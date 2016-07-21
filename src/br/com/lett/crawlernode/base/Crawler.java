@@ -1,11 +1,14 @@
 package br.com.lett.crawlernode.base;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.fetcher.DataFetcher;
+import br.com.lett.crawlernode.models.Market;
 import uk.org.lidalia.slf4jext.Logger;
 import uk.org.lidalia.slf4jext.LoggerFactory;
 
@@ -15,7 +18,7 @@ import uk.org.lidalia.slf4jext.LoggerFactory;
  *
  */
 
-public abstract class Crawler {
+public abstract class Crawler implements Runnable {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 	
@@ -23,6 +26,12 @@ public abstract class Crawler {
 			+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
 			+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
 			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+	
+	/**
+	 * The market associated with this crawler
+	 */
+	public Market market;
+	
 	
 	public abstract boolean shouldVisit(String url);
 	
@@ -54,6 +63,11 @@ public abstract class Crawler {
 		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, url, null, null);
 		
 		return Jsoup.parse(html);		
+	}
+	
+	@Override
+	public void run() {
+		// fazer tarefa
 	}
 
 }
