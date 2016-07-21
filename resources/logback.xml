@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+	<!-- Syslog appender -->
+	<appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+		<syslogHost>172.31.47.108</syslogHost>
+		<port>514</port>
+		<facility>SYSLOG</facility>
+		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%-5level] [PROJECT]crawler-node [THREAD]%thread [LOGGER]%logger{26} [MODE]%X{MODE} - %msg%n</suffixPattern>
+	</appender>
+	
+	<!-- 
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>logback/crawler.log</file>		
+		<encoder>
+			<pattern>%date{MMM dd HH:mm:ss} %X{HOST_NAME} %X{PROCESS_NAME}[%X{PID}]: [THREAD]%thread [LEVEL]%-5level[LOGGER]%logger{26} [MODE]%X{MODE} [ENVIRONMENT]%X{ENVIRONMENT} - %msg%n</pattern>
+		</encoder>
+	</appender> -->
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+
+		  	<filter class="ch.qos.logback.core.filter.EvaluatorFilter">      
+      			<evaluator> <!-- defaults to type ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+        			<expression>
+
+						if(mdc == null || mdc.get("DEBUG_MODE") == null) return true;
+				
+						String payee = (String) mdc.get("DEBUG_MODE");
+				
+						if(payee.equals("true")) return true;
+				
+						if(payee.equals("false") &amp;&amp; level==DEBUG) return false;
+				
+						return true;
+		
+    				</expression>
+      			</evaluator>
+      			<OnMismatch>DENY</OnMismatch>
+      			<OnMatch>ACCEPT</OnMatch>
+    		</filter>
+		 
+		<encoder>
+			<pattern>[LEVEL]%-5level [LOGGER]%logger{26} [MODE]%X{MODE} [ENVIRONMENT]%X{ENVIRONMENT} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="crawlernode_stdout" level="ALL" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+	
+	<!-- 
+	<logger name="crawlernode_file" level="ALL" additivity="false">
+		<appender-ref ref="FILE" />
+	</logger> -->
+	
+	<logger name="crawlernode_syslog" level="ALL" additivity="false">
+		<appender-ref ref="SYSLOG" />
+	</logger>
+
+	<logger name="br.com.lett" level="TRACE">
+		<!-- <appender-ref ref="FILE" /> -->
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="SYSLOG" />
+	</logger>
+
+	<!-- Strictly speaking, the level attribute is not necessary since -->
+	<!-- the level of the root level is set to DEBUG by default. -->
+	<root level="OFF">
+	</root>
+
+</configuration>
