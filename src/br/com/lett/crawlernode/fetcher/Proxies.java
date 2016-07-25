@@ -37,7 +37,6 @@ public class Proxies {
 		this.semiPremiumProxies = new ArrayList<LettProxy>();
 	}
 
-
 	public void fetchRegularProxies() {
 		try {
 			Logging.printLogDebug(logger, "Fetching regular proxies...");
@@ -67,16 +66,18 @@ public class Proxies {
 			}
 			in.close();
 
-			Logging.printLogDebug(logger, regularProxies.size() + " regular proxies fetched!");
+			Logging.printLogDebug(logger, "Regular proxies fetched with success! [" + this.regularProxies.size() + " proxies fetched]");
 		}
 		catch (Exception e) {
-
+			Logging.printLogError(logger, "Error fetching regular proxies [" + e.getMessage() + "]");
 		}
 
 	}
 
-	public void fetchPremiumProxies() {
+	public void fetchPremiumProxies() {		
 		try {
+			
+			Logging.printLogDebug(logger, "Fetching premium proxies...");
 			
 			premiumProxies.add(new LettProxy("shader", "138.99.122.129", 60000, "Brasil", "lett", "hQEu5srTMe"));
 			premiumProxies.add(new LettProxy("shader", "138.99.122.131", 60000, "Brasil", "lett", "hQEu5srTMe"));
@@ -129,8 +130,10 @@ public class Proxies {
 			premiumProxies.add(new LettProxy("shader", "138.99.122.253", 60000, "Brasil", "lett", "hQEu5srTMe"));
 			premiumProxies.add(new LettProxy("shader", "138.99.122.255", 60000, "Brasil", "lett", "hQEu5srTMe"));
 			
+			Logging.printLogDebug(logger, "Premium proxies fetched with success! [" + this.premiumProxies.size() + " proxies fetched]");
+			
 		} catch(Exception e) {
-
+			Logging.printLogError(logger, "Error fetching premium proxies [" + e.getMessage() + "]");
 		}
 	}
 

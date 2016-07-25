@@ -9,6 +9,7 @@ import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToHTMLContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,7 @@ public class Parser {
 		 */
 		else {
 			Metadata metadata = new Metadata();
-			ToHTMLContentHandler contentHandler = new ToHTMLContentHandler();
+			BodyContentHandler contentHandler = new BodyContentHandler();
 			
 			try (InputStream inputStream = new ByteArrayInputStream(pageContent.getContentData())) {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);

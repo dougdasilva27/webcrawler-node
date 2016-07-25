@@ -51,12 +51,10 @@ import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import org.jsoup.Connection.Method;
-import org.jsoup.Connection.Response;
 import org.jsoup.nodes.Document;
 
-import uk.org.lidalia.slf4jext.Logger;
-import uk.org.lidalia.slf4jext.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -392,9 +390,18 @@ public class DataFetcher {
 			Parser parser = new Parser();
 			parser.parse(pageContent);
 
-			if (pageContent.getBinaryParseData() != null) return pageContent.getBinaryParseData().getHtml();
-			if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
-			if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
+			if (pageContent.getBinaryParseData() != null) {
+				Logging.printLogDebug(logger, "Binary Content");
+				return pageContent.getBinaryParseData().getHtml();
+			}
+			if (pageContent.getHtmlParseData() != null) {
+				Logging.printLogDebug(logger, "html Content");				
+				return pageContent.getHtmlParseData().getHtml();
+			}
+			if (pageContent.getTextParseData() != null) {
+				Logging.printLogDebug(logger, "text Content");
+				return pageContent.getTextParseData().getTextContent();
+			}
 
 			return "";
 

@@ -8,8 +8,8 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.fetcher.DataFetcher;
 import br.com.lett.crawlernode.models.CrawlerSession;
 
-import uk.org.lidalia.slf4jext.Logger;
-import uk.org.lidalia.slf4jext.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -38,13 +38,8 @@ public class Crawler implements Runnable {
 	}
 	
 	public void extract(String url) {
-		
-//		Document document = preProcessing(url);
-		
-		Document document = null;
-		
+		Document document = preProcessing(url);
 		extractInformation(document, url);
-		
 	}
 	
 	public void extractInformation(Document document, String url) {

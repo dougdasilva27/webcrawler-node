@@ -76,34 +76,23 @@
 			<scope>compile</scope>
 		</dependency>
 
-		<!-- Logging -->
-		<dependency>
-			<groupId>uk.org.lidalia</groupId>
-			<artifactId>lidalia-slf4j-ext</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-
-		<!-- Logging -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.1.2</version>
-			<scope>test</scope>
 		</dependency>
 
-
-		<!-- Logging -->
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
-			<version>1.1.2</version>
-		</dependency>
-
-		<!-- Logging -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
 			<version>2.5.16</version>
+		</dependency>
+		
+		<!-- google common -->
+		<dependency>
+			<groupId>com.google.collections</groupId>
+			<artifactId>google-collections</artifactId>
+			<version>1.0-rc2</version>
 		</dependency>
 
 	</dependencies>
