@@ -17,6 +17,11 @@ public class CrawlerSession {
 	 */
 	private int processedId;
 	
+	/**
+	 * the market associated with this session
+	 */
+	private Market market;
+	
 	
 	public CrawlerSession() {
 		super();
@@ -50,6 +55,16 @@ public class CrawlerSession {
 
 	public void setProcessedId(int processedId) {
 		this.processedId = processedId;
+	}
+
+
+	public Market getMarket() {
+		return market;
+	}
+
+
+	public void setMarket(Market market) {
+		this.market = market;
 	}
 
 }

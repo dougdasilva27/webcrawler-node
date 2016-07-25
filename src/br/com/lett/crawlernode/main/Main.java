@@ -12,10 +12,12 @@ import java.util.concurrent.TimeUnit;
 
 import br.com.lett.crawlernode.base.Crawler;
 import br.com.lett.crawlernode.base.ExecutionParameters;
+
 import br.com.lett.crawlernode.crawlers.BrasilAdiasCrawler;
 import br.com.lett.crawlernode.crawlers.BrasilAmericanasCrawler;
-import br.com.lett.crawlernode.crawlers.BrasilXulambisCrawler;
+
 import br.com.lett.crawlernode.fetcher.Proxies;
+import br.com.lett.crawlernode.models.CrawlerSession;
 
 /**
  * 
@@ -33,8 +35,8 @@ public class Main {
 	public static void main(String args[]) {
 
 		// setting execution parameters
-		executionParameters = new ExecutionParameters(args);
-		executionParameters.setUpExecutionParameters();
+//		executionParameters = new ExecutionParameters(args);
+//		executionParameters.setUpExecutionParameters();
 
 		// fetching proxies
 		//		proxies = new Proxies();
@@ -63,10 +65,12 @@ public class Main {
 					System.out.println("mandando as 10 tarefas para o executor...");
 					for (String url : tasks) {
 						Runnable task = null;
+						
+						CrawlerSession session = new CrawlerSession();
+						session.setUrl(url);
 
-						if (url.contains("adias")) task = new BrasilAdiasCrawler(url);
-						else if(url.contains("americanas")) task = new BrasilAmericanasCrawler(url);
-						else if(url.contains("xulambis")) task = new BrasilXulambisCrawler(url);
+						if (session.getUrl().contains("adias")) task = new BrasilAdiasCrawler(session);
+						else task = new BrasilAmericanasCrawler(session);
 
 						executor.execute(task);
 					}	
@@ -89,9 +93,8 @@ public class Main {
 	private static ArrayList<String> createTasks(int n) {
 		ArrayList<String> tasks = new ArrayList<String>();
 		for (int i = 0; i < n; i++) {
-			if (i >= 0 && i <= 3) tasks.add("http://www.americanas.com.br/");
-			else if (i >= 4 && i <= 7) tasks.add("http://www.adias.com.br/");
-			else tasks.add("http://www.xulambisworks.com.br");
+			if (i%2 == 0) tasks.add("http://www.americanas.com.br/");
+			else tasks.add("http://www.adias.com.br/");
 		} 
 
 		return tasks;

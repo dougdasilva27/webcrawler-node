@@ -1,14 +1,13 @@
 package br.com.lett.crawlernode.base;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.fetcher.DataFetcher;
-import br.com.lett.crawlernode.models.Market;
+import br.com.lett.crawlernode.models.CrawlerSession;
+
 import uk.org.lidalia.slf4jext.Logger;
 import uk.org.lidalia.slf4jext.LoggerFactory;
 
@@ -27,19 +26,12 @@ public class Crawler implements Runnable {
 			+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
 			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 	
-	/**
-	 * The market associated with this crawler
-	 */
-	public Market market;
+
+	protected CrawlerSession session;
 	
-	public String taskURL;
-	
-	
-	
-	public Crawler(String url) {
-		this.taskURL = url;
+	public Crawler(CrawlerSession session) {
+		this.session = session;
 	}	
-	
 	
 	public boolean shouldVisit(String url) {
 		return true;
@@ -79,7 +71,7 @@ public class Crawler implements Runnable {
 	
 	@Override 
 	public void run() {
-		extract(this.taskURL);
+		extract(session.getUrl());
 	}
 
 }

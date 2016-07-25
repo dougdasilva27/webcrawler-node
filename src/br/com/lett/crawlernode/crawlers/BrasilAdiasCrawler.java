@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.base.Crawler;
+import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -42,8 +43,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilAdiasCrawler extends Crawler {
 
-	public BrasilAdiasCrawler(String url) {
-		super(url);
+	public BrasilAdiasCrawler(CrawlerSession session) {
+		super(session);
 	}
 
 	private final String HOME_PAGE = "http://www.adias.com.br/";

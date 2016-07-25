@@ -3,11 +3,12 @@ package br.com.lett.crawlernode.crawlers;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.base.Crawler;
+import br.com.lett.crawlernode.models.CrawlerSession;
 
 public class BrasilAmericanasCrawler extends Crawler {
 
-	public BrasilAmericanasCrawler(String url) {
-		super(url);
+	public BrasilAmericanasCrawler(CrawlerSession session) {
+		super(session);
 	}
 
 	@Override
