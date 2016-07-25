@@ -57,12 +57,14 @@ import org.jsoup.nodes.Document;
 
 import uk.org.lidalia.slf4jext.Logger;
 import uk.org.lidalia.slf4jext.LoggerFactory;
-import br.com.lett.crawlernode.base.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 import com.google.common.collect.Lists;
+
+import br.com.lett.crawlernode.base.ExecutionParameters;
+import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.parser.Parser;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 
 public class DataFetcher {
 
@@ -101,6 +103,30 @@ public class DataFetcher {
 	}
 
 	/**
+	 * Fetch a json object from the API, either by a GET ou POST http request.
+	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param url The url from which we will fetch the data.
+	 * @param payload The payload, or parameter field of the request, in case of a POST request. null if we have a GET request.
+	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
+	 */
+	public static JSONObject fetchJSONObject(String reqType, String url, String payload, List<Cookie> cookies) {
+		return new JSONObject(fetchJson(reqType, url, payload, cookies, 1));
+	}
+
+	/**
+	 * Fetch a json array from the API, either by a GET ou POST http request.
+	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param url The url from which we will fetch the data.
+	 * @param payload The payload, or parameter field of the request, in case of a POST request. null if we have a GET request.
+	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
+	 */
+	public static JSONArray fetchJSONArray(String reqType, String url, String payload, List<Cookie> cookies) {
+		return new JSONArray(fetchJson(reqType, url, payload, cookies, 1));
+	}
+
+	/**
 	 * Get the http response code of a URL
 	 * @param url 
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
@@ -110,20 +136,20 @@ public class DataFetcher {
 		return getUrlResponseCode(url, 1);
 	}
 
-
-
 	private static Integer getUrlResponseCode(String url, int attempt) {
 		try {
-
 			URL urlObject = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt));
 			connection.setRequestMethod("GET");
 			connection.connect();
 
 			return connection.getResponseCode();
-		} catch (Exception e) {			
+		} catch (Exception e) {
+
+
 			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url);
 			Logging.printLogError(logger, e.getStackTrace().toString());
+
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
@@ -135,9 +161,144 @@ public class DataFetcher {
 		}
 	}
 
+	private static String fetchJson(String reqType, String url, String payload, List<Cookie> cookies, int attempt) {
+		try {
+
+			if (reqType.equals(GET_REQUEST)) {
+				return fetchPageGET(url, cookies, attempt);
+			} else if (reqType.equals(POST_REQUEST)) {
+				if (payload != null) {
+					return fetchJsonPOST(url, payload, cookies, attempt);
+				} else {
+					Logging.printLogWarn(logger, "Parametro payload está null.");
+				}
+			} else {
+				Logging.printLogWarn(logger, "Parametro reqType é inválido.");
+			}
+
+		} catch (Exception e) {
+
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
+			Logging.printLogError(logger, e.getStackTrace().toString());
+
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
+			} else {
+				return fetchJson(reqType, url, payload, cookies, attempt+1);	
+			}
+
+		}
+
+		return null;
+
+	}
+
+	private static String fetchJsonPOST(String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
+		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
+
+		String randUserAgent = randUserAgent();
+		LettProxy randProxy = randLettProxy(attempt);
+
+		CookieStore cookieStore = new BasicCookieStore();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				cookieStore.addCookie(cookie);
+			}
+		}
+
+		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+		if(randProxy.getUser() != null) {
+			credentialsProvider.setCredentials(
+					new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+					new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+					);
+		}
+
+		HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+
+		RequestConfig requestConfig = RequestConfig.custom()
+				.setCookieSpec(CookieSpecs.STANDARD)
+				.setRedirectsEnabled(false)
+				.setProxy(proxy)
+				.build();
+
+
+		Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+		List<Header> headers = Lists.newArrayList(header);
+
+		CloseableHttpClient httpclient = HttpClients.custom()
+				.setDefaultCookieStore(cookieStore)
+				.setUserAgent(randUserAgent)
+				.setDefaultRequestConfig(requestConfig)
+				.setDefaultCredentialsProvider(credentialsProvider)
+				.setDefaultHeaders(headers)
+				.build();
+
+		HttpContext localContext = new BasicHttpContext();
+		localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+		HttpPost httpPost = new HttpPost(url);
+		httpPost.setConfig(requestConfig);
+
+
+		if(payload != null) {
+
+			JSONObject payloadJson = null;
+
+			try {
+				payloadJson = new JSONObject(payload);
+			} catch (Exception e) {
+
+				Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST JSON, pois não consegui converter o payload em json: " + payload);
+				Logging.printLogError(logger, e.getStackTrace().toString());
+
+			}
+
+			if(payloadJson != null && payloadJson.length() > 0) {
+
+				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
+
+				Iterator iterator = payloadJson.keySet().iterator();
+
+				while(iterator.hasNext()) {
+
+					String key = (String) iterator.next();
+
+					postParameters.add(new BasicNameValuePair(key, payloadJson.get(key).toString()));
+
+
+				}
+
+
+				httpPost.setEntity(new UrlEncodedFormEntity(postParameters));
+
+			}
+
+		}
+
+		Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+
+		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+
+		while((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+
+		System.out.println(response.toString());
+
+		return response.toString();
+
+	}
+
 
 	private static String fetchPage(String reqType, String url, String urlParameters, List<Cookie> cookies, int attempt) {
-
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
@@ -155,18 +316,15 @@ public class DataFetcher {
 			}
 
 		} catch (Exception e) {
-
 			e.printStackTrace();
 
-			
-				Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
-				Logging.printLogError(logger, e.getStackTrace().toString());
-			
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
+			Logging.printLogError(logger, e.getStackTrace().toString());
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
-
 				return "";
+				
 			} else {
 				return fetchPage(reqType, url, urlParameters, cookies, attempt+1);	
 			}
@@ -221,22 +379,29 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
-
+			
+			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
-			Header contentTypeHeader = closeableHttpResponse.getEntity().getContentType();
-			String contentType = null;
-			if (contentTypeHeader != null) {
-				contentType = contentTypeHeader.toString();
-			}
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
 
-			if (contentType != null && contentType.contains(CONTENT_TYPE_APPLICATION_JSON)) {
-				return getPureTextData(closeableHttpResponse.getEntity());
-			}
+			// parse
+			Parser parser = new Parser();
+			parser.parse(pageContent);
 
-			return parseContentToHtml(closeableHttpResponse.getEntity(), url);
+			if (pageContent.getBinaryParseData() != null) return pageContent.getBinaryParseData().getHtml();
+			if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
+			if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
+
+			return "";
 
 		} catch (Exception e) {
+
+			e.printStackTrace();
+
 			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
 			Logging.printLogError(logger, e.getMessage());
 			e.printStackTrace();
@@ -253,13 +418,8 @@ public class DataFetcher {
 	}
 
 	private static String fetchPagePOST(String url, String urlParameters, List<Cookie> cookies, int attempt) {
-
 		try {
-
-			
-				Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
-			
-
+			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt);
@@ -317,25 +477,30 @@ public class DataFetcher {
 
 			}
 
-			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+			Logging.printLogDebug(logger, "Request using proxy: " + httpPost.getConfig().getProxy());
 
+			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
-			Header contentTypeHeader = closeableHttpResponse.getEntity().getContentType();
-			String contentType = null;
-			if (contentTypeHeader != null) {
-				contentType = contentTypeHeader.toString();
-			}
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
 
-			if (contentType != null && contentType.contains(CONTENT_TYPE_APPLICATION_JSON)) {
-				return getPureTextData(closeableHttpResponse.getEntity());
-			}
+			// parse
+			Parser parser = new Parser();
+			parser.parse(pageContent);
 
-			return parseContentToHtml(closeableHttpResponse.getEntity(), url);
+			if (pageContent.getBinaryParseData() != null) return pageContent.getBinaryParseData().getHtml();
+			if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
+			if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
+
+			return "";
 
 		} catch (Exception e) {
 
 			e.printStackTrace();
+
 
 			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
 			Logging.printLogError(logger, e.getStackTrace().toString());
@@ -352,18 +517,19 @@ public class DataFetcher {
 	}
 
 
-	private static LettProxy randLettProxy(int attempt) {	
+	private static LettProxy randLettProxy(int attempt) {
+		String mode = Main.executionParameters.getMode();
+		String env = Main.executionParameters.getEnvironment();
 
-		if( Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
+		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
 			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
-			// If we are in production and in normal mode, use only premium proxies
-						if ( Main.executionParameters.getMode().equals(ExecutionParameters.MODE_NORMAL) ) {
-							Logging.printLogDebug(logger, "Running in mode normal on production...using only premium proxies on rand.");
-							
-							proxies.addAll(Main.proxies.premiumProxies);
-						}
+			// If we are in mode insights or placeholder, than we must use premium proxy always
+			if (mode.equals(ExecutionParameters.MODE_DISCOVERY) || mode.equals(ExecutionParameters.MODE_NORMAL)) {
+				Logging.printLogDebug(logger, "Running in mode " + mode + " ... using only premium proxies on rand.");
+				proxies.addAll(Main.proxies.premiumProxies);
+			}
 
 			else {
 				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
@@ -388,15 +554,17 @@ public class DataFetcher {
 
 	}
 
-	private static Proxy randProxy(int attempt) {	
+	private static Proxy randProxy(int attempt) {
+		String mode = Main.executionParameters.getMode();
+		String env = Main.executionParameters.getEnvironment();
 
-		if( Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
+		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+
 			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
-			// If we are in production and in normal mode, use only premium proxies
-			if ( Main.executionParameters.getMode().equals(ExecutionParameters.MODE_NORMAL) ) {
-				Logging.printLogDebug(logger, "Running in mode normal on production...using only premium proxies on rand.");
-				
+			// If we are in mode insights or placeholder, than we must use premium proxy always
+			if (mode.equals(ExecutionParameters.MODE_DISCOVERY) || mode.equals(ExecutionParameters.MODE_NORMAL)) {
+				Logging.printLogDebug(logger, "Running in mode " + mode + " ... using only premium proxies on rand.");
 				proxies.addAll(Main.proxies.premiumProxies);
 			}
 
@@ -418,7 +586,6 @@ public class DataFetcher {
 			final String nextProxyPass = nextProxy.getPass();
 
 			if(nextProxyUser != null){
-				
 				//Autenticação de usuário e senha do proxy e seta a porta e o host para conexão
 				Authenticator a = new Authenticator() {
 					public PasswordAuthentication getPasswordAuthentication() {
@@ -439,39 +606,6 @@ public class DataFetcher {
 
 		}
 
-	}
-
-	/**
-	 * Parse the content fetched inside the http entity to a String in htlm format
-	 * 
-	 * @param entity
-	 * @param url
-	 * @return A string with all the content fetched in html format. An empty string if nothing was fetched.
-	 * @throws Exception
-	 */
-	private static String parseContentToHtml(HttpEntity entity, String url) throws Exception {
-		return Jsoup.parse(entity.getContent(), "UTF-8", url).html();
-	}
-
-	/**
-	 * Get the pure text as a response from a requisition. Used when the page is a pure JSONObject.
-	 * When we are fetching a proper html page, we must use the parseContentToHtml before we use the content.
-	 * 
-	 * @param entity
-	 * @return
-	 * @throws Exception
-	 */
-	private static String getPureTextData(HttpEntity entity) throws Exception {
-		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
-
-		while((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-		in.close();
-
-		return response.toString();
 	}
 
 

@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.fetcher;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
+
+import br.com.lett.crawlernode.parser.BinaryParseData;
+import br.com.lett.crawlernode.parser.HtmlParseData;
+import br.com.lett.crawlernode.parser.TextParseData;
 
 public class PageContent {
 	
@@ -42,40 +47,46 @@ public class PageContent {
 	 */
 	private String language;
 	
-	private HttpEntity entity;
+	/**
+	 * Status code
+	 */
+	private int statusCode;
 	
+	
+	private BinaryParseData binaryParseData;
+	private HtmlParseData htmlParseData;
+	private TextParseData textParseData;
 
-	public PageContent(HttpEntity entity) {
-		this.entity = entity;
-	}
-
-	public void load() throws Exception {
-
+	public PageContent(HttpEntity entity) throws IOException {
+		
+		// setting content type
 		setContentType(null);
 		Header type = entity.getContentType();
 		if (type != null) {
 			setContentType(type.getValue());
 		}
-
+		
+		// setting content encoding
 		setContentEncoding(null);
 		Header encoding = entity.getContentEncoding();
 		if (encoding != null) {
 			setContentEncoding(encoding.getValue());
 		}
-
+		
+		// setting charset
 		Charset charset = ContentType.getOrDefault(entity).getCharset();
 		if (charset != null) {
 			setContentCharset(charset.displayName());
 		}
-
+		
+		// setting content data
 		setContentData(EntityUtils.toByteArray(entity));
+		
 	}
-
 
 	public byte[] getContentData() {
 		return contentData;
 	}
-
 
 	public void setContentData(byte[] contentData) {
 		this.contentData = contentData;
@@ -125,6 +136,38 @@ public class PageContent {
 
 	public void setLanguage(String language) {
 		this.language = language;
+	}
+
+	public int getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(int statusCode) {
+		this.statusCode = statusCode;
+	}
+
+	public BinaryParseData getBinaryParseData() {
+		return binaryParseData;
+	}
+
+	public void setBinaryParseData(BinaryParseData binaryParseData) {
+		this.binaryParseData = binaryParseData;
+	}
+
+	public TextParseData getTextParseData() {
+		return textParseData;
+	}
+
+	public void setTextParseData(TextParseData textParseData) {
+		this.textParseData = textParseData;
+	}
+
+	public HtmlParseData getHtmlParseData() {
+		return htmlParseData;
+	}
+
+	public void setHtmlParseData(HtmlParseData htmlParseData) {
+		this.htmlParseData = htmlParseData;
 	}
 
 }

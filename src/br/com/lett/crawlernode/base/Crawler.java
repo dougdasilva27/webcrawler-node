@@ -18,7 +18,7 @@ import uk.org.lidalia.slf4jext.LoggerFactory;
  *
  */
 
-public abstract class Crawler implements Runnable {
+public class Crawler implements Runnable {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 	
@@ -32,12 +32,24 @@ public abstract class Crawler implements Runnable {
 	 */
 	public Market market;
 	
+	public String taskURL;
 	
-	public abstract boolean shouldVisit(String url);
+	
+	
+	public Crawler(String url) {
+		this.taskURL = url;
+	}	
+	
+	
+	public boolean shouldVisit(String url) {
+		return true;
+	}
 	
 	public void extract(String url) {
 		
-		Document document = preProcessing(url);
+//		Document document = preProcessing(url);
+		
+		Document document = null;
 		
 		extractInformation(document, url);
 		
@@ -65,9 +77,9 @@ public abstract class Crawler implements Runnable {
 		return Jsoup.parse(html);		
 	}
 	
-	@Override
+	@Override 
 	public void run() {
-		// fazer tarefa
+		extract(this.taskURL);
 	}
 
 }

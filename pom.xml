@@ -26,6 +26,12 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.9.2</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>1.5</version>
+		</dependency>
 	
 		<!-- HTTP request -->
 		<dependency>
