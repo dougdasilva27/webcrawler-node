@@ -94,7 +94,64 @@
 			<artifactId>google-collections</artifactId>
 			<version>1.0-rc2</version>
 		</dependency>
+		
+		<!-- Amazon sdk -->
+		<dependency>
+           <groupId>com.amazonaws</groupId>
+           <artifactId>aws-java-sdk-s3</artifactId>
+           <version>1.9.35</version>
+		</dependency>
+		
+		<!-- Image processing -->
+		<dependency>
+			<groupId>org.openimaj</groupId>
+			<artifactId>core</artifactId>
+			<version>1.3.1</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openimaj</groupId>
+			<artifactId>core-image</artifactId>
+			<version>1.3.1</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openimaj</groupId>
+			<artifactId>image-local-features</artifactId>
+			<version>1.3.1</version>
+			<scope>compile</scope>
+		</dependency>
+		
+		<!-- Commom model to store image descriptors of Mongo -->
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.6.2</version>
+		</dependency>
+		
+		<!-- csv format file -->
+		<dependency>
+			<groupId>net.sf.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>2.3</version>
+		</dependency>
 
 	</dependencies>
+	
+	<repositories>
+	
+		<repository>
+			<id>OpenIMAJ maven releases repository</id>
+			<url>http://maven.openimaj.org</url>
+		</repository>
+		
+		<repository>
+			<id>OpenIMAJ maven snapshots repository</id>
+			<url>http://snapshots.openimaj.org</url>
+		</repository>
+		
+	</repositories>
 
 </project>

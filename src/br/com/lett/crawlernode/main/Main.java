@@ -20,9 +20,13 @@ import br.com.lett.crawlernode.base.Crawler;
 import br.com.lett.crawlernode.base.ExecutionParameters;
 import br.com.lett.crawlernode.crawlers.brasil.BrasilAdiasCrawler;
 import br.com.lett.crawlernode.crawlers.brasil.BrasilAmericanasCrawler;
+import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.fetcher.Proxies;
 import br.com.lett.crawlernode.models.CrawlerSession;
+import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.util.Logging;
+
 
 /**
  * 
@@ -37,6 +41,9 @@ public class Main {
 	public static ExecutionParameters 	executionParameters;
 	public static Proxies 				proxies;
 	public static ExecutorService 		executor;
+	public static DatabaseManager 		dbManager;
+	public static ResultManager 		processorResultManager;
+	
 	public static Timer mainTask = new Timer();
 
 	public static void main(String args[]) {

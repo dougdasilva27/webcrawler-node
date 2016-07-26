@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 public class Crawler implements Runnable {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
+	
+	protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
 	protected final static Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g"
 			+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
@@ -68,12 +70,14 @@ public class Crawler implements Runnable {
 		 * Do nothing by default. Subclasses will implement the desired functionality.
 		 */
 	}
-
+	
+	/**
+	 * Request the sku URL and parse to a DOM format
+	 * 
+	 * @return parsed HTML in form of a Document
+	 */
 	private Document preProcessing() {
-
-		// fetch data
 		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, null, null);
-
 		return Jsoup.parse(html);		
 	}
 
