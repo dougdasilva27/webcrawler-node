@@ -18,10 +18,8 @@ import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.base.Crawler;
 import br.com.lett.crawlernode.base.ExecutionParameters;
-
-import br.com.lett.crawlernode.crawlers.BrasilAdiasCrawler;
-import br.com.lett.crawlernode.crawlers.BrasilAmericanasCrawler;
-
+import br.com.lett.crawlernode.crawlers.brasil.BrasilAdiasCrawler;
+import br.com.lett.crawlernode.crawlers.brasil.BrasilAmericanasCrawler;
 import br.com.lett.crawlernode.fetcher.Proxies;
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;

@@ -8,10 +8,16 @@ import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
 
-import br.com.lett.crawlernode.parser.BinaryParseData;
 import br.com.lett.crawlernode.parser.HtmlParseData;
 import br.com.lett.crawlernode.parser.TextParseData;
 
+/**
+ * This class contains the content fetched from a http request and
+ * also it's parsed content.
+ * 
+ * @author Samir Leão
+ *
+ */
 public class PageContent {
 	
 	/**
@@ -52,9 +58,14 @@ public class PageContent {
 	 */
 	private int statusCode;
 	
-	
-	private BinaryParseData binaryParseData;
+	/**
+	 * Content parsed as html
+	 */
 	private HtmlParseData htmlParseData;
+	
+	/**
+	 * Content parsed as plain text
+	 */
 	private TextParseData textParseData;
 
 	public PageContent(HttpEntity entity) throws IOException {
@@ -144,14 +155,6 @@ public class PageContent {
 
 	public void setStatusCode(int statusCode) {
 		this.statusCode = statusCode;
-	}
-
-	public BinaryParseData getBinaryParseData() {
-		return binaryParseData;
-	}
-
-	public void setBinaryParseData(BinaryParseData binaryParseData) {
-		this.binaryParseData = binaryParseData;
 	}
 
 	public TextParseData getTextParseData() {

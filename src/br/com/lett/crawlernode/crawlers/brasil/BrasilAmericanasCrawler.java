@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers;
+package br.com.lett.crawlernode.crawlers.brasil;
 
 import org.jsoup.nodes.Document;
 
@@ -6,21 +6,24 @@ import br.com.lett.crawlernode.base.Crawler;
 import br.com.lett.crawlernode.models.CrawlerSession;
 
 public class BrasilAmericanasCrawler extends Crawler {
+	
+	private final String HOME_PAGE = "http://www.americanas.com.br/";
 
 	public BrasilAmericanasCrawler(CrawlerSession session) {
 		super(session);
 	}
 
 	@Override
-	public boolean shouldVisit(String url) {
-		return true;
+	public boolean shouldVisit() {
+		String href = this.session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
 	@Override
-	public void extractInformation(Document doc, String url) {
-		super.extractInformation(doc, url);
+	public void extractInformation(Document doc) {
+		super.extractInformation(doc);
 		
-		System.out.println("Thread: " + Thread.currentThread().getId() + ", task: " + url);
+		System.out.println("Thread: " + Thread.currentThread().getId() + ", task: " + this.session.getUrl());
 
 //		if ( isProductPage(url) ) {
 //

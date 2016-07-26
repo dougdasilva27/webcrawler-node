@@ -10,7 +10,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ToHTMLContentHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +18,13 @@ import br.com.lett.crawlernode.fetcher.PageContent;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
+/**
+ * This class is used to parse the content fetched from a web page. It can all the necessary cases
+ * for the needs of the crawler node.
+ * 
+ * @author Samir Leão
+ *
+ */
 
 public class Parser {
 
@@ -30,27 +37,23 @@ public class Parser {
 		htmlParser = new HtmlParser();
 		parseContext = new ParseContext();
 	}
-
+	
+	/**
+	 * Parses the content fetched. This content is passed through a PageContent object,
+	 * that was populated with a http entity and a http response, used in DataFetcher class.
+	 * This method can handle the situations where we only want to get the html from a webpage
+	 * or the case where we are expecting a JSONObject or a JSONArray as reponse from an API
+	 * request. In this last case it parses it as a plain text. The PageContent passed, will be populated
+	 * with the parsed data.
+	 * 
+	 * @param pageContent an object containing the content that will be parsed
+	 */
 	public void parse(PageContent pageContent) {
 
 		/*
-		 * binary
+		 * plain text - JSONObjects, JSONArrays from APIs and any other text content
 		 */
-		if (CommonMethods.hasBinaryContent(pageContent.getContentType())) {
-			BinaryParseData parseData = new BinaryParseData();
-			parseData.setBinaryContent(pageContent.getContentData());
-
-			pageContent.setBinaryParseData(parseData);
-			if (parseData.getHtml() == null) {
-				Logging.printLogError(logger, "Error parsing binary content [" + pageContent.getUrl() + "]");
-			}
-
-		} 
-
-		/*
-		 * plain text
-		 */
-		else if (CommonMethods.hasPlainTextContent(pageContent.getContentType())) {
+		 if (CommonMethods.hasPlainTextContent(pageContent.getContentType()) || CommonMethods.hasBinaryContent(pageContent.getContentType())) {
 			try {
 				TextParseData parseData = new TextParseData();
 				if (pageContent.getContentCharset() == null) {
@@ -60,7 +63,7 @@ public class Parser {
 				}
 				pageContent.setTextParseData(parseData);
 			} catch (Exception e) {
-				logger.error("{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
+				Logging.printLogError(logger, "{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
 			}
 		} 
 
@@ -74,7 +77,7 @@ public class Parser {
 			try (InputStream inputStream = new ByteArrayInputStream(pageContent.getContentData())) {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);
 			} catch (Exception e) {
-				logger.error("{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
+				Logging.printLogError(logger, "{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
 			}
 
 			if (pageContent.getContentCharset() == null) {
@@ -99,7 +102,7 @@ public class Parser {
 				pageContent.setHtmlParseData(parseData);
 				
 			} catch (UnsupportedEncodingException e) {
-				logger.error("error parsing the html: " + pageContent.getUrl(), e);
+				Logging.printLogError(logger, "error parsing the html: " + pageContent.getUrl() + e.getMessage());
 			}
 		}
 	}
