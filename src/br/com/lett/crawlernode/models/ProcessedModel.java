@@ -314,7 +314,6 @@ public class ProcessedModel {
 	 * Método que avalia o truco b
 	 */
 	public boolean compareHugeChanges(ProcessedModel truco) {
-		
 
 		// Verificando se foi criado agora
 		if(truco == null) {

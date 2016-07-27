@@ -106,25 +106,6 @@ public class Main {
 	//		}, 0, 10000); // 10 seconds
 
 
-	/**
-	 * Test function to create n tasks
-	 * 
-	 * @return ArrayList with tasks (URLs)
-	 */
-	private static ArrayList<String> createTasks() {
-		ArrayList<String> tasks = new ArrayList<String>();
-
-		// adding 2 for Adias
-		tasks.add("http://www.adias.com.br/produto/ar-condicionado-split-12000-btus-philco-220v-frio-ph12000fm5-68338");
-		tasks.add("http://www.adias.com.br/produto/ar-condicionado-split-inverter-18000-btus-fujitsu-220v-quente-e-frio-asba18lec-68273");
-
-		// adding 2 for Americanas
-		tasks.add("http://www.americanas.com.br/produto/124797411/console-xbox-one-1tb-game-halo-5-guardians-via-download-headset-com-fio-controle-wireless?chave=HM_DT13");
-		tasks.add("http://www.americanas.com.br/produto/128366870/smartphone-lenovo-vibe-c2-dual-chip-android-6.0-tela-5-16gb-4g-camera-8mp-preto?chave=pm_hm_bg_0_0_acom_lenovovibe_2507");
-
-		return tasks;
-	}
-
 
 	private static void setLogMDC() {
 		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");

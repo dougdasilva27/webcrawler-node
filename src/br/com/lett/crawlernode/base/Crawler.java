@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.base;
 
-import java.sql.SQLException;
 import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
@@ -49,31 +48,81 @@ public class Crawler implements Runnable {
 	@Override 
 	public void run() {
 
-		ProcessedModel newProcessedProduct = null;
+		/*
+		 * Initial iteration
+		 */
 
-		while (true) {
+		boolean mustEnterTrucoMode = false;
 
-			// crawl informations and create a product
-			Product product = extract();
+		// crawl informations and create a product
+		Product product = extract();
 
-			// persist the product
-			Persistence.persistProduct(product, session);
+		// persist the product
+		Persistence.persistProduct(product, session);
 
-			// fetch the previous processed product stored on database
-			ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+		// fetch the previous processed product stored on database
+		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
-			// create the new processed product
-			newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+		// create the new processed product
+		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
 
-			// if truco was valid and performed some verification
-			if ( !performTruco(product, newProcessedProduct, previousProcessedProduct, session) ) break; 
+		if (previousProcessedProduct == null) {
+
+			// if a new processed product was created
+			if (newProcessedProduct != null) {
+				Persistence.persistProcessedProduct(newProcessedProduct, session);
+			} else {
+				// indicates we had some invalid information crawled
+			}
+		}
+
+
+		else { // we already have a processed product, so we must decide if we update 
+
+			if (newProcessedProduct != null) {
+
+				// the two processed are different, so we must enter in truco mode
+				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
+					mustEnterTrucoMode = true;
+				}
+
+				// the two processed are equals, so we can update it
+				else {
+					Persistence.persistProcessedProduct(newProcessedProduct, session);
+					return;
+				}
+			}
 
 		}
 
-		// persist the new processed product
-		if (newProcessedProduct != null) {
-			Persistence.persistProcessedProduct(newProcessedProduct, session);
+		/*
+		 * Running truco
+		 */
+		if (mustEnterTrucoMode) {
+			ProcessedModel currentTruco = newProcessedProduct;
+			
+			while (true) {
+				product = extract();
+				Persistence.persistProduct(product, session);
+				newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+				session.incrementTrucoAttempts();
+				
+				if (newProcessedProduct != null) {					
+					if ( compare(newProcessedProduct, currentTruco) ) {
+						currentTruco = newProcessedProduct;	
+					} 
+					
+					// if we found two consecutive equals processed products, persist and end 
+					else {
+						Persistence.persistProcessedProduct(newProcessedProduct, session);
+						return;
+					}
+				}
+				
+				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
+			}
 		}
+
 
 	}
 
@@ -116,67 +165,13 @@ public class Crawler implements Runnable {
 	}
 
 	/**
+	 * Compare ProcessedModel p1 against p2
+	 * p2 is suposed to be the truco, that is the model we are checking against
 	 * 
-	 * @param product
-	 * @param newProcessedProduct
-	 * @param actualProcessedProduct
-	 * @param session
-	 * @return
+	 * @return true if they are different or false otherwise
 	 */
-	private boolean performTruco(Product product, ProcessedModel newProcessedProduct, ProcessedModel actualProcessedProduct, CrawlerSession session) {
-		ProcessedModel truco = session.getTruco();		
-
-		// validating truco mode
-		if(truco != null) {
-			if(session.getOriginalURL() == null) { // TODO conferir o que seria essa originalURL
-				Logging.printLogError(logger, "Erro tentando começar modo truco sem enviar a originalUrl");
-				return false;
-			}
-
-			if(truco.getInternalId() == null) {
-				Logging.printLogError(logger, "Error: truco with null internalId");
-				return false;
-			}
-
-			// Se estou no modo truco mas o produto sendo verificado não é o mesmo,
-			// que acontece no caso de URLs com múltiplos produtos, então paro por aqui.
-			if(!truco.getInternalId().equals(product.getInternalId())) {
-				Logging.printLogDebug(logger, "Abortando este modo truco pois estou trucando outro produto.");
-				return false;
-			}
-
-			// see if we reached maximum number of attempts in truco mode
-			if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-				return false;
-			}
-
-			// increment truco attempts counter
-			session.incrementTrucoAttempts();
-
-			return mustCheckAgain(actualProcessedProduct, newProcessedProduct, session);
-
-		}
-
-		return false;		
+	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
+		return p1.compareHugeChanges(p2);
 	}
-
-	private boolean mustCheckAgain(ProcessedModel actualProcessedProduct, ProcessedModel newProcessedProduct, CrawlerSession session) {
-		ProcessedModel truco = session.getTruco();
-		boolean mustCheckAgain = false;
-
-		if(actualProcessedProduct != null || truco != null) {
-			if(truco != null) {
-				mustCheckAgain = newProcessedProduct.compareHugeChanges(truco);
-			} else {
-				mustCheckAgain = newProcessedProduct.compareHugeChanges(actualProcessedProduct);
-			}
-		} else {
-			mustCheckAgain = false;
-		}
-
-		return mustCheckAgain;
-	}
-
-
 
 }

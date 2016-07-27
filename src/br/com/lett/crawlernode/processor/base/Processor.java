@@ -17,7 +17,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.ProcessedModel;
@@ -33,7 +32,7 @@ public class Processor {
 	 * 
 	 * @param product
 	 * @param session
-	 * @return a new ProcessedModel 
+	 * @return a new ProcessedModel or null in case the Product model has invalid informations
 	 */
 	public static ProcessedModel createProcessed(Product product, CrawlerSession session, ProcessedModel previousProcessedProduct) {
 
@@ -69,6 +68,35 @@ public class Processor {
 		description = sanitizeBeforePersist(description);
 		internal_id = sanitizeBeforePersist(internal_id);
 		internal_pid = sanitizeBeforePersist(internal_pid);
+		
+		String marketplace_string = null;
+
+		if(marketplace != null && marketplace.length() > 0) {
+			marketplace_string = sanitizeBeforePersist(marketplace.toString());
+		}
+
+
+		// checking fields
+		if((price == null || price.equals(0f)) && available) {
+			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
+			return null;
+		} else if(internal_id == null || internal_id.isEmpty()) {
+			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
+			return null;
+		} else if(session.getMarket().getNumber() == 0) {
+			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
+			return null;
+		} else if(url == null || url.isEmpty()) {
+			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
+			return null;
+		} else if(name == null || name.isEmpty()) {
+			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
+			return null;
+		}
+
+		if(price != null && price == 0.0) {
+			price = null;
+		}
 
 		try {
 			

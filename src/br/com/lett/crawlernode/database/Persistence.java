@@ -165,7 +165,7 @@ public class Persistence {
 			Logging.printLogError(logger, "Error inserting producton database! [" + e.getMessage() + "]");
 		}
 	}
-
+	
 	public static void persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		
 		String query = "";

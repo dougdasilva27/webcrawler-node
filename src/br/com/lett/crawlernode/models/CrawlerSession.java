@@ -2,10 +2,18 @@ package br.com.lett.crawlernode.models;
 
 public class CrawlerSession {
 	
+	public static final String STANDALONE = "standalone";
+	public static final String INSIGHTS = "insights";
+	
 	/**
 	 * id of current crawling session
 	 */
 	private String sessionId;
+	
+	/**
+	 * type of crawler session: standalone | insights
+	 */
+	private String type;
 	
 	/**
 	 * Current url seed id
@@ -33,12 +41,8 @@ public class CrawlerSession {
 	private Market market;
 	
 	/**
-	 * processed model of truco mode
-	 * this is the information of the current product of a previous crawling
-	 * the data that was saved on database before the current reading
+	 * number of truco checks
 	 */
-	private ProcessedModel truco;
-	
 	private int trucoAttempts;
 	
 	
@@ -79,18 +83,9 @@ public class CrawlerSession {
 		this.market = market;
 	}
 
-	public ProcessedModel getTruco() {
-		return truco;
-	}
-
-	public void setTruco(ProcessedModel truco) {
-		this.truco = truco;
-	}
-
 	public String getOriginalURL() {
 		return originalURL;
 	}
-
 
 	public void setOriginalURL(String originalURL) {
 		this.originalURL = originalURL;
@@ -110,6 +105,14 @@ public class CrawlerSession {
 
 	public void incrementTrucoAttempts() {
 		this.trucoAttempts++;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 }
