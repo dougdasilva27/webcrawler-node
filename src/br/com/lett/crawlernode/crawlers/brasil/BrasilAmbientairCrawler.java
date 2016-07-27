@@ -43,7 +43,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.ambientair.com.br/";
 	private final String PROTOCOL = "http://";
-	
+
 	public BrasilAmbientairCrawler(CrawlerSession session) {
 		super(session);
 	}
@@ -56,7 +56,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 
 	@Override
-	public void extractInformation(Document doc) {
+	public Product extractInformation(Document doc) {
 		super.extractInformation(doc);
 
 		if ( isProductPage(doc) ) {
@@ -78,7 +78,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
-			
+
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -105,7 +105,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-//			product.setSeedId(seedId);
+			//			product.setSeedId(seedId);
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -121,18 +121,14 @@ public class BrasilAmbientairCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 
-			// execute finalization routines of this sku crawling
-//			executeFinishingRoutines(product, truco);
-
+			return product;
 
 		} else {
 			Logging.printLogTrace(logger, "Not a product page " + this.session.getUrl());
 
-//			if ( Main.mode.equals(Main.MODE_INSIGHTS) ) {
-//				this.crawlerController.scheduleUrlToReprocess(url);
-//			}
 		}
 
+		return new Product();
 	}
 
 
@@ -145,12 +141,12 @@ public class BrasilAmbientairCrawler extends Crawler {
 		if ( document.select("#descricao").first() != null ) return true;
 		return false;
 	}
-	
-	
+
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	private String crawlInternalId(Document document) {
 		String internalId = null;
 		Elements internalIdElements = document.select("input[name=variacao]");
@@ -172,7 +168,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 		return internalPid;
 	}
-	
+
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select("h2.produto").first();
@@ -194,7 +190,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 		return price;
 	}
-	
+
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".produtoIndisponivel").first();
 		if (notifyMeElement != null) return false;
@@ -263,40 +259,40 @@ public class BrasilAmbientairCrawler extends Crawler {
 		return description;
 	}
 
-//	private void executeFinishingRoutines(Product product, ProcessedModel truco) {
-//		try {
-//
-//			if ( this.missingProduct(product) && Main.mode.equals(Main.MODE_INSIGHTS) ) {
-//				this.crawlerController.scheduleUrlToReprocess( product.getUrl() );
-//			}
-//
-//			else {
-//
-//				// print information on console
-//				this.printExtractedInformation(product);
-//
-//				// upload image to s3
-//				if (product.getPrimaryImage() != null && !product.getPrimaryImage().equals("")) {
-//					db.uploadImageToAmazon(this, product.getPrimaryImage(), product.getInternalId());
-//				}
-//
-//				// persist information on database
-//				this.persistInformation(product, this.marketId, truco, product.getUrl());
-//
-//			}
-//
-//		} catch (Exception e1) {
-//			e1.printStackTrace();
-//		}
-//	}
-	
+	//	private void executeFinishingRoutines(Product product, ProcessedModel truco) {
+	//		try {
+	//
+	//			if ( this.missingProduct(product) && Main.mode.equals(Main.MODE_INSIGHTS) ) {
+	//				this.crawlerController.scheduleUrlToReprocess( product.getUrl() );
+	//			}
+	//
+	//			else {
+	//
+	//				// print information on console
+	//				this.printExtractedInformation(product);
+	//
+	//				// upload image to s3
+	//				if (product.getPrimaryImage() != null && !product.getPrimaryImage().equals("")) {
+	//					db.uploadImageToAmazon(this, product.getPrimaryImage(), product.getInternalId());
+	//				}
+	//
+	//				// persist information on database
+	//				this.persistInformation(product, this.marketId, truco, product.getUrl());
+	//
+	//			}
+	//
+	//		} catch (Exception e1) {
+	//			e1.printStackTrace();
+	//		}
+	//	}
+
 	/**************************
 	 * Specific manipulations *
 	 **************************/
-	
+
 	private String sanitizeName(String name) {
 		return name.replace("'","").replace("’","").trim();
 	}
-	
+
 
 }

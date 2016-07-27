@@ -58,7 +58,7 @@ public class BrasilAdiasCrawler extends Crawler {
 	}
 
 	@Override
-	public void extractInformation(Document doc) {
+	public Product extractInformation(Document doc) {
 		super.extractInformation(doc);
 		
 		System.out.println("Thread: " + Thread.currentThread().getId() + ", task: " + this.session.getUrl());
@@ -134,13 +134,13 @@ public class BrasilAdiasCrawler extends Crawler {
 				e.printStackTrace();
 			}
 
-			// execute finalization routines of this sku crawling
-//			executeFinishingRoutines(product);
-
+			return product;
 
 		} else {
 			Logging.printLogTrace(logger, "Not a product page " + this.session.getUrl());
 		}
+		
+		return new Product();
 
 	}
 

@@ -16,26 +16,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.base.Crawler;
+
 import br.com.lett.crawlernode.base.ExecutionParameters;
-import br.com.lett.crawlernode.crawlers.brasil.BrasilAdiasCrawler;
-import br.com.lett.crawlernode.crawlers.brasil.BrasilAmericanasCrawler;
+import br.com.lett.crawlernode.base.TaskFactory;
+
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.database.Persistence;
+
 import br.com.lett.crawlernode.fetcher.Proxies;
 import br.com.lett.crawlernode.models.CrawlerSession;
+import br.com.lett.crawlernode.models.Market;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.util.Logging;
 
 
 /**
  * 
+ * Parameters:
+ * -debug : to print debug log messages on console
+ * -environment [development,  production]
+ * -mode [discover, normal]: yet to be defined
+ * 
  * @author Samir Leão
  *
  */
 
 public class Main {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static ExecutionParameters 	executionParameters;
@@ -43,7 +49,7 @@ public class Main {
 	public static ExecutorService 		executor;
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
-	
+
 	public static Timer mainTask = new Timer();
 
 	public static void main(String args[]) {
@@ -51,7 +57,7 @@ public class Main {
 		// setting execution parameters
 		executionParameters = new ExecutionParameters(args);
 		executionParameters.setUpExecutionParameters();
-		
+
 		// setting MDC for logging messages
 		//setLogMDC();
 
@@ -74,32 +80,31 @@ public class Main {
 		//			public void run() {
 
 		// creating tasks
-		ArrayList<String> tasks = createTasks();
+		//ArrayList<String> tasks = createTasks();
 
-		if (!executor.isShutdown()) {
+		// executing each task
+//		for (String url : tasks) {
+			CrawlerSession session = new CrawlerSession();
+			
+			// market
+			Market market = new Market(61, "brasil", "americanas");
+			
+			session.setMarket(market);
+			session.setUrl("http://www.americanas.com.br/produto/124797411/console-xbox-one-1tb-game-halo-5-guardians-via-download-headset-com-fio-controle-wireless?chave=HM_DT13");
+			session.setOriginalURL("http://www.americanas.com.br/produto/124797411/console-xbox-one-1tb-game-halo-5-guardians-via-download-headset-com-fio-controle-wireless?chave=HM_DT13");
 
-			// executing each task
-			for (String url : tasks) {
-				Runnable task = null;
+			Runnable task = TaskFactory.createTask(session);
 
-				CrawlerSession session = new CrawlerSession();
-				session.setUrl(url);
-
-				if (session.getUrl().contains("adias")) task = new BrasilAdiasCrawler(session);
-				else if (session.getUrl().contains("americanas")) task = new BrasilAmericanasCrawler(session);
-
+			if (task != null) {
 				executor.execute(task);
-			}	
-		} else {
-			System.out.println("Executor foi desligado.");
-		}
-		//			}
-		//
-		//		}, 0, 10000); // 10 seconds
+			}
+		//}
+			
+	} 
+	//			}
+	//
+	//		}, 0, 10000); // 10 seconds
 
-
-
-	}
 
 	/**
 	 * Test function to create n tasks
@@ -119,8 +124,8 @@ public class Main {
 
 		return tasks;
 	}
-	
-	
+
+
 	private static void setLogMDC() {
 		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
 		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
@@ -128,7 +133,7 @@ public class Main {
 		MDC.put("PID", pid);
 		MDC.put("HOST_NAME", hostName);
 		MDC.put("PROCESS_NAME", "java");
-		
+
 		if (executionParameters != null) {
 
 			MDC.put("ENVIRONMENT", executionParameters.getEnvironment());
@@ -138,7 +143,7 @@ public class Main {
 			} else {
 				MDC.put("DEBUG_MODE", "false");
 			}
-			
+
 		} else {
 			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
 			System.exit(0);

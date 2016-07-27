@@ -2,32 +2,29 @@ package br.com.lett.crawlernode.models;
 
 public class Market {
 	
-	private int number;
+	private int id;
 	private String city;
 	private String name;
-	private Boolean production;
 	
-	
-	public Market(int number, String city, String name, Boolean production) {
+	public Market(int number, String city, String name) {
 		super();
-		this.number = number;
+		this.id = number;
 		this.city = city;
 		this.name = name;
-		this.production = production;
 	}
 	
 	@Override
 	public String toString() {
-		return "Market [number=" + number + ", city=" + city + ", name=" + name
-				+ ", production=" + production + "]";
+		return "Market [number=" + id + ", city=" + city + ", name=" + name
+				+ ", production=" + "]";
 	}
 
 	public int getNumber() {
-		return number;
+		return id;
 	}
 	
 	public void setNumber(int number) {
-		this.number = number;
+		this.id = number;
 	}
 
 	public String getCity() {
@@ -44,13 +41,5 @@ public class Market {
 	
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public Boolean getProduction() {
-		return production;
-	}
-	
-	public void setProduction(Boolean production) {
-		this.production = production;
 	}
 }

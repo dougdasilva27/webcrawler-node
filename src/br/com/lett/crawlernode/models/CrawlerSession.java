@@ -39,9 +39,12 @@ public class CrawlerSession {
 	 */
 	private ProcessedModel truco;
 	
+	private int trucoAttempts;
+	
 	
 	public CrawlerSession() {
 		super();
+		trucoAttempts = 0;
 	}
 
 	public String getUrl() {
@@ -99,6 +102,14 @@ public class CrawlerSession {
 
 	public void setSeedId(String seedId) {
 		this.seedId = seedId;
+	}
+
+	public int getTrucoAttempts() {
+		return trucoAttempts;
+	}
+
+	public void incrementTrucoAttempts() {
+		this.trucoAttempts++;
 	}
 
 }

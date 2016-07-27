@@ -59,7 +59,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 
 	@Override
-	public void extractInformation(Document doc) {
+	public Product extractInformation(Document doc) {
 		super.extractInformation(doc);
 
 		if ( isProductPage(doc) ) {
@@ -124,14 +124,13 @@ public class BrasilCentralarCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 
-			// execute finalization routines of this sku crawling
-//			executeFinishingRoutines(product, truco);
-
+			return product;
 
 		} else {
 			Logging.printLogDebug(logger, "Not a product page" + this.session.getUrl());
 		}
-
+		
+		return new Product();
 	}
 
 
