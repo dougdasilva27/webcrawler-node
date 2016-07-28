@@ -1,0 +1,14 @@
+br.com.lett.crawlernode.base
+br.com.lett.crawlernode.crawlers.brasil
+br.com.lett.crawlernode.database
+br.com.lett.crawlernode.fetcher
+br.com.lett.crawlernode.imgprocessing
+br.com.lett.crawlernode.main
+br.com.lett.crawlernode.models
+br.com.lett.crawlernode.parser
+br.com.lett.crawlernode.processor.base
+br.com.lett.crawlernode.processor.controller
+br.com.lett.crawlernode.processor.extractors
+br.com.lett.crawlernode.queue
+br.com.lett.crawlernode.security
+br.com.lett.crawlernode.util

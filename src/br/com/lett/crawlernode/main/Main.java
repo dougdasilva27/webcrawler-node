@@ -35,9 +35,8 @@ import br.com.lett.crawlernode.util.Logging;
  * Parameters:
  * -debug : to print debug log messages on console
  * -environment [development,  production]
- * -mode [discover, normal]: yet to be defined
  * 
- * @author Samir Leão
+ * @author Samir Leao
  *
  */
 

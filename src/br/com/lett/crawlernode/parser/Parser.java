@@ -22,7 +22,7 @@ import br.com.lett.crawlernode.util.Logging;
  * This class is used to parse the content fetched from a web page. It can all the necessary cases
  * for the needs of the crawler node.
  * 
- * @author Samir Leão
+ * @author Samir Leao
  *
  */
 

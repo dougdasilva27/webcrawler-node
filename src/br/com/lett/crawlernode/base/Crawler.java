@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * The Crawler superclass. All crawler tasks must extend this class to override both
  * the shouldVisit and extract methods.
  * 
- * @author Samir Leão
+ * @author Samir Leao
  *
  */
 

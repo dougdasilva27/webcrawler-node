@@ -17,8 +17,11 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * 
- * @author samirleao
+ * A bridge with the Amazon SQS. The other crawlers modules uses the methods from this class
+ * to send messages, do requests and delete messages from the queue.
+ * The long pooling time is sort of in sync with the Timer thread on the main method in class Main.
+ * This time is the time that a request on the queue waits until some message is on the request response.
+ * @author Samir Leao
  *
  */
 public class QueueService {
