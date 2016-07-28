@@ -14,6 +14,11 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 
+/**
+ * 
+ * @author Samir Leao
+ *
+ */
 public class DataCipher {
 	
 	private SymmetricCipher symmetricCipher;

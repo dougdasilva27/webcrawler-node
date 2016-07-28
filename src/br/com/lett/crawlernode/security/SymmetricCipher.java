@@ -1,13 +1,5 @@
-
-/**
- * Classe contendo métodos para cifrar e decifrar um array de bytes.
- * O método de cifra usado é o AES128, que corresponde a um tamanho de bloco
- * de 16 bytes, usado internamento no algoritmo.
- * 
- * @author Samir Leão
- */
-
 package br.com.lett.crawlernode.security;
+
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -21,6 +13,13 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * This class contains methods to encrypt and decrypt byte arrays.
+ * The encryption method is the AES128, which corresponds to a cypher block
+ * size of 16 bytes. 
+ * @author Samir Leao
+ *
+ */
 public class SymmetricCipher {
 	
 	public final int BLOCK_SIZE = 16;

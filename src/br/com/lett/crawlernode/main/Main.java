@@ -19,7 +19,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.base.ExecutionParameters;
 import br.com.lett.crawlernode.base.TaskFactory;
-
+import br.com.lett.crawlernode.base.WorkList;
 import br.com.lett.crawlernode.database.DatabaseManager;
 
 import br.com.lett.crawlernode.fetcher.Proxies;
@@ -52,6 +52,7 @@ public class Main {
 	
 	private static ExecutorService 		executor;
 	private static QueueHandler			queueHandler;
+	private static WorkList				workList;
 
 	public static void main(String args[]) {
 
@@ -73,48 +74,51 @@ public class Main {
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 		
-//		sendTasks();
+		sendTasks();
+		
+		// create the work list
+		workList = new WorkList(10);
 
 		// create an executor with a fixed number of threads
-		executor = Executors.newFixedThreadPool(100);
-
-		
-		/*
-		 * main task -- from time to time goes to server and takes 10 urls
-		 */
-
-		Timer mainTask = new Timer();
-
-		mainTask.scheduleAtFixedRate(new TimerTask() {
-
-			@Override
-			public void run() {
-
-				// request message (tasks) from the Amazon queue
-				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
-
-				for (Message message : messages) {
-
-					// check the message fields
-					if (QueueService.checkMessage(message)) {
-
-						// create a crawler session from the message
-						CrawlerSession session = new CrawlerSession(message);
-
-						// create the task
-						Runnable task = TaskFactory.createTask(session);
-
-						// submit the task to the executor
-						if (task != null) {
-							executor.execute(task);
-						}
-					}
-
-				}
-
-
-			} 
-		} , 0, 15000); // 15 seconds
+//		executor = Executors.newFixedThreadPool(100);
+//
+//		
+//		/*
+//		 * main task -- from time to time goes to server and takes 10 urls
+//		 */
+//
+//		Timer mainTask = new Timer();
+//
+//		mainTask.scheduleAtFixedRate(new TimerTask() {
+//
+//			@Override
+//			public void run() {
+//
+//				// request message (tasks) from the Amazon queue
+//				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
+//
+//				for (Message message : messages) {
+//
+//					// check the message fields
+//					if (QueueService.checkMessage(message)) {
+//
+//						// create a crawler session from the message
+//						CrawlerSession session = new CrawlerSession(message);
+//
+//						// create the task
+//						Runnable task = TaskFactory.createTask(session);
+//
+//						// submit the task to the executor
+//						if (task != null) {
+//							executor.execute(task);
+//						}
+//					}
+//
+//				}
+//
+//
+//			} 
+//		} , 0, 15000); // 15 seconds
 
 	}
 
@@ -160,15 +164,15 @@ public class Main {
 		attrMap3.put("market", new MessageAttributeValue().withDataType("String").withStringValue("centralar"));
 		attrMap3.put("marketId", new MessageAttributeValue().withDataType("String").withStringValue("24"));
 		
-		for (int i = 1; i < 50; i++) {
+		for (int i = 1; i < 500; i++) {
 			String body = "www.adias.com.br" + i;			
 			QueueService.sendMessage(queue, attrMap1, body);
 		}
-		for (int i = 1; i < 50; i++) {
+		for (int i = 1; i < 500; i++) {
 			String body = "www.ambientair.com.br" + i;			
 			QueueService.sendMessage(queue, attrMap2, body);
 		}
-		for (int i = 1; i < 50; i++) {
+		for (int i = 1; i < 500; i++) {
 			String body = "www.centralar.com.br" + i;			
 			QueueService.sendMessage(queue, attrMap3, body);
 		}
