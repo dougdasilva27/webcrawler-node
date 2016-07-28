@@ -23,8 +23,8 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.fetcher.Proxies;
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.queueservice.QueueHandler;
-import br.com.lett.crawlernode.queueservice.QueueService;
+import br.com.lett.crawlernode.queue.QueueHandler;
+import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 

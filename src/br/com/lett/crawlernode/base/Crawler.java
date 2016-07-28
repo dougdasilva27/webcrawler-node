@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.processor.base.Processor;
-import br.com.lett.crawlernode.queueservice.QueueService;
+import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.slf4j.Logger;

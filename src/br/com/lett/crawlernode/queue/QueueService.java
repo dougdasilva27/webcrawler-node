@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.queueservice;
+package br.com.lett.crawlernode.queue;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +12,7 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import br.com.lett.crawlernode.util.Logging;
 
@@ -98,6 +99,21 @@ public class QueueService {
 			String messageReceiptHandle = messages.get(i).getReceiptHandle();
 			sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageReceiptHandle));
 		}
+	}
+	
+	/**
+	 * 
+	 * @param sqs
+	 * @param attributes
+	 * @param messageBody
+	 */
+	public void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
+		SendMessageRequest sendMessageRequest = new SendMessageRequest();
+		sendMessageRequest.setQueueUrl(QUEUE_URL);
+		sendMessageRequest.setMessageBody(messageBody);
+		sendMessageRequest.setMessageAttributes(attributes);
+		
+		sqs.sendMessage(sendMessageRequest);
 	}
 
 	/**
