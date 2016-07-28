@@ -7,7 +7,7 @@
 		<syslogHost>172.31.47.108</syslogHost>
 		<port>514</port>
 		<facility>SYSLOG</facility>
-		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%-5level] [PROJECT]crawler-node [THREAD]%thread [LOGGER]%logger{26} [MODE]%X{MODE} - %msg%n</suffixPattern>
+		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%-5level] [PROJECT]webcrawler-node [THREAD]%thread [LOGGER]%logger{26} %msg%n</suffixPattern>
 	</appender>
 	
 	<!-- 
@@ -41,7 +41,7 @@
     		</filter>
 		 
 		<encoder>
-			<pattern>[LEVEL]%-5level [LOGGER]%logger{26} [MODE]%X{MODE} [ENVIRONMENT]%X{ENVIRONMENT} - %msg%n</pattern>
+			<pattern>[LEVEL]%-5level [LOGGER]%logger{26} [ENVIRONMENT]%X{ENVIRONMENT} %msg%n</pattern>
 		</encoder>
 	</appender>
 

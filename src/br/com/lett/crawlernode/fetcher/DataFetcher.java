@@ -489,7 +489,7 @@ public class DataFetcher {
 
 		}
 	}
-	
+
 	/**
 	 * Parse the page content, either to get a html or a plain text
 	 * In case we are expecting JSONObject or JSONArray response from an API, the content
@@ -510,7 +510,6 @@ public class DataFetcher {
 
 
 	private static LettProxy randLettProxy(int attempt) {
-		String mode = Main.executionParameters.getMode();
 		String env = Main.executionParameters.getEnvironment();
 
 		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
@@ -518,20 +517,19 @@ public class DataFetcher {
 			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
 			// If we are in mode insights or placeholder, than we must use premium proxy always
-			if (mode.equals(ExecutionParameters.MODE_DISCOVERY) || mode.equals(ExecutionParameters.MODE_NORMAL)) {
-				Logging.printLogDebug(logger, "Running in mode " + mode + " ... using only premium proxies on rand.");
-				proxies.addAll(Main.proxies.premiumProxies);
-			}
+			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
+			proxies.addAll(Main.proxies.premiumProxies);
 
-			else {
-				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
-					proxies.addAll(Main.proxies.regularProxies);
-				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
-					proxies.addAll(Main.proxies.semiPremiumProxies);
-				} else {
-					proxies.addAll(Main.proxies.premiumProxies);
-				}
-			}
+
+			//			else {
+			//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
+			//					proxies.addAll(Main.proxies.regularProxies);
+			//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
+			//					proxies.addAll(Main.proxies.semiPremiumProxies);
+			//				} else {
+			//					proxies.addAll(Main.proxies.premiumProxies);
+			//				}
+			//			}
 
 			LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 
@@ -547,7 +545,6 @@ public class DataFetcher {
 	}
 
 	private static Proxy randProxy(int attempt) {
-		String mode = Main.executionParameters.getMode();
 		String env = Main.executionParameters.getEnvironment();
 
 		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
@@ -555,20 +552,19 @@ public class DataFetcher {
 			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
 			// If we are in mode insights or placeholder, than we must use premium proxy always
-			if (mode.equals(ExecutionParameters.MODE_DISCOVERY) || mode.equals(ExecutionParameters.MODE_NORMAL)) {
-				Logging.printLogDebug(logger, "Running in mode " + mode + " ... using only premium proxies on rand.");
-				proxies.addAll(Main.proxies.premiumProxies);
-			}
+			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
+			proxies.addAll(Main.proxies.premiumProxies);
 
-			else {
-				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
-					proxies.addAll(Main.proxies.regularProxies);
-				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
-					proxies.addAll(Main.proxies.semiPremiumProxies);
-				} else {
-					proxies.addAll(Main.proxies.premiumProxies);
-				}
-			}
+
+			//			else {
+			//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
+			//					proxies.addAll(Main.proxies.regularProxies);
+			//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
+			//					proxies.addAll(Main.proxies.semiPremiumProxies);
+			//				} else {
+			//					proxies.addAll(Main.proxies.premiumProxies);
+			//				}
+			//			}
 
 			LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 

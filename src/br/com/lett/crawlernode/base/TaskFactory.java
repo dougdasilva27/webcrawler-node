@@ -28,6 +28,7 @@ public class TaskFactory {
 	 * @return Controller instance
 	 */
 	public static Runnable createTask(CrawlerSession session) {
+		Logging.printLogDebug(logger, session, "Creating task for " + session.getUrl());
 		
 		// assembling the class name
 		String taskClassName = assembleClassName(session.getMarket());

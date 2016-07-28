@@ -1,14 +1,29 @@
 package br.com.lett.crawlernode.models;
 
+import java.util.Map;
+
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
+
+import br.com.lett.crawlernode.queueservice.QueueService;
+
 public class CrawlerSession {
 	
 	public static final String STANDALONE = "standalone";
 	public static final String INSIGHTS = "insights";
 	
 	/**
-	 * id of current crawling session
+	 * id of current crawling session. It's the same id of the message from Amazon SQS
 	 */
 	private String sessionId;
+	
+	/**
+	 * A receipt handle used to delete a message from the Amazon sqs
+	 * The id is useful to identify the message, but the it can't be used to delete the message.
+	 * Only the messageReceiptHandle can be used for this. It's a string received at the moment
+	 * we get the message from the queue 
+	 */
+	private String messageReceiptHandle;
 	
 	/**
 	 * type of crawler session: standalone | insights
@@ -45,6 +60,32 @@ public class CrawlerSession {
 	 */
 	private int trucoAttempts;
 	
+	
+	public CrawlerSession(Message message) {
+		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+		
+		// setting truco attempts
+		this.trucoAttempts = 0;
+		
+		// setting session id
+		this.sessionId = message.getMessageId();
+		
+		// setting message receipt handle
+		this.setMessageReceiptHandle(message.getReceiptHandle());
+		
+		// setting Market
+		this.market = new Market(message);
+		
+		// setting URL and originalURL
+		this.url = message.getBody();
+		this.originalURL = message.getBody();
+		
+		// setting processed id
+		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+			this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		}
+		
+	}
 	
 	public CrawlerSession() {
 		super();
@@ -113,6 +154,31 @@ public class CrawlerSession {
 
 	public void setType(String type) {
 		this.type = type;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("session id: " + this.sessionId + "\n");
+		sb.append("type: " + this.type + "\n");
+		sb.append("seed id: " + this.seedId + "\n");
+		sb.append("original url: " + this.originalURL + "\n");
+		sb.append("url: " + this.url + "\n");
+		sb.append("processed id: " + this.processedId + "\n");
+		sb.append("market id: " + this.market.getNumber() + "\n");
+		sb.append("market name: " + this.market.getName() + "\n");
+		sb.append("market city: " + this.market.getCity() + "\n");
+
+		return sb.toString();
+	}
+
+	public String getMessageReceiptHandle() {
+		return messageReceiptHandle;
+	}
+
+	public void setMessageReceiptHandle(String messageReceiptHandle) {
+		this.messageReceiptHandle = messageReceiptHandle;
 	}
 
 }

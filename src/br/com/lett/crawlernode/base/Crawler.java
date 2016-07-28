@@ -7,10 +7,12 @@ import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.fetcher.DataFetcher;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.processor.base.Processor;
+import br.com.lett.crawlernode.queueservice.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.slf4j.Logger;
@@ -44,87 +46,96 @@ public class Crawler implements Runnable {
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 	}
-
-	@Override 
+	
+	@Override
 	public void run() {
-
-		/*
-		 * Initial iteration
-		 */
-
-		boolean mustEnterTrucoMode = false;
-
-		// crawl informations and create a product
-		Product product = extract();
-
-		// persist the product
-		Persistence.persistProduct(product, session);
-
-		// fetch the previous processed product stored on database
-		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-
-		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
-
-		if (previousProcessedProduct == null) {
-
-			// if a new processed product was created
-			if (newProcessedProduct != null) {
-				Persistence.persistProcessedProduct(newProcessedProduct, session);
-			} else {
-				// indicates we had some invalid information crawled
-			}
-		}
-
-
-		else { // we already have a processed product, so we must decide if we update 
-
-			if (newProcessedProduct != null) {
-
-				// the two processed are different, so we must enter in truco mode
-				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
-					mustEnterTrucoMode = true;
-				}
-
-				// the two processed are equals, so we can update it
-				else {
-					Persistence.persistProcessedProduct(newProcessedProduct, session);
-					return;
-				}
-			}
-
-		}
-
-		/*
-		 * Running truco
-		 */
-		if (mustEnterTrucoMode) {
-			ProcessedModel currentTruco = newProcessedProduct;
-			
-			while (true) {
-				product = extract();
-				Persistence.persistProduct(product, session);
-				newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
-				session.incrementTrucoAttempts();
-				
-				if (newProcessedProduct != null) {					
-					if ( compare(newProcessedProduct, currentTruco) ) {
-						currentTruco = newProcessedProduct;	
-					} 
-					
-					// if we found two consecutive equals processed products, persist and end 
-					else {
-						Persistence.persistProcessedProduct(newProcessedProduct, session);
-						return;
-					}
-				}
-				
-				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
-			}
-		}
-
-
+		//Product product = extract();
+		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
+		
+//		System.out.println("Apagando task da session: " + session.getSessionId() + "...");
+//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
 	}
+
+//	@Override 
+//	public void run() {
+//
+//		/*
+//		 * Initial iteration
+//		 */
+//
+//		boolean mustEnterTrucoMode = false;
+//
+//		// crawl informations and create a product
+//		Product product = extract();
+//
+//		// persist the product
+//		Persistence.persistProduct(product, session);
+//
+//		// fetch the previous processed product stored on database
+//		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+//
+//		// create the new processed product
+//		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+//
+//		if (previousProcessedProduct == null) {
+//
+//			// if a new processed product was created
+//			if (newProcessedProduct != null) {
+//				Persistence.persistProcessedProduct(newProcessedProduct, session);
+//			} else {
+//				// indicates we had some invalid information crawled
+//			}
+//		}
+//
+//
+//		else { // we already have a processed product, so we must decide if we update 
+//
+//			if (newProcessedProduct != null) {
+//
+//				// the two processed are different, so we must enter in truco mode
+//				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
+//					mustEnterTrucoMode = true;
+//				}
+//
+//				// the two processed are equals, so we can update it
+//				else {
+//					Persistence.persistProcessedProduct(newProcessedProduct, session);
+//					return;
+//				}
+//			}
+//
+//		}
+//
+//		/*
+//		 * Running truco
+//		 */
+//		if (mustEnterTrucoMode) {
+//			ProcessedModel currentTruco = newProcessedProduct;
+//			
+//			while (true) {
+//				product = extract();
+//				Persistence.persistProduct(product, session);
+//				newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+//				session.incrementTrucoAttempts();
+//				
+//				if (newProcessedProduct != null) {					
+//					if ( compare(newProcessedProduct, currentTruco) ) {
+//						currentTruco = newProcessedProduct;	
+//					} 
+//					
+//					// if we found two consecutive equals processed products, persist and end 
+//					else {
+//						Persistence.persistProcessedProduct(newProcessedProduct, session);
+//						return;
+//					}
+//				}
+//				
+//				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
+//			}
+//		}
+//
+//
+//	}
 
 	/**
 	 * It defines wether the crawler must true to extract data or not
@@ -137,10 +148,10 @@ public class Crawler implements Runnable {
 	}
 
 	public Product extract() {
-		if ( shouldVisit() ) {
-			Document document = preProcessing();
-			return extractInformation(document);
-		}
+//		if ( shouldVisit() ) {
+//			Document document = preProcessing();
+//			return extractInformation(document);
+//		}
 
 		return new Product();
 	}

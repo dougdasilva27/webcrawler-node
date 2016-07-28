@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.util;
 
 import org.slf4j.Logger;
 
+import br.com.lett.crawlernode.models.CrawlerSession;
+
 public class Logging {
 	
 	/* INFO */
@@ -20,15 +22,19 @@ public class Logging {
 	
 	public static void printLogError(Logger logger, String city, String market, String msg) {
 		logger.error("[CITY]" + city + " [MARKET]" + market + " [MSG]" + msg.trim());
-	}
-//	
-//	/* DEBUG */
+	}	
+	
+	/* DEBUG */
 	public static void printLogDebug(Logger logger, String msg) {
 		logger.debug("[MSG]" + msg.trim());
 	}
 	
 	public static void printLogDebug(Logger logger, String city, String market, String msg) {
 		logger.debug("[CITY]" + city + " [MARKET]" + market + " [MSG]" + msg.trim());
+	}
+	
+	public static void printLogDebug(Logger logger, CrawlerSession session, String msg) {
+		logger.debug(" [SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
 	}
 	
 	/* WARN */

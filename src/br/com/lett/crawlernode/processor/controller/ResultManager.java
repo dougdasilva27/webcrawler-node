@@ -621,7 +621,7 @@ public class ResultManager {
 
 		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
 //		if(mode.equals(Controller.MODE_INSIGHTS) || mode.equals(Controller.MODE_PLACEHOLDER)) this.updateDigitalContent(pm); // TODO
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_NORMAL)) this.updateDigitalContent(pm);
+		this.updateDigitalContent(pm);
 
 		// Se em modo all, atualizando produtos similares
 		//		if(mode.equals(Controller.MODE_ALL)) this.updateSimilarProducts(pm);

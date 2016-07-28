@@ -11,8 +11,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<source />
-					<target />
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -87,21 +87,42 @@
 			<artifactId>janino</artifactId>
 			<version>2.5.16</version>
 		</dependency>
-		
+
 		<!-- google common -->
 		<dependency>
 			<groupId>com.google.collections</groupId>
 			<artifactId>google-collections</artifactId>
 			<version>1.0-rc2</version>
 		</dependency>
-		
-		<!-- Amazon sdk -->
+
+		<!-- Amazon -->
 		<dependency>
-           <groupId>com.amazonaws</groupId>
-           <artifactId>aws-java-sdk-s3</artifactId>
-           <version>1.9.35</version>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.9.35</version>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-sqs-java-extended-client-lib</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-core</artifactId>
+			<version>1.10.77</version>
+		</dependency>
+
+
+		<!-- Joda time required for Amazon -->
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.9.4</version>
+		</dependency>
+
+
 		<!-- Image processing -->
 		<dependency>
 			<groupId>org.openimaj</groupId>
@@ -123,14 +144,14 @@
 			<version>1.3.1</version>
 			<scope>compile</scope>
 		</dependency>
-		
+
 		<!-- Commom model to store image descriptors of Mongo -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.6.2</version>
 		</dependency>
-		
+
 		<!-- csv format file -->
 		<dependency>
 			<groupId>net.sf.opencsv</groupId>
@@ -139,19 +160,19 @@
 		</dependency>
 
 	</dependencies>
-	
+
 	<repositories>
-	
+
 		<repository>
 			<id>OpenIMAJ maven releases repository</id>
 			<url>http://maven.openimaj.org</url>
 		</repository>
-		
+
 		<repository>
 			<id>OpenIMAJ maven snapshots repository</id>
 			<url>http://snapshots.openimaj.org</url>
 		</repository>
-		
+
 	</repositories>
 
 </project>

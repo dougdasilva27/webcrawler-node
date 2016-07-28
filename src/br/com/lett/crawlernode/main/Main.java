@@ -2,20 +2,18 @@ package br.com.lett.crawlernode.main;
 
 import java.lang.management.ManagementFactory;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.base.ExecutionParameters;
 import br.com.lett.crawlernode.base.TaskFactory;
@@ -24,8 +22,9 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 
 import br.com.lett.crawlernode.fetcher.Proxies;
 import br.com.lett.crawlernode.models.CrawlerSession;
-import br.com.lett.crawlernode.models.Market;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.queueservice.QueueHandler;
+import br.com.lett.crawlernode.queueservice.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -46,11 +45,12 @@ public class Main {
 
 	public static ExecutionParameters 	executionParameters;
 	public static Proxies 				proxies;
-	public static ExecutorService 		executor;
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
-
-	public static Timer mainTask = new Timer();
+	public static AmazonSQS 			queue;
+	
+	private static ExecutorService 		executor;
+	private static QueueHandler			queueHandler;
 
 	public static void main(String args[]) {
 
@@ -59,52 +59,61 @@ public class Main {
 		executionParameters.setUpExecutionParameters();
 
 		// setting MDC for logging messages
-		//setLogMDC();
+		setLogMDC();
 
 		// fetching proxies
-		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			proxies = new Proxies();
-			proxies.fetchPremiumProxies();
-			proxies.fetchRegularProxies();
-		}
+		//		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+		//			proxies = new Proxies();
+		//			proxies.fetchPremiumProxies();
+		//			proxies.fetchRegularProxies();
+		//		}
 
-		// creating the executor service with a limited size thread pool
-		executor = Executors.newFixedThreadPool(2);
+		// create a queue handler that will contain an Amazon SQS instance
+		queueHandler = new QueueHandler();
+		queue = queueHandler.getSQS();
 
+		// create an executor with a fixed number of threads
+		executor = Executors.newFixedThreadPool(100);
+
+		
 		/*
 		 * main task -- from time to time goes to server and takes 10 urls
 		 */
-		//		mainTask.scheduleAtFixedRate(new TimerTask() {
-		//
-		//			@Override
-		//			public void run() {
 
-		// creating tasks
-		//ArrayList<String> tasks = createTasks();
+		Timer mainTask = new Timer();
 
-		// executing each task
-//		for (String url : tasks) {
-			CrawlerSession session = new CrawlerSession();
-			
-			// market
-			Market market = new Market(61, "brasil", "americanas");
-			
-			session.setMarket(market);
-			session.setUrl("http://www.americanas.com.br/produto/124797411/console-xbox-one-1tb-game-halo-5-guardians-via-download-headset-com-fio-controle-wireless?chave=HM_DT13");
-			session.setOriginalURL("http://www.americanas.com.br/produto/124797411/console-xbox-one-1tb-game-halo-5-guardians-via-download-headset-com-fio-controle-wireless?chave=HM_DT13");
+		mainTask.scheduleAtFixedRate(new TimerTask() {
 
-			Runnable task = TaskFactory.createTask(session);
+			@Override
+			public void run() {
 
-			if (task != null) {
-				executor.execute(task);
-			}
-		//}
-			
-	} 
-	//			}
-	//
-	//		}, 0, 10000); // 10 seconds
+				// request message (tasks) from the Amazon queue
+				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
 
+				for (Message message : messages) {
+
+					// check the message fields
+//					if (QueueService.checkMessage(message)) {
+
+						// create a crawler session from the message
+						CrawlerSession session = new CrawlerSession(message);
+
+						// create the task
+						Runnable task = TaskFactory.createTask(session);
+
+						// submit the task to the executor
+						if (task != null) {
+							executor.execute(task);
+						}
+//					}
+
+				}
+
+
+			} 
+		} , 0, 15000); // 15 seconds
+
+	}
 
 
 	private static void setLogMDC() {

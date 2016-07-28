@@ -42,7 +42,6 @@ public class DatabaseManager {
 	 * Program execution parameters
 	 */
 	public String environment = Main.executionParameters.getEnvironment();
-	public String mode = Main.executionParameters.getMode();
 
 	/**
 	 * Database credentials

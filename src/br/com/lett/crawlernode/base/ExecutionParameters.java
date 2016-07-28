@@ -19,13 +19,9 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 
-	public static final String MODE_DISCOVERY = "discovery";
-	public static final String MODE_NORMAL = "normal";
-
 	private Options options;
 	private String environment;
 	private Boolean debug;
-	private String mode;
 	private String[] args;
 
 	public ExecutionParameters(String[] args) {
@@ -54,7 +50,6 @@ public class ExecutionParameters {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
-		options.addOption("mode", true, "Environment [development, production]");
 
 	}
 
@@ -70,9 +65,6 @@ public class ExecutionParameters {
 
 			// Environment
 			if (cmd.hasOption("environment")) 	environment = cmd.getOptionValue("environment"); else help(); // required
-
-			// Mode
-			if (cmd.hasOption("mode")) 	mode = cmd.getOptionValue("mode"); else help(); // required
 
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
@@ -95,14 +87,5 @@ public class ExecutionParameters {
 		new HelpFormatter().printHelp("Main", this.options);
 		System.exit(0);
 	}
-
-	public String getMode() {
-		return mode;
-	}
-
-	public void setMode(String mode) {
-		this.mode = mode;
-	}	
-
 
 }

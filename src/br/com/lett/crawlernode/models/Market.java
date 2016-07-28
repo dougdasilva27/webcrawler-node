@@ -1,5 +1,12 @@
 package br.com.lett.crawlernode.models;
 
+import java.util.Map;
+
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
+
+import br.com.lett.crawlernode.queueservice.QueueService;
+
 public class Market {
 	
 	private int id;
@@ -11,6 +18,22 @@ public class Market {
 		this.id = number;
 		this.city = city;
 		this.name = name;
+	}
+	
+	public Market(Message message) {
+		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+		
+		if (attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
+			this.id = Integer.parseInt(attrMap.get(QueueService.MARKET_ID_MESSAGE_ATTR).getStringValue());
+		}
+		
+		if (attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
+			this.city = attrMap.get(QueueService.CITY_MESSAGE_ATTR).getStringValue();
+		}		
+		
+		if (attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
+			this.name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
+		}
 	}
 	
 	@Override
