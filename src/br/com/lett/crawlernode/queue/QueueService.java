@@ -107,7 +107,7 @@ public class QueueService {
 	 * @param attributes
 	 * @param messageBody
 	 */
-	public void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
+	public static void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
 		SendMessageRequest sendMessageRequest = new SendMessageRequest();
 		sendMessageRequest.setQueueUrl(QUEUE_URL);
 		sendMessageRequest.setMessageBody(messageBody);

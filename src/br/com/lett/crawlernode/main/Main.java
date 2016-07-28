@@ -1,8 +1,9 @@
 package br.com.lett.crawlernode.main;
 
 import java.lang.management.ManagementFactory;
-
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +15,7 @@ import org.slf4j.MDC;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.base.ExecutionParameters;
 import br.com.lett.crawlernode.base.TaskFactory;
@@ -71,6 +73,8 @@ public class Main {
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
+		
+//		sendTasks();
 
 		// create an executor with a fixed number of threads
 		executor = Executors.newFixedThreadPool(100);
@@ -93,7 +97,7 @@ public class Main {
 				for (Message message : messages) {
 
 					// check the message fields
-//					if (QueueService.checkMessage(message)) {
+					if (QueueService.checkMessage(message)) {
 
 						// create a crawler session from the message
 						CrawlerSession session = new CrawlerSession(message);
@@ -105,7 +109,7 @@ public class Main {
 						if (task != null) {
 							executor.execute(task);
 						}
-//					}
+					}
 
 				}
 
@@ -138,6 +142,38 @@ public class Main {
 			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
 			System.exit(0);
 		}
+	}
+	
+	private static void sendTasks() {
+		Map<String, MessageAttributeValue> attrMap1 = new HashMap<String, MessageAttributeValue>();		
+		Map<String, MessageAttributeValue> attrMap2 = new HashMap<String, MessageAttributeValue>();
+		Map<String, MessageAttributeValue> attrMap3 = new HashMap<String, MessageAttributeValue>();
+		
+		attrMap1.put("city", new MessageAttributeValue().withDataType("String").withStringValue("brasil"));
+		attrMap1.put("market", new MessageAttributeValue().withDataType("String").withStringValue("adias"));
+		attrMap1.put("marketId", new MessageAttributeValue().withDataType("String").withStringValue("20"));
+		
+		attrMap2.put("city", new MessageAttributeValue().withDataType("String").withStringValue("brasil"));
+		attrMap2.put("market", new MessageAttributeValue().withDataType("String").withStringValue("ambientair"));
+		attrMap2.put("marketId", new MessageAttributeValue().withDataType("String").withStringValue("21"));
+		
+		attrMap3.put("city", new MessageAttributeValue().withDataType("String").withStringValue("brasil"));
+		attrMap3.put("market", new MessageAttributeValue().withDataType("String").withStringValue("centralar"));
+		attrMap3.put("marketId", new MessageAttributeValue().withDataType("String").withStringValue("24"));
+		
+		for (int i = 1; i < 50; i++) {
+			String body = "www.adias.com.br" + i;			
+			QueueService.sendMessage(queue, attrMap1, body);
+		}
+		for (int i = 1; i < 50; i++) {
+			String body = "www.ambientair.com.br" + i;			
+			QueueService.sendMessage(queue, attrMap2, body);
+		}
+		for (int i = 1; i < 50; i++) {
+			String body = "www.centralar.com.br" + i;			
+			QueueService.sendMessage(queue, attrMap3, body);
+		}
+		
 	}
 
 }

@@ -52,8 +52,8 @@ public class Crawler implements Runnable {
 		//Product product = extract();
 		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
 		
-//		System.out.println("Apagando task da session: " + session.getSessionId() + "...");
-//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
+		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
 	}
 
 //	@Override 
