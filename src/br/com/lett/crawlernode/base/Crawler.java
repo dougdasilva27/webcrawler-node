@@ -52,7 +52,15 @@ public class Crawler implements Runnable {
 		//Product product = extract();
 		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
 		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			Logging.printLogDebug(logger, session, "Error in thread sleep!");
+			e.printStackTrace();
+		}
+		
 		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
+		
 		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
 	}
 

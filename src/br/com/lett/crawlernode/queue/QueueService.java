@@ -60,7 +60,7 @@ public class QueueService {
 		Logging.printLogDebug(logger, "Requesting for a maximum of " + maxNumberOfMessages + " tasks on queue...");
 
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QUEUE_URL).withMessageAttributeNames("All");
-		receiveMessageRequest.setMaxNumberOfMessages(10);
+		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
 		Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");

@@ -73,10 +73,10 @@ public class Main {
 		//sendTasks();
 		
 		// create the work list
-		workList = new WorkList(10);
+		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
 
 		// create a task executor
-		taskExecutor = new TaskExecutor(100);
+		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
 
 		
 		/*
@@ -91,7 +91,7 @@ public class Main {
 			public void run() {
 
 				// request message (tasks) from the Amazon queue
-				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
+				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
 
 				// add the retrieved messages on the work list
 				workList.addMessages(messages);

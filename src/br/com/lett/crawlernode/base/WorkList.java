@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.base;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.sqs.model.Message;
 
 /**
@@ -12,6 +15,9 @@ import com.amazonaws.services.sqs.model.Message;
  *
  */
 public class WorkList {
+	protected static final Logger logger = LoggerFactory.getLogger(WorkList.class);
+	
+	public static final int DEFAULT_MAX_SIZE = 10;
 	
 	/**
 	 * the internal list of messages
@@ -61,6 +67,21 @@ public class WorkList {
 			messages.remove(0);
 		}
 		return message;
+	}
+	
+	/**
+	 * Compute the maximum number of messages to request from queue.
+	 * This value will be passed to the QueueService, so it can fetch a number of
+	 * messages that is between 0 and the maximum to fetch. This prevents that the QueueService
+	 * doesn't fetch more messages that the work list can handle. If that occurs the extra messages
+	 * will return to the sqs only when the visibility time expires, and other machine will get that
+	 * task.
+	 * @return the maximum number of messages to fetch from Amazon SQS
+	 */
+	public int maxMessagesToFetch() {
+		int toFetch = maxSize - messages.size();
+		if (toFetch < 0) return 0;
+		return toFetch;
 	}
 	
 	public boolean isEmpty() {

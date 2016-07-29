@@ -3,16 +3,34 @@ package br.com.lett.crawlernode.base;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.queue.QueueService;
 
+/**
+ * An encapsulation of the ExecutorService used to run the tasks from Amazon SQS
+ * @author Samir Leao
+ *
+ */
 public class TaskExecutor {
-
+	protected static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
+	
+	public static final int DEFAULT_NTHREADS = 100;
+	
+	/**
+	 * The Executor Service, to whitch the tasks will be submited
+	 */
 	private ExecutorService executor;
 	
+	/**
+	 * Maximum number of threads in the executor pool of threads
+	 */
 	private int maxThreads;
+	
 
 	public TaskExecutor(int maxThreads) {
 		executor = Executors.newFixedThreadPool(maxThreads);
