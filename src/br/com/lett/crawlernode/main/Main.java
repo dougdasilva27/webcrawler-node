@@ -57,7 +57,7 @@ public class Main {
 		executionParameters.setUpExecutionParameters();
 
 		// setting MDC for logging messages
-		setLogMDC();
+		Logging.setLogMDC(executionParameters);
 
 		// fetching proxies
 		//		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
@@ -102,31 +102,6 @@ public class Main {
 			} 
 		} , 0, 15000); // 15 seconds
 
-	}
-
-
-	private static void setLogMDC() {
-		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
-		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
-
-		MDC.put("PID", pid);
-		MDC.put("HOST_NAME", hostName);
-		MDC.put("PROCESS_NAME", "java");
-
-		if (executionParameters != null) {
-
-			MDC.put("ENVIRONMENT", executionParameters.getEnvironment());
-
-			if (executionParameters.getDebug()) {
-				MDC.put("DEBUG_MODE", "true");
-			} else {
-				MDC.put("DEBUG_MODE", "false");
-			}
-
-		} else {
-			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
-			System.exit(0);
-		}
 	}
 	
 	private static void sendTasks() {
