@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.main;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.slf4j.MDC;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 
 import br.com.lett.crawlernode.base.ExecutionParameters;
 import br.com.lett.crawlernode.base.TaskExecutor;
@@ -70,37 +72,37 @@ public class Main {
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 		
-		//sendTasks();
+		sendTasks();
 		
-		// create the work list
-		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
-
-		// create a task executor
-		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
+//		// create the work list
+//		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
+//
+//		// create a task executor
+//		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
 
 		
 		/*
 		 * main task -- from time to time goes to server and takes 10 urls
 		 */
 
-		Timer mainTask = new Timer();
-
-		mainTask.scheduleAtFixedRate(new TimerTask() {
-
-			@Override
-			public void run() {
-
-				// request message (tasks) from the Amazon queue
-				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-
-				// add the retrieved messages on the work list
-				workList.addMessages(messages);
-				
-				// submit the tasks to the task executor
-				taskExecutor.submitWorkList(workList);
-
-			} 
-		} , 0, 15000); // 15 seconds
+//		Timer mainTask = new Timer();
+//
+//		mainTask.scheduleAtFixedRate(new TimerTask() {
+//
+//			@Override
+//			public void run() {
+//
+//				// request message (tasks) from the Amazon queue
+//				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
+//
+//				// add the retrieved messages on the work list
+//				workList.addMessages(messages);
+//				
+//				// submit the tasks to the task executor
+//				taskExecutor.submitWorkList(workList);
+//
+//			} 
+//		} , 0, 15000); // 15 seconds
 
 	}
 	
@@ -121,17 +123,72 @@ public class Main {
 		attrMap3.put("market", new MessageAttributeValue().withDataType("String").withStringValue("centralar"));
 		attrMap3.put("marketId", new MessageAttributeValue().withDataType("String").withStringValue("24"));
 		
-		for (int i = 1; i < 500; i++) {
-			String body = "www.adias.com.br" + i;			
-			QueueService.sendMessage(queue, attrMap1, body);
+		List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
+		
+		for (int i = 1; i <= 500; i++) {
+			String body = "www.adias.com.br" + i;
+			
+			SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+			entry.setId(String.valueOf(i));	// the id must be unique in the batch
+			entry.setMessageAttributes(attrMap1);
+			entry.setMessageBody(body);
+			
+			entries.add(entry);
+			
+			if (entries.size() == 10) {
+				Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+				QueueService.sendBatchMessages(queue, entries);
+				entries.clear();
+			}
 		}
-		for (int i = 1; i < 500; i++) {
-			String body = "www.ambientair.com.br" + i;			
-			QueueService.sendMessage(queue, attrMap2, body);
+		if (entries.size() > 0) { // the left over
+			Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+			QueueService.sendBatchMessages(queue, entries);
+			entries.clear();
 		}
-		for (int i = 1; i < 500; i++) {
-			String body = "www.centralar.com.br" + i;			
-			QueueService.sendMessage(queue, attrMap3, body);
+		
+		for (int i = 1; i <= 500; i++) {
+			String body = "www.ambientair.com.br" + i;
+			
+			SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+			entry.setId(String.valueOf(i));	// the id must be unique in the batch
+			entry.setMessageAttributes(attrMap2);
+			entry.setMessageBody(body);
+			
+			entries.add(entry);
+			
+			if (entries.size() == 10) {
+				Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+				QueueService.sendBatchMessages(queue, entries);
+				entries.clear();
+			}	
+		}
+		if (entries.size() > 0) { // the left over
+			Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+			QueueService.sendBatchMessages(queue, entries);
+			entries.clear();
+		}
+		
+		for (int i = 1; i <= 500; i++) {
+			String body = "www.centralar.com.br" + i;
+			
+			SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+			entry.setId(String.valueOf(i));	// the id must be unique in the batch
+			entry.setMessageAttributes(attrMap3);
+			entry.setMessageBody(body);
+			
+			entries.add(entry);
+			
+			if (entries.size() == 10) {
+				Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+				QueueService.sendBatchMessages(queue, entries);
+				entries.clear();
+			}
+		}
+		if (entries.size() > 0) { // the left over
+			Logging.printLogDebug(logger, "Enviando batch de " + entries.size() + " mensagens...");
+			QueueService.sendBatchMessages(queue, entries);
+			entries.clear();
 		}
 		
 	}

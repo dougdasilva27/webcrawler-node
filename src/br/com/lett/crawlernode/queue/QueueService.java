@@ -12,6 +12,8 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import br.com.lett.crawlernode.util.Logging;
@@ -105,7 +107,7 @@ public class QueueService {
 	}
 	
 	/**
-	 * 
+	 * Send a message with the specified attributes and body to the SQS
 	 * @param sqs
 	 * @param attributes
 	 * @param messageBody
@@ -117,6 +119,19 @@ public class QueueService {
 		sendMessageRequest.setMessageAttributes(attributes);
 		
 		sqs.sendMessage(sendMessageRequest);
+	}
+	
+	/**
+	 * Send a message batch to SQS
+	 * @param sqs
+	 * @param entries
+	 */
+	public static void sendBatchMessages(AmazonSQS sqs, List<SendMessageBatchRequestEntry> entries) {
+		SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
+		batchMessageBatchRequest.setQueueUrl(QUEUE_URL);
+		batchMessageBatchRequest.setEntries(entries);
+		
+		sqs.sendMessageBatch(batchMessageBatchRequest);
 	}
 
 	/**
