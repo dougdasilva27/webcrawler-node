@@ -51,6 +51,11 @@ public class CrawlerSession {
 	private int processedId;
 	
 	/**
+	 * internal id associated with the sku being crawled
+	 */
+	private String internalId;
+	
+	/**
 	 * the market associated with this session
 	 */
 	private Market market;
@@ -166,6 +171,7 @@ public class CrawlerSession {
 		sb.append("original url: " + this.originalURL + "\n");
 		sb.append("url: " + this.url + "\n");
 		sb.append("processed id: " + this.processedId + "\n");
+		sb.append("internal id: " + this.internalId + "\n");
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
@@ -179,6 +185,14 @@ public class CrawlerSession {
 
 	public void setMessageReceiptHandle(String messageReceiptHandle) {
 		this.messageReceiptHandle = messageReceiptHandle;
+	}
+
+	public String getInternalId() {
+		return internalId;
+	}
+
+	public void setInternalId(String internalId) {
+		this.internalId = internalId;
 	}
 
 }
