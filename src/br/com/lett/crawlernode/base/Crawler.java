@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class Crawler implements Runnable {
 		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
 		
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
 		} catch (InterruptedException e) {
 			Logging.printLogDebug(logger, session, "Error in thread sleep!");
 			e.printStackTrace();

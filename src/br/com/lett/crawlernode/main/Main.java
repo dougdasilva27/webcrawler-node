@@ -72,37 +72,37 @@ public class Main {
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 		
-		sendTasks();
+//		sendTasks();
 		
-//		// create the work list
-//		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
-//
-//		// create a task executor
-//		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
+		// create the work list
+		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
+
+		// create a task executor
+		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
 
 		
 		/*
 		 * main task -- from time to time goes to server and takes 10 urls
 		 */
 
-//		Timer mainTask = new Timer();
-//
-//		mainTask.scheduleAtFixedRate(new TimerTask() {
-//
-//			@Override
-//			public void run() {
-//
-//				// request message (tasks) from the Amazon queue
-//				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-//
-//				// add the retrieved messages on the work list
-//				workList.addMessages(messages);
-//				
-//				// submit the tasks to the task executor
-//				taskExecutor.submitWorkList(workList);
-//
-//			} 
-//		} , 0, 15000); // 15 seconds
+		Timer mainTask = new Timer();
+
+		mainTask.scheduleAtFixedRate(new TimerTask() {
+
+			@Override
+			public void run() {
+
+				// request message (tasks) from the Amazon queue
+				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
+
+				// add the retrieved messages on the work list
+				workList.addMessages(messages);
+				
+				// submit the tasks to the task executor
+				taskExecutor.submitWorkList(workList);
+
+			} 
+		} , 0, 15000); // 15 seconds
 
 	}
 	
