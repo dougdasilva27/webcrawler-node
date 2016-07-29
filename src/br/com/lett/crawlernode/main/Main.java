@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +16,10 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.base.ExecutionParameters;
-import br.com.lett.crawlernode.base.TaskFactory;
+import br.com.lett.crawlernode.base.TaskExecutor;
 import br.com.lett.crawlernode.base.WorkList;
 import br.com.lett.crawlernode.database.DatabaseManager;
-
 import br.com.lett.crawlernode.fetcher.Proxies;
-import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.queue.QueueService;
@@ -50,7 +46,7 @@ public class Main {
 	public static ResultManager 		processorResultManager;
 	public static AmazonSQS 			queue;
 	
-	private static ExecutorService 		executor;
+	private static TaskExecutor 		taskExecutor;
 	private static QueueHandler			queueHandler;
 	private static WorkList				workList;
 
@@ -74,51 +70,37 @@ public class Main {
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 		
-		sendTasks();
+		//sendTasks();
 		
 		// create the work list
 		workList = new WorkList(10);
 
-		// create an executor with a fixed number of threads
-//		executor = Executors.newFixedThreadPool(100);
-//
-//		
-//		/*
-//		 * main task -- from time to time goes to server and takes 10 urls
-//		 */
-//
-//		Timer mainTask = new Timer();
-//
-//		mainTask.scheduleAtFixedRate(new TimerTask() {
-//
-//			@Override
-//			public void run() {
-//
-//				// request message (tasks) from the Amazon queue
-//				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
-//
-//				for (Message message : messages) {
-//
-//					// check the message fields
-//					if (QueueService.checkMessage(message)) {
-//
-//						// create a crawler session from the message
-//						CrawlerSession session = new CrawlerSession(message);
-//
-//						// create the task
-//						Runnable task = TaskFactory.createTask(session);
-//
-//						// submit the task to the executor
-//						if (task != null) {
-//							executor.execute(task);
-//						}
-//					}
-//
-//				}
-//
-//
-//			} 
-//		} , 0, 15000); // 15 seconds
+		// create a task executor
+		taskExecutor = new TaskExecutor(100);
+
+		
+		/*
+		 * main task -- from time to time goes to server and takes 10 urls
+		 */
+
+		Timer mainTask = new Timer();
+
+		mainTask.scheduleAtFixedRate(new TimerTask() {
+
+			@Override
+			public void run() {
+
+				// request message (tasks) from the Amazon queue
+				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), 10);
+
+				// add the retrieved messages on the work list
+				workList.addMessages(messages);
+				
+				// submit the tasks to the task executor
+				taskExecutor.submitWorkList(workList);
+
+			} 
+		} , 0, 15000); // 15 seconds
 
 	}
 
