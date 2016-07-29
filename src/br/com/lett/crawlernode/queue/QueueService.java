@@ -37,6 +37,7 @@ public class QueueService {
 	public static final String MARKET_MESSAGE_ATTR = "market";
 	public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
+	public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
 
 
 	/**
