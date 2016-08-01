@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.base;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
@@ -15,6 +16,8 @@ import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+
+import org.apache.http.cookie.Cookie;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +45,12 @@ public class Crawler implements Runnable {
 	 * the current crawling session
 	 */
 	protected CrawlerSession session;
+	
+	/**
+	 * cookies that must be used to fetch the sku page
+	 * this attribute is set by the handleCookiesBeforeFetch method
+	 */
+	protected List<Cookie> cookies;
 
 
 	public Crawler(CrawlerSession session) {
@@ -155,8 +164,35 @@ public class Crawler implements Runnable {
 	public boolean shouldVisit() {
 		return true;
 	}
+	
+	/**
+	 * By default this method only set the list of cookies to null.
+	 * If the crawler needs to set some cookie to fetch the sku page,
+	 * then it must implement this method.
+	 */
+	public void handleCookiesBeforeFetch() {
+		this.cookies = null;
+	}
+	
+	/**
+	 * 
+	 * @param url
+	 * @return
+	 */
+	public String handleURLBeforeFetch(String url) {
+		return url;
+	}
 
 	public Product extract() {
+		
+		// handle cookie
+		handleCookiesBeforeFetch();
+		
+		// handle URL modifications
+		String url = handleURLBeforeFetch(session.getUrl());
+		session.setUrl(url);
+		session.setOriginalURL(url);
+		
 //		if ( shouldVisit() ) {
 //			Document document = preProcessing();
 //			return extractInformation(document);
@@ -165,22 +201,24 @@ public class Crawler implements Runnable {
 		return new Product();
 	}
 
-
+	
+	/**
+	 * Contains all the logic to sku information extraction.
+	 * Must be implemented on subclasses.
+	 * By default, returns an empty product.
+	 * @param document
+	 * @return A product with all it's crawled informations
+	 */
 	public Product extractInformation(Document document) {
-		/*
-		 * Return an empty Product by default. Will be implemented on subclasses.
-		 */
-
 		return new Product();
 	}
 
 	/**
 	 * Request the sku URL and parse to a DOM format
-	 * 
 	 * @return parsed HTML in form of a Document
 	 */
 	private Document preProcessing() {
-		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, null, null);
+		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, null, cookies);
 		return Jsoup.parse(html);		
 	}
 

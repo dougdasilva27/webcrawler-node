@@ -10,6 +10,7 @@ import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.util.Logging;
 
 /**
  * An encapsulation of the ExecutorService used to run the tasks from Amazon SQS
@@ -60,6 +61,8 @@ public class TaskExecutor {
 				// submit the task to the executor
 				if (task != null) {
 					executor.execute(task);
+				} else {
+					Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
 				}
 			}
 		}
