@@ -61,87 +61,78 @@ public class BrasilAdiasCrawler extends Crawler {
 	public Product extractInformation(Document doc) {
 		super.extractInformation(doc);
 		
-		System.out.println("Thread: " + Thread.currentThread().getId() + ", task: " + this.session.getUrl());
-		return new Product();
+		Product product = new Product();
 
-//		if ( isProductPage(this.session.getUrl()) ) {
-//
-//			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
-//
-//			/* ***********************************
-//			 * crawling data of only one product *
-//			 *************************************/
-//
-//			// InternalId
-//			String internalId = crawlInternalId(doc);
-//
-//			// Pid
-//			String internalPid = crawlInternalPid(doc);
-//
-//			// Name
-//			String name = crawlName(doc);
-//
-//			// Price
-//			Float price = crawlMainPagePrice(doc);
-//			
-//			// Availability
-//			boolean available = crawlAvailability(doc);
-//
-//			// Categories
-//			ArrayList<String> categories = crawlCategories(doc);
-//			String category1 = getCategory(categories, 0);
-//			String category2 = getCategory(categories, 1);
-//			String category3 = getCategory(categories, 2);
-//
-//			// Primary image
-//			String primaryImage = crawlPrimaryImage(doc);
-//
-//			// Secondary images
-//			String secondaryImages = crawlSecondaryImages(doc);
-//
-//			// Description
-//			String description = crawlDescription(doc);
-//
-//			// Stock
-//			Integer stock = null;
-//
-//			// Marketplace map
-//			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-//
-//			// Marketplace
-//			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-//
-//			// Creating the product
-//			Product product = new Product();
-//			product.setUrl(this.session.getUrl());
-//			product.setInternalId(internalId);
-//			product.setInternalPid(internalPid);
-//			product.setName(name);
-//			product.setPrice(price);
-//			product.setAvailable(available);
-//			product.setCategory1(category1);
-//			product.setCategory2(category2);
-//			product.setCategory3(category3);
-//			product.setPrimaryImage(primaryImage);
-//			product.setSecondaryImages(secondaryImages);
-//			product.setDescription(description);
-//			product.setStock(stock);
-//			product.setMarketplace(marketplace);
-//			
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//
-//			return product;
-//
-//		} else {
-//			Logging.printLogTrace(logger, "Not a product page " + this.session.getUrl());
-//		}
-//		
-//		return new Product();
+		if ( isProductPage(this.session.getUrl()) ) {
+
+			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+
+			/* ***********************************
+			 * crawling data of only one product *
+			 *************************************/
+
+			// InternalId
+			String internalId = crawlInternalId(doc);
+
+			// Pid
+			String internalPid = crawlInternalPid(doc);
+
+			// Name
+			String name = crawlName(doc);
+
+			// Price
+			Float price = crawlMainPagePrice(doc);
+			
+			// Availability
+			boolean available = crawlAvailability(doc);
+
+			// Categories
+			ArrayList<String> categories = crawlCategories(doc);
+			String category1 = getCategory(categories, 0);
+			String category2 = getCategory(categories, 1);
+			String category3 = getCategory(categories, 2);
+
+			// Primary image
+			String primaryImage = crawlPrimaryImage(doc);
+
+			// Secondary images
+			String secondaryImages = crawlSecondaryImages(doc);
+
+			// Description
+			String description = crawlDescription(doc);
+
+			// Stock
+			Integer stock = null;
+
+			// Marketplace map
+			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
+
+			// Marketplace
+			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+
+			// Creating the product
+			product.setUrl(this.session.getUrl());
+			product.setInternalId(internalId);
+			product.setInternalPid(internalPid);
+			product.setName(name);
+			product.setPrice(price);
+			product.setAvailable(available);
+			product.setCategory1(category1);
+			product.setCategory2(category2);
+			product.setCategory3(category3);
+			product.setPrimaryImage(primaryImage);
+			product.setSecondaryImages(secondaryImages);
+			product.setDescription(description);
+			product.setStock(stock);
+			product.setMarketplace(marketplace);
+
+			return product;
+
+		} else {
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+		}
+		
+		return new Product();
 
 	}
 

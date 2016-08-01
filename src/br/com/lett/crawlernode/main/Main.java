@@ -43,7 +43,7 @@ public class Main {
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
 	public static AmazonSQS 			queue;
-	
+
 	private static TaskExecutor 		taskExecutor;
 	private static QueueHandler			queueHandler;
 	private static WorkList				workList;
@@ -57,55 +57,58 @@ public class Main {
 
 		// setting MDC for logging messages
 		Logging.setLogMDC(executionParameters);
-		
+
 		// setting database credentials
-		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("node");
+		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");
 		dbCredentials = dbCredentialsSetter.setDatabaseCredentials();
 
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 		dbManager.connect();
+		
+		// creating processor result manager
+		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
-		//		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-		//			proxies = new Proxies();
-		//			proxies.fetchPremiumProxies();
-		//			proxies.fetchRegularProxies();
-		//		}
+		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+			proxies = new Proxies();
+			proxies.fetchPremiumProxies();
+			proxies.fetchRegularProxies();
+		}
 
-//		// create a queue handler that will contain an Amazon SQS instance
-//		queueHandler = new QueueHandler();
-//		queue = queueHandler.getSQS();
-//		
-//		// create the work list
-//		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
-//
-//		// create a task executor
-//		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
-//
-//		
-//		/*
-//		 * main task -- from time to time goes to server and takes 10 urls
-//		 */
-//
-//		Timer mainTask = new Timer();
-//
-//		mainTask.scheduleAtFixedRate(new TimerTask() {
-//
-//			@Override
-//			public void run() {
-//
-//				// request message (tasks) from the Amazon queue
-//				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-//
-//				// add the retrieved messages on the work list
-//				workList.addMessages(messages);
-//				
-//				// submit the tasks to the task executor
-//				taskExecutor.submitWorkList(workList);
-//
-//			} 
-//		} , 0, 15000); // 15 seconds
+		// create a queue handler that will contain an Amazon SQS instance
+		queueHandler = new QueueHandler();
+		queue = queueHandler.getSQS();
+
+		// create the work list
+		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
+
+		// create a task executor
+		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
+
+
+		/*
+		 * main task -- from time to time goes to server and takes 10 urls
+		 */
+
+		Timer mainTask = new Timer();
+
+		mainTask.scheduleAtFixedRate(new TimerTask() {
+
+			@Override
+			public void run() {
+
+				// request message (tasks) from the Amazon queue
+				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
+
+				// add the retrieved messages on the work list
+				workList.addMessages(messages);
+
+				// submit the tasks to the task executor
+				taskExecutor.submitWorkList(workList);
+
+			} 
+		} , 0, 15000); // 15 seconds
 
 	}
 

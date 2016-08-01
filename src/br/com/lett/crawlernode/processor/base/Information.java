@@ -78,7 +78,6 @@ public class Information {
 	private static String cdnBucketName     = "cdn.insights.lett.com.br";
 	private static String accessKey        	= "AKIAJ73Z3NTUDN2IF7AA";
 	private static String secretKey        	= "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";
-
 	
 	
 	public static Dimension fetchImageDimensionFromWeb(URL url, Proxy proxy) throws IOException {
@@ -109,8 +108,7 @@ public class Information {
 		return null; 	
 	}
 	
-	public static File fetchImageFromAmazon(String key) {
-		
+	public static File fetchImageFromAmazon(String key) {		
 		Logging.printLogDebug(logger, "Fetching image from Amazon: " + key);
 		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);

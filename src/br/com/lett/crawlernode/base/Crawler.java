@@ -57,44 +57,48 @@ public class Crawler implements Runnable {
 		this.session = session;
 	}
 	
-	@Override
-	public void run() {
-		//Product product = extract();
-		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
-		
-		try {
-			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
-		} catch (InterruptedException e) {
-			Logging.printLogDebug(logger, session, "Error in thread sleep!");
-			e.printStackTrace();
-		}
-		
-		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
-		
-		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-	}
-
-//	@Override 
+//	@Override
 //	public void run() {
-//
-//		/*
-//		 * Initial iteration
-//		 */
-//
-//		boolean mustEnterTrucoMode = false;
-//
-//		// crawl informations and create a product
-//		Product product = extract();
-//
-//		// persist the product
-//		Persistence.persistProduct(product, session);
-//
-//		// fetch the previous processed product stored on database
-//		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-//
-//		// create the new processed product
-//		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
-//
+//		//Product product = extract();
+//		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
+//		
+//		try {
+//			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
+//		} catch (InterruptedException e) {
+//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
+//			e.printStackTrace();
+//		}
+//		
+//		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
+//		
+//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+//	}
+
+	@Override 
+	public void run() {
+		
+		Logging.printLogDebug(logger, session, "START");
+
+		/*
+		 * Initial iteration
+		 */
+
+		boolean mustEnterTrucoMode = false;
+
+		// crawl informations and create a product
+		Product product = extract();
+		
+		printCrawledInformation(product);
+
+		// persist the product
+		Persistence.persistProduct(product, session);
+
+		// fetch the previous processed product stored on database
+		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+
+		// create the new processed product
+		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+
 //		if (previousProcessedProduct == null) {
 //
 //			// if a new processed product was created
@@ -151,9 +155,15 @@ public class Crawler implements Runnable {
 //				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
 //			}
 //		}
-//
-//
-//	}
+
+		
+		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
+		
+		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+		
+		Logging.printLogDebug(logger, session, "END");
+		
+	}
 
 	/**
 	 * It defines wether the crawler must true to extract data or not
@@ -193,10 +203,10 @@ public class Crawler implements Runnable {
 		session.setUrl(url);
 		session.setOriginalURL(url);
 		
-//		if ( shouldVisit() ) {
-//			Document document = preProcessing();
-//			return extractInformation(document);
-//		}
+		if ( shouldVisit() ) {
+			Document document = preProcessing();
+			return extractInformation(document);
+		}
 
 		return new Product();
 	}
@@ -230,6 +240,10 @@ public class Crawler implements Runnable {
 	 */
 	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
 		return p1.compareHugeChanges(p2);
+	}
+	
+	private void printCrawledInformation(Product product) {
+		Logging.printLogDebug(logger, "Crawled information[session: " + session.getSessionId() + "]" + product.toString());
 	}
 
 }

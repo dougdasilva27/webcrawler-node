@@ -40,7 +40,7 @@ public class Logging {
 	}
 	
 	public static void printLogDebug(Logger logger, CrawlerSession session, String msg) {
-		logger.debug(" [SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.debug("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
 	}
 	
 	/* WARN */

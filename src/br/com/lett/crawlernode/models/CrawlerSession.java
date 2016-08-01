@@ -160,6 +160,22 @@ public class CrawlerSession {
 	public void setType(String type) {
 		this.type = type;
 	}
+
+	public String getMessageReceiptHandle() {
+		return messageReceiptHandle;
+	}
+
+	public void setMessageReceiptHandle(String messageReceiptHandle) {
+		this.messageReceiptHandle = messageReceiptHandle;
+	}
+
+	public String getInternalId() {
+		return internalId;
+	}
+
+	public void setInternalId(String internalId) {
+		this.internalId = internalId;
+	}
 	
 	@Override
 	public String toString() {
@@ -177,22 +193,6 @@ public class CrawlerSession {
 		sb.append("market city: " + this.market.getCity() + "\n");
 
 		return sb.toString();
-	}
-
-	public String getMessageReceiptHandle() {
-		return messageReceiptHandle;
-	}
-
-	public void setMessageReceiptHandle(String messageReceiptHandle) {
-		this.messageReceiptHandle = messageReceiptHandle;
-	}
-
-	public String getInternalId() {
-		return internalId;
-	}
-
-	public void setInternalId(String internalId) {
-		this.internalId = internalId;
 	}
 
 }

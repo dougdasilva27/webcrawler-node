@@ -40,6 +40,7 @@ import br.com.lett.crawlernode.fetcher.Proxy;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.models.BrandModel;
 import br.com.lett.crawlernode.models.ClassModel;
+import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.Market;
 import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
@@ -89,8 +90,6 @@ public class ResultManager {
 
 	// Variável usada no teste de processer de um determinado supermercado
 	private ArrayList<Integer> marketid;
-	
-	private String mode;
 
 	/**
 	 * Construtor do ResultManager chamado pelo Crawler
@@ -98,8 +97,7 @@ public class ResultManager {
 	 * @author fabricio
 	 * @param activateLogging - Define a ativação ou não dos logs
 	 */
-	public ResultManager(boolean activateLogging, String m, MongoDatabase mongo, DatabaseManager db) throws NullPointerException {
-		this.mode = m;
+	public ResultManager(boolean activateLogging, MongoDatabase mongo, DatabaseManager db) throws NullPointerException {
 		this.db = db;
 		this.mongo = mongo;
 
@@ -575,8 +573,8 @@ public class ResultManager {
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
-	public ProcessedModel processProduct(ProcessedModel pm) {	
-		if (logActivated) System.out.println("processProduct: " + pm);
+	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
+		Logging.printLogDebug(logger, session, "Processing product...");
 
 		// Previne o conteúdo de extra ser nulo
 		if (pm.getExtra() == null) pm.setExtra("");
@@ -595,14 +593,11 @@ public class ResultManager {
 					this.cityNameInfo.get(pm.getMarket()).substring(1) +
 					Character.toUpperCase(this.marketNameInfo.get(pm.getMarket()).charAt(0)) +
 					marketNameInfo.get(pm.getMarket()).substring(1)).newInstance();
+			
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-
-			// Caso de caracteres inválidos o supermercado usado será o Angeloni
 			Logging.printLogError(logger, "Processor not defined for " + this.marketNameInfo.get(pm.getMarket()) + ". Using FlorianopolisAngeloni as default.");
 			extractor = new ExtractorFlorianopolisAngeloni();
 		} catch (NullPointerException e) {
-
-			// Caso nulo o supermercado usado será o Angeloni
 			Logging.printLogError(logger, "Market " + pm.getMarket() + " not included on postgres market table yet. Using FlorianopolisAngeloni as default.");
 			extractor = new ExtractorFlorianopolisAngeloni();
 		}
@@ -643,108 +638,108 @@ public class ResultManager {
 	 * @category Manipulação
 	 * 
 	 */
-	public void processProducts(String city, String market, boolean test) throws SQLException{
-
-		// Variável para medir tempo...
-		long start = System.currentTimeMillis();		
-		ResultSet rs = null;
-
-
-		// Popular lista de ids de supermercado
-		List<Integer> marketIdsToPersist = new ArrayList<Integer>();
-
-		rs = this.fetchMarketsAsPointer();
-
-		while(rs.next()) {
-			if(city != null && market == null) {
-				if(rs.getString("city").equals(city)) marketIdsToPersist.add(rs.getInt("id"));
-			} else {
-				if(rs.getString("city").equals(city) && rs.getString("name").equals(market)) marketIdsToPersist.add(rs.getInt("id"));
-			}
-		}
-
-		Logging.printLogDebug(logger, "Lista de ids de markets que vou processar: " + marketIdsToPersist);
-
-		// Processando um supermercado por vez
-
-		// Contadores com o resultado de contéudos processados
-		int countBrand = 0, countClass = 0, countRecipient = 0, countQtd = 0, countUnit = 0, countMult = 0, count = 0;
-
-		for(int marketId: marketIdsToPersist) {
-
-			rs = this.fetchModifiedProcessedProductsAsPointer(new DateTime().minusDays(1), marketId);
-
-			// Enquanto houver linhas, faça...
-			while (rs.next()) {
-
-				JSONObject digitalContent;
-				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
-				} catch (Exception e) 	{	digitalContent = null; }
-
-				JSONObject changes;
-				try 					{ 	changes = new JSONObject(rs.getString("changes"));
-				} catch (Exception e) 	{	changes = null; }
-
-				JSONArray similars;
-				try 					{ 	similars = new JSONArray(rs.getString("similars"));
-				} catch (Exception e) 	{	similars = null; }
-
-				JSONArray behaviour;
-				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
-				} catch (Exception e) 	{	behaviour = null; }
-
-				JSONArray marketplace;
-				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
-				} catch (Exception e) 	{	marketplace = null; }
-
-				Integer actual_stock;
-				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-				} catch (Exception e) 	{	actual_stock = null; }
-
-				// Transfere os valores de cada coluna de cada linha para um Crawler model
-				ProcessedModel pm = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
-						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
-						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"),
-						changes, rs.getString("original_description"),
-						rs.getFloat("price"), digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
-
-
-				if (logActivated) Logging.printLogDebug(logger, "\n\n\n\n--------------------------------------------------------------------------------------------------------------");
-				if (logActivated) Logging.printLogDebug(logger, "INICIANDO PROCESSAMENTO DE PRODUTO: " + pm.getOriginalName());
-
-				// Através do método processProduct minera os valores para popular/atualizar o ProcessedModel
-				ProcessedModel pm_new = this.processProduct(pm);
-
-				if (logActivated) Logging.printLogDebug(logger, "SALVANDO PRODUTO:");
-
-				// Insere ou atualiza o ProcessedModel no banco de dados
-				this.saveProcessedModel(pm_new);
-				if (logActivated) Logging.printLogDebug(logger, "success!");
-				if (logActivated) Logging.printLogDebug(logger, "--------------------------------------------------------------------------------------------------------------");
-
-				// Verifica a quantidade atributos extraídos do CrawlerModel
-				if(pm.getBrand()==null) countBrand++;
-				if(pm.get_class()==null || pm.get_class().isEmpty())  countClass++;					
-				if(pm.getRecipient()!=null) countRecipient++;
-				if(pm.getMultiplier()!=1) countMult++;
-				if(pm.getQuantity()!= null) countQtd++;
-				if(pm.getUnit()!=null) countUnit++;
-				count++;
-			}
-
-		}
-
-		// Mostra resultados 
-		Logging.printLogDebug(logger, "Products tested: " + count +
-				"\nBrands not found found: " + countBrand +
-				"\nClass not found: " + countClass +
-				"\nRecipients found: " + countRecipient +
-				"\nQuantities found: " + countQtd +
-				"\nUnits found: " + countUnit +
-				"\nMultiplier found: " + countMult +
-				"\nExecution time: " + ((System.currentTimeMillis() - start)/(1000*60.0)) + "min");
-
-	}
+//	public void processProducts(String city, String market, boolean test) throws SQLException{
+//
+//		// Variável para medir tempo...
+//		long start = System.currentTimeMillis();		
+//		ResultSet rs = null;
+//
+//
+//		// Popular lista de ids de supermercado
+//		List<Integer> marketIdsToPersist = new ArrayList<Integer>();
+//
+//		rs = this.fetchMarketsAsPointer();
+//
+//		while(rs.next()) {
+//			if(city != null && market == null) {
+//				if(rs.getString("city").equals(city)) marketIdsToPersist.add(rs.getInt("id"));
+//			} else {
+//				if(rs.getString("city").equals(city) && rs.getString("name").equals(market)) marketIdsToPersist.add(rs.getInt("id"));
+//			}
+//		}
+//
+//		Logging.printLogDebug(logger, "Lista de ids de markets que vou processar: " + marketIdsToPersist);
+//
+//		// Processando um supermercado por vez
+//
+//		// Contadores com o resultado de contéudos processados
+//		int countBrand = 0, countClass = 0, countRecipient = 0, countQtd = 0, countUnit = 0, countMult = 0, count = 0;
+//
+//		for(int marketId: marketIdsToPersist) {
+//
+//			rs = this.fetchModifiedProcessedProductsAsPointer(new DateTime().minusDays(1), marketId);
+//
+//			// Enquanto houver linhas, faça...
+//			while (rs.next()) {
+//
+//				JSONObject digitalContent;
+//				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
+//				} catch (Exception e) 	{	digitalContent = null; }
+//
+//				JSONObject changes;
+//				try 					{ 	changes = new JSONObject(rs.getString("changes"));
+//				} catch (Exception e) 	{	changes = null; }
+//
+//				JSONArray similars;
+//				try 					{ 	similars = new JSONArray(rs.getString("similars"));
+//				} catch (Exception e) 	{	similars = null; }
+//
+//				JSONArray behaviour;
+//				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
+//				} catch (Exception e) 	{	behaviour = null; }
+//
+//				JSONArray marketplace;
+//				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
+//				} catch (Exception e) 	{	marketplace = null; }
+//
+//				Integer actual_stock;
+//				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
+//				} catch (Exception e) 	{	actual_stock = null; }
+//
+//				// Transfere os valores de cada coluna de cada linha para um Crawler model
+//				ProcessedModel pm = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
+//						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
+//						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"),
+//						changes, rs.getString("original_description"),
+//						rs.getFloat("price"), digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
+//
+//
+//				if (logActivated) Logging.printLogDebug(logger, "\n\n\n\n--------------------------------------------------------------------------------------------------------------");
+//				if (logActivated) Logging.printLogDebug(logger, "INICIANDO PROCESSAMENTO DE PRODUTO: " + pm.getOriginalName());
+//
+//				// Através do método processProduct minera os valores para popular/atualizar o ProcessedModel
+//				ProcessedModel pm_new = this.processProduct(pm);
+//
+//				if (logActivated) Logging.printLogDebug(logger, "SALVANDO PRODUTO:");
+//
+//				// Insere ou atualiza o ProcessedModel no banco de dados
+//				this.saveProcessedModel(pm_new);
+//				if (logActivated) Logging.printLogDebug(logger, "success!");
+//				if (logActivated) Logging.printLogDebug(logger, "--------------------------------------------------------------------------------------------------------------");
+//
+//				// Verifica a quantidade atributos extraídos do CrawlerModel
+//				if(pm.getBrand()==null) countBrand++;
+//				if(pm.get_class()==null || pm.get_class().isEmpty())  countClass++;					
+//				if(pm.getRecipient()!=null) countRecipient++;
+//				if(pm.getMultiplier()!=1) countMult++;
+//				if(pm.getQuantity()!= null) countQtd++;
+//				if(pm.getUnit()!=null) countUnit++;
+//				count++;
+//			}
+//
+//		}
+//
+//		// Mostra resultados 
+//		Logging.printLogDebug(logger, "Products tested: " + count +
+//				"\nBrands not found found: " + countBrand +
+//				"\nClass not found: " + countClass +
+//				"\nRecipients found: " + countRecipient +
+//				"\nQuantities found: " + countQtd +
+//				"\nUnits found: " + countUnit +
+//				"\nMultiplier found: " + countMult +
+//				"\nExecution time: " + ((System.currentTimeMillis() - start)/(1000*60.0)) + "min");
+//
+//	}
 
 	/**
 	 * Atualiza informações de conteúdo digital no objeto Processed.

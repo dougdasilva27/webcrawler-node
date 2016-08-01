@@ -138,5 +138,28 @@ public class Product {
 	public void setStock(Integer stock) {
 		this.stock = stock;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("\n" + "url: " + this.url + "\n");
+		sb.append("seed id: " + this.seedId + "\n");
+		sb.append("internalId: " + this.internalId + "\n");
+		sb.append("internalPid: " + this.internalPid + "\n");
+		sb.append("name: " + this.name + "\n");
+		sb.append("price: " + this.price + "\n");
+		sb.append("available: " + this.available + "\n");
+		sb.append("marketplace: " + this.marketplace + "\n");
+		sb.append("category1: " + this.category1 + "\n");
+		sb.append("category2: " + this.category2 + "\n");
+		sb.append("category3: " + this.category3 + "\n");
+		sb.append("primary image: " + this.primaryImage + "\n");
+		sb.append("secondary images: " + this.secondaryImages + "\n");
+		sb.append("description: " + "html code with" + this.description.length() + " characters" + "\n");
+		sb.append("stock: " + this.stock + "\n");
+
+		return sb.toString();
+	}
 
 }

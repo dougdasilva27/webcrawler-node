@@ -35,6 +35,7 @@ public class Processor {
 	 * @return a new ProcessedModel or null in case the Product model has invalid informations
 	 */
 	public static ProcessedModel createProcessed(Product product, CrawlerSession session, ProcessedModel previousProcessedProduct) {
+		Logging.printLogDebug(logger, session, "Creating processed product...");
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -166,7 +167,7 @@ public class Processor {
 						null);
 			}
 
-			Main.processorResultManager.processProduct(newProcessedProduct);
+			Main.processorResultManager.processProduct(newProcessedProduct, session);
 
 			// Atualizando disponibilidade
 			newProcessedProduct.setAvailable(available);

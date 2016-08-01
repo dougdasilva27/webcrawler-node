@@ -26,6 +26,7 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void persistProduct(Product product, CrawlerSession session) {
+		Logging.printLogDebug(logger, session, "Persisting crawled product...");
 
 		// get crawled information
 		boolean available = product.getAvailable();
@@ -160,9 +161,11 @@ public class Persistence {
 							+ "); ";
 
 			Main.dbManager.runSqlExecute(sql_crawler);
+			
+			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
 		} catch (SQLException e) {
-			Logging.printLogError(logger, "Error inserting producton database! [" + e.getMessage() + "]");
+			Logging.printLogError(logger, "Error inserting product on database! [" + e.getMessage() + "]");
 		}
 	}
 	
