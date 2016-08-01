@@ -6,19 +6,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.base.Crawler;
-
 import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
- * Crawling notes (08/07/2016):
+ * Crawling notes (11/07/2016):
  * 
  * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
  *  
@@ -26,31 +24,35 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 3) There is no marketplace in this ecommerce by the time this crawler was made.
  * 
- * 4) The sku page identification is done simply looking the URL format.
+ * 4) The sku page identification is done by looking for a specific html element of a sku.
  * 
- * 5) Even if a product is unavailable, its price is displayed.
+ * 5) If the sku is unavailable, it's price is not displayed.
  * 
  * 6) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
  * the variations of a given sku.
  * 
- * 7) We have one method for each type of information for a sku (please carry on with this pattern).
+ * 7) On crawling the descriptions, the pattern observed is that we have 3 tabs. The first one is the description, the second is
+ * tech specs and third is for sku insurance. We consider only the first and second.
+ * 
+ * 8) We have one method for each type of information for a sku (please carry on with this pattern).
  * 
  * Examples:
- * ex1 (available): http://www.adias.com.br/produto/ar-condicionado-split-janela-9000-btus-elgin-compact-110v-frio-hcfi09a1na-68152
- * ex2 (unavailable): http://www.adias.com.br/produto/ar-condicionado-split-janela-7000-btus-elgin-compact-220v-frio-sqfic-7000-2-68221 
+ * ex1 (available): http://www.climario.com.br/split-inverter/22000-a-30000-btus/ar-condicionado-split-hi-wall-hitachi-inverter-22000-btuh-220v-frio-hitachi.html
+ * ex2 (unavailable): http://www.climario.com.br/ar-de-janela/11000-a-19000-btus/ar-condicionado-de-janela-springer-minimaxi-12000-btus-220v-mecanico-frio-springer.html 
  *
  * Optimizations notes:
  * No optimizations.
  *
  ************************************************************************************************************************************************************************************/
 
-public class BrasilAdiasCrawler extends Crawler {
+public class BrasilClimarioCrawler extends Crawler {
 
-	public BrasilAdiasCrawler(CrawlerSession session) {
+	private final String HOME_PAGE = "http://www.climario.com.br/";
+	private final String MAIN_DOMAIN = "http://www.climario.com.br";
+	
+	public BrasilClimarioCrawler(CrawlerSession session) {
 		super(session);
 	}
-
-	private final String HOME_PAGE = "http://www.adias.com.br/";
 
 	@Override
 	public boolean shouldVisit() {
@@ -58,14 +60,15 @@ public class BrasilAdiasCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
+
 	@Override
 	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if ( isProductPage(doc) ) {
 
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, "Product page identified: " + session.getUrl());
 
 			/* ***********************************
 			 * crawling data of only one product *
@@ -112,6 +115,7 @@ public class BrasilAdiasCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
+			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -130,11 +134,10 @@ public class BrasilAdiasCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+			Logging.printLogTrace(logger, "Not a product page" + this.session.getUrl());
 		}
 		
 		return products;
-
 	}
 
 
@@ -143,8 +146,9 @@ public class BrasilAdiasCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		if ( url.startsWith(HOME_PAGE + "produto/") ) return true;
+	private boolean isProductPage(Document document) {
+		Element skuSchemaElement = document.select("div[itemtype=http://schema.org/Product]").first();
+		if (skuSchemaElement != null) return true;
 		return false;
 	}
 	
@@ -155,7 +159,7 @@ public class BrasilAdiasCrawler extends Crawler {
 	
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select("#hdnProdutoId").first();
+		Element internalIdElement = document.select("#prod_id").first();
 
 		if (internalIdElement != null) {
 			internalId = internalIdElement.attr("value").toString().trim();			
@@ -172,10 +176,10 @@ public class BrasilAdiasCrawler extends Crawler {
 	
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select(".fbits-produto-nome.prodTitle.title").first();
+		Element nameElement = document.select(".tituloProdDetalhe span[itemprop=name]").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+			name = sanitizeName(nameElement.text());
 		}
 
 		return name;
@@ -183,7 +187,7 @@ public class BrasilAdiasCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element mainPagePriceElement = document.select("#fbits-forma-pagamento .precoPor").first();
+		Element mainPagePriceElement = document.select(".precoPor .val").first();
 
 		if (mainPagePriceElement != null) {
 			price = Float.parseFloat( mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
@@ -193,13 +197,9 @@ public class BrasilAdiasCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select(".avisoIndisponivel").first();
-		
-		if (notifyMeElement != null) {
-			if (notifyMeElement.attr("style").equals("display:none;")) return true;
-		}
-		
-		return false;
+		Element notifyMeElement = document.select(".produtoIndisponivel").first();
+		if (notifyMeElement != null) return false;
+		return true;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
@@ -212,10 +212,10 @@ public class BrasilAdiasCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select(".fbits-componente-imagem img").first();
+		Element primaryImageElement = document.select(".imgDetalhe a img").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("data-zoom-image").trim();
+			primaryImage = primaryImageElement.attr("content").trim();
 		}
 
 		return primaryImage;
@@ -225,10 +225,11 @@ public class BrasilAdiasCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select(".fbits-componente-imagemvariantethumb.orientacao-vertical.fbits-produto-imagens .jcarousel ul li a");
+		Elements imagesElement = document.select("#mycarousel li a img");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			secondaryImagesArray.put( imagesElement.get(i).attr("data-zoom-image").trim() );
+			String image = MAIN_DOMAIN + imagesElement.get(i).attr("src").trim();
+			secondaryImagesArray.put( modifyImageURL(image) );
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -240,11 +241,12 @@ public class BrasilAdiasCrawler extends Crawler {
 
 	private ArrayList<String> crawlCategories(Document document) {
 		ArrayList<String> categories = new ArrayList<String>();
-		Elements elementCategories = document.select("#fbits-breadcrumb ol li a span");
+		Elements elementCategories = document.select("#breadCrumbDetalhe");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
-		}
+		String[] tokens = elementCategories.text().split(">");		
+		for (int i = 1; i < tokens.length; i++) {
+			categories.add( sanitizeName(tokens[i]) );
+		}		
 
 		return categories;
 	}
@@ -259,40 +261,35 @@ public class BrasilAdiasCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select(".informacao-abas #conteudo-0").first();
-		Element specElement = document.select(".informacao-abas #conteudo-1").first();
+		Element descriptionElement = document.select("#abas1").first();
+		Element specElement = document.select("#abas2").first();
 
 		if (descriptionElement != null) description = description + descriptionElement.html();
 		if (specElement != null) description = description + specElement.html();
 
 		return description;
 	}
-
-//	private void executeFinishingRoutines(Product product, ProcessedModel truco) {
-//		try {
-//
-//			if ( this.missingProduct(product) && Main.mode.equals(Main.MODE_INSIGHTS) ) {
-//				this.crawlerController.scheduleUrlToReprocess( product.getUrl() );
-//			}
-//
-//			else {
-//
-//				// print information on console
-//				this.printExtractedInformation(product);
-//
-//				// upload image to s3
-//				if (product.getPrimaryImage() != null && !product.getPrimaryImage().equals("")) {
-//					db.uploadImageToAmazon(this, product.getPrimaryImage(), product.getInternalId());
-//				}
-//
-//				// persist information on database
-//				this.persistInformation(product, this.marketId, truco, product.getUrl());
-//
-//			}
-//
-//		} catch (Exception e1) {
-//			e1.printStackTrace();
-//		}
-//	}
+	
+	/**************************
+	 * Specific manipulations *
+	 **************************/
+	
+	private String sanitizeName(String name) {
+		return name.replace("'","").replace("’","").trim();
+	}
+	
+	
+	/**
+	 * Modify the imageURL to get a bigger version of the image.
+	 * The logic used in this ecommerce is to modify the first two letters in the number code
+	 * for the image, just before the .jpg. The observed pattern is that 'PP' is for the smallest version,
+	 * and OP is for the biggest.
+	 * 
+	 * @param imageURL the image URL with the main domain already appended
+	 * @return the modified imageURL for the biggest version
+	 */
+	private String modifyImageURL(String imageURL) {
+		return imageURL.replace("__PP", "__OP");
+	}
 
 }

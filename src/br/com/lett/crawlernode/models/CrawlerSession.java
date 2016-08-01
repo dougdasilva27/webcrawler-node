@@ -85,6 +85,11 @@ public class CrawlerSession {
 		this.url = message.getBody();
 		this.originalURL = message.getBody();
 		
+		// setting internal id
+		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		}
+		
 		// setting processed id
 		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 			this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());

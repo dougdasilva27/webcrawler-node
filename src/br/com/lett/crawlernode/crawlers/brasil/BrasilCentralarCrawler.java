@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -59,8 +60,9 @@ public class BrasilCentralarCrawler extends Crawler {
 
 
 	@Override
-	public Product extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
+		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
 
@@ -108,7 +110,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-//			product.setSeedId(seedId);
+			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -124,13 +126,13 @@ public class BrasilCentralarCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 
-			return product;
+			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, "Not a product page" + this.session.getUrl());
 		}
 		
-		return new Product();
+		return products;
 	}
 
 

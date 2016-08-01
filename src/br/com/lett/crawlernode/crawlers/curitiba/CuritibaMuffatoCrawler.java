@@ -97,13 +97,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 
 	@Override
-	public Product extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
 		
-		Product product = new Product();
+		List<Product> products = new ArrayList<Product>();
 
 		if( isProductPage(this.session.getUrl(), doc) ) {
-
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
 
 			// InternalId
@@ -148,7 +147,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = new JSONArray();
-
+			
+			// create the product
+			Product product = new Product();
 			product.setSeedId(session.getSeedId());
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
@@ -164,12 +165,14 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
+			
+			products.add(product);
 
 		} else {
 			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
 		}
 		
-		return product;
+		return products;
 	}
 	
 	

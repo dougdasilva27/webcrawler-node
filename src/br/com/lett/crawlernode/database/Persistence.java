@@ -170,6 +170,7 @@ public class Persistence {
 	}
 	
 	public static void persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
+		Logging.printLogDebug(logger, session, "Persisting processed product...");
 		
 		String query = "";
 
@@ -254,6 +255,8 @@ public class Persistence {
 
 		try {
 			Main.dbManager.runSqlExecute(query);
+			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
+			
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
 			Logging.printLogError(logger, e.getMessage());

@@ -17,7 +17,7 @@ import com.amazonaws.services.sqs.model.Message;
 public class WorkList {
 	protected static final Logger logger = LoggerFactory.getLogger(WorkList.class);
 	
-	public static final int DEFAULT_MAX_SIZE = 1;
+	public static final int DEFAULT_MAX_SIZE = 10;
 	
 	/**
 	 * the internal list of messages

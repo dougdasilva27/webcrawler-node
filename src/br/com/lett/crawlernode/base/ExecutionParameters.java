@@ -18,9 +18,12 @@ public class ExecutionParameters {
 
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
+	public static final String MODE_INSIGHTS = "insights";
+	public static final String MODE_DISCOVERY = "discovery";
 
 	private Options options;
 	private String environment;
+	private String mode;
 	private Boolean debug;
 	private String[] args;
 
@@ -44,12 +47,17 @@ public class ExecutionParameters {
 	public String getEnvironment() {
 		return this.environment;
 	}
+	
+	public String getMode() {
+		return this.mode;
+	}
 
 	private void createOptions() {
 
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
+		options.addOption("mode", true, "Mode [insights, discovery]");
 
 	}
 
@@ -66,6 +74,9 @@ public class ExecutionParameters {
 			// Environment
 			if (cmd.hasOption("environment")) 	environment = cmd.getOptionValue("environment"); else help(); // required
 
+			// Mode
+			if (cmd.hasOption("mode")) 	mode = cmd.getOptionValue("mode"); else help(); // required
+
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
 			Logging.printLogError(logger, e.getMessage());
@@ -79,6 +90,7 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Debug: " + this.debug + "\n");
 		sb.append("Environment: " + this.environment + "\n");
+		sb.append("Mode: " + this.mode + "\n");
 
 		return sb.toString();
 	} 

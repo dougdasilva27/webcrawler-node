@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.base;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -45,7 +46,7 @@ public class Crawler implements Runnable {
 	 * the current crawling session
 	 */
 	protected CrawlerSession session;
-	
+
 	/**
 	 * cookies that must be used to fetch the sku page
 	 * this attribute is set by the handleCookiesBeforeFetch method
@@ -56,40 +57,73 @@ public class Crawler implements Runnable {
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 	}
-	
-//	@Override
-//	public void run() {
-//		//Product product = extract();
-//		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
-//		
-//		try {
-//			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
-//		} catch (InterruptedException e) {
-//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
-//			e.printStackTrace();
-//		}
-//		
-//		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
-//		
-//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-//	}
+
+	//	@Override
+	//	public void run() {
+	//		//Product product = extract();
+	//		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
+	//		
+	//		try {
+	//			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
+	//		} catch (InterruptedException e) {
+	//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
+	//			e.printStackTrace();
+	//		}
+	//		
+	//		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
+	//		
+	//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+	//	}
 
 	@Override 
 	public void run() {
-		
 		Logging.printLogDebug(logger, session, "START");
 
-		/*
-		 * Initial iteration
-		 */
-
-		boolean mustEnterTrucoMode = false;
-
-		// crawl informations and create a product
-		Product product = extract();
+		// crawl informations and create a list of products
+		List<Product> products = extract();
 		
-		printCrawledInformation(product);
+		/*
+		 * MODE INSIGHTS
+		 * 
+		 * There is only one product that will be processed in this mode.
+		 * This product will be selected by it's internalId, passed by the CrawlerSession
+		 */
+		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+			for (Product product : products) {
+				if (product.getInternalId() != null && product.getInternalId().equals(session.getInternalId())) {
+					processProduct(product);
+				}
+			}
+		}
+		
+		/*
+		 * MODE DISCOVERY
+		 * In this mode, we must process each crawled product.
+		 */
+		else {
+			for (Product product : products) {
+				processProduct(product);
+			}
+		}
 
+		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
+
+		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+
+		Logging.printLogDebug(logger, session, "END [trucos = " + session.getTrucoAttempts() + "]");
+
+	}
+
+	/**
+	 * 
+	 * @param product
+	 */
+	private void processProduct(Product product) {
+		boolean mustEnterTrucoMode = false;
+		
+		// print crawled information
+		printCrawledInformation(product);
+		
 		// persist the product
 		Persistence.persistProduct(product, session);
 
@@ -99,71 +133,75 @@ public class Crawler implements Runnable {
 		// create the new processed product
 		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
 
-//		if (previousProcessedProduct == null) {
-//
-//			// if a new processed product was created
-//			if (newProcessedProduct != null) {
-//				Persistence.persistProcessedProduct(newProcessedProduct, session);
-//			} else {
-//				// indicates we had some invalid information crawled
-//			}
-//		}
-//
-//
-//		else { // we already have a processed product, so we must decide if we update 
-//
-//			if (newProcessedProduct != null) {
-//
-//				// the two processed are different, so we must enter in truco mode
-//				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
-//					mustEnterTrucoMode = true;
-//				}
-//
-//				// the two processed are equals, so we can update it
-//				else {
-//					Persistence.persistProcessedProduct(newProcessedProduct, session);
-//					return;
-//				}
-//			}
-//
-//		}
-//
-//		/*
-//		 * Running truco
-//		 */
-//		if (mustEnterTrucoMode) {
-//			ProcessedModel currentTruco = newProcessedProduct;
-//			
-//			while (true) {
-//				product = extract();
-//				Persistence.persistProduct(product, session);
-//				newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
-//				session.incrementTrucoAttempts();
-//				
-//				if (newProcessedProduct != null) {					
-//					if ( compare(newProcessedProduct, currentTruco) ) {
-//						currentTruco = newProcessedProduct;	
-//					} 
-//					
-//					// if we found two consecutive equals processed products, persist and end 
-//					else {
-//						Persistence.persistProcessedProduct(newProcessedProduct, session);
-//						return;
-//					}
-//				}
-//				
-//				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
-//			}
-//		}
+		if (previousProcessedProduct == null) {
 
-		
-		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
-		
-		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-		
-		Logging.printLogDebug(logger, session, "END");
-		
+			// if a new processed product was created
+			if (newProcessedProduct != null) {
+				Persistence.persistProcessedProduct(newProcessedProduct, session);
+			} else {
+				// indicates we had some invalid information crawled
+			}
+		}
+
+
+		else { // we already have a processed product, so we must decide if we update 
+
+			if (newProcessedProduct != null) {
+
+				// the two processed are different, so we must enter in truco mode
+				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
+					mustEnterTrucoMode = true;
+				}
+
+				// the two processed are equals, so we can update it
+				else {
+					Persistence.persistProcessedProduct(newProcessedProduct, session);
+					return;
+				}
+			}
+
+		}
+
+		/*
+		 * Running truco
+		 */
+		if (mustEnterTrucoMode) {
+			Logging.printLogDebug(logger, session, "Entering truco mode...");
+			
+			ProcessedModel currentTruco = newProcessedProduct;
+
+			while (true) {
+				List<Product> products = extract();
+				
+				// when we are processing all the the products in array (mode discovery)
+				// we will select only the product being 'trucado'
+				Product localProduct = this.getProductByInternalId(products, currentTruco.getInternalId());
+				
+				session.incrementTrucoAttempts();
+				
+				if (localProduct != null) {
+					Persistence.persistProduct(localProduct, session);
+					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct);
+
+					if (newProcessedProduct != null) {					
+						if ( compare(newProcessedProduct, currentTruco) ) {
+							currentTruco = newProcessedProduct;	
+						} 
+
+						// if we found two consecutive equals processed products, persist and end 
+						else {
+							Persistence.persistProcessedProduct(newProcessedProduct, session);
+							return;
+						}
+					}
+				}
+				
+				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
+				
+			}
+		}
 	}
+	
 
 	/**
 	 * It defines wether the crawler must true to extract data or not
@@ -174,7 +212,7 @@ public class Crawler implements Runnable {
 	public boolean shouldVisit() {
 		return true;
 	}
-	
+
 	/**
 	 * By default this method only set the list of cookies to null.
 	 * If the crawler needs to set some cookie to fetch the sku page,
@@ -183,7 +221,7 @@ public class Crawler implements Runnable {
 	public void handleCookiesBeforeFetch() {
 		this.cookies = null;
 	}
-	
+
 	/**
 	 * 
 	 * @param url
@@ -193,25 +231,29 @@ public class Crawler implements Runnable {
 		return url;
 	}
 
-	public Product extract() {
-		
+	public List<Product> extract() {
+
 		// handle cookie
 		handleCookiesBeforeFetch();
-		
+
 		// handle URL modifications
 		String url = handleURLBeforeFetch(session.getUrl());
 		session.setUrl(url);
 		session.setOriginalURL(url);
-		
+
 		if ( shouldVisit() ) {
 			Document document = preProcessing();
-			return extractInformation(document);
+			List<Product> products = extractInformation(document);
+			if (products.isEmpty()) products.add( new Product() );
+			return products;
 		}
 
-		return new Product();
+		List<Product> products = new ArrayList<Product>();
+		if (products.isEmpty()) products.add( new Product() );
+		return products;
 	}
 
-	
+
 	/**
 	 * Contains all the logic to sku information extraction.
 	 * Must be implemented on subclasses.
@@ -219,8 +261,8 @@ public class Crawler implements Runnable {
 	 * @param document
 	 * @return A product with all it's crawled informations
 	 */
-	public Product extractInformation(Document document) {
-		return new Product();
+	public List<Product> extractInformation(Document document) {
+		return new ArrayList<Product>();
 	}
 
 	/**
@@ -241,9 +283,25 @@ public class Crawler implements Runnable {
 	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
 		return p1.compareHugeChanges(p2);
 	}
-	
+
 	private void printCrawledInformation(Product product) {
 		Logging.printLogDebug(logger, "Crawled information[session: " + session.getSessionId() + "]" + product.toString());
+	}
+	
+	/**
+	 * 
+	 * @param products
+	 * @param internalId
+	 * @return
+	 */
+	private Product getProductByInternalId(List<Product> products, String internalId) {
+		for (Product product : products) {
+			if (product.getInternalId() != null && product.getInternalId().equals(internalId)) {
+				return product;
+			}
+		}
+		
+		return null;
 	}
 
 }
