@@ -616,7 +616,7 @@ public class ResultManager {
 
 		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
 //		if(mode.equals(Controller.MODE_INSIGHTS) || mode.equals(Controller.MODE_PLACEHOLDER)) this.updateDigitalContent(pm); // TODO
-		//if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) this.updateDigitalContent(pm);
+		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) this.updateDigitalContent(pm);
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
 

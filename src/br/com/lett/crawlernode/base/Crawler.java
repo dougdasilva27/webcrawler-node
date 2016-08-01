@@ -57,23 +57,7 @@ public class Crawler implements Runnable {
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 	}
-
-	//	@Override
-	//	public void run() {
-	//		//Product product = extract();
-	//		Logging.printLogDebug(logger, session, "Processing task: " + session.getUrl());
-	//		
-	//		try {
-	//			Thread.sleep(5000 + CommonMethods.randInt(1000, 6000));
-	//		} catch (InterruptedException e) {
-	//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
-	//			e.printStackTrace();
-	//		}
-	//		
-	//		Logging.printLogDebug(logger, session, "Apagando task: " + session.getOriginalURL() + "...");
-	//		
-	//		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-	//	}
+	
 
 	@Override 
 	public void run() {
@@ -146,7 +130,7 @@ public class Crawler implements Runnable {
 			if (newProcessedProduct != null) {
 				Persistence.persistProcessedProduct(newProcessedProduct, session);
 			} else {
-				// indicates we had some invalid information crawled
+				Logging.printLogError(logger, session, "The new processed product is null. Indicates that the crawler missed vital information.");
 			}
 		}
 
@@ -158,6 +142,7 @@ public class Crawler implements Runnable {
 				// the two processed are different, so we must enter in truco mode
 				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
 					mustEnterTrucoMode = true;
+					Logging.printLogDebug(logger, session, "Must enter in truco mode.");
 				}
 
 				// the two processed are equals, so we can update it

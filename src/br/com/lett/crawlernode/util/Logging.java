@@ -28,7 +28,11 @@ public class Logging {
 	
 	public static void printLogError(Logger logger, String city, String market, String msg) {
 		logger.error("[CITY]" + city + " [MARKET]" + market + " [MSG]" + msg.trim());
-	}	
+	}
+	
+	public static void printLogError(Logger logger, CrawlerSession session, String msg) {
+		logger.error("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+	}
 	
 	/* DEBUG */
 	public static void printLogDebug(Logger logger, String msg) {
