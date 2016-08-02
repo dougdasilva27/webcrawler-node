@@ -108,7 +108,7 @@ public class Main {
 				taskExecutor.submitWorkList(workList);
 
 			} 
-		} , 0, 15000); // 15 seconds
+		} , 0, 5000); // 5 seconds
 
 	}
 
