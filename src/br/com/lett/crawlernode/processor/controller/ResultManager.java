@@ -574,33 +574,33 @@ public class ResultManager {
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
 	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
-		Logging.printLogDebug(logger, session, "Processing product...");
+		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
 		// Previne o conteúdo de extra ser nulo
 		if (pm.getExtra() == null) pm.setExtra("");
 
-		// Objeto 'extractor' será definido de acordo com cada supermercado
-		Object extractor;
-
 		// Tratamento de exceção na definição de supermercado, no caso de valores inválidos ou nulos o supermercado usado será o 1 FlorianopolisAngeloni por padrão
-		try {
+//		try {
 
 			// Polimorfismo da classe extractor, aqui será definido qual extractor será utilizado
-			extractor = Class.forName("br.com.lett.processor." +
-					this.cityNameInfo.get(pm.getMarket()) + 
-					".Extractor" + 
-					Character.toUpperCase(this.cityNameInfo.get(pm.getMarket()).charAt(0)) +
-					this.cityNameInfo.get(pm.getMarket()).substring(1) +
-					Character.toUpperCase(this.marketNameInfo.get(pm.getMarket()).charAt(0)) +
-					marketNameInfo.get(pm.getMarket()).substring(1)).newInstance();
+//			extractor = Class.forName("br.com.lett.processor." +
+//					this.cityNameInfo.get(pm.getMarket()) + 
+//					".Extractor" + 
+//					Character.toUpperCase(this.cityNameInfo.get(pm.getMarket()).charAt(0)) +
+//					this.cityNameInfo.get(pm.getMarket()).substring(1) +
+//					Character.toUpperCase(this.marketNameInfo.get(pm.getMarket()).charAt(0)) +
+//					marketNameInfo.get(pm.getMarket()).substring(1)).newInstance();
+		
+		
+			Extractor extractor = new ExtractorFlorianopolisAngeloni();
 			
-		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-			Logging.printLogError(logger, "Processor not defined for " + this.marketNameInfo.get(pm.getMarket()) + ". Using FlorianopolisAngeloni as default.");
-			extractor = new ExtractorFlorianopolisAngeloni();
-		} catch (NullPointerException e) {
-			Logging.printLogError(logger, "Market " + pm.getMarket() + " not included on postgres market table yet. Using FlorianopolisAngeloni as default.");
-			extractor = new ExtractorFlorianopolisAngeloni();
-		}
+//		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+//			Logging.printLogError(logger, "Processor not defined for " + this.marketNameInfo.get(pm.getMarket()) + ". Using FlorianopolisAngeloni as default.");
+//			extractor = new ExtractorFlorianopolisAngeloni();
+//		} catch (NullPointerException e) {
+//			Logging.printLogError(logger, "Market " + pm.getMarket() + " not included on postgres market table yet. Using FlorianopolisAngeloni as default.");
+//			extractor = new ExtractorFlorianopolisAngeloni();
+//		}
 
 		// Coerção do objeto 'extractor' como Extractor para definição de atributos da classe
 		((Extractor) extractor).setAttrs(logActivated, 
@@ -616,7 +616,9 @@ public class ResultManager {
 
 		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
 //		if(mode.equals(Controller.MODE_INSIGHTS) || mode.equals(Controller.MODE_PLACEHOLDER)) this.updateDigitalContent(pm); // TODO
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) this.updateDigitalContent(pm);
+		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+			this.updateDigitalContent(pm, session);
+		}
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
 
@@ -744,7 +746,9 @@ public class ResultManager {
 	 * @author Fabricio
 	 * @param pm - ProcessModel recebido no instante da execução
 	 */
-	private void updateDigitalContent(ProcessedModel pm) {   
+	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
+		Logging.printLogDebug(logger, session, "Updating digital content...");
+		
 		if(pm.getDigitalContent() == null) { pm.setDigitalContent(new JSONObject()); }
 
 		// 0) Lendo informações desejadas pelo fornecedor (digital_content na tabela Lett)
@@ -791,8 +795,11 @@ public class ResultManager {
 				"/" + 
 				pm.getLettId() + 
 				"/1-original.jpg";
-
+		
+		Logging.printLogDebug(logger, session, "Fetching image from Amazon...");
 		File primaryImage = Information.fetchImageFromAmazon(primaryImageAmazonKey);
+		
+		Logging.printLogDebug(logger, session, "Fetching md5 from Amazon...");
 		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(desiredPrimaryImageAmazonKey);
 
 		String primaryMd5 = null;
@@ -839,15 +846,13 @@ public class ResultManager {
 
 				pic_primary.put("similarity_sift", similaritySiftResult);
 
-				// Atualizando md5 da nova imagem primária
+				// updating md5 of the new primary image
 				pic_primary.put("md5", primaryMd5);
 
 				// Tentando comparar imagem com a referência e antecipar o Match
-				if(pic_primary.getDouble("similarity") == 1) {
-					// Deu Match
+				if(pic_primary.getDouble("similarity") == 1) { // match
 					pic_primary.put("status", "match");
-				} else {
-					// Marcando como não verificada
+				} else { // not verified
 					pic_primary.put("status", "not-verified");
 				}
 

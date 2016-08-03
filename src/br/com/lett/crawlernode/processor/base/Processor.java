@@ -318,7 +318,7 @@ public class Processor {
 
 			newProcessedProduct.setBehaviour(newBehaviour);
 
-			Logging.printLogDebug(logger, "Produto processado:" + "\n" + newProcessedProduct.toString());
+			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Erro ao tentar processar produto [seed:" + session.getSeedId() + "]");
@@ -336,6 +336,8 @@ public class Processor {
 	 * @return the current ProcessedModel stored on database, or null if the product doesn't yet exists on processed table.
 	 */
 	public static ProcessedModel fetchPreviousProcessed(Product product, CrawlerSession session) {
+		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
+		
 		ProcessedModel actualProcessedProduct = null;
 
 		// get crawled information
