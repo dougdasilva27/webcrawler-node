@@ -56,6 +56,7 @@ public class Crawler implements Runnable {
 
 	public Crawler(CrawlerSession session) {
 		this.session = session;
+		this.cookies = new ArrayList<Cookie>();
 	}
 	
 
@@ -232,7 +233,7 @@ public class Crawler implements Runnable {
 		String url = handleURLBeforeFetch(session.getUrl());
 		session.setUrl(url);
 		session.setOriginalURL(url);
-
+		
 		if ( shouldVisit() ) {
 			Document document = preProcessing();
 			List<Product> products = extractInformation(document);

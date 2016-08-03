@@ -331,8 +331,10 @@ public class DataFetcher {
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
-				for (Cookie cookie : cookies) {
-					cookieStore.addCookie(cookie);
+				if (cookies.size() > 0) {
+					for (Cookie cookie : cookies) {
+						cookieStore.addCookie(cookie);
+					}
 				}
 			}
 
@@ -407,8 +409,10 @@ public class DataFetcher {
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
-				for (Cookie cookie : cookies) {
-					cookieStore.addCookie(cookie);
+				if (cookies.size() > 0) {
+					for (Cookie cookie : cookies) {
+						cookieStore.addCookie(cookie);
+					}
 				}
 			}
 
