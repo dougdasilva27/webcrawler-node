@@ -74,6 +74,7 @@ public class Main {
 			proxies = new Proxies();
 			proxies.fetchPremiumProxies();
 			proxies.fetchRegularProxies();
+			proxies.fetchBonanzaProxies();
 		}
 
 		// create a queue handler that will contain an Amazon SQS instance

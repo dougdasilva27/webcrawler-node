@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.util.json.JSONArray;
+import com.amazonaws.util.json.JSONObject;
+
 import br.com.lett.crawlernode.util.Logging;
 
 public class Proxies {
@@ -30,11 +33,17 @@ public class Proxies {
 	 */
 	public ArrayList<LettProxy> semiPremiumProxies;
 	
+	/**
+	 * Proxy bonanza
+	 */
+	public ArrayList<LettProxy> bonanza;
+	
 
 	public Proxies() {
 		this.premiumProxies = new ArrayList<LettProxy>();
 		this.regularProxies = new ArrayList<LettProxy>();
 		this.semiPremiumProxies = new ArrayList<LettProxy>();
+		this.bonanza = new ArrayList<LettProxy>();
 	}
 
 	public void fetchRegularProxies() {
@@ -134,6 +143,51 @@ public class Proxies {
 			
 		} catch(Exception e) {
 			Logging.printLogError(logger, "Error fetching premium proxies [" + e.getMessage() + "]");
+		}
+	}
+	
+	public void fetchBonanzaProxies() {
+		try {
+
+			Logging.printLogDebug(logger, "Fetching bonanza proxies...");
+
+			String url = "https://api.proxybonanza.com/v1/userpackages/41202.json";
+
+			URL obj = new URL(url);
+			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+			con.setRequestMethod("GET");
+			con.setRequestProperty("Authorization", "BxcANHYTx3fRlGDKXGjAsTz6MbaZaY68ufUrSMr81yLyvGcJfe!40284");
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();
+
+			JSONObject data = new JSONObject(response.toString()).getJSONObject("data");
+
+			String username = data.getString("login").toString();
+			String pass = data.getString("password").toString();
+
+			JSONArray proxies = data.getJSONArray("ippacks");
+
+			for(int i=0; i < proxies.length(); i++) {
+				bonanza.add(new LettProxy("proxybonanza", 
+						proxies.getJSONObject(i).getString("ip"), 
+						proxies.getJSONObject(i).getInt("port_http"), 
+						proxies.getJSONObject(i).getJSONObject("proxyserver").getJSONObject("georegion").getString("name"), 
+						username, 
+						pass));
+			}
+			
+			Logging.printLogDebug(logger, "Bonanza proxies fetched with success! [" + this.bonanza.size() + " proxies fetched]");
+			
+		} catch (Exception e) {
+			
 		}
 	}
 
