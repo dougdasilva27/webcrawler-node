@@ -320,7 +320,15 @@ public class DataFetcher {
 		}
 
 	}
-
+	
+	/**
+	 * Fetch a page
+	 * By default the redirects are enabled in the RequestConfig
+	 * @param session
+	 * @param cookies
+	 * @param attempt
+	 * @return
+	 */
 	private static String fetchPageGET(CrawlerSession session, List<Cookie> cookies, int attempt) {
 
 		try {
@@ -351,7 +359,7 @@ public class DataFetcher {
 
 			RequestConfig requestConfig = RequestConfig.custom()
 					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(false)
+					.setRedirectsEnabled(true) // set redirect to true
 					.setProxy(proxy)
 					.build();
 
