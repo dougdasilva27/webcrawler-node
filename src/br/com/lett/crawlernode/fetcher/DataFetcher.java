@@ -82,8 +82,8 @@ public class DataFetcher {
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
 	 * @return A String.
 	 */
-	public static String fetchString(String reqType, CrawlerSession session, String urlParameters, List<Cookie> cookies) {
-		return fetchPage(reqType, session, urlParameters, cookies, 1);	
+	public static String fetchString(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+		return fetchPage(reqType, session, url, urlParameters, cookies, 1);	
 	}
 
 	/**
@@ -95,8 +95,8 @@ public class DataFetcher {
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
 	 * @return A Document with the data from the url passed, or null if something went wrong.
 	 */
-	public static Document fetchDocument(String reqType, CrawlerSession session, String urlParameters, List<Cookie> cookies) {
-		return Jsoup.parse(fetchPage(reqType, session, urlParameters, cookies, 1));	
+	public static Document fetchDocument(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));	
 	}
 
 	/**
@@ -108,8 +108,8 @@ public class DataFetcher {
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
 	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONObject fetchJSONObject(String reqType, CrawlerSession session, String payload, List<Cookie> cookies) {
-		return new JSONObject(fetchJson(reqType, session, payload, cookies, 1));
+	public static JSONObject fetchJSONObject(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+		return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
 	/**
@@ -121,8 +121,8 @@ public class DataFetcher {
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
 	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONArray fetchJSONArray(String reqType, CrawlerSession session, String payload, List<Cookie> cookies) {
-		return new JSONArray(fetchJson(reqType, session, payload, cookies, 1));
+	public static JSONArray fetchJSONArray(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+		return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
 	/**
@@ -161,14 +161,14 @@ public class DataFetcher {
 		}
 	}
 
-	private static String fetchJson(String reqType, CrawlerSession session, String payload, List<Cookie> cookies, int attempt) {
+	private static String fetchJson(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) {
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
-				return fetchPageGET(session, cookies, attempt);
+				return fetchPageGET(session, url, cookies, attempt);
 			} else if (reqType.equals(POST_REQUEST)) {
 				if (payload != null) {
-					return fetchJsonPOST(session, payload, cookies, attempt);
+					return fetchJsonPOST(session, url, payload, cookies, attempt);
 				} else {
 					Logging.printLogWarn(logger, "Parametro payload está null.");
 				}
@@ -178,14 +178,14 @@ public class DataFetcher {
 
 		} catch (Exception e) {
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + session.getUrl());
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
 			Logging.printLogError(logger, e.getStackTrace().toString());
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + session.getUrl());
+				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
 			} else {
-				return fetchJson(reqType, session, payload, cookies, attempt+1);	
+				return fetchJson(reqType, session, url, payload, cookies, attempt+1);	
 			}
 
 		}
@@ -194,8 +194,8 @@ public class DataFetcher {
 
 	}
 
-	private static String fetchJsonPOST(CrawlerSession session, String payload, List<Cookie> cookies, int attempt) throws Exception {
-		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + session.getUrl());
+	private static String fetchJsonPOST(CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
+		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
 		LettProxy randProxy = randLettProxy(attempt);
@@ -239,7 +239,7 @@ public class DataFetcher {
 		HttpContext localContext = new BasicHttpContext();
 		localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-		HttpPost httpPost = new HttpPost(session.getUrl());
+		HttpPost httpPost = new HttpPost(url);
 		httpPost.setConfig(requestConfig);
 
 
@@ -286,14 +286,14 @@ public class DataFetcher {
 	}
 
 
-	private static String fetchPage(String reqType, CrawlerSession session, String urlParameters, List<Cookie> cookies, int attempt) {
+	private static String fetchPage(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
-				return fetchPageGET(session, cookies, attempt);
+				return fetchPageGET(session, url, cookies, attempt);
 			} else if (reqType.equals(POST_REQUEST)) {
 				if (urlParameters != null) {
-					return fetchPagePOST(session, urlParameters, cookies, attempt);
+					return fetchPagePOST(session, url, urlParameters, cookies, attempt);
 				} else {
 					Logging.printLogError(logger, "Parametro payload está null.");
 					return "";
@@ -306,15 +306,15 @@ public class DataFetcher {
 		} catch (Exception e) {
 			e.printStackTrace();
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + session.getUrl());
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
 			Logging.printLogError(logger, e.getStackTrace().toString());
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + session.getUrl());
+				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
 				return "";
 
 			} else {
-				return fetchPage(reqType, session, urlParameters, cookies, attempt+1);	
+				return fetchPage(reqType, session, url, urlParameters, cookies, attempt+1);	
 			}
 
 		}
@@ -329,10 +329,13 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return
 	 */
-	private static String fetchPageGET(CrawlerSession session, List<Cookie> cookies, int attempt) {
+	private static String fetchPageGET(CrawlerSession session, String url, List<Cookie> cookies, int attempt) {
 
 		try {
-			Logging.printLogDebug(logger, "Fazendo requisição GET: " + session.getUrl());
+			Logging.printLogDebug(logger, "Fazendo requisição GET: " + url);
+			
+			// adding request info for this url
+			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt);
@@ -373,7 +376,7 @@ public class DataFetcher {
 			HttpContext localContext = new BasicHttpContext();
 			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-			HttpGet httpGet = new HttpGet(session.getUrl());
+			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
 
 			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
@@ -384,7 +387,7 @@ public class DataFetcher {
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
-			pageContent.setUrl(session.getUrl()); // setting url
+			pageContent.setUrl(url); // setting url
 
 			// process response and parse
 			return processContent(pageContent);
@@ -393,24 +396,27 @@ public class DataFetcher {
 
 			e.printStackTrace();
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getUrl());
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
 			Logging.printLogError(logger, e.getMessage());
 			e.printStackTrace();
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + session.getUrl());
+				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + url);
 				return "";
 			} else {
-				return fetchPageGET(session, cookies, attempt+1);	
+				return fetchPageGET(session, url, cookies, attempt+1);	
 			}
 
 		}
 	}
 
-	private static String fetchPagePOST(CrawlerSession session, String urlParameters, List<Cookie> cookies, int attempt) {
+	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		try {
-			Logging.printLogDebug(logger, "Fazendo requisição POST: " + session.getUrl());
+			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
+			
+			// adding request info for this url
+			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt);
@@ -451,7 +457,7 @@ public class DataFetcher {
 			HttpContext localContext = new BasicHttpContext();
 			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-			HttpPost httpPost = new HttpPost(session.getUrl());
+			HttpPost httpPost = new HttpPost(url);
 			httpPost.setConfig(requestConfig);
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
@@ -478,7 +484,7 @@ public class DataFetcher {
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
-			pageContent.setUrl(session.getUrl()); // setting url
+			pageContent.setUrl(url); // setting url
 
 			// process response and parse
 			return processContent(pageContent);
@@ -488,15 +494,15 @@ public class DataFetcher {
 			e.printStackTrace();
 
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
 			Logging.printLogError(logger, e.getStackTrace().toString());
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + session.getUrl());
+				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + url);
 				return "";
 			} else {
-				return fetchPagePOST(session, urlParameters, cookies, attempt+1);	
+				return fetchPagePOST(session, url, urlParameters, cookies, attempt+1);	
 			}
 
 		}

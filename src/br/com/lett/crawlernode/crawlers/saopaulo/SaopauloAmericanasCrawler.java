@@ -526,7 +526,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	}
 	
 	private Document fetchMarketplace(String internalID, String url) {
-		Document docMarketplaceInfo = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null);
+		Document docMarketplaceInfo = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
 
 		return docMarketplaceInfo;
 	}

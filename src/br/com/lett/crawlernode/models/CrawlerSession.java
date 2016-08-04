@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.models;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.sqs.model.Message;
@@ -65,12 +66,20 @@ public class CrawlerSession {
 	 */
 	private int trucoAttempts;
 	
+	/**
+	 * this map associates an URL with the number of requests for this URL
+	 */
+	private Map<String, Integer> urlRequests;
+	
 	
 	public CrawlerSession(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 		
 		// setting truco attempts
 		this.trucoAttempts = 0;
+		
+		// creating the urlRequests map
+		this.urlRequests = new HashMap<String, Integer>();
 		
 		// setting session id
 		this.sessionId = message.getMessageId();
@@ -181,6 +190,22 @@ public class CrawlerSession {
 	public void setInternalId(String internalId) {
 		this.internalId = internalId;
 	}
+
+	public Map<String, Integer> getUrlRequest() {
+		return urlRequests;
+	}
+
+	public void setUrlRequest(Map<String, Integer> urlRequest) {
+		this.urlRequests = urlRequest;
+	}
+	
+	public void addRequestInfo(String url) {
+		if (urlRequests.containsKey(url)) {
+			urlRequests.put(url, urlRequests.get(url) + 1);
+		} else {
+			urlRequests.put(url, 1);
+		}
+	}
 	
 	@Override
 	public String toString() {
@@ -196,6 +221,12 @@ public class CrawlerSession {
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
+		
+		sb.append("[URL, requests]\n");
+		
+		for (String url : urlRequests.keySet()) {
+			sb.append("[" + url + ", " + urlRequests.get(url) + "]" + "\n");
+		}
 
 		return sb.toString();
 	}

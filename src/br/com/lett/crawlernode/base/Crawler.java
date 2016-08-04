@@ -263,7 +263,7 @@ public class Crawler implements Runnable {
 	 * @return parsed HTML in form of a Document
 	 */
 	private Document preProcessing() {
-		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, null, cookies);
+		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getUrl(), null, cookies);
 		return Jsoup.parse(html);		
 	}
 
