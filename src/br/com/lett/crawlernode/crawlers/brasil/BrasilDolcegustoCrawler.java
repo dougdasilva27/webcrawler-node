@@ -34,7 +34,6 @@ public class BrasilDolcegustoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl(), doc) ) {
-
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// internalId
