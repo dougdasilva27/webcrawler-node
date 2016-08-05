@@ -1,5 +1,8 @@
 br.com.lett.crawlernode.base
 br.com.lett.crawlernode.crawlers.brasil
+br.com.lett.crawlernode.crawlers.curitiba
+br.com.lett.crawlernode.crawlers.riodejaneiro
+br.com.lett.crawlernode.crawlers.saopaulo
 br.com.lett.crawlernode.database
 br.com.lett.crawlernode.fetcher
 br.com.lett.crawlernode.imgprocessing
