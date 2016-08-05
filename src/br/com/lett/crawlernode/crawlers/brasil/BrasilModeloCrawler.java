@@ -13,11 +13,12 @@ import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
-public class BrasilMassoftCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://massoft.com.br/prestashop/";
+public class BrasilModeloCrawler extends Crawler {
 
-	public BrasilMassoftCrawler(CrawlerSession session) {
+	private final String HOME_PAGE = "http://massula.com.br/lett/";
+
+	public BrasilModeloCrawler(CrawlerSession session) {
 		super(session);
 	}
 
@@ -31,7 +32,7 @@ public class BrasilMassoftCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) {   
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
-
+		
 		if( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
@@ -115,7 +116,7 @@ public class BrasilMassoftCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
-			
+
 			Product product = new Product();
 			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
@@ -133,11 +134,11 @@ public class BrasilMassoftCrawler extends Crawler {
 			product.setAvailable(available);
 
 			products.add(product);
-			
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
 	
@@ -147,6 +148,7 @@ public class BrasilMassoftCrawler extends Crawler {
 
 	private boolean isProductPage(Document document) {
 		Element elementProduct = document.select(".primary_block.row").first();
-		return (elementProduct != null);
+		return elementProduct != null;
+		
 	}
 }

@@ -136,7 +136,7 @@ public class DataFetcher {
 		return getUrlResponseCode(url, 1);
 	}
 
-	private static Integer getUrlResponseCode(String url, int attempt) {
+	public static Integer getUrlResponseCode(String url, int attempt) {
 		try {
 			URL urlObject = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt));
