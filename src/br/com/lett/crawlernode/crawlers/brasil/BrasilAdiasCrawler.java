@@ -44,12 +44,12 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilAdiasCrawler extends Crawler {
+	
+	private final String HOME_PAGE = "http://www.adias.com.br/";
 
 	public BrasilAdiasCrawler(CrawlerSession session) {
 		super(session);
-	}
-
-	private final String HOME_PAGE = "http://www.adias.com.br/";
+	}	
 
 	@Override
 	public boolean shouldVisit() {
@@ -63,7 +63,6 @@ public class BrasilAdiasCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
 
 			/* ***********************************
@@ -134,7 +133,6 @@ public class BrasilAdiasCrawler extends Crawler {
 		}
 		
 		return products;
-
 	}
 
 
