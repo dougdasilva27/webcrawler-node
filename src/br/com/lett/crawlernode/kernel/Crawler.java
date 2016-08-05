@@ -58,7 +58,12 @@ public class Crawler implements Runnable {
 		this.cookies = new ArrayList<Cookie>();
 	}
 	
-
+	
+	/**
+	 * Overrides the run method that will perform a task within a thread.
+	 * The actual thread performs it's computation controlled by an Executor, from
+	 * Java's Executors Framework.
+	 */
 	@Override 
 	public void run() {
 		Logging.printLogDebug(logger, session, "START");
