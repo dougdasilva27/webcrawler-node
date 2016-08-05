@@ -70,8 +70,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		Logging.printLogDebug(logger, session, "Deciding if should visit...");
-		
 		String href = this.session.getUrl().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
@@ -82,7 +80,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if( isProductPage(session.getUrl(), doc) ) {
-
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 
