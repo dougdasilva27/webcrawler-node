@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.base;
+package br.com.lett.crawlernode.kernel;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;

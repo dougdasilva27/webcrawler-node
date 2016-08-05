@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.base;
+package br.com.lett.crawlernode.kernel;
 
 import java.util.ArrayList;
 import java.util.List;

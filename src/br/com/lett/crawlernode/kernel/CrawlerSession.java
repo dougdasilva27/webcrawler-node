@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.models;
+package br.com.lett.crawlernode.kernel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,6 +6,7 @@ import java.util.Map;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
+import br.com.lett.crawlernode.models.Market;
 import br.com.lett.crawlernode.queue.QueueService;
 
 public class CrawlerSession {

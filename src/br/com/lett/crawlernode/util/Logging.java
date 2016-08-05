@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.base.ExecutionParameters;
-import br.com.lett.crawlernode.models.CrawlerSession;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.kernel.ExecutionParameters;
 
 /**
  * This class contains static methods to print log messages using the logback lib.

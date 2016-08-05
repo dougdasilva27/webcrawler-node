@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.parser;
+package br.com.lett.crawlernode.kernel.parser;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -14,7 +14,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.fetcher.PageContent;
+import br.com.lett.crawlernode.kernel.fetcher.PageContent;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

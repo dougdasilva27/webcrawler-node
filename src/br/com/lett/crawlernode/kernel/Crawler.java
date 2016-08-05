@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.base;
+package br.com.lett.crawlernode.kernel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +8,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.fetcher.DataFetcher;
+import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.processor.base.Processor;

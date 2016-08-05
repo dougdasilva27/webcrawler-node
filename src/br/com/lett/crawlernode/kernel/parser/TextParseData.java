@@ -1,5 +1,5 @@
 
-package br.com.lett.crawlernode.parser;
+package br.com.lett.crawlernode.kernel.parser;
 
 public class TextParseData {
 

@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.fetcher;
+package br.com.lett.crawlernode.kernel.fetcher;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import br.com.lett.crawlernode.base.ExecutionParameters;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.kernel.parser.Parser;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.models.CrawlerSession;
-import br.com.lett.crawlernode.parser.Parser;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

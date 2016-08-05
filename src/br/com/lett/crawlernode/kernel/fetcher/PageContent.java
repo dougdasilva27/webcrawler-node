@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.fetcher;
+package br.com.lett.crawlernode.kernel.fetcher;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -8,8 +8,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
 
-import br.com.lett.crawlernode.parser.HtmlParseData;
-import br.com.lett.crawlernode.parser.TextParseData;
+import br.com.lett.crawlernode.kernel.parser.HtmlParseData;
+import br.com.lett.crawlernode.kernel.parser.TextParseData;
 
 /**
  * This class contains the content fetched from a http request and

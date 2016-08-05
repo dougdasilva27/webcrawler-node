@@ -10,13 +10,13 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 
-import br.com.lett.crawlernode.base.ExecutionParameters;
-import br.com.lett.crawlernode.base.TaskExecutor;
-import br.com.lett.crawlernode.base.WorkList;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.fetcher.Proxies;
+import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.kernel.TaskExecutor;
+import br.com.lett.crawlernode.kernel.WorkList;
+import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.queue.QueueService;

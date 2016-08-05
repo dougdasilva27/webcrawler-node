@@ -8,8 +8,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.base.Crawler;
-import br.com.lett.crawlernode.models.CrawlerSession;
+import br.com.lett.crawlernode.kernel.Crawler;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 

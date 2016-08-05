@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.fetcher;
+package br.com.lett.crawlernode.kernel.fetcher;
 
 /**
  * Processor request utils

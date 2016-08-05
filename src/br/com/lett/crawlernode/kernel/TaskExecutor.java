@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.base;
+package br.com.lett.crawlernode.kernel;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.model.Message;
 
-import br.com.lett.crawlernode.models.CrawlerSession;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
