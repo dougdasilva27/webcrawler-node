@@ -245,33 +245,6 @@ public class BrasilCentralarCrawler extends Crawler {
 
 		return description;
 	}
-
-//	private void executeFinishingRoutines(Product product, ProcessedModel truco) {
-//		try {
-//
-//			if ( this.missingProduct(product) && Main.mode.equals(Main.MODE_INSIGHTS) ) {
-//				this.crawlerController.scheduleUrlToReprocess( product.getUrl() );
-//			}
-//
-//			else {
-//
-//				// print information on console
-//				this.printExtractedInformation(product);
-//
-//				// upload image to s3
-//				if (product.getPrimaryImage() != null && !product.getPrimaryImage().equals("")) {
-//					db.uploadImageToAmazon(this, product.getPrimaryImage(), product.getInternalId());
-//				}
-//
-//				// persist information on database
-//				this.persistInformation(product, this.marketId, truco, product.getUrl());
-//
-//			}
-//
-//		} catch (Exception e1) {
-//			e1.printStackTrace();
-//		}
-//	}
 	
 	/**************************
 	 * Specific manipulations *
