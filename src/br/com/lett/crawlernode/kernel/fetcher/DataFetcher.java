@@ -13,6 +13,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
@@ -30,6 +31,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -320,7 +322,7 @@ public class DataFetcher {
 		}
 
 	}
-	
+
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
@@ -333,7 +335,7 @@ public class DataFetcher {
 
 		try {
 			Logging.printLogDebug(logger, "Fazendo requisição GET: " + url);
-			
+
 			// adding request info for this url
 			session.addRequestInfo(url);
 
@@ -414,7 +416,7 @@ public class DataFetcher {
 	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		try {
 			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
-			
+
 			// adding request info for this url
 			session.addRequestInfo(url);
 
@@ -503,6 +505,91 @@ public class DataFetcher {
 				return "";
 			} else {
 				return fetchPagePOST(session, url, urlParameters, cookies, attempt+1);	
+			}
+
+		}
+	}
+
+	public static String fetchPagePOSTWithHeaders(String url, CrawlerSession session, String urlParameters, List<Cookie> cookies, int attempt, Map<String,String> headers) {
+
+		try {
+
+			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
+
+			String randUserAgent = randUserAgent();
+			LettProxy randProxy = randLettProxy(attempt);
+
+			CookieStore cookieStore = new BasicCookieStore();
+			if (cookies != null) {
+				for (Cookie cookie : cookies) {
+					cookieStore.addCookie(cookie);
+				}
+			}
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if(randProxy.getUser() != null) {
+				credentialsProvider.setCredentials(
+						new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+						);
+			}
+
+			HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+
+			RequestConfig requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(false)
+					.setProxy(proxy)
+					.build();
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			StringEntity input = new StringEntity(urlParameters);
+			input.setContentType(headers.get("Content-Type"));
+
+			HttpPost httpPost = new HttpPost(url);
+			httpPost.setEntity(input);
+
+			for(String key : headers.keySet()){
+				httpPost.addHeader(key, headers.get(key));
+			}
+
+			httpPost.setConfig(requestConfig);
+
+			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+
+			// do request
+			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
+			// process response and parse
+			return processContent(pageContent);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+			Logging.printLogError(logger, e.getStackTrace().toString());
+
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogDebug(logger, session, "Atingi máximo de tentativas para a url : " + url);
+				return "";
+			} else {
+				return fetchPagePOSTWithHeaders(url, session, urlParameters, cookies, attempt+1, headers);	
 			}
 
 		}
