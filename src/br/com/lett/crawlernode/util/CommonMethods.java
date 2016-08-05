@@ -11,8 +11,20 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 
+/**
+ * This class contains common methods that can be used in any class within
+ * crawler-node project.
+ * @author Samir Leao
+ *
+ */
 public class CommonMethods {
-
+	
+	/**
+	 * Generates a random integer in the interval between min and max
+	 * @param min
+	 * @param max
+	 * @return
+	 */
 	public static int randInt(int min, int max) {
 
 		// NOTE: Usually this should be a field rather than a method
@@ -25,14 +37,27 @@ public class CommonMethods {
 
 		return randomNum;
 	}
-
+	
+	/**
+	 * Check wether the string contentType contains identifiers of binary content.
+	 * This method is mainly used by the Parser, when fetching web pages content.
+	 * @param contentType
+	 * @return
+	 */
 	public static boolean hasBinaryContent(String contentType) {
 		String typeStr = (contentType != null) ? contentType.toLowerCase() : "";
 
 		return typeStr.contains("image") || typeStr.contains("audio") || typeStr.contains("video") ||
 				typeStr.contains("application");
 	}
-
+	
+	/**
+	 * Check wether the string contentType contains identifiers of text content.
+	 * This method is mainly used by the Parser, when fetching web pages content.
+	 * Can be used to parse only the text of a web page, for example.
+	 * @param contentType
+	 * @return
+	 */
 	public static boolean hasPlainTextContent(String contentType) {
 		String typeStr = (contentType != null) ? contentType.toLowerCase() : "";
 

@@ -63,7 +63,7 @@ public class Parser {
 				}
 				pageContent.setTextParseData(parseData);
 			} catch (Exception e) {
-				Logging.printLogError(logger, "{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
+				Logging.printLogError(logger, "Error while parsing plain text [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
 			}
 		} 
 
@@ -77,7 +77,7 @@ public class Parser {
 			try (InputStream inputStream = new ByteArrayInputStream(pageContent.getContentData())) {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);
 			} catch (Exception e) {
-				Logging.printLogError(logger, "{}, while parsing: {}", e.getMessage(), pageContent.getUrl());
+				Logging.printLogError(logger, "Error while parsing html [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
 			}
 
 			if (pageContent.getContentCharset() == null) {
