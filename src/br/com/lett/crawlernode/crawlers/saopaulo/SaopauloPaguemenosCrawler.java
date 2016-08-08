@@ -56,8 +56,6 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		Logging.printLogDebug(logger, session, "Deciding if should visit...");
-		
 		String href = this.session.getUrl().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}

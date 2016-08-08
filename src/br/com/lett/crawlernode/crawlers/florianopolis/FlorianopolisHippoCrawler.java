@@ -1,0 +1,123 @@
+package br.com.lett.crawlernode.crawlers.florianopolis;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import br.com.lett.crawlernode.kernel.Crawler;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.models.Product;
+import br.com.lett.crawlernode.util.Logging;
+
+public class FlorianopolisHippoCrawler extends Crawler {
+	
+	public FlorianopolisHippoCrawler(CrawlerSession session) {
+		super(session);
+	}
+	
+	private final String HOME_PAGE = "http://www.hippo.com.br/";
+	
+	@Override
+	public boolean shouldVisit() {
+		String href = this.session.getUrl().toLowerCase();            
+		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
+	}
+
+
+	@Override
+	public List<Product> extractInformation(Document doc) {
+		super.extractInformation(doc);
+		List<Product> products = new ArrayList<Product>();
+
+		if ( isProductPage(this.session.getUrl()) ) {
+			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+
+			// Id interno
+			String internalID = Integer.toString(Integer.parseInt(this.session.getUrl().split("/")[4]));
+
+			// Pid
+			String internalPid = null;
+			Element elementInternalPid = doc.select(".infos .nome .cod").first();
+			if (elementInternalPid != null) {
+				internalPid = elementInternalPid.text().split("\\.")[1].trim();
+			}
+
+			// Nome
+			Elements elementName = doc.select("p.nome");
+			String name = elementName.text().replace("'", "").trim();
+
+			// Preço
+			Elements elementPrice = doc.select("div.preco_comprar div.valores .valor");
+			Float price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+			// Disponibilidade
+			boolean available = true;
+
+			// Categorias
+			Elements element_cat1 = doc.select(".breadcrumb a");
+			String category1 = (element_cat1.size() >= 3) ? element_cat1.get(2).text().trim() : "";
+
+			Elements element_cat2 = doc.select(".breadcrumb a");
+			String category2 = (element_cat2.size() >= 4) ? element_cat2.get(3).text().trim() : "";
+
+			Elements element_cat3 = doc.select(".breadcrumb a");
+			String category3 = (element_cat3.size() >= 5) ? element_cat3.get(4).text().trim() : "";
+
+			// Imagens
+			Elements element_foto = doc.select("div.img a");
+			String primaryImage = (element_foto.size() > 0) ? element_foto.get(0).attr("href") : "";
+			primaryImage = primaryImage.replace("/./", "http://www.hippo.com.br/");
+			if(primaryImage.contains("produto_default_grande.jpg")) primaryImage = "";
+
+			String secondaryImages = null;
+
+			// Descrição
+			String description = null;
+			Elements elementDescription = doc.select("div.accordion--body");
+			description = elementDescription.html();
+
+			// Estoque
+			Integer stock = null;
+
+			// Marketplace
+			JSONArray marketplace = null;
+
+			Product product = new Product();
+			product.setSeedId(session.getSeedId());
+			product.setUrl(session.getUrl());
+			product.setInternalId(internalID);
+			product.setInternalPid(internalPid);
+			product.setName(name);
+			product.setPrice(price);
+			product.setCategory1(category1);
+			product.setCategory2(category2);
+			product.setCategory3(category3);
+			product.setPrimaryImage(primaryImage);
+			product.setSecondaryImages(secondaryImages);
+			product.setDescription(description);
+			product.setStock(stock);
+			product.setMarketplace(marketplace);
+			product.setAvailable(available);
+
+			products.add(product);
+
+		} else {
+			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+		}
+		
+		return products;
+	}
+	
+	
+	/*******************************
+	 * Product page identification *
+	 *******************************/
+
+	private boolean isProductPage(String url) {
+		return url.contains("/produto/");
+	}
+}
