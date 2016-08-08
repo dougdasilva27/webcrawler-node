@@ -33,7 +33,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.com.bytecode.opencsv.CSVReader;
+//import au.com.bytecode.opencsv.CSVReader;
+
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
@@ -45,10 +46,12 @@ import br.com.lett.crawlernode.models.Market;
 import br.com.lett.crawlernode.models.ProcessedModel;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Information;
+import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ProcessedModelSanitizer;
 import br.com.lett.crawlernode.processor.base.Extractor;
+import br.com.lett.crawlernode.processor.base.IdentificationLists;
 
 import com.mongodb.client.MongoDatabase;
 
@@ -147,7 +150,7 @@ public class ResultManager {
 		//Logging.printLogDebug(logger, pid, mode, environment, msg);
 		Logging.printLogDebug(logger, "Creating Result Manager and downloading lists sheets from Google Drive");
 		String [] nextLine;
-		CSVReader reader;
+		//CSVReader reader;
 		String key;
 		String value;
 
@@ -230,59 +233,63 @@ public class ResultManager {
 		}
 
 		// Cria listas de identificação de recipientes
-		System.out.print(".");
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsListCSV).openStream())));
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				this.recipientsList.add(key);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		System.out.print(".");
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsListCSV).openStream())));
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				this.recipientsList.add(key);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		this.recipientsList = IdentificationLists.recipientsList;
 
 		// Cria listas de identificação de unidades
-		System.out.print(".");
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsListCSV).openStream())));
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				this.unitsList.add(key);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		System.out.print(".");
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsListCSV).openStream())));
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				this.unitsList.add(key);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		this.unitsList = IdentificationLists.unitsList;
 
 		// Cria listas de substituição de unidades
-		System.out.print(".");
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				value = nextLine[1].toLowerCase();
-				this.unitsReplaceMap.put(key, value);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		System.out.print(".");
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				value = nextLine[1].toLowerCase();
+//				this.unitsReplaceMap.put(key, value);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		this.unitsReplaceMap = ReplacementMaps.unitsReplaceMap;
 
 		// Cria listas de substituição de recipientes
-		System.out.print(".");
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
-			reader.readNext();
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase().trim();
-				value = nextLine[1].toLowerCase().trim();
-				this.recipientsReplaceMap.put(key, value);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		System.out.print(".");
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
+//			reader.readNext();
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase().trim();
+//				value = nextLine[1].toLowerCase().trim();
+//				this.recipientsReplaceMap.put(key, value);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		this.recipientsReplaceMap = ReplacementMaps.recipientsReplaceMap;
 
 		// Cria Modelo de manipulação da classes para torná-las LettClasses
 		try{

@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.processor.controller;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-import java.net.URL;
+//import java.io.BufferedReader;
+//import java.io.InputStreamReader;
+//
+//import java.net.URL;
 
 import java.text.Normalizer;
 
@@ -18,8 +18,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.com.bytecode.opencsv.CSVReader;
-import br.com.lett.crawlernode.processor.base.Information;
+//import au.com.bytecode.opencsv.CSVReader;
+//
+//import br.com.lett.crawlernode.processor.base.Information;
+import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -42,7 +44,7 @@ public class Sanitizer {
 		
 		this.logActivated = logActivated;
 		
-		Logging.printLogDebug(logger, "Creating Sanitizer and downloading replace map sheets from Google Drive...");
+		Logging.printLogDebug(logger, "Creating Sanitizer and assembling replace maps...");
 		
 		this.identifiersReplaceMap = new LinkedHashMap<String, String>();
 		this.unitsReplaceMap = new LinkedHashMap<String, String>();
@@ -50,25 +52,29 @@ public class Sanitizer {
 		this.brandsReplaceMap = new LinkedHashMap<String, String>();
 		this.blackList = new ArrayList<String>();
 		
-		String [] nextLine;
-		CSVReader reader;
-		String key;
-		String value;
+//		String [] nextLine;
+//		CSVReader reader;
+//		String key;
+//		String value;
 		
 		//Download csv from google
 		//https://docs.google.com/spreadsheets/d/<KEY>/export?gid=0&format=csv
 			
 		// Create blacklist
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.blacklistRemoveListCSV).openStream())));
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				this.blackList.add(key);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.blacklistRemoveListCSV).openStream())));
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				this.blackList.add(key);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		
+		this.blackList.add("para");
+		this.blackList.add("com");
+		this.blackList.add("de");
 		
 			
 		// Create brands replace map
@@ -85,32 +91,36 @@ public class Sanitizer {
 //		}
 				
 		// Create units replace map
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				value = nextLine[1].toLowerCase();
-				this.unitsReplaceMap.put(key, value);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				value = nextLine[1].toLowerCase();
+//				this.unitsReplaceMap.put(key, value);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		
+		this.unitsReplaceMap = ReplacementMaps.unitsReplaceMap;
 		
 		
 		// Create recipients replace map
-		try {
-			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
-			reader.readNext();
-			while ((nextLine = reader.readNext()) != null) {
-				key = nextLine[0].toLowerCase();
-				value = nextLine[1].toLowerCase();
-				this.recipientsReplaceMap.put(key, value);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
+//			reader.readNext();
+//			while ((nextLine = reader.readNext()) != null) {
+//				key = nextLine[0].toLowerCase();
+//				value = nextLine[1].toLowerCase();
+//				this.recipientsReplaceMap.put(key, value);
+//			}
+//			reader.close();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		
+		this.recipientsReplaceMap = ReplacementMaps.recipientsReplaceMap;
 		
 		Logging.printLogDebug(logger, "success!");
 
