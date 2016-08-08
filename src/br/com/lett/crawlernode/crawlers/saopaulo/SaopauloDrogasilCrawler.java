@@ -14,17 +14,16 @@ import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloDrogasilCrawler extends Crawler {
+	
+	public SaopauloDrogasilCrawler(CrawlerSession session) {
+		super(session);
+	}
 
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getUrl().toLowerCase();
 		return !FILTERS.matcher(href).matches();
 	}
-
-	public SaopauloDrogasilCrawler(CrawlerSession session) {
-		super(session);
-	}
-
 
 	@Override
 	public List<Product> extractInformation(Document doc) {
