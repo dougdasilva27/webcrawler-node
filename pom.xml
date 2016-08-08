@@ -88,13 +88,6 @@
 			<version>2.5.16</version>
 		</dependency>
 
-		<!-- google common -->
-		<dependency>
-			<groupId>com.google.collections</groupId>
-			<artifactId>google-collections</artifactId>
-			<version>1.0-rc2</version>
-		</dependency>
-
 		<!-- Amazon -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>

@@ -49,8 +49,6 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.parser.Parser;
@@ -228,7 +226,9 @@ public class DataFetcher {
 
 
 		Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-		List<Header> headers = Lists.newArrayList(header);
+		//List<Header> headers = Lists.newArrayList(header);
+		List<Header> headers = new ArrayList<Header>();
+		headers.add(header);
 
 		CloseableHttpClient httpclient = HttpClients.custom()
 				.setDefaultCookieStore(cookieStore)
