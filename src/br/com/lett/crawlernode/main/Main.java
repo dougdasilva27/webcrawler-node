@@ -72,9 +72,7 @@ public class Main {
 		// fetching proxies
 		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 			proxies = new Proxies();
-			proxies.fetchPremiumProxies();
-			proxies.fetchRegularProxies();
-			proxies.fetchBonanzaProxies();
+			proxies.fetchLuminatiProxies();
 		}
 
 		// create a queue handler that will contain an Amazon SQS instance

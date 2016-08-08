@@ -623,7 +623,7 @@ public class DataFetcher {
 
 			// If we are in mode insights or placeholder, than we must use premium proxy always
 			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
-			proxies.addAll(Main.proxies.premiumProxies);
+			proxies.addAll(Main.proxies.luminatiProxies);
 
 
 			//			else {
@@ -658,7 +658,7 @@ public class DataFetcher {
 
 			// If we are in mode insights or placeholder, than we must use premium proxy always
 			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
-			proxies.addAll(Main.proxies.premiumProxies);
+			proxies.addAll(Main.proxies.luminatiProxies);
 
 
 			//			else {
