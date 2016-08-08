@@ -65,7 +65,6 @@ public class BrasilCentralarCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			/* ***********************************
