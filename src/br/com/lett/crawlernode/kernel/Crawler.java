@@ -282,7 +282,7 @@ public class Crawler implements Runnable {
 	}
 
 	private void printCrawledInformation(Product product) {
-		Logging.printLogDebug(logger, "Crawled information[session: " + session.getSessionId() + "]" + product.toString());
+		Logging.printLogDebug(logger, session, "Crawled information: " + product.toString());
 	}
 	
 	/**
