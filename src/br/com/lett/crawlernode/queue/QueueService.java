@@ -31,6 +31,7 @@ public class QueueService {
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 	
 	private static final String QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
+	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 	
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final String CITY_MESSAGE_ATTR = "city";
