@@ -8,6 +8,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.models.ProcessedModel;
@@ -25,7 +26,6 @@ import org.slf4j.LoggerFactory;
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both
  * the shouldVisit and extract methods.
- * 
  * @author Samir Leao
  *
  */
@@ -42,15 +42,21 @@ public class Crawler implements Runnable {
 			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
 	/**
-	 * the current crawling session
+	 * The current crawling session.
 	 */
 	protected CrawlerSession session;
 
 	/**
-	 * cookies that must be used to fetch the sku page
-	 * this attribute is set by the handleCookiesBeforeFetch method
+	 * Cookies that must be used to fetch the sku page
+	 * this attribute is set by the handleCookiesBeforeFetch method.
 	 */
 	protected List<Cookie> cookies;
+	
+	/**
+	 * Remote webdriver to be used in case of screenshot in truco mode
+	 * or any other need. By default it's not instantiated.
+	 */
+	protected CrawlerWebdriver webdriver;
 
 
 	public Crawler(CrawlerSession session) {
@@ -70,6 +76,17 @@ public class Crawler implements Runnable {
 
 		// crawl informations and create a list of products
 		List<Product> products = extract();
+		
+		// take a screenshot
+//		if (webdriver == null) {
+//			webdriver = new CrawlerWebdriver();
+//		}
+//		String path = "/home/samirleao/Pictures/screenshots/" + 
+//				session.getMarket().getCity() + "/" + 
+//				session.getMarket().getName() + "/" +
+//				session.getUrl() + ".jpg";
+//		webdriver.takeScreenshot(session.getUrl(), path);
+//		webdriver.closeDriver();
 		
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 		
@@ -119,11 +136,11 @@ public class Crawler implements Runnable {
 	 * This method is responsible for the main post processing stages of a crawled product.
 	 * It takes care of the following tasks:
 	 * <ul>
-	 * 	<li> 1. Print the crawled information; </li>
-	 * 	<li> 2. Persist the product; </li>
-	 * 	<li> 3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product; </li>
-	 * 	<li> 4. Create a new ProcessedModel; </li>
-	 * 	<li> 5. Persist the new ProcessedModel; </li>
+	 * 	<li>1. Print the crawled information;</li>
+	 * 	<li>2. Persist the product;</li>
+	 * 	<li>3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product;</li>
+	 * 	<li>4. Create a new ProcessedModel;</li>
+	 * 	<li>5. Persist the new ProcessedModel;</li>
 	 * </ul>
 	 * <p>
 	 * In this method we also have the so called 'truco' stage. In cases that we already have the ProcessedModel, we will only update
