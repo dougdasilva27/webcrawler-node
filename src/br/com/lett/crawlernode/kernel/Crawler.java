@@ -71,6 +71,8 @@ public class Crawler implements Runnable {
 		// crawl informations and create a list of products
 		List<Product> products = extract();
 		
+		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
+		
 		/*
 		 * MODE INSIGHTS
 		 * 
