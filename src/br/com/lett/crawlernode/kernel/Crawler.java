@@ -73,9 +73,10 @@ public class Crawler implements Runnable {
 		
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 		
-		/*
-		 * MODE INSIGHTS
-		 * 
+		/* ***************
+		 * MODE INSIGHTS *
+		 * ***************
+		 *  
 		 * There is only one product that will be processed in this mode.
 		 * This product will be selected by it's internalId, passed by the CrawlerSession
 		 */
@@ -87,8 +88,10 @@ public class Crawler implements Runnable {
 			}
 		}
 		
-		/*
-		 * MODE DISCOVERY
+		/* ****************
+		 * MODE DISCOVERY *
+		 * ****************
+		 * 
 		 * In this mode, we must process each crawled product.
 		 */
 		else {
@@ -97,12 +100,12 @@ public class Crawler implements Runnable {
 			}
 		}
 		
-		try {
-			Thread.sleep(15000 + CommonMethods.randInt(2000, 10000));
-		} catch (InterruptedException e) {
-			Logging.printLogDebug(logger, session, "Error in thread sleep!");
-			e.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(15000 + CommonMethods.randInt(2000, 10000));
+//		} catch (InterruptedException e) {
+//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
+//			e.printStackTrace();
+//		}
 
 		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
 
@@ -113,7 +116,27 @@ public class Crawler implements Runnable {
 	}
 
 	/**
-	 * 
+	 * This method is responsible for the main post processing stages of a crawled product.
+	 * It takes care of the following tasks:
+	 * <ul>
+	 * 	<li> 1. Print the crawled information; </li>
+	 * 	<li> 2. Persist the product; </li>
+	 * 	<li> 3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product; </li>
+	 * 	<li> 4. Create a new ProcessedModel; </li>
+	 * 	<li> 5. Persist the new ProcessedModel; </li>
+	 * </ul>
+	 * <p>
+	 * In this method we also have the so called 'truco' stage. In cases that we already have the ProcessedModel, we will only update
+	 * the informations of the previous ProcessedModel with the new information crawled. But we don't update the information in the first try.
+	 * When we detect some important change, such as in sku availability or price, we run the process all over again. The crawler runs again and all
+	 * the above enumerated stages are repeated, just to be shure that the information really changed or if it isn't a crawling bug or an URL blocking,
+	 * by the ecommerce website. 
+	 * </p>
+	 * <p>
+	 * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or until we find two consecutive equals sets of
+	 * crawled informations. If this occurs, then we persist the new ProcessedModel. If the we run all the truco checks, and don't find consistent
+	 * information, the crawler doesn't persist the new ProcessedModel. 
+	 * </p> 
 	 * @param product
 	 */
 	private void processProduct(Product product) {
@@ -203,8 +226,7 @@ public class Crawler implements Runnable {
 	
 
 	/**
-	 * It defines wether the crawler must true to extract data or not
-	 * 
+	 * It defines wether the crawler must true to extract data or not.
 	 * @param url
 	 * @return
 	 */
@@ -222,9 +244,10 @@ public class Crawler implements Runnable {
 	}
 
 	/**
+	 * Performs any desired transformation on the URL before the actual fetching.
 	 * 
-	 * @param url
-	 * @return
+	 * @param the URL we want to modify
+	 * @return the modified URL, that will be used in the fetching
 	 */
 	public String handleURLBeforeFetch(String url) {
 		return url;
@@ -276,7 +299,6 @@ public class Crawler implements Runnable {
 	/**
 	 * Compare ProcessedModel p1 against p2
 	 * p2 is suposed to be the truco, that is the model we are checking against
-	 * 
 	 * @return true if they are different or false otherwise
 	 */
 	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
@@ -288,7 +310,7 @@ public class Crawler implements Runnable {
 	}
 	
 	/**
-	 * 
+	 * Get only the product with the desired internalId.
 	 * @param products
 	 * @param internalId
 	 * @return
