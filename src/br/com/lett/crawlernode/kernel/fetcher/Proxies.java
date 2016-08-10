@@ -17,6 +17,13 @@ import br.com.lett.crawlernode.util.Logging;
 public class Proxies {
 
 	private static final Logger logger = LoggerFactory.getLogger(Proxies.class);
+	
+	public static final String SHADER = "shader";
+	public static final String LUMINATI = "luminati";
+	public static final String BUY = "buy";
+	public static final String BONANZA = "bonanza";
+	
+	public static final String DEFAULT = LUMINATI;
 
 	/**
 	 * Shader
@@ -47,7 +54,11 @@ public class Proxies {
 	}
 	
 	public void fetchLuminatiProxies() {
+		Logging.printLogDebug(logger, "Fetching Luminati proxies...");
+		
 		luminatiProxies.add(new LettProxy("luminati", "zproxy.luminati.io", 22225, "Brasil Luminati", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
+	
+		Logging.printLogDebug(logger, "Luminati proxies fetched with success! [" + this.luminatiProxies.size() + " proxies fetched]");
 	}
 
 	public void fetchBuyProxies() {

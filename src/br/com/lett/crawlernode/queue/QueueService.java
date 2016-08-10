@@ -16,6 +16,8 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 
+import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -30,7 +32,7 @@ public class QueueService {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 	
-	private static final String QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
+	private static final String PRODUCTION_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
 	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 	
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
@@ -39,6 +41,7 @@ public class QueueService {
 	public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
+	public static final String PROXY_SERVICE_MESSAGE_ATTR = "proxy";
 
 
 	/**
@@ -47,8 +50,9 @@ public class QueueService {
 	 */
 	public static List<Message> requestMessages(AmazonSQS sqs) {
 		Logging.printLogDebug(logger, "Requesting for a maximum of 1 task on queue...");
-
-		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QUEUE_URL).withMessageAttributeNames("All");
+		
+		String queueURL = selectQueue();
+		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
 		Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
@@ -62,8 +66,9 @@ public class QueueService {
 	 */
 	public static List<Message> requestMessages(AmazonSQS sqs, int maxNumberOfMessages) {
 		Logging.printLogDebug(logger, "Requesting for a maximum of " + maxNumberOfMessages + " tasks on queue...");
-
-		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QUEUE_URL).withMessageAttributeNames("All");
+		
+		String queueURL = selectQueue();
+		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
@@ -79,9 +84,10 @@ public class QueueService {
 	 */
 	public static void deleteMessage(AmazonSQS sqs, Message message) {
 		Logging.printLogDebug(logger, "Deleting message " + message.getMessageId());
-
+		
+		String queueURL = selectQueue();
 		String messageReceiptHandle = message.getReceiptHandle();
-		sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageReceiptHandle));
+		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
 	
 	/**
@@ -92,7 +98,8 @@ public class QueueService {
 	 */
 	public static void deleteMessage(AmazonSQS sqs, String messageId, String messageReceiptHandle) {
 		Logging.printLogDebug(logger, "Deleting message " + messageId);
-		sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageReceiptHandle));
+		String queueURL = selectQueue();
+		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
 
 	/**
@@ -102,9 +109,10 @@ public class QueueService {
 	 */
 	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
 		System.out.println("Deleting received messages.\n");
+		String queueURL = selectQueue();
 		for (int i = 0; i < messages.size(); i++) {
 			String messageReceiptHandle = messages.get(i).getReceiptHandle();
-			sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, messageReceiptHandle));
+			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 		}
 	}
 	
@@ -116,7 +124,8 @@ public class QueueService {
 	 */
 	public static void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
 		SendMessageRequest sendMessageRequest = new SendMessageRequest();
-		sendMessageRequest.setQueueUrl(QUEUE_URL);
+		String queueURL = selectQueue();
+		sendMessageRequest.setQueueUrl(queueURL);
 		sendMessageRequest.setMessageBody(messageBody);
 		sendMessageRequest.setMessageAttributes(attributes);
 		
@@ -130,7 +139,8 @@ public class QueueService {
 	 */
 	public static void sendBatchMessages(AmazonSQS sqs, List<SendMessageBatchRequestEntry> entries) {
 		SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
-		batchMessageBatchRequest.setQueueUrl(QUEUE_URL);
+		String queueURL = selectQueue();
+		batchMessageBatchRequest.setQueueUrl(queueURL);
 		batchMessageBatchRequest.setEntries(entries);
 		
 		sqs.sendMessageBatch(batchMessageBatchRequest);
@@ -146,9 +156,20 @@ public class QueueService {
 
 		if (!attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) return false;
 		if (!attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) return false;
-		if (!attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) return false;
 
 		return true;
+	}
+	
+	/**
+	 * Selects a proper Amazon SQS queue to be used, according to the environment
+	 * @param environment
+	 * @return
+	 */
+	private static String selectQueue() {
+		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+			return PRODUCTION_QUEUE_URL;
+		}
+		return DEVELOMENT_QUEUE_URL;
 	}
 
 }

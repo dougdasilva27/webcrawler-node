@@ -29,6 +29,22 @@ import br.com.lett.crawlernode.util.Logging;
  * -debug : to print debug log messages on console
  * -environment [development,  production]
  * 
+ * <p>Environments:</p>
+ * <ul>
+ * <li> development: in this mode we use a testing Amazon SQS queue, named crawler-development;
+ * We stil use proxies when running in development mode, because we must test for website blocking and 
+ * crawling informations the way it's going be running in the server. The classes in which this mode has some influence, are: 
+ * <ul>
+ * <li>DataFetcher</li>
+ * <li>QueueHandler</li>
+ * <li>QueueService</li>
+ * <li>DatabaseManager</li>
+ * </ul>
+ * </li>
+ * <li> production: in this mode the Amazon SQS used is the crawler-insights, and the crawler-node can run
+ * whatever ecommerce crawler it finds on the queue. Besides, the information inside the message in this mode
+ * is expected to be complete, differing from the development, where the only vital information is url, market and city.</li> 
+ * </ul>
  * @author Samir Leao
  *
  */
@@ -65,22 +81,23 @@ public class Main {
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 		dbManager.connect();
-		
+
 		// creating processor result manager
 		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
-		if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			proxies = new Proxies();
-			proxies.fetchLuminatiProxies();
-		}
+		proxies = new Proxies();
+		proxies.fetchLuminatiProxies();
+		proxies.fetchBonanzaProxies();
+		proxies.fetchShaderProxies();
+		proxies.fetchBuyProxies();
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 
 		// create the work list
-		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
+		workList = new WorkList(1); // TODO voltar para valor padrão
 
 		// create a task executor
 		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);

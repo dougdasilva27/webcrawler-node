@@ -59,11 +59,14 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			}
 
 			// ID interno
-			Elements elementInternalID = doc.select("input[name=productId]");
-			String internalID = elementInternalID.val().trim();
-
+			String internalId = null;
+			Element elementInternalId = doc.select("input[name=productId]").first();
+			if (elementInternalId != null) {
+				 internalId = elementInternalId.attr("value").trim();
+			}
+			
 			// Pid
-			String internalPid = internalID;
+			String internalPid = null;
 
 			// Nome
 			Elements elementName = doc.select("h1.product-header__heading");
@@ -147,7 +150,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			Product product = new Product();
 			product.setUrl(this.session.getUrl());
 			product.setSeedId(this.session.getSeedId());
-			product.setInternalId(internalID);
+			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);

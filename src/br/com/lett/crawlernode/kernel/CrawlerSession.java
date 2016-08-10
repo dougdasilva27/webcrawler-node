@@ -68,6 +68,11 @@ public class CrawlerSession {
 	private int trucoAttempts;
 	
 	/**
+	 * Preferencial proxy service to be used in this market
+	 */
+	private String proxyServiceName;
+	
+	/**
 	 * this map associates an URL with the number of requests for this URL
 	 */
 	private Map<String, Integer> urlRequests;
@@ -103,6 +108,11 @@ public class CrawlerSession {
 		// setting processed id
 		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 			this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		}
+		
+		// setting proxy service
+		if (attrMap.containsKey(QueueService.PROXY_SERVICE_MESSAGE_ATTR)) {
+			this.proxyServiceName = attrMap.get(QueueService.PROXY_SERVICE_MESSAGE_ATTR).getStringValue();
 		}
 		
 	}
@@ -230,6 +240,14 @@ public class CrawlerSession {
 		}
 
 		return sb.toString();
+	}
+
+	public String getProxyServiceName() {
+		return proxyServiceName;
+	}
+
+	public void setProxyServiceName(String proxyServiceName) {
+		this.proxyServiceName = proxyServiceName;
 	}
 
 }

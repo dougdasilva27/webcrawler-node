@@ -139,7 +139,7 @@ public class DataFetcher {
 	public static Integer getUrlResponseCode(String url, int attempt) {
 		try {
 			URL urlObject = new URL(url);
-			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt));
+			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, null));
 			connection.setRequestMethod("GET");
 			connection.connect();
 
@@ -198,7 +198,7 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
-		LettProxy randProxy = randLettProxy(attempt);
+		LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
 
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
@@ -340,7 +340,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt);
+			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -421,7 +421,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt);
+			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -517,7 +517,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt);
+			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -614,16 +614,42 @@ public class DataFetcher {
 	}
 
 
-	private static LettProxy randLettProxy(int attempt) {
+	private static LettProxy randLettProxy(int attempt, String serviceName) { // TODO esta usando proxies sempre
 		String env = Main.executionParameters.getEnvironment();
 
-		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+		//		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
-			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
+		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
-			// If we are in mode insights or placeholder, than we must use premium proxy always
-			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
+		if (serviceName != null) {
+			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
+			
+			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
+				if (Main.proxies.bonanzaProxies.size() > 0) {
+					proxies.addAll(Main.proxies.bonanzaProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+				}
+			} 
+			else if (serviceName.equals(Proxies.BUY)) { // buy
+				if (Main.proxies.buyProxiesProxies.size() > 0) {
+					proxies.addAll(Main.proxies.buyProxiesProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.SHADER)) { // shader
+				if (Main.proxies.shaderProxies.size() > 0) {
+					proxies.addAll(Main.proxies.shaderProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+				}
+			}
+		}
+		else { // default is luminati
+			Logging.printLogDebug(logger, "Proxy service: " + Proxies.DEFAULT);
 			proxies.addAll(Main.proxies.luminatiProxies);
+		}
 
 
 			//			else {
@@ -635,69 +661,97 @@ public class DataFetcher {
 			//					proxies.addAll(Main.proxies.premiumProxies);
 			//				}
 			//			}
-
-			LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
-
-
-			return nextProxy;
-
-		} else {
-
-			return null;
-
+		
+		LettProxy nextProxy = null;
+		if (proxies.size() > 0) {
+			nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 		}
+
+		return nextProxy;
+
+		//		} else {
+		//
+		//			return null;
+		//
+		//		}
 
 	}
 
-	private static Proxy randProxy(int attempt) {
+	private static Proxy randProxy(int attempt, String serviceName) { // TODO esta usando proxies sempre
 		String env = Main.executionParameters.getEnvironment();
 
-		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+		//		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
-			ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
+		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();		
 
-			// If we are in mode insights or placeholder, than we must use premium proxy always
-			Logging.printLogDebug(logger, "Using only premium proxies on rand.");
-			proxies.addAll(Main.proxies.luminatiProxies);
-
-
-			//			else {
-			//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
-			//					proxies.addAll(Main.proxies.regularProxies);
-			//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
-			//					proxies.addAll(Main.proxies.semiPremiumProxies);
-			//				} else {
-			//					proxies.addAll(Main.proxies.premiumProxies);
-			//				}
-			//			}
-
-			LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
-
-			final String nextProxyHost = nextProxy.getAddress();
-			final int nextProxyPort = nextProxy.getPort();
-			final String nextProxyUser = nextProxy.getUser();
-			final String nextProxyPass = nextProxy.getPass();
-
-			if(nextProxyUser != null){
-				//Autenticação de usuário e senha do proxy e seta a porta e o host para conexão
-				Authenticator a = new Authenticator() {
-					public PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication(nextProxyUser, nextProxyPass.toCharArray());
-					}
-				};
-
-				Authenticator.setDefault(a);
+		if (serviceName != null) {
+			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
+			
+			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
+				if (Main.proxies.bonanzaProxies.size() > 0) {
+					proxies.addAll(Main.proxies.bonanzaProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+				}
+			} 
+			else if (serviceName.equals(Proxies.BUY)) { // buy
+				if (Main.proxies.buyProxiesProxies.size() > 0) {
+					proxies.addAll(Main.proxies.buyProxiesProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+				}
 			}
-
-			return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
-
-		} else {
-
-			Authenticator.setDefault(null);
-
-			return null;
-
+			else if (serviceName.equals(Proxies.SHADER)) { // shader
+				if (Main.proxies.shaderProxies.size() > 0) {
+					proxies.addAll(Main.proxies.shaderProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
+		else { // default is luminati
+			Logging.printLogDebug(logger, "Proxy service: " + Proxies.DEFAULT);
+			proxies.addAll(Main.proxies.luminatiProxies);
+		}
+
+
+		//			else {
+		//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
+		//					proxies.addAll(Main.proxies.regularProxies);
+		//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
+		//					proxies.addAll(Main.proxies.semiPremiumProxies);
+		//				} else {
+		//					proxies.addAll(Main.proxies.premiumProxies);
+		//				}
+		//			}
+
+		LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
+
+		final String nextProxyHost = nextProxy.getAddress();
+		final int nextProxyPort = nextProxy.getPort();
+		final String nextProxyUser = nextProxy.getUser();
+		final String nextProxyPass = nextProxy.getPass();
+
+		if(nextProxyUser != null){
+			//Autenticação de usuário e senha do proxy e seta a porta e o host para conexão
+			Authenticator a = new Authenticator() {
+				public PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication(nextProxyUser, nextProxyPass.toCharArray());
+				}
+			};
+
+			Authenticator.setDefault(a);
+		}
+
+		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
+
+		//		} else {
+		//
+		//			Authenticator.setDefault(null);
+		//
+		//			return null;
+		//
+		//		}
 
 	}
 

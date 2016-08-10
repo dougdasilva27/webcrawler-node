@@ -97,11 +97,20 @@ public class DatabaseManager {
 
 		// connect to mongodb
 		try {
+			
+			/* ************************
+			 * Production environment *
+			 **************************/
 			if ( environment.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
 				this.setMongoPanel();
 				this.setMongoInsights();
 				this.setMongoImages();
-			} else {
+			} 
+			
+			/* *************************
+			 * Development environment *
+			 ***************************/
+			else {
 				mongoClientBackendPanel = new MongoClient("localhost", 27017);
 				mongoBackendPanel = mongoClientBackendPanel.getDatabase("panel");
 				mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
