@@ -77,17 +77,6 @@ public class Crawler implements Runnable {
 		// crawl informations and create a list of products
 		List<Product> products = extract();
 		
-		// take a screenshot
-//		if (webdriver == null) {
-//			webdriver = new CrawlerWebdriver();
-//		}
-//		String path = "/home/samirleao/Pictures/screenshots/" + 
-//				session.getMarket().getCity() + "/" + 
-//				session.getMarket().getName() + "/" +
-//				session.getUrl() + ".jpg";
-//		webdriver.takeScreenshot(session.getUrl(), path);
-//		webdriver.closeDriver();
-		
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 		
 		/* ***************
@@ -125,8 +114,12 @@ public class Crawler implements Runnable {
 //		}
 
 		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
-
 		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
+		
+		if (webdriver != null) {
+			Logging.printLogDebug(logger, session, "Closing webdriver...");
+			webdriver.closeDriver();
+		}
 
 		Logging.printLogDebug(logger, session, "END [trucos = " + session.getTrucoAttempts() + "]");
 
@@ -230,6 +223,18 @@ public class Crawler implements Runnable {
 						// if we found two consecutive equals processed products, persist and end 
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
+							
+							// take a screenshot
+//							if (webdriver == null) {
+//								Logging.printLogDebug(logger, session, "Initializing webdriver");
+//								webdriver = new CrawlerWebdriver();
+//							}
+//							String path = "/home/samirleao/Pictures/screenshots/" + 
+//									session.getMarket().getCity() + "/" + 
+//									session.getMarket().getName() + "/" +
+//									session.getUrl() + ".png";
+//							webdriver.takeScreenshot(session.getUrl(), path);
+							
 							return;
 						}
 					}

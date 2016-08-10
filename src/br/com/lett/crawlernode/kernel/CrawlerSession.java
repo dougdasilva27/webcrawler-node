@@ -11,11 +11,11 @@ import br.com.lett.crawlernode.queue.QueueService;
 
 public class CrawlerSession {
 	
-	public static final String STANDALONE = "standalone";
+	public static final String DISCOVERY = "standalone";
 	public static final String INSIGHTS = "insights";
 	
 	/**
-	 * id of current crawling session. It's the same id of the message from Amazon SQS
+	 * Id of current crawling session. It's the same id of the message from Amazon SQS
 	 */
 	private String sessionId;
 	
@@ -28,7 +28,7 @@ public class CrawlerSession {
 	private String messageReceiptHandle;
 	
 	/**
-	 * type of crawler session: standalone | insights
+	 * Type of crawler session: discovery | insights
 	 */
 	private String type;
 	
@@ -38,32 +38,32 @@ public class CrawlerSession {
 	private String seedId;
 	
 	/**
-	 * base original URL
+	 * Base original URL
 	 */
 	private String originalURL;
 	
 	/**
-	 * sku url being crawled
+	 * Sku url being crawled
 	 */
 	private String url;
 	
 	/**
-	 * processed id associated with the sku being crawled
+	 * Processed id associated with the sku being crawled
 	 */
 	private int processedId;
 	
 	/**
-	 * internal id associated with the sku being crawled
+	 * Internal id associated with the sku being crawled
 	 */
 	private String internalId;
 	
 	/**
-	 * the market associated with this session
+	 * Market associated with this session
 	 */
 	private Market market;
 	
 	/**
-	 * number of truco checks
+	 * Number of truco checks
 	 */
 	private int trucoAttempts;
 	
@@ -73,7 +73,7 @@ public class CrawlerSession {
 	private String proxyServiceName;
 	
 	/**
-	 * this map associates an URL with the number of requests for this URL
+	 * Map associating an URL with the number of requests for this URL
 	 */
 	private Map<String, Integer> urlRequests;
 	
