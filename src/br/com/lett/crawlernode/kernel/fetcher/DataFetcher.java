@@ -645,12 +645,17 @@ public class DataFetcher {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
+			else if (serviceName.equals(Proxies.LUMINATI)) {
+				if (Main.proxies.luminatiProxies.size() > 0) {
+					proxies.addAll(Main.proxies.luminatiProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.LUMINATI + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
-		else { // default is luminati
-			Logging.printLogDebug(logger, "Proxy service: " + Proxies.DEFAULT);
-			proxies.addAll(Main.proxies.luminatiProxies);
+		else {
+			Logging.printLogError(logger, "No proxy service selected.");
 		}
-
 
 			//			else {
 			//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
@@ -708,10 +713,16 @@ public class DataFetcher {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
+			else if (serviceName.equals(Proxies.LUMINATI)) {
+				if (Main.proxies.luminatiProxies.size() > 0) {
+					proxies.addAll(Main.proxies.luminatiProxies);
+				} else {
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.LUMINATI + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
-		else { // default is luminati
-			Logging.printLogDebug(logger, "Proxy service: " + Proxies.DEFAULT);
-			proxies.addAll(Main.proxies.luminatiProxies);
+		else {
+			Logging.printLogError(logger, "No proxy service selected.");
 		}
 
 

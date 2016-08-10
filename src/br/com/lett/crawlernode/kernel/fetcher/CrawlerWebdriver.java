@@ -38,7 +38,7 @@ public class CrawlerWebdriver {
 	/**
 	 * The URL of the hub that connects to the remote webdriver instances
 	 */
-	private final String HUB_URL = "http://54.174.116.105:4444/wd/hub";
+	private final String HUB_URL = "http://104.154.24.237:4444/wd/hub";
 	
 	/**
 	 * Selenium Webdriver instance
