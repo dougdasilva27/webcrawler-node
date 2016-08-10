@@ -61,6 +61,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
+
 	@Override
 	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
@@ -268,7 +269,7 @@ public class BrasilMultisomCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element specialPrice = document.select(".productRight small strong").first();		
+		Element specialPrice = document.select("p.prices ins").first();		
 		
 		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );

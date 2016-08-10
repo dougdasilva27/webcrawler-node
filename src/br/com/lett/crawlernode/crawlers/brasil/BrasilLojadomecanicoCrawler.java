@@ -64,7 +64,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 			
 			// InternalId
 			String internalId = crawlInternalId(doc);
@@ -122,13 +121,13 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			product.setDescription(description);
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
-			
-			products.add(product);
+
+			products.add(product);	
 			
 			/* ***********************************
 			 * crawling data of mutiple products *
 			 *************************************/
-			if(hasVariations(doc)){
+			if(hasVariations(doc)) {
 				
 				Elements skuVariations = doc.select("td[align=left] div[style=padding-top:20px;padding-bottom:30px;width:100%;border-bottom:1px solid #E2E2E2;] div > a");
 				
@@ -197,7 +196,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		}
 		
 		return products;
-
 	}
 
 
@@ -225,6 +223,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 	
 	private Document fetchPageVariation(String url){
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
+		
 		return doc;
 	}
 	
@@ -262,7 +261,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element mainPagePriceElement = document.select("span[itemprop=price]").first();
+		Element mainPagePriceElement = document.select("td.produto > div[style] > div[style=font-size:19px;font-weight:bold;color:#0074c5;]").first();
 
 		if (mainPagePriceElement != null) {
 			price = Float.parseFloat( mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );

@@ -6,19 +6,21 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.kernel.Crawler;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (01/08/2016):
  * 
- * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
+ * 1) For this crawler, we have one url per mutiple skus.
  *  
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
  * 
@@ -26,17 +28,21 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 4) The sku page identification is done simply looking for an specific html element.
  * 
- * 5) Even if a product is unavailable, its price is displayed.
+ * 5) Even if a product is unavailable, its price is not displayed if product has no variations.
  * 
- * 6) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
+ * 6) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
  * the variations of a given sku.
  * 
  * 7) The primary image is the first image in the secondary images selector.
  * 
+ * 8) To get price of variations is accessed a api to get them.
+ * 
+ * 9) In products have variations, price is displayed if product is unavailable;
  * 
  * Examples:
  * ex1 (available): https://www.econtinental.com.br/fogao-electrolux-chef-super-52sb-piso-4-bocas-branco-chama-rapida-bivolt
- * ex2 (unavailable):https://www.econtinental.com.br/ar-split-cassete-springer-48000-btus-quente-e-frio-220v
+ * ex2 (unavailable): https://www.econtinental.com.br/ar-split-cassete-springer-48000-btus-quente-e-frio-220v
+ * ex3 (variations): https://www.econtinental.com.br/lavadora-de-roupas-electrolux-turbo-15kg-turbo-branca
  *
  * Optimizations notes:
  * No optimizations.
@@ -57,6 +63,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
+
 	@Override
 	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
@@ -64,69 +71,150 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
-
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
-			// InternalId
-			String internalId = crawlInternalId(doc);
-
-			// Pid
-			String internalPid = crawlInternalPid(doc);
-
-			// Name
-			String name = crawlName(doc);
-
-			// Availability
-			boolean available = crawlAvailability(doc);
 			
-			// Price
-			Float price = crawlMainPagePrice(doc, available);
+			Elements variations = doc.select("#ctrEscolheTamanho li a");
 
-			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
+			if(variations.size() > 0){
+				
+				/* ***********************************
+				 * crawling data of mutiple products *
+				 *************************************/
+				
+				for(Element e : variations){
+					
+					// InternalID
+					String internalId = e.attr("idgrade");
+					
+					// Name Variation
+					String nameVariation = e.text();
+					
+					// Pid
+					String internalPid = crawlInternalPid(doc);
 
-			// Primary image
-			String primaryImage = crawlPrimaryImage(doc);
+					// Name
+					String name = crawlName(doc) + " - " + nameVariation;
+					
+					//JSON price
+					JSONObject jsonPrice = this.fetchApiPrice(internalId);
+					
+					// Availability
+					boolean available = crawlAvailabilityVariation(e);
+					
+					// Price
+					Float price = crawlPriceVariation(jsonPrice);
 
-			// Secondary images
-			String secondaryImages = crawlSecondaryImages(doc);
+					// Categories
+					ArrayList<String> categories = crawlCategories(doc);
+					String category1 = getCategory(categories, 0);
+					String category2 = getCategory(categories, 1);
+					String category3 = getCategory(categories, 2);
 
-			// Description
-			String description = crawlDescription(doc);
+					// Primary image
+					String primaryImage = crawlPrimaryImage(doc);
 
-			// Stock
-			Integer stock = null;
+					// Secondary images
+					String secondaryImages = crawlSecondaryImages(doc);
 
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
+					// Description
+					String description = crawlDescription(doc);
 
-			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+					// Stock
+					Integer stock = null;
 
-			// Creating the product
-			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
-			product.setUrl(this.session.getUrl());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setAvailable(available);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
+					// Marketplace map
+					Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 
-			products.add(product);
+					// Marketplace
+					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+
+					// Creating the product
+					Product product = new Product();
+					product.setSeedId(this.session.getSeedId());
+					product.setUrl(this.session.getUrl());
+					product.setInternalId(internalId);
+					product.setInternalPid(internalPid);
+					product.setName(name);
+					product.setPrice(price);
+					product.setAvailable(available);
+					product.setCategory1(category1);
+					product.setCategory2(category2);
+					product.setCategory3(category3);
+					product.setPrimaryImage(primaryImage);
+					product.setSecondaryImages(secondaryImages);
+					product.setDescription(description);
+					product.setStock(stock);
+					product.setMarketplace(marketplace);
+
+					products.add(product);
+				}
+			}
+			
+			else {
+				
+				/* ***********************************
+				 * crawling data of only one product *
+				 *************************************/
+
+				// InternalId
+				String internalId = crawlInternalId(doc);
+
+				// Pid
+				String internalPid = crawlInternalPid(doc);
+
+				// Name
+				String name = crawlName(doc);
+
+				// Availability
+				boolean available = crawlAvailability(doc);
+						
+				// Price
+				Float price = crawlMainPagePrice(doc, available);
+				
+				// Categories
+				ArrayList<String> categories = crawlCategories(doc);
+				String category1 = getCategory(categories, 0);
+				String category2 = getCategory(categories, 1);
+				String category3 = getCategory(categories, 2);
+
+				// Primary image
+				String primaryImage = crawlPrimaryImage(doc);
+
+				// Secondary images
+				String secondaryImages = crawlSecondaryImages(doc);
+
+				// Description
+				String description = crawlDescription(doc);
+
+				// Stock
+				Integer stock = null;
+
+				// Marketplace map
+				Map<String, Float> marketplaceMap = crawlMarketplace(doc);
+
+				// Marketplace
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+
+				// Creating the product
+				Product product = new Product();
+				product.setSeedId(this.session.getSeedId());
+				product.setUrl(this.session.getUrl());
+				product.setInternalId(internalId);
+				product.setInternalPid(internalPid);
+				product.setName(name);
+				product.setPrice(price);
+				product.setAvailable(available);
+				product.setCategory1(category1);
+				product.setCategory2(category2);
+				product.setCategory3(category3);
+				product.setPrimaryImage(primaryImage);
+				product.setSecondaryImages(secondaryImages);
+				product.setDescription(description);
+				product.setStock(stock);
+				product.setMarketplace(marketplace);
+
+				products.add(product);				
+			}
+			
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
@@ -146,6 +234,44 @@ public class BrasilEcontinentalCrawler extends Crawler {
 		return false;
 	}
 	
+	/*********************
+	 * Variation product *
+	 *********************/	
+	
+	private JSONObject fetchApiPrice(String internalID){
+		String urlVariation = "https://www.econtinental.com.br/produto/do_escolhe_variacao?idgrade=" + internalID;
+		
+		Map<String,String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/json");
+		headers.put("X-Requested-With", "XMLHttpRequest");
+		
+		JSONObject jsonPrice = new JSONObject(DataFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
+		
+		return jsonPrice;
+	}
+	
+	private Float crawlPriceVariation(JSONObject jsonPrice) {
+		Float price = null;
+		
+		if (jsonPrice.has("valor")) {
+			price = Float.parseFloat(jsonPrice.getString("valor").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		} 
+
+		return price;
+	}
+	
+	private boolean crawlAvailabilityVariation(Element e) {
+		
+		if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
+			int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+			
+			if(stock > 0) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 	/*******************
 	 * General methods *
@@ -153,24 +279,31 @@ public class BrasilEcontinentalCrawler extends Crawler {
 	
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select(".submensagem").first();
+		
+		Element internalIdElement = document.select("#ctrIdGrade").first();
 
-		if (internalIdElement != null) {
-			internalId = internalIdElement.text().toString().trim();
-			
-			if(internalId.contains(":")){
-				int x = internalId.indexOf(":");
-				
-				internalId = internalId.substring(x+1).trim();
-			}
+		if(internalIdElement != null){
+			internalId = internalIdElement.attr("value");
 		}
-
+		
 		return internalId;
 	}
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
+		
+		Element internalPidElement = document.select(".submensagem").first();
 
+		if (internalPidElement != null) {
+			internalPid = internalPidElement.text().toString().trim();
+			
+			if(internalPid.contains(":")){
+				int x = internalPid.indexOf(":");
+				
+				internalPid = internalPid.substring(x+1).trim();
+			}
+		}
+		
 		return internalPid;
 	}
 	
@@ -187,7 +320,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document, boolean available) {
 		Float price = null;
-		Element specialPrice = document.select(".billet-value.ctrValorMoeda").first();		
+		Element specialPrice = document.select(".new-value-by .ctrValorMoeda").first();		
 		
 		if (specialPrice != null && available) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
@@ -269,5 +402,4 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
 		return description;
 	}
-
 }

@@ -183,7 +183,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element mainPagePriceElement = document.select(".product-shop .avista .price").first();
+		Element mainPagePriceElement = document.select(".box-buy .regular-price span").first();
 
 		if (mainPagePriceElement != null) {
 			price = Float.parseFloat( mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );

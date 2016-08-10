@@ -262,14 +262,24 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Performs any desired transformation on the URL before the actual fetching.
-	 * 
 	 * @param the URL we want to modify
 	 * @return the modified URL, that will be used in the fetching
 	 */
 	public String handleURLBeforeFetch(String url) {
 		return url;
 	}
-
+	
+	/**
+	 * Performs the data extraction of the URL in the session.
+	 * The four main steps of this method are:
+	 * <ul>
+	 * <li>Handle Cookies: Set any necessary cookies to do a proper http request of the page.</li>
+	 * <li>Handle URL: Makes any necessary modification on the URL in the session, before the request.</li>
+	 * <li>Fetch: Do a http request and fetch the page data as a DOM.</li>
+	 * <li>Extraction: Crawl all skus in the URL on the crawling session.</li>
+	 * </ul> 
+	 * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an empty array list if no product was found.
+	 */
 	public List<Product> extract() {
 
 		// handle cookie
@@ -281,7 +291,7 @@ public class Crawler implements Runnable {
 		session.setOriginalURL(url);
 		
 		if ( shouldVisit() ) {
-			Document document = preProcessing();
+			Document document = fetch();
 			List<Product> products = extractInformation(document);
 			if (products.isEmpty()) products.add( new Product() );
 			return products;
@@ -306,9 +316,9 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Request the sku URL and parse to a DOM format
-	 * @return parsed HTML in form of a Document
+	 * @return Parsed HTML in form of a Document
 	 */
-	private Document preProcessing() {
+	private Document fetch() {
 		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getUrl(), null, cookies);
 		return Jsoup.parse(html);		
 	}
@@ -330,7 +340,7 @@ public class Crawler implements Runnable {
 	 * Get only the product with the desired internalId.
 	 * @param products
 	 * @param internalId
-	 * @return
+	 * @return The product with the desired internal id.
 	 */
 	private Product getProductByInternalId(List<Product> products, String internalId) {
 		for (Product product : products) {
