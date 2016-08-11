@@ -198,7 +198,7 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
-		LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
+		LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
 
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
@@ -340,7 +340,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -421,7 +421,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -517,7 +517,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getProxyServiceName());
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
