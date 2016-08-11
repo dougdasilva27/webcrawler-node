@@ -28,6 +28,7 @@ import br.com.lett.crawlernode.util.Logging;
  * Parameters:
  * -debug : to print debug log messages on console
  * -environment [development,  production]
+ * -mode [insights, discovery]
  * 
  * <p>Environments:</p>
  * <ul>
@@ -97,7 +98,7 @@ public class Main {
 		queue = queueHandler.getSQS();
 
 		// create the work list
-		workList = new WorkList(1); // TODO voltar para valor padrão
+		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
 
 		// create a task executor
 		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
