@@ -36,9 +36,7 @@ public class BrasilFastshopCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		Element elementProductInfoViewer = doc.select("#widget_product_info_viewer").first();
-
-		if (elementProductInfoViewer != null) {
+		if ( isProductPage(this.session.getUrl(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			String script = getDataLayerJson(doc);
@@ -260,6 +258,15 @@ public class BrasilFastshopCrawler extends Crawler {
 		}
 		
 		return products;
+	}
+	
+	/*******************************
+	 * Product page identification *
+	 *******************************/
+
+	private boolean isProductPage(String url, Document doc) {
+		Element elementProductInfoViewer = doc.select("#widget_product_info_viewer").first();
+		return elementProductInfoViewer != null;
 	}
 
 	private String getDataLayerJson(Document doc) {
