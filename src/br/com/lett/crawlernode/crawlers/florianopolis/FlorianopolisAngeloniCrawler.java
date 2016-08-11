@@ -25,13 +25,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
 		boolean shouldVisit = false;
 
-		shouldVisit = !FILTERS.matcher(href).matches() 
-				&& 
-				(
-						href.startsWith("http://www.angeloni.com.br/super/")
-						||
-						(href.startsWith("http://www.angeloni.com.br/"))
-						);
+		shouldVisit = !FILTERS.matcher(href).matches() && (href.startsWith("http://www.angeloni.com.br/super/"));
 
 		return shouldVisit;
 	}
