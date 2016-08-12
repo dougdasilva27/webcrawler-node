@@ -1,5 +1,5 @@
 
-package br.com.lett.crawlernode.models;
+package br.com.lett.crawlernode.kernel.models;
 
 import java.util.List;
 

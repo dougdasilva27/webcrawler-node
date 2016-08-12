@@ -21,12 +21,17 @@ public class QueueHandler {
 
 	private final String AWS_ACCESS_KEY = "AKIAITCJTG6OHBYGUWLA";
 	private final String SECRET_KEY = "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";
-	
+
 	/**
 	 * Amazon sqs queue to be used only in production mode
 	 */
-	private AmazonSQS sqsProduction;
-	
+	private AmazonSQS sqsInsights;
+
+	/**
+	 * Amazon sqs queue to be used in discovery mode
+	 */
+	private AmazonSQS sqsDiscovery;
+
 	/**
 	 * Amazon sqs queue to be used only in development mode
 	 */
@@ -39,24 +44,30 @@ public class QueueHandler {
 		} catch (Exception e) {
 			throw new AmazonClientException("Cannot create credentials", e);
 		}
-		
+
 		/* ************************
 		 * Production environment *
 		 **************************/
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 			Logging.printLogDebug(logger, "Authenticating in production environment SQS...");
-			
-			sqsProduction = new AmazonSQSClient(credentials);
-			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
-			sqsProduction.setRegion(usEast1);
+
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+				sqsInsights = new AmazonSQSClient(credentials);
+				Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+				sqsInsights.setRegion(usEast1);
+			} else {
+				sqsDiscovery = new AmazonSQSClient(credentials);
+				Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+				sqsDiscovery.setRegion(usEast1);
+			}
 		}
-		
+
 		/* *************************
 		 * Development environment *
 		 ***************************/
 		else {
 			Logging.printLogDebug(logger, "Authenticating in development environment SQS...");
-			
+
 			sqsDevelopment = new AmazonSQSClient(credentials);
 			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 			sqsDevelopment.setRegion(usEast1);
@@ -66,7 +77,10 @@ public class QueueHandler {
 
 	public AmazonSQS getSQS() {
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			return sqsProduction;
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+				return sqsInsights;
+			}
+			return sqsDiscovery;
 		}
 		return sqsDevelopment;
 	}

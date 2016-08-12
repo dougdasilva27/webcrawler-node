@@ -6,19 +6,20 @@ import java.util.Map;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
-import br.com.lett.crawlernode.models.Market;
+import br.com.lett.crawlernode.kernel.models.Market;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueService;
 
 public class CrawlerSession {
-	
-	public static final String DISCOVERY = "standalone";
-	public static final String INSIGHTS = "insights";
-	
+
+	public static final String DISCOVERY_TYPE = "standalone";
+	public static final String INSIGHTS_TYPE = "insights";
+
 	/**
 	 * Id of current crawling session. It's the same id of the message from Amazon SQS
 	 */
 	private String sessionId;
-	
+
 	/**
 	 * A receipt handle used to delete a message from the Amazon sqs
 	 * The id is useful to identify the message, but the it can't be used to delete the message.
@@ -26,87 +27,96 @@ public class CrawlerSession {
 	 * we get the message from the queue 
 	 */
 	private String messageReceiptHandle;
-	
+
 	/**
 	 * Type of crawler session: discovery | insights
 	 */
 	private String type;
-	
+
 	/**
 	 * Current url seed id
 	 */
 	private String seedId;
-	
+
 	/**
 	 * Base original URL
 	 */
 	private String originalURL;
-	
+
 	/**
 	 * Sku url being crawled
 	 */
 	private String url;
-	
+
 	/**
 	 * Processed id associated with the sku being crawled
 	 */
 	private int processedId;
-	
+
 	/**
 	 * Internal id associated with the sku being crawled
 	 */
 	private String internalId;
-	
+
 	/**
 	 * Market associated with this session
 	 */
 	private Market market;
-	
+
 	/**
 	 * Number of truco checks
 	 */
 	private int trucoAttempts;
-	
+
 	/**
 	 * Map associating an URL with the number of requests for this URL
 	 */
 	private Map<String, Integer> urlRequests;
-	
-	
+
+
 	public CrawlerSession(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-		
+
 		// setting truco attempts
 		this.trucoAttempts = 0;
-		
+
 		// creating the urlRequests map
 		this.urlRequests = new HashMap<String, Integer>();
-		
+
 		// setting session id
 		this.sessionId = message.getMessageId();
-		
+
 		// setting message receipt handle
 		this.setMessageReceiptHandle(message.getReceiptHandle());
-		
+
 		// setting Market
 		this.market = new Market(message);
-		
+
 		// setting URL and originalURL
 		this.url = message.getBody();
 		this.originalURL = message.getBody();
-		
-		// setting internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+
+		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+
+			// setting internal id
+			if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+				this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+			}
+
+			// setting processed id
+			if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+				this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+			}
+			
+			// setting session type
+			this.type = INSIGHTS_TYPE;
+		} 
+		else {
+			this.type = DISCOVERY_TYPE;
 		}
-		
-		// setting processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		}
-		
+
 	}
-	
+
 	public CrawlerSession() {
 		super();
 		trucoAttempts = 0;
@@ -199,7 +209,7 @@ public class CrawlerSession {
 	public void setUrlRequest(Map<String, Integer> urlRequest) {
 		this.urlRequests = urlRequest;
 	}
-	
+
 	public void addRequestInfo(String url) {
 		if (urlRequests.containsKey(url)) {
 			urlRequests.put(url, urlRequests.get(url) + 1);
@@ -207,11 +217,11 @@ public class CrawlerSession {
 			urlRequests.put(url, 1);
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		
+
 		sb.append("session id: " + this.sessionId + "\n");
 		sb.append("type: " + this.type + "\n");
 		sb.append("seed id: " + this.seedId + "\n");
@@ -222,9 +232,9 @@ public class CrawlerSession {
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
-		
+
 		sb.append("[URL, requests]\n");
-		
+
 		for (String url : urlRequests.keySet()) {
 			sb.append("[" + url + ", " + urlRequests.get(url) + "]" + "\n");
 		}

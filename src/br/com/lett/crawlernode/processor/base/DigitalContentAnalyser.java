@@ -26,7 +26,7 @@ import br.com.lett.crawlernode.imgprocessing.ImageComparationResult;
 import br.com.lett.crawlernode.imgprocessing.ImageComparator;
 import br.com.lett.crawlernode.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.imgprocessing.NaiveSimilarityFinder;
-import br.com.lett.crawlernode.models.ProcessedModel;
+import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
 
 

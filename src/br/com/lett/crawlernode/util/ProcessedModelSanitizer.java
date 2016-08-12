@@ -7,7 +7,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import br.com.lett.crawlernode.models.ProcessedModel;
+import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 
 public class ProcessedModelSanitizer {
 	

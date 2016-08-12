@@ -46,6 +46,11 @@ import br.com.lett.crawlernode.util.Logging;
  * whatever ecommerce crawler it finds on the queue. Besides, the information inside the message in this mode
  * is expected to be complete, differing from the development, where the only vital information is url, market and city.</li> 
  * </ul>
+ * <p>Modes:</p>
+ * <ul>
+ * <li>insights:</li>
+ * <li>discovery:</li>
+ * </ul>
  * @author Samir Leao
  *
  */

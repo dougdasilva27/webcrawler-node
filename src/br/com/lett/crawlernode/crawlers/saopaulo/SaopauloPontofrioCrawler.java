@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.kernel.Crawler;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
-import br.com.lett.crawlernode.models.Product;
+import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloPontofrioCrawler extends Crawler {

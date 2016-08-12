@@ -10,9 +10,9 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
+import br.com.lett.crawlernode.kernel.models.ProcessedModel;
+import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.models.ProcessedModel;
-import br.com.lett.crawlernode.models.Product;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -86,7 +86,7 @@ public class Crawler implements Runnable {
 		 * There is only one product that will be processed in this mode.
 		 * This product will be selected by it's internalId, passed by the CrawlerSession
 		 */
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
 			for (Product product : products) {
 				if (product.getInternalId() != null && product.getInternalId().equals(session.getInternalId())) {
 					processProduct(product);
@@ -116,6 +116,7 @@ public class Crawler implements Runnable {
 		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
 		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
 		
+		// if the crawler used the webdriver in some point, it must be closed
 		if (webdriver != null) {
 			Logging.printLogDebug(logger, session, "Closing webdriver...");
 			webdriver.closeDriver();
