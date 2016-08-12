@@ -12,9 +12,9 @@ br.com.lett.crawlernode.database
 br.com.lett.crawlernode.imgprocessing
 br.com.lett.crawlernode.kernel
 br.com.lett.crawlernode.kernel.fetcher
+br.com.lett.crawlernode.kernel.models
 br.com.lett.crawlernode.kernel.parser
 br.com.lett.crawlernode.main
-br.com.lett.crawlernode.models
 br.com.lett.crawlernode.processor.base
 br.com.lett.crawlernode.processor.controller
 br.com.lett.crawlernode.processor.extractors
