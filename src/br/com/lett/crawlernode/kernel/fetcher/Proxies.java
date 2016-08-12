@@ -23,7 +23,7 @@ public class Proxies {
 	public static final String BUY = "buy";
 	public static final String BONANZA = "bonanza";
 	
-	public static final String DEFAULT = LUMINATI;
+	public static final String DEFAULT = SHADER;
 
 	/**
 	 * Shader

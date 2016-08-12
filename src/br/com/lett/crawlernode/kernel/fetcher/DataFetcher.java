@@ -72,6 +72,11 @@ public class DataFetcher {
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int ATTEMPTS_SEMIPREMIUM_PROXIES = 8;
 	private static final int ATTEMPTS_REGULAR_PROXIES = 5;
+	
+	// do mais caro para o mais barato
+	private static final int MAX_ATTEMPTS_RANK_1 = 5;
+	private static final int MAX_ATTEMPTS_RANK_2 = 5;
+	private static final int MAX_ATTEMPTS_RANK_3 = 5;
 
 	/**
 	 * Fetch a text string from a URL, either by a GET ou POST http request.
@@ -198,7 +203,7 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
-		LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
+		LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
 
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
@@ -340,7 +345,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
+			LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -421,7 +426,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
+			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -517,7 +522,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getPreferredProxyService());
+			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
