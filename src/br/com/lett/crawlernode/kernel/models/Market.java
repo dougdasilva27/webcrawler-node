@@ -5,7 +5,7 @@ import java.util.Map;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
-import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.server.QueueService;
 
 public class Market {
 	

@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.queue;
+package br.com.lett.crawlernode.server;
 
 import java.util.List;
 import java.util.Map;

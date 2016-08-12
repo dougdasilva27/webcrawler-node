@@ -18,8 +18,8 @@ import br.com.lett.crawlernode.kernel.TaskExecutor;
 import br.com.lett.crawlernode.kernel.WorkList;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.queue.QueueHandler;
-import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.server.QueueHandler;
+import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 

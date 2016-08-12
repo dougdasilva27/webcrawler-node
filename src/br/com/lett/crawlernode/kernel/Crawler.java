@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
-import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

@@ -8,7 +8,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
 
