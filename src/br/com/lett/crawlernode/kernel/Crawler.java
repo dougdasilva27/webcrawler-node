@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.cookie.Cookie;
 
 import org.slf4j.Logger;
@@ -227,17 +228,21 @@ public class Crawler implements Runnable {
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
 							
-							// take a screenshot
+							// create webdriver
 							if (webdriver == null) {
 								Logging.printLogDebug(logger, session, "Initializing webdriver");
 								webdriver = new CrawlerWebdriver();
 							}
-							String path = "/home/samirleao/Pictures/screenshots/" + 
-									session.getMarket().getCity() + "/" + 
-									session.getMarket().getName() + "/" +
-									session.getUrl() + ".png";
+							
+							// get a screenshot from the page
 							File screenshot = webdriver.takeScreenshot(session.getUrl());
-							S3Service.uploadFileToAmazon(session, screenshot, S3Service.SCREENSHOT_UPLOAD_TYPE);
+							
+							// the the page html
+							String html = webdriver.loadUrl(session.getUrl());
+							
+							// upload screenshot and html to Amazon
+							S3Service.uploadFileToAmazon(session, screenshot);
+							S3Service.uploadHtmlToAmazon(session, html);
 							
 							return;
 						}

@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.server;
 
 import java.io.File;
+import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +27,10 @@ public class S3Service {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 	
-	private static final String AWS_ACCESS_KEY = "AKIAITCJTG6OHBYGUWLA";
-	private static final String SECRET_KEY = "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";
-	private static final String SESSION_BUCKET  = "crawler-sessions";
+	private static final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
+	private static final String SECRET_KEY = "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";
 	
-	private static final String SCREENSHOT_FOLDER = "screenshot";
-	private static final String HTML_FOLDER = "html";
+	private static final String SESSION_BUCKET  = "crawler-sessions";
 	
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
 	public static final String HTML_UPLOAD_TYPE = "html";
@@ -49,19 +49,9 @@ public class S3Service {
 	 * @param file
 	 * @param type
 	 */
-	public static void uploadFileToAmazon(CrawlerSession session, File file, String type) {
+	public static void uploadFileToAmazon(CrawlerSession session, File file) {
 		
-		String amazonLocation = null;
-		if (type.equals(SCREENSHOT_UPLOAD_TYPE)) {
-			amazonLocation = session.getSessionId() + "/" + SCREENSHOT_FOLDER + "/" + session.getSessionId() + ".png";
-		}
-		else if (type.equals(HTML_UPLOAD_TYPE)) {
-			amazonLocation = session.getSessionId() + "/" + HTML_FOLDER + "/" + session.getSessionId() + ".html";
-		}
-		else {
-			Logging.printLogError(logger, "Upload type not recognized...aborting file upload...");
-			return;
-		}
+		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".png";
 
 		try {
 			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
@@ -86,6 +76,46 @@ public class S3Service {
 					"communicate with S3, " +
 					"such as not being able to access the network.");
 			Logging.printLogError(logger, session, "Error Message: " + ace.getMessage());
+		}
+	}
+	
+	/**
+	 * Uploads a String as file to Amazon.
+	 * @param session
+	 * @param file
+	 * @param type
+	 */
+	public static void uploadHtmlToAmazon(CrawlerSession session, String html) {		
+		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".html";
+	
+		try {
+			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
+			File htmlFile = new File(session.getSessionId() + ".html");
+			FileUtils.writeStringToFile(htmlFile, html);
+			s3client.putObject(new PutObjectRequest(SESSION_BUCKET, amazonLocation, htmlFile));
+			Logging.printLogDebug(logger, session, "Screenshot uploaded with success!");
+
+		} catch (AmazonServiceException ase) {
+			Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " +
+					"means your request made it " +
+					"to Amazon S3, but was rejected with an error response" +
+					" for some reason.");
+			Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
+			Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
+			Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
+			Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
+			Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
+			
+		} catch (AmazonClientException ace) {
+			Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " +
+					"means the client encountered " +
+					"an internal error while trying to " +
+					"communicate with S3, " +
+					"such as not being able to access the network.");
+			Logging.printLogError(logger, session, "Error Message: " + ace.getMessage());
+			
+		} catch (IOException ex) {
+			Logging.printLogError(logger, session, "Error writing String to file during html upload.");
 		}
 	}
 
