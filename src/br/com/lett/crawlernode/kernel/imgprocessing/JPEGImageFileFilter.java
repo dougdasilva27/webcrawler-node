@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.imgprocessing;
+package br.com.lett.crawlernode.kernel.imgprocessing;
 
 import java.io.File;
 
