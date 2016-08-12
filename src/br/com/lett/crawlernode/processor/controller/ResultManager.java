@@ -413,10 +413,10 @@ public class ResultManager {
 	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
 	 * @throws SQLException 
 	 */
-	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date) throws SQLException {		
-		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "'");
-		return rs;
-	}
+//	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date) throws SQLException {		
+//		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "'");
+//		return rs;
+//	}
 
 	/**
 	 * Método responsável por buscar produtos na tabela Processed modificados recentemente que
@@ -425,10 +425,10 @@ public class ResultManager {
 	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
 	 * @throws SQLException 
 	 */
-	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date, Integer marketId) throws SQLException {		
-		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId);
-		return rs;
-	}
+//	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date, Integer marketId) throws SQLException {		
+//		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId);
+//		return rs;
+//	}
 
 	/**
 	 * Método responsável por buscar produtos de clientes na tabela Processed modificados recentemente que
@@ -437,14 +437,14 @@ public class ResultManager {
 	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
 	 * @throws SQLException 
 	 */
-	private ResultSet fetchClientModifiedProcessedProductsAsPointer(DateTime date, Integer marketId, String market, String city) throws SQLException {		
-		String query = "SELECT processed.*, lett.supplier as lett_supplier FROM processed "
-				+ "LEFT OUTER JOIN lett ON (processed.internal_id = lett."+ city + "_" + market + "_internal_id AND processed.market = " + marketId + ") "
-				+ "WHERE "
-				+ "processed.lmt > '" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId + " AND lett_supplier IS NOT NULL";
-
-		return this.db.runSqlConsult(query);
-	}
+//	private ResultSet fetchClientModifiedProcessedProductsAsPointer(DateTime date, Integer marketId, String market, String city) throws SQLException {		
+//		String query = "SELECT processed.*, lett.supplier as lett_supplier FROM processed "
+//				+ "LEFT OUTER JOIN lett ON (processed.internal_id = lett."+ city + "_" + market + "_internal_id AND processed.market = " + marketId + ") "
+//				+ "WHERE "
+//				+ "processed.lmt > '" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId + " AND lett_supplier IS NOT NULL";
+//
+//		return this.db.runSqlConsult(query);
+//	}
 
 	/**
 	 * Método responsável pela busca de produtos na tabela Crawler, funciona como um apontamento para tal tabela com resultados de um supermercado específico
@@ -452,10 +452,10 @@ public class ResultManager {
 	 * @return - ResultSet com dados do Crawler referente ao Supermercado
 	 * @throws SQLException 
 	 */
-	private ResultSet fetchMarketsAsPointer() throws SQLException {
-		ResultSet rs = this.db.runSqlConsult(Information.queryMarkets);
-		return rs;
-	}
+//	private ResultSet fetchMarketsAsPointer() throws SQLException {
+//		ResultSet rs = this.db.runSqlConsult(Information.queryMarkets);
+//		return rs;
+//	}
 
 	// =================== DADOS PROCESSED ======================
 
@@ -466,63 +466,63 @@ public class ResultManager {
 	 * @param market - Supermercado à ser consultado
 	 * @return ProcessModel com os valores da linha com os parametros da consulta
 	 */
-	private ProcessedModel fetchProcessedProduct(String internal_id, int market) {
-		try {
-
-			// Faz consulta na tabela processed de acordo com os parametros recebidos e os retém em um ResultSet
-			ResultSet rs = this.db.runSqlConsult(Information.queryForSelectProcessedProduct_part1 + internal_id + Information.queryForSelectProcessedProduct_part2 + market);
-			ProcessedModel p = null;
-
-
-			// Enquanto houver próxima linha...
-			while (rs.next()) {
-
-				JSONObject digitalContent;
-				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
-				} catch (Exception e) 	{	digitalContent = null; }
-
-				JSONObject changes;
-				try 					{ 	changes = new JSONObject(rs.getString("changes"));
-				} catch (Exception e) 	{	changes = null; }
-
-				JSONArray similars;
-				try 					{ 	similars = new JSONArray(rs.getString("similars"));
-				} catch (Exception e) 	{	similars = null; }
-
-				JSONArray behaviour;
-				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
-				} catch (Exception e) 	{	behaviour = null; }
-
-				JSONArray marketplace;
-				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
-				} catch (Exception e) 	{	marketplace = null; }
-
-				Integer actual_stock;
-				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-				} catch (Exception e) 	{	actual_stock = null; }
-
-				// Salva resultados de cada coluna em um ProcessModel
-				p = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
-						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), 
-						rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
-						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), 
-						rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
-						rs.getString("original_description"), rs.getFloat("price"), 
-						digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
-				break;
-			}
-			rs.close();
-			// ProcessModel pode ser nulo caso não encontre resultados na tabela processor
-			return p;
-		}
-		// Caso algo ocorra errado o retorno será nulo
-		catch (SQLException e) {
-			Logging.printLogError(logger, "Problem fetching processed product with internal_id=" + internal_id + " and market=" + market);
-			Logging.printLogError(logger, e.getMessage());
-
-			return null;
-		}
-	}
+//	private ProcessedModel fetchProcessedProduct(String internal_id, int market) {
+//		try {
+//
+//			// Faz consulta na tabela processed de acordo com os parametros recebidos e os retém em um ResultSet
+//			ResultSet rs = this.db.runSqlConsult(Information.queryForSelectProcessedProduct_part1 + internal_id + Information.queryForSelectProcessedProduct_part2 + market);
+//			ProcessedModel p = null;
+//
+//
+//			// Enquanto houver próxima linha...
+//			while (rs.next()) {
+//
+//				JSONObject digitalContent;
+//				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
+//				} catch (Exception e) 	{	digitalContent = null; }
+//
+//				JSONObject changes;
+//				try 					{ 	changes = new JSONObject(rs.getString("changes"));
+//				} catch (Exception e) 	{	changes = null; }
+//
+//				JSONArray similars;
+//				try 					{ 	similars = new JSONArray(rs.getString("similars"));
+//				} catch (Exception e) 	{	similars = null; }
+//
+//				JSONArray behaviour;
+//				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
+//				} catch (Exception e) 	{	behaviour = null; }
+//
+//				JSONArray marketplace;
+//				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
+//				} catch (Exception e) 	{	marketplace = null; }
+//
+//				Integer actual_stock;
+//				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
+//				} catch (Exception e) 	{	actual_stock = null; }
+//
+//				// Salva resultados de cada coluna em um ProcessModel
+//				p = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
+//						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), 
+//						rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
+//						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), 
+//						rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
+//						rs.getString("original_description"), rs.getFloat("price"), 
+//						digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
+//				break;
+//			}
+//			rs.close();
+//			// ProcessModel pode ser nulo caso não encontre resultados na tabela processor
+//			return p;
+//		}
+//		// Caso algo ocorra errado o retorno será nulo
+//		catch (SQLException e) {
+//			Logging.printLogError(logger, "Problem fetching processed product with internal_id=" + internal_id + " and market=" + market);
+//			Logging.printLogError(logger, e.getMessage());
+//
+//			return null;
+//		}
+//	}
 
 	/**
 	 * Método responsável pelo preparo da persistência de dados, ou seja, prepara para o envio de dados para o banco.<br>
@@ -532,43 +532,43 @@ public class ResultManager {
 	 * @throws SQLException 
 	 * @category Conexão
 	 */
-	private void saveProcessedModel(ProcessedModel pm) throws SQLException {
-
-		// Prepara O PocessedModel para persistência
-		ProcessedModelSanitizer.prepareToPersist(pm);
-
-		// Caso já exista o produto é atualizada a linha no banco de dados processed
-		if (pm.getId() != null) {
-			this.db.runSqlExecute("UPDATE processed SET "
-					+ "internal_id=" + pm.getInternalId() + ","
-					+ "void = false," // void é sempre false. Se tiver que ser true, é o history que o fará.
-					+ "original_name=" + pm.getOriginalName() + ","
-					+ "original_description=" + pm.getOriginalDescription() + ","
-					+ "class=" + pm.get_class() + ","
-					+ "brand=" + pm.getBrand() + ","
-					+ "recipient=" + pm.getRecipient() + ","
-					+ "quantity=" + pm.getQuantity() + ","
-					+ "multiplier=" + pm.getMultiplier() + ","
-					+ "unit=" + pm.getUnit() + ","
-					+ "extra=" + pm.getExtra() + ","
-					+ "pic=" + pm.getPic() + ","
-					+ "secondary_pics=" + pm.getSecondary_pics() + ","
-					+ "price=" + pm.getPrice() + ","
-					+ "cat1=" + pm.getCat1() + ","
-					+ "cat2=" + pm.getCat2() + ","
-					+ "cat3=" + pm.getCat3() + ","
-					+ "url=" + pm.getUrl() + ","
-					+ "market=" + pm.getMarket() + ","
-					+ "ect=" + pm.getEct() + ","
-					+ "lmt=" + pm.getLmt() + ","
-					+ "changes=" + pm.getChanges() + ", "
-					+ "digital_content='" + pm.getDigitalContent() + "', "
-					+ "behaviour='" + pm.getBehaviour() + "' "
-					+ "WHERE id=" + pm.getId());
-		} else {
-			// Não teremos mais este caso. Quem cria processed agora é o crawler. O processor só atualiza.
-		}
-	}
+//	private void saveProcessedModel(ProcessedModel pm) throws SQLException {
+//
+//		// Prepara O PocessedModel para persistência
+//		ProcessedModelSanitizer.prepareToPersist(pm);
+//
+//		// Caso já exista o produto é atualizada a linha no banco de dados processed
+//		if (pm.getId() != null) {
+//			this.db.runSqlExecute("UPDATE processed SET "
+//					+ "internal_id=" + pm.getInternalId() + ","
+//					+ "void = false," // void é sempre false. Se tiver que ser true, é o history que o fará.
+//					+ "original_name=" + pm.getOriginalName() + ","
+//					+ "original_description=" + pm.getOriginalDescription() + ","
+//					+ "class=" + pm.get_class() + ","
+//					+ "brand=" + pm.getBrand() + ","
+//					+ "recipient=" + pm.getRecipient() + ","
+//					+ "quantity=" + pm.getQuantity() + ","
+//					+ "multiplier=" + pm.getMultiplier() + ","
+//					+ "unit=" + pm.getUnit() + ","
+//					+ "extra=" + pm.getExtra() + ","
+//					+ "pic=" + pm.getPic() + ","
+//					+ "secondary_pics=" + pm.getSecondary_pics() + ","
+//					+ "price=" + pm.getPrice() + ","
+//					+ "cat1=" + pm.getCat1() + ","
+//					+ "cat2=" + pm.getCat2() + ","
+//					+ "cat3=" + pm.getCat3() + ","
+//					+ "url=" + pm.getUrl() + ","
+//					+ "market=" + pm.getMarket() + ","
+//					+ "ect=" + pm.getEct() + ","
+//					+ "lmt=" + pm.getLmt() + ","
+//					+ "changes=" + pm.getChanges() + ", "
+//					+ "digital_content='" + pm.getDigitalContent() + "', "
+//					+ "behaviour='" + pm.getBehaviour() + "' "
+//					+ "WHERE id=" + pm.getId());
+//		} else {
+//			// Não teremos mais este caso. Quem cria processed agora é o crawler. O processor só atualiza.
+//		}
+//	}
 
 	/**
 	 * 
@@ -633,119 +633,6 @@ public class ResultManager {
 
 		return pm;
 	}
-
-	/**
-	 * Método responsável por testar o processamento de todos os produtos de um único supermercado.
-	 * Exibe número de marcas, classes, recipientes, unidades estraídas pelo Processor.
-	 * @author doug
-	 * @param market - Supermercado a ser testado
-	 * @param saveProcessedModel - Define se salva os dados na tabela processed ou não
-	 * @throws SQLException
-	 * @category Manipulação
-	 * 
-	 */
-//	public void processProducts(String city, String market, boolean test) throws SQLException{
-//
-//		// Variável para medir tempo...
-//		long start = System.currentTimeMillis();		
-//		ResultSet rs = null;
-//
-//
-//		// Popular lista de ids de supermercado
-//		List<Integer> marketIdsToPersist = new ArrayList<Integer>();
-//
-//		rs = this.fetchMarketsAsPointer();
-//
-//		while(rs.next()) {
-//			if(city != null && market == null) {
-//				if(rs.getString("city").equals(city)) marketIdsToPersist.add(rs.getInt("id"));
-//			} else {
-//				if(rs.getString("city").equals(city) && rs.getString("name").equals(market)) marketIdsToPersist.add(rs.getInt("id"));
-//			}
-//		}
-//
-//		Logging.printLogDebug(logger, "Lista de ids de markets que vou processar: " + marketIdsToPersist);
-//
-//		// Processando um supermercado por vez
-//
-//		// Contadores com o resultado de contéudos processados
-//		int countBrand = 0, countClass = 0, countRecipient = 0, countQtd = 0, countUnit = 0, countMult = 0, count = 0;
-//
-//		for(int marketId: marketIdsToPersist) {
-//
-//			rs = this.fetchModifiedProcessedProductsAsPointer(new DateTime().minusDays(1), marketId);
-//
-//			// Enquanto houver linhas, faça...
-//			while (rs.next()) {
-//
-//				JSONObject digitalContent;
-//				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
-//				} catch (Exception e) 	{	digitalContent = null; }
-//
-//				JSONObject changes;
-//				try 					{ 	changes = new JSONObject(rs.getString("changes"));
-//				} catch (Exception e) 	{	changes = null; }
-//
-//				JSONArray similars;
-//				try 					{ 	similars = new JSONArray(rs.getString("similars"));
-//				} catch (Exception e) 	{	similars = null; }
-//
-//				JSONArray behaviour;
-//				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
-//				} catch (Exception e) 	{	behaviour = null; }
-//
-//				JSONArray marketplace;
-//				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
-//				} catch (Exception e) 	{	marketplace = null; }
-//
-//				Integer actual_stock;
-//				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-//				} catch (Exception e) 	{	actual_stock = null; }
-//
-//				// Transfere os valores de cada coluna de cada linha para um Crawler model
-//				ProcessedModel pm = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
-//						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
-//						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"),
-//						changes, rs.getString("original_description"),
-//						rs.getFloat("price"), digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
-//
-//
-//				if (logActivated) Logging.printLogDebug(logger, "\n\n\n\n--------------------------------------------------------------------------------------------------------------");
-//				if (logActivated) Logging.printLogDebug(logger, "INICIANDO PROCESSAMENTO DE PRODUTO: " + pm.getOriginalName());
-//
-//				// Através do método processProduct minera os valores para popular/atualizar o ProcessedModel
-//				ProcessedModel pm_new = this.processProduct(pm);
-//
-//				if (logActivated) Logging.printLogDebug(logger, "SALVANDO PRODUTO:");
-//
-//				// Insere ou atualiza o ProcessedModel no banco de dados
-//				this.saveProcessedModel(pm_new);
-//				if (logActivated) Logging.printLogDebug(logger, "success!");
-//				if (logActivated) Logging.printLogDebug(logger, "--------------------------------------------------------------------------------------------------------------");
-//
-//				// Verifica a quantidade atributos extraídos do CrawlerModel
-//				if(pm.getBrand()==null) countBrand++;
-//				if(pm.get_class()==null || pm.get_class().isEmpty())  countClass++;					
-//				if(pm.getRecipient()!=null) countRecipient++;
-//				if(pm.getMultiplier()!=1) countMult++;
-//				if(pm.getQuantity()!= null) countQtd++;
-//				if(pm.getUnit()!=null) countUnit++;
-//				count++;
-//			}
-//
-//		}
-//
-//		// Mostra resultados 
-//		Logging.printLogDebug(logger, "Products tested: " + count +
-//				"\nBrands not found found: " + countBrand +
-//				"\nClass not found: " + countClass +
-//				"\nRecipients found: " + countRecipient +
-//				"\nQuantities found: " + countQtd +
-//				"\nUnits found: " + countUnit +
-//				"\nMultiplier found: " + countMult +
-//				"\nExecution time: " + ((System.currentTimeMillis() - start)/(1000*60.0)) + "min");
-//
-//	}
 
 	/**
 	 * Atualiza informações de conteúdo digital no objeto Processed.

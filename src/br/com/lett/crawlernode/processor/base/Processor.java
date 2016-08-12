@@ -29,7 +29,6 @@ public class Processor {
 
 	/**
 	 * Process the product and create a new ProcessedModel based on the crawled product.
-	 * 
 	 * @param product
 	 * @param session
 	 * @return a new ProcessedModel or null in case the Product model has invalid informations
