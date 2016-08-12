@@ -6,6 +6,7 @@ import java.util.Map;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
+import br.com.lett.crawlernode.kernel.fetcher.LettProxy;
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
@@ -72,6 +73,11 @@ public class CrawlerSession {
 	 * Map associating an URL with the number of requests for this URL
 	 */
 	private Map<String, Integer> urlRequests;
+	
+	/**
+	 * Map associating an URL with the last proxy used to request this URL
+	 */
+	private Map<String, LettProxy> lastURLRequest;
 
 
 	public CrawlerSession(Message message) {
@@ -82,6 +88,8 @@ public class CrawlerSession {
 
 		// creating the urlRequests map
 		this.urlRequests = new HashMap<String, Integer>();
+		
+		this.lastURLRequest = new HashMap<String, LettProxy>();
 
 		// setting session id
 		this.sessionId = message.getMessageId();
@@ -240,6 +248,18 @@ public class CrawlerSession {
 		}
 
 		return sb.toString();
+	}
+	
+	public void addProxyRequestInfo(String url, LettProxy proxy) {
+		this.lastURLRequest.put(url, proxy);
+	}
+
+	public Map<String, LettProxy> getLastURLRequest() {
+		return lastURLRequest;
+	}
+
+	public void setLastURLRequest(Map<String, LettProxy> lastURLRequest) {
+		this.lastURLRequest = lastURLRequest;
 	}
 
 }

@@ -204,6 +204,8 @@ public class DataFetcher {
 
 		String randUserAgent = randUserAgent();
 		LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
+		
+		session.addProxyRequestInfo(url, randProxy);
 
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
@@ -346,6 +348,8 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
+			
+			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -427,6 +431,8 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
+			
+			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -523,6 +529,8 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
+			
+			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
