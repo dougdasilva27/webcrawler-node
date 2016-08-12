@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.kernel;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -15,6 +16,7 @@ import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -226,15 +228,16 @@ public class Crawler implements Runnable {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
 							
 							// take a screenshot
-//							if (webdriver == null) {
-//								Logging.printLogDebug(logger, session, "Initializing webdriver");
-//								webdriver = new CrawlerWebdriver();
-//							}
-//							String path = "/home/samirleao/Pictures/screenshots/" + 
-//									session.getMarket().getCity() + "/" + 
-//									session.getMarket().getName() + "/" +
-//									session.getUrl() + ".png";
-//							webdriver.takeScreenshot(session.getUrl(), path);
+							if (webdriver == null) {
+								Logging.printLogDebug(logger, session, "Initializing webdriver");
+								webdriver = new CrawlerWebdriver();
+							}
+							String path = "/home/samirleao/Pictures/screenshots/" + 
+									session.getMarket().getCity() + "/" + 
+									session.getMarket().getName() + "/" +
+									session.getUrl() + ".png";
+							File screenshot = webdriver.takeScreenshot(session.getUrl());
+							S3Service.uploadFileToAmazon(session, screenshot, S3Service.SCREENSHOT_UPLOAD_TYPE);
 							
 							return;
 						}
