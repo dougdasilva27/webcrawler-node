@@ -867,8 +867,6 @@ public class DataFetcher {
 		else {
 			service = Proxies.NO_PROXY;
 		}
-		
-		System.err.println("attempt = " + attempt + " proxy selecionado: " + service);
 
 		return service;
 	}
