@@ -228,21 +228,21 @@ public class Crawler implements Runnable {
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
 							
-							// create webdriver
-							if (webdriver == null) {
-								Logging.printLogDebug(logger, session, "Initializing webdriver");
-								webdriver = new CrawlerWebdriver();
-							}
-							
-							// get a screenshot from the page
-							File screenshot = webdriver.takeScreenshot(session.getUrl());
-							
-							// the the page html
-							String html = webdriver.loadUrl(session.getUrl());
-							
-							// upload screenshot and html to Amazon
-							S3Service.uploadFileToAmazon(session, screenshot);
-							S3Service.uploadHtmlToAmazon(session, html);
+//							// create webdriver
+//							if (webdriver == null) {
+//								Logging.printLogDebug(logger, session, "Initializing webdriver");
+//								webdriver = new CrawlerWebdriver();
+//							}
+//							
+//							// get a screenshot from the page
+//							File screenshot = webdriver.takeScreenshot(session.getUrl());
+//							
+//							// the the page html
+//							String html = webdriver.loadUrl(session.getUrl());
+//							
+//							// upload screenshot and html to Amazon
+//							S3Service.uploadFileToAmazon(session, screenshot);
+//							S3Service.uploadHtmlToAmazon(session, html);
 							
 							return;
 						}
