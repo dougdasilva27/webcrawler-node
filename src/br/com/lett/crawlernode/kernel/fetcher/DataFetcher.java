@@ -70,13 +70,7 @@ public class DataFetcher {
 	public static final String POST_REQUEST = "POST";
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
-	private static final int ATTEMPTS_SEMIPREMIUM_PROXIES = 8;
-	private static final int ATTEMPTS_REGULAR_PROXIES = 5;
-	
-	// do mais caro para o mais barato
-	private static final int MAX_ATTEMPTS_RANK_1 = 5;
-	private static final int MAX_ATTEMPTS_RANK_2 = 5;
-	private static final int MAX_ATTEMPTS_RANK_3 = 5;
+	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
 	/**
 	 * Fetch a text string from a URL, either by a GET ou POST http request.
@@ -203,8 +197,8 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
-		LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
-		
+		LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+
 		session.addProxyRequestInfo(url, randProxy);
 
 		CookieStore cookieStore = new BasicCookieStore();
@@ -216,20 +210,33 @@ public class DataFetcher {
 
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-		if(randProxy.getUser() != null) {
-			credentialsProvider.setCredentials(
-					new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-					new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
-					);
+		if (randProxy != null) {
+			if(randProxy.getUser() != null) {
+				credentialsProvider.setCredentials(
+						new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+						);
+			}
 		}
 
-		HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+		HttpHost proxy = null;
+		if (randProxy != null) {
+			proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+		}
 
-		RequestConfig requestConfig = RequestConfig.custom()
-				.setCookieSpec(CookieSpecs.STANDARD)
-				.setRedirectsEnabled(false)
-				.setProxy(proxy)
-				.build();
+		RequestConfig requestConfig = null;
+		if (proxy != null) {
+			requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(false)
+					.setProxy(proxy)
+					.build();
+		} else {
+			requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(false)
+					.build();
+		}
 
 
 		Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -277,7 +284,11 @@ public class DataFetcher {
 
 		}
 
-		Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+		if (proxy != null) {
+			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+		} else {
+			Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+		}
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
@@ -347,8 +358,8 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, Proxies.SHADER); // TODO
-			
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+
 			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -362,20 +373,33 @@ public class DataFetcher {
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-			if(randProxy.getUser() != null) {
-				credentialsProvider.setCredentials(
-						new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
-						);
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
 			}
 
-			HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
 
-			RequestConfig requestConfig = RequestConfig.custom()
-					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(true) // set redirect to true
-					.setProxy(proxy)
-					.build();
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.build();
+			}
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -390,7 +414,11 @@ public class DataFetcher {
 			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
 
-			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
+			if (proxy != null) {
+				Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
+			} else {
+				Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+			}
 
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -430,8 +458,8 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
-			
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+
 			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -445,20 +473,33 @@ public class DataFetcher {
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-			if(randProxy.getUser() != null) {
-				credentialsProvider.setCredentials(
-						new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
-						);
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
 			}
 
-			HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
 
-			RequestConfig requestConfig = RequestConfig.custom()
-					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(false)
-					.setProxy(proxy)
-					.build();
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(false)
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(false)
+						.build();
+			}
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -489,7 +530,11 @@ public class DataFetcher {
 
 			}
 
-			Logging.printLogDebug(logger, "Request using proxy: " + httpPost.getConfig().getProxy());
+			if (proxy != null) {
+				Logging.printLogDebug(logger, "Request using proxy: " + httpPost.getConfig().getProxy());
+			} else {
+				Logging.printLogDebug(logger, "Request sem proxy.");
+			}
 
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
@@ -528,8 +573,8 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, Proxies.DEFAULT); // TODO
-			
+			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+
 			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -541,20 +586,33 @@ public class DataFetcher {
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-			if(randProxy.getUser() != null) {
-				credentialsProvider.setCredentials(
-						new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
-						);
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
 			}
 
-			HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
 
-			RequestConfig requestConfig = RequestConfig.custom()
-					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(false)
-					.setProxy(proxy)
-					.build();
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(false)
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(false)
+						.build();
+			}
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -577,8 +635,12 @@ public class DataFetcher {
 			}
 
 			httpPost.setConfig(requestConfig);
-
-			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+			
+			if (proxy != null) {
+				Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+			} else {
+				Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+			}
 
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
@@ -627,16 +689,14 @@ public class DataFetcher {
 	}
 
 
-	private static LettProxy randLettProxy(int attempt, String serviceName) { // TODO esta usando proxies sempre
-		String env = Main.executionParameters.getEnvironment();
-
-		//		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-
+	private static LettProxy randLettProxy(int attempt, ArrayList<String> proxyServices) {
 		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
+
+		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
 			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
-			
+
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
 				if (Main.proxies.bonanzaProxies.size() > 0) {
 					proxies.addAll(Main.proxies.bonanzaProxies);
@@ -658,53 +718,36 @@ public class DataFetcher {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
-			else if (serviceName.equals(Proxies.LUMINATI)) {
-				if (Main.proxies.luminatiProxies.size() > 0) {
-					proxies.addAll(Main.proxies.luminatiProxies);
+			else if (serviceName.equals(Proxies.STORM)) { // storm
+				if (Main.proxies.storm.size() > 0) {
+					proxies.addAll(Main.proxies.storm);
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.LUMINATI + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
-		else {
-			Logging.printLogError(logger, "No proxy service selected.");
+
+		if (proxies.isEmpty()) { // no_proxy
+			Logging.printLogDebug(logger, "Will request with no proxy...");
+			return null;
 		}
 
-			//			else {
-			//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
-			//					proxies.addAll(Main.proxies.regularProxies);
-			//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
-			//					proxies.addAll(Main.proxies.semiPremiumProxies);
-			//				} else {
-			//					proxies.addAll(Main.proxies.premiumProxies);
-			//				}
-			//			}
-		
 		LettProxy nextProxy = null;
 		if (proxies.size() > 0) {
 			nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 		}
 
 		return nextProxy;
-
-		//		} else {
-		//
-		//			return null;
-		//
-		//		}
-
 	}
 
-	private static Proxy randProxy(int attempt, String serviceName) { // TODO esta usando proxies sempre
-		String env = Main.executionParameters.getEnvironment();
+	private static Proxy randProxy(int attempt, ArrayList<String> proxyServices) {
+		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
 
-		//		if(env.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-
-		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();		
+		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
 			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
-			
+
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
 				if (Main.proxies.bonanzaProxies.size() > 0) {
 					proxies.addAll(Main.proxies.bonanzaProxies);
@@ -726,28 +769,19 @@ public class DataFetcher {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
-			else if (serviceName.equals(Proxies.LUMINATI)) {
-				if (Main.proxies.luminatiProxies.size() > 0) {
-					proxies.addAll(Main.proxies.luminatiProxies);
+			else if (serviceName.equals(Proxies.STORM)) { // storm
+				if (Main.proxies.storm.size() > 0) {
+					proxies.addAll(Main.proxies.storm);
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.LUMINATI + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
-		else {
-			Logging.printLogError(logger, "No proxy service selected.");
+
+		if (proxies.isEmpty()) {
+			Logging.printLogDebug(logger, "Will request with no proxy...");
+			return null;
 		}
-
-
-		//			else {
-		//				if(attempt < ATTEMPTS_REGULAR_PROXIES+1 && !Main.proxies.regularProxies.isEmpty()){
-		//					proxies.addAll(Main.proxies.regularProxies);
-		//				} else if(attempt < ATTEMPTS_SEMIPREMIUM_PROXIES+1 && !Main.proxies.semiPremiumProxies.isEmpty()){
-		//					proxies.addAll(Main.proxies.semiPremiumProxies);
-		//				} else {
-		//					proxies.addAll(Main.proxies.premiumProxies);
-		//				}
-		//			}
 
 		LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 
@@ -768,15 +802,6 @@ public class DataFetcher {
 		}
 
 		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
-
-		//		} else {
-		//
-		//			Authenticator.setDefault(null);
-		//
-		//			return null;
-		//
-		//		}
-
 	}
 
 
@@ -807,6 +832,45 @@ public class DataFetcher {
 
 		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
 
+	}
+
+	private static String getProxyService(int attempt, ArrayList<String> proxyServices) {
+		String service = null;
+
+		if (proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
+			service = Proxies.NO_PROXY;
+		}
+
+		if (attempt <= MAX_ATTEMPTS_PER_PROXY) { // first interval of attempts...the first proxy service on the list
+			service = proxyServices.get(0);
+		}
+		else if (attempt > MAX_ATTEMPTS_PER_PROXY && attempt <= MAX_ATTEMPTS_PER_PROXY*2) { // second interval of attempts
+			if (proxyServices.size() > 1) {
+				service = proxyServices.get(1);
+			}
+		}
+		else if (attempt > MAX_ATTEMPTS_PER_PROXY*2 && attempt <= MAX_ATTEMPTS_PER_PROXY*3) { // third interval of attempts
+			if (proxyServices.size() > 2) {
+				service = proxyServices.get(2);
+			}
+		}
+		else if (attempt > MAX_ATTEMPTS_PER_PROXY*3 && attempt <= MAX_ATTEMPTS_PER_PROXY*4) { // fourth interval of attempts
+			if (proxyServices.size() > 3) {
+				service = proxyServices.get(3);
+			}
+		}
+		else if (attempt > MAX_ATTEMPTS_PER_PROXY*4 && attempt <= MAX_ATTEMPTS_PER_PROXY*5) { // fourth interval of attempts
+			if (proxyServices.size() > 4) {
+				service = proxyServices.get(4);
+			}
+		}
+		else {
+			service = Proxies.NO_PROXY;
+		}
+		
+		System.err.println("attempt = " + attempt + " proxy selecionado: " + service);
+
+		return service;
 	}
 
 

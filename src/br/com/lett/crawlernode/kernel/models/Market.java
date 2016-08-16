@@ -51,7 +51,7 @@ public class Market {
 			ArrayList<String> proxies = new ArrayList<String>();
 			String[] tokens = proxiesFromMessage.split(",");
 			for (String token : tokens) {
-				proxies.add(token.trim());
+				proxies.add(token.replaceAll("\"", "").trim());
 			}
 			this.setProxies(proxies);
 		}

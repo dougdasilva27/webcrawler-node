@@ -97,6 +97,7 @@ public class Main {
 		proxies.fetchBonanzaProxies();
 		proxies.fetchShaderProxies();
 		proxies.fetchBuyProxies();
+		proxies.fetchStormProxies();
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();

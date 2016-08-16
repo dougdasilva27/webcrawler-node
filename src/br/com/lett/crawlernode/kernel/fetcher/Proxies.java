@@ -23,6 +23,7 @@ public class Proxies {
 	public static final String BUY = "buy";
 	public static final String BONANZA = "bonanza";
 	public static final String STORM = "storm";
+	public static final String NO_PROXY = "no_proxy";
 
 	public static final String DEFAULT = SHADER;
 
