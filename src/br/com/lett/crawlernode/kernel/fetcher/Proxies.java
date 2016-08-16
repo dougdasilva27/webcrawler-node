@@ -17,19 +17,20 @@ import br.com.lett.crawlernode.util.Logging;
 public class Proxies {
 
 	private static final Logger logger = LoggerFactory.getLogger(Proxies.class);
-	
+
 	public static final String SHADER = "shader";
 	public static final String LUMINATI = "luminati";
 	public static final String BUY = "buy";
 	public static final String BONANZA = "bonanza";
-	
+	public static final String STORM = "storm";
+
 	public static final String DEFAULT = SHADER;
 
 	/**
 	 * Shader
 	 */
 	public ArrayList<LettProxy> shaderProxies;
-	
+
 	/**
 	 * Luminati
 	 */
@@ -38,26 +39,32 @@ public class Proxies {
 	/**
 	 * ByProxies
 	 */
-	public ArrayList<LettProxy> buyProxiesProxies;
-	
+	public ArrayList<LettProxy> buyProxies;
+
 	/**
 	 * Proxy bonanza
 	 */
 	public ArrayList<LettProxy> bonanzaProxies;
-	
+
+	/**
+	 * Storm
+	 */
+	public ArrayList<LettProxy> storm;
+
 
 	public Proxies() {
 		this.luminatiProxies = new ArrayList<LettProxy>();
 		this.shaderProxies = new ArrayList<LettProxy>();
-		this.buyProxiesProxies = new ArrayList<LettProxy>();
+		this.buyProxies = new ArrayList<LettProxy>();
 		this.bonanzaProxies = new ArrayList<LettProxy>();
+		this.storm = new ArrayList<LettProxy>();
 	}
-	
+
 	public void fetchLuminatiProxies() {
 		Logging.printLogDebug(logger, "Fetching Luminati proxies...");
-		
+
 		luminatiProxies.add(new LettProxy("luminati", "zproxy.luminati.io", 22225, "Brasil Luminati", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
-	
+
 		Logging.printLogDebug(logger, "Luminati proxies fetched with success! [" + this.luminatiProxies.size() + " proxies fetched]");
 	}
 
@@ -79,7 +86,7 @@ public class Proxies {
 
 			while ((inputLine = in.readLine()) != null) {
 
-				buyProxiesProxies.add(new LettProxy("buyproxies.org", 
+				buyProxies.add(new LettProxy("buyproxies.org", 
 						inputLine.split(":")[0], 
 						55555, 
 						"USA", 
@@ -90,7 +97,7 @@ public class Proxies {
 			}
 			in.close();
 
-			Logging.printLogDebug(logger, "Buy proxies fetched with success! [" + this.buyProxiesProxies.size() + " proxies fetched]");
+			Logging.printLogDebug(logger, "Buy proxies fetched with success! [" + this.buyProxies.size() + " proxies fetched]");
 		}
 		catch (Exception e) {
 			Logging.printLogError(logger, "Error fetching regular proxies [" + e.getMessage() + "]");
@@ -98,69 +105,70 @@ public class Proxies {
 
 	}
 
-	public void fetchShaderProxies() {		
-		try {
-			
-			Logging.printLogDebug(logger, "Fetching Shader proxies...");
-			
-			shaderProxies.add(new LettProxy("shader", "138.99.122.129", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.131", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.135", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.137", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.141", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.143", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.147", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.149", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.153", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.155", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.159", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.161", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.165", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.167", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.171", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.173", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.177", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.179", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.183", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.185", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.189", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.191", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.195", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.197", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.201", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.203", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.207", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.209", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.213", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.215", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.217", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.219", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.221", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.223", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.225", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.227", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.229", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.231", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.233", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.235", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.237", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.239", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.241", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.243", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.245", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.247", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.249", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.251", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.253", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			shaderProxies.add(new LettProxy("shader", "138.99.122.255", 60000, "Brasil", "lett", "hQEu5srTMe"));
-			
-			Logging.printLogDebug(logger, "Shader proxies fetched with success! [" + this.shaderProxies.size() + " proxies fetched]");
-			
-		} catch(Exception e) {
-			Logging.printLogError(logger, "Error fetching Shader proxies [" + e.getMessage() + "]");
-		}
+	public void fetchShaderProxies() {					
+		Logging.printLogDebug(logger, "Fetching Shader proxies...");
+
+		shaderProxies.add(new LettProxy("shader", "138.99.122.129", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.131", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.135", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.137", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.141", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.143", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.147", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.149", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.153", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.155", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.159", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.161", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.165", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.167", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.171", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.173", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.177", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.179", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.183", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.185", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.189", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.191", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.195", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.197", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.201", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.203", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.207", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.209", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.213", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.215", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.217", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.219", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.221", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.223", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.225", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.227", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.229", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.231", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.233", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.235", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.237", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.239", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.241", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.243", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.245", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.247", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.249", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.251", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.253", 60000, "Brasil", "lett", "hQEu5srTMe"));
+		shaderProxies.add(new LettProxy("shader", "138.99.122.255", 60000, "Brasil", "lett", "hQEu5srTMe"));
+
+		Logging.printLogDebug(logger, "Shader proxies fetched with success! [" + this.shaderProxies.size() + " proxies fetched]");
+
 	}
-	
+
+	public void fetchStormProxies() {
+		Logging.printLogDebug(logger, "Fetching Storm proxies...");
+		
+		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
+	}
+
 	public void fetchBonanzaProxies() {
 		try {
 
@@ -198,11 +206,11 @@ public class Proxies {
 						username, 
 						pass));
 			}
-			
+
 			Logging.printLogDebug(logger, "Bonanza proxies fetched with success! [" + this.bonanzaProxies.size() + " proxies fetched]");
-			
+
 		} catch (Exception e) {
-			
+
 		}
 	}
 

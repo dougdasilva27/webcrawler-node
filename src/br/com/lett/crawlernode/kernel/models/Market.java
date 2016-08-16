@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.kernel.models;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import com.amazonaws.services.sqs.model.Message;
@@ -12,7 +13,7 @@ public class Market {
 	private int id;
 	private String city;
 	private String name;
-	private String preferredProxyService;
+	private ArrayList<String> proxies;
 	
 	public Market(
 			int id, 
@@ -23,7 +24,7 @@ public class Market {
 		this.id = id;
 		this.city = city;
 		this.name = name;
-		this.preferredProxyService = preferredProxyService;
+		this.proxies = new ArrayList<String>();
 	}
 	
 	public Market(Message message) {
@@ -44,10 +45,17 @@ public class Market {
 			this.name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
 		}
 		
-		// market preferred proxy service
+		// proxies
 		if (attrMap.containsKey(QueueService.PROXY_SERVICE_MESSAGE_ATTR)) {
-			this.preferredProxyService = attrMap.get(QueueService.PROXY_SERVICE_MESSAGE_ATTR).getStringValue();
+			String proxiesFromMessage = attrMap.get(QueueService.PROXY_SERVICE_MESSAGE_ATTR).getStringValue().replace("[", "").replace("]", "");
+			ArrayList<String> proxies = new ArrayList<String>();
+			String[] tokens = proxiesFromMessage.split(",");
+			for (String token : tokens) {
+				proxies.add(token.trim());
+			}
+			this.setProxies(proxies);
 		}
+		
 	}
 
 	public int getNumber() {
@@ -73,20 +81,19 @@ public class Market {
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public String getPreferredProxyService() {
-		return preferredProxyService;
-	}
-
-	public void setPreferredProxyService(String preferredProxyService) {
-		this.preferredProxyService = preferredProxyService;
-	}
 	
 	@Override
 	public String toString() {
 		return "Market [id=" + this.id + 
 				", city=" + this.city + 
-				", name=" + this.name + 
-				", preferred proxy service=" + this.preferredProxyService + "]";
+				", name=" + this.name;
+	}
+
+	public ArrayList<String> getProxies() {
+		return proxies;
+	}
+
+	public void setProxies(ArrayList<String> proxies) {
+		this.proxies = proxies;
 	}
 }

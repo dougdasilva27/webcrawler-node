@@ -41,7 +41,7 @@ public class QueueService {
 	public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
-	public static final String PROXY_SERVICE_MESSAGE_ATTR = "proxy";
+	public static final String PROXY_SERVICE_MESSAGE_ATTR = "proxies";
 
 
 	/**

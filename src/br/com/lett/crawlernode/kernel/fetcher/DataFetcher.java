@@ -645,8 +645,8 @@ public class DataFetcher {
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxiesProxies.size() > 0) {
-					proxies.addAll(Main.proxies.buyProxiesProxies);
+				if (Main.proxies.buyProxies.size() > 0) {
+					proxies.addAll(Main.proxies.buyProxies);
 				} else {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
@@ -713,8 +713,8 @@ public class DataFetcher {
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxiesProxies.size() > 0) {
-					proxies.addAll(Main.proxies.buyProxiesProxies);
+				if (Main.proxies.buyProxies.size() > 0) {
+					proxies.addAll(Main.proxies.buyProxies);
 				} else {
 					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
