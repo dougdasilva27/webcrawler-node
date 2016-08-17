@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.kernel.Crawler;
@@ -53,8 +54,11 @@ public class SaopauloEmporiumCrawler extends Crawler {
 			String name = elementName.text().replace("'", "").trim();
 
 			// Preço
-			Elements elementPrice = doc.select("td.precoGR");
-			Float price = Float.parseFloat(elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			Float price = null;
+			Element elementPrice = doc.select("td.precoGR").last();
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
 
 			// Disponibilidade
 			boolean available = true;

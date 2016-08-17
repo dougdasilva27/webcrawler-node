@@ -139,7 +139,7 @@ public class Information {
 			return file;
 		
         } catch (Exception e) {
-        	e.printStackTrace();
+        	Logging.printLogError(logger, "Error fetching image from Amazon. [" + e.getMessage() + "]");
     		return null;
 		}
 		

@@ -47,12 +47,18 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			}
 
 			// Nome
+			String name = null;
 			Elements elementName = doc.select("p.nome");
-			String name = elementName.text().replace("'", "").trim();
+			if (elementName != null) {
+				name = elementName.text().replace("'", "").trim();
+			}
 
 			// Preço
+			Float price = null;
 			Elements elementPrice = doc.select("div.preco_comprar div.valores .valor");
-			Float price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			}
 
 			// Disponibilidade
 			boolean available = true;
