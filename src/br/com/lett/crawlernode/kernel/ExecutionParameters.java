@@ -18,14 +18,23 @@ public class ExecutionParameters {
 
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
+	
 	public static final String MODE_INSIGHTS = "insights";
 	public static final String MODE_DISCOVERY = "discovery";
+	
+	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 
 	private Options options;
 	private String environment;
 	private String mode;
 	private Boolean debug;
 	private String[] args;
+	
+	/**
+	 * Number of threads used by the crawler
+	 * Value is passed by an environment variable
+	 */
+	private int nthreads;
 
 	public ExecutionParameters(String[] args) {
 		this.args = args;
@@ -36,6 +45,9 @@ public class ExecutionParameters {
 	public void setUpExecutionParameters() {
 		this.createOptions();
 		this.parseCommandLineOptions();
+		
+		// get the number of threads on environment variable
+		this.nthreads = getEnvNumOfThreads();
 
 		Logging.printLogDebug(logger, this.toString());
 	}
@@ -98,6 +110,20 @@ public class ExecutionParameters {
 	private void help() {
 		new HelpFormatter().printHelp("Main", this.options);
 		System.exit(0);
+	}
+	
+	private int getEnvNumOfThreads() {
+		String nThreads = System.getenv(ENV_NTHREADS);
+		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
+		return Integer.parseInt(nThreads);
+	}
+
+	public int getNthreads() {
+		return nthreads;
+	}
+
+	public void setNthreads(int nthreads) {
+		this.nthreads = nthreads;
 	}
 
 }

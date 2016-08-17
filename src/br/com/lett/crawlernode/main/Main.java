@@ -109,8 +109,8 @@ public class Main {
 		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
 
 		// create a task executor
-		taskExecutor = new TaskExecutor(TaskExecutor.DEFAULT_NTHREADS);
-
+		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");
+		taskExecutor = new TaskExecutor(executionParameters.getNthreads());
 
 		/*
 		 * main task -- from time to time goes to server and takes 10 urls
