@@ -13,8 +13,11 @@ import com.amazonaws.services.sqs.model.Message;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.kernel.ControlledTaskExecutor;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.TaskExecutor;
+import br.com.lett.crawlernode.kernel.TaskFactory;
 import br.com.lett.crawlernode.kernel.WorkList;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
@@ -59,17 +62,18 @@ public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-	public static ExecutionParameters 	executionParameters;
-	public static Proxies 				proxies;
-	public static DBCredentials 		dbCredentials;
-	public static DatabaseManager 		dbManager;
-	public static ResultManager 		processorResultManager;
-	public static AmazonSQS 			queue;
+	public static ExecutionParameters 		executionParameters;
+	public static Proxies 					proxies;
+	public static DBCredentials 			dbCredentials;
+	public static DatabaseManager 			dbManager;
+	public static ResultManager 			processorResultManager;
+	public static AmazonSQS 				queue;
 
-	private static TaskExecutor 		taskExecutor;
-	private static QueueHandler			queueHandler;
-	private static WorkList				workList;
-	
+	private static TaskExecutor 			taskExecutor;
+	private static ControlledTaskExecutor 	controlledTaskExecutor;
+	private static QueueHandler				queueHandler;
+	private static WorkList					workList;
+
 	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
 
 	public static void main(String args[]) {
@@ -110,7 +114,8 @@ public class Main {
 
 		// create a task executor
 		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");
-		taskExecutor = new TaskExecutor(executionParameters.getNthreads());
+		//taskExecutor = new TaskExecutor(executionParameters.getNthreads());
+		controlledTaskExecutor = new ControlledTaskExecutor(executionParameters.getNthreads());
 
 		/*
 		 * main task -- from time to time goes to server and takes 10 urls
@@ -122,19 +127,58 @@ public class Main {
 
 			@Override
 			public void run() {
-
-				// request message (tasks) from the Amazon queue
-				List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-
-				// add the retrieved messages on the work list
-				workList.addMessages(messages);
-
-				// submit the tasks to the task executor
-				taskExecutor.submitWorkList(workList);
+				
+				//mainTaskWithDefaultTaskExecutor();
+				mainTaskWithControlledTaskExecutor();
 
 			} 
 		} , 0, FETCH_TASK_PERIOD);
 
+	}
+	
+	/**
+	 * Task performed using the Executor from Executors Framework
+	 */
+	private static void mainTaskWithDefaultTaskExecutor() {
+		
+		// request message (tasks) from the Amazon queue
+		List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
+
+		// add the retrieved messages on the work list
+		workList.addMessages(messages);
+
+		// submit the tasks to the task executor
+		taskExecutor.submitWorkList(workList);
+	}
+	
+	/**
+	 * Task performed using the ThreadPoolExecutor
+	 */
+	private static void mainTaskWithControlledTaskExecutor() {
+
+		// request message (tasks) from the Amazon queue
+		List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
+
+		for (Message message : messages) {
+
+			// check the message
+			if ( QueueService.checkMessage(message) ) {
+
+				// create a crawler session from the message
+				CrawlerSession session = new CrawlerSession(message);
+
+				// create the task
+				Runnable task = TaskFactory.createTask(session);
+
+				// submit the task to the executor
+				if (task != null) {
+					controlledTaskExecutor.executeTask(task);
+				} else {
+					Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
+				}
+			}
+
+		}
 	}
 
 }
