@@ -74,6 +74,8 @@ public class Main {
 	private static WorkList					workList;
 
 	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
+	
+	private static int BLOQUING_QUEUE_SIZE = 50; // the max size of the queue used by the TaskExecutor
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -114,7 +116,7 @@ public class Main {
 		// create a task executor
 		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");
 		//taskExecutor = new TaskExecutor(executionParameters.getNthreads());
-		controlledTaskExecutor = new ControlledTaskExecutor(executionParameters.getNthreads());
+		controlledTaskExecutor = new ControlledTaskExecutor(executionParameters.getNthreads(), BLOQUING_QUEUE_SIZE);
 
 		/*
 		 * main task
