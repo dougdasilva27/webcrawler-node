@@ -32,7 +32,7 @@ public class TaskExecutorAgent {
 			for (Message message : messages) {
 
 				// check the message
-				if ( QueueService.checkMessage(message) ) {
+				if ( QueueService.checkMessageIntegrity(message) ) {
 
 					// create a crawler session from the message
 					CrawlerSession session = new CrawlerSession(message);
@@ -46,6 +46,11 @@ public class TaskExecutorAgent {
 					} else {
 						Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
 					}
+				}
+				
+				// something is wrong with the message content
+				else {
+					Logging.printLogError(logger, "Message refused [failed on integrity checking].");
 				}
 
 			}

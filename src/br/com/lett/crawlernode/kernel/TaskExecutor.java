@@ -49,7 +49,7 @@ public class TaskExecutor {
 			// get one message from the work list
 			Message message = workList.getMessage();
 			
-			if (QueueService.checkMessage(message)) { // checking message fields
+			if (QueueService.checkMessageIntegrity(message)) { // checking message fields
 
 				// create a crawler session from the message
 				CrawlerSession session = new CrawlerSession(message);
