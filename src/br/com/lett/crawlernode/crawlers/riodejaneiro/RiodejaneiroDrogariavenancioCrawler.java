@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.drogariavenancio.com.br/";
 
 	public RiodejaneiroDrogariavenancioCrawler(CrawlerSession session) {
@@ -68,28 +68,11 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
-			// Categorias
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
-			ArrayList<String> categories = new ArrayList<String>();
-
-			categories.add(doc.select("#miolo .breadCrumbs a").get(1).text());
-			Elements subCategoriesElements = doc.select("#miolo .breadCrumbs h3 p");
-			for(Element e : subCategoriesElements) {
-				categories.add(e.text());
-			}
-			for(String category : categories) {
-				if(category1.isEmpty()) {
-					category1 = category;
-				} 
-				else if(category2.isEmpty()) {
-					category2 = category;
-				} 
-				else if(category3.isEmpty()) {
-					category3 = category;
-				}
-			}
+			// Categories
+			ArrayList<String> categories = this.crawlCategories(doc);
+			String category1 = getCategory(categories, 0);
+			String category2 = getCategory(categories, 1);
+			String category3 = getCategory(categories, 2);
 
 			// Descricao
 			String description = "";
@@ -167,7 +150,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				product.setStock(stock);
 				product.setMarketplace(marketplace);
 				product.setAvailable(available);
-				
+
 				products.add(product);
 
 			}
@@ -210,7 +193,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 					// Requisição POST para conseguir dados da imagem
 					String response = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp", assembleUrlParameters(session.getUrl().split("/")[4], posInternalId), null);
-					
+
 					String imageId = parseImageId(response);
 					Element elementPrimaryImage = doc.select(".produtoPrincipal .imagem .holder .cloud-zoom .foto").first();
 					String primaryImage = null;
@@ -250,7 +233,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					product.setStock(stock);
 					product.setMarketplace(marketplace);
 					product.setAvailable(available);
-					
+
 					products.add(product);
 
 				}
@@ -259,15 +242,39 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + session.getSeedId());
 		}
-		
+
 		return products;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
 	private boolean isProductPage(String url) {
 		return url.contains("/produto/");
+	}
+
+	private ArrayList<String> crawlCategories(Document document) {
+		ArrayList<String> categories = new ArrayList<String>();
+
+		Element mainCategory = document.select(".breadCrumbs a").last();
+		if (mainCategory != null) {
+			categories.add(mainCategory.text().trim());
+		}
+
+		Element subCategory = document.select(".breadCrumbs a .hierarquia").first();
+		if (subCategory != null) {
+			categories.add(subCategory.text().trim());
+		}
+
+		return categories;
+	}
+	
+	private String getCategory(ArrayList<String> categories, int n) {
+		if (n < categories.size()) {
+			return categories.get(n);
+		}
+
+		return "";
 	}
 
 	private String assembleUrlParameters(String idProduto, String variacaoCombinacao) {

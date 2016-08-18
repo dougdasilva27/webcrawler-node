@@ -83,9 +83,7 @@ public class QueueService {
 	 * @param sqs
 	 * @param message
 	 */
-	public static void deleteMessage(AmazonSQS sqs, Message message) {
-		Logging.printLogDebug(logger, "Deleting message " + message.getMessageId());
-		
+	public static void deleteMessage(AmazonSQS sqs, Message message) {		
 		String queueURL = selectQueue();
 		String messageReceiptHandle = message.getReceiptHandle();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
@@ -98,7 +96,6 @@ public class QueueService {
 	 * @param messageReceiptHandle
 	 */
 	public static void deleteMessage(AmazonSQS sqs, String messageId, String messageReceiptHandle) {
-		Logging.printLogDebug(logger, "Deleting message " + messageId);
 		String queueURL = selectQueue();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
@@ -109,7 +106,6 @@ public class QueueService {
 	 * @param messages
 	 */
 	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
-		System.out.println("Deleting received messages.\n");
 		String queueURL = selectQueue();
 		for (int i = 0; i < messages.size(); i++) {
 			String messageReceiptHandle = messages.get(i).getReceiptHandle();

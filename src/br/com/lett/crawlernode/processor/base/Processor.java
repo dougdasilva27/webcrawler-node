@@ -78,19 +78,19 @@ public class Processor {
 
 		// checking fields
 		if((price == null || price.equals(0f)) && available) {
-			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
 			return null;
 		} else if(internal_id == null || internal_id.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
 			return null;
 		} else if(session.getMarket().getNumber() == 0) {
-			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
 			return null;
 		} else if(url == null || url.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
 			return null;
 		} else if(name == null || name.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
 			return null;
 		}
 
@@ -320,7 +320,7 @@ public class Processor {
 			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Erro ao tentar processar produto [seed:" + session.getSeedId() + "]");
+			Logging.printLogError(logger, session, "Erro ao tentar processar produto [seed:" + session.getSeedId() + "]");
 			Logging.printLogError(logger, e.getMessage());
 		}
 		

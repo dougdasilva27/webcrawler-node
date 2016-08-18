@@ -115,7 +115,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 						// Foi preciso fazer essa checagem, pois haviam imagens secundárias de um produto
 						// onde a url da imagem secundária de um produto não foi encontrada
 						String imgAmpliada = image.attr("src").replace("Detalhes", "Ampliada");
-						Integer responseCode = DataFetcher.getUrlResponseCode(imgAmpliada, 1);
+						Integer responseCode = DataFetcher.getUrlResponseCode(imgAmpliada, this.session, 1);
 
 						if (responseCode != null && responseCode != 404) {
 							secondaryImagesArray.put(image.attr("src").replace("Detalhes", "Ampliada"));

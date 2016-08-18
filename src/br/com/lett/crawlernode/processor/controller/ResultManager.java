@@ -702,8 +702,8 @@ public class ResultManager {
 			FileInputStream fis = new FileInputStream(primaryImage);
 			primaryMd5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
 			fis.close();
-		} catch (Exception e1) {
-			e1.printStackTrace();
+		} catch (Exception ex) {
+			Logging.printLogError(logger, session, "Error analysing image md5. [" + ex.getMessage() + "]");
 		}		
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");

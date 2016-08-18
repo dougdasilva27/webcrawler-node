@@ -51,12 +51,14 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			String name = elementName.text().trim();
 
 			// Preço
+			Float price = null;
 			Element elementPrice = doc.select(".compra-unica .precoPor #PrecoPromocaoProduto").first();
 			if(elementPrice == null) {
 				elementPrice = doc.select(".compra-unica .precoPor").first();
+				if (elementPrice != null) {
+					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				}
 			}
-
-			Float price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
 			// Categorias
 			String category1 = null; 

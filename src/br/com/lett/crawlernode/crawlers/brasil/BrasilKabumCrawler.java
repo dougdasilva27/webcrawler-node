@@ -49,8 +49,14 @@ public class BrasilKabumCrawler extends Crawler {
 			String internalPid = null;
 
 			// name
-			Element elementName = elementProduct.select("#titulo_det h1").first();
-			String name = elementName.text().replace("'","").replace("’","").trim();
+			String name = null;
+			Element elementName = null;
+			if (elementProduct != null) {
+				elementName = elementProduct.select("#titulo_det h1").first();
+			}
+			if (elementName != null) {
+				name = elementName.text().replace("'","").replace("’","").trim();
+			}
 
 			// price
 			Float price = null;

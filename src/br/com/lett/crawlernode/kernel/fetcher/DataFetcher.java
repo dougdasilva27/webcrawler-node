@@ -126,34 +126,30 @@ public class DataFetcher {
 
 	/**
 	 * Get the http response code of a URL
-	 * 
 	 * @param url 
 	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
 	 * @return The integer code. Null if we have an exception.
 	 */
-	public static Integer getUrlResponseCode(String url) {
-		return getUrlResponseCode(url, 1);
+	public static Integer getUrlResponseCode(String url, CrawlerSession session) {
+		return getUrlResponseCode(url, session, 1);
 	}
 
-	public static Integer getUrlResponseCode(String url, int attempt) {
+	public static Integer getUrlResponseCode(String url, CrawlerSession session, int attempt) {
 		try {
 			URL urlObject = new URL(url);
-			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, null));
+			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, session, new ArrayList<String>()));
 			connection.setRequestMethod("GET");
 			connection.connect();
 
 			return connection.getResponseCode();
 		} catch (Exception e) {
 
-
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url);
-			Logging.printLogError(logger, e.getStackTrace().toString());
-
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url + " [" + e.getMessage() + "]");
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
 			} else {
-				return getUrlResponseCode(url, attempt+1);	
+				return getUrlResponseCode(url, session, attempt+1);	
 			}
 
 			return null;
@@ -197,7 +193,7 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
-		LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+		LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 		session.addProxyRequestInfo(url, randProxy);
 
@@ -358,7 +354,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -458,7 +454,7 @@ public class DataFetcher {
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -573,7 +569,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, session, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
+			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -635,7 +631,7 @@ public class DataFetcher {
 			}
 
 			httpPost.setConfig(requestConfig);
-			
+
 			if (proxy != null) {
 				Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
 			} else {
@@ -689,109 +685,99 @@ public class DataFetcher {
 	}
 
 
-	private static LettProxy randLettProxy(int attempt, ArrayList<String> proxyServices) {
-		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
-
+	private static LettProxy randLettProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
+		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
+			Logging.printLogDebug(logger, session, "Proxy service: " + serviceName);
 
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
 				if (Main.proxies.bonanzaProxies.size() > 0) {
-					proxies.addAll(Main.proxies.bonanzaProxies);
+					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
 				if (Main.proxies.buyProxies.size() > 0) {
-					proxies.addAll(Main.proxies.buyProxies);
+					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.SHADER)) { // shader
 				if (Main.proxies.shaderProxies.size() > 0) {
-					proxies.addAll(Main.proxies.shaderProxies);
+					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.STORM)) { // storm
 				if (Main.proxies.storm.size() > 0) {
-					proxies.addAll(Main.proxies.storm);
+					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
 
-		if (proxies.isEmpty()) { // no_proxy
-			Logging.printLogDebug(logger, "Will request with no proxy...");
+		if (nextProxy == null) {
+			Logging.printLogDebug(logger, session, "Will request with no proxy...");
 			return null;
-		}
-
-		LettProxy nextProxy = null;
-		if (proxies.size() > 0) {
-			nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 		}
 
 		return nextProxy;
 	}
 
-	private static Proxy randProxy(int attempt, ArrayList<String> proxyServices) {
-		ArrayList<LettProxy> proxies = new ArrayList<LettProxy>();
-
+	private static Proxy randProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {		
+		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			Logging.printLogDebug(logger, "Proxy service: " + serviceName);
+			Logging.printLogDebug(logger, session, "Proxy service: " + serviceName);
 
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
 				if (Main.proxies.bonanzaProxies.size() > 0) {
-					proxies.addAll(Main.proxies.bonanzaProxies);
+					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
 				if (Main.proxies.buyProxies.size() > 0) {
-					proxies.addAll(Main.proxies.buyProxies);
+					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.SHADER)) { // shader
 				if (Main.proxies.shaderProxies.size() > 0) {
-					proxies.addAll(Main.proxies.shaderProxies);
+					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.STORM)) { // storm
 				if (Main.proxies.storm.size() > 0) {
-					proxies.addAll(Main.proxies.storm);
+					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
 				} else {
-					Logging.printLogError(logger, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
 
-		if (proxies.isEmpty()) {
-			Logging.printLogDebug(logger, "Will request with no proxy...");
+		if (nextProxy == null) {
+			Logging.printLogDebug(logger, session, "Will request with no proxy...");
 			return null;
 		}
-
-		LettProxy nextProxy = proxies.get(CommonMethods.randInt(0, proxies.size() - 1));
 
 		final String nextProxyHost = nextProxy.getAddress();
 		final int nextProxyPort = nextProxy.getPort();
 		final String nextProxyUser = nextProxy.getUser();
 		final String nextProxyPass = nextProxy.getPass();
 
-		if(nextProxyUser != null){
-			//Autenticação de usuário e senha do proxy e seta a porta e o host para conexão
+		if (nextProxyUser != null) {
 			Authenticator a = new Authenticator() {
 				public PasswordAuthentication getPasswordAuthentication() {
 					return new PasswordAuthentication(nextProxyUser, nextProxyPass.toCharArray());
