@@ -73,7 +73,7 @@ public class Main {
 	private static QueueHandler				queueHandler;
 	private static WorkList					workList;
 
-	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
+	private static int FETCH_TASK_PERIOD = 1000;	// milisseconds
 	
 	private static int BLOQUING_QUEUE_SIZE = 10; // the max size of the queue used by the TaskExecutor
 
