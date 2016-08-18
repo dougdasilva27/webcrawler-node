@@ -44,15 +44,14 @@ public class TaskExecutorAgent {
 					if (task != null) {
 						controlledTaskExecutor.executeTask(task);
 					} else {
-						Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
+						Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]" + " deleting message from sqs...");
+						QueueService.deleteMessage(queueHandler.getSQS(), message);						
 					}
 				}
 				
 				// something is wrong with the message content
 				else {
 					Logging.printLogError(logger, "Message refused [failed on integrity checking]. Will delete it from the queue...");
-					
-					// delete the message from sqs
 					QueueService.deleteMessage(queueHandler.getSQS(), message);
 				}
 
