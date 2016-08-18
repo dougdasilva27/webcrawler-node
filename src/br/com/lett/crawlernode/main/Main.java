@@ -74,7 +74,7 @@ public class Main {
 	private static QueueHandler				queueHandler;
 	private static WorkList					workList;
 
-	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
+	private static int FETCH_TASK_PERIOD = 3000;	// milisseconds
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
