@@ -74,7 +74,7 @@ public class Main {
 	private static QueueHandler				queueHandler;
 	private static WorkList					workList;
 
-	private static int FETCH_TASK_PERIOD = 3000;	// milisseconds
+	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -122,17 +122,21 @@ public class Main {
 		 */
 
 		Timer mainTask = new Timer();
+		
+		for(int i=0; i<5; i++) {
 
-		mainTask.scheduleAtFixedRate(new TimerTask() {
-
-			@Override
-			public void run() {
-				
-				//mainTaskWithDefaultTaskExecutor();
-				mainTaskWithControlledTaskExecutor();
-
-			} 
-		} , 0, FETCH_TASK_PERIOD);
+			mainTask.scheduleAtFixedRate(new TimerTask() {
+	
+				@Override
+				public void run() {
+					
+					//mainTaskWithDefaultTaskExecutor();
+					mainTaskWithControlledTaskExecutor();
+	
+				} 
+			} , 1000*i, FETCH_TASK_PERIOD);
+		
+		}
 
 	}
 	
