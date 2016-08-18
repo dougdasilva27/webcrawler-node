@@ -66,19 +66,19 @@ public class Persistence {
 
 		// checking fields
 		if((price == null || price.equals(0f)) && available) {
-			Logging.printLogError(logger, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
 			return;
 		} else if(internal_id == null || internal_id.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
 			return;
 		} else if(session.getMarket().getNumber() == 0) {
-			Logging.printLogError(logger, "Erro tentando inserir leitura de produto com campo vazio: [marketId] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: [marketId] ... aborting ...");
 			return;
 		} else if(url == null || url.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando inserir leitura de produto com campo vazio: [url] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: [url] ... aborting ...");
 			return;
 		} else if(name == null || name.isEmpty()) {
-			Logging.printLogError(logger, "Erro tentando inserir leitura de produto com campo vazio: [name] ... aborting ...");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: [name] ... aborting ...");
 			return;
 		}
 
@@ -165,7 +165,7 @@ public class Persistence {
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
 		} catch (SQLException e) {
-			Logging.printLogError(logger, "Error inserting product on database! [" + e.getMessage() + "]");
+			Logging.printLogError(logger, session, "Error inserting product on database! [" + e.getMessage() + "]");
 		}
 	}
 	
@@ -258,8 +258,8 @@ public class Persistence {
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 			
 		} catch (SQLException e) {
-			Logging.printLogError(logger, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
+			Logging.printLogError(logger, session, e.getMessage());
 		}
 
 	}

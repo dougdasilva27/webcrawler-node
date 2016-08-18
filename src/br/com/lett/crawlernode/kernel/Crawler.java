@@ -108,13 +108,6 @@ public class Crawler implements Runnable {
 				processProduct(product);
 			}
 		}
-		
-//		try {
-//			Thread.sleep(15000 + CommonMethods.randInt(2000, 10000));
-//		} catch (InterruptedException e) {
-//			Logging.printLogDebug(logger, session, "Error in thread sleep!");
-//			e.printStackTrace();
-//		}
 
 		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
 		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());

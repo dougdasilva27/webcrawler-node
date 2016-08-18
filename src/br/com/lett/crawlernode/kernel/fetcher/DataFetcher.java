@@ -169,20 +169,20 @@ public class DataFetcher {
 				if (payload != null) {
 					return fetchJsonPOST(session, url, payload, cookies, attempt);
 				} else {
-					Logging.printLogWarn(logger, "Parametro payload está null.");
+					Logging.printLogWarn(logger, session, "Parametro payload está null.");
 				}
 			} else {
-				Logging.printLogWarn(logger, "Parametro reqType é inválido.");
+				Logging.printLogWarn(logger, session, "Parametro reqType é inválido.");
 			}
 
 		} catch (Exception e) {
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
-			Logging.printLogError(logger, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
+			Logging.printLogError(logger, session, e.getStackTrace().toString());
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
 			} else {
 				return fetchJson(reqType, session, url, payload, cookies, attempt+1);	
 			}
@@ -194,7 +194,7 @@ public class DataFetcher {
 	}
 
 	private static String fetchJsonPOST(CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
-		Logging.printLogDebug(logger, "Fazendo requisição POST com content-type JSON: " + url);
+		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
 		LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
@@ -266,8 +266,8 @@ public class DataFetcher {
 			try {
 				payloadJson = new JSONObject(payload);
 			} catch (Exception e) {
-				Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST JSON, pois não consegui converter o payload em json: " + payload);
-				Logging.printLogError(logger, e.getStackTrace().toString());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST JSON, pois não consegui converter o payload em json: " + payload);
+				Logging.printLogError(logger, session, e.getStackTrace().toString());
 			}
 
 			if(payloadJson != null && payloadJson.length() > 0) {
@@ -285,9 +285,9 @@ public class DataFetcher {
 		}
 
 		if (proxy != null) {
-			Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+			Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
 		} else {
-			Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+			Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
 		}
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
@@ -315,22 +315,22 @@ public class DataFetcher {
 				if (urlParameters != null) {
 					return fetchPagePOST(session, url, urlParameters, cookies, attempt);
 				} else {
-					Logging.printLogError(logger, "Parametro payload está null.");
+					Logging.printLogError(logger, session, "Parametro payload está null.");
 					return "";
 				}
 			} else {
-				Logging.printLogError(logger, "Parametro reqType é inválido.");
+				Logging.printLogError(logger, session, "Parametro reqType é inválido.");
 				return "";
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
-			Logging.printLogError(logger, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
+			Logging.printLogError(logger, session, e.getStackTrace().toString());
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
 				return "";
 
 			} else {
@@ -352,7 +352,7 @@ public class DataFetcher {
 	private static String fetchPageGET(CrawlerSession session, String url, List<Cookie> cookies, int attempt) {
 
 		try {
-			Logging.printLogDebug(logger, "Fazendo requisição GET: " + url);
+			Logging.printLogDebug(logger, session, "Fazendo requisição GET: " + url);
 
 			// adding request info for this url
 			session.addRequestInfo(url);
@@ -415,9 +415,9 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			if (proxy != null) {
-				Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
+				Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
 			} else {
-				Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+				Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
 			}
 
 			// do request
@@ -435,13 +435,13 @@ public class DataFetcher {
 
 			e.printStackTrace();
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
+			Logging.printLogError(logger, session, e.getMessage());
 			e.printStackTrace();
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Atingi máximo de tentativas para a url : " + url);
 				return "";
 			} else {
 				return fetchPageGET(session, url, cookies, attempt+1);	
@@ -452,7 +452,7 @@ public class DataFetcher {
 
 	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		try {
-			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
+			Logging.printLogDebug(logger, session, "Fazendo requisição POST: " + url);
 
 			// adding request info for this url
 			session.addRequestInfo(url);
@@ -531,9 +531,9 @@ public class DataFetcher {
 			}
 
 			if (proxy != null) {
-				Logging.printLogDebug(logger, "Request using proxy: " + httpPost.getConfig().getProxy());
+				Logging.printLogDebug(logger, session, "Request using proxy: " + httpPost.getConfig().getProxy());
 			} else {
-				Logging.printLogDebug(logger, "Request sem proxy.");
+				Logging.printLogDebug(logger, session, "Request sem proxy.");
 			}
 
 			// do request
@@ -552,12 +552,12 @@ public class DataFetcher {
 			e.printStackTrace();
 
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
-			Logging.printLogError(logger, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+			Logging.printLogError(logger, session, e.getStackTrace().toString());
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, "Atingi máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Atingi máximo de tentativas para a url : " + url);
 				return "";
 			} else {
 				return fetchPagePOST(session, url, urlParameters, cookies, attempt+1);	
@@ -570,7 +570,7 @@ public class DataFetcher {
 
 		try {
 
-			Logging.printLogDebug(logger, "Fazendo requisição POST: " + url);
+			Logging.printLogDebug(logger, session, "Fazendo requisição POST: " + url);
 
 			String randUserAgent = randUserAgent();
 			LettProxy randProxy = randLettProxy(attempt, session.getMarket().getProxies());
@@ -637,9 +637,9 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 			
 			if (proxy != null) {
-				Logging.printLogDebug(logger, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+				Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
 			} else {
-				Logging.printLogDebug(logger, "Fazendo requisição sem proxy.");
+				Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
 			}
 
 			// do request
@@ -656,8 +656,8 @@ public class DataFetcher {
 		} catch (Exception e) {
 			e.printStackTrace();
 
-			Logging.printLogError(logger, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
-			Logging.printLogError(logger, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+			Logging.printLogError(logger, session, e.getStackTrace().toString());
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {

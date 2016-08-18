@@ -58,7 +58,7 @@ public class RiodejaneiroExtraCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Descobrindo produto existe na loja pão de açúcar selecionada
-			if(doc.select("article.hproduct header").first().text().trim().isEmpty()) {
+			if(doc.select("article.hproduct header").first() != null && doc.select("article.hproduct header").first().text().trim().isEmpty()) {
 				Logging.printLogDebug(logger, session, "Produto " + this.session.getUrl() + " não existe nessa loja do Extra.");
 				return products;
 			}

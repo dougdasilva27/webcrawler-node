@@ -100,10 +100,11 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			category3 = null;
 
 			// Imagem primária
-			String primaryImage = "";
-
-			Elements elementPrimaryImage = doc.select("#img_zoom img");
-			primaryImage = elementPrimaryImage.first().attr("src").trim();	
+			String primaryImage = null;
+			Element elementPrimaryImage = doc.select("#img_zoom img").first();
+			if (elementPrimaryImage != null) {
+				primaryImage = elementPrimaryImage.attr("src").trim();
+			}
 
 			if(primaryImage.contains("produto_sem_foto")) primaryImage = "";
 

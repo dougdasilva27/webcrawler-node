@@ -34,7 +34,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Id interno
 			String internalID = Integer.toString(Integer.parseInt(this.session.getUrl().split("/")[4]));
@@ -55,9 +55,13 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 			// Preço
 			Float price = null;
+			try {
 			Elements elementPrice = doc.select("div.preco_comprar div.valores .valor");
 			if (elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			}
+			} catch (Exception ex) {
+				Logging.printLogDebug(logger, session, "Error crawling price! [" + ex.getMessage() + "]");
 			}
 
 			// Disponibilidade
