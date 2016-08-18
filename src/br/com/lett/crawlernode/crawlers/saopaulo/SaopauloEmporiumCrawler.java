@@ -76,10 +76,13 @@ public class SaopauloEmporiumCrawler extends Crawler {
 			String category3 = "";
 
 			// Imagens
+			String primaryImage = null;
 			Elements element_foto = doc.select("td.tdtfoto img");
-			String primaryImage = element_foto.get(0).attr("src").trim();
+			if (element_foto != null && element_foto.size() > 0) {
+				primaryImage = element_foto.get(0).attr("src").trim();
+			}
 			if(primaryImage != null && !primaryImage.equals("")) primaryImage = "http://www.emporiumsaopaulo.com.br/" + primaryImage;
-			if(primaryImage.contains("produto_sem_foto")) primaryImage = "";
+			if(primaryImage != null && primaryImage.contains("produto_sem_foto")) primaryImage = "";
 			String secondaryImages = null;
 
 			// Descrição

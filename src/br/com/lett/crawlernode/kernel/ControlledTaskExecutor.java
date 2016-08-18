@@ -15,12 +15,17 @@ public class ControlledTaskExecutor {
 	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
 
 	private ThreadPoolExecutor threadPoolExecutor;
-
-	/**
-	 * Maximum number of threads in the executor pool of threads
-	 */
-	private int maxThreads;
-
+	
+	public ControlledTaskExecutor() {
+		threadPoolExecutor = new ThreadPoolExecutor(
+				DEFAULT_MAX_NTHREADS,
+				DEFAULT_MAX_NTHREADS,
+				0L,
+				TimeUnit.MILLISECONDS,
+				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
+				new RejectedTaskHandler()
+				);
+	}
 
 	public ControlledTaskExecutor(int maxThreads) {
 		threadPoolExecutor = new ThreadPoolExecutor(
@@ -31,8 +36,29 @@ public class ControlledTaskExecutor {
 				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
 				new RejectedTaskHandler()
 				);
-
-		this.maxThreads = maxThreads;
+	}
+	
+	public ControlledTaskExecutor(int maxThreads, int bloquingQueueSize) {
+		threadPoolExecutor = new ThreadPoolExecutor(
+				maxThreads,
+				maxThreads,
+				0L,
+				TimeUnit.MILLISECONDS,
+				new LinkedBlockingQueue<Runnable>(bloquingQueueSize),
+				new RejectedTaskHandler()
+				);
+	}
+	
+	public int getMaxThreadsCount() {
+		return threadPoolExecutor.getMaximumPoolSize();
+	}
+	
+	public int getBloquingQueueSize() {
+		return threadPoolExecutor.getQueue().size();
+	}
+	
+	public int getActiveThreadsCount() {
+		return threadPoolExecutor.getActiveCount();
 	}
 	
 	public long getCompletedTasksCount() {
@@ -45,14 +71,6 @@ public class ControlledTaskExecutor {
 
 	public ThreadPoolExecutor getExecutor() {
 		return threadPoolExecutor;
-	}
-
-	public int getMaxThreads() {
-		return maxThreads;
-	}
-
-	public void setMaxThreads(int maxThreads) {
-		this.maxThreads = maxThreads;
 	}
 
 }

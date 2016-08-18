@@ -14,10 +14,9 @@ import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.ControlledTaskExecutor;
-import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.TaskExecutor;
-import br.com.lett.crawlernode.kernel.TaskFactory;
+import br.com.lett.crawlernode.kernel.TaskExecutorAgent;
 import br.com.lett.crawlernode.kernel.WorkList;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
@@ -118,33 +117,33 @@ public class Main {
 		controlledTaskExecutor = new ControlledTaskExecutor(executionParameters.getNthreads());
 
 		/*
-		 * main task -- from time to time goes to server and takes 10 urls
+		 * main task
 		 */
 
 		Timer mainTask = new Timer();
-		
+
 		for(int i=0; i<5; i++) {
 
 			mainTask.scheduleAtFixedRate(new TimerTask() {
-	
+
 				@Override
 				public void run() {
-					
+
 					//mainTaskWithDefaultTaskExecutor();
-					mainTaskWithControlledTaskExecutor();
-	
+					TaskExecutorAgent.performTask(controlledTaskExecutor, queueHandler);
+
 				} 
 			} , 1000*i, FETCH_TASK_PERIOD);
-		
+
 		}
 
 	}
-	
+
 	/**
 	 * Task performed using the Executor from Executors Framework
 	 */
 	private static void mainTaskWithDefaultTaskExecutor() {
-		
+
 		// request message (tasks) from the Amazon queue
 		List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
 
@@ -153,36 +152,6 @@ public class Main {
 
 		// submit the tasks to the task executor
 		taskExecutor.submitWorkList(workList);
-	}
-	
-	/**
-	 * Task performed using the ThreadPoolExecutor
-	 */
-	private static void mainTaskWithControlledTaskExecutor() {
-
-		// request message (tasks) from the Amazon queue
-		List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-
-		for (Message message : messages) {
-
-			// check the message
-			if ( QueueService.checkMessage(message) ) {
-
-				// create a crawler session from the message
-				CrawlerSession session = new CrawlerSession(message);
-
-				// create the task
-				Runnable task = TaskFactory.createTask(session);
-
-				// submit the task to the executor
-				if (task != null) {
-					controlledTaskExecutor.executeTask(task);
-				} else {
-					Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
-				}
-			}
-
-		}
 	}
 
 }
