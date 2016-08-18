@@ -51,6 +51,8 @@ public class TaskExecutorAgent {
 				// something is wrong with the message content
 				else {
 					Logging.printLogError(logger, "Message refused [failed on integrity checking]. Will delete it from the queue...");
+					
+					// delete the message from sqs
 					QueueService.deleteMessage(queueHandler.getSQS(), message);
 				}
 
