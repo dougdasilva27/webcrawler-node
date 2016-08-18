@@ -75,7 +75,7 @@ public class Main {
 
 	private static int FETCH_TASK_PERIOD = 5000;	// milisseconds
 	
-	private static int BLOQUING_QUEUE_SIZE = 50; // the max size of the queue used by the TaskExecutor
+	private static int BLOQUING_QUEUE_SIZE = 10; // the max size of the queue used by the TaskExecutor
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -124,7 +124,7 @@ public class Main {
 
 		Timer mainTask = new Timer();
 
-		for(int i=0; i<5; i++) {
+		//for(int i=0; i<5; i++) {
 
 			mainTask.scheduleAtFixedRate(new TimerTask() {
 
@@ -134,10 +134,11 @@ public class Main {
 					//mainTaskWithDefaultTaskExecutor();
 					TaskExecutorAgent.performTask(controlledTaskExecutor, queueHandler);
 
-				} 
-			} , 1000*i, FETCH_TASK_PERIOD);
+				}
+			} , 0, FETCH_TASK_PERIOD);
+			//} , 1000*i, FETCH_TASK_PERIOD);
 
-		}
+		//}
 
 	}
 
