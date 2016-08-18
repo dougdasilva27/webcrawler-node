@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class TaskExecutor {
 	protected static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
 	
-	public static final int DEFAULT_NTHREADS = 100;
+	public static final int DEFAULT_NTHREADS = 400;
 	
 	/**
 	 * The Executor Service, to whitch the tasks will be submited
