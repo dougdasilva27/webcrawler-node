@@ -73,7 +73,7 @@ public class Parser {
 		 */
 		else {
 			Metadata metadata = new Metadata();
-			BodyContentHandler contentHandler = new BodyContentHandler();
+			BodyContentHandler contentHandler = new BodyContentHandler(-1);
 			
 			try (InputStream inputStream = new ByteArrayInputStream(pageContent.getContentData())) {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);
