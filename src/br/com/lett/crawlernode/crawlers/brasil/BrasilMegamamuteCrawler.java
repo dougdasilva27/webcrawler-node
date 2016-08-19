@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.kernel.Crawler;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -41,21 +42,20 @@ public class BrasilMegamamuteCrawler extends Crawler {
 		if ( isProductPage(this.session.getUrl()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
-			Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
-			String[] internalIds = null;
-			if (elementInternalId != null) {
-				internalIds = elementInternalId.attr("value").trim().split(",");
-			}
+			try {
+				Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
+				String[] internalIds = null;
+				if (elementInternalId != null) {
+					internalIds = elementInternalId.attr("value").trim().split(",");
+				}
 
-			for (String skuId : internalIds) {
+				for (String skuId : internalIds) {
 
-				// ID interno
-				String internalId = skuId;
+					// ID interno
+					String internalId = skuId;
 
-				// Pid
-				String internalPid = internalId;
-
-				try {
+					// Pid
+					String internalPid = internalId;
 
 					// requisitar informações da API
 					JSONArray jsonArrayAPI = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.megamamute.com.br/produto/sku/" + internalId), null, null);
@@ -148,19 +148,19 @@ public class BrasilMegamamuteCrawler extends Crawler {
 					product.setDescription(description);
 					product.setStock(stock);
 					product.setMarketplace(marketplace);
-					
+
 					products.add(product);
 
-				} catch(Exception e) {
-					Logging.printLogError(logger, session, "Error processing product! " + "[" + e.getMessage() + "]");
 				}
 
-			} 
+			} catch (Exception e) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
 
@@ -223,7 +223,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
 		return marketplace;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
