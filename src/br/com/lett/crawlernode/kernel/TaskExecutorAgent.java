@@ -22,8 +22,7 @@ public class TaskExecutorAgent {
 	public static void performTask(ControlledTaskExecutor controlledTaskExecutor, QueueHandler queueHandler) {
 		
 		// computing number of tasks to retrieve from SQS
-		//int numTasksToRetrieve = computeNumOfTasksToRetrieve(controlledTaskExecutor);
-		int numTasksToRetrieve = 1;
+		int numTasksToRetrieve = computeNumOfTasksToRetrieve(controlledTaskExecutor);
 
 		if (numTasksToRetrieve > 0) { // this will prevent to make an empty request
 

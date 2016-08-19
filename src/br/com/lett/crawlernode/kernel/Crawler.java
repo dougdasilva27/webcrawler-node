@@ -310,9 +310,7 @@ public class Crawler implements Runnable {
 			return products;
 		}
 
-		List<Product> products = new ArrayList<Product>();
-		if (products.isEmpty()) products.add( new Product() );
-		return products;
+		return new ArrayList<Product>();
 	}
 
 

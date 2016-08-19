@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.kernel.models;
 
 import org.json.JSONArray;
 
-import br.com.lett.crawlernode.util.Logging;
-
 public class Product {
 	
 	private String url;
@@ -21,6 +19,10 @@ public class Product {
 	private String description;
 	private JSONArray marketplace;
 	private Integer stock;
+	
+	public Product() {
+		this.description = "";
+	}
 	
 	public String getSeedId() {
 		return seedId;
