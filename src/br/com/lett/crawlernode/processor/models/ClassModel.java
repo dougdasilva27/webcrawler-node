@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.kernel.models;
+package br.com.lett.crawlernode.processor.models;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -11,10 +11,10 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
-import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
+import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -363,6 +363,38 @@ public class Crawler implements Runnable {
 		}
 
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @param product
+	 * @return
+	 */
+	private Product activeVoid(Product product) {
+		Product p = product;
+		
+		if ( product.isVoid() ) {
+			
+			// fetch the previous processed product stored on database
+			ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+			
+			if (previousProcessedProduct != null) {
+				if ( previousProcessedProduct.getVoid_product() ) {
+					
+					// TODO update last dates
+					
+				}
+				else {
+					// TODO try again
+				}
+			}
+			else {
+				// TODO try again
+			}
+			
+		}
+		
+		return p;
 	}
 
 }

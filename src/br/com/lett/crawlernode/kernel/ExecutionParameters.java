@@ -19,9 +19,24 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	
+	/**
+	 * Crawler will get messages from the tracked skus queue
+	 */
 	public static final String MODE_INSIGHTS = "insights";
+	
+	/**
+	 * Crawler will get messages from the sku URL suggestions queue
+	 */
 	public static final String MODE_DISCOVERY = "discovery";
 	
+	/**
+	 * Crawler will get messages from the queue for dead letter
+	 */
+	public static final String MODE_DEAD_LETTER = "dead";
+	
+	/**
+	 * The maximum number of threads that can be used by the crawler
+	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 
 	private Options options;
@@ -69,7 +84,7 @@ public class ExecutionParameters {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
-		options.addOption("mode", true, "Mode [insights, discovery]");
+		options.addOption("mode", true, "Mode [insights, discovery, dead]");
 
 	}
 
@@ -80,14 +95,30 @@ public class ExecutionParameters {
 		try {
 			cmd = parser.parse(options, args);
 
-			// Debug mode
+			// debug mode
 			debug = cmd.hasOption("debug");
 
-			// Environment
-			if (cmd.hasOption("environment")) 	environment = cmd.getOptionValue("environment"); else help(); // required
+			// environment
+			if (cmd.hasOption("environment")) {
+				environment = cmd.getOptionValue("environment");
+				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) || !environment.equals(ENVIRONMENT_PRODUCTION)) {
+					Logging.printLogError(logger, "Unrecognized environment.");
+					help();
+				}
+			} else {
+				help();
+			}
 
-			// Mode
-			if (cmd.hasOption("mode")) 	mode = cmd.getOptionValue("mode"); else help(); // required
+			// mode
+			if (cmd.hasOption("mode")) {
+				mode = cmd.getOptionValue("mode");
+				if (!mode.equals(MODE_INSIGHTS) || !mode.equals(MODE_DISCOVERY) || !mode.equals(MODE_DEAD_LETTER)) {
+					Logging.printLogError(logger, "Unrecognized mode.");
+					help();
+				}
+			} else {
+				help();
+			}			
 
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
