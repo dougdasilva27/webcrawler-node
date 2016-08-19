@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.kernel.models;
 
 import org.json.JSONArray;
 
+import br.com.lett.crawlernode.util.Logging;
+
 public class Product {
 	
 	private String url;
@@ -137,6 +139,24 @@ public class Product {
 	
 	public void setStock(Integer stock) {
 		this.stock = stock;
+	}
+	
+	/**
+	 * Check if the product instance is void. Cases in which it's considered
+	 * a void product:
+	 * <ul>
+	 * <li>1. The price is null or 0.0 and at the same time is available.</li>
+	 * <li>2. The internal id is null or is an empty string</li>
+	 * <li>3. The name is null or is an empty string</li>
+	 * </ul>
+	 * @return true if product is void or false otherwise
+	 */
+	public boolean isVoid() {
+		if((price == null || price.equals(0f)) && available) return true;
+		if(internalId == null || internalId.isEmpty()) return true;
+		if(name == null || name.isEmpty()) return true;
+		
+		return false;
 	}
 	
 	@Override
