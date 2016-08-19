@@ -14,6 +14,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.PageContent;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -27,15 +28,16 @@ import br.com.lett.crawlernode.util.Logging;
  */
 
 public class Parser {
-
 	protected static final Logger logger = LoggerFactory.getLogger(Parser.class);
 
 	private final HtmlParser htmlParser;
 	private final ParseContext parseContext;
+	private CrawlerSession session;
 
-	public Parser() {
+	public Parser(CrawlerSession session) {
 		htmlParser = new HtmlParser();
 		parseContext = new ParseContext();
+		this.session = session;
 	}
 	
 	/**
@@ -45,7 +47,6 @@ public class Parser {
 	 * or the case where we are expecting a JSONObject or a JSONArray as reponse from an API
 	 * request. In this last case it parses it as a plain text. The PageContent passed, will be populated
 	 * with the parsed data.
-	 * 
 	 * @param pageContent an object containing the content that will be parsed
 	 */
 	public void parse(PageContent pageContent) {
@@ -63,7 +64,7 @@ public class Parser {
 				}
 				pageContent.setTextParseData(parseData);
 			} catch (Exception e) {
-				Logging.printLogError(logger, "Error while parsing plain text [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
+				Logging.printLogError(logger, session, "Error while parsing plain text [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
 			}
 		} 
 
@@ -77,7 +78,7 @@ public class Parser {
 			try (InputStream inputStream = new ByteArrayInputStream(pageContent.getContentData())) {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);
 			} catch (Exception e) {
-				Logging.printLogError(logger, "Error while parsing html [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
+				Logging.printLogError(logger, session, "Error while parsing html [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
 			}
 
 			if (pageContent.getContentCharset() == null) {
@@ -102,7 +103,7 @@ public class Parser {
 				pageContent.setHtmlParseData(parseData);
 				
 			} catch (UnsupportedEncodingException e) {
-				Logging.printLogError(logger, "error parsing the html: " + pageContent.getUrl() + e.getMessage());
+				Logging.printLogError(logger, session, "error parsing the html: " + pageContent.getUrl() + e.getMessage());
 			}
 		}
 	}

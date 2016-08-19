@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
-import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.parser.Parser;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -425,7 +424,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// process response and parse
-			return processContent(pageContent);
+			return processContent(pageContent, session);
 
 		} catch (Exception e) {
 
@@ -541,7 +540,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// process response and parse
-			return processContent(pageContent);
+			return processContent(pageContent, session);
 
 		} catch (Exception e) {
 
@@ -647,7 +646,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// process response and parse
-			return processContent(pageContent);
+			return processContent(pageContent, session);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -674,8 +673,8 @@ public class DataFetcher {
 	 * @param pageContent
 	 * @return String with the request response, either in html or plain text format
 	 */
-	private static String processContent(PageContent pageContent) {		
-		Parser parser = new Parser();
+	private static String processContent(PageContent pageContent, CrawlerSession session) {		
+		Parser parser = new Parser(session);
 		parser.parse(pageContent);
 
 		if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
