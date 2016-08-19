@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.security.DataCipher;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class DatabaseCredentialsSetter {
@@ -52,7 +53,7 @@ public class DatabaseCredentialsSetter {
 			
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error during database credentials deciphering operation.");
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 		
 		

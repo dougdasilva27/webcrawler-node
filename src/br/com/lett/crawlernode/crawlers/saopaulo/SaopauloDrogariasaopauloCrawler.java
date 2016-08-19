@@ -34,7 +34,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// ID interno
 			Element element_id = doc.select("div.productReference").first();

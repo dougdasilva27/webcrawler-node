@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.kernel.models.Market;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -38,8 +39,8 @@ public class TaskFactory {
 
 			return task;
 		} catch (Exception ex) {
-			Logging.printLogError(logger, "Error instantiating task: " + taskClassName);
-			ex.printStackTrace();
+			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
 		}
 
 		return null;

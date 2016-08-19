@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.kernel.TaskExecutor;
 import br.com.lett.crawlernode.kernel.TaskExecutorAgent;
 import br.com.lett.crawlernode.kernel.WorkList;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
@@ -65,7 +64,6 @@ public class Main {
 	public static Proxies 					proxies;
 	public static DBCredentials 			dbCredentials;
 	public static DatabaseManager 			dbManager;
-	public static ResultManager 			processorResultManager;
 	public static AmazonSQS 				queue;
 
 	private static TaskExecutor 			taskExecutor;
@@ -94,9 +92,6 @@ public class Main {
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 		dbManager.connect();
-
-		// creating processor result manager
-		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
 		proxies = new Proxies();

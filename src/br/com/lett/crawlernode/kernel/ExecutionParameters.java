@@ -10,6 +10,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ExecutionParameters {
@@ -101,7 +102,7 @@ public class ExecutionParameters {
 			// environment
 			if (cmd.hasOption("environment")) {
 				environment = cmd.getOptionValue("environment");
-				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) || !environment.equals(ENVIRONMENT_PRODUCTION)) {
+				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) && !environment.equals(ENVIRONMENT_PRODUCTION)) {
 					Logging.printLogError(logger, "Unrecognized environment.");
 					help();
 				}
@@ -112,7 +113,7 @@ public class ExecutionParameters {
 			// mode
 			if (cmd.hasOption("mode")) {
 				mode = cmd.getOptionValue("mode");
-				if (!mode.equals(MODE_INSIGHTS) || !mode.equals(MODE_DISCOVERY) || !mode.equals(MODE_DEAD_LETTER)) {
+				if (!mode.equals(MODE_INSIGHTS) && !mode.equals(MODE_DISCOVERY) && !mode.equals(MODE_DEAD_LETTER)) {
 					Logging.printLogError(logger, "Unrecognized mode.");
 					help();
 				}
@@ -122,7 +123,7 @@ public class ExecutionParameters {
 
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			help();
 		}
 	}

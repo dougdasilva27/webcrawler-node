@@ -31,6 +31,7 @@ import com.mongodb.client.result.UpdateResult;
 
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -90,9 +91,11 @@ public class DatabaseManager {
 
 			Logging.printLogDebug(logger, "Successfully connected to Postgres!");
 		} catch (SQLException e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres." + "[" + e.getMessage() + "]");
+			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		} catch (ClassNotFoundException e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres." + "[" + e.getMessage() + "]");
+			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 		// connect to mongodb
@@ -119,7 +122,8 @@ public class DatabaseManager {
 
 			Logging.printLogDebug(logger, "Successfully connected to Mongo!");
 		} catch (Exception e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo." + "[" + e.getMessage() + "]");
+			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 	}
@@ -193,7 +197,7 @@ public class DatabaseManager {
 
 			} catch (Exception e) {
 				System.err.println("ERROR fetching Seed document to update logs!");
-				e.printStackTrace();
+				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			}			
 		}
 
@@ -221,8 +225,8 @@ public class DatabaseManager {
 				UpdateResult updateResult = seedCollection.updateOne(filterQuery, updateQuery);
 
 			} catch (Exception e) {
-				System.err.println("ERROR appending log to Seed document!");
-				e.printStackTrace();
+				//System.err.println("ERROR appending log to Seed document!");
+				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			}			
 		}
 
@@ -249,8 +253,8 @@ public class DatabaseManager {
 				UpdateResult updateResult = seedCollection.updateOne(filterQuery, updateQuery);
 
 			} catch (Exception e) {
-				System.err.println("ERROR appending log to Seed document!");
-				e.printStackTrace();
+				//System.err.println("ERROR appending log to Seed document!");
+				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			}			
 		}
 

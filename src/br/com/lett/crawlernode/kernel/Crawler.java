@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.kernel;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -14,13 +13,12 @@ import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
+import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.server.S3Service;
-import br.com.lett.crawlernode.util.CommonMethods;
+
 import br.com.lett.crawlernode.util.Logging;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.cookie.Cookie;
 
 import org.slf4j.Logger;
@@ -60,11 +58,17 @@ public class Crawler implements Runnable {
 	 * or any other need. By default it's not instantiated.
 	 */
 	protected CrawlerWebdriver webdriver;
+	
+	/**
+	 * Processor
+	 */
+	protected ResultManager processorResultManager;
 
 
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 		this.cookies = new ArrayList<Cookie>();
+		this.processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager, session);
 	}
 
 
@@ -79,8 +83,6 @@ public class Crawler implements Runnable {
 
 		// crawl informations and create a list of products
 		List<Product> products = extract();
-		
-		
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
@@ -153,8 +155,6 @@ public class Crawler implements Runnable {
 	private void processProduct(Product product) {
 		boolean mustEnterTrucoMode = false;
 		
-		
-
 		// print crawled information
 		printCrawledInformation(product);
 
@@ -165,7 +165,7 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, processorResultManager);
 
 		if (previousProcessedProduct == null) {
 
@@ -216,7 +216,7 @@ public class Crawler implements Runnable {
 
 				if (localProduct != null) {
 					Persistence.persistProduct(localProduct, session);
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct);
+					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, processorResultManager);
 
 					if (newProcessedProduct != null) {					
 						if ( compare(newProcessedProduct, currentTruco) ) {

@@ -68,7 +68,7 @@ public class BrasilClimarioCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 
-			Logging.printLogDebug(logger, "Product page identified: " + session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + session.getUrl());
 
 			/* ***********************************
 			 * crawling data of only one product *

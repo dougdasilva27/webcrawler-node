@@ -86,9 +86,11 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			String secondaryImages = null;
 
 			// Descrição
-			String description = null;
+			String description = "";
 			Elements elementDescription = doc.select("div.accordion--body");
-			description = elementDescription.html();
+			if (elementDescription != null) {
+				description = description + elementDescription.html();
+			}
 
 			// Estoque
 			Integer stock = null;

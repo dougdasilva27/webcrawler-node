@@ -63,7 +63,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			/* ***********************************
 			 * crawling data of only one product *

@@ -37,7 +37,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 
 		if ( isProductPage(this.session.getUrl()) ) {
 
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// ID interno
 			String internalId = null;

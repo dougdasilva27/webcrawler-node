@@ -39,7 +39,7 @@ public class BrasilDafitiCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Nome
 			Elements elementPreName = doc.select("h1.product-name");

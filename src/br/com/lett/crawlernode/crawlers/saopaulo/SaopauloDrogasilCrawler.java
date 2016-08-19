@@ -31,7 +31,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl(), doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// ID interno
 			Element elementInternalID = doc.select(".product-details .col-2 .data-table tr .data").first();
