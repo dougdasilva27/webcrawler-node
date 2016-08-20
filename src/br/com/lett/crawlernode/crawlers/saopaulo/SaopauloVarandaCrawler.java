@@ -37,7 +37,7 @@ public class SaopauloVarandaCrawler extends Crawler {
 		// estamos visitando é uma página de produto.
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Id interno
 			Elements element_id = doc.select("input[name=product]");

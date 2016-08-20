@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -220,6 +222,14 @@ public class CommonMethods {
 		}
 
 		return null;
+	}
+	
+	public static String getStackTraceString(Exception e) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(stringWriter);
+		e.printStackTrace(printWriter);
+		
+		return stringWriter.toString(); 
 	}
 
 }

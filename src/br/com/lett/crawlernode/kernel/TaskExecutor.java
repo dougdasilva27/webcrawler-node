@@ -61,7 +61,7 @@ public class TaskExecutor {
 				if (task != null) {
 					executor.execute(task);
 				} else {
-					Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]");
+					Logging.printLogError(logger, session, "Error: task could not be created.");
 				}
 			}
 		}

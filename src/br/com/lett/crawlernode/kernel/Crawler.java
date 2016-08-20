@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.kernel;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -11,16 +10,15 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
-import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
+import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.server.S3Service;
-import br.com.lett.crawlernode.util.CommonMethods;
+
 import br.com.lett.crawlernode.util.Logging;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.cookie.Cookie;
 
 import org.slf4j.Logger;
@@ -54,20 +52,26 @@ public class Crawler implements Runnable {
 	 * this attribute is set by the handleCookiesBeforeFetch method.
 	 */
 	protected List<Cookie> cookies;
-	
+
 	/**
 	 * Remote webdriver to be used in case of screenshot in truco mode
 	 * or any other need. By default it's not instantiated.
 	 */
 	protected CrawlerWebdriver webdriver;
+	
+	/**
+	 * Processor
+	 */
+	protected ResultManager processorResultManager;
 
 
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 		this.cookies = new ArrayList<Cookie>();
+		this.processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager, session);
 	}
-	
-	
+
+
 	/**
 	 * Overrides the run method that will perform a task within a thread.
 	 * The actual thread performs it's computation controlled by an Executor, from
@@ -79,29 +83,31 @@ public class Crawler implements Runnable {
 
 		// crawl informations and create a list of products
 		List<Product> products = extract();
-		
+
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
-		
-		/* ***************
-		 * MODE INSIGHTS *
-		 * ***************
-		 *  
-		 * There is only one product that will be processed in this mode.
-		 * This product will be selected by it's internalId, passed by the CrawlerSession
+
+		/* **********************************************************
+		 * 						MODE INSIGHTS 						*
+		 *  														*
+		 * There is only one product that will be 					*
+		 * processed in this mode. This product will be selected 	*
+		 * by it's internalId, passed by the CrawlerSession			*
+		 * 															*
+		 * **********************************************************
 		 */
 		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
-			for (Product product : products) {
-				if (product.getInternalId() != null && product.getInternalId().equals(session.getInternalId())) {
-					processProduct(product);
-				}
+			Product product = getProductByInternalId(products, session.getInternalId());
+			if (product != null) {
+				processProduct(product);
 			}
 		}
-		
-		/* ****************
-		 * MODE DISCOVERY *
-		 * ****************
-		 * 
-		 * In this mode, we must process each crawled product.
+
+		/* ******************************************************
+		 * 					MODE DISCOVERY					    *
+		 * 														*
+		 * In this mode, we must process each crawled product.  *
+		 * 														*
+		 * ******************************************************
 		 */
 		else {
 			for (Product product : products) {
@@ -111,8 +117,8 @@ public class Crawler implements Runnable {
 
 		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
 		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-		
-		// if the crawler used the webdriver in some point, it must be closed
+
+		// if the crawler used the webdriver at some point, it must be closed
 		if (webdriver != null) {
 			Logging.printLogDebug(logger, session, "Closing webdriver...");
 			webdriver.closeDriver();
@@ -151,7 +157,7 @@ public class Crawler implements Runnable {
 		
 		// print crawled information
 		printCrawledInformation(product);
-		
+
 		// persist the product
 		Persistence.persistProduct(product, session);
 
@@ -159,7 +165,7 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct);
+		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, processorResultManager);
 
 		if (previousProcessedProduct == null) {
 
@@ -196,21 +202,21 @@ public class Crawler implements Runnable {
 		 */
 		if (mustEnterTrucoMode) {
 			Logging.printLogDebug(logger, session, "Entering truco mode...");
-			
+
 			ProcessedModel currentTruco = newProcessedProduct;
 
 			while (true) {
 				List<Product> products = extract();
-				
+
 				// when we are processing all the the products in array (mode discovery)
 				// we will select only the product being 'trucado'
-				Product localProduct = this.getProductByInternalId(products, currentTruco.getInternalId());
-				
+				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
+
 				session.incrementTrucoAttempts();
-				
+
 				if (localProduct != null) {
 					Persistence.persistProduct(localProduct, session);
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct);
+					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, processorResultManager);
 
 					if (newProcessedProduct != null) {					
 						if ( compare(newProcessedProduct, currentTruco) ) {
@@ -220,34 +226,34 @@ public class Crawler implements Runnable {
 						// if we found two consecutive equals processed products, persist and end 
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
-							
-//							// create webdriver
-//							if (webdriver == null) {
-//								Logging.printLogDebug(logger, session, "Initializing webdriver");
-//								webdriver = new CrawlerWebdriver();
-//							}
-//							
-//							// get a screenshot from the page
-//							File screenshot = webdriver.takeScreenshot(session.getUrl());
-//							
-//							// the the page html
-//							String html = webdriver.loadUrl(session.getUrl());
-//							
-//							// upload screenshot and html to Amazon
-//							S3Service.uploadFileToAmazon(session, screenshot);
-//							S3Service.uploadHtmlToAmazon(session, html);
-							
+
+							//							// create webdriver
+							//							if (webdriver == null) {
+							//								Logging.printLogDebug(logger, session, "Initializing webdriver");
+							//								webdriver = new CrawlerWebdriver();
+							//							}
+							//							
+							//							// get a screenshot from the page
+							//							File screenshot = webdriver.takeScreenshot(session.getUrl());
+							//							
+							//							// the the page html
+							//							String html = webdriver.loadUrl(session.getUrl());
+							//							
+							//							// upload screenshot and html to Amazon
+							//							S3Service.uploadFileToAmazon(session, screenshot);
+							//							S3Service.uploadHtmlToAmazon(session, html);
+
 							return;
 						}
 					}
 				}
-				
+
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
-				
+
 			}
 		}
 	}
-	
+
 
 	/**
 	 * It defines wether the crawler must true to extract data or not.
@@ -275,7 +281,7 @@ public class Crawler implements Runnable {
 	public String handleURLBeforeFetch(String url) {
 		return url;
 	}
-	
+
 	/**
 	 * Performs the data extraction of the URL in the session.
 	 * The four main steps of this method are:
@@ -296,7 +302,7 @@ public class Crawler implements Runnable {
 		String url = handleURLBeforeFetch(session.getUrl());
 		session.setUrl(url);
 		session.setOriginalURL(url);
-		
+
 		if ( shouldVisit() ) {
 			Document document = fetch();
 			List<Product> products = extractInformation(document);
@@ -304,9 +310,7 @@ public class Crawler implements Runnable {
 			return products;
 		}
 
-		List<Product> products = new ArrayList<Product>();
-		if (products.isEmpty()) products.add( new Product() );
-		return products;
+		return new ArrayList<Product>();
 	}
 
 
@@ -342,7 +346,7 @@ public class Crawler implements Runnable {
 	private void printCrawledInformation(Product product) {
 		Logging.printLogDebug(logger, session, "Crawled information: " + product.toString());
 	}
-	
+
 	/**
 	 * Get only the product with the desired internalId.
 	 * @param products
@@ -355,8 +359,40 @@ public class Crawler implements Runnable {
 				return product;
 			}
 		}
-		
+
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @param product
+	 * @return
+	 */
+	private Product activeVoid(Product product) {
+		Product p = product;
+		
+		if ( product.isVoid() ) {
+			
+			// fetch the previous processed product stored on database
+			ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+			
+			if (previousProcessedProduct != null) {
+				if ( previousProcessedProduct.getVoid_product() ) {
+					
+					// TODO update last dates
+					
+				}
+				else {
+					// TODO try again
+				}
+			}
+			else {
+				// TODO try again
+			}
+			
+		}
+		
+		return p;
 	}
 
 }

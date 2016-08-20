@@ -75,7 +75,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 				Document skuDoc = this.fetchSkuURL(element);
 
 				if (skuDoc != null) {
-					Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 					// InternalId
 					String internalID = crawlInternalId(skuDoc);

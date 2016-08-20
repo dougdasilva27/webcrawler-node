@@ -20,6 +20,10 @@ public class Product {
 	private JSONArray marketplace;
 	private Integer stock;
 	
+	public Product() {
+		this.description = "";
+	}
+	
 	public String getSeedId() {
 		return seedId;
 	}
@@ -137,6 +141,24 @@ public class Product {
 	
 	public void setStock(Integer stock) {
 		this.stock = stock;
+	}
+	
+	/**
+	 * Check if the product instance is void. Cases in which it's considered
+	 * a void product:
+	 * <ul>
+	 * <li>1. The price is null or 0.0 and at the same time is available.</li>
+	 * <li>2. The internal id is null or is an empty string</li>
+	 * <li>3. The name is null or is an empty string</li>
+	 * </ul>
+	 * @return true if product is void or false otherwise
+	 */
+	public boolean isVoid() {
+		if((price == null || price.equals(0f)) && available) return true;
+		if(internalId == null || internalId.isEmpty()) return true;
+		if(name == null || name.isEmpty()) return true;
+		
+		return false;
 	}
 	
 	@Override

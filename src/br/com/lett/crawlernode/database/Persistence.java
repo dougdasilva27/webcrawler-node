@@ -11,9 +11,10 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.BasicDBObject;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
-import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class Persistence {
@@ -165,7 +166,8 @@ public class Persistence {
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
 		} catch (SQLException e) {
-			Logging.printLogError(logger, session, "Error inserting product on database! [" + e.getMessage() + "]");
+			Logging.printLogError(logger, session, "Error inserting product on database!");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
 	
@@ -259,7 +261,7 @@ public class Persistence {
 			
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
-			Logging.printLogError(logger, session, e.getMessage());
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 	}

@@ -18,9 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
-import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
 
 public class Processor {
@@ -33,7 +34,12 @@ public class Processor {
 	 * @param session
 	 * @return a new ProcessedModel or null in case the Product model has invalid informations
 	 */
-	public static ProcessedModel createProcessed(Product product, CrawlerSession session, ProcessedModel previousProcessedProduct) {
+	public static ProcessedModel createProcessed(
+			Product product, 
+			CrawlerSession session, 
+			ProcessedModel previousProcessedProduct, 
+			ResultManager processorResultManager) {
+		
 		Logging.printLogDebug(logger, session, "Creating processed product...");
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
@@ -166,7 +172,7 @@ public class Processor {
 						null);
 			}
 
-			Main.processorResultManager.processProduct(newProcessedProduct, session);
+			processorResultManager.processProduct(newProcessedProduct);
 
 			// Atualizando disponibilidade
 			newProcessedProduct.setAvailable(available);

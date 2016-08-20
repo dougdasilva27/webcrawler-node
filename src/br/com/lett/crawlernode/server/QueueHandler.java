@@ -39,12 +39,22 @@ public class QueueHandler {
 	 * Amazon sqs queue to be used in discovery mode
 	 */
 	private AmazonSQS sqsDiscovery;
+	
+	/**
+	 * Amazon sqs queue to be used in dead mode
+	 */
+	private AmazonSQS sqsDeadLetter;
 
 	/**
 	 * Amazon sqs queue to be used only in development mode
 	 */
 	private AmazonSQS sqsDevelopment;
-
+	
+	/**
+	 * Default constructor for QueueHandler.
+	 * Perform authentication on Amazon services and creates an instance
+	 * of the appropriate SQS queue, according to environment and execution mode.
+	 */
 	public QueueHandler() {
 		AWSCredentials credentials = null;
 		try {
@@ -52,44 +62,52 @@ public class QueueHandler {
 		} catch (Exception e) {
 			throw new AmazonClientException("Cannot create credentials", e);
 		}
+		
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 
-		/* ************************
-		 * Production environment *
-		 **************************/
+		// creating queue for environment production
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			Logging.printLogDebug(logger, "Authenticating in production environment SQS...");
-
 			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+				Logging.printLogDebug(logger, "Authenticating in production environment SQS [insights queue]...");
 				sqsInsights = new AmazonSQSClient(credentials);
-				Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 				sqsInsights.setRegion(usEast1);
-			} else {
+			} else if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
+				Logging.printLogDebug(logger, "Authenticating in production environment SQS [discovery queue]...");
 				sqsDiscovery = new AmazonSQSClient(credentials);
-				Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 				sqsDiscovery.setRegion(usEast1);
+			} else if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
+				Logging.printLogDebug(logger, "Authenticating in production environment SQS [dead letter queue]...");
+				sqsDeadLetter = new AmazonSQSClient(credentials);
+				sqsDeadLetter.setRegion(usEast1);
 			}
 		}
 
-		/* *************************
-		 * Development environment *
-		 ***************************/
+		// creating queue for environment development
 		else {
-			Logging.printLogDebug(logger, "Authenticating in development environment SQS...");
-
+			Logging.printLogDebug(logger, "Authenticating in production environment SQS [development queue]...");
 			sqsDevelopment = new AmazonSQSClient(credentials);
-			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 			sqsDevelopment.setRegion(usEast1);
 		}
 
 	}
-
+	
+	/**
+	 * Select the appropriate AmazonSQS according to environment and mode 
+	 * @return
+	 */
 	public AmazonSQS getSQS() {
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
+				return sqsDeadLetter;
+			}
 			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
 				return sqsInsights;
 			}
-			return sqsDiscovery;
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
+				return sqsDiscovery;
+			}
 		}
+		
 		return sqsDevelopment;
 	}
 

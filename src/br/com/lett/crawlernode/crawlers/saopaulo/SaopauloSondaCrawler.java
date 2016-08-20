@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.kernel.Crawler;
@@ -39,12 +40,18 @@ public class SaopauloSondaCrawler extends Crawler {
 			String internalID = Integer.toString(Integer.parseInt(this.session.getUrl().split("/")[this.session.getUrl().split("/").length-1]));
 
 			// Nome
-			Elements elementName = doc.select(".box-DetalhesProdMed h3");
-			String name = elementName.text().replace("'", "").trim();
+			String name = null;
+			Element elementName = doc.select(".box-DetalhesProdMed h3").first();
+			if (elementName != null) {
+				name = elementName.text().replace("'", "").trim();
+			}
 
 			// Preço
-			Elements elementPrice = doc.select(".box-DetalhesProdMed h2");
-			Float price = Float.parseFloat(elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			Float price = null;
+			Element elementPrice = doc.select(".box-DetalhesProdMed h2").first();
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
 
 			// Disponibilidade
 			boolean available = true;
@@ -57,9 +64,14 @@ public class SaopauloSondaCrawler extends Crawler {
 			String category3 = "";
 
 			// Imagem primária
-			Elements elementPrimaryImage = doc.select(".box-Imagem img");
-			String primaryImage = elementPrimaryImage.get(0).attr("src");
-			if(primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) primaryImage = ""; //TODO: Verificar o nome da foto genérica
+			String primaryImage = null;
+			Element elementPrimaryImage = doc.select(".box-Imagem img").first();
+			if (elementPrimaryImage != null) {
+				primaryImage = elementPrimaryImage.attr("src");
+			}
+			if(primaryImage != null && primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) {
+				primaryImage = ""; //TODO: Verificar o nome da foto genérica
+			}
 			String secondaryImages = null;
 
 			// Descrição

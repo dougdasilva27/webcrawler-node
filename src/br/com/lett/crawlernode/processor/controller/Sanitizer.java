@@ -52,74 +52,16 @@ public class Sanitizer {
 		this.brandsReplaceMap = new LinkedHashMap<String, String>();
 		this.blackList = new ArrayList<String>();
 		
-//		String [] nextLine;
-//		CSVReader reader;
-//		String key;
-//		String value;
-		
-		//Download csv from google
-		//https://docs.google.com/spreadsheets/d/<KEY>/export?gid=0&format=csv
-			
-		// Create blacklist
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.blacklistRemoveListCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				this.blackList.add(key);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-		
 		this.blackList.add("para");
 		this.blackList.add("com");
 		this.blackList.add("de");
 		
 			
-		// Create brands replace map
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.brandsReplaceMapCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				value = nextLine[1].toLowerCase();
-//				this.brandsReplaceMap.put(key, value);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-				
-		// Create units replace map
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				value = nextLine[1].toLowerCase();
-//				this.unitsReplaceMap.put(key, value);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-		
+		// Create brands replace map		
 		this.unitsReplaceMap = ReplacementMaps.unitsReplaceMap;
 		
 		
-		// Create recipients replace map
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
-//			reader.readNext();
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				value = nextLine[1].toLowerCase();
-//				this.recipientsReplaceMap.put(key, value);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-		
+		// Create recipients replace map		
 		this.recipientsReplaceMap = ReplacementMaps.recipientsReplaceMap;
 		
 		Logging.printLogDebug(logger, "success!");
@@ -368,8 +310,6 @@ public class Sanitizer {
 		return new ArrayList<String>(Arrays.asList(name.split(" ")));
 	}
 	
-	
-	// ============ GETTERS AND SETTERS ==================
 	public boolean isLogActivated() {
 		return this.logActivated;
 	}

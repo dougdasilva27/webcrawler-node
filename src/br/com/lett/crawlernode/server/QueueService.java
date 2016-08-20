@@ -34,6 +34,8 @@ public class QueueService {
 	
 	private static final String PRODUCTION_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
 	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
+	private static final String DISCOVERY_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
+	private static final String DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
 	
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
@@ -52,7 +54,7 @@ public class QueueService {
 	public static List<Message> requestMessages(AmazonSQS sqs) {
 		Logging.printLogDebug(logger, "Requesting for a maximum of 1 task on queue...");
 		
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
@@ -68,7 +70,7 @@ public class QueueService {
 	public static List<Message> requestMessages(AmazonSQS sqs, int maxNumberOfMessages) {
 		Logging.printLogDebug(logger, "Requesting for a maximum of " + maxNumberOfMessages + " tasks on queue...");
 		
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
@@ -84,7 +86,7 @@ public class QueueService {
 	 * @param message
 	 */
 	public static void deleteMessage(AmazonSQS sqs, Message message) {		
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		String messageReceiptHandle = message.getReceiptHandle();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
@@ -96,7 +98,7 @@ public class QueueService {
 	 * @param messageReceiptHandle
 	 */
 	public static void deleteMessage(AmazonSQS sqs, String messageId, String messageReceiptHandle) {
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
 
@@ -106,7 +108,7 @@ public class QueueService {
 	 * @param messages
 	 */
 	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		for (int i = 0; i < messages.size(); i++) {
 			String messageReceiptHandle = messages.get(i).getReceiptHandle();
 			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
@@ -121,7 +123,7 @@ public class QueueService {
 	 */
 	public static void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
 		SendMessageRequest sendMessageRequest = new SendMessageRequest();
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		sendMessageRequest.setQueueUrl(queueURL);
 		sendMessageRequest.setMessageBody(messageBody);
 		sendMessageRequest.setMessageAttributes(attributes);
@@ -136,7 +138,7 @@ public class QueueService {
 	 */
 	public static void sendBatchMessages(AmazonSQS sqs, List<SendMessageBatchRequestEntry> entries) {
 		SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
-		String queueURL = selectQueue();
+		String queueURL = selectQueueURL();
 		batchMessageBatchRequest.setQueueUrl(queueURL);
 		batchMessageBatchRequest.setEntries(entries);
 		
@@ -182,12 +184,21 @@ public class QueueService {
 	/**
 	 * Selects a proper Amazon SQS queue to be used, according to the environment
 	 * @param environment
-	 * @return
+	 * @return The appropriate queue URL
 	 */
-	private static String selectQueue() {
+	private static String selectQueueURL() {
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			return PRODUCTION_QUEUE_URL;
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
+				return DEAD_LETTER_QUEUE_URL;
+			}
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+				return PRODUCTION_QUEUE_URL;
+			}
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
+				return DISCOVERY_QUEUE_URL;
+			}
 		}
+		
 		return DEVELOMENT_QUEUE_URL;
 	}
 

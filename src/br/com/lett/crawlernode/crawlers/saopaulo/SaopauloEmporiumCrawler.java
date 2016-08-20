@@ -36,7 +36,7 @@ public class SaopauloEmporiumCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			String params = this.session.getUrl().split("\\?")[1];
 			Map<String, String> paramsMap = new HashMap<String, String>();

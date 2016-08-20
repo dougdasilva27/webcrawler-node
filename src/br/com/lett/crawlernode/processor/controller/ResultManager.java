@@ -39,17 +39,16 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.fetcher.Proxy;
-import br.com.lett.crawlernode.kernel.models.BrandModel;
-import br.com.lett.crawlernode.kernel.models.ClassModel;
-import br.com.lett.crawlernode.kernel.models.Market;
-import br.com.lett.crawlernode.kernel.models.ProcessedModel;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Information;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
+import br.com.lett.crawlernode.processor.models.BrandModel;
+import br.com.lett.crawlernode.processor.models.ClassModel;
+import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.ProcessedModelSanitizer;
 import br.com.lett.crawlernode.processor.base.Extractor;
 import br.com.lett.crawlernode.processor.base.IdentificationLists;
 
@@ -87,7 +86,9 @@ public class ResultManager {
 	private DateFormat isoDateFormat;
 	private Map<Integer, String> cityNameInfo;
 	private Map<Integer, String> marketNameInfo;
-	private List<Market> markets;
+	//private List<Market> markets;
+	
+	private CrawlerSession session;
 
 	private List<Proxy> proxies;
 
@@ -100,9 +101,14 @@ public class ResultManager {
 	 * @author fabricio
 	 * @param activateLogging - Define a ativação ou não dos logs
 	 */
-	public ResultManager(boolean activateLogging, MongoDatabase mongo, DatabaseManager db) throws NullPointerException {
+	public ResultManager(
+			boolean activateLogging, 
+			MongoDatabase mongo, 
+			DatabaseManager db,
+			CrawlerSession session) throws NullPointerException {
 		this.db = db;
 		this.mongo = mongo;
+		this.session = session;
 
 		this.initialize(activateLogging);
 	}
@@ -148,7 +154,7 @@ public class ResultManager {
 		this.brandModelList = new ArrayList<BrandModel>();
 
 		//Logging.printLogDebug(logger, pid, mode, environment, msg);
-		Logging.printLogDebug(logger, "Creating Result Manager and downloading lists sheets from Google Drive");
+		//Logging.printLogDebug(logger, "Creating Result Manager and downloading lists sheets from Google Drive");
 		String [] nextLine;
 		//CSVReader reader;
 		String key;
@@ -157,7 +163,7 @@ public class ResultManager {
 
 		// Cria Modelo de manipulação de Marcas para substituição e identificação
 		System.out.print(".");
-		try{
+		try {
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Information.queryForLettBrandProducts);
 
@@ -195,7 +201,7 @@ public class ResultManager {
 
 			// Trata exceções do ResultSet
 		}	catch (Exception e) {
-			e.printStackTrace();
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		// Completa marcas ou corrige marcas através da lista de marcas	
@@ -233,62 +239,15 @@ public class ResultManager {
 		}
 
 		// Cria listas de identificação de recipientes
-//		System.out.print(".");
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsListCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				this.recipientsList.add(key);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 		this.recipientsList = IdentificationLists.recipientsList;
 
 		// Cria listas de identificação de unidades
-//		System.out.print(".");
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsListCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				this.unitsList.add(key);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 		this.unitsList = IdentificationLists.unitsList;
 
 		// Cria listas de substituição de unidades
-//		System.out.print(".");
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.unitsReplaceMapCSV).openStream())));
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase();
-//				value = nextLine[1].toLowerCase();
-//				this.unitsReplaceMap.put(key, value);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 		this.unitsReplaceMap = ReplacementMaps.unitsReplaceMap;
 
 		// Cria listas de substituição de recipientes
-//		System.out.print(".");
-//		try {
-//			reader = new CSVReader(new BufferedReader(new InputStreamReader(new URL(Information.recipientsReplaceMapCSV).openStream())));
-//			reader.readNext();
-//			while ((nextLine = reader.readNext()) != null) {
-//				key = nextLine[0].toLowerCase().trim();
-//				value = nextLine[1].toLowerCase().trim();
-//				this.recipientsReplaceMap.put(key, value);
-//			}
-//			reader.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 		this.recipientsReplaceMap = ReplacementMaps.recipientsReplaceMap;
 
 		// Cria Modelo de manipulação da classes para torná-las LettClasses
@@ -297,7 +256,7 @@ public class ResultManager {
 			ResultSet rs = this.db.runSqlConsult(Information.queryForLettClassProducts);
 
 			// Enquanto houver linhas...
-			while(rs.next()){
+			while (rs.next()) {
 
 				ClassModel aux = null;
 
@@ -310,7 +269,7 @@ public class ResultManager {
 				}
 
 				// Se não existe, cria um nome lettClassesModel e adiciona na lista
-				if(aux == null) {
+				if (aux == null) {
 					aux = new ClassModel(rs.getString("denomination"));
 					aux.putOnMap(rs.getString("mistake"), rs.getString("extra"));
 					classModelList.add(aux);
@@ -325,11 +284,11 @@ public class ResultManager {
 
 			// Trata exceções do ResultSet
 		}	catch (Exception e) {
-			e.printStackTrace();
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		// Completa classes ou corrige classes através da lista de classes	
-		for(ClassModel cm : classModelList){
+		for (ClassModel cm : classModelList){
 
 			Pattern space = Pattern.compile(" ");
 
@@ -337,7 +296,7 @@ public class ResultManager {
 			// Exemplo: Marca de nome: jack daniels
 			//          Nós adicionaremos automaticamente com brandsReplaceMap e suas combinações: 
 			//          jackdaniels (errado) -> jack daniels (correto)
-			if(cm.getLettName().contains(" ")) {
+			if (cm.getLettName().contains(" ")) {
 
 				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", ""))) 	cm.putOnMap(cm.getLettName().replace(" ", ""), "");
 				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", "-"))) 	cm.putOnMap(cm.getLettName().replace(" ", "-"), "");
@@ -353,7 +312,7 @@ public class ResultManager {
 			//          Nós adicionaremos automáticamente com brandsReplaceMap e suas combinações: 
 			//          arco íris (errado) -> arco-íris (correto)
 			//          arcoíris (errado)  -> arco-íris (correto)
-			if(cm.getLettName().contains("-")) {
+			if (cm.getLettName().contains("-")) {
 
 				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", ""))) 	cm.putOnMap(cm.getLettName().replace("-", ""), "");
 				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", " "))) 	cm.putOnMap(cm.getLettName().replace("-", " "), "");
@@ -364,9 +323,9 @@ public class ResultManager {
 				}
 			}
 		}
-		Logging.printLogDebug(logger, "success!");
+		Logging.printLogDebug(logger, session, "success!");
 
-		Logging.printLogDebug(logger, "Fetching proxies to download images on Processor...");
+		Logging.printLogDebug(logger, session, "Fetching proxies to download images on Processor...");
 
 		proxies = new ArrayList<Proxy>();
 
@@ -395,11 +354,10 @@ public class ResultManager {
 			}
 			in.close();
 
-			Logging.printLogDebug(logger, proxies.size() + " proxies fetched!");
+			Logging.printLogDebug(logger, session, proxies.size() + " proxies fetched!");
 
 		} catch (Exception e) {
-			System.err.print("error!");
-			e.printStackTrace();
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 	}
@@ -407,180 +365,14 @@ public class ResultManager {
 	// =================== DADOS CRAWLER ======================
 
 	/**
-	 * Método responsável por buscar produtos na tabela Processed modificados recentemente que
-	 * precisar passar pelo processamento de novo, pois podem ter mudanças.
-	 * @author Fabricio
-	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
-	 * @throws SQLException 
-	 */
-//	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date) throws SQLException {		
-//		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "'");
-//		return rs;
-//	}
-
-	/**
-	 * Método responsável por buscar produtos na tabela Processed modificados recentemente que
-	 * precisar passar pelo processamento de novo, pois podem ter mudanças.
-	 * @author Fabricio
-	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
-	 * @throws SQLException 
-	 */
-//	private ResultSet fetchModifiedProcessedProductsAsPointer(DateTime date, Integer marketId) throws SQLException {		
-//		ResultSet rs = this.db.runSqlConsult(Information.queryForProcessedProducts + "'" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId);
-//		return rs;
-//	}
-
-	/**
-	 * Método responsável por buscar produtos de clientes na tabela Processed modificados recentemente que
-	 * precisar passar pelo processamento de novo, pois podem ter mudanças.
-	 * @author Fabricio
-	 * @return Retorna ResultSet com informaçẽos da consuta da tabela Processed
-	 * @throws SQLException 
-	 */
-//	private ResultSet fetchClientModifiedProcessedProductsAsPointer(DateTime date, Integer marketId, String market, String city) throws SQLException {		
-//		String query = "SELECT processed.*, lett.supplier as lett_supplier FROM processed "
-//				+ "LEFT OUTER JOIN lett ON (processed.internal_id = lett."+ city + "_" + market + "_internal_id AND processed.market = " + marketId + ") "
-//				+ "WHERE "
-//				+ "processed.lmt > '" + date.toString("yyyy-MM-dd HH:mm:ss.SSS") + "' AND market = " + marketId + " AND lett_supplier IS NOT NULL";
-//
-//		return this.db.runSqlConsult(query);
-//	}
-
-	/**
-	 * Método responsável pela busca de produtos na tabela Crawler, funciona como um apontamento para tal tabela com resultados de um supermercado específico
-	 * @param market - Supermercado a buscar na tabela Crawler
-	 * @return - ResultSet com dados do Crawler referente ao Supermercado
-	 * @throws SQLException 
-	 */
-//	private ResultSet fetchMarketsAsPointer() throws SQLException {
-//		ResultSet rs = this.db.runSqlConsult(Information.queryMarkets);
-//		return rs;
-//	}
-
-	// =================== DADOS PROCESSED ======================
-
-	/**
-	 * Método responsável por buscar uma linha na tabela processed e retorna ProcessedModel com as informações de um produto específico
-	 * @autor Doug
-	 * @param internal_id - Id interno de cada supermercado
-	 * @param market - Supermercado à ser consultado
-	 * @return ProcessModel com os valores da linha com os parametros da consulta
-	 */
-//	private ProcessedModel fetchProcessedProduct(String internal_id, int market) {
-//		try {
-//
-//			// Faz consulta na tabela processed de acordo com os parametros recebidos e os retém em um ResultSet
-//			ResultSet rs = this.db.runSqlConsult(Information.queryForSelectProcessedProduct_part1 + internal_id + Information.queryForSelectProcessedProduct_part2 + market);
-//			ProcessedModel p = null;
-//
-//
-//			// Enquanto houver próxima linha...
-//			while (rs.next()) {
-//
-//				JSONObject digitalContent;
-//				try 					{ 	digitalContent = new JSONObject(rs.getString("digital_content"));
-//				} catch (Exception e) 	{	digitalContent = null; }
-//
-//				JSONObject changes;
-//				try 					{ 	changes = new JSONObject(rs.getString("changes"));
-//				} catch (Exception e) 	{	changes = null; }
-//
-//				JSONArray similars;
-//				try 					{ 	similars = new JSONArray(rs.getString("similars"));
-//				} catch (Exception e) 	{	similars = null; }
-//
-//				JSONArray behaviour;
-//				try 					{ 	behaviour = new JSONArray(rs.getString("behaviour"));
-//				} catch (Exception e) 	{	behaviour = null; }
-//
-//				JSONArray marketplace;
-//				try 					{ 	marketplace = new JSONArray(rs.getString("marketplace"));
-//				} catch (Exception e) 	{	marketplace = null; }
-//
-//				Integer actual_stock;
-//				try 					{ 	actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-//				} catch (Exception e) 	{	actual_stock = null; }
-//
-//				// Salva resultados de cada coluna em um ProcessModel
-//				p = new ProcessedModel(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"), rs.getString("original_name"), rs.getString("class"), rs.getString("brand"),
-//						rs.getString("recipient"), rs.getDouble("quantity"), rs.getInt("multiplier"), rs.getString("unit"), 
-//						rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"), rs.getString("cat1"),
-//						rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), 
-//						rs.getString("ect"), rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
-//						rs.getString("original_description"), rs.getFloat("price"), 
-//						digitalContent, rs.getLong("lett_id"), similars, rs.getBoolean("available"), rs.getBoolean("void"), actual_stock, behaviour, marketplace);
-//				break;
-//			}
-//			rs.close();
-//			// ProcessModel pode ser nulo caso não encontre resultados na tabela processor
-//			return p;
-//		}
-//		// Caso algo ocorra errado o retorno será nulo
-//		catch (SQLException e) {
-//			Logging.printLogError(logger, "Problem fetching processed product with internal_id=" + internal_id + " and market=" + market);
-//			Logging.printLogError(logger, e.getMessage());
-//
-//			return null;
-//		}
-//	}
-
-	/**
-	 * Método responsável pelo preparo da persistência de dados, ou seja, prepara para o envio de dados para o banco.<br>
-	 * Também é responsável por definir se será inserida ou atualizada uma linha.
-	 * @author Doug
-	 * @param pm - ProcessedModel à ser enviado para o banco de dados
-	 * @throws SQLException 
-	 * @category Conexão
-	 */
-//	private void saveProcessedModel(ProcessedModel pm) throws SQLException {
-//
-//		// Prepara O PocessedModel para persistência
-//		ProcessedModelSanitizer.prepareToPersist(pm);
-//
-//		// Caso já exista o produto é atualizada a linha no banco de dados processed
-//		if (pm.getId() != null) {
-//			this.db.runSqlExecute("UPDATE processed SET "
-//					+ "internal_id=" + pm.getInternalId() + ","
-//					+ "void = false," // void é sempre false. Se tiver que ser true, é o history que o fará.
-//					+ "original_name=" + pm.getOriginalName() + ","
-//					+ "original_description=" + pm.getOriginalDescription() + ","
-//					+ "class=" + pm.get_class() + ","
-//					+ "brand=" + pm.getBrand() + ","
-//					+ "recipient=" + pm.getRecipient() + ","
-//					+ "quantity=" + pm.getQuantity() + ","
-//					+ "multiplier=" + pm.getMultiplier() + ","
-//					+ "unit=" + pm.getUnit() + ","
-//					+ "extra=" + pm.getExtra() + ","
-//					+ "pic=" + pm.getPic() + ","
-//					+ "secondary_pics=" + pm.getSecondary_pics() + ","
-//					+ "price=" + pm.getPrice() + ","
-//					+ "cat1=" + pm.getCat1() + ","
-//					+ "cat2=" + pm.getCat2() + ","
-//					+ "cat3=" + pm.getCat3() + ","
-//					+ "url=" + pm.getUrl() + ","
-//					+ "market=" + pm.getMarket() + ","
-//					+ "ect=" + pm.getEct() + ","
-//					+ "lmt=" + pm.getLmt() + ","
-//					+ "changes=" + pm.getChanges() + ", "
-//					+ "digital_content='" + pm.getDigitalContent() + "', "
-//					+ "behaviour='" + pm.getBehaviour() + "' "
-//					+ "WHERE id=" + pm.getId());
-//		} else {
-//			// Não teremos mais este caso. Quem cria processed agora é o crawler. O processor só atualiza.
-//		}
-//	}
-
-	/**
-	 * 
 	 * Extrai informações a partir dos campos "original_" do ProcessModel, e por fim
 	 * salva os dados recebidos dentro do ProcessModel a ser retornado.
-	 * 
 	 * @author Fabricio
 	 * @category Manipulação
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
-	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
+	public ProcessedModel processProduct(ProcessedModel pm) {	
 		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
 		// Previne o conteúdo de extra ser nulo
@@ -622,9 +414,8 @@ public class ResultManager {
 		pm = ((Extractor) extractor).extract(pm);
 
 		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
-//		if(mode.equals(Controller.MODE_INSIGHTS) || mode.equals(Controller.MODE_PLACEHOLDER)) this.updateDigitalContent(pm); // TODO
 		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-			this.updateDigitalContent(pm, session);
+			this.updateDigitalContent(pm);
 		}
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
@@ -640,7 +431,7 @@ public class ResultManager {
 	 * @author Fabricio
 	 * @param pm - ProcessModel recebido no instante da execução
 	 */
-	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
+	private void updateDigitalContent(ProcessedModel pm) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
 		
 		if(pm.getDigitalContent() == null) { pm.setDigitalContent(new JSONObject()); }
@@ -658,7 +449,7 @@ public class ResultManager {
 			}
 			
 		} catch (Exception e) { 
-			
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		// 1) Avaliando imagem
@@ -704,6 +495,7 @@ public class ResultManager {
 			fis.close();
 		} catch (Exception ex) {
 			Logging.printLogError(logger, session, "Error analysing image md5. [" + ex.getMessage() + "]");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
 		}		
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
@@ -920,7 +712,7 @@ public class ResultManager {
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "Error fetching market info on postgres!");
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 

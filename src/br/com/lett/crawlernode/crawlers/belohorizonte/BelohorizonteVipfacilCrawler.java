@@ -33,7 +33,7 @@ public class BelohorizonteVipfacilCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Id interno
 			String internalId = Integer.toString(Integer.parseInt(this.session.getUrl().split("/")[5]));
