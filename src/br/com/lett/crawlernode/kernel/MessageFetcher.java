@@ -78,11 +78,12 @@ public class MessageFetcher implements Runnable {
 	 * @return The maximum number of messages to request for the queue.
 	 */
 	private int computeNumOfTasksToRetrieve() {
-		int idleThreads = taskExecutor.getMaxThreadsCount() - taskExecutor.getActiveThreadsCount();
-		int queueRemainingCapacity = taskExecutor.getBloquingQueueRemainingCapacity();
-		if (idleThreads > QueueService.MAX_MESSAGES_REQUEST) return QueueService.MAX_MESSAGES_REQUEST;
+		int tasksToRetrieve = taskExecutor.getMaxThreadsCount() - taskExecutor.getActiveThreadsCount();
+		if (tasksToRetrieve > QueueService.MAX_MESSAGES_REQUEST) tasksToRetrieve = QueueService.MAX_MESSAGES_REQUEST;
 		
-		return idleThreads;
+		Logging.printLogDebug(logger, "[THREADS ATIVAS=" + taskExecutor.getActiveThreadsCount() + ", MAX_THREADS_POOL=" + taskExecutor.getMaxThreadsCount() + ", TASKS_TO_RETRIEVE=" + tasksToRetrieve + "]");
+		
+		return tasksToRetrieve;
 	}
 	
 }
