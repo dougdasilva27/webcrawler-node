@@ -11,8 +11,9 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.ControlledTaskExecutor;
+import br.com.lett.crawlernode.kernel.TaskExecutor;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.kernel.MessageFetcher;
 import br.com.lett.crawlernode.kernel.TaskExecutorAgent;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.server.QueueHandler;
@@ -55,18 +56,15 @@ public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-	public static ExecutionParameters 		executionParameters;
-	public static Proxies 					proxies;
-	public static DBCredentials 			dbCredentials;
-	public static DatabaseManager 			dbManager;
-	public static AmazonSQS 				queue;
+	public static ExecutionParameters 	executionParameters;
+	public static Proxies 				proxies;
+	public static DBCredentials 		dbCredentials;
+	public static DatabaseManager 		dbManager;
+	public static AmazonSQS 			queue;
 
-//	private static TaskExecutor 			taskExecutor;
-	private static ControlledTaskExecutor 	controlledTaskExecutor;
-	private static QueueHandler				queueHandler;
-//	private static WorkList					workList;
-
-	private static int FETCH_TASK_PERIOD = 100;	// milisseconds
+	private static TaskExecutor 		taskExecutor;
+	private static TaskExecutorAgent 	taskExecutorAgent;
+	private static QueueHandler			queueHandler;
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -98,51 +96,15 @@ public class Main {
 		queueHandler = new QueueHandler();
 		queue = queueHandler.getSQS();
 
-		// create the work list
-//		workList = new WorkList(WorkList.DEFAULT_MAX_SIZE);
-
 		// create a task executor
 		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");
-		//taskExecutor = new TaskExecutor(executionParameters.getNthreads());
-		controlledTaskExecutor = new ControlledTaskExecutor(executionParameters.getNthreads());
-
-		/*
-		 * main task
-		 */
-
-		Timer mainTask = new Timer();
-
-		for(int i=0; i<5; i++) {
-
-			mainTask.scheduleAtFixedRate(new TimerTask() {
-
-				@Override
-				public void run() {
-
-					//mainTaskWithDefaultTaskExecutor();
-					TaskExecutorAgent.performTask(controlledTaskExecutor, queueHandler);
-
-				}
-			//} , 0, FETCH_TASK_PERIOD);
-			} , 1000*i, FETCH_TASK_PERIOD);
-
-		}
+		taskExecutor = new TaskExecutor(executionParameters.getNthreads());
+		
+		// schedule threads to keep fethcing messages
+		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
+		taskExecutorAgent = new TaskExecutorAgent();
+		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler) );
 
 	}
-
-	/**
-	 * Task performed using the Executor from Executors Framework
-	 */
-//	private static void mainTaskWithDefaultTaskExecutor() {
-//
-//		// request message (tasks) from the Amazon queue
-//		List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), workList.maxMessagesToFetch());
-//
-//		// add the retrieved messages on the work list
-//		workList.addMessages(messages);
-//
-//		// submit the tasks to the task executor
-//		taskExecutor.submitWorkList(workList);
-//	}
 
 }

@@ -146,7 +146,7 @@ public class ExecutionParameters {
 	
 	private int getEnvNumOfThreads() {
 		String nThreads = System.getenv(ENV_NTHREADS);
-		if (nThreads == null) return ControlledTaskExecutor.DEFAULT_NTHREADS;
+		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
 		return Integer.parseInt(nThreads);
 	}
 

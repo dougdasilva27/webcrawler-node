@@ -1,87 +1,80 @@
 package br.com.lett.crawlernode.kernel;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.model.Message;
-
-import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.util.Logging;
-
-/**
- * An encapsulation of the ExecutorService used to run the tasks from Amazon SQS
- * @author Samir Leao
- *
- */
 public class TaskExecutor {
 	protected static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
+
+	public static final int DEFAULT_NTHREADS = 100;
+	public static final int DEFAULT_MAX_NTHREADS = 100;
+	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
+
+	private ThreadPoolExecutor threadPoolExecutor;
 	
-	public static final int DEFAULT_NTHREADS = 200;
-	
-	/**
-	 * The Executor Service, to whitch the tasks will be submited
-	 */
-	private ExecutorService executor;
-	
-	/**
-	 * Maximum number of threads in the executor pool of threads
-	 */
-	private int maxThreads;
-	
+	public TaskExecutor() {
+		threadPoolExecutor = new ThreadPoolExecutor(
+				DEFAULT_MAX_NTHREADS,
+				DEFAULT_MAX_NTHREADS,
+				0L,
+				TimeUnit.MILLISECONDS,
+				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
+				new RejectedTaskHandler()
+				);
+	}
 
-	public TaskExecutor(int maxThreads) {		
-		executor = Executors.newFixedThreadPool(maxThreads);
-		this.setMaxThreads(maxThreads);
+	public TaskExecutor(int maxThreads) {
+		threadPoolExecutor = new ThreadPoolExecutor(
+				maxThreads,
+				maxThreads,
+				0L,
+				TimeUnit.MILLISECONDS,
+				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
+				new RejectedTaskHandler()
+				);
 	}
 	
-	/**
-	 * 
-	 * @param workList
-	 */
-	public void submitWorkList(WorkList workList) {
-
-		// check the message fields
-		while (!workList.isEmpty()) {
-			
-			// get one message from the work list
-			Message message = workList.getMessage();
-			
-			if (QueueService.checkMessageIntegrity(message)) { // checking message fields
-
-				// create a crawler session from the message
-				CrawlerSession session = new CrawlerSession(message);
-
-				// create the task
-				Runnable task = TaskFactory.createTask(session);
-
-				// submit the task to the executor
-				if (task != null) {
-					executor.execute(task);
-				} else {
-					Logging.printLogError(logger, session, "Error: task could not be created.");
-				}
-			}
-		}
+	public TaskExecutor(int maxThreads, int bloquingQueueSize) {
+		threadPoolExecutor = new ThreadPoolExecutor(
+				maxThreads,
+				maxThreads,
+				0L,
+				TimeUnit.MILLISECONDS,
+				new LinkedBlockingQueue<Runnable>(bloquingQueueSize),
+				new RejectedTaskHandler()
+				);
+	}
+	
+	public int getMaxThreadsCount() {
+		return threadPoolExecutor.getMaximumPoolSize();
+	}
+	
+	public int getBloquingQueueSize() {
+		return threadPoolExecutor.getQueue().size();
+	}
+	
+	public int getBloquingQueueRemainingCapacity() {
+		return threadPoolExecutor.getQueue().remainingCapacity();
+	}
+	
+	public int getActiveThreadsCount() {
+		return threadPoolExecutor.getActiveCount();
+	}
+	
+	public long getCompletedTasksCount() {
+		return threadPoolExecutor.getCompletedTaskCount();
 	}
 
-	public ExecutorService getExecutor() {
-		return executor;
+	public void executeTask(Runnable task) {
+		threadPoolExecutor.execute(task);
 	}
 
-	public void setExecutor(ExecutorService executor) {
-		this.executor = executor;
+	public ThreadPoolExecutor getExecutor() {
+		return threadPoolExecutor;
 	}
-
-	public int getMaxThreads() {
-		return maxThreads;
-	}
-
-	public void setMaxThreads(int maxThreads) {
-		this.maxThreads = maxThreads;
-	}
-
 
 }

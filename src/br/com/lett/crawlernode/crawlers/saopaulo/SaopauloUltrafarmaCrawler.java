@@ -159,7 +159,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, "Not a product page.");
 		}
 		
 		return products;

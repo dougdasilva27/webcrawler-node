@@ -1,82 +1,29 @@
 package br.com.lett.crawlernode.kernel;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.services.sqs.model.Message;
-
-import br.com.lett.crawlernode.server.QueueHandler;
-import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.util.Logging;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class TaskExecutorAgent {
-	private static final Logger logger = LoggerFactory.getLogger(TaskExecutorAgent.class);
+	private ScheduledExecutorService scheduledExecutorService;
 	
-	/**
-	 * 
-	 * @param controlledTaskExecutor
-	 * @param queueHandler
-	 */
-	public static void performTask(ControlledTaskExecutor controlledTaskExecutor, QueueHandler queueHandler) {
-		
-		// computing number of tasks to retrieve from SQS
-		int numTasksToRetrieve = computeNumOfTasksToRetrieve(controlledTaskExecutor);
-
-		if (numTasksToRetrieve > 0) { // this will prevent to make an empty request
-
-			// request message (tasks) from the Amazon queue
-			Logging.printLogDebug(logger, "Requesting for a maximum of " + numTasksToRetrieve + " tasks on queue...");
-			List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), numTasksToRetrieve);
-			Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
-
-			for (Message message : messages) {
-
-				// check the message
-				if ( QueueService.checkMessageIntegrity(message) ) {
-
-					// create a crawler session from the message
-					CrawlerSession session = new CrawlerSession(message);
-
-					// create the task
-					Runnable task = TaskFactory.createTask(session);
-
-					// submit the task to the executor
-					if (task != null) {
-						controlledTaskExecutor.executeTask(task);
-					} else {
-						Logging.printLogError(logger, session, "Error: task could not be created...deleting message from sqs...");
-						QueueService.deleteMessage(queueHandler.getSQS(), message);						
-					}
-				}
-				
-				// something is wrong with the message content
-				else {
-					Logging.printLogError(logger, "Message refused [failed on integrity checking]. Will delete it from the queue...");
-					QueueService.deleteMessage(queueHandler.getSQS(), message);
-				}
-
-			}
-		}
-		else {
-			Logging.printLogDebug(logger, "Won't ask for any message because the pool is at it's maximum!");
-		}
+	private static final int DEFAULT_PERIOD = 1; // 1 second
+	private static final int DEFAULT_NTHREADS = 2;
+	
+	public TaskExecutorAgent() {
+		scheduledExecutorService = Executors.newScheduledThreadPool(DEFAULT_NTHREADS);
 	}
 	
-	/**
-	 * Computes the number of tasks to request for from AmazonSQS, based
-	 * on the number of active threads on the ThreadPool. Note that this is the maximum
-	 * number. In some cases the request can return less than the maximum, because of the long
-	 * pooling policy.
-	 * @param controlledTaskExecutor
-	 * @return The maximum number of messages to request for the queue.
-	 */
-	private static int computeNumOfTasksToRetrieve(ControlledTaskExecutor controlledTaskExecutor) {
-		int numTasksToRetrieve = controlledTaskExecutor.getMaxThreadsCount() - controlledTaskExecutor.getActiveThreadsCount();
-		if (numTasksToRetrieve < 0) numTasksToRetrieve = 0;
-		else if (numTasksToRetrieve > QueueService.MAX_MESSAGES_REQUEST) numTasksToRetrieve = QueueService.MAX_MESSAGES_REQUEST;
-		return numTasksToRetrieve;
+	public TaskExecutorAgent(int nthreads) {
+		scheduledExecutorService = Executors.newScheduledThreadPool(nthreads);
+	}
+	
+	public void executeScheduled(MessageFetcher messageFetcher) {
+		scheduledExecutorService.scheduleAtFixedRate(messageFetcher, 0, DEFAULT_PERIOD, TimeUnit.SECONDS);
+	}
+	
+	public void executeScheduled(MessageFetcher messageFetcher, int period) {
+		scheduledExecutorService.scheduleAtFixedRate(messageFetcher, 0, period, TimeUnit.SECONDS);
 	}
 
 }
