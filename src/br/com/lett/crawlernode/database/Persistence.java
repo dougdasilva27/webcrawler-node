@@ -2,13 +2,13 @@ package br.com.lett.crawlernode.database;
 
 import java.sql.SQLException;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.mongodb.BasicDBObject;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.models.Product;
@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class Persistence {
-	private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
 
 	/**
 	 * Persist the product crawled informations on tables crawler and crawler_old
@@ -162,7 +162,7 @@ public class Persistence {
 							+ "); ";
 
 			Main.dbManager.runSqlExecute(sql_crawler);
-			
+
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
 		} catch (SQLException e) {
@@ -170,10 +170,10 @@ public class Persistence {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	public static void persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
-		
+
 		String query = "";
 
 		if(newProcessedProduct.getId() == null) {
@@ -258,10 +258,80 @@ public class Persistence {
 		try {
 			Main.dbManager.runSqlExecute(query);
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
-			
+
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+
+	}
+
+	/**
+	 * Set void value of a processed model.
+	 * @param processed
+	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
+	 * @param session
+	 */
+	public void setProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
+		StringBuilder query = new StringBuilder();
+
+		query.append("UPDATE processed SET void=" + voidValue + " ");
+		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("AND ");
+		query.append("market=" + session.getMarket());
+
+		try {
+			Main.dbManager.runSqlExecute(query.toString());
+			Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
+		} catch(SQLException e) {
+			Logging.printLogError(logger, session, "Error updating processed product void.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+	}
+	
+	/**
+	 * Updates processed LastReadTime on processed table.
+	 * @param processed
+	 * @param nowISO
+	 * @param session
+	 */
+	public void updateProcessedLRT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+		StringBuilder query = new StringBuilder();
+
+		query.append("UPDATE processed set lrt=" + nowISO + " ");
+		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("AND ");
+		query.append("market=" + session.getMarket());
+
+		try {
+			Main.dbManager.runSqlExecute(query.toString());
+			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
+		} catch(SQLException e) {
+			Logging.printLogError(logger, session, "Error updating processed product LRT.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+	}
+
+	/**
+	 * Updates processed LastModifiedTime on processed table.
+	 * @param processed
+	 * @param nowISO
+	 * @param session
+	 */
+	public void updateProcessedLMT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+		StringBuilder query = new StringBuilder();
+
+		query.append("UPDATE processed set lmt=" + nowISO + " ");
+		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("AND ");
+		query.append("market=" + session.getMarket());
+
+		try {
+			Main.dbManager.runSqlExecute(query.toString());
+			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
+		} catch(SQLException e) {
+			Logging.printLogError(logger, session, "Error updating processed product LMT.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 	}

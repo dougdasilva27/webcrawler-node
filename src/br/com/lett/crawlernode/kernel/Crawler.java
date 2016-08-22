@@ -20,7 +20,8 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.apache.http.cookie.Cookie;
-
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -379,6 +380,7 @@ public class Crawler implements Runnable {
 	 */
 	private Product activeVoid(Product product) {
 		Product p = product;
+		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		
 		if ( product.isVoid() ) {
 			
