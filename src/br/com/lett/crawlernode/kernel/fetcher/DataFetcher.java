@@ -142,9 +142,9 @@ public class DataFetcher {
 
 			return connection.getResponseCode();
 		} catch (Exception e) {
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url + " [" + e.getMessage() + "]");
-
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
 			} else {
@@ -171,9 +171,8 @@ public class DataFetcher {
 			}
 
 		} catch (Exception e) {
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
-			Logging.printLogError(logger, session, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
@@ -262,7 +261,7 @@ public class DataFetcher {
 				payloadJson = new JSONObject(payload);
 			} catch (Exception e) {
 				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST JSON, pois não consegui converter o payload em json: " + payload);
-				Logging.printLogError(logger, session, e.getStackTrace().toString());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
 			if(payloadJson != null && payloadJson.length() > 0) {
@@ -319,10 +318,8 @@ public class DataFetcher {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
-			Logging.printLogError(logger, session, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
@@ -427,14 +424,9 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-
-			e.printStackTrace();
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
-			Logging.printLogError(logger, session, e.getMessage());
-			e.printStackTrace();
-
-
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Atingi máximo de tentativas para a url : " + url);
 				return "";
@@ -543,12 +535,8 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-
-			e.printStackTrace();
-
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
-			Logging.printLogError(logger, session, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
@@ -649,10 +637,8 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			e.printStackTrace();
-
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
-			Logging.printLogError(logger, session, e.getStackTrace().toString());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
