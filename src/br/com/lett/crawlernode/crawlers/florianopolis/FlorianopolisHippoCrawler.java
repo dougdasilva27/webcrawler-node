@@ -14,13 +14,13 @@ import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.util.Logging;
 
 public class FlorianopolisHippoCrawler extends Crawler {
-	
+
 	public FlorianopolisHippoCrawler(CrawlerSession session) {
 		super(session);
 	}
-	
+
 	private final String HOME_PAGE = "http://www.hippo.com.br/";
-	
+
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getUrl().toLowerCase();            
@@ -29,7 +29,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -55,13 +55,9 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 			// Preço
 			Float price = null;
-			try {
 			Elements elementPrice = doc.select("div.preco_comprar div.valores .valor");
 			if (elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-			}
-			} catch (Exception ex) {
-				Logging.printLogDebug(logger, session, "Error crawling price! [" + ex.getMessage() + "]");
 			}
 
 			// Disponibilidade
@@ -120,11 +116,11 @@ public class FlorianopolisHippoCrawler extends Crawler {
 		} else {
 			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
 		}
-		
+
 		return products;
 	}
-	
-	
+
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/

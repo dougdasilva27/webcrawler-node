@@ -32,7 +32,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -42,9 +42,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 			String params = this.session.getUrl().split("\\?")[1];
 			Map<String, String> paramsMap = new HashMap<String, String>();
 			for(String s: params.split("&")) {
-				try {
-					paramsMap.put(s.split("=")[0], s.split("=")[1]);
-				} catch (Exception e) { }
+				paramsMap.put(s.split("=")[0], s.split("=")[1]);
 			}
 
 			// Id interno

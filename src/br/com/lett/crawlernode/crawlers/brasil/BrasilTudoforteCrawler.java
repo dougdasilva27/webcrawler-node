@@ -35,7 +35,7 @@ public class BrasilTudoforteCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -46,12 +46,8 @@ public class BrasilTudoforteCrawler extends Crawler {
 			Element elementProduct = doc.select(".product-actions").first();
 			String internalID = null;
 			String actionFormComprar = elementProduct.select("#form_comprar").first().attr("action");
-			List<NameValuePair> params = null;
-			try {
-				params = URLEncodedUtils.parse(new URI(actionFormComprar), "UTF-8");
-			} catch (URISyntaxException uriSyntaxException) {
-				uriSyntaxException.printStackTrace();
-			}
+			List<NameValuePair> params = URLEncodedUtils.parse(new URI(actionFormComprar), "UTF-8");
+			
 			for (NameValuePair param : params) {
 				if(param.getName().equals("product_id")) {
 					internalID = param.getValue(); 

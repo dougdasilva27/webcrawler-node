@@ -31,7 +31,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 	}
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -98,107 +98,101 @@ public class BrasilNetshoesCrawler extends Crawler {
 
 			Element elementSku = doc.select("form[name=addToCart] input[name=skuId]").first();
 
-			try {
+			// Capturando sku genérico
+			String sku = "";
+			String[] skuSpplited = elementSku.attr("value").split("-");
 
-				// Capturando sku genérico
-				String sku = "";
-				String[] skuSpplited = elementSku.attr("value").split("-");
+			for(String s: skuSpplited) {
+				sku = sku + s + "-";
+			}
 
-				for(String s: skuSpplited) {
-					sku = sku + s + "-";
-				}
+			// Pegar produtos dentro da url usando a variável da chaordic
 
-				// Pegar produtos dentro da url usando a variável da chaordic
+			JSONObject chaordicMeta = null; //FIXME - variável da chaordic não existe mais
 
-				JSONObject chaordicMeta = null; //FIXME - variável da chaordic não existe mais
+			Elements scriptTags = doc.getElementsByTag("script");
+			for (Element tag : scriptTags){                
+				for (DataNode node : tag.dataNodes()) {
+					if(node.getWholeData().trim().startsWith("window.chaordic_meta = ")) {									
+						chaordicMeta = new JSONObject(node.getWholeData().trim().substring(22));
+					}
+				}        
+			}
 
-				Elements scriptTags = doc.getElementsByTag("script");
-				for (Element tag : scriptTags){                
-					for (DataNode node : tag.dataNodes()) {
-						if(node.getWholeData().trim().startsWith("window.chaordic_meta = ")) {									
-							chaordicMeta = new JSONObject(node.getWholeData().trim().substring(22));
-						}
-					}        
-				}
+			if(chaordicMeta != null && chaordicMeta.length() > 0) {
 
-				if(chaordicMeta != null && chaordicMeta.length() > 0) {
+				JSONArray skus = chaordicMeta.getJSONObject("product").getJSONArray("skus");
+				JSONArray sizes_information = chaordicMeta.getJSONObject("product").getJSONObject("specs").getJSONArray("size");
 
-					JSONArray skus = chaordicMeta.getJSONObject("product").getJSONArray("skus");
-					JSONArray sizes_information = chaordicMeta.getJSONObject("product").getJSONObject("specs").getJSONArray("size");
+				for(int i = 0; i < skus.length(); i++) {
 
-					for(int i = 0; i < skus.length(); i++) {
+					JSONObject skuInformation = skus.getJSONObject(i);
 
-						JSONObject skuInformation = skus.getJSONObject(i);
+					if(skuInformation.getString("url").equals(this.session.getUrl())) {
 
-						if(skuInformation.getString("url").equals(this.session.getUrl())) {
+						// ID interno
+						String internalID = skuInformation.getString("sku");
 
-							// ID interno
-							String internalID = skuInformation.getString("sku");
+						// Nome
+						String name = preName;
 
-							// Nome
-							String name = preName;
+						// Se tiver múltiplos produtos, vamos mudar os nomes de acordo com o seu tamanho
+						if(skus.length() > 1) {
 
-							// Se tiver múltiplos produtos, vamos mudar os nomes de acordo com o seu tamanho
-							if(skus.length() > 1) {
+							Elements elementsSizes = doc.select("form[name=addToCart] ul.attr-size .attr-name");
 
-								Elements elementsSizes = doc.select("form[name=addToCart] ul.attr-size .attr-name");
+							// Tem múltiplos tamanhos
+							if(elementsSizes.size() > 0) {
 
-								// Tem múltiplos tamanhos
-								if(elementsSizes.size() > 0) {
+								String sizeLabel = "";
 
-									String sizeLabel = "";
-
-									for(int x = 0; x < sizes_information.length(); x++) {
-										if(sizes_information.getJSONObject(x).getString("id").equals(skuInformation.getJSONObject("specs").getString("size"))) {
-											sizeLabel = sizes_information.getJSONObject(x).getString("label");
-										}
+								for(int x = 0; x < sizes_information.length(); x++) {
+									if(sizes_information.getJSONObject(x).getString("id").equals(skuInformation.getJSONObject("specs").getString("size"))) {
+										sizeLabel = sizes_information.getJSONObject(x).getString("label");
 									}
-
-									if(!sizeLabel.isEmpty()) name = name + " (tamanho " + sizeLabel + ")";
-
 								}
+
+								if(!sizeLabel.isEmpty()) name = name + " (tamanho " + sizeLabel + ")";
 
 							}
 
-
-							Integer stock = null;
-
-							boolean available = skuInformation.getString("status").equals("available");
-
-							Product product = new Product();
-							product.setSeedId(this.session.getSeedId());
-							product.setUrl(this.session.getUrl());
-							product.setInternalId(internalID);
-							product.setName(name);
-							product.setPrice(price);
-							product.setCategory1(category1);
-							product.setCategory2(category2);
-							product.setCategory3(category3);
-							product.setPrimaryImage(primaryImage);
-							product.setSecondaryImages(secondaryImages);
-							product.setDescription(description);
-							product.setStock(stock);
-							product.setMarketplace(marketplace);
-							product.setAvailable(available);
-
-							products.add(product);
 						}
 
-					}
-				}
 
-			} catch (Exception e1) {
-				e1.printStackTrace();
+						Integer stock = null;
+
+						boolean available = skuInformation.getString("status").equals("available");
+
+						Product product = new Product();
+						product.setSeedId(this.session.getSeedId());
+						product.setUrl(this.session.getUrl());
+						product.setInternalId(internalID);
+						product.setName(name);
+						product.setPrice(price);
+						product.setCategory1(category1);
+						product.setCategory2(category2);
+						product.setCategory3(category3);
+						product.setPrimaryImage(primaryImage);
+						product.setSecondaryImages(secondaryImages);
+						product.setDescription(description);
+						product.setStock(stock);
+						product.setMarketplace(marketplace);
+						product.setAvailable(available);
+
+						products.add(product);
+					}
+
+				}
 			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
-		
+
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/

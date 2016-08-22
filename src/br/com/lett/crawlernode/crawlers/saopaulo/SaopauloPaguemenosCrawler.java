@@ -71,7 +71,7 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 	}
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 

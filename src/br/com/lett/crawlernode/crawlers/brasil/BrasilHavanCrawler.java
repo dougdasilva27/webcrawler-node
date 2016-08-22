@@ -70,7 +70,7 @@ public class BrasilHavanCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -368,24 +368,4 @@ public class BrasilHavanCrawler extends Crawler {
 		return skuJsonArray;
 	}
 	
-//	/**
-//	 * This method return true if there is some voltage selector for the sku. 
-//	 * If we have some selector other than voltage, the method checks if the sku is available.
-//	 * Because if it's not available, the product is not displayed for the user.
-//	 * 
-//	 * @param available
-//	 * @param doc
-//	 * @return
-//	 */
-//	private boolean mustBeContinued(boolean available, Document doc){
-//		if(hasVolts(doc)) {
-//			return true;
-//		} else {
-//			if(available) {
-//				return true;
-//			} else {
-//				return false;
-//			}
-//		}
-//	}
 }

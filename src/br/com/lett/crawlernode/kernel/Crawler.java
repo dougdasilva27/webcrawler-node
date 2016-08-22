@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueService;
-
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.apache.http.cookie.Cookie;
@@ -305,8 +305,17 @@ public class Crawler implements Runnable {
 
 		if ( shouldVisit() ) {
 			Document document = fetch();
-			List<Product> products = extractInformation(document);
-			if (products.isEmpty()) products.add( new Product() );
+			List<Product> products = null;
+			try {
+				products = extractInformation(document);
+			} catch (Exception e) {
+				Logging.printLogError(logger, session, "Error during extraction.");
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			if (products == null) products = new ArrayList<Product>();
+			if (products.isEmpty()) {
+				products.add( new Product() );
+			}
 			return products;
 		}
 
@@ -321,7 +330,7 @@ public class Crawler implements Runnable {
 	 * @param document
 	 * @return A product with all it's crawled informations
 	 */
-	public List<Product> extractInformation(Document document) {
+	public List<Product> extractInformation(Document document) throws Exception {
 		return new ArrayList<Product>();
 	}
 

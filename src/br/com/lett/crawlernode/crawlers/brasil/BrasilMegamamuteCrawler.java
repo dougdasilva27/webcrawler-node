@@ -15,7 +15,6 @@ import br.com.lett.crawlernode.kernel.Crawler;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -35,126 +34,122 @@ public class BrasilMegamamuteCrawler extends Crawler {
 	}
 
 	@Override
-	public List<Product> extractInformation(Document doc) {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
-			try {
-				Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
-				String[] internalIds = null;
-				if (elementInternalId != null) {
-					internalIds = elementInternalId.attr("value").trim().split(",");
+
+			Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
+			String[] internalIds = null;
+			if (elementInternalId != null) {
+				internalIds = elementInternalId.attr("value").trim().split(",");
+			}
+
+			for (String skuId : internalIds) {
+
+				// ID interno
+				String internalId = skuId;
+
+				// Pid
+				String internalPid = internalId;
+
+				// requisitar informações da API
+				JSONArray jsonArrayAPI = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.megamamute.com.br/produto/sku/" + internalId), null, null);
+				JSONObject productJsonAPI = (JSONObject) jsonArrayAPI.get(0);
+
+				// Nome
+				String name = productJsonAPI.getString("Name");
+
+				// Categoria
+				String category1 = "";
+				String category2 = "";
+				String category3 = "";
+				Elements elementCategories = doc.select(".x-breadcrumb .bread-crumb ul li a");
+				ArrayList<String> categories = new ArrayList<String>();
+				for(Element e : elementCategories) {
+					String tmp = e.text().trim();
+					if( !tmp.equals("megamamute") ) {
+						categories.add(tmp);
+					}
+				}
+				for (String c : categories) {
+					if (category1.isEmpty()) {
+						category1 = c;
+					} else if (category2.isEmpty()) {
+						category2 = c;
+					} else if (category3.isEmpty()) {
+						category3 = c;
+					}
 				}
 
-				for (String skuId : internalIds) {
+				// Imagens
+				JSONArray images = productJsonAPI.getJSONArray("Images");
+				String primaryImage = null;
+				String secondaryImages = null;
+				JSONArray secondaryImagesArray = new JSONArray();
 
-					// ID interno
-					String internalId = skuId;
-
-					// Pid
-					String internalPid = internalId;
-
-					// requisitar informações da API
-					JSONArray jsonArrayAPI = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.megamamute.com.br/produto/sku/" + internalId), null, null);
-					JSONObject productJsonAPI = (JSONObject) jsonArrayAPI.get(0);
-
-					// Nome
-					String name = productJsonAPI.getString("Name");
-
-					// Categoria
-					String category1 = "";
-					String category2 = "";
-					String category3 = "";
-					Elements elementCategories = doc.select(".x-breadcrumb .bread-crumb ul li a");
-					ArrayList<String> categories = new ArrayList<String>();
-					for(Element e : elementCategories) {
-						String tmp = e.text().trim();
-						if( !tmp.equals("megamamute") ) {
-							categories.add(tmp);
-						}
+				for(int i = 0; i < images.length(); i++) {
+					JSONArray tmpArray = images.getJSONArray(i);
+					JSONObject image = tmpArray.getJSONObject(0);
+					if(primaryImage == null) {
+						primaryImage = image.getString("Path");
+					} else {
+						secondaryImagesArray.put(image.getString("Path"));
 					}
-					for (String c : categories) {
-						if (category1.isEmpty()) {
-							category1 = c;
-						} else if (category2.isEmpty()) {
-							category2 = c;
-						} else if (category3.isEmpty()) {
-							category3 = c;
-						}
-					}
-
-					// Imagens
-					JSONArray images = productJsonAPI.getJSONArray("Images");
-					String primaryImage = null;
-					String secondaryImages = null;
-					JSONArray secondaryImagesArray = new JSONArray();
-
-					for(int i = 0; i < images.length(); i++) {
-						JSONArray tmpArray = images.getJSONArray(i);
-						JSONObject image = tmpArray.getJSONObject(0);
-						if(primaryImage == null) {
-							primaryImage = image.getString("Path");
-						} else {
-							secondaryImagesArray.put(image.getString("Path"));
-						}
-					}
-					if (secondaryImagesArray.length() > 0) {
-						secondaryImages = secondaryImagesArray.toString();
-					}
-
-					// Descrição
-					String description = "";
-					Element elementDescription = doc.select(".x-description-group .x-item .productDescription").first();
-					Element elementEspecification = doc.select("#caracteristicas").first();
-					if(elementDescription != null) {
-						description = description + elementDescription.html();
-					}
-					if(elementEspecification != null) {
-						description = description + elementEspecification.html();
-					}
-
-					// Estoque
-					Integer stock = null;
-
-					// Marketplace map
-					Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
-
-					// Availability
-					boolean available = crawlAvailability(marketplaceMap);
-
-					// Price
-					Float price = crawlPrice(marketplaceMap);
-
-					// Marketplace
-					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-
-
-					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
-					product.setUrl(this.session.getUrl());
-					product.setInternalId(internalId);
-					product.setInternalPid(internalPid);
-					product.setName(name);
-					product.setAvailable(available);
-					product.setPrice(price);
-					product.setCategory1(category1);
-					product.setCategory2(category2);
-					product.setCategory3(category3);
-					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(secondaryImages);
-					product.setDescription(description);
-					product.setStock(stock);
-					product.setMarketplace(marketplace);
-
-					products.add(product);
-
+				}
+				if (secondaryImagesArray.length() > 0) {
+					secondaryImages = secondaryImagesArray.toString();
 				}
 
-			} catch (Exception e) {
-				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+				// Descrição
+				String description = "";
+				Element elementDescription = doc.select(".x-description-group .x-item .productDescription").first();
+				Element elementEspecification = doc.select("#caracteristicas").first();
+				if(elementDescription != null) {
+					description = description + elementDescription.html();
+				}
+				if(elementEspecification != null) {
+					description = description + elementEspecification.html();
+				}
+
+				// Estoque
+				Integer stock = null;
+
+				// Marketplace map
+				Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
+
+				// Availability
+				boolean available = crawlAvailability(marketplaceMap);
+
+				// Price
+				Float price = crawlPrice(marketplaceMap);
+
+				// Marketplace
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+
+
+				Product product = new Product();
+				product.setSeedId(this.session.getSeedId());
+				product.setUrl(this.session.getUrl());
+				product.setInternalId(internalId);
+				product.setInternalPid(internalPid);
+				product.setName(name);
+				product.setAvailable(available);
+				product.setPrice(price);
+				product.setCategory1(category1);
+				product.setCategory2(category2);
+				product.setCategory3(category3);
+				product.setPrimaryImage(primaryImage);
+				product.setSecondaryImages(secondaryImages);
+				product.setDescription(description);
+				product.setStock(stock);
+				product.setMarketplace(marketplace);
+
+				products.add(product);
+
 			}
 
 		} else {
