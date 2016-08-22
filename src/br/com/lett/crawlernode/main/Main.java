@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.main;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +13,7 @@ import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.MessageFetcher;
 import br.com.lett.crawlernode.kernel.TaskExecutorAgent;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
+import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -61,6 +59,7 @@ public class Main {
 	public static DBCredentials 		dbCredentials;
 	public static DatabaseManager 		dbManager;
 	public static AmazonSQS 			queue;
+	public static ResultManager 		processorResultManager;
 
 	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
@@ -83,6 +82,9 @@ public class Main {
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 		dbManager.connect();
+		
+		// create result manager for processor stage
+		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
 
 		// fetching proxies
 		proxies = new Proxies();
@@ -103,7 +105,7 @@ public class Main {
 		// schedule threads to keep fethcing messages
 		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
 		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
-		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler) );
+		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 5 );
 
 	}
 

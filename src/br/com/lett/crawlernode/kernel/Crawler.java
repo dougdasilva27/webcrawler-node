@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -60,16 +59,10 @@ public class Crawler implements Runnable {
 	 */
 	protected CrawlerWebdriver webdriver;
 	
-	/**
-	 * Processor
-	 */
-	protected ResultManager processorResultManager;
-
 
 	public Crawler(CrawlerSession session) {
 		this.session = session;
 		this.cookies = new ArrayList<Cookie>();
-		this.processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager, session);
 	}
 
 
@@ -166,7 +159,7 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, processorResultManager);
+		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
 
 		if (previousProcessedProduct == null) {
 
@@ -217,7 +210,7 @@ public class Crawler implements Runnable {
 
 				if (localProduct != null) {
 					Persistence.persistProduct(localProduct, session);
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, processorResultManager);
+					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, Main.processorResultManager);
 
 					if (newProcessedProduct != null) {					
 						if ( compare(newProcessedProduct, currentTruco) ) {

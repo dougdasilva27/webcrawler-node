@@ -86,11 +86,6 @@ public class ResultManager {
 	private DateFormat isoDateFormat;
 	private Map<Integer, String> cityNameInfo;
 	private Map<Integer, String> marketNameInfo;
-	//private List<Market> markets;
-	
-	private CrawlerSession session;
-
-	private List<Proxy> proxies;
 
 	// Variável usada no teste de processer de um determinado supermercado
 	private ArrayList<Integer> marketid;
@@ -104,18 +99,14 @@ public class ResultManager {
 	public ResultManager(
 			boolean activateLogging, 
 			MongoDatabase mongo, 
-			DatabaseManager db,
-			CrawlerSession session) throws NullPointerException {
+			DatabaseManager db
+			) throws NullPointerException {
+
 		this.db = db;
 		this.mongo = mongo;
-		this.session = session;
 
 		this.initialize(activateLogging);
 	}
-
-	//	public void setMongoDatabse(MongoDatabase mongoPanelDatabase) {
-	//		this.mongoPanelDatabase = mongoPanelDatabase;
-	//	}
 
 	/**
 	 * Construtora responsável pela inicialização dos mapas de identificação e substituição
@@ -141,6 +132,7 @@ public class ResultManager {
 		this.logActivated = activateLogging;
 
 		// Cria as informaçẽos do supermercado
+		
 		this.createMarketInfo();
 
 		// Inicializa os mapas de substituição
@@ -153,16 +145,7 @@ public class ResultManager {
 		this.classModelList = new ArrayList<ClassModel>();
 		this.brandModelList = new ArrayList<BrandModel>();
 
-		//Logging.printLogDebug(logger, pid, mode, environment, msg);
-		//Logging.printLogDebug(logger, "Creating Result Manager and downloading lists sheets from Google Drive");
-		String [] nextLine;
-		//CSVReader reader;
-		String key;
-		String value;
-
-
 		// Cria Modelo de manipulação de Marcas para substituição e identificação
-		System.out.print(".");
 		try {
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Information.queryForLettBrandProducts);
@@ -201,7 +184,7 @@ public class ResultManager {
 
 			// Trata exceções do ResultSet
 		}	catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 		// Completa marcas ou corrige marcas através da lista de marcas	
@@ -284,7 +267,7 @@ public class ResultManager {
 
 			// Trata exceções do ResultSet
 		}	catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 		// Completa classes ou corrige classes através da lista de classes	
@@ -323,42 +306,7 @@ public class ResultManager {
 				}
 			}
 		}
-		Logging.printLogDebug(logger, session, "success!");
-
-		Logging.printLogDebug(logger, session, "Fetching proxies to download images on Processor...");
-
-		proxies = new ArrayList<Proxy>();
-
-
-		try {
-			String url = "http://api.buyproxies.org/?a=showProxies&pid=40833&key=80069a39926fb5a7cbc4a684092572b0";
-
-			URL obj = new URL(url);
-			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-			con.setRequestMethod("GET");
-
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-
-			while ((inputLine = in.readLine()) != null) {
-
-				proxies.add(new Proxy(
-						inputLine.split(":")[0], 
-						55555, 
-						inputLine.split(":")[2], 
-						inputLine.split(":")[3]));
-
-				response.append(inputLine);
-			}
-			in.close();
-
-			Logging.printLogDebug(logger, session, proxies.size() + " proxies fetched!");
-
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
+		Logging.printLogDebug(logger, "success!");
 
 	}
 
@@ -372,34 +320,13 @@ public class ResultManager {
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
-	public ProcessedModel processProduct(ProcessedModel pm) {	
+	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
 		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
 		// Previne o conteúdo de extra ser nulo
 		if (pm.getExtra() == null) pm.setExtra("");
 
-		// Tratamento de exceção na definição de supermercado, no caso de valores inválidos ou nulos o supermercado usado será o 1 FlorianopolisAngeloni por padrão
-//		try {
-
-			// Polimorfismo da classe extractor, aqui será definido qual extractor será utilizado
-//			extractor = Class.forName("br.com.lett.processor." +
-//					this.cityNameInfo.get(pm.getMarket()) + 
-//					".Extractor" + 
-//					Character.toUpperCase(this.cityNameInfo.get(pm.getMarket()).charAt(0)) +
-//					this.cityNameInfo.get(pm.getMarket()).substring(1) +
-//					Character.toUpperCase(this.marketNameInfo.get(pm.getMarket()).charAt(0)) +
-//					marketNameInfo.get(pm.getMarket()).substring(1)).newInstance();
-		
-		
-			Extractor extractor = new ExtractorFlorianopolisAngeloni();
-			
-//		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-//			Logging.printLogError(logger, "Processor not defined for " + this.marketNameInfo.get(pm.getMarket()) + ". Using FlorianopolisAngeloni as default.");
-//			extractor = new ExtractorFlorianopolisAngeloni();
-//		} catch (NullPointerException e) {
-//			Logging.printLogError(logger, "Market " + pm.getMarket() + " not included on postgres market table yet. Using FlorianopolisAngeloni as default.");
-//			extractor = new ExtractorFlorianopolisAngeloni();
-//		}
+		Extractor extractor = new ExtractorFlorianopolisAngeloni();
 
 		// Coerção do objeto 'extractor' como Extractor para definição de atributos da classe
 		((Extractor) extractor).setAttrs(logActivated, 
@@ -415,7 +342,7 @@ public class ResultManager {
 
 		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
 		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-			this.updateDigitalContent(pm);
+			this.updateDigitalContent(pm, session);
 		}
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
@@ -431,9 +358,9 @@ public class ResultManager {
 	 * @author Fabricio
 	 * @param pm - ProcessModel recebido no instante da execução
 	 */
-	private void updateDigitalContent(ProcessedModel pm) {  
+	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
-		
+
 		if(pm.getDigitalContent() == null) { pm.setDigitalContent(new JSONObject()); }
 
 		// 0) Lendo informações desejadas pelo fornecedor (digital_content na tabela Lett)
@@ -441,13 +368,13 @@ public class ResultManager {
 
 		// 		0.1) A partir do ID Lett, lemos as informações
 		try {
-			
+
 			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + pm.getLettId());
-			
+
 			while(rs.next()) {
 				lett_digital_content = new JSONObject(rs.getString("digital_content"));
 			}
-			
+
 		} catch (Exception e) { 
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
@@ -480,10 +407,10 @@ public class ResultManager {
 				"/" + 
 				pm.getLettId() + 
 				"/1-original.jpg";
-		
+
 		Logging.printLogDebug(logger, session, "Fetching image from Amazon...");
 		File primaryImage = Information.fetchImageFromAmazon(primaryImageAmazonKey);
-		
+
 		Logging.printLogDebug(logger, session, "Fetching md5 from Amazon...");
 		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(desiredPrimaryImageAmazonKey);
 
@@ -695,11 +622,11 @@ public class ResultManager {
 		this.marketid = new ArrayList<Integer>();
 
 		try {
-			
+
 			ResultSet rs = this.db.runSqlConsult("SELECT * FROM market");
-			
+
 			while(rs.next()) {
-				
+
 				// Mapa de informaçẽos da cidade
 				this.cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
 
@@ -708,15 +635,15 @@ public class ResultManager {
 
 				// Contém ids dos supermercados para teste do processer
 				this.marketid.add(rs.getInt("id"));
-				
+
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "Error fetching market info on postgres!");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
 
-	
+
 	public List<Integer> getMarketid() {
 		return this.marketid;
 	}

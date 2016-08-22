@@ -172,7 +172,7 @@ public class Processor {
 						null);
 			}
 
-			processorResultManager.processProduct(newProcessedProduct);
+			processorResultManager.processProduct(newProcessedProduct, session);
 
 			// Atualizando disponibilidade
 			newProcessedProduct.setAvailable(available);
