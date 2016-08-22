@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 public class TaskExecutor {
 	protected static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
 
-	public static final int DEFAULT_NTHREADS = 100;
-	public static final int DEFAULT_MAX_NTHREADS = 100;
+	public static final int DEFAULT_NTHREADS = 200;
+	public static final int DEFAULT_MAX_NTHREADS = 200;
 	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
 
 	private ThreadPoolExecutor threadPoolExecutor;

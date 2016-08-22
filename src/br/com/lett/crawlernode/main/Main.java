@@ -105,7 +105,7 @@ public class Main {
 		// schedule threads to keep fethcing messages
 		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
 		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
-		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 5 );
+		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 3 );
 
 	}
 
