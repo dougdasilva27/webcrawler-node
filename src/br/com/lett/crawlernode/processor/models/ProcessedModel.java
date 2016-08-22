@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import com.mongodb.client.MongoDatabase;
 
 
+
 /**
  * Processor model - Processed
  * 
@@ -172,7 +173,6 @@ public class ProcessedModel {
 				}
 			} catch (Exception e) {
 				newChanges = new JSONObject();
-				e.printStackTrace();
 			}
 
 			// Verificando se o preço se alterou

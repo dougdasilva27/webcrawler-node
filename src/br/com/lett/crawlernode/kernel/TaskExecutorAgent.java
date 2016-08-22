@@ -44,7 +44,7 @@ public class TaskExecutorAgent {
 					if (task != null) {
 						controlledTaskExecutor.executeTask(task);
 					} else {
-						Logging.printLogError(logger, "Error: task could not be created. [market: " + session.getMarket().getName() + ", city: " + session.getMarket().getCity() + "]" + " deleting message from sqs...");
+						Logging.printLogError(logger, session, "Error: task could not be created...deleting message from sqs...");
 						QueueService.deleteMessage(queueHandler.getSQS(), message);						
 					}
 				}

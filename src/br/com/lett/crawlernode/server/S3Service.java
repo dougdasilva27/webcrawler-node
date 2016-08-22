@@ -16,6 +16,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -75,7 +76,7 @@ public class S3Service {
 					"an internal error while trying to " +
 					"communicate with S3, " +
 					"such as not being able to access the network.");
-			Logging.printLogError(logger, session, "Error Message: " + ace.getMessage());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
 		}
 	}
 	
@@ -112,10 +113,11 @@ public class S3Service {
 					"an internal error while trying to " +
 					"communicate with S3, " +
 					"such as not being able to access the network.");
-			Logging.printLogError(logger, session, "Error Message: " + ace.getMessage());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
 			
 		} catch (IOException ex) {
 			Logging.printLogError(logger, session, "Error writing String to file during html upload.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
 		}
 	}
 

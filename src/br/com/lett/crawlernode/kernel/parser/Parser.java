@@ -65,6 +65,7 @@ public class Parser {
 				pageContent.setTextParseData(parseData);
 			} catch (Exception e) {
 				Logging.printLogError(logger, session, "Error while parsing plain text [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 		} 
 
@@ -79,6 +80,7 @@ public class Parser {
 				htmlParser.parse(inputStream, contentHandler, metadata, parseContext);
 			} catch (Exception e) {
 				Logging.printLogError(logger, session, "Error while parsing html [" + pageContent.getUrl() + "]"  + " " + e.getMessage());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
 			if (pageContent.getContentCharset() == null) {
@@ -104,6 +106,7 @@ public class Parser {
 				
 			} catch (UnsupportedEncodingException e) {
 				Logging.printLogError(logger, session, "error parsing the html: " + pageContent.getUrl() + e.getMessage());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 		}
 	}
