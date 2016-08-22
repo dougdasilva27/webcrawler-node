@@ -27,7 +27,9 @@ public class TaskExecutorAgent {
 		if (numTasksToRetrieve > 0) { // this will prevent to make an empty request
 
 			// request message (tasks) from the Amazon queue
+			Logging.printLogDebug(logger, "Requesting for a maximum of " + numTasksToRetrieve + " tasks on queue...");
 			List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), numTasksToRetrieve);
+			Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
 
 			for (Message message : messages) {
 

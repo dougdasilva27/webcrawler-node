@@ -57,6 +57,10 @@ public class ControlledTaskExecutor {
 		return threadPoolExecutor.getQueue().size();
 	}
 	
+	public int getBloquingQueueRemainingCapacity() {
+		return threadPoolExecutor.getQueue().remainingCapacity();
+	}
+	
 	public int getActiveThreadsCount() {
 		return threadPoolExecutor.getActiveCount();
 	}

@@ -52,13 +52,9 @@ public class QueueService {
 	 * @return List containing all the messages retrieved
 	 */
 	public static List<Message> requestMessages(AmazonSQS sqs) {
-		Logging.printLogDebug(logger, "Requesting for a maximum of 1 task on queue...");
-		
 		String queueURL = selectQueueURL();
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-
-		Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
 
 		return messages;
 	}
@@ -68,14 +64,10 @@ public class QueueService {
 	 * @return List containing all the messages retrieved
 	 */
 	public static List<Message> requestMessages(AmazonSQS sqs, int maxNumberOfMessages) {
-		Logging.printLogDebug(logger, "Requesting for a maximum of " + maxNumberOfMessages + " tasks on queue...");
-		
 		String queueURL = selectQueueURL();
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-
-		Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
 
 		return messages;
 	}
