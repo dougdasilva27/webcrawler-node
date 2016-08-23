@@ -76,7 +76,6 @@ public class MessageFetcher implements Runnable {
 	 * on the number of active threads on the ThreadPool. Note that this is the maximum
 	 * number. In some cases the request can return less than the maximum, because of the long
 	 * pooling policy.
-	 * @param taskExecutor
 	 * @return The maximum number of messages to request for the queue.
 	 */
 	private int computeNumOfTasksToRetrieve() {

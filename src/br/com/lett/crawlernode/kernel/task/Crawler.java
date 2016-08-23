@@ -252,7 +252,6 @@ public class Crawler implements Runnable {
 
 	/**
 	 * It defines wether the crawler must true to extract data or not.
-	 * @param url
 	 * @return
 	 */
 	public boolean shouldVisit() {
@@ -270,7 +269,7 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Performs any desired transformation on the URL before the actual fetching.
-	 * @param the URL we want to modify
+	 * @param url the URL we want to modify
 	 * @return the modified URL, that will be used in the fetching
 	 */
 	public String handleURLBeforeFetch(String url) {
@@ -339,6 +338,8 @@ public class Crawler implements Runnable {
 	/**
 	 * Compare ProcessedModel p1 against p2
 	 * p2 is suposed to be the truco, that is the model we are checking against
+	 * @param p1
+	 * @param p2
 	 * @return true if they are different or false otherwise
 	 */
 	private boolean compare(ProcessedModel p1, ProcessedModel p2) {

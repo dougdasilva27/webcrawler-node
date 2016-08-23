@@ -110,10 +110,7 @@ public class ResultManager {
 
 	/**
 	 * Construtora responsável pela inicialização dos mapas de identificação e substituição
-	 * <p>Download de listas do google docs (arquivos csv) : https://docs.google.com/spreadsheets/d/<KEY>/export?gid=0&format=csv<p>
-	 * @category Construtor
-	 * @author doug
-	 * @param activateLogging - Define a ativação ou não dos logs
+	 * @param activateLogging display log messages
 	 */
 	public ResultManager(boolean activateLogging) throws NullPointerException {
 		this.initialize(activateLogging);
@@ -310,13 +307,10 @@ public class ResultManager {
 
 	}
 
-	// =================== DADOS CRAWLER ======================
-
 	/**
 	 * Extrai informações a partir dos campos "original_" do ProcessModel, e por fim
 	 * salva os dados recebidos dentro do ProcessModel a ser retornado.
 	 * @author Fabricio
-	 * @category Manipulação
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */

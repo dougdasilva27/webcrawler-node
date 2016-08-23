@@ -75,10 +75,11 @@ public class DataFetcher {
 	 * Fetch a text string from a URL, either by a GET ou POST http request.
 	 * 
 	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param session
 	 * @param url The url from which we will fetch the data.
 	 * @param urlParameters The urlParameters, or parameter field of the request, in case of a POST request. null if we have a GET request.
-	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
-	 * @return A String.
+	 * @param cookies
+	 * @return A string containing the page html content
 	 */
 	public static String fetchString(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
 		return fetchPage(reqType, session, url, urlParameters, cookies, 1);	
@@ -88,9 +89,10 @@ public class DataFetcher {
 	 * Fetch a HTML Document from a URL, either by a GET ou POST http request.
 	 * 
 	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param session
 	 * @param url The url from which we will fetch the data.
 	 * @param urlParameters The urlParameters, or parameter field of the request, in case of a POST request. null if we have a GET request.
-	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @param cookies
 	 * @return A Document with the data from the url passed, or null if something went wrong.
 	 */
 	public static Document fetchDocument(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
@@ -101,9 +103,10 @@ public class DataFetcher {
 	 * Fetch a json object from the API, either by a GET ou POST http request.
 	 * 
 	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param session
 	 * @param url The url from which we will fetch the data.
 	 * @param payload The payload, or parameter field of the request, in case of a POST request. null if we have a GET request.
-	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @param cookies
 	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
 	 */
 	public static JSONObject fetchJSONObject(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
@@ -114,9 +117,10 @@ public class DataFetcher {
 	 * Fetch a json array from the API, either by a GET ou POST http request.
 	 * 
 	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param session
 	 * @param url The url from which we will fetch the data.
 	 * @param payload The payload, or parameter field of the request, in case of a POST request. null if we have a GET request.
-	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @param cookies
 	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
 	 */
 	public static JSONArray fetchJSONArray(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
@@ -125,8 +129,9 @@ public class DataFetcher {
 
 	/**
 	 * Get the http response code of a URL
+	 * 
 	 * @param url 
-	 * @param marketCrawler An instance of the MarketCrawler class to use the log method, or null if we want to print System.err
+	 * @param session
 	 * @return The integer code. Null if we have an exception.
 	 */
 	public static Integer getUrlResponseCode(String url, CrawlerSession session) {
@@ -336,7 +341,9 @@ public class DataFetcher {
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
+	 * 
 	 * @param session
+	 * @param url
 	 * @param cookies
 	 * @param attempt
 	 * @return
@@ -548,8 +555,14 @@ public class DataFetcher {
 
 		}
 	}
-
-	public static String fetchPagePOSTWithHeaders(String url, CrawlerSession session, String urlParameters, List<Cookie> cookies, int attempt, Map<String,String> headers) {
+	
+	public static String fetchPagePOSTWithHeaders(
+			String url, 
+			CrawlerSession session, 
+			String urlParameters, 
+			List<Cookie> cookies, 
+			int attempt, 
+			Map<String,String> headers) {
 
 		try {
 
@@ -657,6 +670,7 @@ public class DataFetcher {
 	 * will be parsed as a plain text. Otherwise it will be parsed as a htlm format.
 	 * 
 	 * @param pageContent
+	 * @param session
 	 * @return String with the request response, either in html or plain text format
 	 */
 	private static String processContent(PageContent pageContent, CrawlerSession session) {		
@@ -669,7 +683,13 @@ public class DataFetcher {
 		return "";
 	}
 
-
+	/**
+	 * 
+	 * @param attempt
+	 * @param session
+	 * @param proxyServices
+	 * @return
+	 */
 	private static LettProxy randLettProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, proxyServices);
@@ -714,7 +734,14 @@ public class DataFetcher {
 
 		return nextProxy;
 	}
-
+	
+	/**
+	 * 
+	 * @param attempt
+	 * @param session
+	 * @param proxyServices
+	 * @return
+	 */
 	private static Proxy randProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {		
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, proxyServices);
@@ -775,7 +802,10 @@ public class DataFetcher {
 		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
 	}
 
-
+	/**
+	 * 
+	 * @return
+	 */
 	public static String randUserAgent() {
 
 		// Lista dos mais populares retirada de https://techblog.willshouse.com/2012/01/03/most-common-user-agents/

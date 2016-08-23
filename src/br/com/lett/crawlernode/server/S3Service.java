@@ -48,7 +48,6 @@ public class S3Service {
 	 * Uploads a file to the Amazon session bucket.
 	 * @param session
 	 * @param file
-	 * @param type
 	 */
 	public static void uploadFileToAmazon(CrawlerSession session, File file) {
 		
@@ -84,7 +83,6 @@ public class S3Service {
 	 * Uploads a String as file to Amazon.
 	 * @param session
 	 * @param file
-	 * @param type
 	 */
 	public static void uploadHtmlToAmazon(CrawlerSession session, String html) {		
 		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".html";

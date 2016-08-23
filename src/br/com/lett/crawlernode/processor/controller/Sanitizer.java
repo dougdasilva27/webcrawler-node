@@ -181,7 +181,6 @@ public class Sanitizer {
 
 	/**
 	 * 
-	 * @category Manipulação
 	 * @param paramName - nome do produto ainda não modificado
 	 * @return Arraylist name - arraylist com o nome do produto separado por espaços
 	 */

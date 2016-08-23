@@ -22,29 +22,20 @@ import br.com.lett.crawlernode.util.Logging;
 public abstract class Extractor {
 	
 	private static final Logger logger = LoggerFactory.getLogger(Extractor.class);
-
-	// =========================== MAPAS DE SUBSTITUIÇÃO ===========================
 	
 	protected Map<String, String> unitsReplaceMap;
 	protected Map<String, String> recipientsReplaceMap;
-
-	// =========================== LISTAS DE IDENTIFICAÇÃO ===========================
 	
 	protected List<String> recipientsList;
 	protected List<String> unitsList;
 	protected List<ClassModel> classModelList;
 	protected List<BrandModel> brandModelList;
 	
-	// =========================== CONTROLE DE LOG ===========================
-	
 	protected boolean logActivated;
-	
-	// =========================== MÉTODOS ===========================
 	
 	/**
 	 * Método responsável pela definição e extração de atributos
 	 * @author Doug
-	 * @category Setter e Getters
 	 * @param logActivated - Definição de status do log
 	 * @param unitsReplaceMap - Mapa de redefinição de unidades
 	 * @param recipientsReplaceMap - Mapa de redefinição de recipientes
@@ -72,21 +63,16 @@ public abstract class Extractor {
 	
 	/**
 	 * Método alegórico de extração que será definido de acordo com cada supermercado
-	 * @author Doug
-	 * @category Alegórico
 	 * @param processedModel
-	 * @return objeto processedModel
+	 * @return processedModel
 	 */
 	public ProcessedModel extract(ProcessedModel processedModel) {
 		
 		// Colocando o original_name no extra.
 		processedModel.setExtra(processedModel.getOriginalName());
 
-
 		return processedModel;
 	}
-	
-	// =========================== MÉTODOS EXTRATORES ===========================
 	
 	/** 
 	 * Método responsável por uma pré hizienização e padronização do conteúdo de ProcessModel
@@ -112,8 +98,6 @@ public abstract class Extractor {
 		sanitizedName = sanitizedName.replaceAll("\\u200a"," ");
 		sanitizedName = sanitizedName.replaceAll("\\xA0"," ");
 		sanitizedName = sanitizedName.replaceAll("\\u205f"," ");
-		
-
 		
 		// Básico - Remover caixa alta e espaços vazios no começo e fim
 		sanitizedName = sanitizedName.toLowerCase();
@@ -711,11 +695,9 @@ public abstract class Extractor {
 	
 	/**
 	 * Método responsável pela automatização de remoção de termos do extra 
-	 * @author Doug
-	 * @param pm - ProcessModel que contém o extra
-	 * @param stringToBeRemoved - Termo à ser removido do extra
+	 * @param stringToBeRemoved Termo a ser removido do extra
+	 * @param extra
 	 * @return String com extra livre do termo não desejado
-	 * @category Manipulação
 	 */	
 	protected static String removeExtraFromString(String stringToBeRemoved, String extra) {
 		String newExtra = extra;

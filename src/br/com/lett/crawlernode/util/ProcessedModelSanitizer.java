@@ -12,13 +12,9 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 public class ProcessedModelSanitizer {
 	
 	/**
-	 * Processor
-	 * 
 	 * Testa os atributos definidos no crawlerModel e adiciona aspas simples caso estes não sejam
 	 * nulos nem string vazia.
-	 * 
-	 * @category comparação 
-	 * @author julinha
+	 * @param processedModel
 	 */
 	public static void prepareToPersist(ProcessedModel processedModel) {
 		
