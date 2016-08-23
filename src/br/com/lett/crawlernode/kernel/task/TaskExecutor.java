@@ -24,6 +24,8 @@ public class TaskExecutor {
 				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
 				new RejectedTaskHandler()
 				);
+		
+		crawlerPoolExecutor.prestartAllCoreThreads();
 	}
 
 	public TaskExecutor(int maxThreads) {
@@ -35,6 +37,8 @@ public class TaskExecutor {
 				new LinkedBlockingQueue<Runnable>(DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
 				new RejectedTaskHandler()
 				);
+		
+		crawlerPoolExecutor.prestartAllCoreThreads();
 	}
 	
 	public TaskExecutor(int maxThreads, int bloquingQueueSize) {
@@ -46,6 +50,8 @@ public class TaskExecutor {
 				new LinkedBlockingQueue<Runnable>(bloquingQueueSize),
 				new RejectedTaskHandler()
 				);
+		
+		crawlerPoolExecutor.prestartAllCoreThreads();
 	}
 	
 	public int getMaxThreadsCount() {
