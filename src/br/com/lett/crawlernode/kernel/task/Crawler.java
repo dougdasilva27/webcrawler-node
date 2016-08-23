@@ -59,7 +59,7 @@ public class Crawler implements Runnable {
 	 * or any other need. By default it's not instantiated.
 	 */
 	protected CrawlerWebdriver webdriver;
-	
+
 
 	public Crawler(CrawlerSession session) {
 		this.session = session;
@@ -91,9 +91,14 @@ public class Crawler implements Runnable {
 		 * **********************************************************
 		 */
 		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
-			Product product = getProductByInternalId(products, session.getInternalId());
-			if (product != null) {
-				processProduct(product);
+			if (products.size() == 0) {
+				Logging.printLogDebug(logger, session, "Product is void.");
+			}
+			else {
+				Product product = getProductByInternalId(products, session.getInternalId());
+				if (product != null) {
+					processProduct(product);
+				}
 			}
 		}
 
@@ -144,7 +149,7 @@ public class Crawler implements Runnable {
 	 */
 	private void processProduct(Product product) {
 		boolean mustEnterTrucoMode = false;
-		
+
 		// print crawled information
 		printCrawledInformation(product);
 
@@ -303,9 +308,7 @@ public class Crawler implements Runnable {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			if (products == null) products = new ArrayList<Product>();
-			if (products.isEmpty()) {
-				products.add( new Product() );
-			}
+
 			return products;
 		}
 
@@ -361,7 +364,7 @@ public class Crawler implements Runnable {
 
 		return null;
 	}
-	
+
 	/**
 	 * 
 	 * @param product
@@ -370,17 +373,17 @@ public class Crawler implements Runnable {
 	private Product activeVoid(Product product) {
 		Product p = product;
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		
+
 		if ( product.isVoid() ) {
-			
+
 			// fetch the previous processed product stored on database
 			ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-			
+
 			if (previousProcessedProduct != null) {
 				if ( previousProcessedProduct.getVoid_product() ) {
-					
+
 					// TODO update last dates
-					
+
 				}
 				else {
 					// TODO try again
@@ -389,9 +392,9 @@ public class Crawler implements Runnable {
 			else {
 				// TODO try again
 			}
-			
+
 		}
-		
+
 		return p;
 	}
 

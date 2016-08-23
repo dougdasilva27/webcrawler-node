@@ -142,7 +142,7 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page: " + this.session.getUrl());
 		}
 		
 		return products;
