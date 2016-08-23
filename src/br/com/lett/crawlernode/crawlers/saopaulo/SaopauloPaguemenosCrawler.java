@@ -164,10 +164,10 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select("input#ProdutoCodigo").first();
+		Element internalIdElement = document.select("#liCodigoInterno span[itemprop=identifier]").first();
 
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").toString().trim();			
+			internalId = internalIdElement.text().trim();			
 		}
 
 		return internalId;

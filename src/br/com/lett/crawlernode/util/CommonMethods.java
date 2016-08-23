@@ -224,6 +224,11 @@ public class CommonMethods {
 		return null;
 	}
 	
+	/**
+	 * Print the stack trace of an exception on a String
+	 * @param e the exception we want the stack trace from
+	 * @return the string containing the stack trace
+	 */
 	public static String getStackTraceString(Exception e) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
