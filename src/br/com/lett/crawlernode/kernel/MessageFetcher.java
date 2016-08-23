@@ -81,13 +81,21 @@ public class MessageFetcher implements Runnable {
 	 */
 	private int computeNumOfTasksToRetrieve() {
 		int activeTasks = taskExecutor.getActiveTasksCount();
+		long succeededTasks = taskExecutor.getSucceededTasksCount();
+		long failedTasksCount = taskExecutor.getFailedTasksCount();
 		int taskQueueSize = taskExecutor.getBloquingQueueSize();
 		int coreThreadPoolSize = taskExecutor.getCoreThreadsCount();
 		int activeThreads = taskExecutor.getActiveThreadsCount();
 		
 		int diff = coreThreadPoolSize - activeTasks;
 		
-		Logging.printLogDebug(logger, "[ACTIVE_TASKS_COUNT]" + activeTasks + " [BLOQUING_QUEUE_SIZE]" + taskQueueSize + " [ACTIVE_THREADS]" + activeThreads);
+		Logging.printLogDebug(logger, 
+				"[ACTIVE_TASKS_COUNT]" + activeTasks +
+				" [SUCCEEDED_TASKS_COUNT]" + succeededTasks +
+				" [FAILED_TASKS_COUNT]" + failedTasksCount +
+				" [BLOQUING_QUEUE_SIZE]" + taskQueueSize + 
+				" [ACTIVE_THREADS]" + activeThreads
+				);
 		
 		if (diff > QueueService.MAX_MESSAGES_REQUEST) {
 			if (taskQueueSize > 0) return 0;

@@ -19,8 +19,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	private final Object lock = new Object();
 
 	private int activeTaskCount = 0;
-	private int failedTaskCount = 0;
-	private int succeededTaskCount = 0;
+	private long failedTaskCount = 0;
+	private long succeededTaskCount = 0;
 
 	public CrawlerPoolExecutor(int corePoolSize,
 			int maximumPoolSize,
@@ -67,13 +67,13 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		}
 	}
 	
-	public int getFailedTaskCount() {
+	public long getFailedTaskCount() {
 		synchronized(lock) {
 			return failedTaskCount;
 		}
 	}
 	
-	public int getSucceededTaskCount() {
+	public long getSucceededTaskCount() {
 		synchronized(lock) {
 			return succeededTaskCount;
 		}

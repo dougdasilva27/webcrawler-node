@@ -90,7 +90,11 @@ public class TaskExecutor {
 		return crawlerPoolExecutor.getActiveTaskCount();
 	}
 	
-	public int getFailedTasksCount() {
+	public long getSucceededTasksCount() {
+		return crawlerPoolExecutor.getSucceededTaskCount();
+	}
+	
+	public long getFailedTasksCount() {
 		return crawlerPoolExecutor.getFailedTaskCount();
 	}
 
