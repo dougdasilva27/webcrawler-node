@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import br.com.lett.crawlernode.kernel.task.TaskExecutor;
+import br.com.lett.crawlernode.kernel.task.TaskFactory;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
@@ -78,12 +80,23 @@ public class MessageFetcher implements Runnable {
 	 * @return The maximum number of messages to request for the queue.
 	 */
 	private int computeNumOfTasksToRetrieve() {
-		int tasksToRetrieve = taskExecutor.getMaxThreadsCount() - taskExecutor.getActiveThreadsCount();
-		if (tasksToRetrieve > QueueService.MAX_MESSAGES_REQUEST) tasksToRetrieve = QueueService.MAX_MESSAGES_REQUEST;
+		int activeTasks = taskExecutor.getActiveTasksCount();
+		int taskQueueSize = taskExecutor.getBloquingQueueSize();
+		int coreThreadPoolSize = taskExecutor.getCoreThreadsCount();
+		int activeThreads = taskExecutor.getActiveThreadsCount();
 		
-		Logging.printLogDebug(logger, "[THREADS ATIVAS=" + taskExecutor.getActiveThreadsCount() + ", MAX_THREADS_POOL=" + taskExecutor.getMaxThreadsCount() + ", TASKS_TO_RETRIEVE=" + tasksToRetrieve + "]");
+		int diff = coreThreadPoolSize - activeTasks;
 		
-		return tasksToRetrieve;
+		Logging.printLogDebug(logger, "[ACTIVE_TASKS_COUNT]" + activeTasks + " [BLOQUING_QUEUE_SIZE]" + taskQueueSize + " [ACTIVE_THREADS]" + activeThreads);
+		
+		if (diff > QueueService.MAX_MESSAGES_REQUEST) {
+			if (taskQueueSize > 0) return 0;
+			return QueueService.MAX_MESSAGES_REQUEST;
+		} 
+		else {
+			if (taskQueueSize > 0) return 0;
+			return diff;
+		}
 	}
 	
 }

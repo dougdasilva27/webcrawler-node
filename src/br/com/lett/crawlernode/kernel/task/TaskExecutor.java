@@ -1,7 +1,6 @@
-package br.com.lett.crawlernode.kernel;
+package br.com.lett.crawlernode.kernel.task;
 
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -14,10 +13,10 @@ public class TaskExecutor {
 	public static final int DEFAULT_MAX_NTHREADS = 200;
 	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
 
-	private ThreadPoolExecutor threadPoolExecutor;
+	private CrawlerPoolExecutor crawlerPoolExecutor;
 	
 	public TaskExecutor() {
-		threadPoolExecutor = new ThreadPoolExecutor(
+		crawlerPoolExecutor = new CrawlerPoolExecutor(
 				DEFAULT_MAX_NTHREADS,
 				DEFAULT_MAX_NTHREADS,
 				0L,
@@ -28,7 +27,7 @@ public class TaskExecutor {
 	}
 
 	public TaskExecutor(int maxThreads) {
-		threadPoolExecutor = new ThreadPoolExecutor(
+		crawlerPoolExecutor = new CrawlerPoolExecutor(
 				maxThreads,
 				maxThreads,
 				0L,
@@ -39,7 +38,7 @@ public class TaskExecutor {
 	}
 	
 	public TaskExecutor(int maxThreads, int bloquingQueueSize) {
-		threadPoolExecutor = new ThreadPoolExecutor(
+		crawlerPoolExecutor = new CrawlerPoolExecutor(
 				maxThreads,
 				maxThreads,
 				0L,
@@ -50,31 +49,43 @@ public class TaskExecutor {
 	}
 	
 	public int getMaxThreadsCount() {
-		return threadPoolExecutor.getMaximumPoolSize();
+		return crawlerPoolExecutor.getMaximumPoolSize();
+	}
+	
+	public int getCoreThreadsCount() {
+		return crawlerPoolExecutor.getCorePoolSize();
 	}
 	
 	public int getBloquingQueueSize() {
-		return threadPoolExecutor.getQueue().size();
+		return crawlerPoolExecutor.getQueue().size();
 	}
 	
 	public int getBloquingQueueRemainingCapacity() {
-		return threadPoolExecutor.getQueue().remainingCapacity();
+		return crawlerPoolExecutor.getQueue().remainingCapacity();
 	}
 	
 	public int getActiveThreadsCount() {
-		return threadPoolExecutor.getActiveCount();
+		return crawlerPoolExecutor.getActiveCount();
 	}
 	
 	public long getCompletedTasksCount() {
-		return threadPoolExecutor.getCompletedTaskCount();
+		return crawlerPoolExecutor.getCompletedTaskCount();
 	}
 
 	public void executeTask(Runnable task) {
-		threadPoolExecutor.execute(task);
+		crawlerPoolExecutor.execute(task);
 	}
 
-	public ThreadPoolExecutor getExecutor() {
-		return threadPoolExecutor;
+	public CrawlerPoolExecutor getExecutor() {
+		return crawlerPoolExecutor;
+	}
+	
+	public int getActiveTasksCount() {
+		return crawlerPoolExecutor.getActiveTaskCount();
+	}
+	
+	public int getFailedTasksCount() {
+		return crawlerPoolExecutor.getFailedTaskCount();
 	}
 
 }

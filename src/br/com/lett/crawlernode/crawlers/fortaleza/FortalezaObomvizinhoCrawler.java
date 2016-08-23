@@ -7,9 +7,9 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.kernel.Crawler;
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.models.Product;
+import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class FortalezaObomvizinhoCrawler extends Crawler {

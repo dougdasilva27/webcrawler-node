@@ -1,8 +1,10 @@
-package br.com.lett.crawlernode.kernel;
+package br.com.lett.crawlernode.kernel.task;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import br.com.lett.crawlernode.kernel.MessageFetcher;
 
 public class TaskExecutorAgent {
 	private ScheduledExecutorService scheduledExecutorService;

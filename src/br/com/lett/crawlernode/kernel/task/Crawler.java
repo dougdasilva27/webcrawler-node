@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.kernel;
+package br.com.lett.crawlernode.kernel.task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
@@ -109,16 +110,11 @@ public class Crawler implements Runnable {
 			}
 		}
 
-		Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + "...");
-		QueueService.deleteMessage(Main.queue, session.getSessionId(), session.getMessageReceiptHandle());
-
 		// if the crawler used the webdriver at some point, it must be closed
 		if (webdriver != null) {
 			Logging.printLogDebug(logger, session, "Closing webdriver...");
 			webdriver.closeDriver();
 		}
-
-		Logging.printLogDebug(logger, session, "END [trucos = " + session.getTrucoAttempts() + "]");
 
 	}
 

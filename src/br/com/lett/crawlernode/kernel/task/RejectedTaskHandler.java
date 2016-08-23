@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.kernel;
+package br.com.lett.crawlernode.kernel.task;
 
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;

@@ -1,10 +1,11 @@
-package br.com.lett.crawlernode.kernel;
+package br.com.lett.crawlernode.kernel.task;
 
 import java.lang.reflect.Constructor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
