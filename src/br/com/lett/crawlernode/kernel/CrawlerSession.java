@@ -15,10 +15,9 @@ public class CrawlerSession {
 
 	public static final String DISCOVERY_TYPE = "standalone";
 	public static final String INSIGHTS_TYPE = "insights";
+	public static final String TEST_TYPE = "test";
 
-	/**
-	 * Id of current crawling session. It's the same id of the message from Amazon SQS
-	 */
+	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	private String sessionId;
 
 	/**
@@ -29,57 +28,40 @@ public class CrawlerSession {
 	 */
 	private String messageReceiptHandle;
 
-	/**
-	 * Type of crawler session: discovery | insights
-	 */
+	/** Type of crawler session: discovery | insights */
 	private String type;
 
-	/**
-	 * Current url seed id
-	 */
+	/** Current url seed id */
 	private String seedId;
 
-	/**
-	 * Base original URL
-	 */
+	/** Base original URL */
 	private String originalURL;
 
-	/**
-	 * Sku url being crawled
-	 */
+	/** Sku url being crawled */
 	private String url;
 
-	/**
-	 * Processed id associated with the sku being crawled
-	 */
+	/** Processed id associated with the sku being crawled */
 	private int processedId;
 
-	/**
-	 * Internal id associated with the sku being crawled
-	 */
+	/** Internal id associated with the sku being crawled */
 	private String internalId;
 
-	/**
-	 * Market associated with this session
-	 */
+	/** Market associated with this session */
 	private Market market;
 
-	/**
-	 * Number of truco checks
-	 */
+	/** Number of truco checks */
 	private int trucoAttempts;
 
-	/**
-	 * Map associating an URL with the number of requests for this URL
-	 */
+	/** Map associating an URL with the number of requests for this URL */
 	private Map<String, Integer> urlRequests;
 	
-	/**
-	 * Map associating an URL with the last proxy used to request this URL
-	 */
+	/** Map associating an URL with the last proxy used to request this URL */
 	private Map<String, LettProxy> lastURLRequest;
 
-
+	/**
+	 * Default constructor to be used when running in production.
+	 * @param message with informations to create a new crawler session
+	 */
 	public CrawlerSession(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
@@ -124,10 +106,30 @@ public class CrawlerSession {
 		}
 
 	}
+	
+	public CrawlerSession(String url) {
 
-	public CrawlerSession() {
-		super();
-		trucoAttempts = 0;
+		// setting truco attempts
+		this.trucoAttempts = 0;
+
+		// creating the urlRequests map
+		this.urlRequests = new HashMap<String, Integer>();
+		
+		this.lastURLRequest = new HashMap<String, LettProxy>();
+
+		// setting session id
+		this.sessionId = "test";
+
+		// setting Market
+		//this.market = new Market(message); // TODO
+
+		// setting URL and originalURL
+		this.url = url;
+		this.originalURL = url;
+		
+		// type
+		this.type = TEST_TYPE;
+		
 	}
 
 	public String getUrl() {

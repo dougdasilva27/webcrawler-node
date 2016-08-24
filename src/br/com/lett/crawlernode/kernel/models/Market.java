@@ -15,18 +15,10 @@ public class Market {
 	private String name;
 	private ArrayList<String> proxies;
 	
-	public Market(
-			int id, 
-			String city, 
-			String name,
-			String preferredProxyService) {
-		
-		this.id = id;
-		this.city = city;
-		this.name = name;
-		this.proxies = new ArrayList<String>();
-	}
-	
+	/**
+	 * 
+	 * @param message
+	 */
 	public Market(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 		
@@ -55,6 +47,26 @@ public class Market {
 			}
 			this.setProxies(proxies);
 		}
+		
+	}
+	
+	/**
+	 * Default constructor used for testing.
+	 * @param marketId
+	 * @param marketCity
+	 * @param marketName
+	 * @param proxies
+	 */
+	public Market(
+			int marketId,
+			String marketCity,
+			String marketName,
+			ArrayList<String> proxies) {
+		
+		this.id = marketId;
+		this.city = marketCity;
+		this.name = marketName;
+		this.proxies = proxies;
 		
 	}
 
