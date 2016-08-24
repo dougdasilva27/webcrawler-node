@@ -402,11 +402,11 @@ public class ResultManager {
 				pm.getLettId() + 
 				"/1-original.jpg";
 
-		Logging.printLogDebug(logger, session, "Fetching image from Amazon...");
-		File primaryImage = Information.fetchImageFromAmazon(primaryImageAmazonKey);
+		Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + primaryImageAmazonKey);
+		File primaryImage = Information.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
-		Logging.printLogDebug(logger, session, "Fetching md5 from Amazon...");
-		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(desiredPrimaryImageAmazonKey);
+		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + desiredPrimaryImageAmazonKey);
+		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
 
 		String primaryMd5 = null;
 
@@ -415,7 +415,7 @@ public class ResultManager {
 			primaryMd5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
 			fis.close();
 		} catch (Exception ex) {
-			Logging.printLogError(logger, session, "Error analysing image md5. [" + ex.getMessage() + "]");
+			Logging.printLogError(logger, session, "Error analysing image md5.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
 		}		
 
@@ -424,7 +424,6 @@ public class ResultManager {
 		// Se o md5 for nulo, então limpamos e adicionamos a marcação de sem imagem
 		if(primaryMd5 == null) {
 			pic_primary = new JSONObject();
-
 			pic_primary.put("status", "no-image");
 			pic_primary.put("verified_by", "crawler_" + nowISO);
 
@@ -441,7 +440,7 @@ public class ResultManager {
 				pic_primary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
 
 				// Capturando similaridade da nova imagem primária usando o NaiveSimilarityFinder
-				pic_primary.put("similarity", DigitalContentAnalyser.imageSimilarity(primaryImage, Information.fetchImageFromAmazon(desiredPrimaryImageAmazonKey)));
+				pic_primary.put("similarity", DigitalContentAnalyser.imageSimilarity(primaryImage, Information.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey)));
 
 				// Calculando similaridade da nova imagem primária usando o SIFT
 				JSONObject similaritySiftResult = null;

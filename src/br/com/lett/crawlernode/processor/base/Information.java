@@ -32,8 +32,10 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.Proxy;
 import br.com.lett.crawlernode.kernel.fetcher.ProxyAuthenticator;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -80,7 +82,7 @@ public class Information {
 	private static String secretKey        	= "zv/BGsUT3QliiKOqIZR+FfJC+ai3XRofTmHNP0fy";
 	
 	
-	public static Dimension fetchImageDimensionFromWeb(URL url, Proxy proxy) throws IOException {
+	public static Dimension fetchImageDimensionFromWeb(CrawlerSession session, URL url, Proxy proxy) throws IOException {
  		
  		System.setProperty("http.proxyHost", proxy.getHost());
         System.setProperty("http.proxyPort", Integer.toString(proxy.getPort()));
@@ -89,7 +91,7 @@ public class Information {
 
         Authenticator.setDefault(new ProxyAuthenticator(proxy.getUser(), proxy.getPass()));
         
-        Logging.printLogDebug(logger, "Fetching image with proxy: " + proxy.getHost());
+        Logging.printLogDebug(logger, session, "Fetching image with proxy: " + proxy.getHost());
         
 		try(ImageInputStream in = ImageIO.createImageInputStream(url.openStream())){
 		    final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
@@ -108,9 +110,7 @@ public class Information {
 		return null; 	
 	}
 	
-	public static File fetchImageFromAmazon(String key) {		
-		Logging.printLogDebug(logger, "Fetching image from Amazon: " + key);
-		
+	public static File fetchImageFromAmazon(CrawlerSession session, String key) {		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 
@@ -134,35 +134,31 @@ public class Information {
 			writer.close();
 			reader.close();
 			
-			Logging.printLogDebug(logger, "fetched at: " + file.getAbsolutePath());
+			Logging.printLogDebug(logger, session, "fetched at: " + file.getAbsolutePath());
 
 			return file;
 		
         } catch (Exception e) {
-        	Logging.printLogError(logger, "Error fetching image from Amazon. [" + e.getMessage() + "]");
+        	Logging.printLogError(logger, session, "Error fetching image from Amazon.");
+        	Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
     		return null;
 		}
 		
 	}
 	
-	public static String fetchMd5FromAmazon(String key) {
-		
-		Logging.printLogDebug(logger, "Fetching image md5 from Amazon: " + key);
-		
+	public static String fetchMd5FromAmazon(CrawlerSession session, String key) {		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 
         try {
             ObjectMetadata objectMetadata = s3client.getObjectMetadata(new GetObjectMetadataRequest(cdnBucketName, key));
-            
             String md5 = objectMetadata.getETag();
-            
-            Logging.printLogDebug(logger, "fetched md5: " + md5);
+            Logging.printLogDebug(logger, session, "fetched md5: " + md5);
 
 			return md5;
 		
         } catch (Exception e) {
-//        	e.printStackTrace();
+        	Logging.printLogError(logger, session, "MD5 not found.");
     		return null;
 		}
 		
