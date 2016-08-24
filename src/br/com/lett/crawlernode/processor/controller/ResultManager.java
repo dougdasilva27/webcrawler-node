@@ -585,21 +585,6 @@ public class ResultManager {
 			}
 		}
 
-
-
-		for(int i=0; i<description_rules_desired.length(); i++) {
-			JSONObject rule = description_rules_desired.getJSONObject(i);
-
-			JSONObject r = DigitalContentAnalyser.validateRule(pm.getOriginalDescription(), rule);
-			r.put("name", rule.getString("name"));
-
-			if(rule.has("section") 		&& !rule.isNull("section")) 	r.put("section", rule.getString("section"));
-			if(rule.has("type") 	 	&& !rule.isNull("type")) 		r.put("type", rule.getString("type"));
-			if(rule.has("condition") 	&& !rule.isNull("condition")) 	r.put("condition", rule.getInt("condition"));
-
-			description_rules_results.put(r);
-		}
-
 		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
