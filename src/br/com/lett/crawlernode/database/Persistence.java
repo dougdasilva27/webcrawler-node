@@ -272,7 +272,7 @@ public class Persistence {
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
 	 */
-	public void setProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
+	public void updateProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed SET void=" + voidValue + " ");

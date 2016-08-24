@@ -107,7 +107,7 @@ public class CrawlerSession {
 
 	}
 	
-	public CrawlerSession(String url) {
+	public CrawlerSession(String url, Market market) {
 
 		// setting truco attempts
 		this.trucoAttempts = 0;
@@ -121,7 +121,7 @@ public class CrawlerSession {
 		this.sessionId = "test";
 
 		// setting Market
-		//this.market = new Market(message); // TODO
+		this.market = market;
 
 		// setting URL and originalURL
 		this.url = url;

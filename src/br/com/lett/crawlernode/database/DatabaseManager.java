@@ -60,7 +60,7 @@ public class DatabaseManager {
 	public MongoClient mongoClientBackendDashboard = null;
 	public MongoClient mongoClientMongoImages = null;
 
-//	public MongoDatabase mongo_data_crawler = null;
+	//	public MongoDatabase mongo_data_crawler = null;
 	public MongoDatabase mongoBackendPanel = null;
 	public MongoDatabase mongoBackendInsights = null;
 	public MongoDatabase mongoMongoImages = null;
@@ -100,7 +100,7 @@ public class DatabaseManager {
 
 		// connect to mongodb
 		try {
-			
+
 			/* ************************
 			 * Production environment *
 			 **************************/
@@ -109,7 +109,7 @@ public class DatabaseManager {
 				this.setMongoInsights();
 				this.setMongoImages();
 			} 
-			
+
 			/* *************************
 			 * Development environment *
 			 ***************************/
@@ -119,6 +119,40 @@ public class DatabaseManager {
 				mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
 				mongoMongoImages = mongoClientBackendPanel.getDatabase("images");
 			}
+
+			Logging.printLogDebug(logger, "Successfully connected to Mongo!");
+		} catch (Exception e) {
+			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+
+	}
+
+	public void connectTestMode() {		
+		Logging.printLogDebug(logger, "Starting connection with databases...");
+
+		// connect to postgres
+		try {
+			Class.forName("org.postgresql.Driver");
+			String url = "jdbc:postgresql://" + postgresCredentials.getHost() + ":" + postgresCredentials.getPort() + "/" + postgresCredentials.getDatabase();
+			conn = DriverManager.getConnection(url, postgresCredentials.getUsername(), postgresCredentials.getPass());
+
+			Logging.printLogDebug(logger, "Successfully connected to Postgres!");
+		} catch (SQLException e) {
+			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		} catch (ClassNotFoundException e) {
+			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+
+		// connect to mongodb
+		try {
+
+			mongoClientBackendPanel = new MongoClient("localhost", 27017);
+			mongoBackendPanel = mongoClientBackendPanel.getDatabase("panel");
+			mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
+			mongoMongoImages = mongoClientBackendPanel.getDatabase("images");
 
 			Logging.printLogDebug(logger, "Successfully connected to Mongo!");
 		} catch (Exception e) {

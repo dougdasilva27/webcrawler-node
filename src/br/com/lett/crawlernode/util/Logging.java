@@ -8,6 +8,7 @@ import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.test.TestExecutionParameters;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -82,6 +83,34 @@ public class Logging {
 			MDC.put("ENVIRONMENT", executionParameters.getEnvironment());
 
 			if (executionParameters.getDebug()) {
+				MDC.put("DEBUG_MODE", "true");
+			} else {
+				MDC.put("DEBUG_MODE", "false");
+			}
+
+		} else {
+			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
+			System.exit(0);
+		}
+	}
+	
+	/**
+	 * Set up MDC variables when running crawler tests
+	 * @param testExecutionParameters
+	 */
+	public static void setLogMDC(TestExecutionParameters testExecutionParameters) {
+		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
+		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
+
+		MDC.put("PID", pid);
+		MDC.put("HOST_NAME", hostName);
+		MDC.put("PROCESS_NAME", "java");
+
+		if (testExecutionParameters != null) {
+
+			MDC.put("ENVIRONMENT", testExecutionParameters.getEnvironment());
+
+			if (testExecutionParameters.getDebug()) {
 				MDC.put("DEBUG_MODE", "true");
 			} else {
 				MDC.put("DEBUG_MODE", "false");
