@@ -31,12 +31,12 @@ import br.com.lett.crawlernode.util.Logging;
 public class QueueService {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
-	
+
 	private static final String PRODUCTION_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
 	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 	private static final String DISCOVERY_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
 	private static final String DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
-	
+
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
 	public static final String CITY_MESSAGE_ATTR = "city";
@@ -58,7 +58,7 @@ public class QueueService {
 
 		return messages;
 	}
-	
+
 	/**
 	 * Request for messages (tasks) on the Amazon queue up to a maximum of 10 messages
 	 * @return List containing all the messages retrieved
@@ -71,7 +71,7 @@ public class QueueService {
 
 		return messages;
 	}
-	
+
 	/**
 	 * Delete a message from the sqs
 	 * @param sqs
@@ -82,7 +82,7 @@ public class QueueService {
 		String messageReceiptHandle = message.getReceiptHandle();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
-	
+
 	/**
 	 * Delete a message from the sqs
 	 * @param sqs
@@ -106,7 +106,7 @@ public class QueueService {
 			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 		}
 	}
-	
+
 	/**
 	 * Send a message with the specified attributes and body to the SQS
 	 * @param sqs
@@ -119,10 +119,10 @@ public class QueueService {
 		sendMessageRequest.setQueueUrl(queueURL);
 		sendMessageRequest.setMessageBody(messageBody);
 		sendMessageRequest.setMessageAttributes(attributes);
-		
+
 		sqs.sendMessage(sendMessageRequest);
 	}
-	
+
 	/**
 	 * Send a message batch to SQS
 	 * @param sqs
@@ -133,7 +133,7 @@ public class QueueService {
 		String queueURL = selectQueueURL();
 		batchMessageBatchRequest.setQueueUrl(queueURL);
 		batchMessageBatchRequest.setEntries(entries);
-		
+
 		sqs.sendMessageBatch(batchMessageBatchRequest);
 	}
 
@@ -157,22 +157,24 @@ public class QueueService {
 			Logging.printLogError(logger, "Message is missing field [" + CITY_MESSAGE_ATTR + "]");
 			return false;
 		}
-		
+
 		// specific fields for insights mode
 		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-			if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-				Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
-				return false;
-			}
-			if (!attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-				Logging.printLogError(logger, "Message is missing field [" + INTERNAL_ID_MESSAGE_ATTR + "]");
-				return false;
+			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+				if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+					Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
+					return false;
+				}
+				if (!attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+					Logging.printLogError(logger, "Message is missing field [" + INTERNAL_ID_MESSAGE_ATTR + "]");
+					return false;
+				}
 			}
 		}
 
 		return true;
 	}
-	
+
 	/**
 	 * Selects a proper Amazon SQS queue to be used, according to the environment
 	 * @param environment
@@ -190,7 +192,7 @@ public class QueueService {
 				return DISCOVERY_QUEUE_URL;
 			}
 		}
-		
+
 		return DEVELOMENT_QUEUE_URL;
 	}
 
