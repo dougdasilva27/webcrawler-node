@@ -202,14 +202,8 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select("#pnlDisponibilidade .action").first();
-
-		if (notifyMeElement != null) {
-			if (notifyMeElement.hasAttr("style")){
-				if(notifyMeElement.attr("style").equals("display: none;")) return true;
-			}
-		}
-
+		Float price = crawlMainPagePrice(document);
+		if (price != null) return true;
 		return false;
 	}
 
