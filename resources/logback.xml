@@ -7,17 +7,9 @@
 		<syslogHost>172.31.36.233</syslogHost>
 		<port>514</port>
 		<facility>SYSLOG</facility>
-		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%-5level] [PROJECT]webcrawler-node [THREAD]%thread [LOGGER]%logger{26} - %msg%n</suffixPattern>
+		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%level] [PROJECT]webcrawler-node [THREAD]%thread [LOGGER]%logger{26} - %msg%n</suffixPattern>
 	</appender>
 	
-	<!-- 
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>logback/crawler.log</file>		
-		<encoder>
-			<pattern>%date{MMM dd HH:mm:ss} %X{HOST_NAME} %X{PROCESS_NAME}[%X{PID}]: [THREAD]%thread [LEVEL]%-5level[LOGGER]%logger{26} [MODE]%X{MODE} [ENVIRONMENT]%X{ENVIRONMENT} - %msg%n</pattern>
-		</encoder>
-	</appender> -->
-
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 
 		  	<filter class="ch.qos.logback.core.filter.EvaluatorFilter">      
