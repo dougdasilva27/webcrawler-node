@@ -37,7 +37,7 @@ public class Tester {
 	public static void main(String args[]) {
 
 		init(args);
-		test("http://loja.paguemenos.com.br/detalhes.aspx?pc=307408", "saopaulo", "paguemenos");
+		test("http://loja.paguemenos.com.br/alimento-infantil-nestle-feijao-e-legumes-115g-100016.aspx/p", "saopaulo", "paguemenos");
 
 	}
 

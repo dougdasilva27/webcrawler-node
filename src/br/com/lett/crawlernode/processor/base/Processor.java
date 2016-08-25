@@ -182,7 +182,7 @@ public class Processor {
 			newProcessedProduct.setLrt(nowISO);
 
 			// Atualizando VOID
-			newProcessedProduct.setVoid_product(false);
+			newProcessedProduct.setVoid(false);
 
 			// Atualizando LAT
 			if(available) newProcessedProduct.setLat(nowISO);

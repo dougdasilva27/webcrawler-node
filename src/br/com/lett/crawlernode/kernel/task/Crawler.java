@@ -275,6 +275,7 @@ public class Crawler implements Runnable {
 					// if we end up with a void at end of truco, we must change the status of the processed to void
 					if (localProduct.isVoid()) {
 						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
 							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
 						}
 					}

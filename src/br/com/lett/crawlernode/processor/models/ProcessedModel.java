@@ -699,7 +699,7 @@ public class ProcessedModel {
 		return void_product;
 	}
 
-	public void setVoid_product(Boolean void_product) {
+	public void setVoid(Boolean void_product) {
 		this.void_product = void_product;
 	}
 

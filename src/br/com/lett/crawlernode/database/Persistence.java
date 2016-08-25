@@ -296,9 +296,9 @@ public class Persistence {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed SET void=" + voidValue + " ");
-		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
 		query.append("AND ");
-		query.append("market=" + session.getMarket());
+		query.append("market=" + session.getMarket().getNumber());
 
 		try {
 			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
@@ -322,8 +322,8 @@ public class Persistence {
 	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
-		query.append("UPDATE processed set lrt=" + nowISO + " ");
-		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("UPDATE processed set lrt=" + "'" + nowISO + "'" + " ");
+		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
 		query.append("AND ");
 		query.append("market=" + session.getMarket());
 
@@ -349,8 +349,8 @@ public class Persistence {
 	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
-		query.append("UPDATE processed set lmt=" + nowISO + " ");
-		query.append("WHERE internal_id=" + session.getInternalId() + " ");
+		query.append("UPDATE processed set lmt=" + "'" + nowISO + "'" + " ");
+		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
 		query.append("AND ");
 		query.append("market=" + session.getMarket());
 
