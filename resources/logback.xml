@@ -7,7 +7,7 @@
 		<syslogHost>172.31.36.233</syslogHost>
 		<port>514</port>
 		<facility>SYSLOG</facility>
-		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%level] [PROJECT]webcrawler-node [THREAD]%thread [LOGGER]%logger{26} - %msg%n</suffixPattern>
+		<suffixPattern>%X{PROCESS_NAME}[%X{PID}]: [%level] [PROJECT]webcrawler_node [THREAD]%thread [LOGGER]%logger{26} - %msg%n</suffixPattern>
 	</appender>
 	
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -33,7 +33,7 @@
     		</filter>
 		 
 		<encoder>
-			<pattern>[LEVEL]%-5level [LOGGER]%logger{26} [ENVIRONMENT]%X{ENVIRONMENT} %msg%n</pattern>
+			<pattern>[%-5level] %msg%n</pattern>
 		</encoder>
 	</appender>
 
@@ -41,17 +41,11 @@
 		<appender-ref ref="STDOUT" />
 	</logger>
 	
-	<!-- 
-	<logger name="crawlernode_file" level="ALL" additivity="false">
-		<appender-ref ref="FILE" />
-	</logger> -->
-	
 	<logger name="crawlernode_syslog" level="ALL" additivity="false">
 		<appender-ref ref="SYSLOG" />
 	</logger>
 
 	<logger name="br.com.lett" level="TRACE">
-		<!-- <appender-ref ref="FILE" /> -->
 		<appender-ref ref="STDOUT" />
 		<appender-ref ref="SYSLOG" />
 	</logger>
