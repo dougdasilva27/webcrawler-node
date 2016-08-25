@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.util;
 
 import java.lang.management.ManagementFactory;
+import java.text.Normalizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,47 +24,47 @@ public class Logging {
 	
 	/* INFO */
 	public static void printLogInfo(Logger logger, String msg) {
-		logger.info("[MSG]" + msg.trim());
+		logger.info("[MSG]" + sanitizeMessage(msg));
 	}
 	
 	public static void printLogInfo(Logger logger, CrawlerSession session, String msg) {
-		logger.info("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.info("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
 	}
 	
 	/* ERROR */
 	public static void printLogError(Logger logger, String msg) {
-		logger.error("[MSG]" + msg.trim());
+		logger.error("[MSG]" + sanitizeMessage(msg));
 	}
 	
 	public static void printLogError(Logger logger, CrawlerSession session, String msg) {
-		logger.error("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.error("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
 	}
 	
 	/* DEBUG */
 	public static void printLogDebug(Logger logger, String msg) {
-		logger.debug("[MSG]" + msg.trim());
+		logger.debug("[MSG]" + sanitizeMessage(msg));
 	}
 	
 	public static void printLogDebug(Logger logger, CrawlerSession session, String msg) {
-		logger.debug("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.debug("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
 	}
 	
 	/* WARN */
 	public static void printLogWarn(Logger logger, String msg) {
-		logger.warn("[MSG]" + msg.trim());
+		logger.warn("[MSG]" + sanitizeMessage(msg));
 	}
 	
 	public static void printLogWarn(Logger logger, CrawlerSession session, String msg) {
-		logger.warn("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.warn("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
 	}
 	
 	/* TRACE */
 	public static void printLogTrace(Logger logger, String msg) {
-		logger.trace("[MSG]" + msg.trim());
+		logger.trace("[MSG]" + sanitizeMessage(msg));
 	}
 	
 	public static void printLogTrace(Logger logger, CrawlerSession session, String msg) {
-		logger.trace("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + msg.trim());
+		logger.trace("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
 	}
 	
 	/**
@@ -76,7 +77,7 @@ public class Logging {
 
 		MDC.put("PID", pid);
 		MDC.put("HOST_NAME", hostName);
-		MDC.put("PROCESS_NAME", "java");
+		MDC.put("PROCESS_NAME", "lett");
 
 		if (executionParameters != null) {
 
@@ -104,7 +105,7 @@ public class Logging {
 
 		MDC.put("PID", pid);
 		MDC.put("HOST_NAME", hostName);
-		MDC.put("PROCESS_NAME", "java");
+		MDC.put("PROCESS_NAME", "lett");
 
 		if (testExecutionParameters != null) {
 
@@ -117,6 +118,21 @@ public class Logging {
 		} else {
 			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
 			System.exit(0);
+		}
+	}
+	
+	/**
+	 * Sanitize message before logging then
+	 * @param msg
+	 */
+	public static String sanitizeMessage(String msg) {
+		if(msg == null) {
+			return "";
+		} else {
+			msg = Normalizer.normalize(msg, Normalizer.Form.NFD);
+			msg = msg.replaceAll("[^\\p{ASCII}]", "").trim();
+			
+			return msg;
 		}
 	}
 
