@@ -358,10 +358,10 @@ public class Processor {
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
 		String internal_id = null;
-		if (product.getInternalId() == null) {
-			internal_id = session.getInternalId();
-		} else {
+		if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
 			internal_id = product.getInternalId();
+		} else {
+			internal_id = session.getInternalId();
 		}
 
 		// sanitize

@@ -210,6 +210,9 @@ public class Crawler implements Runnable {
 
 		/*
 		 * Running truco
+		 * Inside the truco iterations we also keep track if the product is void
+		 * If at the end of truco attempts we end up with a void product, we
+		 * must change the status of the processed product to void in database.
 		 */
 		if (mustEnterTrucoMode) {
 			Logging.printLogDebug(logger, session, "Entering truco mode...");
@@ -226,8 +229,9 @@ public class Crawler implements Runnable {
 				 * we will select only the product being 'trucado'
 				 */
 				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
-
-				if (localProduct != null) {
+				
+				// proceed the iteration only if the product is not void
+				if (!localProduct.isVoid()) {
 					Persistence.persistProduct(localProduct, session);
 
 					if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
@@ -266,7 +270,17 @@ public class Crawler implements Runnable {
 					}
 				}
 
-				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) break;
+				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
+					
+					// if we end up with a void at end of truco, we must change the status of the processed to void
+					if (localProduct.isVoid()) {
+						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
+						}
+					}
+					
+					break;
+				}
 
 			}
 		}
