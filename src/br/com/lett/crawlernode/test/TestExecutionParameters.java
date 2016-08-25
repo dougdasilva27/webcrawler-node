@@ -27,7 +27,6 @@ public class TestExecutionParameters {
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 
 	private Options options;
-	private String environment;
 	private Boolean debug;
 	private String[] args;
 	
@@ -57,14 +56,9 @@ public class TestExecutionParameters {
 		return this.debug;
 	}
 
-	public String getEnvironment() {
-		return this.environment;
-	}
-
 	private void createOptions() {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
-		options.addOption("environment", true, "Environment [development, production]");
 	}
 
 	private void parseCommandLineOptions() {
@@ -76,17 +70,6 @@ public class TestExecutionParameters {
 
 			// debug mode
 			debug = cmd.hasOption("debug");
-
-			// environment
-			if (cmd.hasOption("environment")) {
-				environment = cmd.getOptionValue("environment");
-				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) && !environment.equals(ENVIRONMENT_PRODUCTION)) {
-					Logging.printLogError(logger, "Unrecognized environment.");
-					help();
-				}
-			} else {
-				help();
-			}	
 
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
@@ -100,7 +83,6 @@ public class TestExecutionParameters {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n");
 		sb.append("Debug: " + this.debug + "\n");
-		sb.append("Environment: " + this.environment + "\n");
 
 		return sb.toString();
 	} 

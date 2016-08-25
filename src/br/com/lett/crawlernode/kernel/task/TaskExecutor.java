@@ -54,6 +54,10 @@ public class TaskExecutor {
 		crawlerPoolExecutor.prestartAllCoreThreads();
 	}
 	
+	public void shutDown() {
+		crawlerPoolExecutor.shutdown();
+	}
+	
 	public int getMaxThreadsCount() {
 		return crawlerPoolExecutor.getMaximumPoolSize();
 	}

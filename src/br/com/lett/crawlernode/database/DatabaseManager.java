@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.database;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -11,14 +10,6 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
@@ -38,11 +29,6 @@ import br.com.lett.crawlernode.util.Logging;
 public class DatabaseManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
-
-	/**
-	 * Program execution parameters
-	 */
-	public String environment = Main.executionParameters.getEnvironment();
 
 	/**
 	 * Database credentials
@@ -65,21 +51,14 @@ public class DatabaseManager {
 	public MongoDatabase mongoBackendInsights = null;
 	public MongoDatabase mongoMongoImages = null;
 
-
-	/**
-	 * Amazon credentials
-	 */
-	private static String screenshotBucketName  = "img.insights.lett.com.br";
-	private static String accessKey        		= "AKIAJ73Z3NTUDN2IF7AA";
-	private static String secretKey        		= "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";
-
-
 	public DatabaseManager(DBCredentials credentials) {
 		this.mongoCredentials = credentials.getMongoCredentials();
 		this.postgresCredentials = credentials.getPostgresCredentials();
-
 	}
-
+	
+	/**
+	 * Connect to databases when not testing crawler logic.
+	 */
 	public void connect() {		
 		Logging.printLogDebug(logger, "Starting connection with databases...");
 
@@ -104,7 +83,7 @@ public class DatabaseManager {
 			/* ************************
 			 * Production environment *
 			 **************************/
-			if ( environment.equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
+			if ( Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
 				this.setMongoPanel();
 				this.setMongoInsights();
 				this.setMongoImages();
@@ -128,7 +107,10 @@ public class DatabaseManager {
 
 	}
 
-	public void connectTestMode() {		
+	/**
+	 * Connect to databases when running crawler logic tests.
+	 */
+	public void connectTest() {		
 		Logging.printLogDebug(logger, "Starting connection with databases...");
 
 		// connect to postgres

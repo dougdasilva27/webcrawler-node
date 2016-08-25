@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class Processor {
@@ -39,7 +40,7 @@ public class Processor {
 			CrawlerSession session, 
 			ProcessedModel previousProcessedProduct, 
 			ResultManager processorResultManager) {
-		
+
 		Logging.printLogDebug(logger, session, "Creating processed product...");
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
@@ -74,7 +75,7 @@ public class Processor {
 		description = sanitizeBeforePersist(description);
 		internal_id = sanitizeBeforePersist(internal_id);
 		internal_pid = sanitizeBeforePersist(internal_pid);
-		
+
 		String marketplace_string = null;
 
 		if(marketplace != null && marketplace.length() > 0) {
@@ -105,13 +106,13 @@ public class Processor {
 		}
 
 		try {
-			
+
 			// if the processed model already exists
 			if (previousProcessedProduct != null) {
-				
+
 				// clone it, creating a new processed model
 				newProcessedProduct = previousProcessedProduct.clone();
-				
+
 				// update fields with new values
 				if(url != null) {
 					newProcessedProduct.setUrl(url);
@@ -130,9 +131,9 @@ public class Processor {
 				newProcessedProduct.setSecondary_pics(secondary_pics);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
-				
+
 			}
-			
+
 			// if the product doesn't exists yet, then we must creat a new processed model
 			if(newProcessedProduct == null) {
 				newProcessedProduct = new ProcessedModel(null, 
@@ -315,8 +316,7 @@ public class Processor {
 					}
 
 				} catch (Exception e1) {
-					System.err.println(dateString);
-					e1.printStackTrace();
+					Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e1));
 				}
 
 			}
@@ -325,11 +325,11 @@ public class Processor {
 
 			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
-		} catch (Exception e) {
+		} catch (Exception e2) {
 			Logging.printLogError(logger, session, "Erro ao tentar processar produto [seed:" + session.getSeedId() + "]");
-			Logging.printLogError(logger, e.getMessage());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e2));
 		}
-		
+
 		return newProcessedProduct;
 	}
 
@@ -342,7 +342,7 @@ public class Processor {
 	 */
 	public static ProcessedModel fetchPreviousProcessed(Product product, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
-		
+
 		ProcessedModel actualProcessedProduct = null;
 
 		// get crawled information
@@ -354,7 +354,20 @@ public class Processor {
 		try {
 
 			// reading current information of processed product
-			ResultSet rs = Main.dbManager.runSqlConsult("SELECT * FROM processed WHERE market = " + session.getMarket().getNumber() + " AND internal_id = '" + internal_id + "'");
+			StringBuilder query = new StringBuilder();
+			query.append("SELECT * FROM processed WHERE market = ");
+			query.append(session.getMarket().getNumber());
+			query.append(" AND internal_id = '");
+			query.append(internal_id);
+			query.append("'");
+
+			ResultSet rs = null;
+
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				rs = br.com.lett.crawlernode.test.Tester.dbManager.runSqlConsult(query.toString());
+			} else {
+				rs = Main.dbManager.runSqlConsult(query.toString());
+			}
 
 			while(rs.next()) {
 
@@ -444,34 +457,15 @@ public class Processor {
 						actual_marketplace);
 
 
-				// Criando log de produto encontrado para a seed no caso do modo standalone
-				foundProductForSeed(session);
-
 				return actualProcessedProduct;
 
 			}
 
-
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (SQLException e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		return actualProcessedProduct;
-	}
-
-	private static void foundProductForSeed(CrawlerSession session) {
-
-		// if we are in a standalone task session
-		//		if(Main.mode.equals(Main.MODE_STANDALONE) && db.mongo_backend_panel != null && seedId != null) {
-		//			BasicDBObject log = new BasicDBObject("date", new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss"))
-		//					.append("type", "product")
-		//					.append("message", processedId);
-		//
-		//			db.appendLogToSeedDocument(seedId, log);
-		//
-		//		}
-
 	}
 
 	private static String sanitizeBeforePersist(String field) {

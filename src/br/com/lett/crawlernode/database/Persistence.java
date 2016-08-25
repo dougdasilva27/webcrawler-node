@@ -146,22 +146,35 @@ public class Persistence {
 				listOfFields = listOfFields + ", marketplace";
 				values = values + ", '" + marketplace_string + "'";
 			}
+			
+			// store data on crawler and crawler_old tables
+			StringBuilder sqlExecuteCrawler = new StringBuilder();
+			
+			sqlExecuteCrawler.append("INSERT INTO crawler ");
+			sqlExecuteCrawler.append("( ");
+			sqlExecuteCrawler.append(listOfFields);
+			sqlExecuteCrawler.append(") ");
+			
+			sqlExecuteCrawler.append("VALUES ");
+			sqlExecuteCrawler.append("( ");
+			sqlExecuteCrawler.append(values);
+			sqlExecuteCrawler.append("); ");
+			
+			sqlExecuteCrawler.append("INSERT INTO crawler_old ");
+			sqlExecuteCrawler.append("( ");
+			sqlExecuteCrawler.append(listOfFields);
+			sqlExecuteCrawler.append(") ");
+			
+			sqlExecuteCrawler.append("VALUES ");
+			sqlExecuteCrawler.append("(");
+			sqlExecuteCrawler.append(values);
+			sqlExecuteCrawler.append(");");
 
-			String sql_crawler = 
-					"INSERT INTO crawler ( "
-							+ 		listOfFields
-							+ ") "
-							+ "VALUES ("
-							+ 		values
-							+ "); "
-							+ "INSERT INTO crawler_old ( "
-							+ 		listOfFields
-							+ ") "
-							+ "VALUES ("
-							+ 		values
-							+ "); ";
-
-			Main.dbManager.runSqlExecute(sql_crawler);
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
+			} else {
+				Main.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
+			}
 
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
@@ -256,7 +269,11 @@ public class Persistence {
 		}
 
 		try {
-			Main.dbManager.runSqlExecute(query);
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query);
+			} else {
+				Main.dbManager.runSqlExecute(query);
+			}
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 		} catch (SQLException e) {
@@ -281,7 +298,11 @@ public class Persistence {
 		query.append("market=" + session.getMarket());
 
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
+			} else {
+				Main.dbManager.runSqlExecute(query.toString());
+			}
 			Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product void.");
@@ -304,7 +325,11 @@ public class Persistence {
 		query.append("market=" + session.getMarket());
 
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
+			} else {
+				Main.dbManager.runSqlExecute(query.toString());
+			}
 			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LRT.");
@@ -327,7 +352,11 @@ public class Persistence {
 		query.append("market=" + session.getMarket());
 
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
+			} else {
+				Main.dbManager.runSqlExecute(query.toString());
+			}
 			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");

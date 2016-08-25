@@ -317,13 +317,15 @@ public class ResultManager {
 	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
 		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
-		// Previne o conteúdo de extra ser nulo
-		if (pm.getExtra() == null) pm.setExtra("");
+		// preventing extra field to be null
+		if (pm.getExtra() == null) {
+			pm.setExtra("");
+		}
 
 		Extractor extractor = new ExtractorFlorianopolisAngeloni();
 
 		// Coerção do objeto 'extractor' como Extractor para definição de atributos da classe
-		((Extractor) extractor).setAttrs(logActivated, 
+		extractor.setAttrs(logActivated, 
 				brandModelList,
 				unitsReplaceMap, 
 				recipientsReplaceMap,
@@ -332,11 +334,18 @@ public class ResultManager {
 				classModelList);
 
 		// Aciona o método 'extract' de acordo com cada supermecado
-		pm = ((Extractor) extractor).extract(pm);
+		pm = extractor.extract(pm);
 
-		// Se em modo clients, atualizando campos de monitoramento de conteúdo digital
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+		// if running test, always update digital content (as we are testing)
+		if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
 			this.updateDigitalContent(pm, session);
+		} 
+		
+		// if we are not running tests, update digital content only if in insights mode
+		else {
+			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+				this.updateDigitalContent(pm, session);
+			}
 		}
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");

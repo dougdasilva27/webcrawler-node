@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.kernel.task.TaskExecutor;
 import br.com.lett.crawlernode.kernel.task.TaskFactory;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -38,7 +37,7 @@ public class Tester {
 	public static void main(String args[]) {
 
 		init(args);
-		test("http://www.angeloni.com.br/eletro/p/lava-e-seca-lg-85kg-wd1485atab-branco-3870764", "florianopolis", "angeloni");
+		test("http://www.angeloni.com.br/super/produto?grupo=22004&idProduto=1785389", "florianopolis", "angeloni");
 
 	}
 
@@ -61,6 +60,9 @@ public class Tester {
 			} else {
 				Logging.printLogError(logger, session, "Error: task could not be created.");					
 			}
+			
+			// shutdown the task executor
+			taskExecutor.shutDown();
 
 		} else {
 			Logging.printLogError(logger, "Market not found.");
@@ -73,17 +75,20 @@ public class Tester {
 		// set up execution parameters
 		testExecutionParameters = new TestExecutionParameters(args);
 		testExecutionParameters.setUpExecutionParameters();
+		
+		// set up MDC variables for the logger
+		Logging.setLogMDCTest(testExecutionParameters);
 
 		// setting database credentials
 		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");
-		dbCredentials = dbCredentialsSetter.setDatabaseCredentials();
+		dbCredentials = dbCredentialsSetter.setDatabaseCredentialsTest();
 
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
-		dbManager.connectTestMode();
+		dbManager.connectTest();
 
 		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
+		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
 		proxies = new Proxies();

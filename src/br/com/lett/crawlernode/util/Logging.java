@@ -98,7 +98,7 @@ public class Logging {
 	 * Set up MDC variables when running crawler tests
 	 * @param testExecutionParameters
 	 */
-	public static void setLogMDC(TestExecutionParameters testExecutionParameters) {
+	public static void setLogMDCTest(TestExecutionParameters testExecutionParameters) {
 		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
 		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
 
@@ -107,8 +107,6 @@ public class Logging {
 		MDC.put("PROCESS_NAME", "java");
 
 		if (testExecutionParameters != null) {
-
-			MDC.put("ENVIRONMENT", testExecutionParameters.getEnvironment());
 
 			if (testExecutionParameters.getDebug()) {
 				MDC.put("DEBUG_MODE", "true");

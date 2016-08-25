@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
@@ -33,32 +34,32 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	private int activeTaskCount = 0;
 	private long failedTaskCount = 0;
 	private long succeededTaskCount = 0;
-	
-	 /**
-     * Creates a new {@code CrawlerPoolExecutor} with the given initial
-     * parameters and default thread factory.
-     *
-     * @param corePoolSize the number of threads to keep in the pool, even
-     *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
-     * @param maximumPoolSize the maximum number of threads to allow in the
-     *        pool
-     * @param keepAliveTime when the number of threads is greater than
-     *        the core, this is the maximum time that excess idle threads
-     *        will wait for new tasks before terminating.
-     * @param unit the time unit for the {@code keepAliveTime} argument
-     * @param workQueue the queue to use for holding tasks before they are
-     *        executed.  This queue will hold only the {@code Runnable}
-     *        tasks submitted by the {@code execute} method.
-     * @param handler the handler to use when execution is blocked
-     *        because the thread bounds and queue capacities are reached
-     * @throws IllegalArgumentException if one of the following holds:<br>
-     *         {@code corePoolSize < 0}<br>
-     *         {@code keepAliveTime < 0}<br>
-     *         {@code maximumPoolSize <= 0}<br>
-     *         {@code maximumPoolSize < corePoolSize}
-     * @throws NullPointerException if {@code workQueue}
-     *         or {@code handler} is null
-     */
+
+	/**
+	 * Creates a new {@code CrawlerPoolExecutor} with the given initial
+	 * parameters and default thread factory.
+	 *
+	 * @param corePoolSize the number of threads to keep in the pool, even
+	 *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+	 * @param maximumPoolSize the maximum number of threads to allow in the
+	 *        pool
+	 * @param keepAliveTime when the number of threads is greater than
+	 *        the core, this is the maximum time that excess idle threads
+	 *        will wait for new tasks before terminating.
+	 * @param unit the time unit for the {@code keepAliveTime} argument
+	 * @param workQueue the queue to use for holding tasks before they are
+	 *        executed.  This queue will hold only the {@code Runnable}
+	 *        tasks submitted by the {@code execute} method.
+	 * @param handler the handler to use when execution is blocked
+	 *        because the thread bounds and queue capacities are reached
+	 * @throws IllegalArgumentException if one of the following holds:<br>
+	 *         {@code corePoolSize < 0}<br>
+	 *         {@code keepAliveTime < 0}<br>
+	 *         {@code maximumPoolSize <= 0}<br>
+	 *         {@code maximumPoolSize < corePoolSize}
+	 * @throws NullPointerException if {@code workQueue}
+	 *         or {@code handler} is null
+	 */
 	public CrawlerPoolExecutor(int corePoolSize,
 			int maximumPoolSize,
 			long keepAliveTime,
@@ -72,8 +73,14 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	@Override
 	protected void beforeExecute(Thread t, Runnable r) {
 		super.beforeExecute(t, r);
-		synchronized(lock) {
-			activeTaskCount++;
+
+		Crawler task = (Crawler)r;
+		Logging.printLogDebug(logger, task.session, "START");
+
+		if (!task.session.getType().equals(CrawlerSession.TEST_TYPE)) {
+			synchronized(lock) {
+				activeTaskCount++;
+			}
 		}
 	}
 
@@ -81,19 +88,25 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	protected void afterExecute(Runnable r, Throwable t) {
 		super.afterExecute(r, t);
 
-		synchronized(lock) {
-			Crawler task = (Crawler)r;
-			if (t != null) {
-				failedTaskCount++;
-				Logging.printLogError(logger,task.session, "Task failed [" + task.session.getUrl() + "]");
-			} else {
-				succeededTaskCount++;
-				Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
-				QueueService.deleteMessage(Main.queue, task.session.getSessionId(), task.session.getMessageReceiptHandle());
-				Logging.printLogDebug(logger, task.session, "END [trucos = " + task.session.getTrucoAttempts() + "]");
+		Crawler task = (Crawler)r;
+
+		if (task.session.getType().equals(CrawlerSession.TEST_TYPE)) {
+			Logging.printLogDebug(logger, task.session, "END");
+		} else {
+			synchronized(lock) {
+				if (t != null) {
+					failedTaskCount++;
+					Logging.printLogError(logger,task.session, "Task failed [" + task.session.getUrl() + "]");
+				} else {
+					succeededTaskCount++;
+					Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
+					QueueService.deleteMessage(Main.queue, task.session.getSessionId(), task.session.getMessageReceiptHandle());
+					Logging.printLogDebug(logger, task.session, "[trucos = " + task.session.getTrucoAttempts() + "]");
+					Logging.printLogDebug(logger, task.session, "END");
+				}
+
+				activeTaskCount--;
 			}
-			
-			activeTaskCount--;
 		}
 
 	}
@@ -103,13 +116,13 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			return activeTaskCount;
 		}
 	}
-	
+
 	public long getFailedTaskCount() {
 		synchronized(lock) {
 			return failedTaskCount;
 		}
 	}
-	
+
 	public long getSucceededTaskCount() {
 		synchronized(lock) {
 			return succeededTaskCount;

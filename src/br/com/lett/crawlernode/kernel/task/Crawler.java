@@ -38,10 +38,12 @@ public class Crawler implements Runnable {
 
 	protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
-	protected final static Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g"
+	protected final static Pattern FILTERS = Pattern.compile(
+			".*(\\.(css|js|bmp|gif|jpe?g"
 			+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
 			+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
-			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$"
+			);
 
 	/**
 	 * The current crawling session.
@@ -74,7 +76,6 @@ public class Crawler implements Runnable {
 	 */
 	@Override 
 	public void run() {
-		Logging.printLogDebug(logger, session, "START");
 
 		// crawl informations and create a list of products
 		List<Product> products = extract();
@@ -160,7 +161,12 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+		ProcessedModel newProcessedProduct = null;
+		if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+			newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, br.com.lett.crawlernode.test.Tester.processorResultManager);
+		} else {
+			newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+		}
 
 		if (previousProcessedProduct == null) {
 
