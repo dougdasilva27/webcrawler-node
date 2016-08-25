@@ -49,7 +49,7 @@ public class ProcessedModelSanitizer {
 		String 		lms = processedModel.getLms();
 		String 		status = processedModel.getStatus();
 		Boolean 	available = processedModel.getAvailable();
-		Boolean 	void_product = processedModel.getVoid_product();
+		Boolean 	void_product = processedModel.getVoid();
 		JSONObject 	changes = processedModel.getChanges();
 		Long 		lettId = processedModel.getLettId();
 		JSONArray 	similars = processedModel.getSimilars();

@@ -98,7 +98,8 @@ public class Market {
 	public String toString() {
 		return "Market [id=" + this.id + 
 				", city=" + this.city + 
-				", name=" + this.name;
+				", name=" + this.name +
+				", proxy=" + this.proxies.toString() + "]";
 	}
 
 	public ArrayList<String> getProxies() {

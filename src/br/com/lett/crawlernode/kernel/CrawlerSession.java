@@ -50,7 +50,10 @@ public class CrawlerSession {
 	private Market market;
 
 	/** Number of truco checks */
-	private int trucoAttempts;
+	private int trucoAttemptsCounter;
+	
+	/** Number of readings to prevent a void status */
+	private int voidAttemptsCounter;
 
 	/** Map associating an URL with the number of requests for this URL */
 	private Map<String, Integer> urlRequests;
@@ -65,8 +68,9 @@ public class CrawlerSession {
 	public CrawlerSession(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
-		// setting truco attempts
-		this.trucoAttempts = 0;
+		// initialize counters
+		this.trucoAttemptsCounter = 0;
+		this.voidAttemptsCounter = 0;
 
 		// creating the urlRequests map
 		this.urlRequests = new HashMap<String, Integer>();
@@ -109,8 +113,9 @@ public class CrawlerSession {
 	
 	public CrawlerSession(String url, Market market) {
 
-		// setting truco attempts
-		this.trucoAttempts = 0;
+		// initialize counters
+		this.trucoAttemptsCounter = 0;
+		this.voidAttemptsCounter = 0;
 
 		// creating the urlRequests map
 		this.urlRequests = new HashMap<String, Integer>();
@@ -181,11 +186,15 @@ public class CrawlerSession {
 	}
 
 	public int getTrucoAttempts() {
-		return trucoAttempts;
+		return trucoAttemptsCounter;
 	}
 
-	public void incrementTrucoAttempts() {
-		this.trucoAttempts++;
+	public void incrementTrucoAttemptsCounter() {
+		this.trucoAttemptsCounter++;
+	}
+	
+	public void incrementVoidAttemptsCounter() {
+		this.voidAttemptsCounter++;
 	}
 
 	public String getType() {
@@ -262,6 +271,14 @@ public class CrawlerSession {
 
 	public void setLastURLRequest(Map<String, LettProxy> lastURLRequest) {
 		this.lastURLRequest = lastURLRequest;
+	}
+
+	public int getVoidAttempts() {
+		return voidAttemptsCounter;
+	}
+
+	public void setVoidAttempts(int voidAttempts) {
+		this.voidAttemptsCounter = voidAttempts;
 	}
 
 }

@@ -37,7 +37,7 @@ public class Tester {
 	public static void main(String args[]) {
 
 		init(args);
-		test("http://www.angeloni.com.br/super/produto?grupo=22004&idProduto=1785389", "florianopolis", "angeloni");
+		test("http://loja.paguemenos.com.br/detalhes.aspx?pc=307408", "saopaulo", "paguemenos");
 
 	}
 

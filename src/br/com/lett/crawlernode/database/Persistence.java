@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.database;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -11,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
@@ -214,7 +217,7 @@ public class Persistence {
 					+ "'" + newProcessedProduct.getLms() + "', "
 					+ (newProcessedProduct.getStatus() == null ? "null" : "'" + newProcessedProduct.getStatus()  + "'" ) + ", "
 					+ newProcessedProduct.getAvailable() + ", "
-					+ newProcessedProduct.getVoid_product() + ", "
+					+ newProcessedProduct.getVoid() + ", "
 					+ (newProcessedProduct.getCat1() == null ? "null" : "'" + newProcessedProduct.getCat1()  + "'" ) + ", "
 					+ (newProcessedProduct.getCat2() == null ? "null" : "'" + newProcessedProduct.getCat2()  + "'" ) + ", "
 					+ (newProcessedProduct.getCat3() == null ? "null" : "'" + newProcessedProduct.getCat3()  + "'" ) + ", "
@@ -251,7 +254,7 @@ public class Persistence {
 					+ "lms=" 		+ "'" + newProcessedProduct.getLms() + "', "
 					+ "status=" 	+ "'" + newProcessedProduct.getStatus() + "', "
 					+ "available=" 	+ newProcessedProduct.getAvailable() + ", "
-					+ "void=" 		+ newProcessedProduct.getVoid_product() + ", "
+					+ "void=" 		+ newProcessedProduct.getVoid() + ", "
 					+ "cat1=" 		+ (newProcessedProduct.getCat1() == null ? "null" : "'" + newProcessedProduct.getCat1()  + "'" ) + ", "
 					+ "cat2=" 		+ (newProcessedProduct.getCat2() == null ? "null" : "'" + newProcessedProduct.getCat2()  + "'" ) + ", "
 					+ "cat3=" 		+ (newProcessedProduct.getCat3() == null ? "null" : "'" + newProcessedProduct.getCat3()  + "'" ) + ", "
@@ -289,7 +292,7 @@ public class Persistence {
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
 	 */
-	public void updateProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
+	public static void updateProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed SET void=" + voidValue + " ");
@@ -316,7 +319,7 @@ public class Persistence {
 	 * @param nowISO
 	 * @param session
 	 */
-	public void updateProcessedLRT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed set lrt=" + nowISO + " ");
@@ -343,7 +346,7 @@ public class Persistence {
 	 * @param nowISO
 	 * @param session
 	 */
-	public void updateProcessedLMT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed set lmt=" + nowISO + " ");

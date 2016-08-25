@@ -8,8 +8,14 @@ import org.joda.time.format.DateTimeFormatter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoDatabase;
+
+import br.com.lett.crawlernode.kernel.CrawlerSession;
+import br.com.lett.crawlernode.kernel.task.Crawler;
+import br.com.lett.crawlernode.util.Logging;
 
 
 
@@ -22,6 +28,8 @@ import com.mongodb.client.MongoDatabase;
  */
 
 public class ProcessedModel {
+	
+	protected static final Logger logger = LoggerFactory.getLogger(ProcessedModel.class);
 
 	private Long 		id;
 	private String 		internalId;
@@ -64,10 +72,42 @@ public class ProcessedModel {
 		super();
 	}
 
-	public ProcessedModel(Long id, String internalId, String internalPid, String originalName, String _class, String brand, String recipient,
-			Double quantity, Integer multiplier, String unit, String extra, String pic, String secondary_pics, String cat1, String cat2, String cat3, String url,
-			Integer market, String ect, String lmt, String lat, String lrt, String lms, String status, JSONObject changes, String originalDescription, Float price, JSONObject digitalContent, Long lettId, JSONArray similars, 
-			Boolean available, Boolean void_product, Integer stock, JSONArray behaviour, JSONArray marketplace) {
+	public ProcessedModel(Long id, 
+			String internalId, 
+			String internalPid, 
+			String originalName, 
+			String _class, 
+			String brand, 
+			String recipient,
+			Double quantity, 
+			Integer multiplier, 
+			String unit, 
+			String extra, 
+			String pic, 
+			String secondary_pics, 
+			String cat1, 
+			String cat2, 
+			String cat3, 
+			String url,
+			Integer market, 
+			String ect, 
+			String lmt, 
+			String lat, 
+			String lrt, 
+			String lms, 
+			String status, 
+			JSONObject changes, 
+			String originalDescription, 
+			Float price, 
+			JSONObject digitalContent, 
+			Long lettId, 
+			JSONArray similars, 
+			Boolean available, 
+			Boolean void_product, 
+			Integer stock, 
+			JSONArray behaviour, 
+			JSONArray marketplace) {
+		
 		super();
 		this.id = id;
 		this.internalId = internalId;
@@ -313,78 +353,65 @@ public class ProcessedModel {
 	/**
 	 * Método que avalia o truco b
 	 */
-	public boolean compareHugeChanges(ProcessedModel truco) {
+	public boolean compareHugeChanges(ProcessedModel truco, CrawlerSession session) {
 
 		// Verificando se foi criado agora
 		if(truco == null) {
 			return false;
 		} else {
 
-			// Verificando se o preço se alterou
+			// price change
 			if(
 					(this.getPrice() == null ^ truco.getPrice() == null)
 					||
 					(this.getPrice() != null && !this.getPrice().equals(truco.getPrice()))
 					) {
-				System.out.println("Mudou preço: ");
-				System.out.println(this.getPrice());
-				System.out.println(truco.getPrice());
+				
+				Logging.printLogDebug(logger, session, "Change detected. [price][" + this.getPrice() + " -> " + truco.getPrice() + "]");
 				return true;
 			}
 
-			// Verificando se mudou sua condição de disponibilidade
+			// availability change
 			if(this.getAvailable() != truco.getAvailable()) {
-				System.out.println("Mudou available: ");
-				System.out.println(this.getAvailable());
-				System.out.println(truco.getAvailable());
+				Logging.printLogDebug(logger, session, "Change detected. [availability][" + this.getAvailable() + " -> " + truco.getAvailable() + "]");
 				return true;
 			}
 
-			// Verificando se mudou sua condição de void
-			if(this.getVoid_product() != truco.getVoid_product()) {
-				System.out.println("Mudou void: ");
-				System.out.println(this.getVoid_product());
-				System.out.println(truco.getVoid_product());
+			// void change
+			if(this.getVoid() != truco.getVoid()) {
+				Logging.printLogDebug(logger, session, "Change detected. [void][" + this.getVoid() + " -> " + truco.getVoid() + "]");
 				return true;
 			}
 
-			// Verificando se mudou status
+			// status change
 			if(!this.getStatus().equals(truco.getStatus())) {
-				System.out.println("Mudou status: ");
-				System.out.println(this.getStatus());
-				System.out.println(truco.getStatus());
+				Logging.printLogDebug(logger, session, "Change detected. [status][" + this.getStatus() + " -> " + truco.getStatus() + "]");
 				return true;
 			}
 
-			// Verificando se nome se alterou
+			// name change
 			if(
 					(this.getOriginalName() == null ^ truco.getOriginalName() == null)
 					||
 					(this.getOriginalName() != null && !this.getOriginalName().equals(truco.getOriginalName()))
 					) {
-				System.out.println("Mudou originalName: ");
-				System.out.println(this.getOriginalName());
-				System.out.println(truco.getOriginalName());
+				Logging.printLogDebug(logger, session, "Change detected. [name][" + this.getOriginalName() + " -> " + truco.getOriginalName() + "]");
 				return true;
 			}
 			
-			// Verificando se internal_pid se alterou
+			// internalPid change
 			if(
-					(this.getInternalPid()== null ^ truco.getInternalPid() == null)
+					(this.getInternalPid() == null ^ truco.getInternalPid() == null)
 					||
 					(this.getInternalPid() != null && !this.getInternalPid().equals(truco.getInternalPid()))
 					) {
-				System.out.println("Mudou internal_pid: ");
-				System.out.println(this.getInternalPid());
-				System.out.println(truco.getInternalPid());
+				Logging.printLogDebug(logger, session, "Change detected. [internalPid][" + this.getInternalPid() + " -> " + truco.getInternalPid() + "]");
 				return true;
 			}
 			
-			// Verificando se url se alterou
+			// url change
 			if(!this.getUrl().equals(truco.getUrl())) {
-				System.out.println("Mudou url: ");
-				System.out.println(this.getUrl());
-				System.out.println(truco.getUrl());
+				Logging.printLogDebug(logger, session, "Change detected. [url][" + this.getUrl() + " -> " + truco.getUrl() + "]");
 				return true;
 			}
 
@@ -668,7 +695,7 @@ public class ProcessedModel {
 		this.marketplace = marketplace;
 	}
 
-	public Boolean getVoid_product() {
+	public Boolean getVoid() {
 		return void_product;
 	}
 

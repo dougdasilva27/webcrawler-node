@@ -209,7 +209,11 @@ public class Processor {
 
 			// Detectando e registrando mudanças
 			// Recebe o banco Panel do Mongo porque grava urls que deverão ter um screenshot capturado
-			newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+				newProcessedProduct.registerChanges(previousProcessedProduct, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
+			} else {
+				newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+			}
 
 			// Atualizando LMT
 			if(newProcessedProduct.getChanges() != null && (newProcessedProduct.getChanges().has("pic") || newProcessedProduct.getChanges().has("originals"))) {
@@ -345,8 +349,20 @@ public class Processor {
 
 		ProcessedModel actualProcessedProduct = null;
 
-		// get crawled information
-		String internal_id = product.getInternalId();
+		/*
+		 * If we are running a test for new crawlers, it may occur cases where the internalId
+		 * in the product is null, because of a fail in crawling logic for example. In the case
+		 * a product is void for example, it also may occur to not find the internalId, so we must get
+		 * what was passed via CrawlerSession.
+		 * But there are some cases where we don't have the internalId in the session, but the product
+		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
+		 */
+		String internal_id = null;
+		if (product.getInternalId() == null) {
+			internal_id = session.getInternalId();
+		} else {
+			internal_id = product.getInternalId();
+		}
 
 		// sanitize
 		internal_id = sanitizeBeforePersist(internal_id);

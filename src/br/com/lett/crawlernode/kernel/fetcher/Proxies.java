@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONObject;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class Proxies {
@@ -101,7 +102,8 @@ public class Proxies {
 			Logging.printLogDebug(logger, "Buy proxies fetched with success! [" + this.buyProxies.size() + " proxies fetched]");
 		}
 		catch (Exception e) {
-			Logging.printLogError(logger, "Error fetching regular proxies [" + e.getMessage() + "]");
+			Logging.printLogError(logger, "Error fetching buy proxies");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 	}
@@ -211,7 +213,8 @@ public class Proxies {
 			Logging.printLogDebug(logger, "Bonanza proxies fetched with success! [" + this.bonanzaProxies.size() + " proxies fetched]");
 
 		} catch (Exception e) {
-
+			Logging.printLogError(logger, "Error fetching bonanza proxies.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
 

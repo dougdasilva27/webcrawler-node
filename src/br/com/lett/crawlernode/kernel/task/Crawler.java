@@ -36,13 +36,14 @@ public class Crawler implements Runnable {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
+	protected static final int MAX_VOID_ATTEMPTS = 3;
 	protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
 	protected final static Pattern FILTERS = Pattern.compile(
 			".*(\\.(css|js|bmp|gif|jpe?g"
-			+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
-			+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
-			+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$"
+					+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
+					+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
+					+ "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$"
 			);
 
 	/**
@@ -82,33 +83,42 @@ public class Crawler implements Runnable {
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
-		/* **********************************************************
-		 * 						MODE INSIGHTS 						*
-		 *  														*
-		 * There is only one product that will be 					*
-		 * processed in this mode. This product will be selected 	*
-		 * by it's internalId, passed by the CrawlerSession			*
-		 * 															*
-		 * **********************************************************
+		/* 
+		 * MODE INSIGHTS							
+		 * There is only one product that will be 					
+		 * processed in this mode. This product will be selected 	
+		 * by it's internalId, passed by the CrawlerSession																
 		 */
 		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
-			if (products.size() == 0) {
+
+			// get crawled product by it's internalId
+			Product crawledProduct = getProductByInternalId(products, session.getInternalId());
+
+			// run active void status analysis
+			Product finalProduct = activeVoid(crawledProduct);
+			
+			if (finalProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Product is void.");
-			}
-			else {
-				Product product = getProductByInternalId(products, session.getInternalId());
-				if (product != null) {
-					processProduct(product);
+				
+				// set previous processed as void
+				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
+				if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+					Logging.printLogDebug(logger, session, "Setting previous processed void status to true.");
+					Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
 				}
+			} 
+			
+			// process the resulting product after active void analysis
+			else {
+				processProduct(finalProduct);
 			}
+
 		}
 
-		/* ******************************************************
-		 * 					MODE DISCOVERY					    *
-		 * 														*
-		 * In this mode, we must process each crawled product.  *
-		 * 														*
-		 * ******************************************************
+
+		/* 
+		 * MODE DISCOVERY												
+		 * In this mode, we must process each crawled product.  												
 		 */
 		else {
 			for (Product product : products) {
@@ -121,7 +131,7 @@ public class Crawler implements Runnable {
 			Logging.printLogDebug(logger, session, "Closing webdriver...");
 			webdriver.closeDriver();
 		}
-
+		
 	}
 
 	/**
@@ -184,7 +194,7 @@ public class Crawler implements Runnable {
 			if (newProcessedProduct != null) {
 
 				// the two processed are different, so we must enter in truco mode
-				if ( compare(newProcessedProduct, previousProcessedProduct) ) {
+				if ( compare(previousProcessedProduct, newProcessedProduct) ) {
 					mustEnterTrucoMode = true;
 					Logging.printLogDebug(logger, session, "Must enter in truco mode.");
 				}
@@ -207,17 +217,24 @@ public class Crawler implements Runnable {
 			ProcessedModel currentTruco = newProcessedProduct;
 
 			while (true) {
+				session.incrementTrucoAttemptsCounter();
+				
 				List<Product> products = extract();
 
-				// when we are processing all the the products in array (mode discovery)
-				// we will select only the product being 'trucado'
+				/*
+				 * when we are processing all the the products in array (mode discovery)
+				 * we will select only the product being 'trucado'
+				 */
 				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
-
-				session.incrementTrucoAttempts();
 
 				if (localProduct != null) {
 					Persistence.persistProduct(localProduct, session);
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, Main.processorResultManager);
+
+					if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
+						newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, br.com.lett.crawlernode.test.Tester.processorResultManager);
+					} else {
+						newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, Main.processorResultManager);
+					}
 
 					if (newProcessedProduct != null) {					
 						if ( compare(newProcessedProduct, currentTruco) ) {
@@ -297,6 +314,7 @@ public class Crawler implements Runnable {
 
 		// handle cookie
 		handleCookiesBeforeFetch();
+		
 
 		// handle URL modifications
 		String url = handleURLBeforeFetch(session.getUrl());
@@ -349,7 +367,7 @@ public class Crawler implements Runnable {
 	 * @return true if they are different or false otherwise
 	 */
 	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
-		return p1.compareHugeChanges(p2);
+		return p1.compareHugeChanges(p2, session);
 	}
 
 	private void printCrawledInformation(Product product) {
@@ -360,7 +378,7 @@ public class Crawler implements Runnable {
 	 * Get only the product with the desired internalId.
 	 * @param products
 	 * @param internalId
-	 * @return The product with the desired internal id.
+	 * @return The product with the desired internal id, or an empty product if it was not found.
 	 */
 	private Product getProductByInternalId(List<Product> products, String internalId) {
 		for (Product product : products) {
@@ -369,40 +387,43 @@ public class Crawler implements Runnable {
 			}
 		}
 
-		return null;
+		return new Product();
 	}
 
 	/**
-	 * 
-	 * @param product
-	 * @return
+	 * This method performs an active analysis of the void status. 
+	 * @param product the crawled product
+	 * @return The resultant product from the analysis
 	 */
 	private Product activeVoid(Product product) {
-		Product p = product;
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		if ( product.isVoid() ) {
-
-			// fetch the previous processed product stored on database
-			ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-
-			if (previousProcessedProduct != null) {
-				if ( previousProcessedProduct.getVoid_product() ) {
-
-					// TODO update last dates
-
-				}
-				else {
-					// TODO try again
-				}
-			}
-			else {
-				// TODO try again
-			}
-
+		/*
+		 * There are two cases in which we return the original product.
+		 * The first case is if it's not void.
+		 * The second is if it is void, and there is a previous processed product 
+		 * with the same internalId that was also void.
+		 */
+		if (!product.isVoid()) return product;
+		
+		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+		if (previousProcessedProduct != null) {
+			if (previousProcessedProduct.getVoid()) return product;
 		}
 
-		return p;
+		Product currentProduct = product;
+		while (true) {
+			if ( currentProduct.isVoid() ) {
+				if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS) break;
+				session.incrementVoidAttemptsCounter();
+				Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
+				
+				List<Product> products = extract();
+				currentProduct = getProductByInternalId(products, session.getInternalId());
+			}
+		}
+
+		return currentProduct;
 	}
 
 }
+
