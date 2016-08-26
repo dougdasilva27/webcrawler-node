@@ -230,7 +230,7 @@ public class Crawler implements Runnable {
 				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
 
 				// proceed the iteration only if the product is not void
-				if (!localProduct.isVoid()) {
+				if (localProduct != null && !localProduct.isVoid()) {
 					Persistence.persistProduct(localProduct, session);
 
 					if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
