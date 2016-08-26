@@ -7,8 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.kernel.CrawlerSession;
-import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.test.TestExecutionParameters;
 
 /**

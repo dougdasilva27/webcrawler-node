@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.kernel.ExecutionParameters;
+import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.security.DataCipher;
 import br.com.lett.crawlernode.util.CommonMethods;

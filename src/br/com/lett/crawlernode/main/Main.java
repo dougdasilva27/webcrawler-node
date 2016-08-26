@@ -8,7 +8,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.kernel.task.MessageFetcher;
 import br.com.lett.crawlernode.kernel.task.TaskExecutor;

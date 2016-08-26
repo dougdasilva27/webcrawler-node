@@ -36,9 +36,9 @@ import org.slf4j.LoggerFactory;
 //import au.com.bytecode.opencsv.CSVReader;
 
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.CrawlerSession;
-import br.com.lett.crawlernode.kernel.ExecutionParameters;
 import br.com.lett.crawlernode.kernel.fetcher.Proxy;
+import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Information;

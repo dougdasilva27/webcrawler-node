@@ -8,7 +8,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.kernel.CrawlerSession;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
@@ -96,10 +95,10 @@ public class Crawler implements Runnable {
 
 			// run active void status analysis
 			Product finalProduct = activeVoid(crawledProduct);
-			
+
 			if (finalProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Product is void.");
-				
+
 				// set previous processed as void
 				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
 				if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
@@ -107,7 +106,7 @@ public class Crawler implements Runnable {
 					Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
 				}
 			} 
-			
+
 			// process the resulting product after active void analysis
 			else {
 				processProduct(finalProduct);
@@ -131,7 +130,7 @@ public class Crawler implements Runnable {
 			Logging.printLogDebug(logger, session, "Closing webdriver...");
 			webdriver.closeDriver();
 		}
-		
+
 	}
 
 	/**
@@ -221,7 +220,7 @@ public class Crawler implements Runnable {
 
 			while (true) {
 				session.incrementTrucoAttemptsCounter();
-				
+
 				List<Product> products = extract();
 
 				/*
@@ -229,7 +228,7 @@ public class Crawler implements Runnable {
 				 * we will select only the product being 'trucado'
 				 */
 				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
-				
+
 				// proceed the iteration only if the product is not void
 				if (!localProduct.isVoid()) {
 					Persistence.persistProduct(localProduct, session);
@@ -271,7 +270,7 @@ public class Crawler implements Runnable {
 				}
 
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-					
+
 					// if we end up with a void at end of truco, we must change the status of the processed to void
 					if (localProduct.isVoid()) {
 						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
@@ -279,7 +278,7 @@ public class Crawler implements Runnable {
 							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
 						}
 					}
-					
+
 					break;
 				}
 
@@ -329,7 +328,7 @@ public class Crawler implements Runnable {
 
 		// handle cookie
 		handleCookiesBeforeFetch();
-		
+
 
 		// handle URL modifications
 		String url = handleURLBeforeFetch(session.getUrl());
@@ -419,7 +418,7 @@ public class Crawler implements Runnable {
 		 * with the same internalId that was also void.
 		 */
 		if (!product.isVoid()) return product;
-		
+
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 		if (previousProcessedProduct != null) {
 			if (previousProcessedProduct.getVoid()) return product;
@@ -427,14 +426,13 @@ public class Crawler implements Runnable {
 
 		Product currentProduct = product;
 		while (true) {
-			if ( currentProduct.isVoid() ) {
-				if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS) break;
-				session.incrementVoidAttemptsCounter();
-				Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
-				
-				List<Product> products = extract();
-				currentProduct = getProductByInternalId(products, session.getInternalId());
-			}
+			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
+			session.incrementVoidAttemptsCounter();
+
+			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
+			List<Product> products = extract();
+			currentProduct = getProductByInternalId(products, session.getInternalId());
+
 		}
 
 		return currentProduct;
