@@ -102,8 +102,8 @@ public class Crawler implements Runnable {
 				// set previous processed as void
 				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
 				if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-					Logging.printLogDebug(logger, session, "Setting previous processed void status to true.");
-					Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
+					Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
+					Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
 				}
 			} 
 
@@ -425,7 +425,9 @@ public class Crawler implements Runnable {
 		if (previousProcessedProduct != null) {
 			if (previousProcessedProduct.getVoid()) return product;
 		}
-
+		
+		Logging.printLogDebug(logger, session, "Starting active void attempts...");
+		
 		Product currentProduct = product;
 		while (true) {
 			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
@@ -433,6 +435,7 @@ public class Crawler implements Runnable {
 
 			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
 			List<Product> products = extract();
+			Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 			currentProduct = getProductByInternalId(products, session.getInternalId());
 
 		}

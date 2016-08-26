@@ -745,7 +745,6 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			Logging.printLogDebug(logger, session, "Proxy service: " + serviceName);
 			
 			// testing selected URLs
 			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
@@ -832,7 +831,6 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			Logging.printLogDebug(logger, session, "Proxy service: " + serviceName);
 
 			// testing selected URLs
 			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {

@@ -292,10 +292,14 @@ public class Persistence {
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
 	 */
-	public static void updateProcessedVoid(ProcessedModel processed, boolean voidValue, CrawlerSession session) {
+	public static void setProcessedVoidTrue(ProcessedModel processed, CrawlerSession session) {
 		StringBuilder query = new StringBuilder();
 
-		query.append("UPDATE processed SET void=" + voidValue + " ");
+		query.append("UPDATE processed SET void=true, ");
+		query.append("available=false, ");
+		query.append("status=" + "'void', ");
+		query.append("marketplace=NULL, ");
+		query.append("price=NULL ");
 		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
 		query.append("AND ");
 		query.append("market=" + session.getMarket().getNumber());

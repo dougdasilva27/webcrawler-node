@@ -79,7 +79,7 @@ public class BrasilPoloarCrawler extends Crawler {
 
 		if ( isProductPage(this.session.getUrl()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
-
+			
 			/* ***********************************
 			 * crawling data of only one product *
 			 *************************************/
@@ -140,6 +140,8 @@ public class BrasilPoloarCrawler extends Crawler {
 			product.setDescription(description);
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
+			
+			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
