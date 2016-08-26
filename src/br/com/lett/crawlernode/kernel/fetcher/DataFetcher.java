@@ -71,34 +71,34 @@ public class DataFetcher {
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
-	
+
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents; 
-	
+
 	/**
 	 * Static initialization block
 	 */
 	static {
 		userAgents = Arrays.asList(
-		"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2",
-		"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-		"Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-		"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-		"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
-		"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
-		);
+				"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2",
+				"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+				"Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+				"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+				"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
+				"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+				);
 	}
 
 	/**
@@ -313,18 +313,45 @@ public class DataFetcher {
 
 		}
 
-		if (proxy != null) {
-			StringBuilder msg = new StringBuilder();
-			msg.append("Request using proxy: ");
-			msg.append("[service: " + randProxy.getSource() + ", ");
-			msg.append("ip: " + randProxy.getAddress() + "]");
-			Logging.printLogDebug(logger, session, msg.toString());
-			
+		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+		// assembling request information log message
+		StringBuilder msg = new StringBuilder();
+		if (proxy != null) {						
+			msg.append("{");
+			msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
+			msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
+			msg.append("req_method: " + "\"POST\",");
+			msg.append("req_location: " + "\"" + url + "\",");
+			msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+			msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+			msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+			msg.append("res_result: ");
+			if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+				msg.append("\"" + "success" + "\"");
+			} else {
+				msg.append("\"" + "fail" + "\"");
+			}
+			msg.append("}");
+
 		} else {
-			Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
+			msg.append("{");
+			msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
+			msg.append("req_method: " + "\"POST\",");
+			msg.append("req_location: " + "\"" + url + "\",");
+			msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+			msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+			msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+			msg.append("res_result: ");
+			if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+				msg.append("\"" + "success" + "\"");
+			} else {
+				msg.append("\"" + "fail" + "\"");
+			}
+			msg.append("}");
 		}
 
-		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+		Logging.printLogDebug(logger, session, msg.toString());
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
 		String inputLine;
@@ -364,7 +391,7 @@ public class DataFetcher {
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
-				
+
 			} else {
 				return fetchPage(reqType, session, url, urlParameters, cookies, attempt+1);	
 			}
@@ -448,19 +475,46 @@ public class DataFetcher {
 			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
 
-			if (proxy != null) {
-				StringBuilder msg = new StringBuilder();
-				msg.append("Request using proxy: ");
-				msg.append("[service: " + randProxy.getSource() + ", ");
-				msg.append("ip: " + randProxy.getAddress() + "]");
-				Logging.printLogDebug(logger, session, msg.toString());
-				
-			} else {
-				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
-			}
-
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// assembling request information log message
+			StringBuilder msg = new StringBuilder();
+			if (proxy != null) {						
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
+				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
+				msg.append("req_method: " + "\"GET\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+
+			} else {
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
+				msg.append("req_method: " + "\"GET\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+			}
+
+			Logging.printLogDebug(logger, session, msg.toString());
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -564,19 +618,46 @@ public class DataFetcher {
 
 			}
 
-			if (proxy != null) {
-				StringBuilder msg = new StringBuilder();
-				msg.append("Request using proxy: ");
-				msg.append("[service: " + randProxy.getSource() + ", ");
-				msg.append("ip: " + randProxy.getAddress() + "]");
-				Logging.printLogDebug(logger, session, msg.toString());
-				
-			} else {
-				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
-			}
-
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+			// assembling request information log message
+			StringBuilder msg = new StringBuilder();
+			if (proxy != null) {						
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
+				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
+				msg.append("req_method: " + "\"POST\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+
+			} else {
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
+				msg.append("req_method: " + "\"POST\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+			}
+
+			Logging.printLogDebug(logger, session, msg.toString());
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -677,19 +758,46 @@ public class DataFetcher {
 
 			httpPost.setConfig(requestConfig);
 
-			if (proxy != null) {
-				StringBuilder msg = new StringBuilder();
-				msg.append("Request using proxy: ");
-				msg.append("[service: " + randProxy.getSource() + ", ");
-				msg.append("ip: " + randProxy.getAddress() + "]");
-				Logging.printLogDebug(logger, session, msg.toString());
-				
-			} else {
-				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
-			}
-
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+			// assembling request information log message
+			StringBuilder msg = new StringBuilder();
+			if (proxy != null) {						
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
+				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
+				msg.append("req_method: " + "\"POST\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+
+			} else {
+				msg.append("{");
+				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
+				msg.append("req_method: " + "\"POST\",");
+				msg.append("req_location: " + "\"" + url + "\",");
+				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
+				msg.append("res_result: ");
+				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
+					msg.append("\"" + "success" + "\"");
+				} else {
+					msg.append("\"" + "fail" + "\"");
+				}
+				msg.append("}");
+			}
+
+			Logging.printLogDebug(logger, session, msg.toString());
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -745,7 +853,7 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			
+
 			// testing selected URLs
 			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
 				if (serviceName.equals(Proxies.BONANZA)) { // bonanza
@@ -810,7 +918,7 @@ public class DataFetcher {
 				}
 			}
 		}
-		
+
 		// request using no proxy
 		if (nextProxy == null) {
 			return null;
@@ -896,7 +1004,7 @@ public class DataFetcher {
 				}
 			}
 		}
-		
+
 		// request using no proxy
 		if (nextProxy == null) {
 			return null;
