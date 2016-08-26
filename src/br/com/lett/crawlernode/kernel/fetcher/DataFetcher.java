@@ -5,11 +5,12 @@ import java.io.InputStreamReader;
 
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -73,12 +74,12 @@ public class DataFetcher {
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
-	private static List<String> userAgents; 
+	private static List<String> userAgents;
 
 	/**
 	 * Static initialization block
 	 */
-	static {
+	static {		
 		userAgents = Arrays.asList(
 				"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2",
 				"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
@@ -366,8 +367,24 @@ public class DataFetcher {
 
 	}
 
-
-	private static String fetchPage(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
+	/**
+	 * 
+	 * @param reqType
+	 * @param session
+	 * @param url
+	 * @param urlParameters
+	 * @param cookies
+	 * @param attempt
+	 * @return
+	 */
+	private static String fetchPage(
+			String reqType, 
+			CrawlerSession session, 
+			String url, 
+			String urlParameters, 
+			List<Cookie> cookies, 
+			int attempt) {
+		
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
@@ -376,16 +393,16 @@ public class DataFetcher {
 				if (urlParameters != null) {
 					return fetchPagePOST(session, url, urlParameters, cookies, attempt);
 				} else {
-					Logging.printLogError(logger, session, "Parametro payload está null.");
+					Logging.printLogError(logger, session, "Parameter payload is null.");
 					return "";
 				}
 			} else {
-				Logging.printLogError(logger, session, "Parametro reqType é inválido.");
+				Logging.printLogError(logger, session, "Invalid reqType parameter.");
 				return "";
 			}
 
 		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de Page via " + reqType + ": " + url);
+			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
@@ -410,16 +427,22 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return
 	 */
-	private static String fetchPageGET(CrawlerSession session, String url, List<Cookie> cookies, int attempt) {
+	private static String fetchPageGET(
+			CrawlerSession session, 
+			String url, 
+			List<Cookie> cookies, 
+			int attempt) {
+		
+		LettProxy randProxy = null;
 
 		try {
-			Logging.printLogDebug(logger, session, "Fazendo requisição GET: " + url);
+			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
 			// adding request info for this url
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -479,42 +502,8 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
 			// assembling request information log message
-			StringBuilder msg = new StringBuilder();
-			if (proxy != null) {						
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
-				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
-				msg.append("req_method: " + "\"GET\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-
-			} else {
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
-				msg.append("req_method: " + "\"GET\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-			}
-
-			Logging.printLogDebug(logger, session, msg.toString());
+			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
+			Logging.printLogDebug(logger, session, msg);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -525,6 +514,9 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
+			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			Logging.printLogDebug(logger, session, msg);
+			
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
@@ -537,16 +529,28 @@ public class DataFetcher {
 
 		}
 	}
-
+	
+	
+	/**
+	 * 
+	 * @param session
+	 * @param url
+	 * @param urlParameters
+	 * @param cookies
+	 * @param attempt
+	 * @return
+	 */
 	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
+		LettProxy randProxy = null;
+		
 		try {
-			Logging.printLogDebug(logger, session, "Fazendo requisição POST: " + url);
+			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			// adding request info for this url
 			session.addRequestInfo(url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -603,9 +607,7 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
-
 				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
-
 				String[] urlParametersSplitted = urlParameters.split("&");
 
 				for(String p: urlParametersSplitted) {
@@ -622,42 +624,8 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// assembling request information log message
-			StringBuilder msg = new StringBuilder();
-			if (proxy != null) {						
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
-				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
-				msg.append("req_method: " + "\"POST\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-
-			} else {
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
-				msg.append("req_method: " + "\"POST\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-			}
-
-			Logging.printLogDebug(logger, session, msg.toString());
+			String msg = assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
+			Logging.printLogDebug(logger, session, msg);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -668,9 +636,11 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			Logging.printLogDebug(logger, session, msg);
+			
+			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -689,13 +659,15 @@ public class DataFetcher {
 			List<Cookie> cookies, 
 			int attempt, 
 			Map<String,String> headers) {
+		
+		LettProxy randProxy = null;
 
 		try {
 
-			Logging.printLogDebug(logger, session, "Fazendo requisição POST: " + url);
+			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			String randUserAgent = randUserAgent();
-			LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			session.addProxyRequestInfo(url, randProxy);
 
@@ -762,42 +734,8 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// assembling request information log message
-			StringBuilder msg = new StringBuilder();
-			if (proxy != null) {						
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
-				msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
-				msg.append("req_method: " + "\"POST\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-
-			} else {
-				msg.append("{");
-				msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
-				msg.append("req_method: " + "\"POST\",");
-				msg.append("req_location: " + "\"" + url + "\",");
-				msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-				msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-				msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-				msg.append("res_result: ");
-				if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-					msg.append("\"" + "success" + "\"");
-				} else {
-					msg.append("\"" + "fail" + "\"");
-				}
-				msg.append("}");
-			}
-
-			Logging.printLogDebug(logger, session, msg.toString());
+			String msg = assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
+			Logging.printLogDebug(logger, session, msg);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -808,9 +746,11 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			Logging.printLogDebug(logger, session, msg);
+			
+			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -820,6 +760,61 @@ public class DataFetcher {
 			}
 
 		}
+	}
+	
+	/**
+	 * 
+	 * @param url
+	 * @param requestType
+	 * @param proxy
+	 * @param session
+	 * @param responseCode
+	 * @return
+	 */
+	private static String assembleRequestInformationLogMsg(
+			String url, 
+			String requestType, 
+			LettProxy proxy, 
+			CrawlerSession session, 
+			Integer responseCode) {
+		
+		StringBuilder requestInformationLogMsg = new StringBuilder();
+		if (proxy != null) {						
+			requestInformationLogMsg.append("{");
+			requestInformationLogMsg.append("proxy_name: " + "\"" + proxy.getSource() + "\",");
+			requestInformationLogMsg.append("proxy_ip: " + "\"" + proxy.getAddress() + "\",");
+			requestInformationLogMsg.append("req_method: " + "\"" + requestType + "\",");
+			requestInformationLogMsg.append("req_location: " + "\"" + url + "\",");
+			requestInformationLogMsg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+			requestInformationLogMsg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+			requestInformationLogMsg.append("res_http_code: " + responseCode + ",");
+			requestInformationLogMsg.append("res_result: ");
+			if (responseCode != null && Integer.toString(responseCode).charAt(0) == '2') {
+				requestInformationLogMsg.append("\"" + "success" + "\"");
+			} else {
+				requestInformationLogMsg.append("\"" + "fail" + "\"");
+			}
+			requestInformationLogMsg.append("}");
+
+		} else {
+			requestInformationLogMsg.append("{");
+			requestInformationLogMsg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
+			requestInformationLogMsg.append("proxy_ip: " + "\"NONE\",");
+			requestInformationLogMsg.append("req_method: " + "\"" + requestType + "\",");
+			requestInformationLogMsg.append("req_location: " + "\"" + url + "\",");
+			requestInformationLogMsg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
+			requestInformationLogMsg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
+			requestInformationLogMsg.append("res_http_code: " + responseCode + ",");
+			requestInformationLogMsg.append("res_result: ");
+			if (responseCode != null && Integer.toString(responseCode).charAt(0) == '2') {
+				requestInformationLogMsg.append("\"" + "success" + "\"");
+			} else {
+				requestInformationLogMsg.append("\"" + "fail" + "\"");
+			}
+			requestInformationLogMsg.append("}");
+		}
+		
+		return requestInformationLogMsg.toString();
 	}
 
 	/**
