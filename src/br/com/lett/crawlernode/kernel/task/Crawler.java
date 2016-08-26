@@ -244,7 +244,7 @@ public class Crawler implements Runnable {
 							currentTruco = newProcessedProduct;	
 						} 
 
-						// if we found two consecutive equals processed products, persist and end 
+						// we found two consecutive equals processed products, persist and end 
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
 
@@ -270,14 +270,16 @@ public class Crawler implements Runnable {
 				}
 
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
+					
+					Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
 
 					// if we end up with a void at end of truco, we must change the status of the processed to void
-					if (localProduct.isVoid()) {
-						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
-							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
-						}
-					}
+//					if (localProduct.isVoid()) {
+//						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+//							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
+//							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
+//						}
+//					}
 
 					break;
 				}

@@ -11,6 +11,7 @@ import java.net.Proxy;
 import java.net.URL;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,35 @@ public class DataFetcher {
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
+	
+	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
+	private static List<String> userAgents; 
+	
+	/**
+	 * Static initialization block
+	 */
+	static {
+		userAgents = Arrays.asList(
+		"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2",
+		"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+		"Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+		"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+		"Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+		"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
+		"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+		);
+	}
 
 	/**
 	 * Fetch a text string from a URL, either by a GET ou POST http request.
@@ -151,7 +181,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return getUrlResponseCode(url, session, attempt+1);	
 			}
@@ -181,7 +211,7 @@ public class DataFetcher {
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return fetchJson(reqType, session, url, payload, cookies, attempt+1);	
 			}
@@ -284,9 +314,14 @@ public class DataFetcher {
 		}
 
 		if (proxy != null) {
-			Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+			StringBuilder msg = new StringBuilder();
+			msg.append("Request using proxy: ");
+			msg.append("[service: " + randProxy.getSource() + ", ");
+			msg.append("ip: " + randProxy.getAddress() + "]");
+			Logging.printLogDebug(logger, session, msg.toString());
+			
 		} else {
-			Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
+			Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
 		}
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
@@ -327,9 +362,9 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Atingido número máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
-
+				
 			} else {
 				return fetchPage(reqType, session, url, urlParameters, cookies, attempt+1);	
 			}
@@ -414,9 +449,14 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			if (proxy != null) {
-				Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpGet.getConfig().getProxy());
+				StringBuilder msg = new StringBuilder();
+				msg.append("Request using proxy: ");
+				msg.append("[service: " + randProxy.getSource() + ", ");
+				msg.append("ip: " + randProxy.getAddress() + "]");
+				Logging.printLogDebug(logger, session, msg.toString());
+				
 			} else {
-				Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
+				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
 			}
 
 			// do request
@@ -435,7 +475,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Atingi máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
 				return fetchPageGET(session, url, cookies, attempt+1);	
@@ -525,9 +565,14 @@ public class DataFetcher {
 			}
 
 			if (proxy != null) {
-				Logging.printLogDebug(logger, session, "Request using proxy: " + httpPost.getConfig().getProxy());
+				StringBuilder msg = new StringBuilder();
+				msg.append("Request using proxy: ");
+				msg.append("[service: " + randProxy.getSource() + ", ");
+				msg.append("ip: " + randProxy.getAddress() + "]");
+				Logging.printLogDebug(logger, session, msg.toString());
+				
 			} else {
-				Logging.printLogDebug(logger, session, "Request sem proxy.");
+				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
 			}
 
 			// do request
@@ -547,7 +592,7 @@ public class DataFetcher {
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Atingi máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
 				return fetchPagePOST(session, url, urlParameters, cookies, attempt+1);	
@@ -633,9 +678,14 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 
 			if (proxy != null) {
-				Logging.printLogDebug(logger, session, "Fazendo requisição via proxy: " + httpPost.getConfig().getProxy());
+				StringBuilder msg = new StringBuilder();
+				msg.append("Request using proxy: ");
+				msg.append("[service: " + randProxy.getSource() + ", ");
+				msg.append("ip: " + randProxy.getAddress() + "]");
+				Logging.printLogDebug(logger, session, msg.toString());
+				
 			} else {
-				Logging.printLogDebug(logger, session, "Fazendo requisição sem proxy.");
+				Logging.printLogDebug(logger, session, "Request using proxy: no_proxy");
 			}
 
 			// do request
@@ -655,7 +705,7 @@ public class DataFetcher {
 
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogDebug(logger, session, "Atingi máximo de tentativas para a url : " + url);
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
 				return fetchPagePOSTWithHeaders(url, session, urlParameters, cookies, attempt+1, headers);	
@@ -761,9 +811,9 @@ public class DataFetcher {
 				}
 			}
 		}
-
+		
+		// request using no proxy
 		if (nextProxy == null) {
-			Logging.printLogDebug(logger, session, "Will request with no proxy...");
 			return null;
 		}
 
@@ -848,9 +898,9 @@ public class DataFetcher {
 				}
 			}
 		}
-
+		
+		// request using no proxy
 		if (nextProxy == null) {
-			Logging.printLogDebug(logger, session, "Will request with no proxy...");
 			return null;
 		}
 
@@ -873,36 +923,11 @@ public class DataFetcher {
 	}
 
 	/**
-	 * 
+	 * Retrieve a random user agent from the user agents array.
 	 * @return
 	 */
 	public static String randUserAgent() {
-
-		// Lista dos mais populares retirada de https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
-
-		List<String> userAgents = new ArrayList<String>();
-
-		userAgents.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
-		userAgents.add("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0");
-		userAgents.add("Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0");
-		userAgents.add("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36");
-		userAgents.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0");
-		userAgents.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
-
 		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
-
 	}
 
 	private static String getProxyService(int attempt, ArrayList<String> proxyServices) {
