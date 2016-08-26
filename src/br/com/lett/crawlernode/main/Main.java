@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.util.Logging;
 
-
+ 
 /**
  * 
  * Parameters:
