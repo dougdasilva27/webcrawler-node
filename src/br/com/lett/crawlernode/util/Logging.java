@@ -105,7 +105,7 @@ public class Logging {
 
 		MDC.put("PID", pid);
 		MDC.put("HOST_NAME", hostName);
-		MDC.put("PROCESS_NAME", "lett");
+		MDC.put("PROCESS_NAME", "webcrawler_node");
 
 		if (testExecutionParameters != null) {
 
