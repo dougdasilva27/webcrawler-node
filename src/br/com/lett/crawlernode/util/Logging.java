@@ -99,6 +99,7 @@ public class Logging {
 		if(session != null) {
 			metadata.put("city", session.getMarket().getCity());
 			metadata.put("market", session.getMarket().getName());
+			metadata.put("session", session.getSessionId());
 		}
 		
 		return metadata;
