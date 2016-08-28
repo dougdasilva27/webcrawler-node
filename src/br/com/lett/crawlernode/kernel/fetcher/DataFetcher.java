@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.kernel.fetcher;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -42,14 +41,13 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.kernel.parser.Parser;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
@@ -316,43 +314,7 @@ public class DataFetcher {
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
-		// assembling request information log message
-		StringBuilder msg = new StringBuilder();
-		if (proxy != null) {						
-			msg.append("{");
-			msg.append("proxy_name: " + "\"" + randProxy.getSource() + "\",");
-			msg.append("proxy_ip: " + "\"" + randProxy.getAddress() + "\",");
-			msg.append("req_method: " + "\"POST\",");
-			msg.append("req_location: " + "\"" + url + "\",");
-			msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-			msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-			msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-			msg.append("res_result: ");
-			if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-				msg.append("\"" + "success" + "\"");
-			} else {
-				msg.append("\"" + "fail" + "\"");
-			}
-			msg.append("}");
-
-		} else {
-			msg.append("{");
-			msg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
-			msg.append("req_method: " + "\"POST\",");
-			msg.append("req_location: " + "\"" + url + "\",");
-			msg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-			msg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-			msg.append("res_http_code: " + closeableHttpResponse.getStatusLine().getStatusCode() + ",");
-			msg.append("res_result: ");
-			if (Integer.toString(closeableHttpResponse.getStatusLine().getStatusCode()).charAt(0) == '2') {
-				msg.append("\"" + "success" + "\"");
-			} else {
-				msg.append("\"" + "fail" + "\"");
-			}
-			msg.append("}");
-		}
-
-		Logging.printLogDebug(logger, session, msg.toString());
+		assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
 		String inputLine;
@@ -502,8 +464,7 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
 			// assembling request information log message
-			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -514,8 +475,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
 			
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -624,8 +584,7 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// assembling request information log message
-			String msg = assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -636,8 +595,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, null);
 			
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -734,8 +692,7 @@ public class DataFetcher {
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// assembling request information log message
-			String msg = assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse.getStatusLine().getStatusCode());
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -746,8 +703,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			String msg = assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
-			Logging.printLogDebug(logger, session, msg);
+			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, null);
 			
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -771,50 +727,24 @@ public class DataFetcher {
 	 * @param responseCode
 	 * @return
 	 */
-	private static String assembleRequestInformationLogMsg(
+	private static void assembleRequestInformationLogMsg(
 			String url, 
 			String requestType, 
 			LettProxy proxy, 
 			CrawlerSession session, 
-			Integer responseCode) {
+			CloseableHttpResponse response) {
 		
-		StringBuilder requestInformationLogMsg = new StringBuilder();
-		if (proxy != null) {						
-			requestInformationLogMsg.append("{");
-			requestInformationLogMsg.append("proxy_name: " + "\"" + proxy.getSource() + "\",");
-			requestInformationLogMsg.append("proxy_ip: " + "\"" + proxy.getAddress() + "\",");
-			requestInformationLogMsg.append("req_method: " + "\"" + requestType + "\",");
-			requestInformationLogMsg.append("req_location: " + "\"" + url + "\",");
-			requestInformationLogMsg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-			requestInformationLogMsg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-			requestInformationLogMsg.append("res_http_code: " + responseCode + ",");
-			requestInformationLogMsg.append("res_result: ");
-			if (responseCode != null && Integer.toString(responseCode).charAt(0) == '2') {
-				requestInformationLogMsg.append("\"" + "success" + "\"");
-			} else {
-				requestInformationLogMsg.append("\"" + "fail" + "\"");
-			}
-			requestInformationLogMsg.append("}");
-
-		} else {
-			requestInformationLogMsg.append("{");
-			requestInformationLogMsg.append("proxy_name: " + "\"" + Proxies.NO_PROXY + "\",");
-			requestInformationLogMsg.append("proxy_ip: " + "\"NONE\",");
-			requestInformationLogMsg.append("req_method: " + "\"" + requestType + "\",");
-			requestInformationLogMsg.append("req_location: " + "\"" + url + "\",");
-			requestInformationLogMsg.append("lett_city: " + "\"" + session.getMarket().getCity() + "\",");
-			requestInformationLogMsg.append("lett_market: " + "\"" + session.getMarket().getName() + "\",");
-			requestInformationLogMsg.append("res_http_code: " + responseCode + ",");
-			requestInformationLogMsg.append("res_result: ");
-			if (responseCode != null && Integer.toString(responseCode).charAt(0) == '2') {
-				requestInformationLogMsg.append("\"" + "success" + "\"");
-			} else {
-				requestInformationLogMsg.append("\"" + "fail" + "\"");
-			}
-			requestInformationLogMsg.append("}");
-		}
+		JSONObject request_metadata = new JSONObject();
 		
-		return requestInformationLogMsg.toString();
+		request_metadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
+		request_metadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
+		request_metadata.put("req_method", requestType);
+		request_metadata.put("req_location", url);
+		request_metadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
+		request_metadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
+		
+		Logging.printLogDebug(logger, session, request_metadata, "Registrando requisição...");
+		
 	}
 
 	/**

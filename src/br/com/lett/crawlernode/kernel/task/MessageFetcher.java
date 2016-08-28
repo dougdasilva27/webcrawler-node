@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.kernel.task;
 
 import java.util.List;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,13 +87,15 @@ public class MessageFetcher implements Runnable {
 		
 		int diff = coreThreadPoolSize - activeTasks;
 		
-		Logging.printLogDebug(logger, 
-				"[TASKS_ACTIVE]" + activeTasks +
-				" [TASKS_SUCCESS]" + succeededTasks +
-				" [TASKS_FAIL]" + failedTasksCount +
-				" [TASKS_QUEUE_SIZE]" + taskQueueSize + 
-				" [THREADS_ACTIVE]" + activeThreads
-				);
+		JSONObject metadata = new JSONObject();
+		
+		metadata.put("crawler_node_tasks_active", activeTasks);
+		metadata.put("crawler_node_tasks_success", succeededTasks);
+		metadata.put("crawler_node_tasks_fail", failedTasksCount);
+		metadata.put("crawler_node_tasks_queue_size", taskQueueSize);
+		metadata.put("crawler_node_threads_active", activeThreads);
+		
+		Logging.printLogDebug(logger, null, metadata, "Registrando situação da tasks...");
 		
 		if (diff > QueueService.MAX_MESSAGES_REQUEST) {
 			if (taskQueueSize > 0) return 0;

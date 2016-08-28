@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 
 import org.apache.http.NameValuePair;
@@ -20,6 +21,8 @@ import org.apache.http.message.BasicNameValuePair;
  *
  */
 public class CommonMethods {
+	
+	private static String version = "1"; //TODO
 	
 	/**
 	 * Generates a random integer in the interval between min and max
@@ -235,6 +238,26 @@ public class CommonMethods {
 		e.printStackTrace(printWriter);
 		
 		return stringWriter.toString(); 
+	}
+	
+	/**
+	 * Fetch the actual package version
+	 * @return the string containing the version
+	 */
+	public static String getVersion() {
+		
+		if(version == null) {
+
+			try {
+				Properties properties = new Properties();
+				properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("project.properties"));
+				version = properties.getProperty("version");
+			} catch (Exception e) { }
+			
+		} 
+		
+		return version;
+		
 	}
 
 }
