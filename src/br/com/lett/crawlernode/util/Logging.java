@@ -1,8 +1,8 @@
 package br.com.lett.crawlernode.util;
 
-import java.lang.management.ManagementFactory;
 import java.text.Normalizer;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -24,47 +24,85 @@ public class Logging {
 	
 	/* INFO */
 	public static void printLogInfo(Logger logger, String msg) {
-		logger.info("[MSG]" + sanitizeMessage(msg));
+		printLogInfo(logger, null, msg);
 	}
 	
 	public static void printLogInfo(Logger logger, CrawlerSession session, String msg) {
-		logger.info("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
+		printLogInfo(logger, session, null, msg);
+	}
+	
+	public static void printLogInfo(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+		logger.info("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
 	/* ERROR */
 	public static void printLogError(Logger logger, String msg) {
-		logger.error("[MSG]" + sanitizeMessage(msg));
+		printLogError(logger, null, msg);
 	}
 	
 	public static void printLogError(Logger logger, CrawlerSession session, String msg) {
-		logger.error("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
+		printLogError(logger, session, null, msg);
 	}
+	
+	public static void printLogError(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+		logger.error("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+	}
+	
 	
 	/* DEBUG */
 	public static void printLogDebug(Logger logger, String msg) {
-		logger.debug("[MSG]" + sanitizeMessage(msg));
+		printLogDebug(logger, null, msg);
 	}
 	
 	public static void printLogDebug(Logger logger, CrawlerSession session, String msg) {
-		logger.debug("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
+		printLogDebug(logger, session, null, msg);
 	}
+	
+	public static void printLogDebug(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+		logger.debug("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+	}
+	
 	
 	/* WARN */
 	public static void printLogWarn(Logger logger, String msg) {
-		logger.warn("[MSG]" + sanitizeMessage(msg));
+		printLogWarn(logger, null, msg);
 	}
 	
 	public static void printLogWarn(Logger logger, CrawlerSession session, String msg) {
-		logger.warn("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
+		printLogWarn(logger, session, null, msg);
 	}
+	
+	public static void printLogWarn(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+	}
+	
 	
 	/* TRACE */
 	public static void printLogTrace(Logger logger, String msg) {
-		logger.trace("[MSG]" + sanitizeMessage(msg));
+		printLogTrace(logger, null, msg);
 	}
 	
 	public static void printLogTrace(Logger logger, CrawlerSession session, String msg) {
-		logger.trace("[SESSION]" + session.getSessionId() + " [CITY]" + session.getMarket().getCity() + " [MARKET]" + session.getMarket().getName() + " [MSG]" + sanitizeMessage(msg));
+		printLogTrace(logger, session, null, msg);
+	}
+	
+	public static void printLogTrace(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+	}
+	
+	
+	private static JSONObject createMetadata(JSONObject metadata, CrawlerSession session) {
+		
+		if(metadata == null || !(metadata instanceof JSONObject) ) metadata = new JSONObject();
+		metadata.put("version",  CommonMethods.getVersion());
+
+		if(session != null) {
+			metadata.put("city", session.getMarket().getCity());
+			metadata.put("market", session.getMarket().getName());
+		}
+		
+		return metadata;
+		
 	}
 	
 	/**
@@ -72,12 +110,8 @@ public class Logging {
 	 * @param executionParameters
 	 */
 	public static void setLogMDC(ExecutionParameters executionParameters) {
-		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
-		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
 
-		MDC.put("PID", pid);
-		MDC.put("HOST_NAME", hostName);
-		MDC.put("PROCESS_NAME", "lett");
+		MDC.put("PROCESS_NAME", "webcrawler_node");
 
 		if (executionParameters != null) {
 
@@ -100,11 +134,7 @@ public class Logging {
 	 * @param testExecutionParameters
 	 */
 	public static void setLogMDCTest(TestExecutionParameters testExecutionParameters) {
-		String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
-		String hostName = ManagementFactory.getRuntimeMXBean().getName().replaceAll("\\d+@", "");
 
-		MDC.put("PID", pid);
-		MDC.put("HOST_NAME", hostName);
 		MDC.put("PROCESS_NAME", "webcrawler_node");
 
 		if (testExecutionParameters != null) {
