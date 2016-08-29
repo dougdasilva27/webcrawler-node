@@ -34,7 +34,7 @@ public class CampograndeComperCrawler extends Crawler {
 		Logging.printLogDebug(logger, session, "Adding cookie...");
 		
 		// performing request to get cookie
-		String cookieValue = DataFetcher.fetchCookie(session, session.getUrl(), "ASP.NET_SessionId", null, 1);
+		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "ASP.NET_SessionId", null, 1);
 		
 		BasicClientCookie cookie = new BasicClientCookie("ASP.NET_SessionId", cookieValue);
 		cookie.setDomain("www.comperdelivery.com.br");
@@ -48,7 +48,7 @@ public class CampograndeComperCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// ID interno
 			String internalId = null;

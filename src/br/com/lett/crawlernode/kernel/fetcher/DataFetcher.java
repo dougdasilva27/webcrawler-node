@@ -63,7 +63,9 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class DataFetcher {
 
-	protected static final Logger logger = LoggerFactory.getLogger(DataFetcher.class); 
+	protected static final Logger logger = LoggerFactory.getLogger(DataFetcher.class);
+	
+	public static final String HTTP_COOKIE_HEADER = "Set-Cookie";
 
 	public static final String GET_REQUEST = "GET";
 	public static final String POST_REQUEST = "POST";
@@ -579,10 +581,19 @@ public class DataFetcher {
 			// assembling request information log message
 			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
 			
-			Header[] headers = closeableHttpResponse.getHeaders("Set-Cookie");
+			// get all cookie headers
+			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
 
+			// get the desired value
 			for (Header header : headers) {
-				if (header.getName().contains(cookieName)) return header.getValue();
+				if (header.getValue().contains(cookieName)) {
+					int beginIndex = header.getValue().indexOf(cookieName);
+					int endIndex = header.getValue().indexOf(';');
+					String desiredCookie = header.getValue().substring(beginIndex, endIndex);
+					
+					// split the desired cookie to get the value that comes next to '='
+					return splitHeaderValue(desiredCookie);
+				}
 			}
 			
 			return "";
@@ -1109,6 +1120,21 @@ public class DataFetcher {
 		}
 
 		return service;
+	}
+	
+	/**
+	 * Splits a cookie value and returns the second part.
+	 * e.g:
+	 * 
+	 * ASP.NET_SessionId=vh2akqijsv0aqzbmn5qxxfbt;
+	 * first part: ASP.NET_SessionId
+	 * second part: vh2akqijsv0aqzbmn5qxxfbt
+	 * 
+	 * @param headerValue
+	 */
+	public static String splitHeaderValue(String headerValue) {
+		int beginIndex = headerValue.indexOf('=') + 1;
+		return headerValue.substring(beginIndex, headerValue.length()).trim();
 	}
 
 
