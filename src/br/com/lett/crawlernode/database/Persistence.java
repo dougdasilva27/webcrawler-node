@@ -29,9 +29,11 @@ public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
 
 	public static final String MONGO_TASKS_COLLECTION = "Task";
-	public static final String MONGO_TASK_COLLECTION_INTERNALID_FIELD = "internal_id";
+
+	public static final String MONGO_TASK_COLLECTION_PROCESSEDID_FIELD = "processed_id";
 	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD = "found_skus";
 	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD = "status";
+
 	public static final String MONGO_TASK_STATUS_DONE = "done";
 	public static final String MONGO_TASK_STATUS_FAILED = "failed";
 
@@ -390,19 +392,52 @@ public class Persistence {
 	 * @param processedId
 	 * @param taskCollection
 	 */
-	public static void insertProcessedId(CrawlerSession session, Long processedId, MongoCollection<Document> taskCollection) {
-		String documentId =  String.valueOf(session.getSessionId());
+	public static void insertProcessedIdOnMongo(CrawlerSession session, MongoDatabase mongoDatabase) {
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId =  String.valueOf(session.getSessionId());
+				if (session.getProcessedId() == null) {
+					taskCollection.updateOne(
+							new Document("_id", documentId), 
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null))
+							);
+				} else {
+					taskCollection.updateOne(
+							new Document("_id", documentId), 
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, String.valueOf(session.getProcessedId())))
+							);
+				}
+			} else {
+				Logging.printLogError(logger, session, "Mongo database is null");
+			}
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+	}
 
-		if (processedId == null) {
-			taskCollection.updateOne(
-					new Document("_id", documentId), 
-					new Document("$set", new Document(MONGO_TASK_COLLECTION_INTERNALID_FIELD, null))
-					);
-		} else {
-			taskCollection.updateOne(
-					new Document("_id", documentId), 
-					new Document("$set", new Document(MONGO_TASK_COLLECTION_INTERNALID_FIELD, String.valueOf(processedId)))
-					);
+	/**
+	 * Insert the internalId on the task collection.
+	 * @param session
+	 * @param processedId
+	 * @param taskCollection
+	 */
+	public static void insertInternalIdOnMongo(String internalId, CrawlerSession session, MongoDatabase mongoDatabase) {
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId =  String.valueOf(session.getSessionId());
+
+				Document search = new Document("_id", documentId);
+				Document modified = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, internalId));
+
+				taskCollection.updateOne(search, modified);
+
+			} else {
+				Logging.printLogError(logger, session, "Mongo database is null");
+			}
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 
@@ -412,15 +447,19 @@ public class Persistence {
 	 * @param taskCollection
 	 */
 	public static void setTaskStatusOnMongo(String status, CrawlerSession session, MongoDatabase mongoDatabase) {
-		if (mongoDatabase != null) {
-			MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
-			String documentId =  String.valueOf(session.getSessionId());
-			taskCollection.updateOne(
-					new Document("_id", documentId), 
-					new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status))
-					);
-		} else {
-			Logging.printLogError(logger, session, "Mongo database is null");
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId =  String.valueOf(session.getSessionId());
+				taskCollection.updateOne(
+						new Document("_id", documentId), 
+						new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status))
+						);
+			} else {
+				Logging.printLogError(logger, session, "Mongo database is null");
+			}
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 
