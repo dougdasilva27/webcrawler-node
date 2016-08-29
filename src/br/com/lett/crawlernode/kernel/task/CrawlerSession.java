@@ -42,7 +42,7 @@ public class CrawlerSession {
 	private String url;
 
 	/** Processed id associated with the sku being crawled */
-	private int processedId;
+	private Long processedId;
 
 	/** Internal id associated with the sku being crawled */
 	private String internalId;
@@ -100,7 +100,7 @@ public class CrawlerSession {
 
 			// setting processed id
 			if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-				this.processedId = Integer.parseInt(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+				this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
 			}
 			
 			// setting session type
@@ -154,11 +154,11 @@ public class CrawlerSession {
 		this.sessionId = sessionId;
 	}
 
-	public int getProcessedId() {
+	public Long getProcessedId() {
 		return processedId;
 	}
 
-	public void setProcessedId(int processedId) {
+	public void setProcessedId(Long processedId) {
 		this.processedId = processedId;
 	}
 

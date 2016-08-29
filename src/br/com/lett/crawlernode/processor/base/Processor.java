@@ -134,7 +134,7 @@ public class Processor {
 
 			}
 
-			// if the product doesn't exists yet, then we must creat a new processed model
+			// if the product doesn't exists yet, then we must create a new processed model
 			if(newProcessedProduct == null) {
 				newProcessedProduct = new ProcessedModel(null, 
 						internal_id, 

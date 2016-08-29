@@ -72,7 +72,8 @@ public class ProcessedModel {
 		super();
 	}
 
-	public ProcessedModel(Long id, 
+	public ProcessedModel(
+			Long id, 
 			String internalId, 
 			String internalPid, 
 			String originalName, 

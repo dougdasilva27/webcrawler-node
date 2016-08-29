@@ -867,7 +867,7 @@ public class DataFetcher {
 		request_metadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
 		request_metadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
 		
-		Logging.printLogDebug(logger, session, request_metadata, "Registering request...");
+		Logging.printLogDebug(logger, session, request_metadata, "Registrando requisição...");
 		
 	}
 
