@@ -490,6 +490,119 @@ public class DataFetcher {
 		}
 	}
 	
+	/**
+	 * Fetch a page
+	 * By default the redirects are enabled in the RequestConfig
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookieName
+	 * @param cookies
+	 * @param attempt
+	 * @return the header value. Will return an empty string if the cookie wasn't found.
+	 */
+	public static String fetchCookie(
+			CrawlerSession session, 
+			String url,
+			String cookieName,
+			List<Cookie> cookies, 
+			int attempt) {
+		
+		LettProxy randProxy = null;
+
+		try {
+			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
+
+			// adding request info for this url
+			session.addRequestInfo(url);
+
+			String randUserAgent = randUserAgent();
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+
+			session.addProxyRequestInfo(url, randProxy);
+
+			CookieStore cookieStore = new BasicCookieStore();
+			if (cookies != null) {
+				if (cookies.size() > 0) {
+					for (Cookie cookie : cookies) {
+						cookieStore.addCookie(cookie);
+					}
+				}
+			}
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.build();
+			}
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// do request
+			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// assembling request information log message
+			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
+			
+			Header[] headers = closeableHttpResponse.getHeaders("Set-Cookie");
+
+			for (Header header : headers) {
+				if (header.getName().contains(cookieName)) return header.getValue();
+			}
+			
+			return "";
+			
+		} catch (Exception e) {
+			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+				return "";
+			} else {
+				return fetchCookie(session, url, cookieName, cookies, attempt+1);	
+			}
+
+		}
+	}
+	
 	
 	/**
 	 * 
