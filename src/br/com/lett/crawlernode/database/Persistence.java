@@ -12,6 +12,11 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+import org.bson.Document;
+
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
@@ -22,6 +27,13 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
+
+	public static final String MONGO_TASKS_COLLECTION = "Task";
+	public static final String MONGO_TASK_COLLECTION_INTERNALID_FIELD = "internal_id";
+	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD = "found_skus";
+	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD = "status";
+	public static final String MONGO_TASK_STATUS_DONE = "done";
+	public static final String MONGO_TASK_STATUS_FAILED = "failed";
 
 	/**
 	 * Persist the product crawled informations on tables crawler and crawler_old
@@ -149,25 +161,25 @@ public class Persistence {
 				listOfFields = listOfFields + ", marketplace";
 				values = values + ", '" + marketplace_string + "'";
 			}
-			
+
 			// store data on crawler and crawler_old tables
 			StringBuilder sqlExecuteCrawler = new StringBuilder();
-			
+
 			sqlExecuteCrawler.append("INSERT INTO crawler ");
 			sqlExecuteCrawler.append("( ");
 			sqlExecuteCrawler.append(listOfFields);
 			sqlExecuteCrawler.append(") ");
-			
+
 			sqlExecuteCrawler.append("VALUES ");
 			sqlExecuteCrawler.append("( ");
 			sqlExecuteCrawler.append(values);
 			sqlExecuteCrawler.append("); ");
-			
+
 			sqlExecuteCrawler.append("INSERT INTO crawler_old ");
 			sqlExecuteCrawler.append("( ");
 			sqlExecuteCrawler.append(listOfFields);
 			sqlExecuteCrawler.append(") ");
-			
+
 			sqlExecuteCrawler.append("VALUES ");
 			sqlExecuteCrawler.append("(");
 			sqlExecuteCrawler.append(values);
@@ -316,7 +328,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	/**
 	 * Updates processed LastReadTime on processed table.
 	 * @param processed
@@ -370,6 +382,46 @@ public class Persistence {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
+	}
+
+	/**
+	 * Insert the processedId on the task collection.
+	 * @param session
+	 * @param processedId
+	 * @param taskCollection
+	 */
+	public static void insertProcessedId(CrawlerSession session, Long processedId, MongoCollection<Document> taskCollection) {
+		String documentId =  String.valueOf(session.getSessionId());
+
+		if (processedId == null) {
+			taskCollection.updateOne(
+					new Document("_id", documentId), 
+					new Document("$set", new Document(MONGO_TASK_COLLECTION_INTERNALID_FIELD, null))
+					);
+		} else {
+			taskCollection.updateOne(
+					new Document("_id", documentId), 
+					new Document("$set", new Document(MONGO_TASK_COLLECTION_INTERNALID_FIELD, String.valueOf(processedId)))
+					);
+		}
+	}
+
+	/**
+	 * Set the status field of the task document to "done"
+	 * @param session
+	 * @param taskCollection
+	 */
+	public static void setTaskStatusOnMongo(String status, CrawlerSession session, MongoDatabase mongoDatabase) {
+		if (mongoDatabase != null) {
+			MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+			String documentId =  String.valueOf(session.getSessionId());
+			taskCollection.updateOne(
+					new Document("_id", documentId), 
+					new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status))
+					);
+		} else {
+			Logging.printLogError(logger, session, "Mongo database is null");
+		}
 	}
 
 	private static String sanitizeBeforePersist(String field) {
