@@ -201,6 +201,9 @@ public class Crawler implements Runnable {
 				// the two processed are equals, so we can update it
 				else {
 					Persistence.persistProcessedProduct(newProcessedProduct, session);
+					Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+					Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
+					
 					return;
 				}
 			}
@@ -247,6 +250,9 @@ public class Crawler implements Runnable {
 						// we found two consecutive equals processed products, persist and end 
 						else {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
+							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+							Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
+							
 
 							//							// create webdriver
 							//							if (webdriver == null) {

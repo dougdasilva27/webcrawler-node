@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.kernel.task;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,6 +62,9 @@ public class CrawlerSession {
 	
 	/** Map associating an URL with the last proxy used to request this URL */
 	private Map<String, LettProxy> lastURLRequest;
+	
+	/** Errors ocurred during crawling session */
+	private ArrayList<CrawlerSessionError> crawlerSessionErrors;
 
 	/**
 	 * Default constructor to be used when running in production.
@@ -77,6 +81,9 @@ public class CrawlerSession {
 		this.urlRequests = new HashMap<String, Integer>();
 		
 		this.lastURLRequest = new HashMap<String, LettProxy>();
+		
+		// creating the errors list
+		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
 
 		// setting session id
 		this.sessionId = message.getMessageId();
@@ -122,6 +129,9 @@ public class CrawlerSession {
 		this.urlRequests = new HashMap<String, Integer>();
 		
 		this.lastURLRequest = new HashMap<String, LettProxy>();
+		
+		// creating the errors list
+		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
 
 		// setting session id
 		this.sessionId = "test";
@@ -280,6 +290,14 @@ public class CrawlerSession {
 
 	public void setVoidAttempts(int voidAttempts) {
 		this.voidAttemptsCounter = voidAttempts;
+	}
+	
+	public ArrayList<CrawlerSessionError> getErrors() {
+		return crawlerSessionErrors;
+	}
+	
+	public void registerError(CrawlerSessionError error) {
+		crawlerSessionErrors.add(error);
 	}
 
 }
