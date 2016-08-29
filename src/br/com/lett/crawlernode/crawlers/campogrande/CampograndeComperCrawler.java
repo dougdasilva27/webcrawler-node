@@ -4,10 +4,12 @@ package br.com.lett.crawlernode.crawlers.campogrande;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
@@ -25,6 +27,19 @@ public class CampograndeComperCrawler extends Crawler {
 	public boolean shouldVisit() {
 		String href = this.session.getUrl().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+	}
+	
+	@Override 
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		// performing request to get cookie
+		String cookieValue = DataFetcher.fetchCookie(session, session.getUrl(), "ASP.NET_SessionId", null, 1);
+		
+		BasicClientCookie cookie = new BasicClientCookie("ASP.NET_SessionId", cookieValue);
+		cookie.setDomain("www.comperdelivery.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
 	}
 
 	@Override
