@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 
 public class SaopauloMamboCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.mambo.com.br/";
 
 	public SaopauloMamboCrawler(CrawlerSession session) {
@@ -38,23 +38,16 @@ public class SaopauloMamboCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Id interno
-			String internalID = null;
-			Element element_id = doc.select(".hidden-sku-default").first(); 
-			if (element_id != null) {
-				internalID = Integer.toString(Integer.parseInt(element_id.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")));
-			}
+			String internalId = crawlInternalId(doc);
 
-			// Nome
-			Elements element_nome = doc.select(".productName");
-			String name = element_nome.text().replace("'","").replace("’","").trim();
+			// name
+			String name = crawlName(doc);
 
-			// Preço
-			Element element_preco = doc.select(".skuBestPrice").last();
-			if (element_preco==null) return products;
-			Float price = Float.parseFloat(element_preco.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			// price
+			Float price = crawlPrice(doc);
 
-			// Disponibilidade
-			boolean available = true;
+			// availability
+			boolean available = crawlAvailability(doc);
 
 			// Categorias
 			Elements element_categories = doc.select(".bread-crumb ul li"); 
@@ -87,10 +80,11 @@ public class SaopauloMamboCrawler extends Crawler {
 				category3 = null;
 			}
 
-			// Imagens
-			Elements elementPrimaryImage = doc.select("#image-main");
-			String primaryImage = elementPrimaryImage.attr("src");
-			String secondaryImages = null;
+			// primary image
+			String primaryImage = crawlPrimaryImage(doc);
+
+			// secondary images
+			String secondaryImages = crawlSecondaryImages(doc);
 
 			// Descrição
 			String description = "";
@@ -106,7 +100,7 @@ public class SaopauloMamboCrawler extends Crawler {
 			Product product = new Product();
 			product.setSeedId(session.getSeedId());
 			product.setUrl(session.getUrl());
-			product.setInternalId(internalID);
+			product.setInternalId(internalId);
 			product.setName(name);
 			product.setPrice(price);
 			product.setCategory1(category1);
@@ -124,10 +118,10 @@ public class SaopauloMamboCrawler extends Crawler {
 		} else {
 			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
 		}
-		
+
 		return products;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
@@ -135,5 +129,82 @@ public class SaopauloMamboCrawler extends Crawler {
 	private boolean isProductPage(Document document) {
 		Element element_id = document.select(".hidden-sku-default").first();
 		return element_id != null;
+	}
+	
+	private String crawlInternalId(Document doc) {
+		String internalId = null;
+		Element elementId = doc.select(".hidden-sku-default").first();
+		if (elementId != null) {
+			internalId = Integer.toString(Integer.parseInt(elementId.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")));
+		}
+		
+		return internalId;
+	}
+	
+	private String crawlName(Document doc) {
+		String name = null;
+		Element elementName = doc.select(".productName").first();
+		if (elementName != null) {
+			name = elementName.text().replace("'","").replace("’","").trim();
+		}
+		
+		return name;
+	}
+	
+	private Float crawlPrice(Document doc) {
+		Element elementPrice = doc.select(".skuBestPrice").last();
+		Float price = null;
+		if (elementPrice != null) { 
+			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		}
+		
+		return price;
+	}
+	
+	/**
+	 * Extract availability information of the sku
+	 * @param doc
+	 * @return tru if sku is available or false otherwise
+	 */
+	private boolean crawlAvailability(Document doc) {
+		if (crawlPrice(doc) == null) return false;
+		return true;
+	}
+
+	private String crawlPrimaryImage(Document doc) {
+		String primaryImage = null;
+		Element image = doc.select("#image a").first();
+
+		if (image != null) {
+			primaryImage = image.attr("href");
+		}
+
+		return primaryImage;
+	}
+
+	private String crawlSecondaryImages(Document doc) {
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+		Elements images = doc.select(".thumbs li a");
+
+
+		for (int i = 1; i < images.size(); i++) {//starts with index 1, because the first image is the primary image
+
+			String urlImage = null;
+			urlImage = images.get(i).attr("zoom").trim();
+			if (urlImage == null || urlImage.isEmpty()) {
+				urlImage = images.get(i).attr("rel");
+			}
+			if (urlImage != null) {
+				secondaryImagesArray.put(urlImage);    
+			}
+
+		}
+
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
 	}
 }
