@@ -2,10 +2,7 @@ package br.com.lett.crawlernode.database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 
@@ -17,7 +14,6 @@ import com.mongodb.client.MongoDatabase;
 
 import org.bson.Document;
 
-import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
@@ -200,9 +196,19 @@ public class Persistence {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-
-	public static void persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
+	
+	/**
+	 * Persists the new processed model on the database.
+	 * 
+	 * @param newProcessedProduct
+	 * @param session
+	 * @return the id of the processed product in the database table
+	 */
+	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
+		
+		ResultSet generatedKeys = null;
+		Long id = null;
 
 		String query = "";
 
@@ -283,21 +289,33 @@ public class Persistence {
 					+ "behaviour=" 		+ ((newProcessedProduct.getBehaviour() == null || newProcessedProduct.getBehaviour().length() == 0) ? "null" : "'" + newProcessedProduct.getBehaviour().toString().replace("'","''")  + "'" ) + ", "
 					+ "similars=" 		+ ((newProcessedProduct.getSimilars() == null || newProcessedProduct.getSimilars().length() == 0) ? "null" : "'" + newProcessedProduct.getSimilars().toString().replace("'","''")  + "'" ) + " "
 					+ "WHERE id = " + newProcessedProduct.getId();
+			
+			// get the id of the processed product that already exists
+			id = newProcessedProduct.getId();
 		}
 
 		try {
 			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query);
+				generatedKeys = br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query);
 			} else {
-				Main.dbManager.runSqlExecute(query);
+				generatedKeys = Main.dbManager.runSqlExecute(query);
 			}
+			
+			// get the id of the new processed product inserted on database
+			if (generatedKeys != null && id == null) {
+				if (generatedKeys.next()) {
+					id = generatedKeys.getLong(1);
+				}
+			}
+			
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
-
+		
+		return id;
 	}
 
 	/**
@@ -388,6 +406,7 @@ public class Persistence {
 
 	/**
 	 * Insert the processedId on the task collection.
+	 * 
 	 * @param session
 	 * @param processedId
 	 * @param taskCollection
@@ -417,19 +436,20 @@ public class Persistence {
 	}
 
 	/**
-	 * Insert the internalId on the task collection.
+	 * Append the processedId on the task collection, on the array of found products.
+	 * 
 	 * @param session
 	 * @param processedId
 	 * @param taskCollection
 	 */
-	public static void insertInternalIdOnMongo(String internalId, CrawlerSession session, MongoDatabase mongoDatabase) {
+	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
 				String documentId =  String.valueOf(session.getSessionId());
 
 				Document search = new Document("_id", documentId);
-				Document modified = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, internalId));
+				Document modified = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
 
 				taskCollection.updateOne(search, modified);
 
@@ -443,6 +463,7 @@ public class Persistence {
 
 	/**
 	 * Set the status field of the task document to "done"
+	 * 
 	 * @param session
 	 * @param taskCollection
 	 */

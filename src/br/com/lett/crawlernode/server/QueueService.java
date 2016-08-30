@@ -64,6 +64,16 @@ public class QueueService {
 	public static RequestMessageResult requestMessages(QueueHandler queueHandler) {
 		RequestMessageResult requestMessagesResult = new RequestMessageResult();
 		List<Message> messages = null;
+		
+		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DEVELOPMENT + "...");
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT);
+			if (!messages.isEmpty()) {
+				requestMessagesResult.setMessages(messages);
+				requestMessagesResult.setQueueName(QueueHandler.DEVELOPMENT);
+				return requestMessagesResult;
+			}
+		}
 
 		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.SEED + "...");
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED);
@@ -105,6 +115,16 @@ public class QueueService {
 	public static RequestMessageResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
 		RequestMessageResult requestMessagesResult = new RequestMessageResult();
 		List<Message> messages = null;
+		
+		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DEVELOPMENT + "...");
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT);
+			if (!messages.isEmpty()) {
+				requestMessagesResult.setMessages(messages);
+				requestMessagesResult.setQueueName(QueueHandler.DEVELOPMENT);
+				return requestMessagesResult;
+			}
+		}
 
 		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.SEED + "...");
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
@@ -271,6 +291,7 @@ public class QueueService {
 		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(QueueHandler.DEVELOPMENT)) return DEVELOMENT_QUEUE_URL;
 
 		Logging.printLogError(logger, "Unrecognized queue.");
 		return null;
