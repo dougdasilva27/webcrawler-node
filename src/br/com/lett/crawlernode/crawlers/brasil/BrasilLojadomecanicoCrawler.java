@@ -64,6 +64,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 			
 			// InternalId
 			String internalId = crawlInternalId(doc);
