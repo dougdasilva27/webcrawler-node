@@ -240,8 +240,16 @@ public class CommonMethods {
 		return stringWriter.toString(); 
 	}
 	
+	public static String getStackTrace(Throwable t) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(stringWriter);
+		t.printStackTrace(printWriter);
+		
+		return stringWriter.toString();
+	}
+	
 	/**
-	 * Fetch the actual package version
+	 * Fetch the current package version
 	 * @return the string containing the version
 	 */
 	public static String getVersion() {
