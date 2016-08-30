@@ -126,7 +126,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 					} else { // only remove the task from queue if it was flawless
 						succeededTaskCount++;
 						Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
-						QueueService.deleteMessage(Main.queue, task.session.getSessionId(), task.session.getMessageReceiptHandle());
+						QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());
 
 						// set task status on database
 						Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, Main.dbManager.mongoBackendPanel);

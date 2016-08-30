@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
+import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -32,27 +33,105 @@ public class QueueService {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
-	private static final String PRODUCTION_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
-	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
+	private static final String INSIGHTS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
+	private static final String INSIGHTS_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
+	
 	private static final String DISCOVERY_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
-	private static final String DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
+	private static final String DISCOVERY_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
+	
+	private static final String SEED_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
+	private static final String SEED_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed-dead";
+	
+	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
+	
 
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
+	
 	public static final String CITY_MESSAGE_ATTR = "city";
 	public static final String MARKET_MESSAGE_ATTR = "market";
 	public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR = "proxies";
-
+	
+	/**
+	 * 
+	 * @param queueHandler
+	 * @return
+	 */
+	public static RequestMessageResult requestMessages(QueueHandler queueHandler) {
+		RequestMessageResult requestMessagesResult = null;
+		List<Message> messages = null;
+		
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED);
+		requestMessagesResult = new RequestMessageResult(messages, QueueHandler.SEED);
+		if (messages.isEmpty()) {
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS);
+			requestMessagesResult = new RequestMessageResult(messages, QueueHandler.INSIGHTS);
+			if (messages.isEmpty()) {
+				messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER);
+				requestMessagesResult = new RequestMessageResult(messages, QueueHandler.DISCOVER);
+			}
+		}
+		
+		return requestMessagesResult;
+	}
+	
+	/**
+	 * 
+	 * @param queueHandler
+	 * @param maxNumberOfMessages
+	 * @return
+	 */
+	public static RequestMessageResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
+		RequestMessageResult requestMessagesResult = null;
+		List<Message> messages = null;
+		
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
+		requestMessagesResult = new RequestMessageResult(messages, QueueHandler.SEED);
+		if (messages.isEmpty()) {
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS, maxNumberOfMessages);
+			requestMessagesResult = new RequestMessageResult(messages, QueueHandler.INSIGHTS);
+			if (messages.isEmpty()) {
+				messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
+				requestMessagesResult = new RequestMessageResult(messages, QueueHandler.DISCOVER);
+			}
+		}
+		
+		return requestMessagesResult;
+	}
+	
+	/**
+	 * 
+	 * @param queueHandler
+	 * @param queueName
+	 * @param message
+	 */
+	public static void deleteMessage(QueueHandler queueHandler, String queueName, Message message) {
+		AmazonSQS sqs = queueHandler.getQueue(queueName);
+		deleteMessage(sqs, queueName, message);
+	}
+	
+	/**
+	 * 
+	 * @param queueHandler
+	 * @param queueName
+	 * @param messageReceiptHandle
+	 */
+	public static void deleteMessage(QueueHandler queueHandler, String queueName, String messageReceiptHandle) {
+		AmazonSQS sqs = queueHandler.getQueue(queueName);
+		deleteMessage(sqs, queueName, messageReceiptHandle);
+	}
+	
+	
 
 	/**
 	 * Request for messages (tasks) on the Amazon queue
 	 * @return List containing all the messages retrieved
 	 */
-	public static List<Message> requestMessages(AmazonSQS sqs) {
-		String queueURL = selectQueueURL();
+	private static List<Message> requestMessages(AmazonSQS sqs, String queueName) {
+		String queueURL = selectQueueURL(queueName);
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
@@ -63,8 +142,8 @@ public class QueueService {
 	 * Request for messages (tasks) on the Amazon queue up to a maximum of 10 messages
 	 * @return List containing all the messages retrieved
 	 */
-	public static List<Message> requestMessages(AmazonSQS sqs, int maxNumberOfMessages) {
-		String queueURL = selectQueueURL();
+	private static List<Message> requestMessages(AmazonSQS sqs, String queueName, int maxNumberOfMessages) {
+		String queueURL = selectQueueURL(queueName);
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
@@ -77,8 +156,8 @@ public class QueueService {
 	 * @param sqs
 	 * @param message
 	 */
-	public static void deleteMessage(AmazonSQS sqs, Message message) {		
-		String queueURL = selectQueueURL();
+	private static void deleteMessage(AmazonSQS sqs, String queueName, Message message) {		
+		String queueURL = selectQueueURL(queueName);
 		String messageReceiptHandle = message.getReceiptHandle();
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
@@ -89,8 +168,8 @@ public class QueueService {
 	 * @param messageId
 	 * @param messageReceiptHandle
 	 */
-	public static void deleteMessage(AmazonSQS sqs, String messageId, String messageReceiptHandle) {
-		String queueURL = selectQueueURL();
+	private static void deleteMessage(AmazonSQS sqs, String queueName, String messageReceiptHandle) {
+		String queueURL = selectQueueURL(queueName);
 		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
 	}
 
@@ -99,43 +178,13 @@ public class QueueService {
 	 * @param sqs
 	 * @param messages
 	 */
-	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
-		String queueURL = selectQueueURL();
-		for (int i = 0; i < messages.size(); i++) {
-			String messageReceiptHandle = messages.get(i).getReceiptHandle();
-			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
-		}
-	}
-
-	/**
-	 * Send a message with the specified attributes and body to the SQS
-	 * @param sqs
-	 * @param attributes
-	 * @param messageBody
-	 */
-	public static void sendMessage(AmazonSQS sqs, Map<String, MessageAttributeValue> attributes, String messageBody) {
-		SendMessageRequest sendMessageRequest = new SendMessageRequest();
-		String queueURL = selectQueueURL();
-		sendMessageRequest.setQueueUrl(queueURL);
-		sendMessageRequest.setMessageBody(messageBody);
-		sendMessageRequest.setMessageAttributes(attributes);
-
-		sqs.sendMessage(sendMessageRequest);
-	}
-
-	/**
-	 * Send a message batch to SQS
-	 * @param sqs
-	 * @param entries
-	 */
-	public static void sendBatchMessages(AmazonSQS sqs, List<SendMessageBatchRequestEntry> entries) {
-		SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
-		String queueURL = selectQueueURL();
-		batchMessageBatchRequest.setQueueUrl(queueURL);
-		batchMessageBatchRequest.setEntries(entries);
-
-		sqs.sendMessageBatch(batchMessageBatchRequest);
-	}
+//	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
+//		String queueURL = selectQueueURL();
+//		for (int i = 0; i < messages.size(); i++) {
+//			String messageReceiptHandle = messages.get(i).getReceiptHandle();
+//			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
+//		}
+//	}
 
 	/**
 	 * Check a message for the mandatory fields.
@@ -176,24 +225,20 @@ public class QueueService {
 	}
 
 	/**
-	 * Selects a proper Amazon SQS queue to be used, according to the environment
-	 * @param environment
+	 * Selects a proper Amazon SQS queue to be used, according to it's name
+	 * @param queueName the name of the queue, as displayed in Amazon console
 	 * @return The appropriate queue URL
 	 */
-	private static String selectQueueURL() {
-		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
-				return DEAD_LETTER_QUEUE_URL;
-			}
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-				return PRODUCTION_QUEUE_URL;
-			}
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
-				return DISCOVERY_QUEUE_URL;
-			}
-		}
-
-		return DEVELOMENT_QUEUE_URL;
+	private static String selectQueueURL(String queueName) {
+		if (queueName.equals(QueueHandler.INSIGHTS)) return INSIGHTS_QUEUE_URL;
+		if (queueName.equals(QueueHandler.INSIGHTS_DEAD)) return INSIGHTS_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(QueueHandler.DISCOVER)) return DISCOVERY_QUEUE_URL;
+		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
+		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
+		
+		Logging.printLogError(logger, "Unrecognized queue.");
+		return null;
 	}
 
 }

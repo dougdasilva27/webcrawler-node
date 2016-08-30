@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.server.RequestMessageResult;
 
 public class CrawlerSession {
 
@@ -21,6 +22,9 @@ public class CrawlerSession {
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	private String sessionId;
+	
+	/** Name of the queue from which the message was retrieved */
+	private String queueName;
 
 	/**
 	 * A receipt handle used to delete a message from the Amazon sqs
@@ -70,7 +74,7 @@ public class CrawlerSession {
 	 * Default constructor to be used when running in production.
 	 * @param message with informations to create a new crawler session
 	 */
-	public CrawlerSession(Message message) {
+	public CrawlerSession(Message message, String queueName) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
 		// initialize counters
@@ -87,6 +91,9 @@ public class CrawlerSession {
 
 		// setting session id
 		this.sessionId = message.getMessageId();
+		
+		// setting queue name
+		this.queueName = queueName;
 
 		// setting message receipt handle
 		this.setMessageReceiptHandle(message.getReceiptHandle());
@@ -253,6 +260,7 @@ public class CrawlerSession {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("session id: " + this.sessionId + "\n");
+		sb.append("queue name: " + this.getQueueName() + "\n");
 		sb.append("type: " + this.type + "\n");
 		sb.append("seed id: " + this.seedId + "\n");
 		sb.append("original url: " + this.originalURL + "\n");
@@ -298,6 +306,14 @@ public class CrawlerSession {
 	
 	public void registerError(CrawlerSessionError error) {
 		crawlerSessionErrors.add(error);
+	}
+
+	public String getQueueName() {
+		return queueName;
+	}
+
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
 	}
 
 }
