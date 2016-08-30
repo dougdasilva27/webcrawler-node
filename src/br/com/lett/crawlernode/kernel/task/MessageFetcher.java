@@ -95,7 +95,7 @@ public class MessageFetcher implements Runnable {
 		metadata.put("crawler_node_tasks_queue_size", taskQueueSize);
 		metadata.put("crawler_node_threads_active", activeThreads);
 		
-		Logging.printLogDebug(logger, null, metadata, "Registrando situação da tasks...");
+		Logging.printLogDebug(logger, null, metadata, "Registering tasks status...");
 		
 		if (diff > QueueService.MAX_MESSAGES_REQUEST) {
 			if (taskQueueSize > 0) return 0;

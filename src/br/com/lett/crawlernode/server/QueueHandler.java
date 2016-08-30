@@ -78,21 +78,27 @@ public class QueueHandler {
 		// creating queues for environment production
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 			
+			Logging.printLogDebug(logger, "Authenticating on " + INSIGHTS + " queue...");
 			sqsInsights = new AmazonSQSClient(credentials);
 			sqsInsights.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + INSIGHTS_DEAD + " queue...");
 			sqsInsightsDead = new AmazonSQSClient(credentials);
 			sqsInsightsDead.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + DISCOVER + " queue...");
 			sqsDiscovery = new AmazonSQSClient(credentials);
 			sqsDiscovery.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + DISCOVER_DEAD + " queue...");
 			sqsDiscoveryDead = new AmazonSQSClient(credentials);
 			sqsDiscoveryDead.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + SEED + " queue...");
 			sqsSeed = new AmazonSQSClient(credentials);
 			sqsSeed.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + SEED_DEAD + " queue...");
 			sqsSeedDead = new AmazonSQSClient(credentials);
 			sqsSeedDead.setRegion(usEast1);
 			
