@@ -98,6 +98,10 @@ public class Crawler implements Runnable {
 
 			if (finalProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Product is void.");
+				
+				// register business logic error on session
+				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Product is void.");
+				session.registerError(error);
 
 				// set previous processed as void
 				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
@@ -105,6 +109,8 @@ public class Crawler implements Runnable {
 					Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
 					Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
 				}
+				
+				
 			} 
 
 			// process the resulting product after active void analysis
@@ -276,8 +282,11 @@ public class Crawler implements Runnable {
 				}
 
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-
 					Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
+					
+					// register business logic error on session
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
+					session.registerError(error);
 
 					// if we end up with a void at end of truco, we must change the status of the processed to void
 					//					if (localProduct.isVoid()) {
@@ -304,12 +313,12 @@ public class Crawler implements Runnable {
 	}
 
 	/**
-	 * By default this method only set the list of cookies to null.
+	 * By default this method does nothing.
 	 * If the crawler needs to set some cookie to fetch the sku page,
 	 * then it must implement this method.
 	 */
 	public void handleCookiesBeforeFetch() {
-		this.cookies = null;
+		
 	}
 
 	/**
@@ -335,6 +344,7 @@ public class Crawler implements Runnable {
 	public List<Product> extract() {
 
 		// handle cookie
+		if (cookies.isEmpty())
 		handleCookiesBeforeFetch();
 
 

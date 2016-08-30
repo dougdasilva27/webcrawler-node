@@ -113,9 +113,11 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 						
 						Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
 						
-						// print all errors
+						// print all exceptions
 						for (CrawlerSessionError error : errors) {
-							Logging.printLogError(logger, task.session, error.getErrorContent());
+							if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
+								Logging.printLogError(logger, task.session, error.getErrorContent());
+							}
 						}
 						
 						// set task status on database
