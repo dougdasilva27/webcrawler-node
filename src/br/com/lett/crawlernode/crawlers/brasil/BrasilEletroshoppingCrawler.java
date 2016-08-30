@@ -32,7 +32,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
+	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 		

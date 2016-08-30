@@ -2,14 +2,21 @@ package br.com.lett.crawlernode.kernel.task;
 
 public class CrawlerSessionError {
 	
-	private String content;
+	public static final String EXCEPTION = "exception";
 	
-	public CrawlerSessionError(String content) {
+	private String content;
+	private String type;
+	
+	public CrawlerSessionError(String type, String content) {
 		this.content = content;
 	}
 	
 	public String getErrorContent() {
 		return content;
+	}
+
+	public String getType() {
+		return type;
 	}
 
 }
