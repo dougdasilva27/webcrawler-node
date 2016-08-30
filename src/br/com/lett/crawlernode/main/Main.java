@@ -57,12 +57,11 @@ public class Main {
 	public static Proxies 				proxies;
 	public static DBCredentials 		dbCredentials;
 	public static DatabaseManager 		dbManager;
-	public static AmazonSQS 			queue;
 	public static ResultManager 		processorResultManager;
+	public static QueueHandler			queueHandler;
 
 	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
-	private static QueueHandler			queueHandler;
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -95,7 +94,6 @@ public class Main {
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
-		queue = queueHandler.getSQS();
 
 		// create a task executor
 		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");

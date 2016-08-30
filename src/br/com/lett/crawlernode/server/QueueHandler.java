@@ -29,26 +29,36 @@ public class QueueHandler {
 
 	private final String AWS_ACCESS_KEY = "AKIAITCJTG6OHBYGUWLA";
 	private final String SECRET_KEY = "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";
+	
+	public static final String DEVELOPMENT = "crawler-development";
+	public static final String INSIGHTS = "crawler-insights";
+	public static final String INSIGHTS_DEAD = "crawler-insights-dead";
+	public static final String DISCOVER = "crawler-discover";
+	public static final String DISCOVER_DEAD = "crawler-discover-dead";
+	public static final String SEED = "crawler-seed";
+	public static final String SEED_DEAD = "crawler-seed-dead";
 
-	/**
-	 * Amazon sqs queue to be used only in production mode
-	 */
+	/** Amazon sqs queue to be used only in production mode */
 	private AmazonSQS sqsInsights;
+	
+	/** Dead letter messages from Insights queue */
+	private AmazonSQS sqsInsightsDead;
 
-	/**
-	 * Amazon sqs queue to be used in discovery mode
-	 */
+	/** Amazon sqs queue for discovery messages */
 	private AmazonSQS sqsDiscovery;
 	
-	/**
-	 * Amazon sqs queue to be used in dead mode
-	 */
-	private AmazonSQS sqsDeadLetter;
-
-	/**
-	 * Amazon sqs queue to be used only in development mode
-	 */
+	/** Amazon sqs queue to be used in dead mode */
+	private AmazonSQS sqsDiscoveryDead;
+	
+	/** Seed queue, added manually */
+	private AmazonSQS sqsSeed;
+	
+	/** Dead letter messages from Seed */
+	private AmazonSQS sqsSeedDead;
+	
+	/** Amazon sqs queue to be used only in development mode */
 	private AmazonSQS sqsDevelopment;
+	
 	
 	/**
 	 * Default constructor for QueueHandler.
@@ -65,50 +75,49 @@ public class QueueHandler {
 		
 		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 
-		// creating queue for environment production
+		// creating queues for environment production
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-				Logging.printLogDebug(logger, "Authenticating in production environment SQS [insights queue]...");
-				sqsInsights = new AmazonSQSClient(credentials);
-				sqsInsights.setRegion(usEast1);
-			} else if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
-				Logging.printLogDebug(logger, "Authenticating in production environment SQS [discovery queue]...");
-				sqsDiscovery = new AmazonSQSClient(credentials);
-				sqsDiscovery.setRegion(usEast1);
-			} else if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
-				Logging.printLogDebug(logger, "Authenticating in production environment SQS [dead letter queue]...");
-				sqsDeadLetter = new AmazonSQSClient(credentials);
-				sqsDeadLetter.setRegion(usEast1);
-			}
+			
+			sqsInsights = new AmazonSQSClient(credentials);
+			sqsInsights.setRegion(usEast1);
+			
+			sqsInsightsDead = new AmazonSQSClient(credentials);
+			sqsInsightsDead.setRegion(usEast1);
+			
+			sqsDiscovery = new AmazonSQSClient(credentials);
+			sqsDiscovery.setRegion(usEast1);
+			
+			sqsDiscoveryDead = new AmazonSQSClient(credentials);
+			sqsDiscoveryDead.setRegion(usEast1);
+			
+			sqsSeed = new AmazonSQSClient(credentials);
+			sqsSeed.setRegion(usEast1);
+			
+			sqsSeedDead = new AmazonSQSClient(credentials);
+			sqsSeedDead.setRegion(usEast1);
+			
 		}
 
 		// creating queue for environment development
 		else {
-			Logging.printLogDebug(logger, "Authenticating in production environment SQS [development queue]...");
 			sqsDevelopment = new AmazonSQSClient(credentials);
 			sqsDevelopment.setRegion(usEast1);
 		}
 
 	}
 	
-	/**
-	 * Select the appropriate AmazonSQS according to environment and mode 
-	 * @return
-	 */
-	public AmazonSQS getSQS() {
-		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DEAD_LETTER)) {
-				return sqsDeadLetter;
-			}
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-				return sqsInsights;
-			}
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_DISCOVERY)) {
-				return sqsDiscovery;
-			}
-		}
+	public AmazonSQS getQueue(String queueName) {
+		if (queueName.equals(INSIGHTS)) return sqsInsights;
+		if (queueName.equals(INSIGHTS_DEAD)) return sqsInsightsDead;
+		if (queueName.equals(DISCOVER)) return sqsDiscovery;
+		if (queueName.equals(DISCOVER_DEAD)) return sqsDiscoveryDead;
+		if (queueName.equals(SEED)) return sqsSeed;
+		if (queueName.equals(SEED_DEAD)) return sqsSeedDead;
 		
-		return sqsDevelopment;
+		Logging.printLogError(logger, "Unrecognized queue.");
+		return null;
 	}
+	
+	
 
 }

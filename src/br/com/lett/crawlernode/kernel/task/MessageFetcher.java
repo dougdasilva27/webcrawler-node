@@ -10,6 +10,7 @@ import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.server.RequestMessageResult;
 import br.com.lett.crawlernode.util.Logging;
 
 public class MessageFetcher implements Runnable {
@@ -34,7 +35,8 @@ public class MessageFetcher implements Runnable {
 
 			// request messages from the Amazon queue
 			Logging.printLogDebug(logger, "Requesting for a maximum of " + numTasksToRetrieve + " tasks on queue...");
-			List<Message> messages = QueueService.requestMessages(queueHandler.getSQS(), numTasksToRetrieve);
+			RequestMessageResult requestResult = QueueService.requestMessages(queueHandler, numTasksToRetrieve);
+			List<Message> messages = requestResult.getMessages();
 			Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
 
 			for (Message message : messages) {
@@ -43,7 +45,7 @@ public class MessageFetcher implements Runnable {
 				if ( QueueService.checkMessageIntegrity(message) ) {
 
 					// create a crawler session from the message
-					CrawlerSession session = new CrawlerSession(message);
+					CrawlerSession session = new CrawlerSession(message, requestResult.getQueueName());
 
 					// create the task
 					Runnable task = TaskFactory.createTask(session);
@@ -52,15 +54,13 @@ public class MessageFetcher implements Runnable {
 					if (task != null) {
 						taskExecutor.executeTask(task);
 					} else {
-						Logging.printLogError(logger, session, "Error: task could not be created...deleting message from sqs...");
-						QueueService.deleteMessage(queueHandler.getSQS(), message);						
+						Logging.printLogError(logger, session, "Error: task could not be created.");					
 					}
 				}
 
 				// something is wrong with the message content
 				else {
-					Logging.printLogError(logger, "Message refused [failed on integrity checking]. Will delete it from the queue...");
-					QueueService.deleteMessage(queueHandler.getSQS(), message);
+					Logging.printLogError(logger, "Message refused [failed on integrity checking].");
 				}
 
 			}
