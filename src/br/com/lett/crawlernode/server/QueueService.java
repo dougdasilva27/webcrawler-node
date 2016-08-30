@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.server;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,49 +36,66 @@ public class QueueService {
 
 	private static final String INSIGHTS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
 	private static final String INSIGHTS_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
-	
+
 	private static final String DISCOVERY_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
 	private static final String DISCOVERY_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
-	
+
 	private static final String SEED_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
 	private static final String SEED_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed-dead";
-	
+
 	private static final String DEVELOMENT_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
-	
+
 
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
-	
+
 	public static final String CITY_MESSAGE_ATTR = "city";
 	public static final String MARKET_MESSAGE_ATTR = "market";
 	public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR = "proxies";
-	
+
 	/**
 	 * 
 	 * @param queueHandler
 	 * @return
 	 */
 	public static RequestMessageResult requestMessages(QueueHandler queueHandler) {
-		RequestMessageResult requestMessagesResult = null;
+		RequestMessageResult requestMessagesResult = new RequestMessageResult();
 		List<Message> messages = null;
-		
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.SEED + "...");
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED);
-		requestMessagesResult = new RequestMessageResult(messages, QueueHandler.SEED);
-		if (messages.isEmpty()) {
-			messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS);
-			requestMessagesResult = new RequestMessageResult(messages, QueueHandler.INSIGHTS);
-			if (messages.isEmpty()) {
-				messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER);
-				requestMessagesResult = new RequestMessageResult(messages, QueueHandler.DISCOVER);
-			}
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.SEED);
+			return requestMessagesResult;
+		}
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.INSIGHTS + "...");
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS);
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.INSIGHTS);
+			return requestMessagesResult;
+		}
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DISCOVER + "...");
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER);
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.DISCOVER);
+			return requestMessagesResult;
+		}
+		
+		if (requestMessagesResult.getMessages() == null) {
+			requestMessagesResult.setMessages(new ArrayList<Message>());
 		}
 		
 		return requestMessagesResult;
 	}
-	
+
 	/**
 	 * 
 	 * @param queueHandler
@@ -85,23 +103,40 @@ public class QueueService {
 	 * @return
 	 */
 	public static RequestMessageResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
-		RequestMessageResult requestMessagesResult = null;
+		RequestMessageResult requestMessagesResult = new RequestMessageResult();
 		List<Message> messages = null;
-		
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.SEED + "...");
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
-		requestMessagesResult = new RequestMessageResult(messages, QueueHandler.SEED);
-		if (messages.isEmpty()) {
-			messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS, maxNumberOfMessages);
-			requestMessagesResult = new RequestMessageResult(messages, QueueHandler.INSIGHTS);
-			if (messages.isEmpty()) {
-				messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
-				requestMessagesResult = new RequestMessageResult(messages, QueueHandler.DISCOVER);
-			}
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.SEED);
+			return requestMessagesResult;
+		}
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.INSIGHTS + "...");
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS, maxNumberOfMessages);
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.INSIGHTS);
+			return requestMessagesResult;
+		}
+
+		Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DISCOVER + "...");
+		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
+		if (!messages.isEmpty()) {
+			requestMessagesResult.setMessages(messages);
+			requestMessagesResult.setQueueName(QueueHandler.DISCOVER);
+			return requestMessagesResult;
+		}
+		
+		if (requestMessagesResult.getMessages() == null) {
+			requestMessagesResult.setMessages(new ArrayList<Message>());
 		}
 		
 		return requestMessagesResult;
 	}
-	
+
 	/**
 	 * 
 	 * @param queueHandler
@@ -112,7 +147,7 @@ public class QueueService {
 		AmazonSQS sqs = queueHandler.getQueue(queueName);
 		deleteMessage(sqs, queueName, message);
 	}
-	
+
 	/**
 	 * 
 	 * @param queueHandler
@@ -123,8 +158,8 @@ public class QueueService {
 		AmazonSQS sqs = queueHandler.getQueue(queueName);
 		deleteMessage(sqs, queueName, messageReceiptHandle);
 	}
-	
-	
+
+
 
 	/**
 	 * Request for messages (tasks) on the Amazon queue
@@ -178,13 +213,13 @@ public class QueueService {
 	 * @param sqs
 	 * @param messages
 	 */
-//	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
-//		String queueURL = selectQueueURL();
-//		for (int i = 0; i < messages.size(); i++) {
-//			String messageReceiptHandle = messages.get(i).getReceiptHandle();
-//			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
-//		}
-//	}
+	//	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
+	//		String queueURL = selectQueueURL();
+	//		for (int i = 0; i < messages.size(); i++) {
+	//			String messageReceiptHandle = messages.get(i).getReceiptHandle();
+	//			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
+	//		}
+	//	}
 
 	/**
 	 * Check a message for the mandatory fields.
@@ -236,7 +271,7 @@ public class QueueService {
 		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
-		
+
 		Logging.printLogError(logger, "Unrecognized queue.");
 		return null;
 	}
