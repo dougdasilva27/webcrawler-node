@@ -119,6 +119,7 @@ public class QueueHandler {
 		if (queueName.equals(DISCOVER_DEAD)) return sqsDiscoveryDead;
 		if (queueName.equals(SEED)) return sqsSeed;
 		if (queueName.equals(SEED_DEAD)) return sqsSeedDead;
+		if (queueName.equals(DEVELOPMENT)) return sqsDevelopment;
 		
 		Logging.printLogError(logger, "Unrecognized queue.");
 		return null;

@@ -14,13 +14,9 @@ import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,10 +94,6 @@ public class Crawler implements Runnable {
 
 			if (finalProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Product is void.");
-				
-				// register business logic error on session
-				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Product is void.");
-				session.registerError(error);
 
 				// set previous processed as void
 				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
@@ -206,9 +198,12 @@ public class Crawler implements Runnable {
 
 				// the two processed are equals, so we can update it
 				else {
-					Persistence.persistProcessedProduct(newProcessedProduct, session);
-					Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-					Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
+					Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
+					if (id != null) {
+						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+						Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+					}
+					
 
 					return;
 				}
@@ -255,9 +250,11 @@ public class Crawler implements Runnable {
 
 						// we found two consecutive equals processed products, persist and end 
 						else {
-							Persistence.persistProcessedProduct(newProcessedProduct, session);
-							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-							Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
+							Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
+							if (id != null) {
+								Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+								Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+							}
 
 
 							//							// create webdriver

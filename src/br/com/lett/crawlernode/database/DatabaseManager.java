@@ -191,9 +191,10 @@ public class DatabaseManager {
 		return sta.executeQuery(sql);
 	}
 
-	public int runSqlExecute(String sql) throws SQLException {
+	public ResultSet runSqlExecute(String sql) throws SQLException {
 		Statement sta = conn.createStatement();
-		return sta.executeUpdate(sql);
+		sta.executeUpdate(sql);
+		return sta.getGeneratedKeys();
 	}
 
 	public Document fetchSeedDocument(String url, Integer market) {
