@@ -203,7 +203,7 @@ public class Crawler implements Runnable {
 					Persistence.persistProcessedProduct(newProcessedProduct, session);
 					Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
 					Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
-					
+
 					return;
 				}
 			}
@@ -252,7 +252,7 @@ public class Crawler implements Runnable {
 							Persistence.persistProcessedProduct(newProcessedProduct, session);
 							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
 							Persistence.insertInternalIdOnMongo(newProcessedProduct.getInternalId(), session, Main.dbManager.mongoBackendPanel);
-							
+
 
 							//							// create webdriver
 							//							if (webdriver == null) {
@@ -276,16 +276,16 @@ public class Crawler implements Runnable {
 				}
 
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-					
+
 					Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
 
 					// if we end up with a void at end of truco, we must change the status of the processed to void
-//					if (localProduct.isVoid()) {
-//						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-//							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
-//							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
-//						}
-//					}
+					//					if (localProduct.isVoid()) {
+					//						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+					//							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
+					//							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
+					//						}
+					//					}
 
 					break;
 				}
@@ -346,12 +346,7 @@ public class Crawler implements Runnable {
 		if ( shouldVisit() ) {
 			Document document = fetch();
 			List<Product> products = null;
-			try {
-				products = extractInformation(document);
-			} catch (Exception e) {
-				Logging.printLogError(logger, session, "Error during extraction.");
-				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-			}
+			products = extractInformation(document);
 			if (products == null) products = new ArrayList<Product>();
 
 			return products;
@@ -368,7 +363,7 @@ public class Crawler implements Runnable {
 	 * @param document
 	 * @return A product with all it's crawled informations
 	 */
-	public List<Product> extractInformation(Document document) throws Exception {
+	public List<Product> extractInformation(Document document) {
 		return new ArrayList<Product>();
 	}
 
@@ -431,9 +426,9 @@ public class Crawler implements Runnable {
 		if (previousProcessedProduct != null) {
 			if (previousProcessedProduct.getVoid()) return product;
 		}
-		
+
 		Logging.printLogDebug(logger, session, "Starting active void attempts...");
-		
+
 		Product currentProduct = product;
 		while (true) {
 			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;

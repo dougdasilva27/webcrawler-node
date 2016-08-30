@@ -16,6 +16,8 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.kernel.task.CrawlerSessionError;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -35,7 +37,7 @@ public class BrasilTudoforteCrawler extends Crawler {
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
+	public List<Product> extractInformation(Document doc) {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
@@ -46,17 +48,21 @@ public class BrasilTudoforteCrawler extends Crawler {
 			Element elementProduct = doc.select(".product-actions").first();
 			String internalID = null;
 			String actionFormComprar = elementProduct.select("#form_comprar").first().attr("action");
-			List<NameValuePair> params = URLEncodedUtils.parse(new URI(actionFormComprar), "UTF-8");
+			
+			List<NameValuePair> params = null;
+			try {
+				params = URLEncodedUtils.parse(new URI(actionFormComprar), "UTF-8");
+			} catch (URISyntaxException e) {
+				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+				session.registerError(error);
+			}
 			
 			for (NameValuePair param : params) {
 				if(param.getName().equals("product_id")) {
 					internalID = param.getValue(); 
 					break;
 				}
-			}
-			if(internalID == null) {
-				Logging.printLogError(logger, session, "Não encontrei internal_id para o produto na URL: " + this.session.getUrl());
-			}			
+			}		
 
 			// Nome
 			Element elementName = doc.select("h2.product-title").first();
