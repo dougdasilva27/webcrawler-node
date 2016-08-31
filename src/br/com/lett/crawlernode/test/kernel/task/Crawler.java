@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.kernel.task;
+package br.com.lett.crawlernode.test.kernel.task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,18 +7,18 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
-import br.com.lett.crawlernode.kernel.models.Product;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.processor.base.Processor;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.util.Logging;
-
 import org.apache.http.cookie.Cookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
+import br.com.lett.crawlernode.kernel.models.Product;
+
+import br.com.lett.crawlernode.test.Logging;
+import br.com.lett.crawlernode.test.db.Persistence;
+import br.com.lett.crawlernode.test.kernel.fetcher.DataFetcher;
+import br.com.lett.crawlernode.test.processor.base.Processor;
+import br.com.lett.crawlernode.test.processor.models.ProcessedModel;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both
@@ -101,8 +101,8 @@ public class Crawler implements Runnable {
 					Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
 					Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
 				}
-				
-				
+
+
 			} 
 
 			// process the resulting product after active void analysis
@@ -168,7 +168,9 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+		ProcessedModel newProcessedProduct = null;
+		newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, br.com.lett.crawlernode.test.Tester.processorResultManager);
+
 
 		if (previousProcessedProduct == null) {
 
@@ -195,10 +197,10 @@ public class Crawler implements Runnable {
 				else {
 					Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
 					if (id != null) {
-						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-						Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+						Persistence.insertProcessedIdOnMongo(session, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
+						Persistence.appendProcessedIdOnMongo(id, session, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
 					}
-					
+
 
 					return;
 				}
@@ -232,8 +234,9 @@ public class Crawler implements Runnable {
 				if (localProduct != null && !localProduct.isVoid()) {
 					Persistence.persistProduct(localProduct, session);
 
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, Main.processorResultManager);
-					
+					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, br.com.lett.crawlernode.test.Tester.processorResultManager);
+
+
 					if (newProcessedProduct != null) {					
 						if ( compare(newProcessedProduct, currentTruco) ) {
 							currentTruco = newProcessedProduct;	
@@ -243,8 +246,8 @@ public class Crawler implements Runnable {
 						else {
 							Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
 							if (id != null) {
-								Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-								Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+								Persistence.insertProcessedIdOnMongo(session, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
+								Persistence.appendProcessedIdOnMongo(id, session, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
 							}
 
 
@@ -271,7 +274,7 @@ public class Crawler implements Runnable {
 
 				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
 					Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
-					
+
 					// register business logic error on session
 					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
 					session.registerError(error);
@@ -306,7 +309,7 @@ public class Crawler implements Runnable {
 	 * then it must implement this method.
 	 */
 	public void handleCookiesBeforeFetch() {
-		
+
 	}
 
 	/**
@@ -333,7 +336,7 @@ public class Crawler implements Runnable {
 
 		// handle cookie
 		if (cookies.isEmpty())
-		handleCookiesBeforeFetch();
+			handleCookiesBeforeFetch();
 
 
 		// handle URL modifications
