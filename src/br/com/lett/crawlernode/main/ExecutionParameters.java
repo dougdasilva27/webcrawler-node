@@ -20,6 +20,7 @@ public class ExecutionParameters {
 
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
+	public static final String DEFAULT_CRAWLER_VERSION = "0";
 	
 	/**
 	 * Crawler will get messages from the tracked skus queue
@@ -44,6 +45,7 @@ public class ExecutionParameters {
 	private Options options;
 	private String environment;
 	private String mode;
+	private String version;
 	private Boolean debug;
 	private String[] args;
 	
@@ -87,6 +89,7 @@ public class ExecutionParameters {
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
 		options.addOption("mode", true, "Mode [insights, discovery, dead]");
+		options.addOption("version", true, "Crawler node version");
 
 	}
 
@@ -120,7 +123,14 @@ public class ExecutionParameters {
 				}
 			} else {
 				help();
-			}			
+			}
+			
+			// version
+			if (cmd.hasOption("version")) {
+				version = cmd.getOptionValue("version");
+			} else {
+				version = DEFAULT_CRAWLER_VERSION;
+			}
 
 		} catch (ParseException e) {
 			Logging.printLogError(logger, " Failed to parse comand line properties.");
@@ -136,6 +146,7 @@ public class ExecutionParameters {
 		sb.append("Debug: " + this.debug + "\n");
 		sb.append("Environment: " + this.environment + "\n");
 		sb.append("Mode: " + this.mode + "\n");
+		sb.append("Version: " + this.version + "\n");
 
 		return sb.toString();
 	} 
@@ -157,6 +168,14 @@ public class ExecutionParameters {
 
 	public void setNthreads(int nthreads) {
 		this.nthreads = nthreads;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
 }
