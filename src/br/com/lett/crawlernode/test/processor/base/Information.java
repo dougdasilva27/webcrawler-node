@@ -27,6 +27,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -111,7 +112,16 @@ public class Information {
 		return null; 	
 	}
 	
-	public static File fetchImageFromAmazon(CrawlerSession session, String key) {		
+	public static File fetchImageFromAmazon(CrawlerSession session, String key) {
+		return fetchImageFromAmazon(session, key, 1); 
+	}
+	
+	private static File fetchImageFromAmazon(CrawlerSession session, String key, int attempt) {
+		
+		if(attempt > 3) return null; 
+		
+		Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Fetching image from Amazon: " + key);
+		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 
@@ -135,32 +145,60 @@ public class Information {
 			writer.close();
 			reader.close();
 			
-			Logging.printLogDebug(logger, session, "fetched at: " + file.getAbsolutePath());
+			Logging.printLogDebug(logger, session, "Fetched at: " + file.getAbsolutePath());
 
 			return file;
 		
-        } catch (Exception e) {
-        	Logging.printLogError(logger, session, "Error fetching image from Amazon.");
-        	Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-    		return null;
+        } catch (AmazonS3Exception s3Exception) {
+        	if (s3Exception.getStatusCode() == 404) {
+        		Logging.printLogWarn(logger, session, "S3 status code: 404 [image not found]");
+        		return null;
+        	} else {
+        		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+        		return fetchImageFromAmazon(session, key, (attempt+1));
+        	}
+        }
+        catch (Exception e) {
+        	Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    		return fetchImageFromAmazon(session, key, (attempt+1));
 		}
 		
 	}
 	
-	public static String fetchMd5FromAmazon(CrawlerSession session, String key) {		
+	public static String fetchMd5FromAmazon(CrawlerSession session, String key) {
+		return fetchMd5FromAmazon(session, key, 1);
+	}
+	
+	private static String fetchMd5FromAmazon(CrawlerSession session, String key, int attempt) {
+		
+		if(attempt > 3) return null; 
+		
+		Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Fetching image md5 from Amazon: " + key);
+		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 
         try {
             ObjectMetadata objectMetadata = s3client.getObjectMetadata(new GetObjectMetadataRequest(cdnBucketName, key));
+            
             String md5 = objectMetadata.getETag();
-            Logging.printLogDebug(logger, session, "fetched md5: " + md5);
+            
+            Logging.printLogDebug(logger, session, "Fetched md5: " + md5);
 
 			return md5;
 		
-        } catch (Exception e) {
-        	Logging.printLogError(logger, session, "MD5 not found.");
-    		return null;
+        } catch (AmazonS3Exception s3Exception) {
+        	if (s3Exception.getStatusCode() == 404) {
+        		Logging.printLogWarn(logger, session, "S3 status code: 404 [md5 not found]");
+        		return null;
+        	} else {
+        		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+        		return fetchMd5FromAmazon(session, key, (attempt+1));
+        	}
+        } 
+        catch (Exception e) {
+        	Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+        	return fetchMd5FromAmazon(session, key, (attempt+1));
 		}
 		
 	}

@@ -131,13 +131,14 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 						// set task status on database
 						Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, Main.dbManager.mongoBackendPanel);
 
-						Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
-						Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
-						Logging.printLogDebug(logger, task.session, "END");
 					}
 				}
 
 				activeTaskCount--;
+				
+				Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
+				Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
+				Logging.printLogDebug(logger, task.session, "END");
 			}
 		}
 
