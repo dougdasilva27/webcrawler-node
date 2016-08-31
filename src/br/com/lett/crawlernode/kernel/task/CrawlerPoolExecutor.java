@@ -95,51 +95,58 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		synchronized(lock) {
 			if (t != null) {
 				failedTaskCount++;
+			} else {
+				ArrayList<CrawlerSessionError> errors = task.session.getErrors();
+				if (errors.size() > 0) {
+					failedTaskCount++;
+				} else { // only remove the task from queue if it was flawless
+					succeededTaskCount++;
+				}
+			}
+			activeTaskCount--;
+		}
+		
+		
+		if (t != null) {
+
+			Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
+			Logging.printLogError(logger, task.session, CommonMethods.getStackTrace(t));
+
+			// set task status on database
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, task.session, Main.dbManager.mongoBackendPanel);
+
+		} else {
+			ArrayList<CrawlerSessionError> errors = task.session.getErrors();
+			if (errors.size() > 0) {
 
 				Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
-				Logging.printLogError(logger, task.session, CommonMethods.getStackTrace(t));
+
+				// print all exceptions
+				for (CrawlerSessionError error : errors) {
+					if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
+						Logging.printLogError(logger, task.session, error.getErrorContent());
+					}
+				}
 
 				// set task status on database
 				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, task.session, Main.dbManager.mongoBackendPanel);
 
+			} else { // only remove the task from queue if it was flawless
+
+				Logging.printLogDebug(logger, task.session, "Task completed.");
+				Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
+				QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());
+
+				// set task status on database
+				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, Main.dbManager.mongoBackendPanel);
+
 			}
-			else {
-				ArrayList<CrawlerSessionError> errors = task.session.getErrors();
-				if (errors.size() > 0) {
-					failedTaskCount++;
-
-					Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
-
-					// print all exceptions
-					for (CrawlerSessionError error : errors) {
-						if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
-							Logging.printLogError(logger, task.session, error.getErrorContent());
-						}
-					}
-
-					// set task status on database
-					Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, task.session, Main.dbManager.mongoBackendPanel);
-
-				} else { // only remove the task from queue if it was flawless
-					succeededTaskCount++;
-
-					Logging.printLogDebug(logger, task.session, "Task completed.");
-					Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
-					QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());
-
-					// set task status on database
-					Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, Main.dbManager.mongoBackendPanel);
-
-				}
-			}
-
-			activeTaskCount--;
-
-			Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
-			Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
-			Logging.printLogDebug(logger, task.session, "END");
 		}
 
+		Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
+		Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
+		Logging.printLogDebug(logger, task.session, "END");
+		
 	}
 
 	public int getActiveTaskCount() {
