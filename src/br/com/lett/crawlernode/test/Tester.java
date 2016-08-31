@@ -40,7 +40,7 @@ public class Tester {
 	public static void main(String args[]) {
 
 		init(args);
-		test("http://www.adias.com.br/produto/ar-condicionado-split-inverter-digital-9000-btus-samsung-220v-frio-ar09hvspbsnn-az-68294", "brasil", "adias");
+		test("http://www.submarino.com.br/produto/6927020/leite-ninho-fases-1-c-400g-nestle", "saopaulo", "submarino");
 
 	}
 

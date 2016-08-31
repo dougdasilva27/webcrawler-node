@@ -124,18 +124,21 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 						
 					} else { // only remove the task from queue if it was flawless
 						succeededTaskCount++;
+						
+						Logging.printLogDebug(logger, task.session, "Task completed.");
 						Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
 
 						// set task status on database
 						Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
 
-						Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
-						Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
-						Logging.printLogDebug(logger, task.session, "END");
 					}
 				}
 
 				activeTaskCount--;
+				
+				Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
+				Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
+				Logging.printLogDebug(logger, task.session, "END");
 			}
 		}
 
