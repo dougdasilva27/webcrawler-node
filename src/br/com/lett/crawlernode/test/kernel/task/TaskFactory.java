@@ -58,7 +58,7 @@ public class TaskFactory {
 		String name = market.getName();
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("br.com.lett.crawlernode.crawlers." + city + ".");
+		sb.append("br.com.lett.crawlernode.test.crawlers." + city + ".");
 		sb.append(city.substring(0, 1).toUpperCase());
 		sb.append(city.substring(1).toLowerCase());
 		sb.append(name.substring(0, 1).toUpperCase());
