@@ -5,15 +5,18 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
-import br.com.lett.crawlernode.database.DatabaseDataFetcher;
-import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.fetcher.Proxies;
+
+
 import br.com.lett.crawlernode.kernel.models.Market;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
-import br.com.lett.crawlernode.kernel.task.TaskExecutor;
-import br.com.lett.crawlernode.kernel.task.TaskFactory;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.test.db.DatabaseDataFetcher;
+import br.com.lett.crawlernode.test.db.DatabaseManager;
+import br.com.lett.crawlernode.test.kernel.fetcher.Proxies;
+import br.com.lett.crawlernode.test.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.test.kernel.task.TaskExecutor;
+import br.com.lett.crawlernode.test.kernel.task.TaskFactory;
+import br.com.lett.crawlernode.test.processor.controller.ResultManager;
+
+
 
 /**
  * Class used to test crawlers logic with any desired number of

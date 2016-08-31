@@ -1,15 +1,15 @@
-package br.com.lett.crawlernode.kernel.fetcher;
+package br.com.lett.crawlernode.test.kernel.fetcher;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -41,21 +41,19 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.kernel.parser.Parser;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Logging;
+import br.com.lett.crawlernode.test.kernel.parser.Parser;
+import br.com.lett.crawlernode.test.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
+
 
 /**
  * Auxiliar class for http requests
@@ -904,30 +902,32 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
+
+			// testing selected URLs
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Main.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxies.size() > 0) {
-					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.buyProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.buyProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.buyProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.SHADER)) { // shader
-				if (Main.proxies.shaderProxies.size() > 0) {
-					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Main.proxies.storm.size() > 0) {
-					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.storm.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.storm.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.storm.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
@@ -954,30 +954,32 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
+
+			// testing selected URLs
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Main.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.bonanzaProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
 				}
 			} 
 			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxies.size() > 0) {
-					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.buyProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.buyProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.buyProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.SHADER)) { // shader
-				if (Main.proxies.shaderProxies.size() > 0) {
-					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.shaderProxies.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
 				}
 			}
 			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Main.proxies.storm.size() > 0) {
-					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
+				if (br.com.lett.crawlernode.test.Tester.proxies.storm.size() > 0) {
+					nextProxy = br.com.lett.crawlernode.test.Tester.proxies.storm.get(CommonMethods.randInt(0, br.com.lett.crawlernode.test.Tester.proxies.storm.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
