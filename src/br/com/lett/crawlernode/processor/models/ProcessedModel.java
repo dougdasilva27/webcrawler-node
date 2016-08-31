@@ -146,37 +146,6 @@ public class ProcessedModel {
 		this.marketplace = marketplace;
 	}
 
-	@Override
-	public String toString() {
-		return 	"ID: " + this.id +
-				"\ninternalId: " + this.internalId +
-				"\ninternalPid: " + this.internalPid +
-				"\nClass: " + this._class +
-				"\nBrand: " + this.brand +
-				"\nRecipient: " + this.recipient +
-				"\nQuantity: " + this.quantity +
-				"\nMultiplier: " + this.multiplier +
-				"\nUnit: " + this.unit +
-				"\nExtra: " + this.extra +
-				"\nPicture: " + this.pic +
-				"\nSecondary pics: " + this.secondary_pics +
-				"\nPrice: " + this.price +
-				"\nURL: " + this.url +
-				"\nDigitalContent: " + this.digitalContent +
-				"\nLettId: " + this.lettId +
-				"\nECT: " + this.ect +
-				"\nLMT: " + this.lmt +
-				"\nLAT: " + this.lat +
-				"\nLRT: " + this.lrt +
-				"\nLMS: " + this.lms +
-				"\nStatus: " + this.status +
-				"\nAvailable: " + this.available +
-				"\nVoid: " + this.void_product +
-				"\nStock: " + this.stock +
-				"\nBehaviour: " + this.behaviour +
-				"\nMarketplace: " + this.marketplace;
-	}
-
 	/**
 	 * Método para identificação de alterações de atributos dos produtos processados em alguma outra ocasião.
 	 * Registra apenas mudanças que o Processor efetua, ou seja, campos que ele extrai. Caso uma dessas mudanças
@@ -702,6 +671,38 @@ public class ProcessedModel {
 
 	public void setVoid(Boolean void_product) {
 		this.void_product = void_product;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder stringBuilder =new StringBuilder();
+		
+		stringBuilder.append("Processed id: " + this.id + "\n");
+		stringBuilder.append("InternalId: " + this.internalId + "\n");
+		stringBuilder.append("InternalPid: " + this.internalPid + "\n");
+		stringBuilder.append("Class: " + this._class + "\n");
+		stringBuilder.append("Brand: " + this.brand + "\n");
+		stringBuilder.append("Recipient: " + this.recipient + "\n");
+		stringBuilder.append("Quantity: " + this.quantity + "\n");
+		stringBuilder.append("Multiplier: " + this.multiplier + "\n");
+		stringBuilder.append("Unit: " + this.unit + "\n");
+		stringBuilder.append("Extra: " + this.extra + "\n");
+		stringBuilder.append("Picture: " + this.pic + "\n");
+		stringBuilder.append("Secondary pics: " + this.secondary_pics + "\n");
+		stringBuilder.append("URL: " + this.url + "\n");
+		stringBuilder.append("LettId: " + this.lettId + "\n");
+		stringBuilder.append("ECT: " + this.ect + "\n");
+		stringBuilder.append("LMT: " + this.lmt + "\n");
+		stringBuilder.append("LAT: " + this.lat + "\n");
+		stringBuilder.append("LRT: " + this.lrt + "\n");
+		stringBuilder.append("LMS: " + this.lms + "\n");
+		stringBuilder.append("Status: " + this.status + "\n");
+		stringBuilder.append("Available: " + this.available + "\n");
+		stringBuilder.append("Void: " + this.void_product + "\n");
+		stringBuilder.append("Stock: " + this.stock + "\n");
+		stringBuilder.append("Marketplace: " + this.marketplace + "\n");
+		
+		return stringBuilder.toString();
 	}
 
 }
