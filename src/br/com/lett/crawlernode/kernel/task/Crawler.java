@@ -332,8 +332,9 @@ public class Crawler implements Runnable {
 	public List<Product> extract() {
 
 		// handle cookie
-		if (cookies.isEmpty())
-		handleCookiesBeforeFetch();
+		if (cookies.isEmpty()) {
+			handleCookiesBeforeFetch();
+		}
 
 
 		// handle URL modifications

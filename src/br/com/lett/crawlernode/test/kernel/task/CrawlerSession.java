@@ -132,7 +132,7 @@ public class CrawlerSession {
 		this.originalURL = url;
 		
 		// type
-		this.type = TEST_TYPE;
+		this.type = INSIGHTS_TYPE;
 		
 	}
 
