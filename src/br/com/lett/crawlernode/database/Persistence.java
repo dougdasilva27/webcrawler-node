@@ -183,11 +183,8 @@ public class Persistence {
 			sqlExecuteCrawler.append(values);
 			sqlExecuteCrawler.append(");");
 
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
-			} else {
-				Main.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
-			}
+			Main.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
+
 
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
@@ -196,7 +193,7 @@ public class Persistence {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	/**
 	 * Persists the new processed model on the database.
 	 * 
@@ -206,7 +203,7 @@ public class Persistence {
 	 */
 	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
-		
+
 		ResultSet generatedKeys = null;
 		Long id = null;
 
@@ -289,32 +286,30 @@ public class Persistence {
 					+ "behaviour=" 		+ ((newProcessedProduct.getBehaviour() == null || newProcessedProduct.getBehaviour().length() == 0) ? "null" : "'" + newProcessedProduct.getBehaviour().toString().replace("'","''")  + "'" ) + ", "
 					+ "similars=" 		+ ((newProcessedProduct.getSimilars() == null || newProcessedProduct.getSimilars().length() == 0) ? "null" : "'" + newProcessedProduct.getSimilars().toString().replace("'","''")  + "'" ) + " "
 					+ "WHERE id = " + newProcessedProduct.getId();
-			
+
 			// get the id of the processed product that already exists
 			id = newProcessedProduct.getId();
 		}
 
 		try {
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				generatedKeys = br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query);
-			} else {
-				generatedKeys = Main.dbManager.runSqlExecute(query);
-			}
-			
+
+			generatedKeys = Main.dbManager.runSqlExecute(query);
+
+
 			// get the id of the new processed product inserted on database
 			if (generatedKeys != null && id == null) {
 				if (generatedKeys.next()) {
 					id = generatedKeys.getLong(1);
 				}
 			}
-			
+
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
-		
+
 		return id;
 	}
 
@@ -337,12 +332,9 @@ public class Persistence {
 		query.append("market=" + session.getMarket().getNumber());
 
 		try {
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
-			} else {
-				Main.dbManager.runSqlExecute(query.toString());
-			}
+			Main.dbManager.runSqlExecute(query.toString());
 			Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
+
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product void.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -364,12 +356,9 @@ public class Persistence {
 		query.append("market=" + session.getMarket());
 
 		try {
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
-			} else {
-				Main.dbManager.runSqlExecute(query.toString());
-			}
+			Main.dbManager.runSqlExecute(query.toString());
 			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
+
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LRT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -391,12 +380,9 @@ public class Persistence {
 		query.append("market=" + session.getMarket());
 
 		try {
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				br.com.lett.crawlernode.test.Tester.dbManager.runSqlExecute(query.toString());
-			} else {
-				Main.dbManager.runSqlExecute(query.toString());
-			}
+			Main.dbManager.runSqlExecute(query.toString());
 			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
+			
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));

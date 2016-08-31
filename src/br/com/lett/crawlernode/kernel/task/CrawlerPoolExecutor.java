@@ -79,11 +79,10 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		Crawler task = (Crawler)r;
 		Logging.printLogDebug(logger, task.session, "START");
 
-		if (!task.session.getType().equals(CrawlerSession.TEST_TYPE)) {
-			synchronized(lock) {
-				activeTaskCount++;
-			}
+		synchronized(lock) {
+			activeTaskCount++;
 		}
+		
 	}
 
 	@Override
@@ -105,8 +104,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			}
 			activeTaskCount--;
 		}
-		
-		
+
+
 		if (t != null) {
 
 			Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
@@ -146,7 +145,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		Logging.printLogDebug(logger, task.session, "[ACTIVE_VOID_ATTEMPTS]" + task.session.getVoidAttempts());
 		Logging.printLogDebug(logger, task.session, "[TRUCO_ATTEMPTS]" + task.session.getTrucoAttempts());
 		Logging.printLogDebug(logger, task.session, "END");
-		
+
 	}
 
 	public int getActiveTaskCount() {

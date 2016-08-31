@@ -18,7 +18,6 @@ public class CrawlerSession {
 
 	public static final String DISCOVERY_TYPE = "standalone";
 	public static final String INSIGHTS_TYPE = "insights";
-	public static final String TEST_TYPE = "test";
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	private String sessionId;
@@ -149,9 +148,6 @@ public class CrawlerSession {
 		// setting URL and originalURL
 		this.url = url;
 		this.originalURL = url;
-		
-		// type
-		this.type = TEST_TYPE;
 		
 	}
 
