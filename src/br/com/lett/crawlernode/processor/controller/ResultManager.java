@@ -128,7 +128,7 @@ public class ResultManager {
 		this.logActivated = activateLogging;
 
 		// Cria as informaçẽos do supermercado
-		
+
 		this.createMarketInfo();
 
 		// Inicializa os mapas de substituição
@@ -335,16 +335,9 @@ public class ResultManager {
 		// Aciona o método 'extract' de acordo com cada supermecado
 		pm = extractor.extract(pm);
 
-		// if running test, always update digital content (as we are testing)
-		if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-			this.updateDigitalContent(pm, session);
-		} 
-		
 		// if we are not running tests, update digital content only if in insights mode
-		else {
-			if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-				this.updateDigitalContent(pm, session);
-			}
+		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+			this.updateDigitalContent(pm, session);
 		}
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
@@ -412,7 +405,7 @@ public class ResultManager {
 
 		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
 		String primaryMd5 = Information.fetchMd5FromAmazon(session, primaryImageAmazonKey);
-		
+
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		// Se o md5 for nulo, então limpamos e adicionamos a marcação de sem imagem
@@ -430,7 +423,7 @@ public class ResultManager {
 
 			// Imagem mudou
 			else {
-				
+
 				File primaryImage = Information.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
 				// Capturando as dimensões da nova imagem primária

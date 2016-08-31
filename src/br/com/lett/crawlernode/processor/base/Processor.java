@@ -209,11 +209,8 @@ public class Processor {
 
 			// Detectando e registrando mudanças
 			// Recebe o banco Panel do Mongo porque grava urls que deverão ter um screenshot capturado
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				newProcessedProduct.registerChanges(previousProcessedProduct, br.com.lett.crawlernode.test.Tester.dbManager.mongoBackendPanel);
-			} else {
-				newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
-			}
+			newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+
 
 			// Atualizando LMT
 			if(newProcessedProduct.getChanges() != null && (newProcessedProduct.getChanges().has("pic") || newProcessedProduct.getChanges().has("originals"))) {
@@ -357,12 +354,8 @@ public class Processor {
 		 * But there are some cases where we don't have the internalId in the session, but the product
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
-		String internal_id = null;
-		if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-			internal_id = product.getInternalId();
-		} else {
-			internal_id = session.getInternalId();
-		}
+		String internal_id = session.getInternalId();
+
 
 		// sanitize
 		internal_id = sanitizeBeforePersist(internal_id);
@@ -379,11 +372,7 @@ public class Processor {
 
 			ResultSet rs = null;
 
-			if (session.getType().equals(CrawlerSession.TEST_TYPE)) {
-				rs = br.com.lett.crawlernode.test.Tester.dbManager.runSqlConsult(query.toString());
-			} else {
-				rs = Main.dbManager.runSqlConsult(query.toString());
-			}
+			rs = Main.dbManager.runSqlConsult(query.toString());
 
 			while(rs.next()) {
 
