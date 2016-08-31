@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloSondaCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.sondadelivery.com.br/";
 
 	public SaopauloSondaCrawler(CrawlerSession session) {
@@ -40,21 +40,13 @@ public class SaopauloSondaCrawler extends Crawler {
 			String internalID = Integer.toString(Integer.parseInt(this.session.getUrl().split("/")[this.session.getUrl().split("/").length-1]));
 
 			// Nome
-			String name = null;
-			Element elementName = doc.select(".box-DetalhesProdMed h3").first();
-			if (elementName != null) {
-				name = elementName.text().replace("'", "").trim();
-			}
+			String name = crawlName(doc);
 
 			// Preço
-			Float price = null;
-			Element elementPrice = doc.select(".box-DetalhesProdMed h2").first();
-			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
+			Float price = crawlPrice(doc);
 
 			// Disponibilidade
-			boolean available = true;
+			boolean available = crawlAvailability(doc);
 
 			// Categorias
 			Elements elementCategory1 = doc.select(".HeaderDetalhesdoProduto h2");
@@ -117,12 +109,37 @@ public class SaopauloSondaCrawler extends Crawler {
 
 		return products;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
 
 	private boolean isProductPage(String url) {
 		return url.contains("/delivery.aspx/produto/");
+	}
+
+	private String crawlName(Document doc) {
+		String name = null;
+		Element elementName = doc.select(".box-DetalhesProdMed h3").first();
+		if (elementName != null) {
+			name = elementName.text().replace("'", "").trim();
+		}
+
+		return name;
+	}
+
+	private boolean crawlAvailability(Document doc) {
+		Element notifymeButton = doc.select(".btn.btnaviso").first();
+		return (notifymeButton == null);
+	}
+
+	private Float crawlPrice(Document doc) {
+		Float price = null;
+		Element elementPrice = doc.select(".box-DetalhesProdMed h2").first();
+		if (elementPrice != null) {
+			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		}
+
+		return price;
 	}
 }
