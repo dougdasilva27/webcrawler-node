@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 //import au.com.bytecode.opencsv.CSVReader;
 
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.fetcher.Proxy;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
@@ -411,28 +410,15 @@ public class ResultManager {
 				pm.getLettId() + 
 				"/1-original.jpg";
 
-		Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + primaryImageAmazonKey);
-		File primaryImage = Information.fetchImageFromAmazon(session, primaryImageAmazonKey);
-
-		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + desiredPrimaryImageAmazonKey);
 		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
-
-		String primaryMd5 = null;
-
-		try {
-			FileInputStream fis = new FileInputStream(primaryImage);
-			primaryMd5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
-			fis.close();
-		} catch (Exception ex) {
-			Logging.printLogError(logger, session, "Error analysing image md5.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-		}		
-
+		String primaryMd5 = Information.fetchMd5FromAmazon(session, primaryImageAmazonKey);
+		
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		// Se o md5 for nulo, então limpamos e adicionamos a marcação de sem imagem
 		if(primaryMd5 == null) {
 			pic_primary = new JSONObject();
+
 			pic_primary.put("status", "no-image");
 			pic_primary.put("verified_by", "crawler_" + nowISO);
 
@@ -444,6 +430,8 @@ public class ResultManager {
 
 			// Imagem mudou
 			else {
+				
+				File primaryImage = Information.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
 				// Capturando as dimensões da nova imagem primária
 				pic_primary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
@@ -461,25 +449,26 @@ public class ResultManager {
 
 				pic_primary.put("similarity_sift", similaritySiftResult);
 
-				// updating md5 of the new primary image
+				// Atualizando md5 da nova imagem primária
 				pic_primary.put("md5", primaryMd5);
 
 				// Tentando comparar imagem com a referência e antecipar o Match
-				if(pic_primary.getDouble("similarity") == 1) { // match
+				if(pic_primary.getDouble("similarity") == 1) {
+					// Deu Match
 					pic_primary.put("status", "match");
-				} else { // not verified
+				} else {
+					// Marcando como não verificada
 					pic_primary.put("status", "not-verified");
 				}
 
 				pic_primary.put("verified_by", "crawler_" + nowISO);
 
+				// Deletando imagens locais
+				if(primaryImage != null) {
+					primaryImage.delete();
+				}
 			} 
 
-		}
-
-		//		1.2.4) Deletando imagens locais
-		if(primaryImage != null) {
-			primaryImage.delete();
 		}
 		//if(desiredPrimaryImage != null) 	desiredPrimaryImage.delete();
 
