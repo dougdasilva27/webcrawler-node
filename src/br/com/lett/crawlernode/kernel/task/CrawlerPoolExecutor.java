@@ -125,6 +125,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 						
 					} else { // only remove the task from queue if it was flawless
 						succeededTaskCount++;
+						
+						Logging.printLogDebug(logger, task.session, "Task completed.");
 						Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
 						QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());
 
