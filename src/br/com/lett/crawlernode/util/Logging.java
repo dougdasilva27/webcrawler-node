@@ -9,7 +9,6 @@ import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.test.TestExecutionParameters;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -119,28 +118,6 @@ public class Logging {
 			MDC.put("ENVIRONMENT", executionParameters.getEnvironment());
 
 			if (executionParameters.getDebug()) {
-				MDC.put("DEBUG_MODE", "true");
-			} else {
-				MDC.put("DEBUG_MODE", "false");
-			}
-
-		} else {
-			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
-			System.exit(0);
-		}
-	}
-	
-	/**
-	 * Set up MDC variables when running crawler tests
-	 * @param testExecutionParameters
-	 */
-	public static void setLogMDCTest(TestExecutionParameters testExecutionParameters) {
-
-		MDC.put("PROCESS_NAME", "webcrawler_node");
-
-		if (testExecutionParameters != null) {
-
-			if (testExecutionParameters.getDebug()) {
 				MDC.put("DEBUG_MODE", "true");
 			} else {
 				MDC.put("DEBUG_MODE", "false");
