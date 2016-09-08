@@ -15,9 +15,6 @@ public class TaskExecutor {
 
 	private CrawlerPoolExecutor crawlerPoolExecutor;
 	
-	/** Cache object to store any needed information shared between crawlers */
-	public Cache cache;
-	
 	public TaskExecutor() {
 		crawlerPoolExecutor = new CrawlerPoolExecutor(
 				DEFAULT_MAX_NTHREADS,
@@ -29,8 +26,6 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
-		
-		cache = new Cache();
 	}
 
 	public TaskExecutor(int maxThreads) {
@@ -44,8 +39,6 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
-		
-		cache = new Cache();
 	}
 	
 	public TaskExecutor(int maxThreads, int bloquingQueueSize) {
@@ -59,8 +52,6 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
-		
-		cache = new Cache();
 	}
 	
 	public void shutDown() {

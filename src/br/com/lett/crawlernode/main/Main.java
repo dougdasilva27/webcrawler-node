@@ -60,7 +60,7 @@ public class Main {
 	public static ResultManager 		processorResultManager;
 	public static QueueHandler			queueHandler;
 
-	public static TaskExecutor 			taskExecutor;
+	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
 
 	public static void main(String args[]) {

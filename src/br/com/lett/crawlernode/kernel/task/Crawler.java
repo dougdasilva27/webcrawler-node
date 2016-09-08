@@ -8,7 +8,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.kernel.fetcher.Cookies;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
@@ -337,6 +336,7 @@ public class Crawler implements Runnable {
 		if (cookies.isEmpty()) {
 			handleCookiesBeforeFetch();
 		}
+
 
 		// handle URL modifications
 		String url = handleURLBeforeFetch(session.getUrl());

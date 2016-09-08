@@ -13,7 +13,6 @@ public class CrawlerSessionError {
 	
 	public CrawlerSessionError(String type, String content) {
 		this.content = content;
-		this.type = type;
 	}
 	
 	public String getErrorContent() {
