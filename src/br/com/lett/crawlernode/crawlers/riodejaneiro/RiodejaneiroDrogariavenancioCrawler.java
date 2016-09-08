@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.riodejaneiro;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,16 +18,14 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.drogariavenancio.com.br/";
-
 	public RiodejaneiroDrogariavenancioCrawler(CrawlerSession session) {
 		super(session);
 	}
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		String href = session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.drogariavenancio.com.br/");
 	}
 
 
@@ -35,7 +34,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if( isProductPage(this.session.getUrl()) ) {
+		if (isProductPage(session.getUrl())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			Element variationElement = doc.select(".variacao").first();
@@ -68,11 +67,28 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
-			// Categories
-			ArrayList<String> categories = this.crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
+			// Categorias
+			String category1 = "";
+			String category2 = "";
+			String category3 = "";
+			ArrayList<String> categories = new ArrayList<String>();
+
+			categories.add(doc.select("#miolo .breadCrumbs a").get(1).text());
+			Elements subCategoriesElements = doc.select("#miolo .breadCrumbs h3 p");
+			for(Element e : subCategoriesElements) {
+				categories.add(e.text());
+			}
+			for(String category : categories) {
+				if(category1.isEmpty()) {
+					category1 = category;
+				} 
+				else if(category2.isEmpty()) {
+					category2 = category;
+				} 
+				else if(category3.isEmpty()) {
+					category3 = category;
+				}
+			}
 
 			// Descricao
 			String description = "";
@@ -80,6 +96,9 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			Element elementDescriptionTab2 = doc.select("#miolo .abas div .aba2").first();
 			if(elementDescriptionTab1 != null) description = description + elementDescriptionTab1.text();
 			if(elementDescriptionTab2 != null) description = description + elementDescriptionTab2.text();
+
+			// Filtragem
+			boolean mustInsert = true;
 
 			// Marketplace
 			JSONArray marketplace = null;
@@ -135,8 +154,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				Integer stock = null;
 
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
-				product.setUrl(this.session.getUrl());
+				product.setSeedId(session.getSeedId());
+				product.setUrl(session.getUrl());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
@@ -152,7 +171,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				product.setAvailable(available);
 
 				products.add(product);
-
 			}
 
 			else {	// Caso 2
@@ -178,10 +196,11 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					Integer stock = null;
 					String scriptName = elementVariation.attr("onclick");
 					stock = Integer.valueOf(scriptName.split("'")[5]);
-
+					
 					// Preço
 					String plus = scriptName.split("'")[7].replace(',', '.');
-					price = price + Float.valueOf(plus);
+					Float priceVariation = normalizeTwoDecimalPlaces(price + Float.valueOf(plus));
+					
 
 					// Disponibilidade
 					boolean available = true;
@@ -193,7 +212,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 					// Requisição POST para conseguir dados da imagem
 					String response = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp", assembleUrlParameters(session.getUrl().split("/")[4], posInternalId), null);
-
+					
 					String imageId = parseImageId(response);
 					Element elementPrimaryImage = doc.select(".produtoPrincipal .imagem .holder .cloud-zoom .foto").first();
 					String primaryImage = null;
@@ -218,63 +237,38 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
-					product.setUrl(this.session.getUrl());
+					product.setSeedId(session.getSeedId());
+					product.setUrl(session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
-					product.setPrice(price);
+					product.setPrice(priceVariation);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
 					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(secondaryImages);
+					product.setSecondaryImages(null);
 					product.setDescription(description);
 					product.setStock(stock);
 					product.setMarketplace(marketplace);
 					product.setAvailable(available);
 
 					products.add(product);
-
 				}
+
+
+
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
 
 		return products;
 	}
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
+	
 	private boolean isProductPage(String url) {
 		return url.contains("/produto/");
-	}
-
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-
-		Element mainCategory = document.select(".breadCrumbs a").last();
-		if (mainCategory != null) {
-			categories.add(mainCategory.text().trim());
-		}
-
-		Element subCategory = document.select(".breadCrumbs a .hierarquia").first();
-		if (subCategory != null) {
-			categories.add(subCategory.text().trim());
-		}
-
-		return categories;
-	}
-	
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-
-		return "";
 	}
 
 	private String assembleUrlParameters(String idProduto, String variacaoCombinacao) {
@@ -297,4 +291,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		return null;
 	}
 
+	/**
+	 * Round and normalize Double to have only two decimal places
+	 * eg: 23.45123 --> 23.45
+	 * @param number
+	 * @return A rounded Double with only two decimal places
+	 */
+	public static Float normalizeTwoDecimalPlaces(Float number) {
+		BigDecimal big = new BigDecimal(number);
+		String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
+		
+		return Float.parseFloat(rounded);
+	}
 }

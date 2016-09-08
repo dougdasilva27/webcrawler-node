@@ -17,16 +17,15 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloShoptimeCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.shoptime.com.br/";
-
 	public SaopauloShoptimeCrawler(CrawlerSession session) {
 		super(session);
 	}
 
+
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		String href = session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.shoptime.com.br/");
 	}
 
 
@@ -35,10 +34,18 @@ public class SaopauloShoptimeCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if (isProductPage(session.getUrl())) {
+
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
+			//Variações indisponíveis
+			boolean allVariationsUnnavailable = false;
+			
 			Elements elementsProductOptions = doc.select(".pure-select option"); // caso que tem seletor 110v e 220v
+			if(elementsProductOptions.size() < 1){
+				elementsProductOptions = doc.select(".pure-input-1 option");
+				allVariationsUnnavailable = true;
+			}
 
 			/*
 			 * ID interno
@@ -115,12 +122,17 @@ public class SaopauloShoptimeCrawler extends Crawler {
 				// Imagem primária
 				primaryImage = elementImages.first().attr("href").trim();
 
-				// Imagens secundárias
-				for(int i = 1; i < elementImages.size(); i++) { // começando da segunda imagem porque a primeira é a imagem primária						
-					String secondaryImage = elementImages.get(i).attr("href").trim();
-					if (!secondaryImage.equals(primaryImage)) {
-						secundaryImagesArray.put( secondaryImage );
+				if(primaryImage.startsWith("http")){
+					
+					// Imagens secundárias
+					for(int i = 1; i < elementImages.size(); i++) { // começando da segunda imagem porque a primeira é a imagem primária						
+						String secondaryImage = elementImages.get(i).attr("href").trim();
+						if (!secondaryImage.equals(primaryImage)) {
+							secundaryImagesArray.put( secondaryImage );
+						}
 					}
+				} else {
+					primaryImage = null;
 				}
 			}
 
@@ -137,33 +149,143 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 			// Marketplace -- vamos capturar essas informações logo antes de inserir no banco
 			// o mesmo document capturado aqui será usado para ver marketplace das variações
-			String urlMarketplaceInfo = this.session.getUrl().replaceAll("/produto/", "/parceiros/");
+			String urlMarketplaceInfo = session.getUrl().replaceAll("/produto/", "/parceiros/");
 			Document docMarketplaceInfo = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketplaceInfo, null, null);
 
 			// Estoque
 			Integer stock = null;
 
-			if(hasMoreProducts) { // capturar e inserir os dois produtos da página
+			// Filtragem
+			boolean mustInsert = true;
 
-				Logging.printLogDebug(logger, session, "Página contém múltiplas variações de um produto.");					
+			if(mustInsert) {
 
-				for(int i = 0; i < elementsProductOptions.size(); i++) {
+				if(hasMoreProducts) { // capturar e inserir os dois produtos da página			
 
-					Element currentOption = elementsProductOptions.get(i);
+					List<String> variationsName = new ArrayList<String>();
+					
+					for(int i = 0; i < elementsProductOptions.size(); i++) {
 
-					String variationInternalId = internalIDFirstPiece + "-" + currentOption.attr("value");
-					String variationName = name + " - " + currentOption.text().trim();
+						Element currentOption = elementsProductOptions.get(i);
 
-					// Pegando marketplace
-					JSONArray marketplace = new JSONArray();
-					String partnersIdVector[] = currentOption.attr("data-partners").split(","); // pegando os ids dos parceiros que vendem essa variação
-					ArrayList<String> partnersId = new ArrayList<String>();
-					for (int k = 0; k < partnersIdVector.length; k++) {
-						partnersId.add(partnersIdVector[k]);
+						String variationInternalId = internalIDFirstPiece + "-" + currentOption.attr("value");
+						String variation = currentOption.text().trim();
+						
+						if(!variationsName.contains(variation)){
+						
+							variationsName.add(variation);
+							String variationName = name + " - " + variation;
+	
+							// Pegando marketplace
+							JSONArray marketplace = new JSONArray();
+							
+							if(!allVariationsUnnavailable){
+								String partnersIdVector[] = currentOption.attr("data-partners").split(","); // pegando os ids dos parceiros que vendem essa variação
+								ArrayList<String> partnersId = new ArrayList<String>();
+								for (int k = 0; k < partnersIdVector.length; k++) {
+									partnersId.add(partnersIdVector[k]);
+								}								
+		
+								Elements partnerLines = docMarketplaceInfo.select(".panel.nospacing .partners ul li[data-partner-id]");
+								for(Element partnerLine : partnerLines) {
+									String partnerName = null;
+									Float partnerPrice = null;
+		
+									String dataPartnerId = partnerLine.attr("data-partner-id").trim();
+		
+									if ( this.isShoptimeId(dataPartnerId) ) {
+										available = true;
+										preco = Float.parseFloat(partnerLine.attr("data-partner-value").trim());
+									}
+		
+									else {
+		
+										if (partnersId.contains(dataPartnerId)) { // se esse parceiro faz parte da lista de parceiros dessa variação de produto
+		
+											// nome do parceiro
+											Element elementPartnerName = partnerLine.select(".partner-name .partner-logo [alt]").first();
+		
+											if(elementPartnerName != null) {
+												partnerName = elementPartnerName.attr("alt");
+											}
+		
+											// se o parceiro não for o Shoptime, então pegar o preço e inserir o parceiro no JSONArray
+											partnerPrice = Float.parseFloat(partnerLine.attr("data-partner-value"));
+											JSONObject partner = new JSONObject();
+											partner.put("name", partnerName);
+											partner.put("price", partnerPrice);
+		
+											marketplace.put(partner);
+										}
+									}
+		
+								}
+		
+								partnersId.remove("01");
+		
+								if (marketplace.length() < partnersId.size()) {
+									
+									String remainingPartner = null;
+									
+									if (soldAndDeliveredBy != null) {
+										remainingPartner = soldAndDeliveredBy.text();
+									}
+											
+									if (remainingPartner != null && !remainingPartner.equals("Shoptime")) {
+										Float partnerPrice = this.extractMainProductPagePrice(doc);
+										
+										JSONObject partner = new JSONObject();
+										partner.put("name", remainingPartner);
+										partner.put("price", partnerPrice);
+		
+										marketplace.put(partner);
+									}
+								}
+							}
+	
+	
+							Product product = new Product();
+							product.setSeedId(session.getSeedId());
+							product.setUrl(session.getUrl());
+							product.setInternalId(variationInternalId);
+							product.setInternalPid(internalPid);
+							product.setName(variationName);
+							product.setPrice(preco);
+							product.setCategory1(category1);
+							product.setCategory2(category2);
+							product.setCategory3(category3);
+							product.setPrimaryImage(primaryImage);
+							product.setSecondaryImages(secondaryImages);
+							product.setDescription(description);
+							product.setStock(stock);
+							product.setMarketplace(marketplace);
+							product.setAvailable(available);
+	
+							products.add(product);
+	
+						}
+					}
+				}
+
+				// inserir o único produto da página
+				else {
+
+					// montando restante do internalId
+					Element secondPartInternalId = doc.select(".toggle-container[data-sku]").first();
+					if (secondPartInternalId != null) {
+						internalID = internalID + "-" + secondPartInternalId.attr("data-sku").trim();
+					} else {
+						secondPartInternalId = doc.select("input[name=soldout.skus]").first();
+						if (secondPartInternalId != null) {
+							internalID = internalID + "-" + secondPartInternalId.attr("value").trim();
+						}
 					}
 
-					Logging.printLogDebug(logger, session, "Pegando o marketplace da variação " + variationName + " ...");						
+					// Pegando o marketplace
 
+					JSONArray marketplace = new JSONArray();
+
+					// capturar o marketplace no caso de produto sem variação
 					Elements partnerLines = docMarketplaceInfo.select(".panel.nospacing .partners ul li[data-partner-id]");
 					for(Element partnerLine : partnerLines) {
 						String partnerName = null;
@@ -171,62 +293,58 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 						String dataPartnerId = partnerLine.attr("data-partner-id").trim();
 
-						if ( this.isShoptimeId(dataPartnerId) ) {
+						if ( dataPartnerId != null && (dataPartnerId.equals("01") || dataPartnerId.isEmpty()) ) {
 							available = true;
 							preco = Float.parseFloat(partnerLine.attr("data-partner-value").trim());
 						}
 
 						else {
 
-							if (partnersId.contains(dataPartnerId)) { // se esse parceiro faz parte da lista de parceiros dessa variação de produto
+							// nome do parceiro
+							Element elementPartnerName = partnerLine.select(".partner-name .partner-logo [alt]").first();
 
-								// nome do parceiro
-								Element elementPartnerName = partnerLine.select(".partner-name .partner-logo [alt]").first();
+							if(elementPartnerName != null) {
+								partnerName = elementPartnerName.attr("alt");
+							}
 
-								if(elementPartnerName != null) {
-									partnerName = elementPartnerName.attr("alt");
+							// se o parceiro não for o Shoptime, então pegar o preço e inserir o parceiro no JSONArray
+							if(partnerName != null) {
+								if( dataPartnerId != null && !dataPartnerId.equals("01") ) {
+									partnerPrice = Float.parseFloat(partnerLine.attr("data-partner-value"));
+									JSONObject partner = new JSONObject();
+									partner.put("name", partnerName);
+									partner.put("price", partnerPrice);
+
+									marketplace.put(partner);
 								}
-
-								// se o parceiro não for o Shoptime, então pegar o preço e inserir o parceiro no JSONArray
-								partnerPrice = Float.parseFloat(partnerLine.attr("data-partner-value"));
-								JSONObject partner = new JSONObject();
-								partner.put("name", partnerName);
-								partner.put("price", partnerPrice);
-
-								marketplace.put(partner);
 							}
 						}
 
 					}
 
-					partnersId.remove("01");
+					// parceiro da página principal
+					String remainingPartner = null;
+					
+					if (soldAndDeliveredBy != null) {
+						remainingPartner = soldAndDeliveredBy.text();
+					}
+							
+					if (remainingPartner != null && !remainingPartner.equals("Shoptime")) {
+						Float partnerPrice = this.extractMainProductPagePrice(doc);
+						
+						JSONObject partner = new JSONObject();
+						partner.put("name", remainingPartner);
+						partner.put("price", partnerPrice);
 
-					if (marketplace.length() < partnersId.size()) {
-
-						String remainingPartner = null;
-
-						if (soldAndDeliveredBy != null) {
-							remainingPartner = soldAndDeliveredBy.text();
-						}
-
-						if (remainingPartner != null && !remainingPartner.equals("Shoptime")) {
-							Float partnerPrice = this.extractMainProductPagePrice(doc);
-
-							JSONObject partner = new JSONObject();
-							partner.put("name", remainingPartner);
-							partner.put("price", partnerPrice);
-
-							marketplace.put(partner);
-						}
+						marketplace.put(partner);
 					}
 
-
 					Product product = new Product();
-					product.setUrl(this.session.getUrl());
-					product.setSeedId(this.session.getSeedId());
-					product.setInternalId(variationInternalId);
+					product.setSeedId(session.getSeedId());
+					product.setUrl(session.getUrl());
+					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
-					product.setName(variationName);
+					product.setName(name);
 					product.setPrice(preco);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
@@ -241,96 +359,6 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					products.add(product);
 
 				}
-
-			}
-
-			// inserir o único produto da página
-			else {
-
-				// montando restante do internalId
-				Element secondPartInternalId = doc.select(".toggle-container[data-sku]").first();
-				if (secondPartInternalId != null) {
-					internalID = internalID + "-" + secondPartInternalId.attr("data-sku").trim();
-				}
-
-				// Pegando o marketplace
-				Logging.printLogDebug(logger, session, "Pegando marketplace de produto único...");
-
-				JSONArray marketplace = new JSONArray();
-
-				// capturar o marketplace no caso de produto sem variação
-				Elements partnerLines = docMarketplaceInfo.select(".panel.nospacing .partners ul li[data-partner-id]");
-				for(Element partnerLine : partnerLines) {
-					String partnerName = null;
-					Float partnerPrice = null;
-
-					String dataPartnerId = partnerLine.attr("data-partner-id").trim();
-
-					if ( dataPartnerId != null && (dataPartnerId.equals("01") || dataPartnerId.isEmpty()) ) {
-						available = true;
-						preco = Float.parseFloat(partnerLine.attr("data-partner-value").trim());
-					}
-
-					else {
-
-						// nome do parceiro
-						Element elementPartnerName = partnerLine.select(".partner-name .partner-logo [alt]").first();
-
-						if(elementPartnerName != null) {
-							partnerName = elementPartnerName.attr("alt");
-						}
-
-						// se o parceiro não for o Shoptime, então pegar o preço e inserir o parceiro no JSONArray
-						if(partnerName != null) {
-							if( dataPartnerId != null && !dataPartnerId.equals("01") ) {
-								partnerPrice = Float.parseFloat(partnerLine.attr("data-partner-value"));
-								JSONObject partner = new JSONObject();
-								partner.put("name", partnerName);
-								partner.put("price", partnerPrice);
-
-								marketplace.put(partner);
-							}
-						}
-					}
-
-				}
-
-				// parceiro da página principal
-				String remainingPartner = null;
-
-				if (soldAndDeliveredBy != null) {
-					remainingPartner = soldAndDeliveredBy.text();
-				}
-
-				if (remainingPartner != null && !remainingPartner.equals("Shoptime")) {
-					Float partnerPrice = this.extractMainProductPagePrice(doc);
-
-					JSONObject partner = new JSONObject();
-					partner.put("name", remainingPartner);
-					partner.put("price", partnerPrice);
-
-					marketplace.put(partner);
-				}
-
-				Product product = new Product();
-				product.setUrl(this.session.getUrl());
-				product.setSeedId(this.session.getSeedId());
-				product.setInternalId(internalID);
-				product.setInternalPid(internalPid);
-				product.setName(name);
-				product.setPrice(preco);
-				product.setCategory1(category1);
-				product.setCategory2(category2);
-				product.setCategory3(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
-				product.setAvailable(available);
-
-				products.add(product);
-
 			}
 
 		} else {
@@ -339,44 +367,37 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 		return products;
 	}
-
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
+	
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.shoptime.com.br/produto/");
 	}
-
+	
 	private Float extractMainProductPagePrice(Document doc) {
 		Element elementPriceFirst = doc.select("div .p-prices .p-price").first();
 		Float preco = null;
 		if (elementPriceFirst != null) {
 			Element elementPrice = elementPriceFirst.select(".value").first();
 			preco = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-
+			
 			return preco;
 		}
-
+		
 		return null;
 	}
 
 
 	private boolean hasMoreProducts(Document doc) {
-		if ( doc.select(".pure-select option").size() > 0 ) return true;
+		if ( doc.select(".pure-select option").size() > 0 ){
+			return true;
+		}
+		
+		if ( doc.select(".pure-input-1 option").size() > 0 ){
+			return true;
+		}
 
 		return false;
 	}
 
-	//	private String extractPrimaryImage(Document doc) {
-	//		Element elementPrimaryImage = doc.select(".p-link").first();
-	//		if (elementPrimaryImage != null) {
-	//			return elementPrimaryImage.attr("href").trim();
-	//		}
-	//
-	//		return null;
-	//	}
 
 	private boolean isShoptimeId(String id) {
 		if (id == null) return true;
