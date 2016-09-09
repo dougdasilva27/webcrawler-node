@@ -80,80 +80,6 @@ public class Crawler implements Runnable {
 	 * The actual thread performs it's computation controlled by an Executor, from
 	 * Java's Executors Framework.
 	 */
-//	@Override 
-//	public void run() {
-//
-//		// crawl informations and create a list of products
-//		List<Product> products = null;
-//		try {
-//			products = extract();
-//		} catch (Exception e) {
-//			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-//			if (products == null) products = new ArrayList<Product>();
-//		}
-//
-//		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
-//
-//		// insights session
-//		// there is only one product that will be selected
-//		// by it's internalId, passed by the crawler session
-//		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
-//
-//			// get crawled product by it's internalId
-//			Product crawledProduct = filter(products, session.getInternalId());
-//			
-//			// if the product is void run the active void analysis
-//			Product activeVoidResultProduct = crawledProduct;
-//			if (crawledProduct.isVoid()) {
-//				try {
-//					activeVoidResultProduct = activeVoid(crawledProduct);
-//				} catch (Exception e) {
-//					Logging.printLogError(logger, session, "Error in active void method.");
-//					
-//					if (activeVoidResultProduct == null) activeVoidResultProduct = new Product();
-//					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-//					session.registerError(error);
-//				}
-//			}
-//			
-//			// after active void analysis we have the resultant
-//			// product after the extra extraction attempts
-//			// if the resultant product is not void, the we will process it
-//			if (!activeVoidResultProduct.isVoid()) {
-//				try {
-//					processProduct(activeVoidResultProduct);
-//				} catch (Exception e) {
-//					Logging.printLogError(logger, session, "Error in process product method.");
-//					
-//					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-//					session.registerError(error);
-//				}
-//			}
-//
-//		}
-//
-//		// discovery session
-//		// when processing a task of a suggested URL by the webcrawler or
-//		// an URL scheduled manually, we won't run active void and 
-//		// we must process each crawled product
-//		else if (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE)) {
-//			for (Product product : products) {
-//				try {
-//					processProduct(product);
-//				} catch (Exception e) {
-//					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-//					session.registerError(error);
-//				}
-//			}
-//		}
-//
-//		// terminate the process
-//		terminate();
-//	}
-	
-	/**
-	 * Run method to be used when testing
-	 */
 	@Override 
 	public void run() {
 
@@ -167,12 +93,86 @@ public class Crawler implements Runnable {
 		}
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
-		
-		for (Product p : products) {
-			printCrawledInformation(p);
+
+		// insights session
+		// there is only one product that will be selected
+		// by it's internalId, passed by the crawler session
+		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
+
+			// get crawled product by it's internalId
+			Product crawledProduct = filter(products, session.getInternalId());
+			
+			// if the product is void run the active void analysis
+			Product activeVoidResultProduct = crawledProduct;
+			if (crawledProduct.isVoid()) {
+				try {
+					activeVoidResultProduct = activeVoid(crawledProduct);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, "Error in active void method.");
+					
+					if (activeVoidResultProduct == null) activeVoidResultProduct = new Product();
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
+				}
+			}
+			
+			// after active void analysis we have the resultant
+			// product after the extra extraction attempts
+			// if the resultant product is not void, the we will process it
+			if (!activeVoidResultProduct.isVoid()) {
+				try {
+					processProduct(activeVoidResultProduct);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, "Error in process product method.");
+					
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
+				}
+			}
+
 		}
 
+		// discovery session
+		// when processing a task of a suggested URL by the webcrawler or
+		// an URL scheduled manually, we won't run active void and 
+		// we must process each crawled product
+		else if (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE)) {
+			for (Product product : products) {
+				try {
+					processProduct(product);
+				} catch (Exception e) {
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
+				}
+			}
+		}
+
+		// terminate the process
+		terminate();
 	}
+	
+	/**
+	 * Run method to be used when testing
+	 */
+//	@Override 
+//	public void run() {
+//
+//		// crawl informations and create a list of products
+//		List<Product> products = null;
+//		try {
+//			products = extract();
+//		} catch (Exception e) {
+//			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+//			if (products == null) products = new ArrayList<Product>();
+//		}
+//
+//		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
+//		
+//		for (Product p : products) {
+//			printCrawledInformation(p);
+//		}
+//
+//	}
 
 	/**
 	 * This method is responsible for the main post processing stages of a crawled product.
