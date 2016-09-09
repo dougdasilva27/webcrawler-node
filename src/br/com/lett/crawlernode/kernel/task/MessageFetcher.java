@@ -11,6 +11,7 @@ import com.amazonaws.services.sqs.model.Message;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.server.RequestMessageResult;
+import br.com.lett.crawlernode.server.SQSRequestResult;
 import br.com.lett.crawlernode.util.Logging;
 
 public class MessageFetcher implements Runnable {
@@ -32,20 +33,29 @@ public class MessageFetcher implements Runnable {
 		int numTasksToRetrieve = computeNumOfTasksToRetrieve();
 
 		if (numTasksToRetrieve > 0) { // this will prevent to make an empty request
-
+			
+			Logging.printLogDebug(logger, "Requesting for a maximum of " + numTasksToRetrieve + " message.");
+			
 			// request messages from the Amazon queue
-			Logging.printLogDebug(logger, "Requesting for a maximum of " + numTasksToRetrieve + " tasks on queue...");
-			RequestMessageResult requestResult = QueueService.requestMessages(queueHandler, numTasksToRetrieve);
-			List<Message> messages = requestResult.getMessages();
-			Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks");
+			SQSRequestResult result = QueueService.requestMessages(queueHandler, numTasksToRetrieve);
+			List<Message> messages = result.getMessages();
+			
+			if (messages.size() == 0) {
+				Logging.printLogDebug(logger, "Request returned with 0 messages.");
+			} else {
+				Logging.printLogDebug(logger, "Request returned with " + messages.size() + " tasks from queue " + result.getQueueName());
+			}
 
 			for (Message message : messages) {
 
 				// check the message
 				if ( QueueService.checkMessageIntegrity(message) ) {
-
+					
 					// create a crawler session from the message
-					CrawlerSession session = new CrawlerSession(message, requestResult.getQueueName());
+					Logging.printLogDebug(logger, "Creating session...");
+					CrawlerSession session = new CrawlerSession(message, result.getQueueName());
+					
+					Logging.printLogDebug(logger, session.toString());
 
 					// create the task
 					Runnable task = TaskFactory.createTask(session);
@@ -79,13 +89,14 @@ public class MessageFetcher implements Runnable {
 	 */
 	private int computeNumOfTasksToRetrieve() {
 		int activeTasks = taskExecutor.getActiveTasksCount();
+		int maxTasks = taskExecutor.getMaximumNumberOfTasks();
 		long succeededTasks = taskExecutor.getSucceededTasksCount();
 		long failedTasksCount = taskExecutor.getFailedTasksCount();
 		int taskQueueSize = taskExecutor.getBloquingQueueSize();
-		int coreThreadPoolSize = taskExecutor.getCoreThreadsCount();
+		//int coreThreadPoolSize = taskExecutor.getCoreThreadsCount();
 		int activeThreads = taskExecutor.getActiveThreadsCount();
 		
-		int diff = coreThreadPoolSize - activeTasks;
+		int diff = maxTasks - activeTasks;
 		
 		JSONObject metadata = new JSONObject();
 		
@@ -97,12 +108,12 @@ public class MessageFetcher implements Runnable {
 		
 		Logging.printLogDebug(logger, null, metadata, "Registering tasks status...");
 		
-		if (diff > QueueService.MAX_MESSAGES_REQUEST) {
-			if (taskQueueSize > 0) return 0;
+		if (diff <= 0) return 0;
+		if (taskQueueSize > 0) return 0;
+		
+		if (diff > QueueService.MAX_MESSAGES_REQUEST) {	
 			return QueueService.MAX_MESSAGES_REQUEST;
-		} 
-		else {
-			if (taskQueueSize > 0) return 0;
+		} else {
 			return diff;
 		}
 	}

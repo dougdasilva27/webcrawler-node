@@ -354,120 +354,125 @@ public class Processor {
 		 * But there are some cases where we don't have the internalId in the session, but the product
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
-		String internal_id = session.getInternalId();
-
+		String internal_id = product.getInternalId();
+		if (internal_id == null) {
+			internal_id = session.getInternalId();
+		}
 
 		// sanitize
 		internal_id = sanitizeBeforePersist(internal_id);
 
-		try {
+		if (internal_id != null) {
 
-			// reading current information of processed product
-			StringBuilder query = new StringBuilder();
-			query.append("SELECT * FROM processed WHERE market = ");
-			query.append(session.getMarket().getNumber());
-			query.append(" AND internal_id = '");
-			query.append(internal_id);
-			query.append("'");
+			try {
 
-			ResultSet rs = null;
+				// reading current information of processed product
+				StringBuilder query = new StringBuilder();
+				query.append("SELECT * FROM processed WHERE market = ");
+				query.append(session.getMarket().getNumber());
+				query.append(" AND internal_id = '");
+				query.append(internal_id);
+				query.append("'");
 
-			rs = Main.dbManager.runSqlConsult(query.toString());
+				ResultSet rs = null;
 
-			while(rs.next()) {
+				rs = Main.dbManager.runSqlConsult(query.toString());
 
-				JSONObject digitalContent;
-				try {
-					digitalContent = new JSONObject(rs.getString("digital_content"));
-				} catch (Exception e) {	
-					digitalContent = null; 
+				while(rs.next()) {
+
+					JSONObject digitalContent;
+					try {
+						digitalContent = new JSONObject(rs.getString("digital_content"));
+					} catch (Exception e) {	
+						digitalContent = null; 
+					}
+
+					JSONObject changes;
+					try { 	
+						changes = new JSONObject(rs.getString("changes"));
+					} catch (Exception e) {	
+						changes = null; 
+					}
+
+					JSONArray similars;
+					try { 	
+						similars = new JSONArray(rs.getString("similars"));
+					} catch (Exception e) {	
+						similars = null; 
+					}
+
+					JSONArray behaviour;
+					try { 	
+						behaviour = new JSONArray(rs.getString("behaviour"));
+					} catch (Exception e) {	
+						behaviour = null; 
+					}
+
+					JSONArray actual_marketplace;
+					try { 	actual_marketplace = new JSONArray(rs.getString("marketplace"));
+					} catch (Exception e) {	
+						actual_marketplace = null; 
+					}
+
+					Integer actual_stock;
+					try { 	
+						actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
+					} catch (Exception e) {	
+						actual_stock = null; 
+					}
+
+					Float actual_price;
+					try { 	
+						actual_price = rs.getFloat("price"); if(actual_price == 0) actual_price = null;
+					} catch (Exception e) {	
+						actual_price = null; 
+					}
+
+					actualProcessedProduct = new ProcessedModel(
+							rs.getLong("id"), 
+							rs.getString("internal_id"), 
+							rs.getString("internal_pid"), 
+							rs.getString("original_name"), 
+							rs.getString("class"), 
+							rs.getString("brand"), 
+							rs.getString("recipient"),
+							rs.getDouble("quantity"), 
+							rs.getInt("multiplier"), 
+							rs.getString("unit"), 
+							rs.getString("extra"), 
+							rs.getString("pic"), 
+							rs.getString("secondary_pics"), 
+							rs.getString("cat1"), 
+							rs.getString("cat2"),
+							rs.getString("cat3"), 
+							rs.getString("url"), 
+							rs.getInt("market"), 
+							rs.getString("ect"), 
+							rs.getString("lmt"), 
+							rs.getString("lat"), 
+							rs.getString("lrt"), 
+							rs.getString("lms"), 
+							rs.getString("status"), 
+							changes,
+							rs.getString("original_description"), 
+							actual_price, 
+							digitalContent, 
+							rs.getLong("lett_id"), 
+							similars, 
+							rs.getBoolean("available"), 
+							rs.getBoolean("void"), 
+							actual_stock, 
+							behaviour, 
+							actual_marketplace);
+
+
+					return actualProcessedProduct;
+
 				}
 
-				JSONObject changes;
-				try { 	
-					changes = new JSONObject(rs.getString("changes"));
-				} catch (Exception e) {	
-					changes = null; 
-				}
-
-				JSONArray similars;
-				try { 	
-					similars = new JSONArray(rs.getString("similars"));
-				} catch (Exception e) {	
-					similars = null; 
-				}
-
-				JSONArray behaviour;
-				try { 	
-					behaviour = new JSONArray(rs.getString("behaviour"));
-				} catch (Exception e) {	
-					behaviour = null; 
-				}
-
-				JSONArray actual_marketplace;
-				try { 	actual_marketplace = new JSONArray(rs.getString("marketplace"));
-				} catch (Exception e) {	
-					actual_marketplace = null; 
-				}
-
-				Integer actual_stock;
-				try { 	
-					actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-				} catch (Exception e) {	
-					actual_stock = null; 
-				}
-
-				Float actual_price;
-				try { 	
-					actual_price = rs.getFloat("price"); if(actual_price == 0) actual_price = null;
-				} catch (Exception e) {	
-					actual_price = null; 
-				}
-
-				actualProcessedProduct = new ProcessedModel(
-						rs.getLong("id"), 
-						rs.getString("internal_id"), 
-						rs.getString("internal_pid"), 
-						rs.getString("original_name"), 
-						rs.getString("class"), 
-						rs.getString("brand"), 
-						rs.getString("recipient"),
-						rs.getDouble("quantity"), 
-						rs.getInt("multiplier"), 
-						rs.getString("unit"), 
-						rs.getString("extra"), 
-						rs.getString("pic"), 
-						rs.getString("secondary_pics"), 
-						rs.getString("cat1"), 
-						rs.getString("cat2"),
-						rs.getString("cat3"), 
-						rs.getString("url"), 
-						rs.getInt("market"), 
-						rs.getString("ect"), 
-						rs.getString("lmt"), 
-						rs.getString("lat"), 
-						rs.getString("lrt"), 
-						rs.getString("lms"), 
-						rs.getString("status"), 
-						changes,
-						rs.getString("original_description"), 
-						actual_price, 
-						digitalContent, 
-						rs.getLong("lett_id"), 
-						similars, 
-						rs.getBoolean("available"), 
-						rs.getBoolean("void"), 
-						actual_stock, 
-						behaviour, 
-						actual_marketplace);
-
-
-				return actualProcessedProduct;
-
+			} catch (SQLException e) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
-
-		} catch (SQLException e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		return actualProcessedProduct;

@@ -15,17 +15,16 @@ import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilColomboCrawler extends Crawler {
-	
-	private final String HOME_PAGE = "https://www.colombo.com.br";
-	
+
 	public BrasilColomboCrawler(CrawlerSession session) {
 		super(session);
 	}
 
+
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
+		return !FILTERS.matcher(href).matches() && href.startsWith("https://www.colombo.com.br");
 	}
 
 
@@ -34,11 +33,10 @@ public class BrasilColomboCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		//Element productElement = doc.select(".detalhe-produto").first();
+		Element productElement = doc.select(".detalhe-produto").first();
 
-		if (isProductPage(doc, session.getUrl())) {
-			
-			Logging.printLogDebug(logger, session, "Product page identified: " + session.getUrl());
+		if (session.getUrl().startsWith("https://www.colombo.com.br/produto/") && !session.getUrl().contains("?") && (productElement != null)) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr");
 
@@ -102,9 +100,6 @@ public class BrasilColomboCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			// Filtragem
-			boolean mustInsert = true;
-
 			if (selections.size() <= 1) { // sem variações
 
 				// Disponibilidade
@@ -135,34 +130,24 @@ public class BrasilColomboCrawler extends Crawler {
 					secondaryImages = secondaryImagesArray.toString();
 				}				
 
-				if (mustInsert) {
+				Product product = new Product();
+				product.setSeedId(session.getSeedId());
+				product.setUrl(session.getUrl());
+				product.setInternalId(internalId);
+				product.setInternalPid(internalPid);
+				product.setName(name);
+				product.setPrice(price);
+				product.setCategory1(category1);
+				product.setCategory2(category2);
+				product.setCategory3(category3);
+				product.setPrimaryImage(primaryImage);
+				product.setSecondaryImages(secondaryImages);
+				product.setDescription(description);
+				product.setStock(stock);
+				product.setMarketplace(marketplace);
+				product.setAvailable(available);
 
-					try {
-
-						Product product = new Product();
-						product.setSeedId(session.getSeedId());
-						product.setUrl(session.getUrl());
-						product.setInternalId(internalId);
-						product.setInternalPid(internalPid);
-						product.setName(name);
-						product.setPrice(price);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImage);
-						product.setSecondaryImages(secondaryImages);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplace);
-						product.setAvailable(available);
-
-						products.add(product);
-
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
-
-				}
+				products.add(product);
 
 			}
 
@@ -249,73 +234,57 @@ public class BrasilColomboCrawler extends Crawler {
 							secondaryImages = secondaryImagesTmp;
 						}
 					}
-					
+
 					// sanitize secondary images
 					JSONArray sanitizedSecondaryImages = new JSONArray();
 					for (int j = 0; j < secondaryImagesArray.length(); j++) {
 						String image = (String) secondaryImagesArray.get(j);
 						String sanitized = this.sanitizeImageURL(image);
-						
+
 						sanitizedSecondaryImages.put(sanitized);
 					}
 					secondaryImages = sanitizedSecondaryImages.toString();
 
-					if (mustInsert) {
+					Product product = new Product();
+					product.setSeedId(session.getSeedId());
+					product.setUrl(session.getUrl());
+					product.setInternalId(variationInternalId);
+					product.setInternalPid(internalPid);
+					product.setName(variationName);
+					product.setPrice(price);
+					product.setCategory1(category1);
+					product.setCategory2(category2);
+					product.setCategory3(category3);
+					product.setPrimaryImage( this.sanitizeImageURL(primaryImage) );
+					product.setSecondaryImages(secondaryImages);
+					product.setDescription(description);
+					product.setStock(stock);
+					product.setMarketplace(marketplace);
+					product.setAvailable(variationAvailable);
 
-						try {
-
-							Product product = new Product();
-							product.setSeedId(session.getSeedId());
-							product.setUrl(session.getSeedId());
-							product.setInternalId(variationInternalId);
-							product.setInternalPid(internalPid);
-							product.setName(variationName);
-							product.setPrice(price);
-							product.setCategory1(category1);
-							product.setCategory2(category2);
-							product.setCategory3(category3);
-							product.setPrimaryImage( this.sanitizeImageURL(primaryImage) );
-							product.setSecondaryImages(secondaryImages);
-							product.setDescription(description);
-							product.setStock(stock);
-							product.setMarketplace(marketplace);
-							product.setAvailable(variationAvailable);
-
-							products.add(product);
-
-						} catch (Exception e1) {
-							e1.printStackTrace();
-						}
-
-					}
+					products.add(product);
 
 				}
 
 			}
 
-
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
-	
-	private boolean isProductPage(Document document, String url) {
-		Element productElement = document.select(".detalhe-produto").first();
-		return (url.startsWith("https://www.colombo.com.br/produto/") && !url.contains("?") && (productElement != null));
-	}
-	
+
 	private String sanitizeImageURL(String imageURL) {
 		String sanitizedURL = null;
-		
+
 		if (imageURL.contains("?")) { // removendo parâmetros da url da imagem, senão não passa no crawler de imagens
 			int index = imageURL.indexOf("?");
 			sanitizedURL = imageURL.substring(0, index);
 		} else {
 			sanitizedURL = imageURL;
 		}
-		
+
 		return sanitizedURL;		
 	}
 }

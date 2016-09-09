@@ -9,6 +9,9 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.MongoException;
+import com.mongodb.MongoWriteConcernException;
+import com.mongodb.MongoWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
@@ -203,10 +206,10 @@ public class Persistence {
 	 */
 	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
-
+		
 		ResultSet generatedKeys = null;
 		Long id = null;
-
+		
 		String query = "";
 
 		if(newProcessedProduct.getId() == null) {
@@ -286,30 +289,29 @@ public class Persistence {
 					+ "behaviour=" 		+ ((newProcessedProduct.getBehaviour() == null || newProcessedProduct.getBehaviour().length() == 0) ? "null" : "'" + newProcessedProduct.getBehaviour().toString().replace("'","''")  + "'" ) + ", "
 					+ "similars=" 		+ ((newProcessedProduct.getSimilars() == null || newProcessedProduct.getSimilars().length() == 0) ? "null" : "'" + newProcessedProduct.getSimilars().toString().replace("'","''")  + "'" ) + " "
 					+ "WHERE id = " + newProcessedProduct.getId();
-
+			
 			// get the id of the processed product that already exists
 			id = newProcessedProduct.getId();
 		}
 
 		try {
-
 			generatedKeys = Main.dbManager.runSqlExecute(query);
-
-
-			// get the id of the new processed product inserted on database
+			
+			// get the id of the new processed product insrted on database
 			if (generatedKeys != null && id == null) {
 				if (generatedKeys.next()) {
 					id = generatedKeys.getLong(1);
 				}
 			}
-
+			
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 		} catch (SQLException e) {
-			Logging.printLogError(logger, session, "Error updating processed product " + "[seedId: " + session.getSeedId() + "]");
+			Logging.printLogError(logger, session, "Error updating processed product.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			return null;
 		}
-
+		
 		return id;
 	}
 
@@ -389,86 +391,108 @@ public class Persistence {
 		}
 
 	}
-
+	
 	/**
-	 * Insert the processedId on the task collection.
+	 * Set the status field of the task document.
 	 * 
+	 * @param status
 	 * @param session
-	 * @param processedId
-	 * @param taskCollection
-	 */
-	public static void insertProcessedIdOnMongo(CrawlerSession session, MongoDatabase mongoDatabase) {
-		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
-				String documentId =  String.valueOf(session.getSessionId());
-				if (session.getProcessedId() == null) {
-					taskCollection.updateOne(
-							new Document("_id", documentId), 
-							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null))
-							);
-				} else {
-					taskCollection.updateOne(
-							new Document("_id", documentId), 
-							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, String.valueOf(session.getProcessedId())))
-							);
-				}
-			} else {
-				Logging.printLogError(logger, session, "Mongo database is null");
-			}
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-	}
-
-	/**
-	 * Append the processedId on the task collection, on the array of found products.
-	 * 
-	 * @param session
-	 * @param processedId
-	 * @param taskCollection
-	 */
-	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
-		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
-				String documentId =  String.valueOf(session.getSessionId());
-
-				Document search = new Document("_id", documentId);
-				Document modified = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
-
-				taskCollection.updateOne(search, modified);
-
-			} else {
-				Logging.printLogError(logger, session, "Mongo database is null");
-			}
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-	}
-
-	/**
-	 * Set the status field of the task document to "done"
-	 * 
-	 * @param session
-	 * @param taskCollection
+	 * @param mongoDatabase
 	 */
 	public static void setTaskStatusOnMongo(String status, CrawlerSession session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
-				String documentId =  String.valueOf(session.getSessionId());
+				String documentId = String.valueOf(session.getSessionId());
 				taskCollection.updateOne(
-						new Document("_id", documentId), 
+						new Document("_id", documentId),
 						new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status))
 						);
 			} else {
-				Logging.printLogError(logger, session, "Mongo database is null");
+				Logging.printLogError(logger, session, "Mongo database is null.");
 			}
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		} catch (MongoWriteException mongoWriteException) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
+		} catch (MongoWriteConcernException mongoWriteConcernException) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
+		} catch (MongoException mongoException) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
 		}
 	}
+	
+	
+	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId = String.valueOf(session.getSessionId());
+				
+				Document search = new Document("_id", documentId);
+				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
+				
+				taskCollection.updateOne(search, modification);
+			}
+		} catch (MongoWriteException mongoWriteException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
+			
+		} catch (MongoWriteConcernException mongoWriteConcernException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
+			
+		} catch (MongoException mongoException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
+		}
+	}
+	
+	/**
+	 * 
+	 * @param session
+	 * @param mongoDatabase
+	 */
+	public static void insertProcessedIdOnMongo(CrawlerSession session, MongoDatabase mongoDatabase) {
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId = String.valueOf(session.getSessionId());
+				
+				// if processedId inside the session is null, it means
+				// we are processing a task that was inserted manually
+				// or a task from an URL scheduled by the webcrawler discover
+				// in these two cases, the field processedId on Mongo must be null, because it can
+				// get more than one product during extraction
+				if (session.getProcessedId() == null) {
+					taskCollection.updateOne(
+							new Document("_id", documentId),
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null))
+							);
+				}
+				
+				// in this case we are processing a task from insights queue
+				else {
+					taskCollection.updateOne(
+							new Document("_id", documentId),
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, String.valueOf(session.getProcessedId())))
+							);
+				}
+			} else {
+				Logging.printLogError(logger, session, "MongoDatabase is null.");
+			}
+		} catch (MongoWriteException mongoWriteException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
+			
+		} catch (MongoWriteConcernException mongoWriteConcernException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
+			
+		} catch (MongoException mongoException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
+		}
+	}
+
 
 	private static String sanitizeBeforePersist(String field) {
 		if(field == null) {

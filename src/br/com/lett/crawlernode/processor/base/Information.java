@@ -117,9 +117,9 @@ public class Information {
 	
 	private static File fetchImageFromAmazon(CrawlerSession session, String key, int attempt) {
 		
-		if(attempt > 3) return null; 
+		//if(attempt > 3) return null; 
 		
-		Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Fetching image from Amazon: " + key);
+		Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + key);
 		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
@@ -154,12 +154,12 @@ public class Information {
         		return null;
         	} else {
         		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
-        		return fetchImageFromAmazon(session, key, (attempt+1));
+        		return null;
         	}
         }
         catch (Exception e) {
         	Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-    		return fetchImageFromAmazon(session, key, (attempt+1));
+    		return null;
 		}
 		
 	}
@@ -170,9 +170,9 @@ public class Information {
 	
 	private static String fetchMd5FromAmazon(CrawlerSession session, String key, int attempt) {
 		
-		if(attempt > 3) return null; 
+		//if(attempt > 3) return null; 
 		
-		Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Fetching image md5 from Amazon: " + key);
+		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + key);
 		
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
@@ -192,12 +192,12 @@ public class Information {
         		return null;
         	} else {
         		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
-        		return fetchMd5FromAmazon(session, key, (attempt+1));
+        		return null;
         	}
         } 
         catch (Exception e) {
         	Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-        	return fetchMd5FromAmazon(session, key, (attempt+1));
+        	return null;
 		}
 		
 	}

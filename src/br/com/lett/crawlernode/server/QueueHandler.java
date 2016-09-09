@@ -43,17 +43,11 @@ public class QueueHandler {
 	
 	/** Dead letter messages from Insights queue */
 	private AmazonSQS sqsInsightsDead;
-
-	/** Amazon sqs queue for discovery messages */
-	private AmazonSQS sqsDiscovery;
 	
-	/** Amazon sqs queue to be used in dead mode */
+	private AmazonSQS sqsDiscovery;
 	private AmazonSQS sqsDiscoveryDead;
 	
-	/** Seed queue, added manually */
 	private AmazonSQS sqsSeed;
-	
-	/** Dead letter messages from Seed */
 	private AmazonSQS sqsSeedDead;
 	
 	/** Amazon sqs queue to be used only in development mode */
@@ -112,13 +106,22 @@ public class QueueHandler {
 
 	}
 	
+	/**
+	 * Get AmazonSQS queue according to it's name
+	 * 
+	 * @param queueName
+	 * @return the desired AmazonSQS
+	 */
 	public AmazonSQS getQueue(String queueName) {
 		if (queueName.equals(INSIGHTS)) return sqsInsights;
 		if (queueName.equals(INSIGHTS_DEAD)) return sqsInsightsDead;
+		
 		if (queueName.equals(DISCOVER)) return sqsDiscovery;
 		if (queueName.equals(DISCOVER_DEAD)) return sqsDiscoveryDead;
+		
 		if (queueName.equals(SEED)) return sqsSeed;
 		if (queueName.equals(SEED_DEAD)) return sqsSeedDead;
+		
 		if (queueName.equals(DEVELOPMENT)) return sqsDevelopment;
 		
 		Logging.printLogError(logger, "Unrecognized queue.");

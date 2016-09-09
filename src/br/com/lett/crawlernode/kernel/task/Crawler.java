@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.kernel.task;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -8,13 +9,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.kernel.fetcher.Cookies;
 import br.com.lett.crawlernode.kernel.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -32,11 +33,9 @@ import org.slf4j.LoggerFactory;
 public class Crawler implements Runnable {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
-
-	protected static final int MAX_VOID_ATTEMPTS = 3;
-	protected static final int MAX_TRUCO_ATTEMPTS = 3;
-
-	protected final static Pattern FILTERS = Pattern.compile(
+	
+	protected final static Pattern FILTERS = Pattern.compile
+			(
 			".*(\\.(css|js|bmp|gif|jpe?g"
 					+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
 					+ "|wav|avi|mov|mpeg|ram|m4v|pdf" 
@@ -44,8 +43,17 @@ public class Crawler implements Runnable {
 			);
 
 	/**
-	 * The current crawling session.
+	 * Maximum attempts during active void analysis
+	 * It's essentially the number of times that we will
+	 * rerun the extract method to crawl a product from a page 
 	 */
+	protected static final int MAX_VOID_ATTEMPTS = 3;
+	
+	
+	protected static final int MAX_TRUCO_ATTEMPTS = 3;
+
+	
+	/** The current crawling session. */
 	protected CrawlerSession session;
 
 	/**
@@ -76,61 +84,71 @@ public class Crawler implements Runnable {
 	public void run() {
 
 		// crawl informations and create a list of products
-		List<Product> products = extract();
+		List<Product> products = null;
+		try {
+			products = extract();
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+			if (products == null) products = new ArrayList<Product>();
+		}
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
-		/* 
-		 * MODE INSIGHTS							
-		 * There is only one product that will be 					
-		 * processed in this mode. This product will be selected 	
-		 * by it's internalId, passed by the CrawlerSession																
-		 */
+		// insights session
+		// there is only one product that will be selected
+		// by it's internalId, passed by the crawler session
 		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
 
 			// get crawled product by it's internalId
-			Product crawledProduct = getProductByInternalId(products, session.getInternalId());
-
-			// run active void status analysis
-			Product finalProduct = activeVoid(crawledProduct);
-
-			if (finalProduct.isVoid()) {
-				Logging.printLogDebug(logger, session, "Product is void.");
-
-				// set previous processed as void
-				ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(finalProduct, session);
-				if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-					Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
-					Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
+			Product crawledProduct = filter(products, session.getInternalId());
+			
+			// if the product is void run the active void analysis
+			Product activeVoidResultProduct = crawledProduct;
+			if (crawledProduct.isVoid()) {
+				try {
+					activeVoidResultProduct = activeVoid(crawledProduct);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, "Error in active void method.");
+					
+					if (activeVoidResultProduct == null) activeVoidResultProduct = new Product();
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
 				}
-				
-				
-			} 
-
-			// process the resulting product after active void analysis
-			else {
-				processProduct(finalProduct);
+			}
+			
+			// after active void analysis we have the resultant
+			// product after the extra extraction attempts
+			// if the resultant product is not void, the we will process it
+			if (!activeVoidResultProduct.isVoid()) {
+				try {
+					processProduct(activeVoidResultProduct);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, "Error in process product method.");
+					
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
+				}
 			}
 
 		}
 
-
-		/* 
-		 * MODE DISCOVERY												
-		 * In this mode, we must process each crawled product.  												
-		 */
-		else {
+		// discovery session
+		// when processing a task of a suggested URL by the webcrawler or
+		// an URL scheduled manually, we won't run active void and 
+		// we must process each crawled product
+		else if (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE)) {
 			for (Product product : products) {
-				processProduct(product);
+				try {
+					processProduct(product);
+				} catch (Exception e) {
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					session.registerError(error);
+				}
 			}
 		}
 
-		// if the crawler used the webdriver at some point, it must be closed
-		if (webdriver != null) {
-			Logging.printLogDebug(logger, session, "Closing webdriver...");
-			webdriver.closeDriver();
-		}
-
+		// terminate the process
+		terminate();
 	}
 
 	/**
@@ -157,7 +175,7 @@ public class Crawler implements Runnable {
 	 * </p> 
 	 * @param product
 	 */
-	private void processProduct(Product product) {
+	private void processProduct(Product product) throws Exception {
 		boolean mustEnterTrucoMode = false;
 
 		// print crawled information
@@ -169,126 +187,70 @@ public class Crawler implements Runnable {
 		// fetch the previous processed product stored on database
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
-		// create the new processed product
-		ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+		if ( (previousProcessedProduct == null && session.getType().equals(CrawlerSession.DISCOVERY_TYPE)) 
+				||
+				previousProcessedProduct != null) 
+		{
 
-		if (previousProcessedProduct == null) {
+			// create the new processed product
+			ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
 
-			// if a new processed product was created
-			if (newProcessedProduct != null) {
-				Persistence.persistProcessedProduct(newProcessedProduct, session);
-			} else {
-				Logging.printLogError(logger, session, "The new processed product is null. Indicates that the crawler missed vital information.");
-			}
-		}
+			// the product doesn't exists yet
+			if (previousProcessedProduct == null) { 
 
+				// if a new processed product was created
+				if (newProcessedProduct != null) {
 
-		else { // we already have a processed product, so we must decide if we update 
-
-			if (newProcessedProduct != null) {
-
-				// the two processed are different, so we must enter in truco mode
-				if ( compare(previousProcessedProduct, newProcessedProduct) ) {
-					mustEnterTrucoMode = true;
-					Logging.printLogDebug(logger, session, "Must enter in truco mode.");
+					// persist the new created processed product, and end
+					Persistence.persistProcessedProduct(newProcessedProduct, session);
+					return;
 				}
 
-				// the two processed are equals, so we can update it
+				// the new processed product is null. Indicates that it occurred some faulty information crawled in the product
+				// this isn't supposed to happen in insights mode, because previous to this process we ran into
+				// the active void analysis. This case will only happen in with discovery url or seed url, where we probably doesn't
+				// have the product on the database yet.
 				else {
-					Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
-					if (id != null) {
-						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-						Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
-					}
-					
-
+					// if we haven't a previous processed, and the new processed was null,
+					// we don't have anything to give a trucada!
+					Logging.printLogDebug(logger, session, "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 					return;
 				}
 			}
 
-		}
 
-		/*
-		 * Running truco
-		 * Inside the truco iterations we also keep track if the product is void
-		 * If at the end of truco attempts we end up with a void product, we
-		 * must change the status of the processed product to void in database.
-		 */
-		if (mustEnterTrucoMode) {
-			Logging.printLogDebug(logger, session, "Entering truco mode...");
+			else { // we already have a processed product, so we must decide if we update 
 
-			ProcessedModel currentTruco = newProcessedProduct;
+				if (newProcessedProduct != null) {
 
-			while (true) {
-				session.incrementTrucoAttemptsCounter();
+					// the two processed are different, so we must enter in truco mode
+					if ( compare(previousProcessedProduct, newProcessedProduct) ) {
+						mustEnterTrucoMode = true;
+						Logging.printLogDebug(logger, session, "Must enter in truco mode.");
+					}
 
-				List<Product> products = extract();
-
-				/*
-				 * when we are processing all the the products in array (mode discovery)
-				 * we will select only the product being 'trucado'
-				 */
-				Product localProduct = getProductByInternalId(products, currentTruco.getInternalId());
-
-				// proceed the iteration only if the product is not void
-				if (localProduct != null && !localProduct.isVoid()) {
-					Persistence.persistProduct(localProduct, session);
-
-					newProcessedProduct = Processor.createProcessed(localProduct, session, previousProcessedProduct, Main.processorResultManager);
-					
-					if (newProcessedProduct != null) {					
-						if ( compare(newProcessedProduct, currentTruco) ) {
-							currentTruco = newProcessedProduct;	
-						} 
-
-						// we found two consecutive equals processed products, persist and end 
-						else {
-							Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
-							if (id != null) {
-								Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-								Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
-							}
-
-
-							//							// create webdriver
-							//							if (webdriver == null) {
-							//								Logging.printLogDebug(logger, session, "Initializing webdriver");
-							//								webdriver = new CrawlerWebdriver();
-							//							}
-							//							
-							//							// get a screenshot from the page
-							//							File screenshot = webdriver.takeScreenshot(session.getUrl());
-							//							
-							//							// the the page html
-							//							String html = webdriver.loadUrl(session.getUrl());
-							//							
-							//							// upload screenshot and html to Amazon
-							//							S3Service.uploadFileToAmazon(session, screenshot);
-							//							S3Service.uploadHtmlToAmazon(session, html);
-
-							return;
+					// the two processed are equals, so we can update it
+					else {
+						
+						// get the id of the processed product on database
+						// if it was only updated it will be the id of the previous existent processed product
+						// if a new processed was created, it will be the id generated by the
+						// this id will be added to the found_products field on the task document on Mongo
+						Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
+						if (id != null) {
+							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+							Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
 						}
+						return;
 					}
 				}
 
-				if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-					Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
-					
-					// register business logic error on session
-					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
-					session.registerError(error);
+			}
 
-					// if we end up with a void at end of truco, we must change the status of the processed to void
-					//					if (localProduct.isVoid()) {
-					//						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-					//							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
-					//							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
-					//						}
-					//					}
-
-					break;
-				}
-
+			// truco!
+			if (mustEnterTrucoMode) {
+				Logging.printLogDebug(logger, session, "Entering truco mode...");
+				truco(newProcessedProduct, previousProcessedProduct);
 			}
 		}
 	}
@@ -308,7 +270,7 @@ public class Crawler implements Runnable {
 	 * then it must implement this method.
 	 */
 	public void handleCookiesBeforeFetch() {
-		
+
 	}
 
 	/**
@@ -331,7 +293,7 @@ public class Crawler implements Runnable {
 	 * </ul> 
 	 * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an empty array list if no product was found.
 	 */
-	public List<Product> extract() {
+	public List<Product> extract() throws Exception {
 
 		// handle cookie
 		if (cookies.isEmpty()) {
@@ -346,12 +308,7 @@ public class Crawler implements Runnable {
 		if ( shouldVisit() ) {
 			Document document = fetch();
 			List<Product> products = null;
-			try {
-				products = extractInformation(document);
-			} catch (Exception e) {
-				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-				session.registerError(error);
-			}
+			products = extractInformation(document);
 			if (products == null) products = new ArrayList<Product>();
 
 			return products;
@@ -384,6 +341,10 @@ public class Crawler implements Runnable {
 	/**
 	 * Compare ProcessedModel p1 against p2
 	 * p2 is suposed to be the truco, that is the model we are checking against
+	 * Obs: this method expects that both p1 and p2 are different from null.
+	 * According to the method processProduct, this never occurs when the
+	 * compare(p1, p2) method is called.
+	 * 
 	 * @param p1
 	 * @param p2
 	 * @return true if they are different or false otherwise
@@ -402,7 +363,7 @@ public class Crawler implements Runnable {
 	 * @param internalId
 	 * @return The product with the desired internal id, or an empty product if it was not found.
 	 */
-	private Product getProductByInternalId(List<Product> products, String internalId) {
+	private Product filter(List<Product> products, String internalId) {
 		for (Product product : products) {
 			if (product.getInternalId() != null && product.getInternalId().equals(internalId)) {
 				return product;
@@ -417,36 +378,175 @@ public class Crawler implements Runnable {
 	 * @param product the crawled product
 	 * @return The resultant product from the analysis
 	 */
-	private Product activeVoid(Product product) {
-
-		/*
-		 * There are two cases in which we return the original product.
-		 * The first case is if it's not void.
-		 * The second is if it is void, and there is a previous processed product 
-		 * with the same internalId that was also void.
-		 */
-		if (!product.isVoid()) return product;
-
+	private Product activeVoid(Product product) throws Exception {
+		
+		// fetch the previous processed product
+		// if a processed already exists and is void, then
+		// we won't perform new attempts to extract the current product
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 		if (previousProcessedProduct != null) {
-			if (previousProcessedProduct.getVoid()) return product;
+			if (previousProcessedProduct.getVoid()) {
+				return product;
+			}
 		}
-
+		
 		Logging.printLogDebug(logger, session, "Starting active void attempts...");
-
+		
+		// starting the active void iterations
+		// until a maximum number of attempts, we will rerun the extract
+		// method and check if the newly extracted product is void
+		// in case it isn't, the loop interrupts and returns the product
+		// when attempts reach it's maximum, we interrupt the loop and return the last extracted
+		// product, even if it's void
 		Product currentProduct = product;
 		while (true) {
-			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
 			session.incrementVoidAttemptsCounter();
 
 			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
 			List<Product> products = extract();
 			Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
-			currentProduct = getProductByInternalId(products, session.getInternalId());
+			currentProduct = filter(products, session.getInternalId());
+			
+			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
+		}
+		
+		// if we ended with a void product after all the attempts
+		// we must set void status of the existent processed product to true
+		if (currentProduct.isVoid()) {
+			Logging.printLogDebug(logger, session, "Product is void.");
+
+			// set previous processed as void
+			if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+				Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
+				Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
+			}
+		}
+		
+		return currentProduct;
+
+	}
+
+	/**
+	 * Run the 'truco' attempts.
+	 * Before entering in this method, the two parameters newProcessed and previousProcessed where compared.
+	 *  
+	 * @param newProcessed the initial processed model, from which we will start the iteration
+	 * @param previousProcessed the processed model that already exists in database
+	 */
+	private void truco(ProcessedModel newProcessed, ProcessedModel previousProcessed) throws Exception {
+		ProcessedModel currentTruco = newProcessed;
+		ProcessedModel next;
+
+		while (true) {
+			session.incrementTrucoAttemptsCounter();
+
+			List<Product> products = extract();
+
+			/*
+			 * when we are processing all the the products in array (mode discovery)
+			 * we will select only the product being 'trucado'
+			 */
+			Product localProduct = filter(products, currentTruco.getInternalId());
+
+			// proceed the iteration only if the product is not void
+			if (localProduct != null && !localProduct.isVoid()) {
+				Persistence.persistProduct(localProduct, session);
+
+				next = Processor.createProcessed(localProduct, session, previousProcessed, Main.processorResultManager);
+
+				if (next != null) {					
+					if ( compare(next, currentTruco) ) {
+						currentTruco = next;	
+					} 
+
+					// we found two consecutive equals processed products, persist and end 
+					else {
+						Long id = Persistence.persistProcessedProduct(next, session);
+						if (id != null) {
+							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+							Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+						}
+
+						// upload screenshot to Amazon
+						//saveScreenshot();
+						
+						// upload html to Amazon
+						//saveHtml();
+
+						return;
+					}
+				}
+			}
+
+			if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
+				Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
+
+				// register business logic error on session
+				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
+				session.registerError(error);
+
+				// if we end up with a void at end of truco, we must change the status of the processed to void
+				//					if (localProduct.isVoid()) {
+				//						if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+				//							Logging.printLogDebug(logger, session, "Seting previous processed void to true");
+				//							Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
+				//						}
+				//					}
+
+				break;
+			}
 
 		}
+	}
 
-		return currentProduct;
+	/**
+	 * Performs all finalization routines freeing
+	 * any necessary elements
+	 */
+	private void terminate() {
+
+		// if the crawler used the webdriver at some point, it must be closed
+		if (webdriver != null) {
+			Logging.printLogDebug(logger, session, "Closing webdriver...");
+			webdriver.closeDriver();
+		}
+	}
+
+	/**
+	 * Save page screenshot on Amazon, using webdriver
+	 */
+	private void saveScreenshot() {
+		
+		// create webdriver
+		if (webdriver == null) {
+			Logging.printLogDebug(logger, session, "Initializing webdriver");
+			webdriver = new CrawlerWebdriver();
+		}
+
+		// get a screenshot from the page
+		File screenshot = webdriver.takeScreenshot(session.getUrl());
+		
+		// upload screenshot to Amazon
+		S3Service.uploadFileToAmazon(session, screenshot);
+
+	}
+	
+	/**
+	 * Save html on Amazon, using webdriver
+	 */
+	private void saveHtml() {
+		
+		// create webdriver
+		if (webdriver == null) {
+			Logging.printLogDebug(logger, session, "Initializing webdriver");
+			webdriver = new CrawlerWebdriver();
+		}
+
+		// the page html
+		String html = webdriver.loadUrl(session.getUrl());
+
+		// upload html and html to Amazon
+		S3Service.uploadHtmlToAmazon(session, html);
 	}
 
 }

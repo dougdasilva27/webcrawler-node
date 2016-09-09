@@ -11,12 +11,15 @@ import br.com.lett.crawlernode.kernel.fetcher.LettProxy;
 import br.com.lett.crawlernode.kernel.models.Market;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.server.RequestMessageResult;
+import br.com.lett.crawlernode.server.SQSRequestResult;
 
 public class CrawlerSession {
 
-	public static final String DISCOVERY_TYPE = "standalone";
+	public static final String DISCOVERY_TYPE = "discovery";
+	public static final String SEED_TYPE = "seed";
 	public static final String INSIGHTS_TYPE = "insights";
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
@@ -73,8 +76,14 @@ public class CrawlerSession {
 	 * Default constructor to be used when running in production.
 	 * @param message with informations to create a new crawler session
 	 */
-	public CrawlerSession(Message message, String queueName) {
+	public CrawlerSession(Message message) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+
+		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			this.queueName = QueueHandler.DEVELOPMENT;
+		} else {
+			this.queueName = QueueHandler.INSIGHTS;
+		}
 
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
@@ -91,8 +100,74 @@ public class CrawlerSession {
 		// setting session id
 		this.sessionId = message.getMessageId();
 
+		// setting message receipt handle
+		this.setMessageReceiptHandle(message.getReceiptHandle());
+
+		// setting Market
+		this.market = new Market(message);
+
+		// setting URL and originalURL
+		this.url = message.getBody();
+		this.originalURL = message.getBody();
+
+		// setting processed id
+		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		}
+
+		// setting internal id
+		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		}
+
+		// type
+		if (this.internalId != null && this.processedId != null) {
+			this.type = INSIGHTS_TYPE;
+		} else {
+			this.type = DISCOVERY_TYPE;
+		}
+
+		//		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+		//
+		//			// setting internal id
+		//			if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+		//				this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		//			}
+		//
+		//			// setting processed id
+		//			if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+		//				this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		//			}
+		//
+		//			// setting session type
+		//			this.type = INSIGHTS_TYPE;
+		//		} 
+		//		else {
+		//			this.type = DISCOVERY_TYPE;
+		//		}
+
+	}
+
+	public CrawlerSession(Message message, String queueName) {
+		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+		
 		// setting queue name
 		this.queueName = queueName;
+
+		// initialize counters
+		this.trucoAttemptsCounter = 0;
+		this.voidAttemptsCounter = 0;
+
+		// creating the urlRequests map
+		this.urlRequests = new HashMap<String, Integer>();
+
+		this.lastURLRequest = new HashMap<String, LettProxy>();
+
+		// creating the errors list
+		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+
+		// setting session id
+		this.sessionId = message.getMessageId();
 
 		// setting message receipt handle
 		this.setMessageReceiptHandle(message.getReceiptHandle());
@@ -103,31 +178,40 @@ public class CrawlerSession {
 		// setting URL and originalURL
 		this.url = message.getBody();
 		this.originalURL = message.getBody();
-		
-		// identifiying the task type
-		// it can be achieved both by looking for the fields, or more easily for the
-		// queue name
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR) && attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 
-			// setting internal id
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-
-
-			// setting processed id
+		// setting processed id
+		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		}
 
+		// setting internal id
+		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		}
 
-			// setting session type
+		// type
+		if (queueName.equals(QueueHandler.INSIGHTS)) {
 			this.type = INSIGHTS_TYPE;
-			
-		} 
-		else {
+		}
+		else if (queueName.equals(QueueHandler.SEED)) {
+			this.type = SEED_TYPE;
+		}
+		else if (queueName.equals(QueueHandler.DISCOVER)) {
 			this.type = DISCOVERY_TYPE;
+		}
+		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
+			this.type = INSIGHTS_TYPE; // it's supposed to be the same as insights
 		}
 
 	}
 
 	public CrawlerSession(String url, Market market) {
+
+		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			this.queueName = QueueHandler.DEVELOPMENT;
+		} else {
+			this.queueName = QueueHandler.INSIGHTS;
+		}
 
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
@@ -268,12 +352,6 @@ public class CrawlerSession {
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
-
-		sb.append("[URL, requests]\n");
-
-		for (String url : urlRequests.keySet()) {
-			sb.append("[" + url + ", " + urlRequests.get(url) + "]" + "\n");
-		}
 
 		return sb.toString();
 	}

@@ -60,7 +60,7 @@ public class Main {
 	public static ResultManager 		processorResultManager;
 	public static QueueHandler			queueHandler;
 
-	public static TaskExecutor 			taskExecutor;
+	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
 
 	public static void main(String args[]) {
@@ -96,13 +96,14 @@ public class Main {
 		queueHandler = new QueueHandler();
 
 		// create a task executor
-		Logging.printLogDebug(logger, "Creating task executor with a maximum of " + executionParameters.getNthreads() + " threads...");
-		taskExecutor = new TaskExecutor(executionParameters.getNthreads());
+		Logging.printLogDebug(logger, "Creating task executor...");
+		taskExecutor = new TaskExecutor(executionParameters.getCoreThreads(), executionParameters.getNthreads());
+		Logging.printLogDebug(logger, taskExecutor.toString());
 		
 		// schedule threads to keep fethcing messages
 		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
 		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
-		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 5 );
+		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 1 );
 
 	}
 

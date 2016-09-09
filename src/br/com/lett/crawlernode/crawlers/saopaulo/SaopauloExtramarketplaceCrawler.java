@@ -43,6 +43,20 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 11) In some cases in products with variations, internalId is not the same id to put in url from marketplaces, so is crawl anothers ids in main page.
  * 
+ * 12)Em casos de produtos com variação de voltagem, os ids que aparecem no seletor de internalIDs não são os mesmos 
+ *	para acessar a página de marketplace. Em alguns casos esses ids de página de marketplace aparacem 
+ *	na url e no id do produto (Cod item ID). Nesses casos eu pego esses dois ids e acesso a página de marketplace de cada um, 
+ *	e nessa página pego o nome do produto e o document dela e coloco em um mapa. Quando entro na variação eu pego esse mapa
+ *	e proucuro o document com o nome do produto. 
+ *	
+ * 13)Quando os ids da url e o (Cod Item ID) são iguais, pego os mesmos marketplaces para as variações, vale lembrar que esse 
+ *	market a página de marketplace é a mesma para as variações.
+ *	
+ * 14)Quando as variações não são de voltagem, os ids para entrar na página de marketplace aparaecem no seletor 
+ *	de internalID das variações, logo entro diretamente nas páginas de marketplaces de cada um normalmente.
+ *	
+ * 15)Para produtos sem variações, apenas troco o final da url de “.html” para “/lista-de-lojistas.html”.
+ * 
  * Examples:
  * ex1 (available): http://www.extra.com.br/Eletronicos/Televisores/SmartTV/Smart-TV-LED-39-HD-Philco-PH39U21DSGW-com-Conversor-Digital-MidiaCast-PVR-Wi-Fi-Entradas-HDMI-e-Endrada-USB-7323247.html
  * ex2 (unavailable): http://www.extra.com.br/Eletroportateis/Cafeteiras/CafeteirasEletricas/Cafeteira-Eletrica-Philco-PH16-Vermelho-Aco-Escovado-4451511.html
@@ -56,17 +70,17 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloExtramarketplaceCrawler extends Crawler {
 
-	private final String MAIN_SELLER_NAME_LOWER = "extra";
-	private final String HOME_PAGE = "http://www.extra.com.br/";
-	
 	public SaopauloExtramarketplaceCrawler(CrawlerSession session) {
 		super(session);
 	}
 
+	private final String MAIN_SELLER_NAME_LOWER = "extra";
+	private final String HOME_PAGE = "http://www.extra.com.br/";
+
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		String href = session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
 	}
 
 	@Override
@@ -75,17 +89,20 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if( isProductPage(doc, session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
-			
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl()); 
+
 			// Pegando url padrão no doc da página, para lidar com casos onde tem url em formato diferente no banco
-			session.setUrl(makeUrlFinal(session.getUrl()));
+			String modifiedURL = makeUrlFinal(session.getUrl());
 			
 			// Variations
 			boolean hasVariations = hasProductVariations(doc);
 			
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
-			
+
+			// Check if all products in page are unnavailable
+			boolean unnavailableForAll = this.checkUnnavaiabilityForAll(doc);
+
 			// Name
 			String name = this.crawlMainPageName(doc);
 
@@ -94,12 +111,12 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
-			
+
 			// Primary image
 			String primaryImage = this.crawlPrimaryImage(doc);
 
 			// Secondary images
-			String secondaryImages = this.crawlSecondaryImages(doc);
+			String secondaryImages = this.crawlSecondaryImages(doc, unnavailableForAll);
 
 			// Description
 			String description = this.crawlDescription(doc);
@@ -110,18 +127,16 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			/* **************************************
 			 * crawling data of multiple variations *
 			 ****************************************/
-			if( hasVariations ) {
+			if( hasVariations && !unnavailableForAll) {
 
-				Logging.printLogDebug(logger, session, "Crawling information of more than one product...");
-				
 				Elements productVariationElements = this.crawlSkuOptions(doc);
-				
+
 				// Array de ids para url para pegar marketplace
-				List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(session.getUrl(), doc, productVariationElements);
+				List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(modifiedURL, doc, productVariationElements);
 
 				// Pegando os documents das páginas de marketPlace para produtos especiais
-				Map<String, Document> documentsMarketPlaces = this.fetchDocumentMarketPlacesToProductSpecial(idsForUrlMarketPlace, session.getUrl());
-				
+				Map<String, Document> documentsMarketPlaces = this.fetchDocumentMarketPlacesToProductSpecial(idsForUrlMarketPlace, modifiedURL);
+
 				for(int i = 0; i < productVariationElements.size(); i++) {
 
 					Element sku = productVariationElements.get(i);
@@ -133,7 +148,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					String variationName = makeVariationName(name, sku).trim();
 
 					// Marketplace map
-					Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(session.getUrl(), sku, documentsMarketPlaces, variationName);
+					Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(modifiedURL, sku, documentsMarketPlaces, variationName);
 
 					// Assemble marketplace from marketplace map
 					JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
@@ -174,9 +189,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 				// InternalId
 				String internalID = this.crawlInternalIDSingleProduct(doc);
-				
+
 				// Marketplace map
-				Map<String, Float> marketplaceMap = this.crawlMarketplacesForSingleProduct(doc, session.getUrl());
+				Map<String, Float> marketplaceMap = this.crawlMarketplacesForSingleProduct(doc, modifiedURL, unnavailableForAll);
 
 				// Assemble marketplace from marketplace map
 				JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
@@ -208,9 +223,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
 
@@ -240,7 +255,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			if(skuChooser.size() == 2){
 				String prodOne = skuChooser.get(0).text();
 				String prodTwo = skuChooser.get(1).text();
-				
+
 				if(prodOne.equals(prodTwo)){
 					return false;
 				}
@@ -255,22 +270,22 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
 		Elements elementInternalId = document.select("script[type=text/javascript]");
-		
+
 		String idenfyId = "idProduct";
-		
+
 		for(Element e : elementInternalId){
 			String script = e.outerHtml();
-			
+
 			if(script.contains(idenfyId)){
 				script = script.replaceAll("\"", "");
-	
+
 				int x = script.indexOf(idenfyId);
 				int y = script.indexOf(",", x + idenfyId.length());
-				
+
 				internalPid = script.substring(x + idenfyId.length(), y).replaceAll("[^0-9]", "").trim();
 			}
 		}
-		
+
 
 		return internalPid;
 	}
@@ -291,20 +306,22 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		return internalIDMainPage;
 	}
 
-	private Map<String, Float> crawlMarketplacesForSingleProduct(Document doc, String url) {
+	private Map<String, Float> crawlMarketplacesForSingleProduct(Document doc, String url, boolean unnavailableForAll) {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 
-		Document docMarketplaceInfo = fetchDocumentMarketPlace(null, url);
+		if(!unnavailableForAll){
+			Document docMarketplaceInfo = fetchDocumentMarketPlace(null, url);
 
-		Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
+			Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
 
-		for(Element linePartner: lines) {
+			for(Element linePartner: lines) {
 
-			String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-			Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+				String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
+				Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
 
-			marketplace.put(partnerName, partnerPrice);
-			
+				marketplace.put(partnerName, partnerPrice);
+
+			}
 		}
 
 		return marketplace;
@@ -316,12 +333,12 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 	private Map<String, Document> fetchDocumentMarketPlacesToProductSpecial(List<String> idsForUrlMarketPlace, String url){
 		Map<String, Document> documentsMarketPlaces = new HashMap<>();
-		
+
 		if(idsForUrlMarketPlace != null){
 			Document docMarketPlaceProdOne = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(0), url);
 			String[] namev = docMarketPlaceProdOne.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
 			documentsMarketPlaces.put(namev[namev.length-1].trim(),docMarketPlaceProdOne);
-			
+
 			if(idsForUrlMarketPlace.size() == 2){
 				Document docMarketPlaceProdTwo = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(1), url);
 				String[] namev2 = docMarketPlaceProdTwo.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
@@ -330,56 +347,57 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				documentsMarketPlaces.put(namev[namev.length-1].trim(), docMarketPlaceProdOne);
 			}
 		}
-		
+
 		return documentsMarketPlaces;
 	}
-	
+
 	private List<String> identifyIDForUrlLojistas(String url, Document doc, Elements skuOptions){
 		List<String> ids = new ArrayList<>();
-		
+
 		// first ID
 		String[] tokens = url.split("-");
 		String firstIdMainPage = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
-		
+
 		// second ID
 		String secondIdMainPage = doc.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first().attr("value").trim();
-		
+
 		ids.add(firstIdMainPage);
-		
+
 		// se os ids forem iguais, não há necessidade de enviar os 2
 		if(!firstIdMainPage.equals(secondIdMainPage)){
 			ids.add(secondIdMainPage);
 		}
-	
+
 		// Ids variations
 		boolean correctId = false;
 		for(Element e : skuOptions){
 			String id = e.attr("value").trim();
-			
+
 			if(id.equals(firstIdMainPage) || id.equals(secondIdMainPage)){
 				correctId = true;
 				break;
 			} 
 		}
-		
+
 		// se os ids estiverem corretos, não há necessidade de retornar nada
 		if(correctId) return null;		
-		
+
 		return ids;
 	}
-	
+
 	private Document fetchDocumentMarketPlace(String id, String url){
 		Document doc = new Document(url);
-		
+
 		if(id != null){
 			String[] tokens = url.split("-");
 			String urlMarketPlace = url.replace(tokens[tokens.length-1], id + "/lista-de-lojistas.html");
+
 			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null, null);
 		} else {
 			String urlMarketPlace = url.replace(".html", "/lista-de-lojistas.html"); 
 			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null, null);
 		}
-		
+
 		return doc;
 	}
 
@@ -393,23 +411,35 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 
 		if(!sku.text().contains("Esgotado")){
-			Document docMarketplaceInfo;
+			Document docMarketplaceInfo = new Document(url);
 			if(documentsMarketPlaces.size() > 0){
-				String[] nameV = name.split("-");
-				docMarketplaceInfo = documentsMarketPlaces.get(nameV[nameV.length-1].trim());
+				
+				if(documentsMarketPlaces.size() == 1){
+					for(String key : documentsMarketPlaces.keySet()){
+						docMarketplaceInfo = documentsMarketPlaces.get(key);
+					}
+				} else {
+					String[] tokens = name.split("-");
+					String nameV = tokens[tokens.length-1].trim();
+					
+					if(documentsMarketPlaces.containsKey(nameV)){
+						docMarketplaceInfo = documentsMarketPlaces.get(nameV);
+					}
+				}
+				
 			} else {
 				docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
 			}
-			
+
 			Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
-	
+
 			for(Element linePartner: lines) {
-	
+
 				String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
 				Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-	
+
 				marketplace.put(partnerName, partnerPrice);
-				
+
 			}
 		}
 
@@ -419,20 +449,25 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 	private String makeVariationName(String name, Element sku){
 		String nameV = name;
-		
+
 		String[] tokens = sku.text().split("\\|");
 		String variation = tokens[0].trim();
-		
+
 		if(!variation.isEmpty()){
 			nameV += " - " + variation;
 		}
-		
+
 		return nameV;
 	}
-	
+
 	/*******************
 	 * General methods *
 	 *******************/
+
+	private boolean checkUnnavaiabilityForAll(Document doc){
+
+		return (doc.select(".alertaIndisponivel").first() != null);
+	}
 
 	private Float crawlPrice(Map<String, Float> marketplaces) {
 		Float price = null;
@@ -462,43 +497,47 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 		String primaryImage = null;
 
-		Element primaryImageElements = document.select("#divFullImage a").first();
+		Element primaryImageElement = document.select(".carouselBox .thumbsImg li a").first();
 
-		if(primaryImageElements.attr("href").isEmpty() && primaryImageElements.attr("href").startsWith("http")){
-			primaryImage = primaryImageElements.attr("href");
+		if(primaryImageElement != null){
+			if(!primaryImageElement.attr("rev").isEmpty() && primaryImageElement.attr("rev").startsWith("http")){
+				primaryImage = primaryImageElement.attr("rev");
+			} else {
+				primaryImage = primaryImageElement.attr("href");
+			}
 		} else {
-			Element e = primaryImageElements.select("img").first();
+			primaryImageElement = document.select("#divFullImage a img").first();
 			
-			if(e != null){
-				primaryImage = e.attr("src");
+			if(primaryImageElement != null){
+				primaryImage = primaryImageElement.attr("src");
 			}
 		}
 
 
 		return primaryImage;
 	}
-	
-	private String crawlSecondaryImages(Document document) {
+
+	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
 		String secondaryImages = null;
 
 		JSONArray secondaryImagesArray = new JSONArray();
-		Elements elementFotoSecundaria = document.select(".thumbsImg li a");
 
-		if (elementFotoSecundaria.size()>1) {
-			for(int i = 1; i < elementFotoSecundaria.size(); i++) { //starts with index 1 because de primary image is the first image
-				Element e = elementFotoSecundaria.get(i);
 
-				if(e.attr("href").isEmpty() && e.attr("href").startsWith("http")){
-					secondaryImagesArray.put(e.attr("value"));
-				} else {
-					Element x = e.select("img").first();
-					
-					if(x != null){
-						secondaryImagesArray.put(x.attr("src"));
+		if(!unnavailableForAll){
+			Elements elementFotoSecundaria = document.select(".carouselBox .thumbsImg li a");
+
+			if (elementFotoSecundaria.size()>1) {
+				for(int i = 1; i < elementFotoSecundaria.size(); i++) { //starts with index 1 because de primary image is the first image
+					Element e = elementFotoSecundaria.get(i);
+
+					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
+						secondaryImagesArray.put(e.attr("rev"));
+					} else {
+						secondaryImagesArray.put(e.attr("href"));
 					}
 				}
-			}
 
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -511,7 +550,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 	private String crawlMainPageName(Document document) {
 		String name = null;
 		Elements elementName = document.select(".produtoNome h1 b");
-		
+
 		if(elementName.size() > 0) {
 			name = elementName.text().replace("'","").replace("’","").trim();
 		}
@@ -565,15 +604,16 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 		return description;
 	}
-	
+
 	private String makeUrlFinal(String url){
 		String urlFinal = url;
-		
+
 		if(url.contains("?")){
 			int x = url.indexOf("?");
+
 			urlFinal = url.substring(0, x);
 		}
-		
+
 		return urlFinal;
 	}
 

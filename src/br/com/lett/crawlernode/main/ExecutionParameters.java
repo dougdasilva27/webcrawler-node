@@ -20,7 +20,7 @@ public class ExecutionParameters {
 
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
-	public static final String DEFAULT_CRAWLER_VERSION = "0";
+	public static final String DEFAULT_CRAWLER_VERSION = "-1";
 	
 	/**
 	 * Crawler will get messages from the tracked skus queue
@@ -41,6 +41,8 @@ public class ExecutionParameters {
 	 * The maximum number of threads that can be used by the crawler
 	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
+	
+	private static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
 
 	private Options options;
 	private String environment;
@@ -54,6 +56,8 @@ public class ExecutionParameters {
 	 * Value is passed by an environment variable
 	 */
 	private int nthreads;
+	
+	private int coreThreads;
 
 	public ExecutionParameters(String[] args) {
 		this.args = args;
@@ -67,6 +71,8 @@ public class ExecutionParameters {
 		
 		// get the number of threads on environment variable
 		this.nthreads = getEnvNumOfThreads();
+		
+		this.coreThreads = getEnvCoreThreads();
 
 		Logging.printLogDebug(logger, this.toString());
 	}
@@ -142,6 +148,7 @@ public class ExecutionParameters {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		
 		sb.append("\n");
 		sb.append("Debug: " + this.debug + "\n");
 		sb.append("Environment: " + this.environment + "\n");
@@ -160,6 +167,16 @@ public class ExecutionParameters {
 		String nThreads = System.getenv(ENV_NTHREADS);
 		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
 		return Integer.parseInt(nThreads);
+	}
+	
+	private int getEnvCoreThreads() {
+		String coreThreads = System.getenv(ENV_CORE_THREADS);
+		if (coreThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
+		return Integer.parseInt(coreThreads);
+	}
+	
+	public int getCoreThreads() {
+		return this.coreThreads;
 	}
 
 	public int getNthreads() {

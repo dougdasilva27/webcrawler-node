@@ -15,12 +15,12 @@ import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
-
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 	public RiodejaneiroDrogariavenancioCrawler(CrawlerSession session) {
 		super(session);
 	}
+
 
 	@Override
 	public boolean shouldVisit() {
@@ -34,7 +34,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if (isProductPage(session.getUrl())) {
+		if( session.getUrl().contains("/produto/") ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			Element variationElement = doc.select(".variacao").first();
@@ -96,9 +96,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			Element elementDescriptionTab2 = doc.select("#miolo .abas div .aba2").first();
 			if(elementDescriptionTab1 != null) description = description + elementDescriptionTab1.text();
 			if(elementDescriptionTab2 != null) description = description + elementDescriptionTab2.text();
-
-			// Filtragem
-			boolean mustInsert = true;
 
 			// Marketplace
 			JSONArray marketplace = null;
@@ -256,8 +253,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					products.add(product);
 				}
 
-
-
 			}
 
 		} else {
@@ -265,10 +260,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		}
 
 		return products;
-	}
-	
-	private boolean isProductPage(String url) {
-		return url.contains("/produto/");
 	}
 
 	private String assembleUrlParameters(String idProduto, String variacaoCombinacao) {

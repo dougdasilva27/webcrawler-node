@@ -75,7 +75,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			String internalPid = crawlInternalPid(doc);
 			
 			// Name
-			String name = crawlName(doc);
+			String name = this.crawlName(doc);
 			
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
@@ -101,9 +101,8 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			// sku data in json
 			ArrayList<String> skuOptions = this.crawlSkuOptions(doc);		
 			
-			if(skuOptions.size() > 0) {
-				for(String internalId : skuOptions) {
-					
+			if(skuOptions.size() > 0){
+				for(String internalId : skuOptions){				
 					// Name
 					String nameVariations = (name + " " + crawlNameVariation(doc, internalId)).trim();
 					
@@ -175,9 +174,9 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			}
 			
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
 
@@ -287,12 +286,12 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		String urlMarketplaceInfo = "http://www.submarino.com.br/parceiros/"+ internalPid +"/?codItemFusion="+ internalId;
 		Document docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketplaceInfo, null, null);
 		
-		/*int attempt = 1;
-		
-		while(response.equals("403") && attempt < 2){
-			attempt++;
-			response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlMarketplaceInfo, null, null).trim();
-		}*/
+//		int attempt = 1;
+//		
+//		while(response.equals("403") && attempt < 2){
+//			attempt++;
+//			response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlMarketplaceInfo, null, null).trim();
+//		}
 
 		return docMarketplace;
 	}
