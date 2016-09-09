@@ -33,7 +33,9 @@ public class DatabaseCredentialsSetter {
 		// Creating a data cipher
 		DataCipher dataCipher = new DataCipher();
 
-		if ( Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) { 
+		// always check if execution parameters is null
+		// because we could be running a test case from Test class
+		if ( Main.executionParameters != null && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) { 
 			key = dataCipher.fetchRemoteKey("https://s3.amazonaws.com/security-lett/lett");
 		}
 

@@ -13,7 +13,9 @@ import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.fetcher.Proxies;
 import br.com.lett.crawlernode.kernel.models.Market;
+import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.kernel.task.TaskExecutor;
+import br.com.lett.crawlernode.kernel.task.TaskFactory;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 
@@ -63,7 +65,7 @@ public class Test {
 		dbManager.connect();
 
 		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
+		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
 		proxies = new Proxies();
@@ -79,8 +81,12 @@ public class Test {
 		
 		// fetch market information
 		Market market = fetchMarket();
-
-
+		
+		CrawlerSession session = new CrawlerSession("http://www.submarino.com.br/produto/121627150/barra-de-chocolate-diplomata-ao-leite-com-crocante-nestle-140g", market);
+		Runnable task = TaskFactory.createTask(session);
+		taskExecutor.executeTask(task);
+		
+		taskExecutor.shutDown();
 	}
 	
 	private static Market fetchMarket() {

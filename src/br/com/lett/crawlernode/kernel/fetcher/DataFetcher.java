@@ -54,6 +54,7 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.kernel.parser.Parser;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -904,34 +905,7 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Main.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
-				}
-			} 
-			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxies.size() > 0) {
-					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.SHADER)) { // shader
-				if (Main.proxies.shaderProxies.size() > 0) {
-					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Main.proxies.storm.size() > 0) {
-					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
-				}
-			}
+			nextProxy = getNextProxy(serviceName, session);
 		}
 
 		// request using no proxy
@@ -954,34 +928,7 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, proxyServices);
 
 		if (serviceName != null) {
-			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Main.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
-				}
-			} 
-			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxies.size() > 0) {
-					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.SHADER)) { // shader
-				if (Main.proxies.shaderProxies.size() > 0) {
-					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Main.proxies.storm.size() > 0) {
-					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
-				}
-			}
+			nextProxy = getNextProxy(serviceName, session);
 		}
 
 		// request using no proxy
@@ -1005,6 +952,82 @@ public class DataFetcher {
 		}
 
 		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
+	}
+	
+	/**
+	 * 
+	 * @param serviceName
+	 * @param session
+	 * @return
+	 */
+	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
+		LettProxy nextProxy = null;
+		
+		// when not testing
+		if (Main.proxies != null) {
+			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
+				if (Main.proxies.bonanzaProxies.size() > 0) {
+					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+				}
+			} 
+			else if (serviceName.equals(Proxies.BUY)) { // buy
+				if (Main.proxies.buyProxies.size() > 0) {
+					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.SHADER)) { // shader
+				if (Main.proxies.shaderProxies.size() > 0) {
+					nextProxy = Main.proxies.shaderProxies.get(CommonMethods.randInt(0, Main.proxies.shaderProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.STORM)) { // storm
+				if (Main.proxies.storm.size() > 0) {
+					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
+				}
+			}
+		}
+		
+		// when testing
+		else {
+			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
+				if (Test.proxies.bonanzaProxies.size() > 0) {
+					nextProxy = Test.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Test.proxies.bonanzaProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
+				}
+			} 
+			else if (serviceName.equals(Proxies.BUY)) { // buy
+				if (Test.proxies.buyProxies.size() > 0) {
+					nextProxy = Test.proxies.buyProxies.get(CommonMethods.randInt(0, Test.proxies.buyProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.SHADER)) { // shader
+				if (Test.proxies.shaderProxies.size() > 0) {
+					nextProxy = Test.proxies.shaderProxies.get(CommonMethods.randInt(0, Test.proxies.shaderProxies.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.SHADER + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.STORM)) { // storm
+				if (Test.proxies.storm.size() > 0) {
+					nextProxy = Test.proxies.storm.get(CommonMethods.randInt(0, Test.proxies.storm.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
+				}
+			}
+		}
+
+		return nextProxy;
 	}
 
 	/**

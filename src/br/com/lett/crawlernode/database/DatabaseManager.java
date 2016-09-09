@@ -83,7 +83,7 @@ public class DatabaseManager {
 			/* ************************
 			 * Production environment *
 			 **************************/
-			if ( Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
+			if ( Main.executionParameters != null && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
 				this.setMongoPanel();
 				this.setMongoInsights();
 				this.setMongoImages();
@@ -108,7 +108,7 @@ public class DatabaseManager {
 	}
 
 	/**
-	 * Connect to databases when running crawler logic tests.
+	 * Connect to databases when running crawler tests.
 	 */
 	public void connectTest() {		
 		Logging.printLogDebug(logger, "Starting connection with databases...");

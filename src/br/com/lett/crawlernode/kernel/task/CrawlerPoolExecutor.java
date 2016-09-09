@@ -107,12 +107,12 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		if (t != null) {
 			Logging.printLogError(logger, task.session, "Task failed [" + task.session.getUrl() + "]");
 			Logging.printLogError(logger, task.session, CommonMethods.getStackTrace(t));
-			
+
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, task.session, Main.dbManager.mongoBackendPanel);
 		} 
-		
+
 		else {
-			
+
 			// errors collected manually
 			// they can be exceptions or business logic errors
 			// and are all gathered inside the session
@@ -125,17 +125,18 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 						Logging.printLogError(logger, task.session, error.getErrorContent());
 					}
 				}
-				
+
 				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, task.session, Main.dbManager.mongoBackendPanel);
 
 			}
-			
+
 			// only remove the task from queue if it was flawless
-			else {
+			// and if we are not testing, because when testing there is no message processing
+			else if (!task.session.getType().equals(CrawlerSession.TEST_TYPE)) {
 				Logging.printLogDebug(logger, task.session, "Task completed.");
 				Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
 				QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());
-				
+
 				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, task.session, Main.dbManager.mongoBackendPanel);
 			}
 		}

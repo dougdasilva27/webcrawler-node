@@ -206,11 +206,11 @@ public class CrawlerSession {
 
 	public CrawlerSession(String url, Market market) {
 
-		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+		/*if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
 			this.queueName = QueueHandler.DEVELOPMENT;
 		} else {
 			this.queueName = QueueHandler.INSIGHTS;
-		}
+		}*/
 
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
@@ -226,6 +226,8 @@ public class CrawlerSession {
 
 		// setting session id
 		this.sessionId = "test";
+		
+		this.type = TEST_TYPE;
 
 		// setting Market
 		this.market = market;

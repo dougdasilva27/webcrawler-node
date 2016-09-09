@@ -16,7 +16,7 @@ public class TaskExecutor {
 	public static final int DEFAULT_MAX_NTHREADS = 210;
 	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
 	
-	public int maxTasks = Main.executionParameters.getCoreThreads();
+	public int maxTasks;
 
 	private CrawlerPoolExecutor crawlerPoolExecutor;
 	
@@ -31,6 +31,7 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
+		maxTasks = Main.executionParameters.getCoreThreads();
 	}
 	
 	/**
@@ -49,6 +50,7 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
+		maxTasks = Main.executionParameters.getCoreThreads();
 	}
 	
 	/**
@@ -69,6 +71,7 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
+		maxTasks = coreThreads;
 	}
 	
 	public TaskExecutor(int coreThreads, int maxThreads, int bloquingQueueSize) {
@@ -82,6 +85,7 @@ public class TaskExecutor {
 				);
 		
 		crawlerPoolExecutor.prestartAllCoreThreads();
+		maxTasks = coreThreads;
 	}
 	
 	public int getMaximumNumberOfTasks() {
