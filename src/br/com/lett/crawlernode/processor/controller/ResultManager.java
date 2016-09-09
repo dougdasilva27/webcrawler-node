@@ -1,12 +1,6 @@
 package br.com.lett.crawlernode.processor.controller;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,8 +27,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import au.com.bytecode.opencsv.CSVReader;
-
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
@@ -46,6 +38,7 @@ import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngelo
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.processor.base.Extractor;
@@ -56,6 +49,7 @@ import com.mongodb.client.MongoDatabase;
 /**
  * Classe responsável por processar produtos da tabela crawler a fim de transformá-los em
  * produtos legíves para serem encaminhados para a tabela processed
+ * 
  * @author Doug
  */
 public class ResultManager {
@@ -91,6 +85,7 @@ public class ResultManager {
 
 	/**
 	 * Construtor do ResultManager chamado pelo Crawler
+	 * 
 	 * @category Construtor
 	 * @author fabricio
 	 * @param activateLogging - Define a ativação ou não dos logs
@@ -109,6 +104,7 @@ public class ResultManager {
 
 	/**
 	 * Construtora responsável pela inicialização dos mapas de identificação e substituição
+	 * 
 	 * @param activateLogging display log messages
 	 */
 	public ResultManager(boolean activateLogging) throws NullPointerException {
@@ -117,6 +113,7 @@ public class ResultManager {
 
 	/**
 	 * Função responsável pela inicialização do ResultManager
+	 * 
 	 * @author fabricio
 	 */
 	private void initialize(boolean activateLogging) throws NullPointerException {
@@ -128,7 +125,6 @@ public class ResultManager {
 		this.logActivated = activateLogging;
 
 		// Cria as informaçẽos do supermercado
-
 		this.createMarketInfo();
 
 		// Inicializa os mapas de substituição
@@ -143,6 +139,7 @@ public class ResultManager {
 
 		// Cria Modelo de manipulação de Marcas para substituição e identificação
 		try {
+			
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Information.queryForLettBrandProducts);
 
@@ -168,23 +165,25 @@ public class ResultManager {
 						aux = new BrandModel(rs.getString("denomination"), rs.getString("lett_supplier"));
 						aux.putOnList(rs.getString("mistake"));
 						brandModelList.add(aux);
-					} 
+					}
+					
 					// Caso já exista uma incidência, apenas adiciona o erro no mapa
 					else {
 						aux.putOnList(rs.getString("mistake"));
 					}
 				}
 			}
-			// Encerra o ResultSet
+			
+			// close the result set
 			rs.close();
 
-			// Trata exceções do ResultSet
-		}	catch (Exception e) {
+		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
 		// Completa marcas ou corrige marcas através da lista de marcas	
 		for(BrandModel bm : brandModelList) {
+			
 			// Automação 1: marcas sem espaço
 			// Exemplo: Marca de nome: jack daniels
 			//          Nós adicionaremos automáticamente com brandsReplaceMap e suas combinações: 
@@ -231,6 +230,7 @@ public class ResultManager {
 
 		// Cria Modelo de manipulação da classes para torná-las LettClasses
 		try{
+			
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Information.queryForLettClassProducts);
 
@@ -403,8 +403,8 @@ public class ResultManager {
 				pm.getLettId() + 
 				"/1-original.jpg";
 
-		String desiredPrimaryMd5 = Information.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
-		String primaryMd5 = Information.fetchMd5FromAmazon(session, primaryImageAmazonKey);
+		String desiredPrimaryMd5 = S3Service.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
+		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey);
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -424,13 +424,13 @@ public class ResultManager {
 			// Imagem mudou
 			else {
 
-				File primaryImage = Information.fetchImageFromAmazon(session, primaryImageAmazonKey);
+				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
 				// Capturando as dimensões da nova imagem primária
 				pic_primary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
 
 				// Capturando similaridade da nova imagem primária usando o NaiveSimilarityFinder
-				pic_primary.put("similarity", DigitalContentAnalyser.imageSimilarity(primaryImage, Information.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey)));
+				pic_primary.put("similarity", DigitalContentAnalyser.imageSimilarity(primaryImage, S3Service.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey)));
 
 				// Calculando similaridade da nova imagem primária usando o SIFT
 				JSONObject similaritySiftResult = null;
