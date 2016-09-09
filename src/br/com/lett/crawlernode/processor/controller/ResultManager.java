@@ -34,6 +34,8 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
+import br.com.lett.crawlernode.processor.digitalcontent.DescriptionRules;
+import br.com.lett.crawlernode.processor.digitalcontent.NameRules;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
@@ -487,53 +489,13 @@ public class ResultManager {
 		pm.getDigitalContent().put("pic", pic);
 
 
-		// 2) Avaliando regras de nomeclatura
-		JSONArray name_rules_results = new JSONArray();
-
-		// 		2.1) Lendo regras de nomeclatura definidas no objeto lett
-		JSONArray name_rules_desired = new JSONArray();
-		if(lettDigitalContent.has("name_rules") ) name_rules_desired = lettDigitalContent.getJSONArray("name_rules");
-
-		// 		2.2) Para cada regra, ver se é satisfeita ou não
-
-		for(int i=0; i<name_rules_desired.length(); i++) {
-			JSONObject rule = name_rules_desired.getJSONObject(i);
-
-			JSONObject r = DigitalContentAnalyser.validateRule(pm.getOriginalName(), rule);
-			r.put("name", rule.getString("name"));
-
-			if(rule.has("section") 		&& !rule.isNull("section")) 	r.put("section", rule.getString("section"));
-			if(rule.has("type") 	 	&& !rule.isNull("type")) 		r.put("type", rule.getString("type"));
-			if(rule.has("condition") 	&& !rule.isNull("condition")) 	r.put("condition", rule.getInt("condition"));
-
-			name_rules_results.put(r);
-		}
-
+		// naming rules
+		JSONArray name_rules_results = NameRules.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
 		pm.getDigitalContent().put("name_rules_results", name_rules_results);
 
 
-		// 3) Avaliando regras de descrição
-		JSONArray description_rules_results = new JSONArray();
-
-		// 		3.1) Lendo regras de descrição definidas no objeto lett
-		JSONArray description_rules_desired = new JSONArray();
-		if(lettDigitalContent.has("description_rules") ) description_rules_desired = lettDigitalContent.getJSONArray("description_rules");
-
-		// 		3.2) Para cada regra, ver se é satisfeita ou não
-
-		for(int i=0; i<description_rules_desired.length(); i++) {
-			JSONObject rule = description_rules_desired.getJSONObject(i);
-
-			JSONObject r = DigitalContentAnalyser.validateRule(pm.getOriginalDescription(), rule);
-			r.put("name", rule.getString("name"));
-
-			if(rule.has("section") 		&& !rule.isNull("section")) 	r.put("section", rule.getString("section"));
-			if(rule.has("type") 	 	&& !rule.isNull("type")) 		r.put("type", rule.getString("type"));
-			if(rule.has("condition") 	&& !rule.isNull("condition")) 	r.put("condition", rule.getInt("condition"));
-
-			description_rules_results.put(r);
-		}
-
+		// description rules
+		JSONArray description_rules_results = DescriptionRules.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
 		pm.getDigitalContent().put("description_rules_results", description_rules_results);
 
 
