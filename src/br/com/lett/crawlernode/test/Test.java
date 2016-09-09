@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = new CrawlerSession("http://www.submarino.com.br/produto/121627150/barra-de-chocolate-diplomata-ao-leite-com-crocante-nestle-140g", market);
+		CrawlerSession session = new CrawlerSession("https://www.walmart.com.br/ar-split-lg-art-cool-inverter-8500-btu-quente-e-frio-220v/eletrodomesticos/ar-condicionado/3074492/pr", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		
