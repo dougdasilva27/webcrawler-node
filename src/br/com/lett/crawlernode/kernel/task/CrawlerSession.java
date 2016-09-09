@@ -189,13 +189,13 @@ public class CrawlerSession {
 		}
 
 		// type
-		if (queueName.equals(QueueHandler.INSIGHTS)) {
+		if (queueName.equals(QueueHandler.INSIGHTS) || queueName.equals(QueueHandler.INSIGHTS_DEAD)) {
 			this.type = INSIGHTS_TYPE;
 		}
-		else if (queueName.equals(QueueHandler.SEED)) {
+		else if (queueName.equals(QueueHandler.SEED) || queueName.equals(QueueHandler.SEED_DEAD)) {
 			this.type = SEED_TYPE;
 		}
-		else if (queueName.equals(QueueHandler.DISCOVER)) {
+		else if (queueName.equals(QueueHandler.DISCOVER) || queueName.equals(QueueHandler.DISCOVER_DEAD)) {
 			this.type = DISCOVERY_TYPE;
 		}
 		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
