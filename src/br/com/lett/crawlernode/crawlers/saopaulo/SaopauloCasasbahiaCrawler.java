@@ -162,7 +162,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 					Product product = new Product();
 					product.setSeedId(session.getSeedId());
-					product.setUrl(session.getUrl());
+					product.setUrl(modifiedURL);
 					product.setInternalId(variationInternalID);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
@@ -205,7 +205,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 				Product product = new Product();
 				product.setSeedId(session.getSeedId());
-				product.setUrl(session.getUrl());
+				product.setUrl(modifiedURL);
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);
