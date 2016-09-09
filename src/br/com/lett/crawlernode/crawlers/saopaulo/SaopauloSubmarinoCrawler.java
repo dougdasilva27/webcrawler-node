@@ -149,6 +149,11 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				
 			} else {
 				
+				// nesses casos o crawler não estava pegando o nome corretamente
+				// coloquei esse seletor aqui para consertar na urgência
+				Element unavailableProductName = doc.select("h1.mp-tit-name[itemprop=name]").first();
+				if (unavailableProductName != null) name = unavailableProductName.text().trim();
+				
 				// InternalId
 				String internalId = crawlInternalIdSingleProduct(doc);
 				
