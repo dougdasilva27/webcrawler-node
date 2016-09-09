@@ -321,6 +321,13 @@ public class DataFetcher {
 
 		assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
 
+		// analysing the status code
+		// if there was some response code that indicates forbidden access or server error we want to try again
+		int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+		if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+			throw new ResponseCodeException(responseCode);
+		}
+
 		BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
 		String inputLine;
 		StringBuffer response = new StringBuffer();
@@ -471,6 +478,13 @@ public class DataFetcher {
 			// assembling request information log message
 			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
 
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
@@ -583,6 +597,13 @@ public class DataFetcher {
 
 			// assembling request information log message
 			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+				throw new ResponseCodeException(responseCode);
+			}
 
 			// get all cookie headers
 			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
@@ -713,6 +734,13 @@ public class DataFetcher {
 			// assembling request information log message
 			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
 
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
@@ -820,6 +848,13 @@ public class DataFetcher {
 
 			// assembling request information log message
 			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+				throw new ResponseCodeException(responseCode);
+			}
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
@@ -953,7 +988,7 @@ public class DataFetcher {
 
 		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
 	}
-	
+
 	/**
 	 * 
 	 * @param serviceName
@@ -962,7 +997,7 @@ public class DataFetcher {
 	 */
 	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
 		LettProxy nextProxy = null;
-		
+
 		// when not testing
 		if (Main.proxies != null) {
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
@@ -994,7 +1029,7 @@ public class DataFetcher {
 				}
 			}
 		}
-		
+
 		// when testing
 		else {
 			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
