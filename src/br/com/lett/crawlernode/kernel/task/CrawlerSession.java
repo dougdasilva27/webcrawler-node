@@ -13,14 +13,13 @@ import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.server.RequestMessageResult;
-import br.com.lett.crawlernode.server.SQSRequestResult;
 
 public class CrawlerSession {
 
-	public static final String DISCOVERY_TYPE = "discovery";
-	public static final String SEED_TYPE = "seed";
-	public static final String INSIGHTS_TYPE = "insights";
+	public static final String DISCOVERY_TYPE 	= "discovery";
+	public static final String SEED_TYPE 		= "seed";
+	public static final String INSIGHTS_TYPE 	= "insights";
+	public static final String TEST_TYPE 		= "test";
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	private String sessionId;
