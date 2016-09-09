@@ -25,7 +25,6 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.imgprocessing.ImageComparationResult;
 import br.com.lett.crawlernode.kernel.imgprocessing.ImageComparator;
 import br.com.lett.crawlernode.kernel.imgprocessing.ImageFeatures;
-import br.com.lett.crawlernode.kernel.imgprocessing.NaiveSimilarityFinder;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -261,21 +260,6 @@ public class DigitalContentAnalyser {
 		}
 				
 		return finalResult;
-	}
-	
-	public static Double imageSimilarity(File image, File desiredImage) {
-
-		try {
-			NaiveSimilarityFinder naiveSimilarityFinder = new NaiveSimilarityFinder(desiredImage);
-			double distance = naiveSimilarityFinder.compare(image);
-			double maximumDistance = 11041.823898251594; // Eu descobri este número na raça, comparando uma imagem toda branca com uma toda preta
-			
-			return ( (maximumDistance - distance)/maximumDistance  );
-			
-		} catch (Exception e) {
-	        return 0.0;
-		}
-		
 	}
 	
 	public static JSONObject similaritySIFT(MongoDatabase mongo, DatabaseManager db, String currentMd5, Long lettId, String referenceMd5) {

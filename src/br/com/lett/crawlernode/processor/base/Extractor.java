@@ -35,7 +35,7 @@ public abstract class Extractor {
 	protected boolean logActivated;
 	
 	/**
-	 * Método responsável pela definição e extração de atributos
+	 * Método responsável pela definição e extração de atributos.
 	 * 
 	 * @author Doug
 	 * @param logActivated - Definição de status do log
@@ -64,15 +64,13 @@ public abstract class Extractor {
 	}
 	
 	/**
-	 * Método alegórico de extração que será definido de acordo com cada supermercado
+	 * Método alegórico de extração que será definido de acordo com cada supermercado.
+	 * 
 	 * @param processedModel
 	 * @return processedModel
 	 */
 	public ProcessedModel extract(ProcessedModel processedModel) {
-		
-		// Colocando o original_name no extra.
 		processedModel.setExtra(processedModel.getOriginalName());
-
 		return processedModel;
 	}
 	

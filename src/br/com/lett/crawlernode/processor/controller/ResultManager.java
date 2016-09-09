@@ -32,7 +32,7 @@ import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
-import br.com.lett.crawlernode.processor.base.Information;
+import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
@@ -43,6 +43,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.processor.base.Extractor;
 import br.com.lett.crawlernode.processor.base.IdentificationLists;
+import br.com.lett.crawlernode.processor.base.PicStatus;
 
 import com.mongodb.client.MongoDatabase;
 
@@ -141,7 +142,7 @@ public class ResultManager {
 		try {
 			
 			// ResultSet com resultados da consulta das classes
-			ResultSet rs = this.db.runSqlConsult(Information.queryForLettBrandProducts);
+			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettBrandProducts);
 
 			// Enquanto houver linhas...
 			while(rs.next()){
@@ -232,7 +233,7 @@ public class ResultManager {
 		try{
 			
 			// ResultSet com resultados da consulta das classes
-			ResultSet rs = this.db.runSqlConsult(Information.queryForLettClassProducts);
+			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettClassProducts);
 
 			// Enquanto houver linhas...
 			while (rs.next()) {
@@ -309,6 +310,7 @@ public class ResultManager {
 	/**
 	 * Extrai informações a partir dos campos "original_" do ProcessModel, e por fim
 	 * salva os dados recebidos dentro do ProcessModel a ser retornado.
+	 * 
 	 * @author Fabricio
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
@@ -322,8 +324,6 @@ public class ResultManager {
 		}
 
 		Extractor extractor = new ExtractorFlorianopolisAngeloni();
-
-		// Coerção do objeto 'extractor' como Extractor para definição de atributos da classe
 		extractor.setAttrs(logActivated, 
 				brandModelList,
 				unitsReplaceMap, 
@@ -348,113 +348,103 @@ public class ResultManager {
 	}
 
 	/**
-	 * Atualiza informações de conteúdo digital no objeto Processed.
 	 * 
-	 * @author Fabricio
-	 * @param pm - ProcessModel recebido no instante da execução
+	 * @param pm
+	 * @param session
 	 */
 	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
-
-		if(pm.getDigitalContent() == null) { pm.setDigitalContent(new JSONObject()); }
-
-		// 0) Lendo informações desejadas pelo fornecedor (digital_content na tabela Lett)
-		JSONObject lett_digital_content = new JSONObject();
-
-		// 		0.1) A partir do ID Lett, lemos as informações
-		try {
-
-			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + pm.getLettId());
-
-			while(rs.next()) {
-				lett_digital_content = new JSONObject(rs.getString("digital_content"));
-			}
-
-		} catch (Exception e) { 
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		
+		// if the processed model doesn't have a digital content
+		// we must create an empty one, to be populated
+		if(pm.getDigitalContent() == null) { 
+			pm.setDigitalContent(new JSONObject()); 
 		}
 
-		// 1) Avaliando imagem
-		JSONObject pic = new JSONObject();
-		try {pic = pm.getDigitalContent().getJSONObject("pic");} catch (Exception e) { }
+		// get reference digital content
+		JSONObject lettDigitalContent = fetchReferenceDigitalContent(pm.getLettId(), session);
 
-		//		1.1) Contando imagens
+		/*
+		 * Analysing image
+		 */
+		
+		JSONObject pic = new JSONObject();
+		try {
+			pic = pm.getDigitalContent().getJSONObject("pic");
+		} 
+		catch (Exception e) { 
+			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+		}
+
+		//	count images
 		pic.put("count", DigitalContentAnalyser.imageCount(pm));
 
 		// 		1.2) Avaliando imagem primária
-		JSONObject pic_primary = new JSONObject();
-		if(pic.has("primary") ) pic_primary = pic.getJSONObject("primary");
+		JSONObject picPrimary = new JSONObject();
+		if(pic.has("primary") ) {
+			picPrimary = pic.getJSONObject("primary");
+		}
 
-		//		1.2.0) Baixando imagem primária armazenada na Amazon
+		//	1.2.0) Baixando imagem primária armazenada na Amazon
+		StringBuilder primaryImageAmazonKey = new StringBuilder();
+		primaryImageAmazonKey.append("product-image/");
+		primaryImageAmazonKey.append(this.cityNameInfo.get(pm.getMarket()) + "/");
+		primaryImageAmazonKey.append(this.marketNameInfo.get(pm.getMarket()) + "/");
+		primaryImageAmazonKey.append(pm.getInternalId());
+		primaryImageAmazonKey.append("/1-original.jpg");
+		
+		StringBuilder desiredPrimaryImageAmazonKey = new StringBuilder();
+		desiredPrimaryImageAmazonKey.append("product-image/");
+		desiredPrimaryImageAmazonKey.append("lett/");
+		desiredPrimaryImageAmazonKey.append(pm.getLettId());
+		desiredPrimaryImageAmazonKey.append("/1-original.jpg");
 
-		String primaryImageAmazonKey = "product-image" + 
-				"/" +
-				this.cityNameInfo.get(pm.getMarket()) + 
-				"/" + 
-				this.marketNameInfo.get(pm.getMarket()) + 
-				"/" + 
-				pm.getInternalId() + 
-				"/1-original.jpg";
-
-		String desiredPrimaryImageAmazonKey = "product-image" + 
-				"/" +
-				"lett" +
-				"/" + 
-				pm.getLettId() + 
-				"/1-original.jpg";
-
-		String desiredPrimaryMd5 = S3Service.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey);
-		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey);
+		String desiredPrimaryMd5 = S3Service.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey.toString());
+		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey.toString());
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		// Se o md5 for nulo, então limpamos e adicionamos a marcação de sem imagem
 		if(primaryMd5 == null) {
-			pic_primary = new JSONObject();
-
-			pic_primary.put("status", "no-image");
-			pic_primary.put("verified_by", "crawler_" + nowISO);
+			picPrimary = new JSONObject();
+			picPrimary.put("status", PicStatus.NO_IMAGE);
+			picPrimary.put("verified_by", "crawler_" + nowISO);
 
 		} else {
 
-			if(pic_primary.has("md5") && pic_primary.get("md5").equals(primaryMd5)) {
+			if(picPrimary.has("md5") && picPrimary.get("md5").equals(primaryMd5)) {
 				// Imagem não mudou, então mantemos os parâmetros que já estavam antes
 			} 
 
 			// Imagem mudou
 			else {
 
-				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey);
+				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey.toString());
+				File desiredPrimaryImage = S3Service.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey.toString());
 
-				// Capturando as dimensões da nova imagem primária
-				pic_primary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
+				// get dimensions from image
+				picPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
 
 				// Capturando similaridade da nova imagem primária usando o NaiveSimilarityFinder
-				pic_primary.put("similarity", DigitalContentAnalyser.imageSimilarity(primaryImage, S3Service.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey)));
+				// está sendo setado para 0 pois o naive similarity foi removido
+				picPrimary.put("similarity", 0);
 
 				// Calculando similaridade da nova imagem primária usando o SIFT
 				JSONObject similaritySiftResult = null;
 				try {
 					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
 				} catch (Exception e) {
-					e.printStackTrace();
+					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 				}				
 
-				pic_primary.put("similarity_sift", similaritySiftResult);
+				picPrimary.put("similarity_sift", similaritySiftResult);
 
 				// Atualizando md5 da nova imagem primária
-				pic_primary.put("md5", primaryMd5);
+				picPrimary.put("md5", primaryMd5);
+				
+				picPrimary.put("status", PicStatus.NOT_VERIFIED);
 
-				// Tentando comparar imagem com a referência e antecipar o Match
-				if(pic_primary.getDouble("similarity") == 1) {
-					// Deu Match
-					pic_primary.put("status", "match");
-				} else {
-					// Marcando como não verificada
-					pic_primary.put("status", "not-verified");
-				}
-
-				pic_primary.put("verified_by", "crawler_" + nowISO);
+				picPrimary.put("verified_by", "crawler_" + nowISO);
 
 				// Deletando imagens locais
 				if(primaryImage != null) {
@@ -463,9 +453,8 @@ public class ResultManager {
 			} 
 
 		}
-		//if(desiredPrimaryImage != null) 	desiredPrimaryImage.delete();
 
-		pic.put("primary", pic_primary);
+		pic.put("primary", picPrimary);
 
 		// 	1.3) Avaliando imagem secundária
 		JSONObject pic_secondary = new JSONObject();
@@ -476,20 +465,21 @@ public class ResultManager {
 		Integer secondary_reference_count = 0;
 
 		try {
-			secondary_reference_count = lett_digital_content.getJSONObject("pic").getInt("secondary");
-		} catch (JSONException e) { }
-
+			secondary_reference_count = lettDigitalContent.getJSONObject("pic").getInt("secondary");
+		} catch (JSONException e) { 
+			
+		}
 		if(secondary_reference_count == 0) { // no-reference tem precedência sobre no-image
-			pic_secondary.put("status", "no-reference");
+			pic_secondary.put("status", PicStatus.NO_REFERENCE);
 		} 
 		else if (pic.getInt("count") <= 1) {
-			pic_secondary.put("status", "no-image");
+			pic_secondary.put("status", PicStatus.NO_IMAGE);
 		}
 		else if(pic.getInt("count")-1 >= secondary_reference_count) {
-			pic_secondary.put("status", "complete");
+			pic_secondary.put("status", PicStatus.COMPLETE);
 		} 
 		else {
-			pic_secondary.put("status", "incomplete");
+			pic_secondary.put("status", PicStatus.INCOMPLETE);
 		}
 
 		pic.put("secondary", pic_secondary);
@@ -502,7 +492,7 @@ public class ResultManager {
 
 		// 		2.1) Lendo regras de nomeclatura definidas no objeto lett
 		JSONArray name_rules_desired = new JSONArray();
-		if(lett_digital_content.has("name_rules") ) name_rules_desired = lett_digital_content.getJSONArray("name_rules");
+		if(lettDigitalContent.has("name_rules") ) name_rules_desired = lettDigitalContent.getJSONArray("name_rules");
 
 		// 		2.2) Para cada regra, ver se é satisfeita ou não
 
@@ -527,7 +517,7 @@ public class ResultManager {
 
 		// 		3.1) Lendo regras de descrição definidas no objeto lett
 		JSONArray description_rules_desired = new JSONArray();
-		if(lett_digital_content.has("description_rules") ) description_rules_desired = lett_digital_content.getJSONArray("description_rules");
+		if(lettDigitalContent.has("description_rules") ) description_rules_desired = lettDigitalContent.getJSONArray("description_rules");
 
 		// 		3.2) Para cada regra, ver se é satisfeita ou não
 
@@ -610,6 +600,27 @@ public class ResultManager {
 			Logging.printLogError(logger, "Error fetching market info on postgres!");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
+	}
+	
+	/**
+	 * Fetch the digital content from lett table.
+	 * 
+	 * @param lettId
+	 * @param session
+	 * @return the json object containing the reference digital content or an empty json object
+	 */
+	private JSONObject fetchReferenceDigitalContent(Long lettId, CrawlerSession session) {
+		try {
+			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
+			while(rs.next()) {
+				return new JSONObject(rs.getString("digital_content"));
+			}
+
+		} catch (Exception e) { 
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+		
+		return new JSONObject();
 	}
 
 
