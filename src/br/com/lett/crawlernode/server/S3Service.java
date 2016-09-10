@@ -38,9 +38,6 @@ public class S3Service {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 	
-	private static final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
-	private static final String SECRET_KEY = "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";
-	
 	private static final String SESSION_BUCKET  = "crawler-sessions";
 	
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
@@ -56,7 +53,7 @@ public class S3Service {
 	
 	
 	static {
-		credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, SECRET_KEY);
+		credentials = new BasicAWSCredentials(accessKey, secretKey);
 		s3client = new AmazonS3Client(credentials);
 	}
 	
