@@ -8,6 +8,7 @@
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
+		
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -28,9 +29,14 @@
 					</execution>
 				</executions>
 				<configuration>
+				
+					<source>1.7</source>
+					<target>1.7</target>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
+					<outputDirectory>target/deployment</outputDirectory>
+					
 				</configuration>
 			</plugin>
 		</plugins>
