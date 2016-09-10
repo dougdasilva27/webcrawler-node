@@ -7,17 +7,24 @@ import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 
 public class NameRules {
 	
+	/**
+	 * Compute name rules results comparing the original name with
+	 * the rules defined on the reference digital content.
+	 * 
+	 * @param lettDigitalContent
+	 * @param originalName
+	 * @return a json array containing the result for each rule
+	 */
 	public static JSONArray computeNameRulesResults(JSONObject lettDigitalContent, String originalName) {
 		JSONArray nameRulesResults = new JSONArray();
 
-		// 		2.1) Lendo regras de nomeclatura definidas no objeto lett
+		// get the reference rules
 		JSONArray nameRulesDesired = new JSONArray();
 		if(lettDigitalContent.has("name_rules") ) {
 			nameRulesDesired = lettDigitalContent.getJSONArray("name_rules");
 		}
 
-		// 		2.2) Para cada regra, ver se é satisfeita ou não
-
+		// iterate through each rule and see if it gets satisfied
 		for(int i=0; i<nameRulesDesired.length(); i++) {
 			JSONObject rule = nameRulesDesired.getJSONObject(i);
 

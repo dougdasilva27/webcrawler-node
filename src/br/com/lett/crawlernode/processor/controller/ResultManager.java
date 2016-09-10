@@ -36,6 +36,7 @@ import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.digitalcontent.DescriptionRules;
 import br.com.lett.crawlernode.processor.digitalcontent.NameRules;
+import br.com.lett.crawlernode.processor.digitalcontent.Pic;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
@@ -422,7 +423,6 @@ public class ResultManager {
 			else {
 
 				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey.toString());
-				File desiredPrimaryImage = S3Service.fetchImageFromAmazon(session, desiredPrimaryImageAmazonKey.toString());
 
 				// get dimensions from image
 				picPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
@@ -458,34 +458,9 @@ public class ResultManager {
 
 		pic.put("primary", picPrimary);
 
-		// 	1.3) Avaliando imagem secundária
-		JSONObject pic_secondary = new JSONObject();
-		if(pic.has("secondary") ) {
-			pic_secondary = pic.getJSONObject("secondary");
-		}
-
-		Integer secondary_reference_count = 0;
-
-		try {
-			secondary_reference_count = lettDigitalContent.getJSONObject("pic").getInt("secondary");
-		} catch (JSONException e) { 
-			
-		}
-		if(secondary_reference_count == 0) { // no-reference tem precedência sobre no-image
-			pic_secondary.put("status", PicStatus.NO_REFERENCE);
-		} 
-		else if (pic.getInt("count") <= 1) {
-			pic_secondary.put("status", PicStatus.NO_IMAGE);
-		}
-		else if(pic.getInt("count")-1 >= secondary_reference_count) {
-			pic_secondary.put("status", PicStatus.COMPLETE);
-		} 
-		else {
-			pic_secondary.put("status", PicStatus.INCOMPLETE);
-		}
-
-		pic.put("secondary", pic_secondary);
-
+		// computing pic secondary
+		Pic.setPicSecondary(lettDigitalContent, pic);
+		
 		pm.getDigitalContent().put("pic", pic);
 
 
