@@ -44,6 +44,13 @@ public class DigitalContentAnalyser {
 	private static final int 	SELF_SIMILARITY_SIFT_THRESHOLD = 400;
 	private static final double SELF_SIMILARITY_SIFT_RATE_THRESHOLD = 0.65;
 	
+	public static final String RULE_SATISFIED = "satisfied";
+	
+	public static final String RULE_TYPE_KEYWORDS_MIN = "keywords_min";
+	public static final String RULE_TYPE_KEYWORDS_EXACT = "keywords_exact";
+	public static final String RULE_TYPE_KEYWORDS_ALL = "keywords_all";
+	public static final String RULE_TYPE_KEYWORDS_NONE = "keywords_none";
+	
 	/**
 	 * 
 	 * @param pm
@@ -89,6 +96,7 @@ public class DigitalContentAnalyser {
 		
 	}
 	
+	
 	public static JSONObject validateRule(String content, JSONObject rule) {
 
 		JSONObject results = new JSONObject();
@@ -109,47 +117,46 @@ public class DigitalContentAnalyser {
 			// Se a regra é de Keywords, vamos contá-las
 			if(rule.getString("type").startsWith("keywords_")) {
 				
-				JSONArray desired_keywords = rule.getJSONArray("value");
-				JSONArray keywords_found = new JSONArray();
-				JSONArray keywords_not_found = new JSONArray();
+				JSONArray desiredKeywords = rule.getJSONArray("value");
+				JSONArray keywordsFound = new JSONArray();
+				JSONArray keywordsNotFound = new JSONArray();
 
 				// Preparando os objetos para realizar as buscas para buscarmos
 				JSONArray desired_keywords_sanitized = new JSONArray();
 
-				for(int i=0; i<desired_keywords.length(); i++) {
-					desired_keywords_sanitized.put(sanitizeBeforeValidateRule(desired_keywords.get(i).toString()));
+				for(int i = 0; i < desiredKeywords.length(); i++) {
+					desired_keywords_sanitized.put(sanitizeBeforeValidateRule(desiredKeywords.get(i).toString()));
 				}
 
 				// Iniciando as buscas
 				for(int i = 0; i < desired_keywords_sanitized.length(); i++) {
 					if(sanitizedContent.contains(desired_keywords_sanitized.get(i).toString() )) {
-						keywords_found.put(desired_keywords.get(i).toString());
-					} 
-					else {
-						keywords_not_found.put(desired_keywords.get(i).toString());
+						keywordsFound.put(desiredKeywords.get(i).toString());
+					} else {
+						keywordsNotFound.put(desiredKeywords.get(i).toString());
 					}
 				}
 				
 				// Agora damos o resultado, baseado no tipo da regra de keywords
-				if(rule.getString("type").equals("keywords_min")) {
-					results.put("satisfied", keywords_found.length() >= condition);
+				if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_MIN)) {
+					results.put(RULE_SATISFIED, keywordsFound.length() >= condition);
 				} 
-				else if(rule.getString("type").equals("keywords_exact")) {
-					results.put("satisfied", keywords_found.length() == condition);
+				else if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_EXACT)) {
+					results.put(RULE_SATISFIED, keywordsFound.length() == condition);
 				} 
-				else if(rule.getString("type").equals("keywords_all")) {
-					results.put("satisfied", keywords_found.length() == desired_keywords_sanitized.length());
+				else if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_ALL)) {
+					results.put(RULE_SATISFIED, keywordsFound.length() == desired_keywords_sanitized.length());
 				} 
-				else if(rule.getString("type").equals("keywords_none")) {
-					results.put("satisfied", keywords_found.length() == 0);
+				else if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_NONE)) {
+					results.put(RULE_SATISFIED, keywordsFound.length() == 0);
 				}
 				
-				results.put("keywords_found", keywords_found);
-				results.put("keywords_not_found", keywords_not_found);
+				results.put("keywords_found", keywordsFound);
+				results.put("keywords_not_found", keywordsNotFound);
 				
 			} else if(rule.getString("type").startsWith("words_")) {
 				
-				results.put("satisfied", sanitizedContent.trim().split(" ").length >= condition);
+				results.put(RULE_SATISFIED, sanitizedContent.trim().split(" ").length >= condition);
 				results.put("words_count", sanitizedContent.trim().split(" ").length);
 				
 			}
@@ -157,10 +164,9 @@ public class DigitalContentAnalyser {
 			return results;
 			
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Ocorreu algum erro ao tentar avaliar a DescriptionRule:");
-			Logging.printLogError(logger, rule.toString());
 			
-			e.printStackTrace();
+			Logging.printLogError(logger, "An error occurred when computing a description rule: ");
+			Logging.printLogError(logger, rule.toString());			
 
 			return results;
 		}

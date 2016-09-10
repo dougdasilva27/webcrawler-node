@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 /**
  * Classe Extratora pai de todas as classes extratoras de todos os supermercados
+ * 
  * @author Doug
  */
 public abstract class Extractor {
@@ -35,6 +36,7 @@ public abstract class Extractor {
 	
 	/**
 	 * Método responsável pela definição e extração de atributos
+	 * 
 	 * @author Doug
 	 * @param logActivated - Definição de status do log
 	 * @param unitsReplaceMap - Mapa de redefinição de unidades
@@ -118,8 +120,9 @@ public abstract class Extractor {
 					while (matcherBeginning.find()) {
 						if (logActivated) Logging.printLogDebug(logger, "-- Found BRAND ON BEGINNING: " + mistake + "\n    '" + sanitizedName + "' -> '");
 						sanitizedName = bm.getBrand() + " " + sanitizedName.substring(matcherBeginning.end());
-						if (logActivated) Logging.printLogDebug(logger, sanitizedName + "'");
-		//						matcherBeginning = beginning.matcher(sanitizedName);
+						if (logActivated) {
+							Logging.printLogDebug(logger, sanitizedName + "'");
+						}
 					}
 					
 					// Se encontrar a marca no final...
@@ -129,7 +132,6 @@ public abstract class Extractor {
 						if (logActivated) Logging.printLogDebug(logger, "-- Found BRAND ON END: " + mistake + "\n    '" + sanitizedName + "' -> '");
 						sanitizedName = sanitizedName.substring(0, matcherEnding.start()) + " " + bm.getBrand();
 						if (logActivated) Logging.printLogDebug(logger, sanitizedName + "'");
-		//						matcherEnding = ending.matcher(sanitizedName);
 					}
 					
 					// Se encontrar a marca no meio...
@@ -148,16 +150,21 @@ public abstract class Extractor {
 		    Matcher matcher = pattern.matcher(sanitizedName);
 		    while (matcher.find()) {
 		        String newName = "";
+		        
 		        // Caso haja a ocorrência do padrão fora da primeira posição
 		        if (matcher.start() != 0) {
 		        	newName = sanitizedName.substring(0, matcher.start()) + matcher.group(1) + (matcher.group(2)!=null ? matcher.group(2) : "") + " " + entry.getValue();
 		        }
+		        
 		        // Caso haja a ocorrência no final da sentença
 		        if (matcher.end() != sanitizedName.length()) {
 		        	newName = newName + " " + sanitizedName.substring(matcher.end(), sanitizedName.length());
 		        }
 		        
-		        if (logActivated) Logging.printLogDebug(logger, "-- Found UNIT WITH PATTERN: " + entry.getKey() + "\n    '" + sanitizedName + "' -> '" + newName + "'");
+		        if (logActivated) {
+		        	Logging.printLogDebug(logger, "-- Found UNIT WITH PATTERN: " + entry.getKey() + "\n    '" + sanitizedName + "' -> '" + newName + "'");
+		        }
+		        
 		        sanitizedName = newName;
 		        matcher = pattern.matcher(sanitizedName);
 		    }
@@ -166,6 +173,7 @@ public abstract class Extractor {
 		
 		// Recipiente entre meio ou final da sentença
 		for (Map.Entry<String, String> entry : this.recipientsReplaceMap.entrySet()) {
+			
 			// Se esta no fim da String
 			Pattern ending = Pattern.compile(Pattern.quote(entry.getKey()) + "$");
 			Matcher matcherEnding = ending.matcher(sanitizedName);
@@ -186,10 +194,10 @@ public abstract class Extractor {
 			
 		}
 		
-		// Remoção de espaços duplos
-		while (sanitizedName.contains("  "))  sanitizedName = sanitizedName.replace("  ", " ");
-		
-		
+		// removing empty spaces
+		while (sanitizedName.contains("  ")) {
+			sanitizedName = sanitizedName.replace("  ", " ");
+		}
 		
 		// Classe passo 1 - Classes erradas do início do nome do produto
 		//
@@ -223,7 +231,9 @@ public abstract class Extractor {
 		}
 		   
 		// Remoção de espaços duplos
-		while (sanitizedName.contains("  "))  sanitizedName = sanitizedName.replace("  ", " ");
+		while (sanitizedName.contains("  ")) {
+			sanitizedName = sanitizedName.replace("  ", " ");
+		}
 				
 		sanitizedName = sanitizedName.trim();
 		
@@ -234,6 +244,7 @@ public abstract class Extractor {
 	
 	/**
 	 * Método responsável pela extração da marca do produto
+	 * 
 	 * @author Doug
 	 * @param pm -ProcessModel que contém a marca à ser extraída
 	 * @category Manipulação
@@ -268,6 +279,7 @@ public abstract class Extractor {
 						currentBrandPosition = normalizedName.indexOf(" " + currentNormalizedBrand);
 						currentBrandLength = currentBrand.trim().length();
 					} else if(normalizedName.indexOf(" " + normalizedBrand) == currentBrandPosition) {
+						
 						// Está na mesma posição, então vamos chegar o size. Pegar a com o maior size, pois pode ser marca composta.
 						// Exemplo: Acelerador de bronzeado AUSTRALIAN GOLD Dark frasco 237ml
 						// AUSTRALIAN é uma marca. GOLD é outra. AUSTRALIAN GOLD outra diferente. Queremos pegar a AUSTRALIAN GOLD.
@@ -292,6 +304,7 @@ public abstract class Extractor {
 						currentBrandPosition = normalizedName.indexOf(" " + currentNormalizedBrand + " ");
 						currentBrandLength = currentBrand.trim().length();
 					} else if(normalizedName.indexOf(" " + normalizedBrand + " ") == currentBrandPosition) {
+						
 						// Está na mesma posição, então vamos chegar o size. Pegar a com o maior size, pois pode ser marca composta.
 						// Exemplo: Acelerador de bronzeado AUSTRALIAN GOLD Dark frasco 237ml
 						// AUSTRALIAN é uma marca. GOLD é outra. AUSTRALIAN GOLD outra diferente. Queremos pegar a AUSTRALIAN GOLD.
@@ -330,7 +343,6 @@ public abstract class Extractor {
 				String normalizedName = Normalizer.normalize(pm.getSanitizedName(), Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
 				String normalizedBrand = Normalizer.normalize(pm.getBrand(), Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
 				
-				
 				int i = normalizedName.indexOf(normalizedBrand);
 				if (i > 0) {
 					// Classe do produto é tudo antes da marca
@@ -343,14 +355,13 @@ public abstract class Extractor {
 				
 				
 			} else {
-				// Se não encontrar a marca, colocaremos temporariamente no class
+				
+				// se não encontrar a marca, colocaremos temporariamente no class
 				pm.set_class(pm.getSanitizedName().trim());
 				
-				// Classe ainda em construção para alertar a falta de marca 
-				
+				// classe ainda em construção para alertar a falta de marca 
 				if (logActivated) Logging.printLogDebug(logger, pm.getOriginalName());
 				if (logActivated) Logging.printLogError(logger, "Problem extracting class. Brand not found on: " + pm.getOriginalName() + " / " + pm.getSanitizedName());
-			
 			
 			}	
 			
@@ -366,14 +377,13 @@ public abstract class Extractor {
 		 	//           vinho ale.puro BACKER gelada 600ml        ->   vinho alemão puro BACKER gelado 600ml
 		 	//           vinho s/ alcool ale BACKER gelada 600ml   ->   vinho sem alcool alemão BACKER gelado 600ml
 			for (ClassModel classModel : this.classModelList) {	
+				
 				// Início
 				Pattern pattern = Pattern.compile("^" + Pattern.quote(classModel.getLettName().trim()) + "(\\s|$)"); // Espaço depois ou no final
 				
 			    Matcher matcher = pattern.matcher(pm.get_class());
-			    // System.err.println(pm.get_class() + " -> Compare with -> " + classModel.getLettName().trim());
 			    
 			    // Corrige as ocorrências do segundo caso de abrevição de classe
-			    
 			    if(classModel.getLettName().length() > currentSizeClass){
 			    
 				    while (matcher.find()) {
@@ -395,6 +405,7 @@ public abstract class Extractor {
 				    }
 			    }
 			}
+			
 			// Caso não encontre classe todo conteúdo irá para o extra
 			if(!found) {
 				newExtra = pm.get_class() + " " + pm.getExtra();
@@ -418,9 +429,9 @@ public abstract class Extractor {
 	
 	/**
 	 * Método responsável pela extração do recipiente do produto
+	 * 
 	 * @param pm - ProcessModel que contém o recipiente à ser extraída
 	 * @author Doug
-	 * @category Manipulação
 	 */
 	public void extractRecipient(ProcessedModel pm) {
 		try {
@@ -596,9 +607,9 @@ public abstract class Extractor {
 	
 	/**
 	 * Método responsável pela extração da quantidade e da unidade do produtos
+	 * 
 	 * @author Doug
 	 * @param pm - ProcessModel que contém a unidade e quantidade à ser extraída
-	 * @category Manipulação
 	 */	
 	public void extractUnitAndQuantity(ProcessedModel pm) {
 		try {
