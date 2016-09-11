@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webcrawler-node</groupId>
 	<artifactId>webcrawler-node</artifactId>
-	<version>2016.09.11-b</version>
+	<version>2016.09.11-c</version>
 	<packaging>jar</packaging>
 
 	<build>
@@ -11,12 +11,22 @@
 		<sourceDirectory>src/java</sourceDirectory>
 		
 		<resources>
+	        <!-- regular resource processsing for everything except logback.xml -->
 	        <resource>
 	            <directory>src/resources</directory>
-	            
+	            <excludes>
+	                <exclude>logback.xml</exclude>
+	            </excludes>
+	        </resource>
+	        <!-- resource processsing with a different output directory
+	             for logback.xml -->
+	        <resource>
+	            <directory>src/resources</directory>
+	            <includes>
+	                <include>logback.xml</include>
+	            </includes>
 	            <!-- relative to target/classes
 	                 i.e. ${project.build.outputDirectory} -->
-	            <targetPath>resources</targetPath>
 	        </resource>
 	    </resources>
 
