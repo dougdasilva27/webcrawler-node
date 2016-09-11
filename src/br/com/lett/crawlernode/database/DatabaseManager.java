@@ -98,8 +98,13 @@ public class DatabaseManager {
 				mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
 				mongoMongoImages = mongoClientBackendPanel.getDatabase("images");
 			}
-
-			Logging.printLogDebug(logger, "Successfully connected to Mongo!");
+			
+			// Verifying connection (if fail, with throw Exception)
+			mongoClientBackendPanel.getAddress();
+			mongoClientBackendDashboard.getAddress();
+			mongoClientMongoImages.getAddress();
+			
+			Logging.printLogDebug(logger, "Successfully connected to Mongo: " + mongoCredentials.getMongoPanelHost());
 		} catch (Exception e) {
 			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
