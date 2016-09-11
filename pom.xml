@@ -130,6 +130,7 @@
 							<url>http://www.lett.com.br</url>
 						</manifestEntries>
 					</archive>
+			        <outputDirectory>target/deployment</outputDirectory>
 				</configuration>
 			
 			</plugin>
