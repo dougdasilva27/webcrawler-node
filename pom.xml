@@ -3,11 +3,22 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webcrawler-node</groupId>
 	<artifactId>webcrawler-node</artifactId>
-	<version>2016.09.11-a</version>
+	<version>2016.09.11-b</version>
 	<packaging>jar</packaging>
 
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		
+		<sourceDirectory>src/java</sourceDirectory>
+		
+		<resources>
+	        <resource>
+	            <directory>src/resources</directory>
+	            
+	            <!-- relative to target/classes
+	                 i.e. ${project.build.outputDirectory} -->
+	            <targetPath>resources</targetPath>
+	        </resource>
+	    </resources>
 
 		<plugins>
 			
@@ -101,9 +112,6 @@
 			
 			
 			
-			
-			
-			
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
@@ -112,8 +120,80 @@
 					<target>1.7</target>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>br.com.lett.crawlernode.main.Main</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			
+			
+			
+			<!-- <plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+			
+			
 			
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<archive>
+								<manifest>
+									<mainClass>br.com.lett.crawlernode.main.Main</mainClass>
+								</manifest>
+							</archive>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin> -->
+			
+			
+			
+			
+			
+			<!-- <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.0.2</version>
@@ -122,7 +202,7 @@
 						<index>true</index>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<classpathPrefix>classes/lib/</classpathPrefix>
+							<classpathPrefix>lib/</classpathPrefix>
 							<mainClass>br.com.lett.crawlernode.main.Main</mainClass>
 						</manifest>
 						<manifestEntries>
@@ -154,7 +234,7 @@
 	                    </configuration>
 	                </execution>
 	            </executions>
-	        </plugin>
+	        </plugin> -->
 	        
 	        
 			
