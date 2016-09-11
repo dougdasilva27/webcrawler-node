@@ -140,6 +140,7 @@
 									</excludes>
 								</filter>
 							</filters>
+					        <outputDirectory>target/deployment</outputDirectory>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<transformers>
 								<transformer
