@@ -8,7 +8,7 @@
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
-		
+
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -29,14 +29,21 @@
 					</execution>
 				</executions>
 				<configuration>
-				
+
 					<source>1.7</source>
 					<target>1.7</target>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>src/</classpathPrefix>
+							<mainClass>br.com.lett.crawlernode.main.Main</mainClass>
+						</manifest>
+					</archive>
 					<outputDirectory>target/deployment</outputDirectory>
-					
+
 				</configuration>
 			</plugin>
 		</plugins>
