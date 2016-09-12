@@ -69,11 +69,11 @@ public class Test {
 
 		// fetching proxies
 		proxies = new Proxies();
-		proxies.fetchLuminatiProxies();
-		proxies.fetchBonanzaProxies();
-		proxies.fetchShaderProxies();
-		proxies.fetchBuyProxies();
-		proxies.fetchStormProxies();
+		proxies.setCharityProxy();
+		proxies.setBonanzaProxies();
+		proxies.setShaderProxies();
+		proxies.setBuyProxies();
+		proxies.setStormProxies();
 
 		// create a task executor
 		// for testing we use 1 thread, there is no need for more

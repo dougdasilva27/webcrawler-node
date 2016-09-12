@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -75,7 +76,7 @@ public class DataFetcher {
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
-	
+
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
@@ -301,6 +302,13 @@ public class DataFetcher {
 		HttpPost httpPost = new HttpPost(url);
 		httpPost.setConfig(requestConfig);
 
+		// if we are using charity engine, we must set header for authentication
+		if (randProxy.getSource().equals(Proxies.CHARITY)) {
+			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+			httpPost.addHeader("Proxy-Authorization", headerValue);
+		}
+
 
 		if(payload != null) {
 
@@ -488,6 +496,13 @@ public class DataFetcher {
 			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
 
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+			}
+
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -613,6 +628,13 @@ public class DataFetcher {
 
 			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
+
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+			}
 
 			// do request
 			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -741,6 +763,13 @@ public class DataFetcher {
 
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setConfig(requestConfig);
+			
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpPost.addHeader("Proxy-Authorization", headerValue);
+			}
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
 				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
@@ -870,6 +899,13 @@ public class DataFetcher {
 
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setEntity(input);
+			
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpPost.addHeader("Proxy-Authorization", headerValue);
+			}
 
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
@@ -1062,6 +1098,13 @@ public class DataFetcher {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
 				}
 			}
+			else if (serviceName.equals(Proxies.CHARITY)) { // charity
+				if (Main.proxies.charity.size() > 0) {
+					nextProxy = Main.proxies.charity.get(CommonMethods.randInt(0, Main.proxies.charity.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
 
 		// when testing
@@ -1092,6 +1135,13 @@ public class DataFetcher {
 					nextProxy = Test.proxies.storm.get(CommonMethods.randInt(0, Test.proxies.storm.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.CHARITY)) { // charity
+				if (Test.proxies.charity.size() > 0) {
+					nextProxy = Test.proxies.charity.get(CommonMethods.randInt(0, Test.proxies.charity.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}

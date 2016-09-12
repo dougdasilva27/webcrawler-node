@@ -20,11 +20,11 @@ public class Proxies {
 	private static final Logger logger = LoggerFactory.getLogger(Proxies.class);
 
 	public static final String SHADER = "shader";
-	public static final String LUMINATI = "luminati";
 	public static final String BUY = "buy";
 	public static final String BONANZA = "bonanza";
 	public static final String STORM = "storm";
 	public static final String NO_PROXY = "no_proxy";
+	public static final String CHARITY = "charity";
 
 	public static final String DEFAULT = SHADER;
 
@@ -32,11 +32,6 @@ public class Proxies {
 	 * Shader
 	 */
 	public ArrayList<LettProxy> shaderProxies;
-
-	/**
-	 * Luminati
-	 */
-	public ArrayList<LettProxy> luminatiProxies;
 
 	/**
 	 * ByProxies
@@ -52,25 +47,26 @@ public class Proxies {
 	 * Storm
 	 */
 	public ArrayList<LettProxy> storm;
+	
+	/**
+	 * Charity
+	 */
+	public ArrayList<LettProxy> charity;
 
 
 	public Proxies() {
-		this.luminatiProxies = new ArrayList<LettProxy>();
 		this.shaderProxies = new ArrayList<LettProxy>();
 		this.buyProxies = new ArrayList<LettProxy>();
 		this.bonanzaProxies = new ArrayList<LettProxy>();
 		this.storm = new ArrayList<LettProxy>();
+		this.charity = new ArrayList<LettProxy>();
+	}
+	
+	public void setCharityProxy() {
+		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
 	}
 
-	public void fetchLuminatiProxies() {
-		Logging.printLogDebug(logger, "Fetching Luminati proxies...");
-
-		luminatiProxies.add(new LettProxy(LUMINATI, "zproxy.luminati.io", 22225, "Brasil Luminati", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
-
-		Logging.printLogDebug(logger, "Luminati proxies fetched with success! [" + this.luminatiProxies.size() + " proxies fetched]");
-	}
-
-	public void fetchBuyProxies() {
+	public void setBuyProxies() {
 		try {
 			Logging.printLogDebug(logger, "Fetching buyProxies proxies...");
 
@@ -108,7 +104,7 @@ public class Proxies {
 
 	}
 
-	public void fetchShaderProxies() {					
+	public void setShaderProxies() {					
 		Logging.printLogDebug(logger, "Fetching Shader proxies...");
 
 		shaderProxies.add(new LettProxy(SHADER, "138.99.122.129", 60000, "Brasil", "lett", "hQEu5srTMe"));
@@ -166,13 +162,13 @@ public class Proxies {
 
 	}
 
-	public void fetchStormProxies() {
+	public void setStormProxies() {
 		Logging.printLogDebug(logger, "Fetching Storm proxies...");
 		
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
 	}
 
-	public void fetchBonanzaProxies() {
+	public void setBonanzaProxies() {
 		try {
 
 			Logging.printLogDebug(logger, "Fetching bonanza proxies...");
