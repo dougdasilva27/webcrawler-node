@@ -11,7 +11,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -34,27 +33,26 @@ import br.com.lett.crawlernode.util.Logging;
  ******************************************************************************************************************************/
 
 public class BrasilDufrioCrawler extends Crawler {
-	
-	private final String HOME_PAGE = "https://www.dufrio.com.br/";
-	private final String DOMAIN = "https://www.dufrio.com.br";
-	
-	private final String SKU_PAGE_IDENTIFICATION_SELECTOR 	= ".detalhe-do-produto";
-	private final String INTERNALID_SELECTOR 				= ".codigo-do-produto .dufrio span";
-	private final String NAME_SELECTOR 						= "h1.nome-do-produto";
-	private final String PRICE_SELECTOR 					= ".grupo-de-precos span.por";
-	private final String AVAILABILITY_SELECTOR 				= ".estoque-nao-disponivel";
-	private final String PRIMARY_IMAGE_SELECTOR 			= ".imagem-do-produto img";
-	private final String SECONDARY_IMAGES_SELECTOR 			= ".mini-galeria .item img";
-	private final String CATEGORIES_SELECTOR 				= ".breadcrumb div.breadcrumb-item a span";
-	private final String DESCRIPTION_SELECTOR 				= ".caracteristicas";
 
+	private final String HOME_PAGE = "https://www.dufrio.com.br/";
+
+	private final String SKU_PAGE_IDENTIFICATION_SELECTOR 	= ".medias";
+	private final String INTERNALID_SELECTOR 				= "input.sku";
+	private final String NAME_SELECTOR 						= ".data h1";
+	private final String PRICE_SELECTOR 					= ".sale-price span";
+	private final String AVAILABILITY_SELECTOR 				= ".wd-buy-button div[style=\"display:none\"]";
+	private final String PRIMARY_IMAGE_SELECTOR 			= "a.large-gallery";
+	private final String SECONDARY_IMAGES_SELECTOR 			= "a.large-gallery";
+	private final String CATEGORIES_SELECTOR 				= ".wd-browsing-breadcrumbs ul li a span";
+	private final String DESCRIPTION_SELECTOR 				= ".wd-descriptions-text";
+	
 	public BrasilDufrioCrawler(CrawlerSession session) {
 		super(session);
 	}
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = session.getUrl().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -109,8 +107,8 @@ public class BrasilDufrioCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
-			product.setUrl(this.session.getUrl());
+			product.setSeedId(session.getSeedId());
+			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -124,7 +122,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			product.setDescription(description);
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
-			
+
 			products.add(product);
 
 		} else {
@@ -152,11 +150,17 @@ public class BrasilDufrioCrawler extends Crawler {
 
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select(INTERNALID_SELECTOR).first();
+		Elements internalIdElements = document.select(INTERNALID_SELECTOR);
 
-		if (internalIdElement != null) {
-			internalId = internalIdElement.text();
+		for(Element e : internalIdElements){
+			String temp = e.attr("value").trim();
+
+			if (temp.matches("\\d+")) {
+				internalId = temp;
+				break;
+			}
 		}
+
 
 		return internalId;
 	}
@@ -198,7 +202,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	private JSONArray crawlMarketplace(Document document) {
 		return new JSONArray();
 	}
-	
+
 	/**
 	 * Crawl the primary image.
 	 * The URL crawled must be modified. It contains the size of the image as parameters in the URL.
@@ -213,12 +217,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		Element primaryImageElement = document.select(PRIMARY_IMAGE_SELECTOR).first();
 
 		if (primaryImageElement != null) {
-			String image = modifyImageSizeParameters( removeWhiteSpace(primaryImageElement.attr("src")) );
-			if (image != null) {
-				primaryImage = DOMAIN + image;
-			} else {
-				Logging.printLogError(logger, session, "Error modifyng URL parameter for image size.");
-			}
+			primaryImage = primaryImageElement.attr("href").trim();
 		}
 
 		return primaryImage;
@@ -231,18 +230,13 @@ public class BrasilDufrioCrawler extends Crawler {
 		Elements imagesElement = document.select(SECONDARY_IMAGES_SELECTOR);
 
 		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			String image = modifyImageSizeParameters( removeWhiteSpace(imagesElement.get(i).attr("src")) );
-			if (image != null) {
-				secondaryImagesArray.put(DOMAIN + image);
-			} else {
-				Logging.printLogError(logger, session, "Error modifyng URL parameter for image size.");
-			}
+			secondaryImagesArray.put(imagesElement.get(i).attr("href").trim());
 		}
 
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
-		
+
 		return secondaryImages;
 	}
 
@@ -250,7 +244,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		ArrayList<String> categories = new ArrayList<String>();
 		Elements elementCategories = document.select(CATEGORIES_SELECTOR);
 
-		for (int i = 1; i < elementCategories.size() - 2; i++) { // starting from index 1, because the first is the market name
+		for (int i = 1; i < elementCategories.size() - 1; i++) { // starting from index 1, because the first is the market name
 			categories.add( elementCategories.get(i).text().trim() );
 		}
 
@@ -268,7 +262,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select(DESCRIPTION_SELECTOR).first();
 		if (descriptionElement != null) description = description + descriptionElement.html();
-		
+
 		return description;
 	}
 
@@ -279,30 +273,5 @@ public class BrasilDufrioCrawler extends Crawler {
 	private String sanitizeName(String name) {
 		return name.replace("'","").replace("’","").trim();
 	}
-	
-	/**
-	 * Remove white spaces from the string.
-	 * Used to remove white from the images URL.
-	 * 
-	 * @param string
-	 * @return
-	 */
-	private String removeWhiteSpace(String string) {
-		return string.replaceAll(" ", "");
-	}
 
-	/**
-	 * Modify URL parameter for image size.
-	 * 
-	 * @param url
-	 * @return
-	 */
-	private String modifyImageSizeParameters(String url) {
-		String imageWithNewPw = CommonMethods.modifyParameter(url, "pw", "900");
-		if (imageWithNewPw != null) {
-			return CommonMethods.modifyParameter(imageWithNewPw, "ph", "900");
-		}
-		return null;
-	}
-	
 }

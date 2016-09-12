@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
-
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,19 +14,17 @@ import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
-
 public class BrasilBalaodainformaticaCrawler extends Crawler {
-
-	private final String HOME_PAGE = "http://www.balaodainformatica.com.br/";
 
 	public BrasilBalaodainformaticaCrawler(CrawlerSession session) {
 		super(session);
 	}
 
+
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		String href =  session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && (href.startsWith("http://www.balaodainformatica.com.br") || href.startsWith("https://www.balaodainformatica.com.br"));
 	}
 
 
@@ -35,7 +33,10 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if (session.getUrl().startsWith("https://www.balaodainformatica.com.br/Produto/")
+				|| session.getUrl().startsWith("http://www.balaodainformatica.com.br/Produto/")
+				|| session.getUrl().startsWith("https://www.balaodainformatica.com.br/ProdutoAnuncio/")
+				|| session.getUrl().startsWith("http://www.balaodainformatica.com.br/ProdutoAnuncio/")) {
 
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
@@ -45,10 +46,6 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			if (elementInternalID != null) {
 				int begin = elementInternalID.text().indexOf(':') + 1;
 				internalId = elementInternalID.text().substring(begin).trim();
-			}
-			if (internalId == null) {
-				Logging.printLogError(logger, session, "Não encontrei id interno para o produto na URL: " + this.session.getUrl());
-				return products;
 			}
 
 			// Pid
@@ -67,12 +64,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			}
 
 			// Preço
-			Float price = null;
-			Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
-			if (elementPrice != null) {
-				price = Float.parseFloat(
-						elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
+			Float price = calculatePrice(elementProduct);
 
 			// Categoria
 			String category1 = "";
@@ -120,9 +112,11 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			// Descrição
 			String description = "";
 			Element elementDescription = doc.select("#especificacoes").first();
-			if (elementDescription != null) {
+			if (elementDescription != null)
 				description = elementDescription.html().replace("’", "").trim();
-			}
+
+			// Filtragem
+			boolean mustInsert = true;
 
 			// Estoque
 			Integer stock = null;
@@ -130,42 +124,83 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
-			product.setUrl(this.session.getUrl());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			if (mustInsert) {
 
-			products.add(product);
+				try {
+
+					Product product = new Product();
+					product.setSeedId(session.getSeedId());
+					product.setUrl(session.getUrl());
+					product.setInternalId(internalId);
+					product.setInternalPid(internalPid);
+					product.setName(name);
+					product.setPrice(price);
+					product.setCategory1(category1);
+					product.setCategory2(category2);
+					product.setCategory3(category3);
+					product.setPrimaryImage(primaryImage);
+					product.setSecondaryImages(secondaryImages);
+					product.setDescription(description);
+					product.setStock(stock);
+					product.setMarketplace(marketplace);
+					product.setAvailable(available);
+
+					products.add(product);
+
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+
+			}
 
 		} else {
-			Logging.printLogDebug(logger, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+		}
+
+		return products;
+	} 
+	
+	private Float calculatePrice(Element elementProduct){
+		Float price = null;
+		Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
+		if (elementPrice != null) {
+			price = Float.parseFloat(
+					elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 		}
 		
-		return products;
+		if(price != null){
+			Elements descontoElement = elementProduct.select("#preco-comprar p");
+			
+			String descontoString = null;
+			
+			for(Element e : descontoElement){
+				String temp = e.ownText().toLowerCase();
+				
+				if(temp.contains("desconto")){
+					descontoString = temp.trim();
+				}
+			}
+			
+			if(descontoString != null){
+				int desconto = Integer.parseInt(descontoString.replaceAll("[^0-9]", "").trim());
+				
+				price = normalizeTwoDecimalPlaces((float) ((price * 100) / (100 - desconto)));
+			}
+		}
+		
+		return price;
 	}
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(String url) {
-		return (
-				url.startsWith("https://www.balaodainformatica.com.br/Produto/")
-				|| url.startsWith("http://www.balaodainformatica.com.br/Produto/") 
-				|| url.startsWith("https://www.balaodainformatica.com.br/ProdutoAnuncio/")
-				|| url.startsWith("http://www.balaodainformatica.com.br/ProdutoAnuncio/")
-				);
+	
+	/**
+	 * Round and normalize Double to have only two decimal places
+	 * eg: 23.45123 --> 23.45
+	 * @param number
+	 * @return A rounded Double with only two decimal places
+	 */
+	public static Float normalizeTwoDecimalPlaces(Float number) {
+		BigDecimal big = new BigDecimal(number);
+		String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
+		
+		return Float.parseFloat(rounded);
 	}
 }
