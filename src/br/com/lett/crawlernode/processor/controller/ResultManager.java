@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
+
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
@@ -39,9 +41,12 @@ import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngelo
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+
 import br.com.lett.crawlernode.server.S3Service;
+
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+
 import br.com.lett.crawlernode.processor.base.Extractor;
 import br.com.lett.crawlernode.processor.base.IdentificationLists;
 
@@ -102,18 +107,10 @@ public class ResultManager {
 	}
 
 	/**
-	 * Construtora responsável pela inicialização dos mapas de identificação e substituição
+	 * Result manager initialization.
 	 * 
-	 * @param activateLogging display log messages
-	 */
-	public ResultManager(boolean activateLogging) throws NullPointerException {
-		this.init(activateLogging);
-	}
-
-	/**
-	 * Função responsável pela inicialização do ResultManager
-	 * 
-	 * @author fabricio
+	 * @param activateLogging
+	 * @throws NullPointerException
 	 */
 	private void init(boolean activateLogging) throws NullPointerException {
 		this.isoDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -121,10 +118,10 @@ public class ResultManager {
 
 		this.logActivated = activateLogging;
 
-		// Cria as informaçẽos do supermercado
+		// create market information
 		this.createMarketInfo();
 
-		// initializa substitution maps
+		// initialize substitution maps
 		this.unitsReplaceMap = new LinkedHashMap<String, String>();
 		this.recipientsReplaceMap = new LinkedHashMap<String, String>();
 
