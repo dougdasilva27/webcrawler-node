@@ -307,6 +307,9 @@ public class DataFetcher {
 			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 			httpPost.addHeader("Proxy-Authorization", headerValue);
+			
+			// setting header for proxy country
+			httpPost.addHeader("X-Proxy-Country", "BR");
 		}
 
 
@@ -501,6 +504,9 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
+				
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
 			// do request
@@ -634,6 +640,9 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
+				
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
 			// do request
@@ -769,6 +778,9 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
+				
+				// setting header for proxy country
+				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
@@ -905,6 +917,9 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
+				
+				// setting header for proxy country
+				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
 
 			for(String key : headers.keySet()){
