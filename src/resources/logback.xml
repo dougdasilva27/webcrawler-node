@@ -32,7 +32,7 @@
    		</filter>
 		 
 		<encoder>
-			<pattern>[%-5level] %msg%n</pattern>
+			<pattern>[%-5level] -> %msg%n</pattern>
 		</encoder>
 	</appender>
 

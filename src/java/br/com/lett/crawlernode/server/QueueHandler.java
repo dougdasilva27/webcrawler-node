@@ -3,6 +3,10 @@ package br.com.lett.crawlernode.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.main.ExecutionParameters;
+import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.util.Logging;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -10,10 +14,6 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.util.Logging;
 
 /**
  * This class only performs authentication on the desired Amazon SQS queue and
@@ -27,8 +27,8 @@ public class QueueHandler {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueHandler.class);
 
-	private final String AWS_ACCESS_KEY = "AKIAITCJTG6OHBYGUWLA";
-	private final String SECRET_KEY = "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";
+	private final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
+	private final String SECRET_KEY = "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";
 	
 	public static final String DEVELOPMENT = "crawler-development";
 	public static final String INSIGHTS = "crawler-insights";
