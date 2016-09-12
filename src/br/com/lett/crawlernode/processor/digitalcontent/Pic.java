@@ -3,9 +3,14 @@ package br.com.lett.crawlernode.processor.digitalcontent;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import br.com.lett.crawlernode.processor.base.PicStatus;
-
 public class Pic {
+	
+	public static final String NO_IMAGE = "no-image";
+	public static final String MATCH = "match";
+	public static final String NOT_VERIFIED = "not-verified";
+	public static final String NO_REFERENCE = "no-reference";
+	public static final String COMPLETE = "complete";
+	public static final String INCOMPLETE = "incomplete";
 
 	public static void setPicSecondary(JSONObject lettDigitalContent, JSONObject pic) {
 		JSONObject pic_secondary = new JSONObject();
@@ -22,16 +27,16 @@ public class Pic {
 
 		}
 		if(secondary_reference_count == 0) { // no-reference tem precedência sobre no-image
-			pic_secondary.put("status", PicStatus.NO_REFERENCE);
+			pic_secondary.put("status", NO_REFERENCE);
 		} 
 		else if (pic.getInt("count") <= 1) {
-			pic_secondary.put("status", PicStatus.NO_IMAGE);
+			pic_secondary.put("status", NO_IMAGE);
 		}
 		else if(pic.getInt("count")-1 >= secondary_reference_count) {
-			pic_secondary.put("status", PicStatus.COMPLETE);
+			pic_secondary.put("status", COMPLETE);
 		} 
 		else {
-			pic_secondary.put("status", PicStatus.INCOMPLETE);
+			pic_secondary.put("status", INCOMPLETE);
 		}
 
 		pic.put("secondary", pic_secondary);

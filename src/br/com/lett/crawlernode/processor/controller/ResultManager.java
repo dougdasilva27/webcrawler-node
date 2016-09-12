@@ -44,7 +44,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.processor.base.Extractor;
 import br.com.lett.crawlernode.processor.base.IdentificationLists;
-import br.com.lett.crawlernode.processor.base.PicStatus;
 
 import com.mongodb.client.MongoDatabase;
 
@@ -349,6 +348,7 @@ public class ResultManager {
 	}
 
 	/**
+	 * Reevaluates all names and description rules, and also all the images.
 	 * 
 	 * @param pm
 	 * @param session
@@ -380,27 +380,33 @@ public class ResultManager {
 		// count images
 		pic.put("count", DigitalContentAnalyser.imageCount(pm));
 
-		// 		1.2) Avaliando imagem primária
+		// evaluate primary image
 		JSONObject picPrimary = new JSONObject();
 		if(pic.has("primary") ) {
 			picPrimary = pic.getJSONObject("primary");
 		}
-
-		//	1.2.0) Baixando imagem primária armazenada na Amazon
+		
+		// assembling path to primary image stored on Amazon S3
+		// this image is the last downloaded image in the image crawler
 		StringBuilder primaryImageAmazonKey = new StringBuilder();
 		primaryImageAmazonKey.append("product-image/");
 		primaryImageAmazonKey.append(this.cityNameInfo.get(pm.getMarket()) + "/");
 		primaryImageAmazonKey.append(this.marketNameInfo.get(pm.getMarket()) + "/");
 		primaryImageAmazonKey.append(pm.getInternalId());
 		primaryImageAmazonKey.append("/1-original.jpg");
-
+		
+		// assembling path to the desired primary image on Amazon S3
+		// this image is the one that was previously stored as the image that goes to insights
 		StringBuilder desiredPrimaryImageAmazonKey = new StringBuilder();
 		desiredPrimaryImageAmazonKey.append("product-image/");
 		desiredPrimaryImageAmazonKey.append("lett/");
 		desiredPrimaryImageAmazonKey.append(pm.getLettId());
 		desiredPrimaryImageAmazonKey.append("/1-original.jpg");
-
+		
+		// fetch md5 of the desired image
 		String desiredPrimaryMd5 = S3Service.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey.toString());
+		
+		// fetch md5 for the supposed new image
 		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey.toString());
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
@@ -408,7 +414,7 @@ public class ResultManager {
 		// if md 5 is null, clean and add set as no_image
 		if(primaryMd5 == null) {
 			picPrimary = new JSONObject();
-			picPrimary.put("status", PicStatus.NO_IMAGE);
+			picPrimary.put("status", Pic.NO_IMAGE);
 			picPrimary.put("verified_by", "crawler_" + nowISO);
 
 		} 
@@ -436,7 +442,7 @@ public class ResultManager {
 
 				// setting fields of the new primary image
 				picPrimary.put("md5", primaryMd5); // updated md5
-				picPrimary.put("status", PicStatus.NOT_VERIFIED);
+				picPrimary.put("status", Pic.NOT_VERIFIED);
 				picPrimary.put("verified_by", "crawler_" + nowISO);
 
 				// delete local images
@@ -468,10 +474,7 @@ public class ResultManager {
 	}
 
 	/**
-	 * Método responsável por buscar informações sobre cidade e supermercado
-	 * @author Doug
-	 * @throws SQLException 
-	 * @category Setters e Getters
+	 * Fetch all markets from database.
 	 */
 	private void createMarketInfo() {
 		this.cityNameInfo = new HashMap<Integer, String>();
