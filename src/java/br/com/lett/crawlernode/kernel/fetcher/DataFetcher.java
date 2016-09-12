@@ -76,9 +76,9 @@ public class DataFetcher {
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 	
-	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 30000; // ms
-	private static final int DEFAULT_CONNECT_TIMEOUT = 30000; // ms
-	private static final int DEFAULT_SOCKET_TIMEOUT = 30000; // ms
+	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
+	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
+	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
