@@ -20,6 +20,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	
 	/**
 	 * Chama os métodos da classe Extractor.
+	 * 
 	 * @author alinetorres
 	 * @category Manipulação
 	 */
@@ -58,7 +59,6 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 		
 		//Chamando o método original
 		super.preSanitize(pm);
-		
 
 		if (pm.getSanitizedName().contains("ref.:")) {
 			pm.setSanitizedName(pm.getSanitizedName().split("ref.:")[0]);
@@ -85,17 +85,18 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	}
 	
 	/**
-	 * Chama o método da classe Extractor para extrair quantidade e unidade. <br>Filtra o extra se for preciso para encontrar a quantidade.
+	 * Extrair quantidade e unidade. 
+	 * <br>Filtra o extra se for preciso para encontrar a quantidade.
+	 * 
 	 * @author alinetorres
 	 * @category Manipulação
-	 * @param pm - objeto da classe ProcessedModel 
+	 * @param pm objeto da classe ProcessedModel 
 	 */
 	@Override
 	public void extractUnitAndQuantity(ProcessedModel pm) {
 		
 		//Chamando o método original
 		super.extractUnitAndQuantity(pm);
-		
 		
 		//Se não achou quantidade, olhar se está no final
 		// Exemplos: vinho ale BACKER gelado 600     ->   quantity: 600
@@ -108,7 +109,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 			Pattern pattern = Pattern.compile("(\\s|^)([0-9]+)([,.][0-9]{1,2})?(\\s|$)");
 		    Matcher matcher = pattern.matcher(pm.getExtra());
 		    
-		    // Contando quantos números sozinhos existem no extra
+		    // counting alone numbers on extra
 		    while (matcher.find()) countOccurences++;
 		    
 	    	if (logActivated) Logging.printLogInfo(logger, "-- QUANTITY ainda é null, achei " + countOccurences + " números avulsos");
@@ -129,7 +130,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 		        
 	        	pm.setQuantity(quantity);
 			        
-		        // Atualizando extra...
+		        // update extra
 		        String newExtra = pm.getExtra().substring(0, matcher.start()) + " " + pm.getExtra().substring(matcher.end(), pm.getExtra().length());
 		        pm.setExtra(newExtra);
 		        

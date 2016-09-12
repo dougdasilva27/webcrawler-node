@@ -21,7 +21,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.slf4j.Logger;
@@ -34,9 +33,8 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
 import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
-import br.com.lett.crawlernode.processor.digitalcontent.DescriptionRules;
-import br.com.lett.crawlernode.processor.digitalcontent.NameRules;
 import br.com.lett.crawlernode.processor.digitalcontent.Pic;
+import br.com.lett.crawlernode.processor.digitalcontent.RulesEvaluation;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
@@ -143,12 +141,12 @@ public class ResultManager {
 
 		// Cria Modelo de manipulação de Marcas para substituição e identificação
 		try {
-			
+
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettBrandProducts);
 
 			// Enquanto houver linhas...
-			while(rs.next()){
+			while(rs.next()) {
 
 				// Verificação se a marca deve ser ignorada
 				// Exemplo: papel higiênico leve 3 pague 2 PAMPERS
@@ -170,14 +168,14 @@ public class ResultManager {
 						aux.putOnList(rs.getString("mistake"));
 						brandModelList.add(aux);
 					}
-					
+
 					// Caso já exista uma incidência, apenas adiciona o erro no mapa
 					else {
 						aux.putOnList(rs.getString("mistake"));
 					}
 				}
 			}
-			
+
 			// close the result set
 			rs.close();
 
@@ -187,7 +185,7 @@ public class ResultManager {
 
 		// Completa marcas ou corrige marcas através da lista de marcas	
 		for(BrandModel bm : brandModelList) {
-			
+
 			// Automação 1: marcas sem espaço
 			// Exemplo: Marca de nome: jack daniels
 			//          Nós adicionaremos automáticamente com brandsReplaceMap e suas combinações: 
@@ -234,7 +232,7 @@ public class ResultManager {
 
 		// Cria Modelo de manipulação da classes para torná-las LettClasses
 		try{
-			
+
 			// ResultSet com resultados da consulta das classes
 			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettClassProducts);
 
@@ -335,7 +333,7 @@ public class ResultManager {
 				unitsList,
 				classModelList);
 
-		// Aciona o método 'extract' de acordo com cada supermecado
+		// extract processed model fields
 		pm = extractor.extract(pm);
 
 		// if we are not running tests, update digital content only if in insights mode
@@ -357,7 +355,7 @@ public class ResultManager {
 	 */
 	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
-		
+
 		// if the processed model doesn't have a digital content
 		// we must create an empty one, to be populated
 		if(pm.getDigitalContent() == null) { 
@@ -367,10 +365,10 @@ public class ResultManager {
 		// get reference digital content
 		JSONObject lettDigitalContent = fetchReferenceDigitalContent(pm.getLettId(), session);
 
-		/*
-		 * Analysing image
-		 */
-		
+		// analysing images
+		// count pics
+		// evaluate primary image
+		// evaluate secondary images
 		JSONObject pic = new JSONObject();
 		try {
 			pic = pm.getDigitalContent().getJSONObject("pic");
@@ -379,7 +377,7 @@ public class ResultManager {
 			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
-		//	count images
+		// count images
 		pic.put("count", DigitalContentAnalyser.imageCount(pm));
 
 		// 		1.2) Avaliando imagem primária
@@ -395,7 +393,7 @@ public class ResultManager {
 		primaryImageAmazonKey.append(this.marketNameInfo.get(pm.getMarket()) + "/");
 		primaryImageAmazonKey.append(pm.getInternalId());
 		primaryImageAmazonKey.append("/1-original.jpg");
-		
+
 		StringBuilder desiredPrimaryImageAmazonKey = new StringBuilder();
 		desiredPrimaryImageAmazonKey.append("product-image/");
 		desiredPrimaryImageAmazonKey.append("lett/");
@@ -407,31 +405,26 @@ public class ResultManager {
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		// Se o md5 for nulo, então limpamos e adicionamos a marcação de sem imagem
+		// if md 5 is null, clean and add set as no_image
 		if(primaryMd5 == null) {
 			picPrimary = new JSONObject();
 			picPrimary.put("status", PicStatus.NO_IMAGE);
 			picPrimary.put("verified_by", "crawler_" + nowISO);
 
-		} else {
-
-			if(picPrimary.has("md5") && picPrimary.get("md5").equals(primaryMd5)) {
-				// Imagem não mudou, então mantemos os parâmetros que já estavam antes
-			} 
-
-			// Imagem mudou
-			else {
-
+		} 
+		else {
+			if( !(picPrimary.has("md5") && picPrimary.get("md5").equals(primaryMd5)) ) { // if image has changed
 				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey.toString());
 
 				// get dimensions from image
 				picPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
 
-				// Capturando similaridade da nova imagem primária usando o NaiveSimilarityFinder
-				// está sendo setado para 0 pois o naive similarity foi removido
+				// old similarity value
+				// was calculate using the naive similarity finder
+				// set to 0 because this algorithm was removed
 				picPrimary.put("similarity", 0);
 
-				// Calculando similaridade da nova imagem primária usando o SIFT
+				// compute similarity of the new image using the SIFT algorithm
 				JSONObject similaritySiftResult = null;
 				try {
 					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
@@ -441,68 +434,36 @@ public class ResultManager {
 
 				picPrimary.put("similarity_sift", similaritySiftResult);
 
-				// Atualizando md5 da nova imagem primária
-				picPrimary.put("md5", primaryMd5);
-				
+				// setting fields of the new primary image
+				picPrimary.put("md5", primaryMd5); // updated md5
 				picPrimary.put("status", PicStatus.NOT_VERIFIED);
-
 				picPrimary.put("verified_by", "crawler_" + nowISO);
 
-				// Deletando imagens locais
+				// delete local images
 				if(primaryImage != null) {
 					primaryImage.delete();
 				}
-			} 
-
+			}
 		}
 
 		pic.put("primary", picPrimary);
 
 		// computing pic secondary
 		Pic.setPicSecondary(lettDigitalContent, pic);
-		
+
+		// set pic on digital content
 		pm.getDigitalContent().put("pic", pic);
 
-
 		// naming rules
-		JSONArray name_rules_results = NameRules.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
-		pm.getDigitalContent().put("name_rules_results", name_rules_results);
-
+		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
+		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
 
 		// description rules
-		JSONArray description_rules_results = DescriptionRules.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
-		pm.getDigitalContent().put("description_rules_results", description_rules_results);
+		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
+		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
 
-
-		// 4) Criando resumo de regras
-		JSONObject rules_results = new JSONObject();
-		rules_results.put("name", true); // Assumindo nome como OK
-		rules_results.put("description", new JSONObject()); // Preparando lugar para sections da description
-
-		// 		4.1) Ver se ocorreu alguma regra de nome que não foi satisfeita
-		for(int i=0; i<name_rules_results.length(); i++) {
-			if(!name_rules_results.getJSONObject(i).getBoolean("satisfied")) {
-				// Marca como não-satisfeita e sai do loop
-				rules_results.put("name", false);
-				break;
-			}
-		}
-
-
-		// 		4.2) Ver se ocorreu alguma regra de descrição em alguma section que não foi satisfeita
-		for(int i=0; i<description_rules_results.length(); i++) {
-
-			// Se nenhuma regra da section foi avaliada ainda, assumimos como OK
-			if(!rules_results.getJSONObject("description").has(description_rules_results.getJSONObject(i).getString("section"))){
-				rules_results.getJSONObject("description").put(description_rules_results.getJSONObject(i).getString("section"), true);
-			}
-
-			if(!description_rules_results.getJSONObject(i).getBoolean("satisfied")) {
-				// Marca como não-satisfeita				
-				rules_results.getJSONObject("description").put(description_rules_results.getJSONObject(i).getString("section"), false);
-			}
-		}
-
+		// create rules summary
+		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
 		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
@@ -538,7 +499,7 @@ public class ResultManager {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	/**
 	 * Fetch the digital content from lett table.
 	 * 
@@ -556,7 +517,7 @@ public class ResultManager {
 		} catch (Exception e) { 
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
-		
+
 		return new JSONObject();
 	}
 

@@ -1,10 +1,5 @@
 package br.com.lett.crawlernode.processor.controller;
 
-//import java.io.BufferedReader;
-//import java.io.InputStreamReader;
-//
-//import java.net.URL;
-
 import java.text.Normalizer;
 
 import java.util.ArrayList;
@@ -18,15 +13,9 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import au.com.bytecode.opencsv.CSVReader;
-//
-//import br.com.lett.crawlernode.processor.base.Information;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.util.Logging;
 
-
-
-// does the same thing that makes Extractor
 public class Sanitizer {
 	
 	private static final Logger logger = LoggerFactory.getLogger(Sanitizer.class);
@@ -129,7 +118,8 @@ public class Sanitizer {
 		
 		// Brands replace
 		for (Map.Entry<String, String> entry : this.brandsReplaceMap.entrySet()) {
-			// If in beginning
+			
+			// if in beginning
 			Pattern beginning = Pattern.compile("^" + Pattern.quote(entry.getKey()));
 			Matcher matcherBeginning = beginning.matcher(name);
 			while (matcherBeginning.find()) {
@@ -138,7 +128,7 @@ public class Sanitizer {
 				if (logActivated) Logging.printLogDebug(logger, name + "'");
 			}
 			
-			// If on ending of string
+			// if on ending of string
 			Pattern ending = Pattern.compile(Pattern.quote(entry.getKey()) + "$");
 			Matcher matcherEnding = ending.matcher(name);
 			while (matcherEnding.find()) {
@@ -147,7 +137,7 @@ public class Sanitizer {
 				if (logActivated) Logging.printLogDebug(logger, name + "'");
 			}
 			
-			// If in the middle of string
+			// if in the middle of string
 			if (name.contains(" " + entry.getKey() + " ")) {
 		    	if (logActivated) Logging.printLogDebug(logger, "-- Found BRAND MIDDLE: " + entry.getKey() + "\n    '" + name + "' -> '");
 		    	name = name.replaceAll(" " + entry.getKey() + " ", " " + entry.getValue() + " ");
