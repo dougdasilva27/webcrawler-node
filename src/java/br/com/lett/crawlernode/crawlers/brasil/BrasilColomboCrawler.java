@@ -62,9 +62,9 @@ public class BrasilColomboCrawler extends Crawler {
 
 			// Preço
 			Float price = null;
-			Element elementPrice = doc.select(".dados-preco-valor").first();
+			Element elementPrice = doc.select(".dados-condicao--texto b span").first();
 			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			    price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
 			// Categoria
