@@ -75,6 +75,10 @@ public class DataFetcher {
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
+	
+	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 30000; // ms
+	private static final int DEFAULT_CONNECT_TIMEOUT = 30000; // ms
+	private static final int DEFAULT_SOCKET_TIMEOUT = 30000; // ms
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
@@ -261,13 +265,19 @@ public class DataFetcher {
 		if (proxy != null) {
 			requestConfig = RequestConfig.custom()
 					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(false)
+					.setRedirectsEnabled(true)
+					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 					.setProxy(proxy)
 					.build();
 		} else {
 			requestConfig = RequestConfig.custom()
 					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(false)
+					.setRedirectsEnabled(true)
+					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 					.build();
 		}
 
@@ -450,12 +460,18 @@ public class DataFetcher {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.setProxy(proxy)
 						.build();
 			} else {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
 
@@ -570,12 +586,18 @@ public class DataFetcher {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.setProxy(proxy)
 						.build();
 			} else {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
 
@@ -692,12 +714,18 @@ public class DataFetcher {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(false)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.setProxy(proxy)
 						.build();
 			} else {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(false)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
 
@@ -811,13 +839,19 @@ public class DataFetcher {
 			if (proxy != null) {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(false)
+						.setRedirectsEnabled(true)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.setProxy(proxy)
 						.build();
 			} else {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(false)
+						.setRedirectsEnabled(true)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
 
