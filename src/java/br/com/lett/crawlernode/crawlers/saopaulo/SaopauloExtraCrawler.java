@@ -31,74 +31,35 @@ public class SaopauloExtraCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
-		
+
 		if(session.getUrl().contains("/produto/")) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
-			// ID interno
-			String internalID = null;
-			try {
-				internalID = Integer.toString(Integer.parseInt(session.getUrl().split("/")[4]));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			// internal id
+			String internalId = crawlInternalId(doc);
 
-			// Pid
-			String internalPid = internalID;
+			// internal pid
+			String internalPid = internalId;
 
-			// Nome
-			String name = null;
-			Element elementName = doc.select("article.hproduct h1").first();
-			if (elementName != null) {
-				name = elementName.text().replace("'", "").trim();
-			}
+			// name
+			String name = crawlName(doc);
 
-			// Preço
-			Float price = null;
-			Elements elementPrice = doc.select("article.hproduct > .hproductLeft .price-off");
-			if(elementPrice.size() == 0) {
-				elementPrice = doc.select(".price-detail.sale-detail > .for > .sale-price");
-				if (elementPrice.size() == 0) {
-					elementPrice = doc.select(".box-price .progressiveDiscount-baseValue");
-				}
-			}
-			if (elementPrice.last() != null) {
-				price = Float.parseFloat(elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
+			// price
+			Float price = crawlPrice(doc);
 
-			// Disponibilidade
-			boolean available = false;
-			Element elementAvailable = doc.select(".btnComprarProd.productElement").first();
-			
-			available = (elementAvailable != null);
+			// availability
+			boolean available = crawlAvailability(doc);
 
-			// Categorias
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
+			// categories
+			ArrayList<String> categories = crawlCategories(doc);
+			String category1 = getCategory(categories, 0);
+			String category2 = getCategory(categories, 1);
+			String category3 = getCategory(categories, 2);
 
-			Element elementCategory1 = doc.select("article.hproduct h2").first();
-			if (elementCategory1 != null) {
-				category1 = elementCategory1.text().trim();
-			}
+			// primary image
+			String primaryImage = crawlPrimaryImage(doc);
 
-			Element elementCategory2 = doc.select("article.hproduct h3").first();
-			if (elementCategory2 != null) {
-				category2 = elementCategory2.text().trim();
-			}
-
-			// Imagem primária
-			String primaryImage = null;
-			Elements elementPrimaryImage = doc.select(".box-image .image img");
-			if (elementPrimaryImage.size() > 0) {
-				primaryImage = "http://www.deliveryextra.com.br" + elementPrimaryImage.attr("src");
-			}
-			
-			if(primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) {
-				primaryImage = ""; //TODO: Verificar o nome da foto genérica
-			}
-
-			// Imagens secundárias
+			// secondary images
 			Elements elementSecondaryImages = doc.select(".more-views dl.thumb-list dd a");
 			JSONArray secondaryImagesArray = new JSONArray();
 			String secondaryImages = "";
@@ -118,23 +79,23 @@ public class SaopauloExtraCrawler extends Crawler {
 				secondaryImages = secondaryImagesArray.toString();
 			}
 
-			// Descrição
+			// description
 			String description = "";   
 			Element element_moreinfo = doc.select("#more-info").first();
 			if(element_moreinfo != null) {
 				description = description + element_moreinfo.html();
 			}
 
-			// Estoque
+			// stock
 			Integer stock = null;
 
-			// Marketplace
+			// marketplace
 			JSONArray marketplace = null;
 
 			Product product = new Product();
 			product.setSeedId(session.getSeedId());
 			product.setUrl(session.getUrl());
-			product.setInternalId(internalID);
+			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
@@ -155,6 +116,78 @@ public class SaopauloExtraCrawler extends Crawler {
 		}
 
 		return products;
+	}
+
+	private String crawlInternalId(Document document) {
+		return Integer.toString(Integer.parseInt(session.getUrl().split("/")[4]));
+	}
+
+	private String crawlName(Document document) {
+		String name = null;
+		Element elementName = document.select("article.hproduct h1").first();
+		if (elementName != null) {
+			name = elementName.text().replace("'", "").trim();
+		}
+		return name;
+	}
+
+	private Float crawlPrice(Document document) {
+		Float price = null;
+		Elements elementPrice = document.select("article.hproduct > .hproductLeft .price-off");
+		if(elementPrice.size() == 0) {
+			elementPrice = document.select(".price-detail.sale-detail > .for > .sale-price");
+			if (elementPrice.size() == 0) {
+				elementPrice = document.select(".box-price .progressiveDiscount-baseValue");
+			}
+		}
+		if (elementPrice.last() != null) {
+			price = Float.parseFloat(elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		}
+
+		return price;
+	}
+
+	private boolean crawlAvailability(Document document) {
+		boolean available = false;
+		Element elementAvailable = document.select(".btnComprarProd.productElement").first();
+		available = (elementAvailable != null);
+
+		return available;
+	}
+
+	private ArrayList<String> crawlCategories(Document document) {
+		ArrayList<String> categories = new ArrayList<String>();
+
+		Elements elementsCategory1 = document.select("article.hproduct h2");
+		if (elementsCategory1.size() > 1) { // prevent crawling wrong category string when product is unavailable
+			Element elementCategory1 = elementsCategory1.first();
+			categories.add(elementCategory1.text().trim());
+		}
+
+		Elements elementsCategory2 = document.select("article.hproduct h3");
+		if (elementsCategory2.size() > 1) { // prevent crawling wrong category string when product is unavailable
+			Element elementCategory2 = elementsCategory2.first();
+			categories.add(elementCategory2.text().trim());
+		}
+
+		return categories;
+	}
+
+	private String getCategory(ArrayList<String> categories, int n) {
+		if (n < categories.size()) {
+			return categories.get(n);
+		}
+
+		return "";
+	}
+
+	private String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		Element elementPrimaryImage = document.select(".box-image .image img").first();
+		if (elementPrimaryImage != null) {
+			primaryImage = "http://www.deliveryextra.com.br" + elementPrimaryImage.attr("src");
+		}
+		return primaryImage;
 	}
 
 }

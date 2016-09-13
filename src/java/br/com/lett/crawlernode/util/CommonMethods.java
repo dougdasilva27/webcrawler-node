@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.util;
 
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -246,6 +247,22 @@ public class CommonMethods {
 		t.printStackTrace(printWriter);
 		
 		return stringWriter.toString();
+	}
+	
+	public static void printToFile(String content, String fileName) {
+		String basePath = "/home/samirleao/Documents/"; // TODO só pra testar
+		PrintWriter out = null;
+		try {
+			out = new PrintWriter(basePath + fileName);
+			out.println(content);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} 
+		finally {
+			if (out != null) {
+				out.close();
+			}
+		}
 	}
 	
 	/**
