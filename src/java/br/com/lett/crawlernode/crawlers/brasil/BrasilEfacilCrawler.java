@@ -9,14 +9,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilEfacilCrawler extends Crawler {
-
-	private final String HOME_PAGE = "http://www.efacil.com.br/";
 
 	public BrasilEfacilCrawler(CrawlerSession session) {
 		super(session);
@@ -24,16 +24,17 @@ public class BrasilEfacilCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		String href = session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.efacil.com.br/");
 	}
+
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if (session.getUrl().startsWith("http://www.efacil.com.br/loja/produto/")) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			Element variationSelector = doc.select(".options_attributes").first();
@@ -85,7 +86,10 @@ public class BrasilEfacilCrawler extends Crawler {
 			Element elementSpecs = doc.select("#especificacoes").first();
 			Element elementTabContainer = doc.select("#tabContainer").first();
 			if (elementTabContainer != null) description += elementTabContainer.html();
-			if (elementSpecs != null) description = description + elementSpecs.html();
+			if (elementSpecs != null) description = description + elementSpecs.html();			
+
+			// Filtragem
+			boolean mustInsert = true;
 
 			// Estoque
 			Integer stock = null;
@@ -95,23 +99,23 @@ public class BrasilEfacilCrawler extends Crawler {
 
 			if (variationSelector == null) { // sem variações
 
-				// ID interno
-				String internalId = null;
-				Element tmpIdElement = doc.select("input[name=productId]").first();
-				String tmpId = null;
-				if (tmpIdElement != null) {
-					tmpId = tmpIdElement.attr("value").trim();
-				}
-				JSONArray infoArray = new JSONArray(doc.select("#entitledItem_" + tmpId).text().trim());
-				JSONObject info = infoArray.getJSONObject(0);
-				internalId = info.getString("catentry_id");
-
 				// InternalPid
 				String internalPid = null;
-				Element elementInternalPid = doc.select("input[name=productId]").first();
+				Element elementInternalPid = doc.select("input#productId").first();
 				if (elementInternalPid != null) {
 					internalPid = elementInternalPid.attr("value").trim();
 				}
+				
+				// ID interno
+				String internalId = null;
+				Element internalIdElement = doc.select("#entitledItem_" + internalPid).first();
+				
+				if(internalIdElement != null){
+					JSONArray infoArray = new JSONArray(internalIdElement.text().trim());
+					JSONObject info = infoArray.getJSONObject(0);
+					internalId = info.getString("catentry_id");
+				} 
+				
 
 				// Disponibilidade
 				boolean available = true;
@@ -119,34 +123,44 @@ public class BrasilEfacilCrawler extends Crawler {
 				if (elementAvailable == null) {
 					available = false;
 				}
-
+				
 				// Preço
 				Float price = null;
 				if (available) {
-					Element elementPrice = doc.select("span[itemprop=price]").first();
-					if (elementPrice != null) {
-						price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					Elements elementPrice = doc.select(".container-price-installment span.blue");
+					
+					for(Element e : elementPrice){
+						String temp = e.text().trim();
+						
+						if(temp.startsWith("R$")){
+							price = Float.parseFloat(temp.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							break; 
+						}
+						
 					}
 				}
 
-				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
-				product.setUrl(this.session.getUrl());
-				product.setInternalId(internalId);
-				product.setInternalPid(internalPid);
-				product.setName(name);
-				product.setAvailable(available);
-				product.setPrice(price);
-				product.setCategory1(category1);
-				product.setCategory2(category2);
-				product.setCategory3(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
+				if (mustInsert) {
 
-				products.add(product);
+					Product product = new Product();
+					product.setSeedId(session.getSeedId());
+					product.setUrl(session.getUrl());
+					product.setInternalId(internalId);
+					product.setInternalPid(internalPid);
+					product.setName(name);
+					product.setAvailable(available);
+					product.setPrice(price);
+					product.setCategory1(category1);
+					product.setCategory2(category2);
+					product.setCategory3(category3);
+					product.setPrimaryImage(primaryImage);
+					product.setSecondaryImages(secondaryImages);
+					product.setDescription(description);
+					product.setStock(stock);
+					product.setMarketplace(marketplace);
+
+					products.add(product);
+				}
 
 			}
 
@@ -195,32 +209,34 @@ public class BrasilEfacilCrawler extends Crawler {
 						// Preço
 						Float price = null;
 						if (available) {
-							price = Float.parseFloat(variationJsonObject.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+							price = crawlPriceFromApi(internalId, internalPid);
 						}
 
-						Product product = new Product();
-						product.setSeedId(this.session.getSeedId());
-						product.setUrl(this.session.getUrl());
-						product.setInternalId(internalId);
-						product.setInternalPid(internalPid);
-						product.setName(variationName);
-						product.setAvailable(available);
-						product.setPrice(price);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImage);
-						product.setSecondaryImages(secondaryImages);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplace);
+						if (mustInsert) {
 
-						products.add(product);
+							Product product = new Product();
+							product.setSeedId(session.getSeedId());
+							product.setUrl(session.getUrl());
+							product.setInternalId(internalId);
+							product.setInternalPid(internalPid);
+							product.setName(variationName);
+							product.setAvailable(available);
+							product.setPrice(price);
+							product.setCategory1(category1);
+							product.setCategory2(category2);
+							product.setCategory3(category3);
+							product.setPrimaryImage(primaryImage);
+							product.setSecondaryImages(secondaryImages);
+							product.setDescription(description);
+							product.setStock(stock);
+							product.setMarketplace(marketplace);
+
+							products.add(product);
+						}
+
 					}
-					
 				} catch (Exception e) {
-					e.printStackTrace();
-					Logging.printLogError(logger, session, "Error processing product with variations!");
+					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 				}
 			} // fim do caso de múltiplas variacoes
 
@@ -230,13 +246,37 @@ public class BrasilEfacilCrawler extends Crawler {
 		
 		return products;
 	}
+
 	
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(String url) {
-		return url.startsWith("http://www.efacil.com.br/loja/produto/");
+	private Float crawlPriceFromApi(String internalId, String internalPid){
+		Float price = null;
+		String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10154"
+				+ "&langId=-6&catalogId=10051&catalogEntryId=" + internalId + "&productId=" + internalPid;
+		
+		String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, null, null);
+		
+		int x = json.indexOf("/*");
+		int y = json.indexOf("*/", x + 2);
+		
+		json = json.substring(x+2, y);
+		
+		
+		JSONObject jsonPrice;
+		try{
+			jsonPrice = new JSONObject(json);
+		} catch(Exception e){
+			jsonPrice = new JSONObject();
+			e.printStackTrace();
+		}
+		
+		if(jsonPrice.has("catalogEntry")){
+			JSONObject jsonCatalog = jsonPrice.getJSONObject("catalogEntry");
+			
+			if(jsonCatalog.has("formattedTotalAVista")){
+				price = Float.parseFloat(jsonCatalog.getString("formattedTotalAVista").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+		}
+		
+		return price;
 	}
-
 }
