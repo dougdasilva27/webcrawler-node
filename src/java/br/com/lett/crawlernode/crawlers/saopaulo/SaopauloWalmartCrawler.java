@@ -22,26 +22,22 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloWalmartCrawler extends Crawler {
 
-	private final String HOME_PAGE_HTTP = "http://www.walmart.com.br/";
-	private final String HOME_PAGE_HTTPS = "https://www.walmart.com.br/";
-
 	public SaopauloWalmartCrawler(CrawlerSession session) {
 		super(session);
 	}
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
+		String href = session.getUrl().toLowerCase();
+		return !FILTERS.matcher(href).matches() && (href.startsWith("http://www.walmart.com.br/") || href.startsWith("https://www.walmart.com.br/"));
 	}
-
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if(session.getUrl().startsWith("http://www.walmart.com.br/produto/") || (session.getUrl().endsWith("/pr") || session.getUrl().contains("?attempt="))) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Nome
@@ -49,7 +45,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 			String name = elementName.text().replace("'","").replace("’","").trim();
 
 			// Pid
-			String internalPid = this.session.getUrl().split("/")[4].trim();
+			String internalPid = session.getUrl().split("/")[4].trim();
 
 			// Categorias
 			Elements elementCategories = doc.select(".breadcrumb li"); 
@@ -122,10 +118,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 			if(elementCharacteristics != null) description = description + elementCharacteristics.html();
 			if(elementDimensions != null) 		description = description + elementDimensions.html();
 
-			Logging.printLogDebug(logger, session, "Já extraí algumas informações, agora vou extrair os produtos dessa URL...");
-
 			// Pegar produtos dentro da url
-
 			JSONObject dataLayer;
 			JSONArray productsListInfo = new JSONArray();
 
@@ -156,7 +149,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				String productCustomName = productsListInfo.getJSONObject(p).getString("name");
 
 				// Fazendo request da página com informações de lojistas
-				Document infoDoc = this.fetchMarketplaceInfoDoc(productId);
+				Document infoDoc = this.fetchMarketplaceInfoDoc(productId, internalPid);
 
 				// Estoque
 				Integer stock = null;
@@ -168,7 +161,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				boolean available = false;
 
 				// availability, price and marketplace
-				Map<String, Float> marketplaceMap = this.extractMarketplace(infoDoc);
+				Map<String, Float> marketplaceMap = this.extractMarketplace(infoDoc, doc);
 				JSONArray marketplace = new JSONArray();
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
@@ -184,8 +177,8 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 
 				Product product = new Product();
-				product.setUrl(this.session.getUrl());
-				product.setSeedId(this.session.getSeedId());
+				product.setSeedId(session.getSeedId());
+				product.setUrl(session.getUrl());
 				product.setInternalId(productId);
 				product.setInternalPid(internalPid);
 				product.setName(name + " " + productCustomName);
@@ -201,7 +194,6 @@ public class SaopauloWalmartCrawler extends Crawler {
 				product.setAvailable(available);
 
 				products.add(product);
-
 			}
 
 		} else {
@@ -211,59 +203,63 @@ public class SaopauloWalmartCrawler extends Crawler {
 		return products;
 	}
 
-	private Map<String, Float> extractMarketplace(Document doc) {
+	private Map<String, Float> extractMarketplace(Document docMarketplace, Document doc) {
 		Map<String, Float> marketplace = new HashMap<String, Float>();
-		Elements marketplaces = doc.select("section");
 
-		for (int i = 0; i < marketplaces.size(); i++) {	
+		Elements marketplaceMainpage = doc.select("#buy-box-accordion section");
 
-			if ( availableInMarketplace(marketplaces.get(i)) ) {
+		for(Element e : marketplaceMainpage){
 
-				String partnerName = marketplaces.get(i).attr("data-seller-name");
-				if ( partnerName != null && !partnerName.isEmpty() ) { // existem casos onde o atributo data-seller-name não existe
-					partnerName = partnerName.trim().toLowerCase();
-					Float partnerPrice = Float.parseFloat(marketplaces.get(i).attr("data-price").trim());
+			//Name
+			Element nameElement = e.select(".seller-name a").first();
 
-					marketplace.put(partnerName, partnerPrice);
-				} 
-				else { // vamos analisar por outro seletor
-					Element marketplaceElement = marketplaces.get(i).select(".title").first();
-					if (marketplaceElement != null) {
-						partnerName = marketplaceElement.attr("data-sellerid");
-						if (partnerName != null && !partnerName.isEmpty()) {
-							partnerName = partnerName.trim().toLowerCase();
-							Float partnerPrice = Float.parseFloat(marketplaceElement.attr("data-sellprice").toString().trim());
+			if(nameElement != null){
+				String name = nameElement.text().trim().toLowerCase();
 
-							marketplace.put(partnerName, partnerPrice);
-						}
-					}
+				Element priceElement = e.select(".payment-price").first();
+				Float price = null;
+
+				if(priceElement != null){
+					price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 				}
+
+				marketplace.put(name, price);
 			}
+
+		}
+
+
+		Elements marketplaces = docMarketplace.select(".sellers-list tr:not([class])");
+
+		for (Element e : marketplaces) {	
+
+			//Name
+			Element nameElement = e.select("td span[data-seller]").first();
+
+			if(nameElement != null){
+				String name = nameElement.text().trim().toLowerCase();
+
+				Element priceElement = e.select(".payment-price").first();
+				Float price = null;
+
+				if(priceElement != null){
+					price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				}
+
+				marketplace.put(name, price);
+			}
+
 		}
 
 		return marketplace;
 	}
-	
-	/*******************************
-	 * Product page identification *
-	 *******************************/
 
-	private boolean isProductPage(String url) {
-		return (url.startsWith("http://www.walmart.com.br/produto/") || url.endsWith("/pr"));
-	}
-
-	private Document fetchMarketplaceInfoDoc(String productId) {
-		String infoUrl = "https://www.walmart.com.br/xhr/sku/buybox/" + productId + "/?isProductPage=true";					
+	private Document fetchMarketplaceInfoDoc(String productId, String pid) {
+		String infoUrl = "https://www.walmart.com.br/xhr/sellers/sku/"+ productId +"?productId="+ pid;					
 		String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+
 		return Jsoup.parse(fetchResult);
 	}
 
-	private boolean availableInMarketplace(Element marketplaceElement) {
-		if (marketplaceElement.select(".content .product-notifyme.clearfix").first() == null) {
-			return true;
-		}
-
-		return false;
-	}
 
 }
