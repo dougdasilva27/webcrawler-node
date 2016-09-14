@@ -97,12 +97,12 @@ public class S3Service {
 	 * @param session
 	 * @param file
 	 */
-	public static void uploadHtmlToAmazon(CrawlerSession session, String html) {		
+	public static void uploadContentToAmazon(CrawlerSession session, String requestHash, String html) {		
 		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".html";
 	
 		try {
 			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
-			File htmlFile = new File(session.getSessionId() + ".html");
+			File htmlFile = new File(requestHash + ".html");
 			FileUtils.writeStringToFile(htmlFile, html);
 			s3client.putObject(new PutObjectRequest(SESSION_BUCKET, amazonLocation, htmlFile));
 			Logging.printLogDebug(logger, session, "Screenshot uploaded with success!");

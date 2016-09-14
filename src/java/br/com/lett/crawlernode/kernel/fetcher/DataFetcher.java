@@ -9,7 +9,8 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -42,7 +43,9 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
+import org.apache.http.util.EntityUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -55,6 +58,7 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.kernel.parser.Parser;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -239,6 +243,8 @@ public class DataFetcher {
 
 		session.addProxyRequestInfo(url, randProxy);
 
+		String requestHash = generateRequestHash(session);
+
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
 			for (Cookie cookie : cookies) {
@@ -307,7 +313,7 @@ public class DataFetcher {
 			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 			httpPost.addHeader("Proxy-Authorization", headerValue);
-			
+
 			// setting header for proxy country
 			httpPost.addHeader("X-Proxy-Country", "BR");
 		}
@@ -340,7 +346,7 @@ public class DataFetcher {
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
-		assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
+		sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 		// analysing the status code
 		// if there was some response code that indicates forbidden access or server error we want to try again
@@ -357,6 +363,9 @@ public class DataFetcher {
 			response.append(inputLine);
 		}
 		in.close();
+
+		// saving request content result on Amazon
+		S3Service.uploadContentToAmazon(session, requestHash, response.toString());
 
 		return response.toString();
 
@@ -429,6 +438,8 @@ public class DataFetcher {
 			int attempt) {
 
 		LettProxy randProxy = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
@@ -504,16 +515,13 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
-				
+
 				// setting header for proxy country
 				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
 			// do request
-			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
-
-			// assembling request information log message
-			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
@@ -527,11 +535,24 @@ public class DataFetcher {
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
 
+			// assembling request information log message
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+			while((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();	
+			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+
 			// process response and parse
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -565,6 +586,8 @@ public class DataFetcher {
 			int attempt) {
 
 		LettProxy randProxy = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
@@ -640,16 +663,13 @@ public class DataFetcher {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
-				
+
 				// setting header for proxy country
 				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
 			// do request
-			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpGet, localContext);
-
-			// assembling request information log message
-			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, closeableHttpResponse);
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
@@ -657,6 +677,19 @@ public class DataFetcher {
 			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
+
+			// assembling request information log message
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+			while((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();	
+			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
 
 			// get all cookie headers
 			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
@@ -676,7 +709,7 @@ public class DataFetcher {
 			return "";
 
 		} catch (Exception e) {
-			assembleRequestInformationLogMsg(url, GET_REQUEST, randProxy, session, null);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -703,6 +736,9 @@ public class DataFetcher {
 	 */
 	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		LettProxy randProxy = null;
+
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
@@ -772,13 +808,13 @@ public class DataFetcher {
 
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setConfig(requestConfig);
-			
+
 			// if we are using charity engine, we must set header for authentication
 			if (randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
-				
+
 				// setting header for proxy country
 				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
@@ -798,10 +834,7 @@ public class DataFetcher {
 			}
 
 			// do request
-			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
-
-			// assembling request information log message
-			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
+			closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
@@ -815,11 +848,24 @@ public class DataFetcher {
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
 
+			// assembling request information log message
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+			while((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();	
+			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+
 			// process response and parse
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, null);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -843,6 +889,8 @@ public class DataFetcher {
 			Map<String,String> headers) {
 
 		LettProxy randProxy = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
 
 		try {
 
@@ -911,13 +959,13 @@ public class DataFetcher {
 
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setEntity(input);
-			
+
 			// if we are using charity engine, we must set header for authentication
 			if (randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
-				
+
 				// setting header for proxy country
 				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
@@ -929,10 +977,7 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 
 			// do request
-			CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
-
-			// assembling request information log message
-			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, closeableHttpResponse);
+			closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
@@ -946,11 +991,24 @@ public class DataFetcher {
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
 
+			// assembling request information log message
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+			while((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();	
+			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+
 			// process response and parse
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			assembleRequestInformationLogMsg(url, POST_REQUEST, randProxy, session, null);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -974,15 +1032,17 @@ public class DataFetcher {
 	 * @param responseCode
 	 * @return
 	 */
-	private static void assembleRequestInformationLogMsg(
+	private static void sendRequestInfoLog(
 			String url, 
 			String requestType, 
 			LettProxy proxy, 
 			CrawlerSession session, 
-			CloseableHttpResponse response) {
+			CloseableHttpResponse response,
+			String requestHash) {
 
 		JSONObject request_metadata = new JSONObject();
 
+		request_metadata.put("req_hash", requestHash);
 		request_metadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
 		request_metadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
 		request_metadata.put("req_method", requestType);
@@ -1222,6 +1282,17 @@ public class DataFetcher {
 	public static String splitHeaderValue(String headerValue) {
 		int beginIndex = headerValue.indexOf('=') + 1;
 		return headerValue.substring(beginIndex, headerValue.length()).trim();
+	}
+
+	private static String generateRequestHash(CrawlerSession session) {
+		String s = session.getSessionId() + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		try {
+			MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+			return Base64.encodeBase64String(sha1.digest(s.getBytes()));
+		} catch (NoSuchAlgorithmException e) {
+			Logging.printLogError(logger, session, "Error generating request hash.");
+			return "";
+		}
 	}
 
 

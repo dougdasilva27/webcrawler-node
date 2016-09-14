@@ -553,24 +553,6 @@ public class Crawler implements Runnable {
 		S3Service.uploadFileToAmazon(session, screenshot);
 
 	}
-	
-	/**
-	 * Save html on Amazon, using webdriver
-	 */
-	private void saveHtml() {
-		
-		// create webdriver
-		if (webdriver == null) {
-			Logging.printLogDebug(logger, session, "Initializing webdriver");
-			webdriver = new CrawlerWebdriver();
-		}
-
-		// the page html
-		String html = webdriver.loadUrl(session.getUrl());
-
-		// upload html and html to Amazon
-		S3Service.uploadHtmlToAmazon(session, html);
-	}
 
 }
 
