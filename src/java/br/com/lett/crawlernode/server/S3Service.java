@@ -98,14 +98,15 @@ public class S3Service {
 	 * @param file
 	 */
 	public static void uploadContentToAmazon(CrawlerSession session, String requestHash, String html) {		
-		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".html";
+		String amazonLocation = session.getSessionId() + "/" + requestHash + ".html";
+		File htmlFile = null;
 	
 		try {
-			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
-			File htmlFile = new File(requestHash + ".html");
+			Logging.printLogDebug(logger, session, "Uploading content to Amazon");
+			htmlFile = new File(requestHash + ".html");			
 			FileUtils.writeStringToFile(htmlFile, html);
 			s3client.putObject(new PutObjectRequest(SESSION_BUCKET, amazonLocation, htmlFile));
-			Logging.printLogDebug(logger, session, "Screenshot uploaded with success!");
+			Logging.printLogDebug(logger, session, "Content uploaded with success!");
 
 		} catch (AmazonServiceException ase) {
 			Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " +
@@ -129,6 +130,10 @@ public class S3Service {
 		} catch (IOException ex) {
 			Logging.printLogError(logger, session, "Error writing String to file during html upload.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+		} finally {
+			if (htmlFile != null) {
+				htmlFile.delete();
+			}
 		}
 	}
 	

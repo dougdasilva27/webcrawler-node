@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -56,6 +57,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.kernel.parser.Parser;
+import br.com.lett.crawlernode.kernel.parser.TextParseData;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
@@ -290,7 +292,6 @@ public class DataFetcher {
 
 
 		Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-		//List<Header> headers = Lists.newArrayList(header);
 		List<Header> headers = new ArrayList<Header>();
 		headers.add(header);
 
@@ -539,14 +540,13 @@ public class DataFetcher {
 			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
-			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-			while((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			in.close();	
-			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+			S3Service.uploadContentToAmazon(session, requestHash, content);
 
 			// process response and parse
 			return processContent(pageContent, session);
@@ -678,18 +678,22 @@ public class DataFetcher {
 				throw new ResponseCodeException(responseCode);
 			}
 
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
 			// assembling request information log message
 			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
-			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-			while((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			in.close();	
-			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+			S3Service.uploadContentToAmazon(session, requestHash, content);
 
 			// get all cookie headers
 			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
@@ -852,14 +856,13 @@ public class DataFetcher {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
-			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-			while((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			in.close();	
-			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+			S3Service.uploadContentToAmazon(session, requestHash, content);
 
 			// process response and parse
 			return processContent(pageContent, session);
@@ -995,14 +998,13 @@ public class DataFetcher {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
-			BufferedReader in = new BufferedReader(new InputStreamReader(closeableHttpResponse.getEntity().getContent()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-			while((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			in.close();	
-			S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+			S3Service.uploadContentToAmazon(session, requestHash, content);
 
 			// process response and parse
 			return processContent(pageContent, session);
@@ -1286,14 +1288,7 @@ public class DataFetcher {
 
 	private static String generateRequestHash(CrawlerSession session) {
 		String s = session.getSessionId() + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		try {
-			MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-			return Base64.encodeBase64String(sha1.digest(s.getBytes()));
-		} catch (NoSuchAlgorithmException e) {
-			Logging.printLogError(logger, session, "Error generating request hash.");
-			return "";
-		}
+		return DigestUtils.md5Hex(s);
 	}
-
 
 }
