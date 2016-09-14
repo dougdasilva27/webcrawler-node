@@ -61,9 +61,15 @@ public class BrasilKabumCrawler extends Crawler {
 
 			// price
 			Float price = null;
-			Element elementPrice = elementProduct.select(".box_preco .preco_desconto span").first();
+			Element elementPrice = elementProduct.select(".preco_normal").first();
 			if(elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			} else {
+				elementPrice = elementProduct.select(".preco_desconto-cm").first();
+				
+				if(elementPrice != null){
+					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				}
 			}
 
 			// availability

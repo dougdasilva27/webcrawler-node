@@ -10,6 +10,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
@@ -55,7 +56,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
 			// Pid
 			String internalPid = null;
-			Element elementInternalPid = doc.select("p.sku span[id]").first();
+			Element elementInternalPid = doc.select(".main_header").first();
 			if (elementInternalPid != null) {
 				internalPid = elementInternalPid.attr("id").split("_")[2].trim();
 			}
@@ -161,8 +162,8 @@ public class BrasilFastshopCrawler extends Crawler {
 				// Preço
 				Float price = null;
 				if(available) {
-					if (dataLayerObject.has("productSalePrice")) {
-						price = Float.parseFloat( dataLayerObject.getString("productSalePrice") );
+					if (dataLayerObject.has("productPrice")) {
+						price = Float.parseFloat( dataLayerObject.getString("productPrice") );
 					}
 				}
 
@@ -226,9 +227,9 @@ public class BrasilFastshopCrawler extends Crawler {
 					boolean variationAvailable = productInfo.getString("ShippingAvailability").equals("1");
 
 					// Preço					
-					Float variationPrice = null;
-					if(variationAvailable) {
-						variationPrice = Float.parseFloat( dataLayerObject.getString("productSalePrice") );
+					Float price = null;
+					if (variationAvailable) {
+						price = crawlPriceFromApi(internalId, internalPid);
 					}
 
 					Product product = new Product();
@@ -237,7 +238,7 @@ public class BrasilFastshopCrawler extends Crawler {
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
-					product.setPrice(variationPrice);
+					product.setPrice(price);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -297,6 +298,41 @@ public class BrasilFastshopCrawler extends Crawler {
 			}
 		}
 		return null;
+	}
+	
+	private Float crawlPriceFromApi(String internalId, String internalPid) {
+		Float price = null;
+		String url = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?"
+				+ "storeId=10151&langId=-6&catalogId=11052"
+				+ "&catalogEntryId="+ internalId +"&productId="+ internalPid +"&hotsite=fastshop";
+		
+		String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, "", null);
+		
+		int x = json.indexOf("/*");
+		int y = json.indexOf("*/", x + 2);
+		
+		json = json.substring(x+2, y);
+		
+		
+		JSONObject jsonPrice;
+		try{
+			jsonPrice = new JSONObject(json);
+		} catch(Exception e){
+			jsonPrice = new JSONObject();
+			e.printStackTrace();
+		}
+		
+		if(jsonPrice.has("catalogEntry")){
+			JSONObject jsonCatalog = jsonPrice.getJSONObject("catalogEntry");
+			
+			if(jsonCatalog.has("formattedTotalAVista")){
+				price = Float.parseFloat(jsonCatalog.getString("formattedTotalAVista").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			} else if(jsonCatalog.has("installmentRow3")){
+				price = Float.parseFloat(jsonCatalog.getString("installmentRow3").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+		}
+		
+		return price;
 	}
 
 }

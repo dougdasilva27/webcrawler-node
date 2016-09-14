@@ -209,9 +209,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							// Preco
 							Float price = null;
 							if (available) {
-								Element elementPrice = variationDocument.select(".content-buy-product meta[itemprop=price]").first();
+								Element elementPrice = variationDocument.select("#productDiscountPrice").first();
 								if(elementPrice != null) {
-									price = Float.parseFloat(elementPrice.attr("content").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+									price = Float.parseFloat(elementPrice.attr("value"));
 								}
 							}
 
@@ -290,9 +290,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							// Preco
 							Float price = null;
 							if (available) {
-								Element elementPrice = doc.select(".content-buy-product meta[itemprop=price]").first();
+								Element elementPrice = doc.select("#productDiscountPrice").first();
 								if(elementPrice != null) {
-									price = Float.parseFloat(elementPrice.attr("content").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+									price = Float.parseFloat(elementPrice.attr("value"));
 								}
 							}
 
