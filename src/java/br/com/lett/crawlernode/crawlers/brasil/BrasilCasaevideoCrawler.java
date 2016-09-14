@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,11 +52,27 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilCasaevideoCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.casaevideo.com.br/";
 
 	public BrasilCasaevideoCrawler(CrawlerSession session) {
 		super(session);
+	}
+
+	@Override
+	public void handleCookiesBeforeFetch() {
+
+		BasicClientCookie cookieWSE = new BasicClientCookie("WC_SESSION_ESTABLISHED", "true");
+		cookieWSE.setDomain("www.casaevideo.com.br");
+		cookieWSE.setPath("/");
+		this.cookies.add(cookieWSE);
+
+		String cookie = DataFetcher.fetchCookie(session, "http://www.casaevideo.com.br/webapp/wcs/stores/servlet/pt/auroraesite", "WC_PERSISTENT", null, 1);
+
+		BasicClientCookie cookieDC = new BasicClientCookie("WC_PERSISTENT", cookie);
+		cookieDC.setDomain("www.casaevideo.com.br");
+		cookieDC.setPath("/");
+		this.cookies.add(cookieDC);
 	}
 
 	@Override
@@ -192,7 +209,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
 
@@ -228,7 +245,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 				try {
 					jsonSkus = new JSONObject(jsonFinal);
 				} catch (JSONException e1) {
-					
+
 				}
 			}
 
@@ -326,7 +343,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 			if(idHtml.contains("id:")){
 				int x = idHtml.indexOf("id:");
 				int y = idHtml.indexOf(",", x+3);
-				
+
 				internalId = idHtml.substring(x+3, y).replaceAll("[^0-9]", "").trim();
 			}
 		}

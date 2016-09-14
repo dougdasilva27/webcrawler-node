@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.crawlers.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,6 +19,24 @@ public class SaopauloExtraCrawler extends Crawler {
 
 	public SaopauloExtraCrawler(CrawlerSession session) {
 		super(session);
+	}
+	
+	@Override
+	public void handleCookiesBeforeFetch() {
+	    
+		// Criando cookie da loja 21 = São Paulo capital
+	    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
+	    cookie.setDomain(".deliveryextra.com.br");
+	    cookie.setPath("/");
+	    cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+	    this.cookies.add(cookie);
+	    
+		// Criando cookie simulando um usuário logado
+	    BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
+	    cookie2.setDomain(".deliveryextra.com.br");
+	    cookie2.setPath("/");
+	    cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+	    this.cookies.add(cookie2);
 	}
 
 
