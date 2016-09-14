@@ -42,7 +42,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilMultiarCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.friopecas.com.br/";
+	private final String HOME_PAGE = "http://www.multiar.com.br/";
 
 	private final String INTERNALID_SELECTOR 								= "#___rc-p-id";
 	private final String INTERNALID_SELECTOR_ATTRIBUTE						= "value";
