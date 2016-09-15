@@ -162,8 +162,8 @@ public class BrasilFastshopCrawler extends Crawler {
 				// Preço
 				Float price = null;
 				if(available) {
-					if (dataLayerObject.has("productPrice")) {
-						price = Float.parseFloat( dataLayerObject.getString("productPrice") );
+					if (dataLayerObject.has("installmentTotalValue")) {
+						price = Float.parseFloat( dataLayerObject.getString("installmentTotalValue") );
 					}
 				}
 
@@ -279,11 +279,13 @@ public class BrasilFastshopCrawler extends Crawler {
 
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			if ( line.contains("productId") || line.contains("productName") || line.contains("mktPlacePartner") || line.contains("productSalePrice") ) {
-				//jsonDataLayerObject = jsonDataLayerObject + line.replaceAll("'", "\\\"").substring(0, line.length()) + "\n";
+			if ( line.contains("productId") || line.contains("productName") || line.contains("mktPlacePartner") || line.contains("installmentTotalValue") ) {
 				jsonDataLayerObject = jsonDataLayerObject + line.substring(0, line.length()) + "\n";
 			}
-
+		}
+		
+		if (scanner != null) {
+			scanner.close();
 		}
 
 		return jsonDataLayerObject;
