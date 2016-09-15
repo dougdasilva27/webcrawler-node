@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.crawlers.extractionutils.BrasilMagazineluizaCrawlerUtils;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
@@ -21,8 +22,16 @@ import br.com.lett.crawlernode.util.Logging;
  * eg:
  * 
  * SKU with marketplace: http://www.magazineluiza.com.br/whisky-vintage-eau-de-toilette-evaflor-100ml-perfume-masculino/p/9843013/pf/pfpm/
+ * http://www.magazineluiza.com.br/micro-ondas-midea-liva-mtag4-30l-com-funcao-grill/p/2019941/ed/mond/
+ * http://www.magazineluiza.com.br/ar-condicionado-split-midea-inverter-9000-btus-frio-vita-42mkca09m5-autolimpante/p/2121992/ar/arsp/
+ * http://www.magazineluiza.com.br/smart-tv-led-48-samsung-full-hd-un48j5200-conversor-digital-wi-fi-2-hdmi-1-usb/p/1933790/et/elit/
+ * http://www.magazineluiza.com.br/cafeteira-nespresso-19-bar-inissia-tropical/p/2165203/ep/cane/
+ * http://www.magazineluiza.com.br/smart-tv-gamer-led-55-samsung-un55j5500-full-hd-conversor-integrado-3-hdmi-2-usb-wi-fi/p/1933674/et/elit/
+ * http://www.magazineluiza.com.br/rack-para-tv-ate-42-1-porta-de-abrir-dj-moveis-america/p/1217778/21/mo/racm/
  * 
  * obs: we couldn't find any URL example with more than one different seller on marketplace.
+ * 
+ * 
  * 
  * @author Samir Leao
  *
@@ -49,7 +58,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		if ( isProductPage(this.session.getUrl()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
-			JSONObject skuJsonInfo = crawlFullSKUInfo(doc);
+			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc);
 
 			/*
 			 * Id interno -- obtido a partir do id do sku apendado com o full id. O full id será
@@ -132,6 +141,18 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 * ******************/
 
 			if (skus.length() == 1) {
+				
+				// append extra in the name
+				JSONObject sku = skus.getJSONObject(0);
+				if (sku.has("voltage")) {
+					name = name + " - " + sku.getString("voltage");
+				}
+				else if (sku.has("color")) {
+					name = name + " - " + sku.getString("color");
+				}
+				else if (sku.has("size")) {
+					name = name + " - " + sku.getString("size").replace("&#34;", "");
+				}
 
 				// availability
 				boolean available = true;
@@ -151,10 +172,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					else available = false;
 				}
 
-				// price
 				Float price = null;
 				if (available) {
-					price = crawlPriceNoVariations(doc);
+					Double priceDouble = skuJsonInfo.getDouble("salePrice");
+					price = priceDouble.floatValue();
 				}
 
 				// marketplace
@@ -163,7 +184,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					String sellerName = marketplaceName.text().toLowerCase().trim();
 					if (!sellerName.equals("magazine luiza")) {
 						Float sellerPrice = crawlPriceNoVariations(doc);
-						
+
 						JSONObject seller = new JSONObject();
 						seller.put("name", sellerName);
 						seller.put("price", sellerPrice);
@@ -197,12 +218,94 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 *************************/
 			else {
 
-				for(int i = 0; i < skus.length(); i++) {
+				// se chegamos até aqui, significa que temos mais de um produto na URL
+				// esse caso deve ser sub-dividido em outros casos.
+				// Primeiro: seletor de voltagem - nesse caso os outros skus na página não possuem URLs diferentes
+				// 			 e o preço dos dois produtos é o mesmo.
+				// Segundo: Os outros produtos da página possuem URLs diferentes e nesse caso o crawler deve capturar
+				//			apenas o produto 'default' daquela página. Os outros serão eventualmente descobertos pelo descobridor.
 
-					JSONObject sku = skus.getJSONObject(i);
 
+				// analyze if we have variations of the same sku or if they are different skus
+				if (BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) { // seletor de voltagem o preço é o mesmo e não há url diferente para os skus e capturamos normalmente
+					for(int i = 0; i < skus.length(); i++) {
+
+						JSONObject sku = skus.getJSONObject(i);
+
+						// internalId
+						String internalIdsecondPart = sku.getString("sku");
+						String variationInternalId = internalId + "-" + internalIdsecondPart;
+
+						// internalPid
+						String variationInternalPid = internalId;
+
+						// name
+						String variationName = name;
+						if (sku.has("voltage")) {
+							variationName = variationName + " - " + sku.getString("voltage");
+						}
+						else if (sku.has("size")) {
+							variationName = variationName + " - " + sku.getString("size").replace("&#34;", "");
+						}
+						else if (sku.has("color")) {
+							variationName = variationName + " - " + sku.getString("color");
+						}
+
+						// availability
+						boolean available = false;
+						if (BrasilMagazineluizaCrawlerUtils.hasOptionSelector(internalIdsecondPart, doc)) {
+							available = true;
+						}
+
+						Float price = null;
+						if (available) {
+							Double priceDouble = skuJsonInfo.getDouble("salePrice");
+							price = priceDouble.floatValue();
+						}
+
+						// marketplace
+						Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
+						if (marketplaceName != null) {
+							String sellerName = marketplaceName.text().toLowerCase().trim();
+							if (!sellerName.equals("magazine luiza")) {
+								Float sellerPrice = crawlPriceVariation(doc);
+
+								JSONObject seller = new JSONObject();
+								seller.put("name", sellerName);
+								seller.put("price", sellerPrice);
+
+								marketplace.put(seller);
+							}
+						}
+
+						Product product = new Product();
+						product.setSeedId(this.session.getSeedId());
+						product.setUrl(this.session.getUrl());
+						product.setInternalId(variationInternalId);
+						product.setInternalPid(variationInternalPid);
+						product.setName(variationName);
+						product.setPrice(price);
+						product.setCategory1(category1);
+						product.setCategory2(category2);
+						product.setCategory3(category3);
+						product.setPrimaryImage(primaryImage);
+						product.setSecondaryImages(secondaryImages);
+						product.setDescription(description);
+						product.setStock(stock);
+						product.setMarketplace(marketplace);
+						product.setAvailable(available);
+
+						products.add(product);
+
+					}
+				}
+				
+				else if (BrasilMagazineluizaCrawlerUtils.skusWithURL(doc)) { // if there are others skus with different URLs per each one
+					String selectedValue = BrasilMagazineluizaCrawlerUtils.selectCurrentSKUValue(doc);
+					JSONObject detail = BrasilMagazineluizaCrawlerUtils.getSKUDetails(selectedValue, skuJsonInfo);
+					
 					// internalId
-					String internalIdsecondPart = sku.getString("sku");
+					String internalIdsecondPart = detail.getString("sku");
 					String variationInternalId = internalId + "-" + internalIdsecondPart;
 
 					// internalPid
@@ -210,20 +313,24 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 					// name
 					String variationName = name;
-					if (sku.has("voltage")) {
-						variationName = variationName + " - " + sku.getString("voltage");
+					if (detail.has("voltage")) {
+						variationName = variationName + " - " + detail.getString("voltage");
+					}
+					else if (detail.has("size")) {
+						variationName = variationName + " - " + detail.getString("size").replace("&#34;", "");
+					}
+					else if (detail.has("color")) {
+						variationName = variationName + " - " + detail.getString("color");
 					}
 
 					// availability
-					boolean available = false;
-					if (hasOptionSelector(internalIdsecondPart, doc)) {
-						available = true;
-					}
+					boolean available = skuJsonInfo.getBoolean("stockAvailability");
 
 					// price
 					Float price = null;
 					if (available) {
-						price = crawlPriceVariation(doc);
+						Double priceDouble = skuJsonInfo.getDouble("salePrice");
+						price = priceDouble.floatValue();
 					}
 
 					// marketplace
@@ -232,7 +339,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						String sellerName = marketplaceName.text().toLowerCase().trim();
 						if (!sellerName.equals("magazine luiza")) {
 							Float sellerPrice = crawlPriceVariation(doc);
-							
+
 							JSONObject seller = new JSONObject();
 							seller.put("name", sellerName);
 							seller.put("price", sellerPrice);
@@ -259,7 +366,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					product.setAvailable(available);
 
 					products.add(product);
-
 				}
 			}
 		} else {
@@ -286,28 +392,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		return (url.contains("/p/"));
 	}
 
-	/**
-	 * Analyze if the current internalId is displayed as an option on the product main page
-	 * in a selection box. If it isn't, it means that this products is not being displayed because
-	 * it's variations is unavailable.
-	 * 
-	 * @return boolean true if exists an option if this internalId or false otherwise.
-	 */
-	private boolean hasOptionSelector(String internalId, Document document) {
-		Element skuUl = document.select(".js-buy-option-box.container-basic-information .js-buy-option-list").first();
-		if (skuUl != null) {
-			Elements skuOptions = skuUl.select("li");
-			for (Element option : skuOptions) {
-				Element input = option.select("input").first();
-				if (input != null) {
-					String value = input.attr("value").trim();
-					if (value.equals(internalId)) return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	private Float crawlPriceNoVariations(Document document) {
 		Float price = null;
 		Element elementPrice = document.select(".content-buy-product meta[itemprop=price]").first();
@@ -328,71 +412,5 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		return price;
 	}
 
-
-	/**
-	 * Get the script having a json with the sku information.
-	 * In the example below the sku has 2 variations. Even if one of them
-	 * is'n show on the main page of the sku, this json contains it's information.
-	 * 
-	 * It was observed that when the variation is unavailable, the ecommerce website
-	 * doesn't display the variation as an option to be selected by the user. When the
-	 * two variations are unavailable, the website doesn't display none of them. Instead,
-	 * it creates a new base product that is displayed as unavailable for the user.
-	 * 
-	 * For instance, if we have Ar Condicionado Midea 110 Vols and Ar Condicionado Midea 220 Volts
-	 * when the two are unavailable, the website only display the product Ar Condicionado Midea.
-	 * If one of them is available, only the other is shown on a box selector for the user.
-	 * 
-	 * The crawler must use the JSON retrieved in this method, so it won't create the new
-	 * "false" sku "Ar Condicionado Midea" on database. This way it continues to crawl the two variations
-	 * and correctly crawl the availability as false.
-	 * 
-	 * eg:
-	 * 
-	 * "reference":"com Função Limpa Fácil",
-	 *	"extendedWarranty":true,
-	 *	"idSku":"0113562",
-	 *	"idSkuFull":"011356201",
-	 *	"salePrice":429,
-	 *	"imageUrl":"http://i.mlcdn.com.br//micro-ondas-midea-liva-mtas4-30l-com-funcao-limpa-facil/v/210x210/011356201.jpg",
-	 *	"fullName":"micro%20ondas%20midea%20liva%20mtas4%2030l%20-%20com%20funcao%20limpa%20facil",
-	 *	"details":[
-	 *		{
-	 *			"color":"Branco",
-	 *			"sku":"011356201",
-	 *			"voltage":"110 Volts"
-	 *		},
-	 *		{
-	 *			"color":"Branco",
-	 *			"sku":"011356301",
-	 *			"voltage":"220 Volts"
-	 *		}
-	 *	],
-	 *	"title":"Micro-ondas Midea Liva MTAS4 30L",
-	 *	"cashPrice":407.55,
-	 *	"brand":"midea",
-	 *	"stockAvailability":true
-	 * 
-	 * @return a json object containing all sku informations in this page.
-	 */
-	private JSONObject crawlFullSKUInfo(Document document) {
-		Elements scriptTags = document.getElementsByTag("script");
-		JSONObject skuJson = null;
-
-		for (Element tag : scriptTags){                
-			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var digitalData = ")) {
-					skuJson = new JSONObject
-							(
-									node.getWholeData().split(Pattern.quote("var digitalData = "))[1] +
-									node.getWholeData().split(Pattern.quote("var digitalData = "))[1].split(Pattern.quote("}]};"))[0]
-									);
-
-				}
-			}        
-		}
-
-		return skuJson.getJSONObject("page").getJSONObject("product");
-	}
 
 }
