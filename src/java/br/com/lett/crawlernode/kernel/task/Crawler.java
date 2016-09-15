@@ -100,6 +100,7 @@ public class Crawler implements Runnable {
 		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
 
 			// get crawled product by it's internalId
+			Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
 			Product crawledProduct = filter(products, session.getInternalId());
 			
 			// if the product is void run the active void analysis
@@ -392,7 +393,8 @@ public class Crawler implements Runnable {
 				return product;
 			}
 		}
-
+		
+		Logging.printLogDebug(logger, session, "Product with internalId " + internalId + " was not found.");
 		return new Product();
 	}
 
