@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.json.JSONArray;
@@ -10,12 +12,21 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.crawlers.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.kernel.fetcher.DataFetcher;
 import br.com.lett.crawlernode.kernel.models.Product;
 import br.com.lett.crawlernode.kernel.task.Crawler;
 import br.com.lett.crawlernode.kernel.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
+/**
+ * e.g:
+ * 
+ * With marketplace: http://www.fastshop.com.br/loja/tratamentodear/arcondicionado1/ar-condicionado-split-hi-wall-midea-elite-30-000-btus-quente-frio-220v-4363-fast?cm_re=FASTSHOP%3ASub-departamento%3AAr%2BCondicionado-_-Vitrine%2B36-_-4395
+ * 
+ * @author Samir Leao
+ *
+ */
 public class BrasilFastshopCrawler extends Crawler {
 
 	private final String HOME_PAGE_HTTP = "http://www.fastshop.com.br/";
@@ -40,8 +51,10 @@ public class BrasilFastshopCrawler extends Crawler {
 		if ( isProductPage(this.session.getUrl(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
+			JSONObject dataLayer = BrasilFastshopCrawlerUtils.crawlFullSKUInfo(doc);
+			
+			
 			String script = getDataLayerJson(doc);
-
 			JSONObject dataLayerObject = null;
 			try {
 				dataLayerObject = new JSONObject(script);
@@ -52,20 +65,13 @@ public class BrasilFastshopCrawler extends Crawler {
 				dataLayerObject = new JSONObject();
 			}
 
-			Element variationSelector = doc.select(".options_dropdown").first();
+			
 
-			// Pid
-			String internalPid = null;
-			Element elementInternalPid = doc.select(".main_header").first();
-			if (elementInternalPid != null) {
-				internalPid = elementInternalPid.attr("id").split("_")[2].trim();
-			}
+			// internal pid
+			String internalPid = crawlInternalPid(doc);
 
-			// Nome
-			String name = null;
-			if (dataLayerObject.has("productName")) {
-				name = dataLayerObject.getString("productName");
-			}
+			// name
+			String name = crawlName(dataLayer);
 
 			// Categoria
 			String category1 = "";
@@ -93,32 +99,19 @@ public class BrasilFastshopCrawler extends Crawler {
 				}
 			}
 
-			// Imagem primária
-			String primaryImage = null;
-			Element elementPrimaryImage = doc.select(".image_container #productMainImage").first();
-			if(elementPrimaryImage != null) {
-				primaryImage = "http:" + elementPrimaryImage.attr("src");
-			}
+			// primary image
+			String primaryImage = crawlPrimaryImage(doc);
 
-			// Imagens secundárias
-			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
-			Elements elementsSecondaryImages = doc.select(".other_views ul li a img");
-			for (Element e : elementsSecondaryImages) {
-				String secondaryImage = e.attr("src");
-				if( !secondaryImage.contains("PRD_447_1.jpg") ) {
-					secondaryImagesArray.put("http:" + e.attr("src"));
-				}
-			}
-			if (secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+			// secondary images
+			String secondaryImages = crawlSecondaryImages(doc);
 
-			// Descrição
-			String description = "";
+			// description
+			String description = crawlDescription(doc);
 
 			// Estoque
 			Integer stock = null;
+			
+			Element variationSelector = doc.select(".options_dropdown").first();
 
 			/*
 			 * Produto sem variação
@@ -141,6 +134,9 @@ public class BrasilFastshopCrawler extends Crawler {
 				if (jsonInfo0.getJSONObject(0).has("catentry_id")) {
 					internalId = jsonInfo0.getJSONObject(0).getString("catentry_id").trim();
 				}
+				
+				// assemble the marketplace map
+				Map<String, Float> marketplaceMap = assembleMarketplaceMap(dataLayer);
 
 				// Disponibilidade
 				boolean available = true;
@@ -318,6 +314,121 @@ public class BrasilFastshopCrawler extends Crawler {
 		}
 		return null;
 	}
+	
+	private String crawlInternalPid(Document document) {
+		String internalPid = null;
+		Element elementInternalPid = document.select(".main_header").first();
+		if (elementInternalPid != null) {
+			internalPid = elementInternalPid.attr("id").split("_")[2].trim();
+		}
+		
+		return internalPid;
+	}
+	
+	private String crawlName(JSONObject dataLayer) {
+		String name = null;
+		if (dataLayer.has("productName")) {
+			name = dataLayer.getString("productName");
+		}
+		
+		return name;
+	}
+	
+	private String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		Element elementPrimaryImage = document.select(".image_container #productMainImage").first();
+		if(elementPrimaryImage != null) {
+			primaryImage = "http:" + elementPrimaryImage.attr("src");
+		}
+		
+		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+		Elements elementsSecondaryImages = document.select(".other_views ul li a img");
+		for (Element e : elementsSecondaryImages) {
+			String secondaryImage = e.attr("src");
+			if( !secondaryImage.contains("PRD_447_1.jpg") ) {
+				secondaryImagesArray.put("http:" + e.attr("src"));
+			}
+		}
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
+	}
+	
+	private String crawlDescription(Document document) {
+		String description = "";
+		Element productTabContainer = document.select("#productTabContainer").first();
+		if (productTabContainer != null) {
+			description = productTabContainer.text().trim();
+		}
+		return description;
+	}
+	
+	/**
+	 * This method creates a marketplace map, associating each parter name
+	 * with the price of the sku in this partner. This information is extracted
+	 * from the dataLayer json, on the field 'mktPlacePartner'.
+	 * 
+	 * Observed pattern for fields in dataLayer:
+	 * 'mktPlacePartner': in this ecommerce we couldn't observe any sku example with more than one different seller from main ecommerce.
+	 * 'installmentTotalValue': this field is always empty on the case that we have one marketplace partner different from the main ecommerce.
+	 * 'productSalePrice': always not empty and in case the installmentTotalValue is empty, we use the productSalePrice to get the sku price.
+	 * 
+	 * Obs: the main ecommerce ("fastshop") is not included in this map, in case that it's name is on the 'mktPlacePartner'. But
+	 * was observed that the name of the main ecommece was never included on the mktPlacePartner field.
+	 * 
+	 * @param dataLayer
+	 * @return
+	 */
+	private Map<String, Float> assembleMarketplaceMap(JSONObject dataLayer) {
+		Map<String, Float> marketplaceMap = new HashMap<String, Float>();
+		
+		// get the name on the field 'mktPlacePartner' on dataLayer json
+		String partnerName = null;
+		if (dataLayer.has("mktPlacePartner")) {
+			String marketplace = dataLayer.getString("mktPlacePartner");
+			if(marketplace != null && !marketplace.isEmpty()) {
+				if (!marketplace.equals("fastshop")) {
+					partnerName = marketplace.toLowerCase().trim();
+				}
+			}
+		}
+		
+		// get the price
+		if(partnerName != null) {
+			Float partnerPrice = null;
+			if (dataLayer.has("installmentTotalValue")) {
+				if (!dataLayer.getString("installmentTotalValue").isEmpty()) {
+					partnerPrice = Float.parseFloat( dataLayer.getString("installmentTotalValue") );
+				}
+				else if (dataLayer.has("productSalePrice")) {
+					if (!dataLayer.getString("productSalePrice").isEmpty()) {
+						partnerPrice = Float.parseFloat( dataLayer.getString("productSalePrice") );
+					}
+				}
+			}
+			
+			if ( (partnerName != null && !partnerName.isEmpty()) && (partnerPrice != null) ) {
+				marketplaceMap.put(partnerName, partnerPrice);
+			}
+		}
+		
+		return marketplaceMap;
+	}
+	
+//	private JSONArray crawlMarkeplace(Map<String, Float> marketplaceMap) {
+//		JSONArray marketplace = new JSONArray();
+//		
+//		for (String partner : marketplaceMap.keySet()) {
+//			
+//		}
+//	}
 	
 	private Float crawlPriceFromApi(String internalId, String internalPid) {
 		Float price = null;

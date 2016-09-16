@@ -82,7 +82,9 @@ public class BrasilMagazineluizaCrawlerUtils {
 		for (int i = 0; i < skus.length(); i++) {
 			JSONObject sku = skus.getJSONObject(i);
 			if (sku.has("voltage")) {
-				return true;
+				if (!sku.getString("voltage").equals("Bivolt")) {
+					return true;
+				}
 			}
 		}
 		return false;
