@@ -140,7 +140,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 * Only one product *
 			 * ******************/
 
-			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) {
+			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) { 
 				
 				// append extra in the name
 				JSONObject sku = skus.getJSONObject(0);
@@ -300,13 +300,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					}
 				}
 				
+				// cai no caso de produto sem variação
 				else if (BrasilMagazineluizaCrawlerUtils.skusWithURL(doc)) { // if there are others skus with different URLs per each one
 					String selectedValue = BrasilMagazineluizaCrawlerUtils.selectCurrentSKUValue(doc);
 					JSONObject detail = BrasilMagazineluizaCrawlerUtils.getSKUDetails(selectedValue, skuJsonInfo);
 					
 					// internalId
-					String internalIdsecondPart = detail.getString("sku");
-					String variationInternalId = internalId + "-" + internalIdsecondPart;
+					//String internalIdsecondPart = detail.getString("sku");
+					//String variationInternalId = internalId + "-" + internalIdsecondPart;
 
 					// internalPid
 					String variationInternalPid = internalId;
@@ -351,7 +352,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					Product product = new Product();
 					product.setSeedId(this.session.getSeedId());
 					product.setUrl(this.session.getUrl());
-					product.setInternalId(variationInternalId);
+					product.setInternalId(internalId);
 					product.setInternalPid(variationInternalPid);
 					product.setName(variationName);
 					product.setPrice(price);
