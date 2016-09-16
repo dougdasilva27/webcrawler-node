@@ -165,14 +165,31 @@ public class BrasilFastshopCrawler extends Crawler {
 					if (dataLayerObject.has("installmentTotalValue")) {
 						price = Float.parseFloat( dataLayerObject.getString("installmentTotalValue") );
 					}
+					else if (dataLayerObject.has("productSalePrice")) {
+						price = Float.parseFloat( dataLayerObject.getString("productSalePrice") );
+					}
 				}
 
 				// Marketplace
 				JSONArray marketplace = new JSONArray();
 				if(partnerName != null && !partnerName.isEmpty()) {
 					JSONObject partner = new JSONObject();
+					Float partnerPrice = null;
+					if (dataLayerObject.has("installmentTotalValue")) {
+						if (!dataLayerObject.getString("installmentTotalValue").isEmpty()) {
+							partnerPrice = Float.parseFloat( dataLayerObject.getString("installmentTotalValue") );
+						}
+						else if (dataLayerObject.has("productSalePrice")) {
+							if (!dataLayerObject.getString("productSalePrice").isEmpty()) {
+								partnerPrice = Float.parseFloat( dataLayerObject.getString("productSalePrice") );
+							}
+						}
+					}
+					
+					
 					partner.put("name", partnerName);
-					partner.put("price", price);
+					partner.put("price", partnerPrice);
+					
 					marketplace.put(partner);
 				}
 
@@ -279,7 +296,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			if ( line.contains("productId") || line.contains("productName") || line.contains("mktPlacePartner") || line.contains("installmentTotalValue") ) {
+			if ( line.contains("productId") || line.contains("productName") || line.contains("mktPlacePartner") || line.contains("installmentTotalValue") || line.contains("productSalePrice")) {
 				jsonDataLayerObject = jsonDataLayerObject + line.substring(0, line.length()) + "\n";
 			}
 		}
