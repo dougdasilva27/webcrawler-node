@@ -80,7 +80,7 @@ public class BrasilMagazineluizaCrawlerUtils {
 	public static boolean hasVoltageSelector(JSONObject skuJsonInfo) {
 		JSONArray skus = skuJsonInfo.getJSONArray("details");
 		for (int i = 0; i < skus.length(); i++) {
-			JSONObject sku = skus.getJSONObject(1);
+			JSONObject sku = skus.getJSONObject(i);
 			if (sku.has("voltage")) {
 				return true;
 			}
