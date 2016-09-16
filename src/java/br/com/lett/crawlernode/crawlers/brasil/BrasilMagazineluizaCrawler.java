@@ -140,7 +140,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 * Only one product *
 			 * ******************/
 
-			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) { 
+			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) {
 				
 				// append extra in the name
 				JSONObject sku = skus.getJSONObject(0);
