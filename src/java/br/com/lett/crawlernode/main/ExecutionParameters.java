@@ -23,21 +23,6 @@ public class ExecutionParameters {
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
 	
 	/**
-	 * Crawler will get messages from the tracked skus queue
-	 */
-	public static final String MODE_INSIGHTS = "insights";
-	
-	/**
-	 * Crawler will get messages from the sku URL suggestions queue
-	 */
-	public static final String MODE_DISCOVERY = "discovery";
-	
-	/**
-	 * Crawler will get messages from the queue for dead letter
-	 */
-	public static final String MODE_DEAD_LETTER = "dead";
-	
-	/**
 	 * The maximum number of threads that can be used by the crawler
 	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
@@ -46,7 +31,6 @@ public class ExecutionParameters {
 
 	private Options options;
 	private String environment;
-	private String mode;
 	private String version;
 	private Boolean debug;
 	private String[] args;
@@ -84,17 +68,12 @@ public class ExecutionParameters {
 	public String getEnvironment() {
 		return this.environment;
 	}
-	
-	public String getMode() {
-		return this.mode;
-	}
 
 	private void createOptions() {
 
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
-		options.addOption("mode", true, "Mode [insights, discovery, dead]");
 		options.addOption("version", true, "Crawler node version");
 
 	}
@@ -114,17 +93,6 @@ public class ExecutionParameters {
 				environment = cmd.getOptionValue("environment");
 				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) && !environment.equals(ENVIRONMENT_PRODUCTION)) {
 					Logging.printLogError(logger, "Unrecognized environment.");
-					help();
-				}
-			} else {
-				help();
-			}
-
-			// mode
-			if (cmd.hasOption("mode")) {
-				mode = cmd.getOptionValue("mode");
-				if (!mode.equals(MODE_INSIGHTS) && !mode.equals(MODE_DISCOVERY) && !mode.equals(MODE_DEAD_LETTER)) {
-					Logging.printLogError(logger, "Unrecognized mode.");
 					help();
 				}
 			} else {
@@ -152,7 +120,6 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Debug: " + this.debug + "\n");
 		sb.append("Environment: " + this.environment + "\n");
-		sb.append("Mode: " + this.mode + "\n");
 		sb.append("Version: " + this.version + "\n");
 
 		return sb.toString();

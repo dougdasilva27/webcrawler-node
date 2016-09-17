@@ -177,7 +177,7 @@ public class QueueService {
 	 * @param message
 	 * @return true if all fields are ok or false if there is at least one field missing
 	 */
-	public static boolean checkMessageIntegrity(Message message) {
+	public static boolean checkMessageIntegrity(Message message, String queueName) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
 		if (!attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
@@ -193,8 +193,8 @@ public class QueueService {
 			return false;
 		}
 
-		// specific fields for insights mode
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
+		// specific fields according with queue type
+		if (queueName.equals(QueueHandler.INSIGHTS)) {
 			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 				if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 					Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");

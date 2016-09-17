@@ -323,10 +323,8 @@ public class ResultManager {
 		// extract processed model fields
 		pm = extractor.extract(pm);
 
-		// if we are not running tests, update digital content only if in insights mode
-		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-			this.updateDigitalContent(pm, session);
-		}
+		// update digital content
+		this.updateDigitalContent(pm, session);
 
 		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
 

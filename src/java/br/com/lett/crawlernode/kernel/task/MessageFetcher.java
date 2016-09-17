@@ -49,7 +49,7 @@ public class MessageFetcher implements Runnable {
 			for (Message message : messages) {
 
 				// check the message
-				if ( QueueService.checkMessageIntegrity(message) ) {
+				if ( QueueService.checkMessageIntegrity(message, result.getQueueName()) ) {
 					
 					// create a crawler session from the message
 					Logging.printLogDebug(logger, "Creating session...");
