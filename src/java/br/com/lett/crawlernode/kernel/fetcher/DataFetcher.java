@@ -1237,7 +1237,7 @@ public class DataFetcher {
 	private static String getProxyService(int attempt, ArrayList<String> proxyServices) {
 		String service = null;
 
-		if (proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
+		if (proxyServices == null || proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
 			service = Proxies.NO_PROXY;
 		}
 
