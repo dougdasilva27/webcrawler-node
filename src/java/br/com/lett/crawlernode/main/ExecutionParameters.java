@@ -74,6 +74,7 @@ public class ExecutionParameters {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("environment", true, "Environment [development, production]");
+		options.addOption("mode", true, "Mode [deprecated]");
 		options.addOption("version", true, "Crawler node version");
 
 	}
