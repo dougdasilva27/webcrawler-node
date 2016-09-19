@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.belohorizonte;
 
 
+
 import java.util.ArrayList;
 import java.util.List;
 
