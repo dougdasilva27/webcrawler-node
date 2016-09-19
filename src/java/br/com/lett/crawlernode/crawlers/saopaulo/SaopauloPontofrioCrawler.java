@@ -254,8 +254,16 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		if (skuChooser.size() > 1) {
 			if(skuChooser.size() == 2){
 				String prodOne = skuChooser.get(0).text();
+				if(prodOne.contains("|")){
+					prodOne = prodOne.split("|")[0].trim();
+				}
+				
 				String prodTwo = skuChooser.get(1).text();
-
+				if(prodTwo.contains("|")){
+					prodTwo = prodTwo.split("|")[0].trim();
+				}
+				
+				
 				if(prodOne.equals(prodTwo)){
 					return false;
 				}
