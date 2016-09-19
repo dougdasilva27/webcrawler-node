@@ -39,7 +39,7 @@ import br.com.lett.crawlernode.util.Logging;
  * ex2 (unavailable): http://www.adias.com.br/produto/ar-condicionado-split-janela-7000-btus-elgin-compact-220v-frio-sqfic-7000-2-68221 
  *
  * Optimizations notes:
- * No optimizations.
+ * No optimizations
  *
  ************************************************************************************************************************************************************************************/
 
