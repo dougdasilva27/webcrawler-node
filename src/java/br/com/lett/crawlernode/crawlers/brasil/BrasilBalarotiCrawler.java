@@ -45,11 +45,11 @@ import br.com.lett.crawlernode.util.Logging;
  *
  ************************************************************************************************************************************************************************************/
 
-public class BrasilBaralotiCrawler extends Crawler {
+public class BrasilBalarotiCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.balaroti.com.br/";
 
-	public BrasilBaralotiCrawler(CrawlerSession session) {
+	public BrasilBalarotiCrawler(CrawlerSession session) {
 		super(session);
 	}
 
