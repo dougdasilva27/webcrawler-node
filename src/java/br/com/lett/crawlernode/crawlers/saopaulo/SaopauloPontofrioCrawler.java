@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.util.Logging;
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
  * 
- * 1) For this crawler, we have one url for mutiples skus.
+ * 1) For this crawler, we have one url for mutiples skus. 
  *  
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
  * 
