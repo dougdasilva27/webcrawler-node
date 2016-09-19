@@ -103,8 +103,15 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			
 			if(skuOptions.size() > 0){
 				for(String internalId : skuOptions){				
+					//variation name
+					String variation = crawlNameVariation(doc, internalId);
+					
 					// Name
-					String nameVariations = (name + " " + crawlNameVariation(doc, internalId)).trim();
+					String nameVariations = name;
+					
+					if(variation != null){
+						nameVariations += " " + variation;
+					}
 					
 					// Get ids partners
 					Map<String, String> mapPartners = crawlIdPartners(doc, internalId);
