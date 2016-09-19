@@ -46,8 +46,7 @@ import br.com.lett.crawlernode.util.Logging;
  * ex2 (unavailable): http://www.casaevideo.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId=142536
  * ex3 (Available 1 variation) : http://www.casaevideo.com.br/webapp/wcs/stores/servlet/pt/auroraesite/cafeteira-expresso-15bar-arno-dolce-gusto-piccolo-127v
  *
- * Optimizations notes:
- * No optimizations.
+ * Optimizations notes: no optimization
  *
  ************************************************************************************************************************************************************************************/
 
