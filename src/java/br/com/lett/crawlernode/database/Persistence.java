@@ -473,7 +473,7 @@ public class Persistence {
 				else {
 					taskCollection.updateOne(
 							new Document("_id", documentId),
-							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, String.valueOf(session.getProcessedId())))
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, session.getProcessedId()))
 							);
 				}
 			} else {
