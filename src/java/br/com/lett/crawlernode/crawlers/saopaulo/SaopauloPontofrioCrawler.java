@@ -127,12 +127,12 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			/* **************************************
 			 * crawling data of multiple variations *
 			 ****************************************/
-			if( hasVariations && !unnavailableForAll) {
+			if( hasVariations ) {
 
 				Elements productVariationElements = this.crawlSkuOptions(doc);
 
 				// Array de ids para url para pegar marketplace
-				List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(modifiedURL, doc, productVariationElements);
+				List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(modifiedURL, doc, productVariationElements, unnavailableForAll);
 
 				// Pegando os documents das páginas de marketPlace para produtos especiais
 				Map<String, Document> documentsMarketPlaces = this.fetchDocumentMarketPlacesToProductSpecial(idsForUrlMarketPlace, modifiedURL);
@@ -359,38 +359,42 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		return documentsMarketPlaces;
 	}
 
-	private List<String> identifyIDForUrlLojistas(String url, Document doc, Elements skuOptions){
-		List<String> ids = new ArrayList<>();
-
-		// first ID
-		String[] tokens = url.split("-");
-		String firstIdMainPage = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
-
-		// second ID
-		String secondIdMainPage = doc.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first().attr("value").trim();
-
-		ids.add(firstIdMainPage);
-
-		// se os ids forem iguais, não há necessidade de enviar os 2
-		if(!firstIdMainPage.equals(secondIdMainPage)){
-			ids.add(secondIdMainPage);
+	private List<String> identifyIDForUrlLojistas(String url, Document doc, Elements skuOptions, boolean unnavailableForAll){
+		if(!unnavailableForAll){
+			List<String> ids = new ArrayList<>();
+	
+			// first ID
+			String[] tokens = url.split("-");
+			String firstIdMainPage = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
+	
+			// second ID
+			String secondIdMainPage = doc.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first().attr("value").trim();
+	
+			ids.add(firstIdMainPage);
+	
+			// se os ids forem iguais, não há necessidade de enviar os 2
+			if(!firstIdMainPage.equals(secondIdMainPage)){
+				ids.add(secondIdMainPage);
+			}
+	
+			// Ids variations
+			boolean correctId = false;
+			for(Element e : skuOptions){
+				String id = e.attr("value").trim();
+	
+				if(id.equals(firstIdMainPage) || id.equals(secondIdMainPage)){
+					correctId = true;
+					break;
+				} 
+			}
+	
+			// se os ids estiverem corretos, não há necessidade de retornar nada
+			if(correctId) return null;		
+	
+			return ids;
 		}
-
-		// Ids variations
-		boolean correctId = false;
-		for(Element e : skuOptions){
-			String id = e.attr("value").trim();
-
-			if(id.equals(firstIdMainPage) || id.equals(secondIdMainPage)){
-				correctId = true;
-				break;
-			} 
-		}
-
-		// se os ids estiverem corretos, não há necessidade de retornar nada
-		if(correctId) return null;		
-
-		return ids;
+		
+		return null;
 	}
 
 	private Document fetchDocumentMarketPlace(String id, String url){
