@@ -34,7 +34,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilDufrioCrawler extends Crawler {
 
-	private final String HOME_PAGE = "https://www.dufrio.com.br/";
+	private final String HOME_PAGE_HTTP = "http://www.dufrio.com.br/";
+	private final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
 
 	private final String SKU_PAGE_IDENTIFICATION_SELECTOR 	= ".medias";
 	private final String INTERNALID_SELECTOR 				= "input.sku";
@@ -53,7 +54,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getUrl().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		return !FILTERS.matcher(href).matches() && ( (href.startsWith(HOME_PAGE_HTTPS)) || (href.startsWith(HOME_PAGE_HTTP)) );
 	}
 
 
