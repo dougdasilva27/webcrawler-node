@@ -18,7 +18,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
-import br.com.lett.crawlernode.kernel.imgprocessing.ImageFeatures;
+import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.util.Logging;
 
 public class DigitalContentAnalyserUtils {

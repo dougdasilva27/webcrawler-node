@@ -21,10 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoDatabase;
 
+import br.com.lett.crawlernode.core.imgprocessing.ImageComparationResult;
+import br.com.lett.crawlernode.core.imgprocessing.ImageComparator;
+import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.imgprocessing.ImageComparationResult;
-import br.com.lett.crawlernode.kernel.imgprocessing.ImageComparator;
-import br.com.lett.crawlernode.kernel.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
 

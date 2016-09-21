@@ -17,8 +17,8 @@ import com.mongodb.client.MongoDatabase;
 
 import org.bson.Document;
 
-import br.com.lett.crawlernode.kernel.models.Product;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;

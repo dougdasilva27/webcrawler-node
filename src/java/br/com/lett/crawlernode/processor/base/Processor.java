@@ -17,8 +17,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.kernel.models.Product;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.task.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;

@@ -13,9 +13,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.kernel.models.Product;
-import br.com.lett.crawlernode.kernel.task.Crawler;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.task.Crawler;
+import br.com.lett.crawlernode.core.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilDafitiCrawler extends Crawler {

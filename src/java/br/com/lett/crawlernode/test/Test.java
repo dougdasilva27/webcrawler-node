@@ -7,15 +7,15 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import br.com.lett.crawlernode.core.fetcher.Proxies;
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.task.TaskExecutor;
+import br.com.lett.crawlernode.core.task.TaskFactory;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.kernel.fetcher.Proxies;
-import br.com.lett.crawlernode.kernel.models.Market;
-import br.com.lett.crawlernode.kernel.task.CrawlerSession;
-import br.com.lett.crawlernode.kernel.task.TaskExecutor;
-import br.com.lett.crawlernode.kernel.task.TaskFactory;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 
