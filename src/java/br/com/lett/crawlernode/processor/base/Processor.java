@@ -130,6 +130,7 @@ public class Processor {
 				newProcessedProduct.setSecondary_pics(secondary_pics);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
+				newProcessedProduct.setInternalPid(internal_pid);
 
 			}
 

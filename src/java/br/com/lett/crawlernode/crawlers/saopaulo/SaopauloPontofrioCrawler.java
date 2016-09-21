@@ -142,7 +142,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Element sku = productVariationElements.get(i);
 
 					// InternalId
-					String variationInternalID = internalPid + "-" + sku.attr("value");
+					String variationInternalID = sku.attr("value");
 
 					// Getting name variation
 					String variationName = makeVariationName(name, sku).trim();
@@ -188,7 +188,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			else {
 
 				// InternalId
-				String internalID = internalPid + "-" + this.crawlInternalIDSingleProduct(doc);
+				String internalID = this.crawlInternalIDSingleProduct(doc);
 
 				// Marketplace map
 				Map<String, Float> marketplaceMap = this.crawlMarketplacesForSingleProduct(doc, modifiedURL, unnavailableForAll);
