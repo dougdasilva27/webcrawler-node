@@ -1284,8 +1284,7 @@ public class DataFetcher {
 		if (proxyServices == null || proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
 			service = Proxies.NO_PROXY;
 		}
-
-		if (attempt <= MAX_ATTEMPTS_PER_PROXY) { // first interval of attempts...the first proxy service on the list
+		else if (attempt <= MAX_ATTEMPTS_PER_PROXY) { // first interval of attempts...the first proxy service on the list
 			service = proxyServices.get(0);
 		}
 		else if (attempt > MAX_ATTEMPTS_PER_PROXY && attempt <= MAX_ATTEMPTS_PER_PROXY*2) { // second interval of attempts
