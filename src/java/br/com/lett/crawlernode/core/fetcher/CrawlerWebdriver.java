@@ -42,7 +42,6 @@ public class CrawlerWebdriver {
 	
 	/**
 	 * Selenium Webdriver instance
-	 * will be used the RemoteWebdriver implementation
 	 */
 	private WebDriver driver;
 
