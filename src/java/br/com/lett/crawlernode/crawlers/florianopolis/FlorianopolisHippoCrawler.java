@@ -95,7 +95,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);
@@ -114,7 +114,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 
 		return products;

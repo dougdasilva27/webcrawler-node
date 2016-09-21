@@ -160,7 +160,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					Float variationPrice = this.crawlPrice(marketplaceMap);
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
+					
 					product.setUrl(modifiedURL);
 					product.setInternalId(variationInternalID);
 					product.setInternalPid(internalPid);
@@ -203,7 +203,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				Float price = this.crawlPrice(marketplaceMap);
 
 				Product product = new Product();
-				product.setSeedId(session.getSeedId());
+				
 				product.setUrl(modifiedURL);
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);

@@ -49,7 +49,6 @@ public class Processor {
 
 		// get crawled information
 		boolean available = product.getAvailable();
-		String seedId = product.getSeedId();
 		String url = product.getUrl();
 		String internal_id = product.getInternalId();
 		String internal_pid = product.getInternalPid();
@@ -327,7 +326,7 @@ public class Processor {
 			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
 		} catch (Exception e2) {
-			Logging.printLogError(logger, session, "Erro ao tentar processar produto [seed:" + session.getSeedId() + "]");
+			Logging.printLogError(logger, session, "Erro ao tentar processar produto.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e2));
 		}
 

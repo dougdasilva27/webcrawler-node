@@ -47,7 +47,6 @@ public class Persistence {
 
 		// get crawled information
 		boolean available = product.getAvailable();
-		String seedId = product.getSeedId();
 		String url = product.getUrl();
 		String internal_id = product.getInternalId();
 		String internal_pid = product.getInternalPid();

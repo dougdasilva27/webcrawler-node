@@ -122,7 +122,6 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalID);
 			product.setName(name);

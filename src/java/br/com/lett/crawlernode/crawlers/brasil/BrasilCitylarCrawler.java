@@ -159,7 +159,6 @@ public class BrasilCitylarCrawler extends Crawler {
 
 
 					Product product = new Product();
-					product.setSeedId(this.session.getUrl());
 					product.setUrl(variationUrl);
 					product.setInternalId(variationInternalID);
 					product.setName(variationName);
@@ -184,7 +183,6 @@ public class BrasilCitylarCrawler extends Crawler {
 			else {
 
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalID);
 				product.setName(name);

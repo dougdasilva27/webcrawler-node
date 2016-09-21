@@ -190,7 +190,6 @@ public class BrasilFastshopCrawler extends Crawler {
 				}
 
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
@@ -246,7 +245,6 @@ public class BrasilFastshopCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
 					product.setUrl(this.session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);

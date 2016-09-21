@@ -151,7 +151,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				Integer stock = null;
 
 				Product product = new Product();
-				product.setSeedId(session.getSeedId());
+				
 				product.setUrl(session.getUrl());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
@@ -234,7 +234,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
+					
 					product.setUrl(session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);

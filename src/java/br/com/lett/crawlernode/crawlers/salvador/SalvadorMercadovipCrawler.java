@@ -83,7 +83,6 @@ public class SalvadorMercadovipCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalID);
 			product.setName(name);
@@ -101,7 +100,7 @@ public class SalvadorMercadovipCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 		
 		return products;

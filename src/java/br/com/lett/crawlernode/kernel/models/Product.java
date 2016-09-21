@@ -5,7 +5,6 @@ import org.json.JSONArray;
 public class Product {
 	
 	private String url;
-	private String seedId;
 	private String internalId;
 	private String internalPid;
 	private String name;
@@ -22,14 +21,6 @@ public class Product {
 	
 	public Product() {
 		this.description = "";
-	}
-	
-	public String getSeedId() {
-		return seedId;
-	}
-	
-	public void setSeedId(String seedId) {
-		this.seedId = seedId;
 	}
 	
 	public String getUrl() {
@@ -166,7 +157,6 @@ public class Product {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("\n" + "url: " + this.url + "\n");
-		sb.append("seed id: " + this.seedId + "\n");
 		sb.append("internalId: " + this.internalId + "\n");
 		sb.append("internalPid: " + this.internalPid + "\n");
 		sb.append("name: " + this.name + "\n");

@@ -243,7 +243,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 							}
 
 							Product product = new Product();
-							product.setSeedId(session.getSeedId());
+							
 							product.setUrl(session.getUrl());
 							product.setInternalId(variationInternalId);
 							product.setInternalPid(internalPid);
@@ -336,7 +336,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
+					
 					product.setUrl(session.getUrl());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);

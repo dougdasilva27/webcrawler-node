@@ -155,7 +155,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -174,7 +174,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 
 		return products;

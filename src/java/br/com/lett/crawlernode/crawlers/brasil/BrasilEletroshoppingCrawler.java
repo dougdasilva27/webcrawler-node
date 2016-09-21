@@ -154,7 +154,6 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
 					product.setUrl(variationUrl);
 					product.setInternalId(variationInternalID);
 					product.setName(variationName);
@@ -179,7 +178,6 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 			else {
 
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalID);
 				product.setName(name);

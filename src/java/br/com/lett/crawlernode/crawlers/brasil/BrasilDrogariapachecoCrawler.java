@@ -119,7 +119,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);

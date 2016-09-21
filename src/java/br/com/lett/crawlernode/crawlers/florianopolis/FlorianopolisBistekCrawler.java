@@ -37,7 +37,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			String params = this.session.getUrl().split("\\?")[1];
 			Map<String, String> paramsMap = new HashMap<String, String>();
@@ -117,7 +117,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalID);
 			product.setName(name);
@@ -137,7 +137,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 			}
 			
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 
 		return products;

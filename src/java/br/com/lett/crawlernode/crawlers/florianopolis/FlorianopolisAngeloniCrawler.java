@@ -126,7 +126,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 			if(elementTabIncludedItens != null) 	description = description + elementTabIncludedItens.html();
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -145,7 +145,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page.");
 		}
 		
 		return products;

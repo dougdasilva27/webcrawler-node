@@ -128,7 +128,7 @@ public class BrasilShopfatoCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
+			
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);

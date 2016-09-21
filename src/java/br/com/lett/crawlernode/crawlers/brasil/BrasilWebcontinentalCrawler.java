@@ -95,10 +95,10 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 						Logging.printLogDebug(logger, session, "The current sku page is not loaded. Will fetch its page...");
 						
 						Document skuDocument = fetchSkuPage(sku);
-						products.add(crawlSku(skuURL, this.session.getSeedId(), skuDocument));
+						products.add(crawlSku(skuURL, skuDocument));
 					} else {
 						Logging.printLogDebug(logger, session, "The current sku page is already loaded by page fetcher. Will not fetch its page again...");
-						products.add(crawlSku(skuURL, this.session.getSeedId(), doc));
+						products.add(crawlSku(skuURL, doc));
 					}										
 				}
 
@@ -111,7 +111,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 				Logging.printLogDebug(logger, session, "Crawling only one product...");
 				
 				// crawl sku data
-				products.add(crawlSku(this.session.getUrl(), this.session.getSeedId(), doc));
+				products.add(crawlSku(this.session.getUrl(), doc));
 			}
 
 		} else {
@@ -181,7 +181,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 	 * General methods *
 	 *******************/
 
-	private Product crawlSku(String url, String seedId, Document document) {
+	private Product crawlSku(String url, Document document) {
 
 		// InternalId
 		String internalId = crawlInternalId(document);
@@ -220,7 +220,6 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 		JSONArray marketplace = null;
 
 		Product product = new Product();
-		product.setSeedId(seedId);
 		product.setUrl(url);
 		product.setInternalId(internalId);
 		product.setInternalPid(internalPid);

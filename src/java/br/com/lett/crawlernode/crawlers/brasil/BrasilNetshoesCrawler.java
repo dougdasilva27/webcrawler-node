@@ -164,7 +164,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 						boolean available = skuInformation.getString("status").equals("available");
 
 						Product product = new Product();
-						product.setSeedId(this.session.getSeedId());
+						
 						product.setUrl(this.session.getUrl());
 						product.setInternalId(internalID);
 						product.setName(name);

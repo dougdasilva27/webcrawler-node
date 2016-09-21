@@ -38,9 +38,6 @@ public class CrawlerSession {
 	/** Type of crawler session: discovery | insights */
 	private String type;
 
-	/** Current url seed id */
-	private String seedId;
-
 	/** Base original URL */
 	private String originalURL;
 
@@ -278,14 +275,6 @@ public class CrawlerSession {
 		this.originalURL = originalURL;
 	}
 
-	public String getSeedId() {
-		return seedId;
-	}
-
-	public void setSeedId(String seedId) {
-		this.seedId = seedId;
-	}
-
 	public int getTrucoAttempts() {
 		return trucoAttemptsCounter;
 	}
@@ -345,7 +334,6 @@ public class CrawlerSession {
 		sb.append("session id: " + this.sessionId + "\n");
 		sb.append("queue name: " + this.getQueueName() + "\n");
 		sb.append("type: " + this.type + "\n");
-		sb.append("seed id: " + this.seedId + "\n");
 		sb.append("original url: " + this.originalURL + "\n");
 		sb.append("url: " + this.url + "\n");
 		sb.append("processed id: " + this.processedId + "\n");

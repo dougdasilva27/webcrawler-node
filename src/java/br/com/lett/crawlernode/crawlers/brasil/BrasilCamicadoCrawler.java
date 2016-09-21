@@ -114,7 +114,6 @@ public class BrasilCamicadoCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);

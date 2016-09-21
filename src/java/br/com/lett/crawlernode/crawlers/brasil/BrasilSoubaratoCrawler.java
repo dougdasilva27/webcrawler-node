@@ -153,7 +153,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
 					Float priceVariation = this.crawlPriceVariation(availableVariations, price);
 					
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
+					
 					product.setUrl(this.session.getUrl());
 					product.setInternalId(variationInternalID);
 					product.setInternalPid(internalPid);
@@ -184,7 +184,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
 				String internalID = this.crawlInternalIDSingleProduct(doc);
 				
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
+				
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);

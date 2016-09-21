@@ -115,7 +115,7 @@ public class BrasilMultisomCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-			product.setSeedId(this.session.getSeedId());
+			
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalIDFirstProduct);
 			product.setInternalPid(internalPid);
@@ -167,7 +167,6 @@ public class BrasilMultisomCrawler extends Crawler {
 
 				// Creating the product
 				Product productVariation = new Product();
-				productVariation.setSeedId(this.session.getSeedId());
 				productVariation.setUrl(urlVariation);
 				productVariation.setInternalId(internalIDVariation);
 				productVariation.setInternalPid(internalPid);

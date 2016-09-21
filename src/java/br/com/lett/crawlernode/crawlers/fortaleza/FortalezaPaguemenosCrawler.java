@@ -125,7 +125,6 @@ public class FortalezaPaguemenosCrawler extends Crawler {
 			// Creating the product
 			Product product = new Product();
 			product.setUrl(this.session.getUrl());
-			product.setSeedId(this.session.getSeedId());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);

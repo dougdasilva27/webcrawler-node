@@ -143,7 +143,6 @@ public class BrasilEfacilCrawler extends Crawler {
 				if (mustInsert) {
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
 					product.setUrl(session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
@@ -215,7 +214,6 @@ public class BrasilEfacilCrawler extends Crawler {
 						if (mustInsert) {
 
 							Product product = new Product();
-							product.setSeedId(session.getSeedId());
 							product.setUrl(session.getUrl());
 							product.setInternalId(internalId);
 							product.setInternalPid(internalPid);

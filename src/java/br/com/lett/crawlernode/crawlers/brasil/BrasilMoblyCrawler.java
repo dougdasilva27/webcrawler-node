@@ -137,7 +137,6 @@ public class BrasilMoblyCrawler extends Crawler {
 					
 					// Creating the product
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
 					product.setUrl(this.session.getUrl());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
@@ -179,7 +178,6 @@ public class BrasilMoblyCrawler extends Crawler {
 
 				// Creating the product
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);

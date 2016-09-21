@@ -194,7 +194,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				}				
 
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
@@ -279,7 +278,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						}
 
 						Product product = new Product();
-						product.setSeedId(this.session.getSeedId());
 						product.setUrl(this.session.getUrl());
 						product.setInternalId(variationInternalId);
 						product.setInternalPid(variationInternalPid);
@@ -350,7 +348,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
 					product.setUrl(this.session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(variationInternalPid);

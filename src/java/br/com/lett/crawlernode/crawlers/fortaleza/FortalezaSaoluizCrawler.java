@@ -33,7 +33,7 @@ public class FortalezaSaoluizCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			Elements element_visit = doc.select(".form_buy nobr");
 			if(element_visit == null ) return products;
@@ -101,7 +101,6 @@ public class FortalezaSaoluizCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalID);
 			product.setName(name);
@@ -119,7 +118,7 @@ public class FortalezaSaoluizCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 
 		return products;

@@ -129,7 +129,6 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				try {
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
 					product.setUrl(session.getUrl());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);

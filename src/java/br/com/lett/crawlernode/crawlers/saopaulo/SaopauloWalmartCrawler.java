@@ -177,7 +177,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 
 				Product product = new Product();
-				product.setSeedId(session.getSeedId());
+				
 				product.setUrl(session.getUrl());
 				product.setInternalId(productId);
 				product.setInternalPid(internalPid);

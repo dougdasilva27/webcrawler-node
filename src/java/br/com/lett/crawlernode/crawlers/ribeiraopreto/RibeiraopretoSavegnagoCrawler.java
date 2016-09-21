@@ -85,7 +85,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// ID interno
 			String internalId = null;
@@ -168,7 +168,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -187,7 +187,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogTrace(logger, "Not a product page" + session.getSeedId());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
 		}
 		
 		return products;

@@ -159,7 +159,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 					Float priceVariation = crawlPriceVariation(skuInformation, availableVariation);
 					
 					Product product = new Product();
-					product.setSeedId(this.session.getSeedId());
+					
 					product.setUrl(this.session.getUrl());
 					product.setInternalId(internalIdVariation);
 					product.setInternalPid(internalPid);
@@ -199,7 +199,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 				boolean available = this.crawlAvailability(doc);
 				
 				Product product = new Product();
-				product.setSeedId(this.session.getSeedId());
+				
 				product.setUrl(this.session.getUrl());
 				product.setInternalId(internalIDMainPage);
 				product.setInternalPid(internalPid);

@@ -125,7 +125,6 @@ public class BrasilCopaferCrawler extends Crawler {
 	
 					// Creating the product
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
 					product.setUrl(session.getUrl());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
@@ -155,7 +154,6 @@ public class BrasilCopaferCrawler extends Crawler {
 
 				// Creating the product
 				Product product = new Product();
-				product.setSeedId(session.getSeedId());
 				product.setUrl(session.getUrl());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);

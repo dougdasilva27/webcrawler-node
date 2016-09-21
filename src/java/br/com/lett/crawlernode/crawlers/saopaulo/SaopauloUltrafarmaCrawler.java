@@ -140,7 +140,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setSeedId(session.getSeedId());
+			
 			product.setUrl(session.getUrl());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);

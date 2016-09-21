@@ -130,7 +130,6 @@ public class BrasilColomboCrawler extends Crawler {
 				}				
 
 				Product product = new Product();
-				product.setSeedId(session.getSeedId());
 				product.setUrl(session.getUrl());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
@@ -245,7 +244,6 @@ public class BrasilColomboCrawler extends Crawler {
 					secondaryImages = sanitizedSecondaryImages.toString();
 
 					Product product = new Product();
-					product.setSeedId(session.getSeedId());
 					product.setUrl(session.getUrl());
 					product.setInternalId(variationInternalId);
 					product.setInternalPid(internalPid);

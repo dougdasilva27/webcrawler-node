@@ -96,7 +96,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 
 			Product product = new Product();
 			product.setUrl(this.session.getUrl());
-			product.setSeedId(this.session.getSeedId());
+			
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
