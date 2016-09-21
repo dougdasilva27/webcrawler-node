@@ -167,7 +167,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select("h1[itemprop='name']").first();
+		Element nameElement = document.select("h1[itemprop=name]").first();
 
 		if (nameElement != null) {
 			name = nameElement.text().toString().trim();
