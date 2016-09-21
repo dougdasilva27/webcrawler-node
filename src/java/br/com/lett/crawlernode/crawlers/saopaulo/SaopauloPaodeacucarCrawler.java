@@ -15,9 +15,9 @@ import br.com.lett.crawlernode.core.task.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloPaodeacucarCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.paodeacucar.com.br/";
-	
+
 	public SaopauloPaodeacucarCrawler(CrawlerSession session) {
 		super(session);
 	}
@@ -29,16 +29,16 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 		// Não pegaremos as páginas que contém "?ftr=" pois elas são categorias filtradas, que não nos interessam.
 		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE) && !href.contains("?ftr=");
 	}
-	
+
 	@Override
 	public void handleCookiesBeforeFetch() {
-	    
+
 		// Criando cookie da loja 3 = São Paulo capital
 		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "3");
-	    cookie.setDomain(".paodeacucar.com.br");
-	    cookie.setPath("/");
-	    this.cookies.add(cookie);
-	    
+		cookie.setDomain(".paodeacucar.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+
 	}
 
 
@@ -62,9 +62,9 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			String internalId = null;
 			Element elementInternalId = doc.select("input[name=productId]").first();
 			if (elementInternalId != null) {
-				 internalId = elementInternalId.attr("value").trim();
+				internalId = elementInternalId.attr("value").trim();
 			}
-			
+
 			// Pid
 			String internalPid = null;
 
@@ -73,15 +73,15 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			String name = elementName.text().replace("'", "").trim();
 
 			// Preço
-			Elements elementPrice = doc.select("div.product-control__price.price_per > span.value");
+			Element elementPrice = doc.select("div.product-control__price.price_per > span.value").last();
 			Float price = null;
 			if(elementPrice != null) {
-				price = Float.parseFloat( elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 			} else {
-				 elementPrice = doc.select("div.product-control__price > span.value");
-				 if(elementPrice != null){
-					 price = Float.parseFloat( elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-				 }
+				elementPrice = doc.select("div.product-control__price > span.value").first();
+				if (elementPrice != null) {
+					price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				}
 			}
 
 			// Categorias
@@ -154,7 +154,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 
 			Product product = new Product();
 			product.setUrl(this.session.getUrl());
-			
+
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -176,10 +176,10 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
-		
+
 		return products;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/

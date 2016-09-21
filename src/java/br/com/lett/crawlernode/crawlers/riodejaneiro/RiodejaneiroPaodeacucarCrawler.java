@@ -70,15 +70,15 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 			String name = elementName.text().replace("'", "").trim();
 
 			// Preço
-			Elements elementPrice = doc.select("div.product-control__price.price_per > span.value");
+			Element elementPrice = doc.select("div.product-control__price.price_per > span.value").last();
 			Float price = null;
 			if(elementPrice != null) {
-				price = Float.parseFloat( elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 			} else {
-				 elementPrice = doc.select("div.product-control__price > span.value");
-				 if(elementPrice != null){
-					 price = Float.parseFloat( elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-				 }
+				elementPrice = doc.select("div.product-control__price > span.value").first();
+				if (elementPrice != null) {
+					price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				}
 			}
 
 			// Categorias

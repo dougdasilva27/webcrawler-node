@@ -100,7 +100,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
 
-			// Check if all products in page are unnavailable
+			// Check if all products in page are unavailable
 			boolean unnavailableForAll = this.checkUnnavaiabilityForAll(doc);
 
 			// Name
@@ -142,7 +142,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Element sku = productVariationElements.get(i);
 
 					// InternalId
-					String variationInternalID = sku.attr("value");
+					String variationInternalID = internalPid + "-" + sku.attr("value");
 
 					// Getting name variation
 					String variationName = makeVariationName(name, sku).trim();
@@ -188,7 +188,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			else {
 
 				// InternalId
-				String internalID = this.crawlInternalIDSingleProduct(doc);
+				String internalID = internalPid + "-" + this.crawlInternalIDSingleProduct(doc);
 
 				// Marketplace map
 				Map<String, Float> marketplaceMap = this.crawlMarketplacesForSingleProduct(doc, modifiedURL, unnavailableForAll);
