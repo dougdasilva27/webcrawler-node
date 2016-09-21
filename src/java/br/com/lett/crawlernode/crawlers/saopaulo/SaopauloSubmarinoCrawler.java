@@ -120,7 +120,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					Document docMarketplace  = fetchMarketplaceInfoDoc(internalPid, internalId);
 	
 					// Marketplace map
-					Map<String, Float> marketplaceMap = crawlMarketplace(doc, docMarketplace, mapPartners, hasVariations);
+					Map<String, Float> marketplaceMap = crawlMarketplace(doc, docMarketplace, mapPartners, hasVariations, internalPid);
 					
 					// Availability
 					boolean available = crawlAvailability(marketplaceMap);
@@ -331,7 +331,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return mapPartners;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document doc, Document marketplaceDocPage, Map<String, String> partnersIds, boolean hasVariations) {
+	private Map<String, Float> crawlMarketplace(Document doc, Document marketplaceDocPage, Map<String, String> partnersIds, boolean hasVariations, String pid) {
 		Map<String, Float> marketplace = new HashMap<String, Float>();
 
 		if(!hasVariations){
@@ -344,25 +344,44 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			}
 		}
 		
-		Elements lines = marketplaceDocPage.select("table.offers-table tbody tr.partner-line");
-
-		for(Element linePartner: lines) {
-
-			Element partnerNameElement = linePartner.select("td .part-logo a [alt]").first();
-			if (partnerNameElement != null) {
-				String partnerName = partnerNameElement.attr("alt").trim().toLowerCase();
-				Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				String idPartner = lines.attr("data-partner-id").trim();
-				
-				if (partnerName.contains("submarino")) partnerName = "submarino";
-				
-				if(partnersIds.containsKey(idPartner) || (partnerName.equals("submarino") && partnersIds.containsKey(SUBMARINO_ID))){
-					marketplace.put(partnerName, partnerPrice);
+		if(hasPidInMarketplacePage(marketplaceDocPage, pid)){
+			
+			Elements lines = marketplaceDocPage.select("table.offers-table tbody tr.partner-line");
+	
+			for(Element linePartner: lines) {
+	
+				Element partnerNameElement = linePartner.select("td .part-logo a [alt]").first();
+				if (partnerNameElement != null) {
+					String partnerName = partnerNameElement.attr("alt").trim().toLowerCase();
+					Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					String idPartner = lines.attr("data-partner-id").trim();
+					
+					if (partnerName.contains("submarino")) partnerName = "submarino";
+					
+					if(partnersIds.containsKey(idPartner) || (partnerName.equals("submarino") && partnersIds.containsKey(SUBMARINO_ID))){
+						marketplace.put(partnerName, partnerPrice);
+					}
 				}
 			}
 		}
 
 		return marketplace;
+	}
+	
+	private boolean hasPidInMarketplacePage(Document doc, String internalPid){
+		if(doc != null){
+			Element hasPid = doc.select("input[name=codProdFusion]").first();
+			
+			if(hasPid != null){
+				String pid = hasPid.attr("value").trim();
+				
+				if(pid.equals(internalPid)){
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {

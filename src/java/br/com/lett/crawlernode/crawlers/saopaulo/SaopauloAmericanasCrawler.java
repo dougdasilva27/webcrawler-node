@@ -136,7 +136,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 						Map<String, String> partners = getIdsForMarketplaces(doc, sku.attr("value"));
 						
 						// Marketplace map
-						Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(internalPid, sku.attr("value"), partners);
+						Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(internalPid, sku.attr("value"), partners, internalPid);
 
 						// Assemble marketplace from marketplace map
 						JSONArray variationMarketplace = this.checkMarketPlace(doc, this.assembleMarketplaceFromMap(marketplaceMap), sku);
@@ -330,28 +330,51 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return skuOptions;
 	}
 	
-	private Map<String, Float> crawlMarketplacesForMutipleVariations(String internalID, String internalIDVariation, Map<String, String> idsMarketplaces) {
+	private Map<String, Float> crawlMarketplacesForMutipleVariations(String internalID, String internalIDVariation, Map<String, String> idsMarketplaces, String pid) {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 		
 		String url = "http://www.americanas.com.br/parceiros/" + internalID + "/" + "?codItemFusion=" + internalIDVariation;
 	
 		Document docMarketplaceInfo = fetchMarketplace(internalID, url);		
-		Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
-
-		for(Element linePartner: lines) {
-
-			String partnerName = linePartner.select(".part-info.part-name").first().text().trim().toLowerCase();
-			Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-
-			String id = linePartner.attr("data-partner-id").trim();
+		if(hasPidInMarketplacePage(docMarketplaceInfo, pid)){
 			
-			if(idsMarketplaces.containsKey(id) || (partnerName.equals(MAIN_SELLER_NAME_LOWER) && idsMarketplaces.containsKey(MAIN_SELLER_ID_PARTNER))){
-				marketplace.put(partnerName, partnerPrice);
+			Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
+	
+			for(Element linePartner: lines) {
+	
+				String partnerName = linePartner.select(".part-info.part-name").first().text().trim().toLowerCase();
+				Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+	
+				String id = linePartner.attr("data-partner-id").trim();
+				
+				if(idsMarketplaces != null){
+					if(idsMarketplaces.containsKey(id) || (partnerName.equals(MAIN_SELLER_NAME_LOWER) && idsMarketplaces.containsKey(MAIN_SELLER_ID_PARTNER))){
+						marketplace.put(partnerName, partnerPrice);
+					}
+				} else {
+					marketplace.put(partnerName, partnerPrice);
+				}
+	
 			}
-
 		}
 
 		return marketplace;
+	}
+	
+	private boolean hasPidInMarketplacePage(Document doc, String internalPid){
+		if(doc != null){
+			Element hasPid = doc.select("input[name=codProdFusion]").first();
+			
+			if(hasPid != null){
+				String pid = hasPid.attr("value").trim();
+				
+				if(pid.equals(internalPid)){
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 	private Map<String, String> getIdsForMarketplaces(Document doc, String internalID){
