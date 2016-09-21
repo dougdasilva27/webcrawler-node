@@ -38,7 +38,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if ( isProductPage(doc, this.session.getUrl()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 
@@ -222,8 +222,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		return (url.endsWith("/p"));
+	private boolean isProductPage(Document document, String url) {
+		return (document.select("#___rc-p-sku-ids").first() != null && url.endsWith("/p"));
 	}
 
 }
