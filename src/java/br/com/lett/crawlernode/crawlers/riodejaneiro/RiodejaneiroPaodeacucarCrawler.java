@@ -70,7 +70,7 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 			String name = elementName.text().replace("'", "").trim();
 
 			// Preço
-			Elements elementPrice = doc.select("div.product-control__price > span.value");
+			Elements elementPrice = doc.select("div.product-control__price.price_per > span.value");
 			Float price = null;
 			if(elementPrice.last() != null) {
 				price = Float.parseFloat( elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
