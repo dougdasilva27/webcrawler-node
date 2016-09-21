@@ -9,7 +9,7 @@ import org.apache.commons.cli.ParseException;
 
 import br.com.lett.crawlernode.core.fetcher.Proxies;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
 import br.com.lett.crawlernode.core.task.TaskFactory;
 import br.com.lett.crawlernode.database.DBCredentials;

@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;

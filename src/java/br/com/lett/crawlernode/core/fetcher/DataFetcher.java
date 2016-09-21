@@ -58,7 +58,7 @@ import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.parser.TextParseData;
-import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;

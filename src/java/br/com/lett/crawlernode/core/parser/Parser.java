@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.PageContent;
-import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

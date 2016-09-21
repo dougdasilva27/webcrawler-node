@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 
 /**

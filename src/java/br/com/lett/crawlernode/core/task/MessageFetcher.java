@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.server.RequestMessageResult;

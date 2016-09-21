@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.task.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;

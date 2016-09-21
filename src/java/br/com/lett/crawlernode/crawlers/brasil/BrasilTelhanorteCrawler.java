@@ -16,8 +16,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
-import br.com.lett.crawlernode.core.task.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************

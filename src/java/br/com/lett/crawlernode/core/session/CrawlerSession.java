@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +9,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.task.CrawlerSessionError;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueHandler;
