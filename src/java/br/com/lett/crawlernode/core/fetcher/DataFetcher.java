@@ -90,6 +90,8 @@ public class DataFetcher {
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
 
+	private static List<String> errorCodes;
+
 	/**
 	 * Static initialization block
 	 */
@@ -114,6 +116,8 @@ public class DataFetcher {
 				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
 				"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 				);
+
+		errorCodes = Arrays.asList("403");
 	}
 
 	/**
@@ -548,6 +552,16 @@ public class DataFetcher {
 			}
 			S3Service.uploadContentToAmazon(session, requestHash, content);
 
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
+
 			// process response and parse
 			return processContent(pageContent, session);
 
@@ -694,6 +708,16 @@ public class DataFetcher {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
 			S3Service.uploadContentToAmazon(session, requestHash, content);
+
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
 
 			// get all cookie headers
 			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
@@ -864,6 +888,16 @@ public class DataFetcher {
 			}
 			S3Service.uploadContentToAmazon(session, requestHash, content);
 
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
+
 			// process response and parse
 			return processContent(pageContent, session);
 
@@ -1005,6 +1039,16 @@ public class DataFetcher {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
 			S3Service.uploadContentToAmazon(session, requestHash, content);
+
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
 
 			// process response and parse
 			return processContent(pageContent, session);

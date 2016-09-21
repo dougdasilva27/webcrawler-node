@@ -248,10 +248,10 @@ public class BrasilEfacilCrawler extends Crawler {
 	
 	private Float crawlPriceFromApi(String internalId, String internalPid){
 		Float price = null;
-		String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10154"
-				+ "&langId=-6&catalogId=10051&catalogEntryId=" + internalId + "&productId=" + internalPid;
+		String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView";
+		String payload = "storeId=10154" + "&langId=-6&catalogId=10051&catalogEntryId=" + internalId + "&productId=" + internalPid;
 		
-		String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, null, null);
+		String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, payload, null);
 		
 		int x = json.indexOf("/*");
 		int y = json.indexOf("*/", x + 2);
