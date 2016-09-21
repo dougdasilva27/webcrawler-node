@@ -185,7 +185,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			/* *******************************************
 			 * crawling data of only one product in page *
 			 *********************************************/
-			else {
+			else{
 
 				// InternalId
 				String internalID = this.crawlInternalIDSingleProduct(doc);
