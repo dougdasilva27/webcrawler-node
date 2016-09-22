@@ -227,8 +227,11 @@ public class Crawler implements Runnable {
 				// if a new processed product was created
 				if (newProcessedProduct != null) {
 
-					// persist the new created processed product, and end
-					Persistence.persistProcessedProduct(newProcessedProduct, session);
+					// persist the new created processed product, append the new processed on mongo task and end
+					Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
+					if (id != null) {
+						Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
+					}
 					return;
 				}
 
@@ -264,7 +267,7 @@ public class Crawler implements Runnable {
 						// this id will be added to the found_products field on the task document on Mongo
 						Long id = Persistence.persistProcessedProduct(newProcessedProduct, session);
 						if (id != null) {
-							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+							//Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
 							Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
 						}
 						return;
