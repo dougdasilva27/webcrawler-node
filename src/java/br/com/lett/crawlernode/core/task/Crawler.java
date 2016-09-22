@@ -213,7 +213,7 @@ public class Crawler implements Runnable {
 		// fetch the previous processed product stored on database
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
-		if ( (previousProcessedProduct == null && session.getType().equals(CrawlerSession.DISCOVERY_TYPE)) 
+		if ( (previousProcessedProduct == null && (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE))) 
 				||
 				previousProcessedProduct != null) 
 		{
