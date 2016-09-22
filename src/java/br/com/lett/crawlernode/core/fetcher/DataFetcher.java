@@ -1,6 +1,12 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 import java.net.Authenticator;
@@ -9,13 +15,14 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -57,13 +64,13 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.parser.TextParseData;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+
 
 /**
  * Auxiliar class for http requests
@@ -132,6 +139,19 @@ public class DataFetcher {
 	 */
 	public static String fetchString(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
 		return fetchPage(reqType, session, url, urlParameters, cookies, 1);	
+	}
+
+	/**
+	 * 
+	 * @param session
+	 * @param localFileDir
+	 * @return
+	 * @throws IOException
+	 */
+	public static BufferedImage fetchImage(CrawlerSession session, String localFileDir) throws IOException {
+		File imageFile = downloadImageFromMarket(1, session, localFileDir);
+		if(imageFile != null) return ImageIO.read(imageFile);
+		return null;
 	}
 
 	/**
@@ -1117,6 +1137,138 @@ public class DataFetcher {
 		if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
 
 		return "";
+	}
+
+	/**
+	 * 
+	 * @param attempt
+	 * @param session
+	 * @param localFileDir
+	 * @return
+	 */
+	private static File downloadImageFromMarket(
+			int attempt,
+			CrawlerSession session, 
+			String localFileDir) {
+
+		LettProxy randProxy = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
+
+		try {
+
+			// choosing the preferred proxy service
+			String randUserAgent = randUserAgent();
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+
+			CookieStore cookieStore = new BasicCookieStore();
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.build();
+			}
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			HttpGet httpGet = new HttpGet(session.getUrl());
+			httpGet.setConfig(requestConfig);
+
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// do request
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
+			// assembling request information log message
+			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			File localFile = new File(localFileDir);
+
+			// get image bytes
+			BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());  
+			BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(localFile));  
+			byte[] b = new byte[8*1024]; // reading each 8kb  
+			int read = 0;  
+			while((read = is.read(b)) > -1){  
+				bout.write(b, 0, read);  
+			}  
+			bout.flush();  
+			bout.close();
+			is.close(); 
+
+			Logging.printLogDebug(logger, session, " Download OK!");
+
+			return localFile;
+
+		} catch (Exception e) {			
+
+			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getUrl() + "]");
+				return null;
+			} else {
+				return downloadImageFromMarket(attempt + 1, session, localFileDir);
+			}
+		}
+
+
 	}
 
 	/**
