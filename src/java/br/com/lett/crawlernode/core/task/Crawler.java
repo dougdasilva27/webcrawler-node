@@ -179,7 +179,7 @@ public class Crawler implements Runnable {
 
 	/**
 	 * This method is responsible for the main post processing stages of a crawled product.
-	 * It takes care of the following tasks:
+	 * It takes care of the following tasks
 	 * <ul>
 	 * 	<li>1. Print the crawled information;</li>
 	 * 	<li>2. Persist the product;</li>
