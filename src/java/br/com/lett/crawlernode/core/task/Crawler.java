@@ -140,6 +140,9 @@ public class Crawler implements Runnable {
 		// an URL scheduled manually, we won't run active void and 
 		// we must process each crawled product
 		else if (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE)) {
+			if (session.getType().equals(CrawlerSession.SEED_TYPE)) Logging.printLogDebug(logger, session, "Processing a SEED session.");
+			else Logging.printLogDebug(logger, session, "Processing a DISCOVERY session.");
+			
 			for (Product product : products) {
 				try {
 					processProduct(product);
@@ -213,7 +216,8 @@ public class Crawler implements Runnable {
 		// fetch the previous processed product stored on database
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
-		if ( (previousProcessedProduct == null && (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE))) 
+		if ( (previousProcessedProduct == null && 
+				(session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE))) 
 				||
 				previousProcessedProduct != null) 
 		{
