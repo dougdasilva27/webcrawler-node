@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.session;
 
 public class CrawlerSessionError {
 	
