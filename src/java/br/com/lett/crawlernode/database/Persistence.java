@@ -106,21 +106,20 @@ public class Persistence {
 		try {
 
 			// Montando string de lista de campos da query
-			String listOfFields = "";
-
-			listOfFields += "available";
-			listOfFields += ", market";
-			listOfFields += ", internal_id";			
-			listOfFields += ", internal_pid"; 
-			listOfFields += ", url";
-			listOfFields += ", price";
-			listOfFields += ", stock";
-			listOfFields += ", name";
-			listOfFields += ", pic";
-			listOfFields += ", secondary_pics";
-			listOfFields += ", cat1";
-			listOfFields += ", cat2";
-			listOfFields += ", cat3";
+			StringBuilder fields = new StringBuilder();
+			fields.append("available");
+			fields.append(", market");
+			fields.append(", internal_id");			
+			fields.append(", internal_pid"); 
+			fields.append(", url");
+			fields.append(", price");
+			fields.append(", stock");
+			fields.append(", name");
+			fields.append(", pic");
+			fields.append(", secondary_pics");
+			fields.append(", cat1");
+			fields.append(", cat2");
+			fields.append(", cat3");
 
 			// Montando string de lista de valores da query
 			String values = "";
@@ -153,12 +152,12 @@ public class Persistence {
 			else values += ", NULL";
 
 			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
-				listOfFields = listOfFields + ", description";
+				fields.append(", description");
 				values = values + ", '" + description + "'";
 			}
 
 			if(marketplace_string != null) {
-				listOfFields = listOfFields + ", marketplace";
+				fields.append(", marketplace");
 				values = values + ", '" + marketplace_string + "'";
 			}
 
@@ -167,7 +166,7 @@ public class Persistence {
 
 			sqlExecuteCrawler.append("INSERT INTO crawler ");
 			sqlExecuteCrawler.append("( ");
-			sqlExecuteCrawler.append(listOfFields);
+			sqlExecuteCrawler.append(fields.toString());
 			sqlExecuteCrawler.append(") ");
 
 			sqlExecuteCrawler.append("VALUES ");
@@ -177,7 +176,7 @@ public class Persistence {
 
 			sqlExecuteCrawler.append("INSERT INTO crawler_old ");
 			sqlExecuteCrawler.append("( ");
-			sqlExecuteCrawler.append(listOfFields);
+			sqlExecuteCrawler.append(fields.toString());
 			sqlExecuteCrawler.append(") ");
 
 			sqlExecuteCrawler.append("VALUES ");
@@ -210,7 +209,7 @@ public class Persistence {
 		Long id = null;
 		
 		String query = "";
-
+		
 		if(newProcessedProduct.getId() == null) {
 			query = "INSERT INTO processed("
 					+ "internal_id, internal_pid, original_name, class, brand, recipient, quantity,"
@@ -218,15 +217,15 @@ public class Persistence {
 					+ "multiplier, original_description, price, stock, secondary_pics, changes, digital_content, marketplace, behaviour, similars)"
 					+ "VALUES ("
 					+ "'" + newProcessedProduct.getInternalId() + "', "
-					+ "'" + newProcessedProduct.getInternalPid() + "', "
+					+ (newProcessedProduct.getInternalPid() 		== null ? "NULL" : "'" + newProcessedProduct.getInternalPid()  + "'") + ", "
 					+ "'" + newProcessedProduct.getOriginalName() + "', "
-					+ (newProcessedProduct.get_class() == null ? "null" : "'" + newProcessedProduct.get_class()  + "'" ) + ", "
-					+ (newProcessedProduct.getBrand() == null ? "null" : "'" + newProcessedProduct.getBrand()  + "'" ) + ", "
-					+ (newProcessedProduct.getRecipient() == null ? "null" : "'" + newProcessedProduct.getRecipient()  + "'" ) + ", "
-					+ (newProcessedProduct.getQuantity() == null ? "null" : newProcessedProduct.getQuantity() ) + ", "
-					+ (newProcessedProduct.getUnit() == null ? "null" : "'" + newProcessedProduct.getUnit()  + "'" ) + ", "
-					+ (newProcessedProduct.getExtra() == null ? "null" : "'" + newProcessedProduct.getExtra()  + "'" ) + ", "
-					+ (newProcessedProduct.getPic() == null ? "null" : "'" + newProcessedProduct.getPic()  + "'" ) + ", "
+					+ (newProcessedProduct.get_class() 				== null ? "null" : "'" + newProcessedProduct.get_class()  + "'" ) + ", "
+					+ (newProcessedProduct.getBrand() 				== null ? "null" : "'" + newProcessedProduct.getBrand()  + "'" ) + ", "
+					+ (newProcessedProduct.getRecipient() 			== null ? "null" : "'" + newProcessedProduct.getRecipient()  + "'" ) + ", "
+					+ (newProcessedProduct.getQuantity() 			== null ? "null" : newProcessedProduct.getQuantity() ) + ", "
+					+ (newProcessedProduct.getUnit() 				== null ? "null" : "'" + newProcessedProduct.getUnit()  + "'" ) + ", "
+					+ (newProcessedProduct.getExtra() 				== null ? "null" : "'" + newProcessedProduct.getExtra()  + "'" ) + ", "
+					+ (newProcessedProduct.getPic() 				== null ? "null" : "'" + newProcessedProduct.getPic()  + "'" ) + ", "
 					+ "'" + newProcessedProduct.getUrl() + "', "
 					+ newProcessedProduct.getMarket() + ", "
 					+ "'" + newProcessedProduct.getEct() + "', "
@@ -255,7 +254,7 @@ public class Persistence {
 
 			query = "UPDATE processed SET "
 					+ "internal_id=" 		+ "'" + newProcessedProduct.getInternalId() + "', "
-					+ "internal_pid=" 		+ "'" + newProcessedProduct.getInternalPid() + "', "
+					+ "internal_pid=" 		+ (newProcessedProduct.getInternalPid() == null ? "NULL" : "'" + newProcessedProduct.getInternalPid()  + "'") + ", "
 					+ "original_name=" 		+ "'" + newProcessedProduct.getOriginalName() + "', "
 					+ "class=" 				+ (newProcessedProduct.get_class() == null ? "null" : "'" + newProcessedProduct.get_class()  + "'" ) + ", "
 					+ "brand=" 				+ (newProcessedProduct.getBrand() == null ? "null" : "'" + newProcessedProduct.getBrand()  + "'" ) + ", "
