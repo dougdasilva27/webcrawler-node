@@ -44,6 +44,12 @@ public class BrasilColomboCrawler extends Crawler {
 			Element elementInternalID = doc.select("input[type=radio][checked]").first();
 			if (elementInternalID != null) {
 				internalId = elementInternalID.attr("value").trim();
+			} else {
+				elementInternalID = doc.select("#itemAviso").first();
+				if (elementInternalID != null) {
+					internalId = elementInternalID.attr("value").trim();
+				}
+				
 			}
 
 			// Pid
