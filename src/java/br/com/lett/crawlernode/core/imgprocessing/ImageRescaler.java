@@ -92,7 +92,7 @@ public class ImageRescaler {
         Graphics2D g2d_regular = outputImageRegular.createGraphics();
         if(!converted) g2d_regular.setColor(Color.WHITE);
         g2d_regular.fillRect(0, 0, widthRegular, heightRegular);        
-        g2d_small.drawImage(image, 0, 0, (widthOriginal < widthRegular ? widthOriginal : widthRegular), (heightOriginal < heightRegular ? heightOriginal : heightRegular), null);
+        g2d_regular.drawImage(image, 0, 0, (widthOriginal < widthRegular ? widthOriginal : widthRegular), (heightOriginal < heightRegular ? heightOriginal : heightRegular), null);
         g2d_regular.dispose();
         
         // Escrevendo original
