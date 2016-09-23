@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
@@ -134,7 +135,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 			// only remove the task from queue if it was flawless
 			// and if we are not testing, because when testing there is no message processing
-			else if (!task.session.getType().equals(CrawlerSession.TEST_TYPE)) {
+			else if (!(task.session instanceof TestCrawlerSession)) {
 				Logging.printLogDebug(logger, task.session, "Task completed.");
 				Logging.printLogDebug(logger, task.session, "Deleting task: " + task.session.getUrl() + " ...");
 				QueueService.deleteMessage(Main.queueHandler, task.session.getQueueName(), task.session.getMessageReceiptHandle());

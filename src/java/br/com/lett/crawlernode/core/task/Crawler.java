@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
@@ -106,11 +107,11 @@ public class Crawler implements Runnable {
 		// insights session
 		// there is only one product that will be selected
 		// by it's internalId, passed by the crawler session
-		if (session.getType().equals(CrawlerSession.INSIGHTS_TYPE)) {
+		if (session instanceof InsightsCrawlerSession) {
 
 			// get crawled product by it's internalId
-			Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
-			Product crawledProduct = filter(products, session.getInternalId());
+			Logging.printLogDebug(logger, session, "Selecting product with internalId " + ((InsightsCrawlerSession)session).getInternalId());
+			Product crawledProduct = filter(products, ((InsightsCrawlerSession)session).getInternalId());
 
 			// if the product is void run the active void analysis
 			Product activeVoidResultProduct = crawledProduct;
@@ -444,7 +445,7 @@ public class Crawler implements Runnable {
 			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
 			List<Product> products = extract();
 			Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
-			currentProduct = filter(products, session.getInternalId());
+			currentProduct = filter(products, ((InsightsCrawlerSession)session).getInternalId());
 
 			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
 		}

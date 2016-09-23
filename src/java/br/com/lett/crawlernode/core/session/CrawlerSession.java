@@ -5,14 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueHandler;
-import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
 
@@ -22,10 +18,10 @@ public class CrawlerSession {
 	public static final String TEST_TYPE 		= "test";
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
-	private String sessionId;
+	protected String sessionId;
 
 	/** Name of the queue from which the message was retrieved */
-	private String queueName;
+	protected String queueName;
 
 	/**
 	 * A receipt handle used to delete a message from the Amazon sqs
@@ -33,127 +29,42 @@ public class CrawlerSession {
 	 * Only the messageReceiptHandle can be used for this. It's a string received at the moment
 	 * we get the message from the queue 
 	 */
-	private String messageReceiptHandle;
+	protected String messageReceiptHandle;
 
 	/** Type of crawler session: discovery | insights */
-	private String type;
+	protected String type;
 
 	/** Base original URL */
-	private String originalURL;
+	protected String originalURL;
 
 	/** Sku url being crawled */
-	private String url;
-
-	/** Processed id associated with the sku being crawled */
-	private Long processedId;
-
-	/** Internal id associated with the sku being crawled */
-	private String internalId;
+	protected String url;
 
 	/** Market associated with this session */
-	private Market market;
-
-	/** Number of truco checks */
-	private int trucoAttemptsCounter;
-
-	/** Number of readings to prevent a void status */
-	private int voidAttemptsCounter;
+	protected Market market;
 
 	/** Map associating an URL with the number of requests for this URL */
-	private Map<String, Integer> urlRequests;
+	protected Map<String, Integer> urlRequests;
 
 	/** Map associating an URL with the last proxy used to request this URL */
-	private Map<String, LettProxy> lastURLRequest;
+	protected Map<String, LettProxy> lastURLRequest;
 
 	/** Errors ocurred during crawling session */
-	private ArrayList<CrawlerSessionError> crawlerSessionErrors;
+	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
+	
 
 	/**
-	 * Default constructor to be used when running in production.
-	 * @param message with informations to create a new crawler session
+	 * Default empty constructor
 	 */
-	public CrawlerSession(Message message) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
-		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			this.queueName = QueueHandler.DEVELOPMENT;
-		} else {
-			this.queueName = QueueHandler.INSIGHTS;
-		}
-
-		// initialize counters
-		this.trucoAttemptsCounter = 0;
-		this.voidAttemptsCounter = 0;
-
-		// creating the urlRequests map
-		this.urlRequests = new HashMap<String, Integer>();
-
-		this.lastURLRequest = new HashMap<String, LettProxy>();
-
-		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
-
-		// setting session id
-		this.sessionId = message.getMessageId();
-
-		// setting message receipt handle
-		this.setMessageReceiptHandle(message.getReceiptHandle());
-
-		// setting Market
-		this.market = new Market(message);
-
-		// setting URL and originalURL
-		this.url = message.getBody();
-		this.originalURL = message.getBody();
-
-		// setting processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		}
-
-		// setting internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-		}
-
-		// type
-		if (this.internalId != null && this.processedId != null) {
-			this.type = INSIGHTS_TYPE;
-		} else {
-			this.type = DISCOVERY_TYPE;
-		}
-
-		//		if (Main.executionParameters.getMode().equals(ExecutionParameters.MODE_INSIGHTS)) {
-		//
-		//			// setting internal id
-		//			if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-		//				this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-		//			}
-		//
-		//			// setting processed id
-		//			if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-		//				this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		//			}
-		//
-		//			// setting session type
-		//			this.type = INSIGHTS_TYPE;
-		//		} 
-		//		else {
-		//			this.type = DISCOVERY_TYPE;
-		//		}
-
+	public CrawlerSession() {
+		super();
 	}
-
+	
 	public CrawlerSession(Message message, String queueName) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 		
 		// setting queue name
 		this.queueName = queueName;
 
-		// initialize counters
-		this.trucoAttemptsCounter = 0;
-		this.voidAttemptsCounter = 0;
-
 		// creating the urlRequests map
 		this.urlRequests = new HashMap<String, Integer>();
 
@@ -174,16 +85,6 @@ public class CrawlerSession {
 		// setting URL and originalURL
 		this.url = message.getBody();
 		this.originalURL = message.getBody();
-
-		// setting processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		}
-
-		// setting internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-		}
 
 		// type
 		if (queueName.equals(QueueHandler.INSIGHTS) || queueName.equals(QueueHandler.INSIGHTS_DEAD)) {
@@ -198,40 +99,6 @@ public class CrawlerSession {
 		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
 			this.type = INSIGHTS_TYPE; // it's supposed to be the same as insights
 		}
-
-	}
-
-	public CrawlerSession(String url, Market market) {
-
-		/*if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			this.queueName = QueueHandler.DEVELOPMENT;
-		} else {
-			this.queueName = QueueHandler.INSIGHTS;
-		}*/
-
-		// initialize counters
-		this.trucoAttemptsCounter = 0;
-		this.voidAttemptsCounter = 0;
-
-		// creating the urlRequests map
-		this.urlRequests = new HashMap<String, Integer>();
-
-		this.lastURLRequest = new HashMap<String, LettProxy>();
-
-		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
-
-		// setting session id
-		this.sessionId = "test";
-		
-		this.type = TEST_TYPE;
-
-		// setting Market
-		this.market = market;
-
-		// setting URL and originalURL
-		this.url = url;
-		this.originalURL = url;
 
 	}
 
@@ -251,14 +118,6 @@ public class CrawlerSession {
 		this.sessionId = sessionId;
 	}
 
-	public Long getProcessedId() {
-		return processedId;
-	}
-
-	public void setProcessedId(Long processedId) {
-		this.processedId = processedId;
-	}
-
 	public Market getMarket() {
 		return market;
 	}
@@ -273,18 +132,6 @@ public class CrawlerSession {
 
 	public void setOriginalURL(String originalURL) {
 		this.originalURL = originalURL;
-	}
-
-	public int getTrucoAttempts() {
-		return trucoAttemptsCounter;
-	}
-
-	public void incrementTrucoAttemptsCounter() {
-		this.trucoAttemptsCounter++;
-	}
-
-	public void incrementVoidAttemptsCounter() {
-		this.voidAttemptsCounter++;
 	}
 
 	public String getType() {
@@ -303,20 +150,30 @@ public class CrawlerSession {
 		this.messageReceiptHandle = messageReceiptHandle;
 	}
 
-	public String getInternalId() {
-		return internalId;
-	}
-
-	public void setInternalId(String internalId) {
-		this.internalId = internalId;
-	}
-
 	public Map<String, Integer> getUrlRequest() {
 		return urlRequests;
 	}
 
 	public void setUrlRequest(Map<String, Integer> urlRequest) {
 		this.urlRequests = urlRequest;
+	}
+	
+	public int getVoidAttempts() {
+		/* returns -1 by default */
+		return -1;
+	}
+	
+	public int getTrucoAttempts() {
+		/* returns -1 by default */
+		return -1;
+	}
+	
+	public void incrementVoidAttemptsCounter() {
+		/* do nothing by default */
+	}
+	
+	public void incrementTrucoAttemptsCounter() {
+		/* do nothing by default */
 	}
 
 	public void addRequestInfo(String url) {
@@ -336,8 +193,6 @@ public class CrawlerSession {
 		sb.append("type: " + this.type + "\n");
 		sb.append("original url: " + this.originalURL + "\n");
 		sb.append("url: " + this.url + "\n");
-		sb.append("processed id: " + this.processedId + "\n");
-		sb.append("internal id: " + this.internalId + "\n");
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
@@ -355,14 +210,6 @@ public class CrawlerSession {
 
 	public void setLastURLRequest(Map<String, LettProxy> lastURLRequest) {
 		this.lastURLRequest = lastURLRequest;
-	}
-
-	public int getVoidAttempts() {
-		return voidAttemptsCounter;
-	}
-
-	public void setVoidAttempts(int voidAttempts) {
-		this.voidAttemptsCounter = voidAttempts;
 	}
 
 	public ArrayList<CrawlerSessionError> getErrors() {
