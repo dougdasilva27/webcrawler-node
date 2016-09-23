@@ -510,13 +510,50 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	}
 	
 	private ArrayList<String> crawlSkuOptions(Document doc){
-		Element elementsProductOptions = doc.select("meta[itemprop=\"sku/list\"]").first();
 		ArrayList<String> internalIds = new ArrayList<String>();
 		
-		if(elementsProductOptions != null){
-			String[] tokens = elementsProductOptions.attr("content").split(",");			
+		String ids = getIdsFromDataLayer(doc);
+		
+		if(ids != null){			
+			String[] tokens = ids.split(",");			
 			for(int i = 0; i < tokens.length; i++){
 				internalIds.add(tokens[i].trim());
+			}
+		} else {
+			Element elementsProductOptions = doc.select("meta[itemprop=\"sku/list\"]").first();
+			
+			if(elementsProductOptions != null){
+				String[] tokens = elementsProductOptions.attr("content").split(",");			
+				for(int i = 0; i < tokens.length; i++){
+					internalIds.add(tokens[i].trim());
+				}
+			}
+		}
+		
+		
+		return internalIds;
+	}
+	
+	private String getIdsFromDataLayer(Document doc){
+		String internalIds = null;
+		Elements scripts = doc.select("script[type=text/javascript]");
+		
+		for(Element e : scripts){
+			String json = e.html();
+			
+			if(json.contains("var crmWA_dataLayer")){
+				int x = json.indexOf("push(");
+				int y = json.indexOf("});", x + 5);
+				
+				json = json.substring(x + 5, y+1);
+				
+				JSONObject skus = new JSONObject(json);
+				
+				if(skus.has("objSKUsProduto")){
+					internalIds = skus.getString("objSKUsProduto");
+				}
+				
+				break;
 			}
 		}
 		
