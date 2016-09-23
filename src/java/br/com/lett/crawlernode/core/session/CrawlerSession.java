@@ -101,6 +101,16 @@ public class CrawlerSession {
 		}
 
 	}
+	
+	public String getInternalId() {
+		/* by default returns an empty string */
+		return "";
+	}
+	
+	public Long getProcessedId() {
+		/* by default returns a null object */
+		return null;
+	}
 
 	public String getUrl() {
 		return url;

@@ -46,7 +46,8 @@ public class InsightsCrawlerSession extends CrawlerSession {
 		this.voidAttemptsCounter = 0;
 
 	}
-
+	
+	@Override
 	public Long getProcessedId() {
 		return processedId;
 	}
@@ -75,6 +76,7 @@ public class InsightsCrawlerSession extends CrawlerSession {
 		return voidAttemptsCounter;
 	}
 	
+	@Override
 	public String getInternalId() {
 		return internalId;
 	}
