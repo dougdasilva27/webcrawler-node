@@ -1,14 +1,10 @@
 package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.amazonaws.services.sqs.model.Message;
 
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.server.QueueHandler;
 
 public class CrawlerSession {
 
@@ -34,20 +30,11 @@ public class CrawlerSession {
 	/** Type of crawler session: discovery | insights */
 	protected String type;
 
-	/** Base original URL */
-	protected String originalURL;
-
 	/** Sku url being crawled */
 	protected String url;
 
 	/** Market associated with this session */
 	protected Market market;
-
-	/** Map associating an URL with the number of requests for this URL */
-	protected Map<String, Integer> urlRequests;
-
-	/** Map associating an URL with the last proxy used to request this URL */
-	protected Map<String, LettProxy> lastURLRequest;
 
 	/** Errors ocurred during crawling session */
 	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
@@ -65,11 +52,6 @@ public class CrawlerSession {
 		// setting queue name
 		this.queueName = queueName;
 
-		// creating the urlRequests map
-		this.urlRequests = new HashMap<String, Integer>();
-
-		this.lastURLRequest = new HashMap<String, LettProxy>();
-
 		// creating the errors list
 		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
 
@@ -84,21 +66,20 @@ public class CrawlerSession {
 
 		// setting URL and originalURL
 		this.url = message.getBody();
-		this.originalURL = message.getBody();
 
 		// type
-		if (queueName.equals(QueueHandler.INSIGHTS) || queueName.equals(QueueHandler.INSIGHTS_DEAD)) {
-			this.type = INSIGHTS_TYPE;
-		}
-		else if (queueName.equals(QueueHandler.SEED) || queueName.equals(QueueHandler.SEED_DEAD)) {
-			this.type = SEED_TYPE;
-		}
-		else if (queueName.equals(QueueHandler.DISCOVER) || queueName.equals(QueueHandler.DISCOVER_DEAD)) {
-			this.type = DISCOVERY_TYPE;
-		}
-		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
-			this.type = INSIGHTS_TYPE; // it's supposed to be the same as insights
-		}
+//		if (queueName.equals(QueueHandler.INSIGHTS) || queueName.equals(QueueHandler.INSIGHTS_DEAD)) {
+//			this.type = INSIGHTS_TYPE;
+//		}
+//		else if (queueName.equals(QueueHandler.SEED) || queueName.equals(QueueHandler.SEED_DEAD)) {
+//			this.type = SEED_TYPE;
+//		}
+//		else if (queueName.equals(QueueHandler.DISCOVER) || queueName.equals(QueueHandler.DISCOVER_DEAD)) {
+//			this.type = DISCOVERY_TYPE;
+//		}
+//		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
+//			this.type = INSIGHTS_TYPE; // it's supposed to be the same as insights
+//		}
 
 	}
 	
@@ -136,14 +117,6 @@ public class CrawlerSession {
 		this.market = market;
 	}
 
-	public String getOriginalURL() {
-		return originalURL;
-	}
-
-	public void setOriginalURL(String originalURL) {
-		this.originalURL = originalURL;
-	}
-
 	public String getType() {
 		return type;
 	}
@@ -158,14 +131,6 @@ public class CrawlerSession {
 
 	public void setMessageReceiptHandle(String messageReceiptHandle) {
 		this.messageReceiptHandle = messageReceiptHandle;
-	}
-
-	public Map<String, Integer> getUrlRequest() {
-		return urlRequests;
-	}
-
-	public void setUrlRequest(Map<String, Integer> urlRequest) {
-		this.urlRequests = urlRequest;
 	}
 	
 	public int getVoidAttempts() {
@@ -186,14 +151,6 @@ public class CrawlerSession {
 		/* do nothing by default */
 	}
 
-	public void addRequestInfo(String url) {
-		if (urlRequests.containsKey(url)) {
-			urlRequests.put(url, urlRequests.get(url) + 1);
-		} else {
-			urlRequests.put(url, 1);
-		}
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -201,25 +158,12 @@ public class CrawlerSession {
 		sb.append("session id: " + this.sessionId + "\n");
 		sb.append("queue name: " + this.getQueueName() + "\n");
 		sb.append("type: " + this.type + "\n");
-		sb.append("original url: " + this.originalURL + "\n");
 		sb.append("url: " + this.url + "\n");
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");
 
 		return sb.toString();
-	}
-
-	public void addProxyRequestInfo(String url, LettProxy proxy) {
-		this.lastURLRequest.put(url, proxy);
-	}
-
-	public Map<String, LettProxy> getLastURLRequest() {
-		return lastURLRequest;
-	}
-
-	public void setLastURLRequest(Map<String, LettProxy> lastURLRequest) {
-		this.lastURLRequest = lastURLRequest;
 	}
 
 	public ArrayList<CrawlerSessionError> getErrors() {

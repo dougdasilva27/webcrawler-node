@@ -342,7 +342,6 @@ public class Crawler implements Runnable {
 		// handle URL modifications
 		String url = handleURLBeforeFetch(session.getUrl());
 		session.setUrl(url);
-		session.setOriginalURL(url);
 
 		if ( shouldVisit() ) {
 			Document document = fetch();
@@ -506,12 +505,6 @@ public class Crawler implements Runnable {
 							Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
 							Persistence.appendProcessedIdOnMongo(id, session, Main.dbManager.mongoBackendPanel);
 						}
-
-						// upload screenshot to Amazon
-						//saveScreenshot();
-
-						// upload html to Amazon
-						//saveHtml();
 
 						return;
 					}

@@ -32,8 +32,6 @@ public class TestCrawlerSession extends CrawlerSession {
 
 		// setting URL and originalURL
 		this.url = url;
-		this.originalURL = url;
-
 	}
 	
 	public int getTrucoAttempts() {

@@ -34,25 +34,28 @@ public class TaskFactory {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getUrl());
 
 		// assembling the class name
-		String taskClassName = assembleClassName(session.getMarket());
-
-		try {
-
-			// instantiating a crawler task with the given session as it's constructor parameter
-			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(CrawlerSession.class);
-			Runnable task = (Runnable) constructor.newInstance(session);
-
-			return task;
-		} catch (Exception ex) {
-			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-		}
-
-		return null;
-
-//		if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof TestCrawlerSession) {
-//			return createCrawlerTask(session);
+//		String taskClassName = assembleClassName(session.getMarket());
+//
+//		try {
+//
+//			// instantiating a crawler task with the given session as it's constructor parameter
+//			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(CrawlerSession.class);
+//			Runnable task = (Runnable) constructor.newInstance(session);
+//
+//			return task;
+//		} catch (Exception ex) {
+//			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
+//			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
 //		}
+//
+//		return null;
+
+		if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof TestCrawlerSession) {
+			return createCrawlerTask(session);
+		}
+		
+		return null;
+		
 //		else if (session instanceof ImageCrawlerSession) {
 //			return createImageCrawlerTask(session);
 //		}

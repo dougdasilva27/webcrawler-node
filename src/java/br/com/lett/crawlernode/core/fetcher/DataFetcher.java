@@ -267,8 +267,6 @@ public class DataFetcher {
 		String randUserAgent = randUserAgent();
 		LettProxy randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-		session.addProxyRequestInfo(url, randProxy);
-
 		String requestHash = generateRequestHash(session);
 
 		CookieStore cookieStore = new BasicCookieStore();
@@ -469,13 +467,8 @@ public class DataFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
-			// adding request info for this url
-			session.addRequestInfo(url);
-
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
-			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -626,13 +619,8 @@ public class DataFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
-			// adding request info for this url
-			session.addRequestInfo(url);
-
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
-			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -791,13 +779,8 @@ public class DataFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
-			// adding request info for this url
-			session.addRequestInfo(url);
-
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
-			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
@@ -955,8 +938,6 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
-			session.addProxyRequestInfo(url, randProxy);
 
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
