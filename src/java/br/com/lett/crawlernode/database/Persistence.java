@@ -429,6 +429,8 @@ public class Persistence {
 				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
 				
 				taskCollection.updateOne(search, modification);
+				
+				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
 		} catch (MongoWriteException mongoWriteException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
