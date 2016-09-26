@@ -250,7 +250,15 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		String name = null;
 		Element elementName = doc.select("h1.prodTitle span").first();
 		
-		if(elementName != null) name = elementName.text().replace("'","").replace("’","").trim();
+		if(elementName != null){
+			name = elementName.text().replace("'","").replace("’","").trim();
+		} else {
+			elementName = doc.select("h1.mp-tit-name").first();
+			
+			if(elementName != null){
+				name = elementName.text().replace("'","").replace("’","").trim();
+			}
+		}
 	
 		return name;
 	}
