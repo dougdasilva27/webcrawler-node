@@ -33,7 +33,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
+		if ( isProductPage(this.session.getUrl(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Id interno
@@ -48,14 +48,14 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 			// Nome
 			String name = null;
-			Elements elementName = doc.select("p.nome");
+			Element elementName = doc.select("p.nome").first();
 			if (elementName != null) {
 				name = elementName.text().replace("'", "").trim();
 			}
 
 			// Preço
 			Float price = null;
-			Elements elementPrice = doc.select("div.preco_comprar div.valores .valor");
+			Element elementPrice = doc.select("div.preco_comprar div.valores .valor").first();
 			if (elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 			}
@@ -83,7 +83,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 			// Descrição
 			String description = "";
-			Elements elementDescription = doc.select("div.accordion--body");
+			Element elementDescription = doc.select("div.accordion--body").first();
 			if (elementDescription != null) {
 				description = description + elementDescription.html();
 			}
@@ -125,7 +125,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		return url.contains("/produto/");
+	private boolean isProductPage(String url, Document doc) {
+		return url.contains("/produto/") && doc.select("p.nome").first() != null;
 	}
 }

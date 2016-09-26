@@ -118,6 +118,7 @@ public class Crawler implements Runnable {
 			// if the product is void run the active void analysis
 			Product activeVoidResultProduct = crawledProduct;
 			if (crawledProduct.isVoid()) {
+				Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
 				try {
 					activeVoidResultProduct = activeVoid(crawledProduct);
 				} catch (Exception e) {
@@ -402,14 +403,16 @@ public class Crawler implements Runnable {
 	 * @param internalId
 	 * @return The product with the desired internal id, or an empty product if it was not found.
 	 */
-	private Product filter(List<Product> products, String internalId) {
+	private Product filter(List<Product> products, String desiredInternalId) {
+		Logging.printLogDebug(logger, session, "Desired internalId " + desiredInternalId);
 		for (Product product : products) {
-			if (product.getInternalId() != null && product.getInternalId().equals(internalId)) {
+			String crawledInternalId = product.getInternalId();
+			if (crawledInternalId != null && crawledInternalId.equals(desiredInternalId)) {
 				return product;
 			}
 		}
 
-		Logging.printLogDebug(logger, session, "Product with internalId " + internalId + " was not found.");
+		Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " was not found...geting an empty product.");
 		return new Product();
 	}
 
