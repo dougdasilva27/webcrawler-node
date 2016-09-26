@@ -139,7 +139,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 						Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(internalPid, sku.attr("value"), partners, internalPid);
 
 						// Assemble marketplace from marketplace map
-						JSONArray variationMarketplace = this.checkMarketPlace(doc, this.assembleMarketplaceFromMap(marketplaceMap), sku);
+						JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
 						// Available
 						boolean available = this.crawlAvailability(marketplaceMap);
@@ -337,28 +337,30 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	private Map<String, Float> crawlMarketplacesForMutipleVariations(String internalID, String internalIDVariation, Map<String, String> idsMarketplaces, String pid) {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 		
-		String url = "http://www.americanas.com.br/parceiros/" + internalID + "/" + "?codItemFusion=" + internalIDVariation;
-	
-		Document docMarketplaceInfo = fetchMarketplace(internalID, url);		
-		if(hasPidInMarketplacePage(docMarketplaceInfo, pid)){
-			
-			Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
-	
-			for(Element linePartner: lines) {
-	
-				String partnerName = linePartner.select(".part-info.part-name").first().text().trim().toLowerCase();
-				Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-	
-				String id = linePartner.attr("data-partner-id").trim();
+		if(idsMarketplaces.size() > 0){
+			String url = "http://www.americanas.com.br/parceiros/" + internalID + "/" + "?codItemFusion=" + internalIDVariation;
+		
+			Document docMarketplaceInfo = fetchMarketplace(internalID, url);		
+			if(hasPidInMarketplacePage(docMarketplaceInfo, pid)){
 				
-				if(idsMarketplaces != null){
-					if(idsMarketplaces.containsKey(id) || (partnerName.equals(MAIN_SELLER_NAME_LOWER) && idsMarketplaces.containsKey(MAIN_SELLER_ID_PARTNER))){
+				Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
+		
+				for(Element linePartner: lines) {
+		
+					String partnerName = linePartner.select(".part-info.part-name").first().text().trim().toLowerCase();
+					Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+		
+					String id = linePartner.attr("data-partner-id").trim();
+					
+					if(idsMarketplaces != null){
+						if(idsMarketplaces.containsKey(id) || (partnerName.equals(MAIN_SELLER_NAME_LOWER) && idsMarketplaces.containsKey(MAIN_SELLER_ID_PARTNER))){
+							marketplace.put(partnerName, partnerPrice);
+						}
+					} else {
 						marketplace.put(partnerName, partnerPrice);
 					}
-				} else {
-					marketplace.put(partnerName, partnerPrice);
+		
 				}
-	
 			}
 		}
 
@@ -390,13 +392,20 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		if(ids.size() >=1){
 			for(Element e : ids){
 				if(e.attr("value").equals(internalID)){
-					tokens = e.attr("data-partners").split(",");
+					String partnersCode = e.attr("data-partners");
+					
+					if(!partnersCode.isEmpty()){
+						tokens = e.attr("data-partners").split(",");
+					}
+					
 					break;
 				}
 			}
 			
-			for(int i = 0; i < tokens.length; i++){
-				idsMarketplaces.put(tokens[i].trim(), internalID);
+			if(tokens != null){
+				for(int i = 0; i < tokens.length; i++){
+					idsMarketplaces.put(tokens[i].trim(), internalID);
+				}
 			}
 		}
 		
