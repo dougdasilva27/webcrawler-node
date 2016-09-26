@@ -30,13 +30,15 @@ public class QueueHandler {
 	private final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
 	private final String SECRET_KEY = "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";
 	
-	public static final String DEVELOPMENT = "crawler-development";
-	public static final String INSIGHTS = "crawler-insights";
-	public static final String INSIGHTS_DEAD = "crawler-insights-dead";
-	public static final String DISCOVER = "crawler-discover";
-	public static final String DISCOVER_DEAD = "crawler-discover-dead";
-	public static final String SEED = "crawler-seed";
-	public static final String SEED_DEAD = "crawler-seed-dead";
+	public static final String DEVELOPMENT 		= "crawler-development";
+	public static final String INSIGHTS 		= "crawler-insights";
+	public static final String INSIGHTS_DEAD 	= "crawler-insights-dead";
+	public static final String DISCOVER 		= "crawler-discover";
+	public static final String DISCOVER_DEAD 	= "crawler-discover-dead";
+	public static final String SEED 			= "crawler-seed";
+	public static final String SEED_DEAD 		= "crawler-seed-dead";
+	public static final String IMAGES 			= "crawler-images";
+	public static final String IMAGES_DEAD 		= "crawler-images-dead";
 
 	/** Amazon sqs queue to be used only in production mode */
 	private AmazonSQS sqsInsights;
@@ -49,6 +51,9 @@ public class QueueHandler {
 	
 	private AmazonSQS sqsSeed;
 	private AmazonSQS sqsSeedDead;
+	
+	private AmazonSQS sqsImages;
+	private AmazonSQS sqsImagesDead;
 	
 	/** Amazon sqs queue to be used only in development mode */
 	private AmazonSQS sqsDevelopment;
@@ -96,6 +101,14 @@ public class QueueHandler {
 			sqsSeedDead = new AmazonSQSClient(credentials);
 			sqsSeedDead.setRegion(usEast1);
 			
+			Logging.printLogDebug(logger, "Authenticating on " + IMAGES + " queue...");
+			sqsImages = new AmazonSQSClient(credentials);
+			sqsImages.setRegion(usEast1);
+			
+			Logging.printLogDebug(logger, "Authenticating on " + IMAGES_DEAD + " queue...");
+			sqsImagesDead = new AmazonSQSClient(credentials);
+			sqsImagesDead.setRegion(usEast1);
+			
 		}
 
 		// creating queue for environment development
@@ -121,6 +134,9 @@ public class QueueHandler {
 		
 		if (queueName.equals(SEED)) return sqsSeed;
 		if (queueName.equals(SEED_DEAD)) return sqsSeedDead;
+		
+		if (queueName.equals(IMAGES)) return sqsImages;
+		if (queueName.equals(IMAGES_DEAD)) return sqsImagesDead;
 		
 		if (queueName.equals(DEVELOPMENT)) return sqsDevelopment;
 		

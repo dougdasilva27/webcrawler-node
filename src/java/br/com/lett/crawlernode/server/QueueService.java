@@ -42,18 +42,22 @@ public class QueueService {
 
 	private static final String DISCOVERY_QUEUE_URL 			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
 	private static final String DISCOVERY_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
+	
+	private static final String IMAGES_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images";
+	private static final String IMAGES_DEAD_LETTER_QUEUE_URL	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-dead";
 
 	private static final String DEVELOMENT_QUEUE_URL 			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 
 	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
 	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
 
-	public static final String CITY_MESSAGE_ATTR 			= "city";
-	public static final String MARKET_MESSAGE_ATTR 			= "market";
-	public static final String MARKET_ID_MESSAGE_ATTR 		= "marketId";
-	public static final String PROCESSED_ID_MESSAGE_ATTR 	= "processedId";
-	public static final String INTERNAL_ID_MESSAGE_ATTR 	= "internalId";
-	public static final String PROXY_SERVICE_MESSAGE_ATTR 	= "proxies";
+	public static final String CITY_MESSAGE_ATTR 				= "city";
+	public static final String MARKET_MESSAGE_ATTR 				= "market";
+	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
+	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
+	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
+	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
+	public static final String SECONDARY_IMAGES_MESSAGE_ATTR 	= "secondary";
 	
 	/**
 	 * 
@@ -160,19 +164,6 @@ public class QueueService {
 	}
 
 	/**
-	 * Delete a list of messages from the queue
-	 * @param sqs
-	 * @param messages
-	 */
-	//	public static void deleteMessages(AmazonSQS sqs, List<Message> messages) {
-	//		String queueURL = selectQueueURL();
-	//		for (int i = 0; i < messages.size(); i++) {
-	//			String messageReceiptHandle = messages.get(i).getReceiptHandle();
-	//			sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
-	//		}
-	//	}
-
-	/**
 	 * Check a message for the mandatory fields.
 	 * @param message
 	 * @return true if all fields are ok or false if there is at least one field missing
@@ -180,10 +171,10 @@ public class QueueService {
 	public static boolean checkMessageIntegrity(Message message, String queueName) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
-		if (!attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + MARKET_ID_MESSAGE_ATTR + "]");
-			return false;
-		}
+//		if (!attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
+//			Logging.printLogError(logger, "Message is missing field [" + MARKET_ID_MESSAGE_ATTR + "]");
+//			return false;
+//		}
 		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
 			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
 			return false;
@@ -206,25 +197,41 @@ public class QueueService {
 				}
 			}
 		}
+		
+		// message from the images queue must have the secondary field in it's attributes
+		if (queueName.equals(QueueHandler.IMAGES)) {
+			if (!attrMap.containsKey(QueueService.SECONDARY_IMAGES_MESSAGE_ATTR)) {
+				Logging.printLogError(logger, "Message is missing field [" + SECONDARY_IMAGES_MESSAGE_ATTR + "]");
+				return false;
+			}
+		}
 
 		return true;
 	}
 
 	/**
-	 * Selects a proper Amazon SQS queue to be used, according to it's name
+	 * Selects a proper Amazon SQS queue to be used, according to it's name.
+	 * 
 	 * @param queueName the name of the queue, as displayed in Amazon console
 	 * @return The appropriate queue URL
 	 */
 	private static String selectQueueURL(String queueName) {
 		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
+		
 		if (queueName.equals(QueueHandler.INSIGHTS)) return INSIGHTS_QUEUE_URL;
 		if (queueName.equals(QueueHandler.INSIGHTS_DEAD)) return INSIGHTS_DEAD_LETTER_QUEUE_URL;
+		
+		if (queueName.equals(QueueHandler.IMAGES)) return IMAGES_QUEUE_URL;
+		if (queueName.equals(QueueHandler.IMAGES_DEAD)) return IMAGES_DEAD_LETTER_QUEUE_URL;
+		
 		if (queueName.equals(QueueHandler.DISCOVER)) return DISCOVERY_QUEUE_URL;
 		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
+		
 		if (queueName.equals(QueueHandler.DEVELOPMENT)) return DEVELOMENT_QUEUE_URL;
 
 		Logging.printLogError(logger, "Unrecognized queue.");
+		
 		return null;
 	}
 
