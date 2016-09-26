@@ -17,9 +17,10 @@ public class Markets {
 	public Markets(DatabaseManager dbManager) {
 		this.markets = new ArrayList<Market>();
 		this.dbManager = dbManager;
+		
+		init();
 	}
 	
-	@PostConstruct
 	public void init() {
 		try {
 			ResultSet rs = dbManager.runSqlConsult("SELECT id, city, name, proxies FROM market");
