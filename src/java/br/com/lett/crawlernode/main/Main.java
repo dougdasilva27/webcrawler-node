@@ -3,9 +3,8 @@ package br.com.lett.crawlernode.main;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-
 import br.com.lett.crawlernode.core.fetcher.Proxies;
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.task.MessageFetcher;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
 import br.com.lett.crawlernode.core.task.TaskExecutorAgent;
@@ -59,6 +58,8 @@ public class Main {
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
 	public static QueueHandler			queueHandler;
+	
+	public static Markets				markets;
 
 	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
@@ -80,6 +81,9 @@ public class Main {
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 		dbManager.connect();
+		
+		// fetch all markets information from database
+		markets = new Markets(dbManager);
 		
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
@@ -103,10 +107,8 @@ public class Main {
 		// schedule threads to keep fetching messages
 		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
 		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
-		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler), 1 );
+		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler, markets), 1 );
 		
-		
-
 	}
 
 }

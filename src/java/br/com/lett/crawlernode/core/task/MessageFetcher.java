@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.server.RequestMessageResult;
 import br.com.lett.crawlernode.server.SQSRequestResult;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -22,10 +22,12 @@ public class MessageFetcher implements Runnable {
 	
 	private TaskExecutor taskExecutor;
 	private QueueHandler queueHandler;
+	private Markets markets;
 	
-	public MessageFetcher(TaskExecutor taskExecutor, QueueHandler queueHandler) {
+	public MessageFetcher(TaskExecutor taskExecutor, QueueHandler queueHandler, Markets markets) {
 		this.taskExecutor = taskExecutor;
 		this.queueHandler = queueHandler;
+		this.markets = markets;
 	}
 
 	@Override
@@ -55,7 +57,7 @@ public class MessageFetcher implements Runnable {
 					
 					// create a crawler session from the message
 					Logging.printLogDebug(logger, "Creating session...");
-					CrawlerSession session = SessionFactory.createSession(message, result.getQueueName());
+					CrawlerSession session = SessionFactory.createSession(message, result.getQueueName(), markets);
 					
 					Logging.printLogDebug(logger, session.toString());
 

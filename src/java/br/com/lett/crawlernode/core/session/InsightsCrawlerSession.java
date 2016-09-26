@@ -5,6 +5,7 @@ import java.util.Map;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class InsightsCrawlerSession extends CrawlerSession {
@@ -22,8 +23,8 @@ public class InsightsCrawlerSession extends CrawlerSession {
 	private int voidAttemptsCounter;
 
 
-	public InsightsCrawlerSession(Message message, String queueName) {
-		super(message, queueName);
+	public InsightsCrawlerSession(Message message, String queueName, Markets markets) {
+		super(message, queueName, markets);
 
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 

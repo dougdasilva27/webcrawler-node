@@ -1,10 +1,14 @@
 package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
 
@@ -27,9 +31,6 @@ public class CrawlerSession {
 	 */
 	protected String messageReceiptHandle;
 
-	/** Type of crawler session: discovery | insights */
-	protected String type;
-
 	/** Sku url being crawled */
 	protected String url;
 
@@ -38,7 +39,7 @@ public class CrawlerSession {
 
 	/** Errors ocurred during crawling session */
 	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
-	
+
 
 	/**
 	 * Default empty constructor
@@ -46,9 +47,10 @@ public class CrawlerSession {
 	public CrawlerSession() {
 		super();
 	}
-	
-	public CrawlerSession(Message message, String queueName) {
-		
+
+	public CrawlerSession(Message message, String queueName, Markets markets) {
+		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+
 		// setting queue name
 		this.queueName = queueName;
 
@@ -62,32 +64,24 @@ public class CrawlerSession {
 		this.setMessageReceiptHandle(message.getReceiptHandle());
 
 		// setting Market
-		this.market = new Market(message);
-
+		String city = null;
+		String name = null;
+		if (attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR) && attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
+			city = attrMap.get(QueueService.CITY_MESSAGE_ATTR).getStringValue();
+			name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
+			this.market = markets.getMarket(city, name);
+		}
+	
 		// setting URL and originalURL
 		this.url = message.getBody();
 
-		// type
-//		if (queueName.equals(QueueHandler.INSIGHTS) || queueName.equals(QueueHandler.INSIGHTS_DEAD)) {
-//			this.type = INSIGHTS_TYPE;
-//		}
-//		else if (queueName.equals(QueueHandler.SEED) || queueName.equals(QueueHandler.SEED_DEAD)) {
-//			this.type = SEED_TYPE;
-//		}
-//		else if (queueName.equals(QueueHandler.DISCOVER) || queueName.equals(QueueHandler.DISCOVER_DEAD)) {
-//			this.type = DISCOVERY_TYPE;
-//		}
-//		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
-//			this.type = INSIGHTS_TYPE; // it's supposed to be the same as insights
-//		}
-
 	}
-	
+
 	public String getInternalId() {
 		/* by default returns an empty string */
 		return "";
 	}
-	
+
 	public Long getProcessedId() {
 		/* by default returns a null object */
 		return null;
@@ -117,14 +111,6 @@ public class CrawlerSession {
 		this.market = market;
 	}
 
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
 	public String getMessageReceiptHandle() {
 		return messageReceiptHandle;
 	}
@@ -132,21 +118,21 @@ public class CrawlerSession {
 	public void setMessageReceiptHandle(String messageReceiptHandle) {
 		this.messageReceiptHandle = messageReceiptHandle;
 	}
-	
+
 	public int getVoidAttempts() {
 		/* returns -1 by default */
 		return -1;
 	}
-	
+
 	public int getTrucoAttempts() {
 		/* returns -1 by default */
 		return -1;
 	}
-	
+
 	public void incrementVoidAttemptsCounter() {
 		/* do nothing by default */
 	}
-	
+
 	public void incrementTrucoAttemptsCounter() {
 		/* do nothing by default */
 	}
@@ -157,7 +143,6 @@ public class CrawlerSession {
 
 		sb.append("session id: " + this.sessionId + "\n");
 		sb.append("queue name: " + this.getQueueName() + "\n");
-		sb.append("type: " + this.type + "\n");
 		sb.append("url: " + this.url + "\n");
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");

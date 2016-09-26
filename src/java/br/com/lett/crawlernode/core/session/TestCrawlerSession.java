@@ -25,8 +25,6 @@ public class TestCrawlerSession extends CrawlerSession {
 		// setting session id
 		this.sessionId = "test";
 		
-		this.type = TEST_TYPE;
-
 		// setting Market
 		this.market = market;
 

@@ -13,7 +13,9 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
@@ -147,10 +149,9 @@ public class Crawler implements Runnable {
 		// when processing a task of a suggested URL by the webcrawler or
 		// an URL scheduled manually, we won't run active void and 
 		// we must process each crawled product
-		else if (session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE)) {
-			if (session.getType().equals(CrawlerSession.SEED_TYPE)) Logging.printLogDebug(logger, session, "Processing a SEED session.");
-			else Logging.printLogDebug(logger, session, "Processing a DISCOVERY session.");
-
+		else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
+			Logging.printLogDebug(logger, session, "Processing session of type: " + session.getClass().getName());
+			
 			for (Product product : products) {
 				try {
 					processProduct(product);
@@ -223,7 +224,7 @@ public class Crawler implements Runnable {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		if ( (previousProcessedProduct == null && 
-				(session.getType().equals(CrawlerSession.DISCOVERY_TYPE) || session.getType().equals(CrawlerSession.SEED_TYPE))) 
+				(session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) 
 				||
 				previousProcessedProduct != null) 
 		{

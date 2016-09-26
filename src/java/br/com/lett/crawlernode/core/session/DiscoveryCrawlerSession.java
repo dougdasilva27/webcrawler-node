@@ -2,10 +2,12 @@ package br.com.lett.crawlernode.core.session;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import br.com.lett.crawlernode.core.models.Markets;
+
 public class DiscoveryCrawlerSession extends CrawlerSession {
 	
-	public DiscoveryCrawlerSession(Message message, String queueName) {
-		super(message, queueName);
+	public DiscoveryCrawlerSession(Message message, String queueName, Markets markets) {
+		super(message, queueName, markets);
 	}
 
 }
