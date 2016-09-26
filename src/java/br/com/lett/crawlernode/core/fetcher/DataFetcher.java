@@ -332,7 +332,7 @@ public class DataFetcher {
 		httpPost.setConfig(requestConfig);
 
 		// if we are using charity engine, we must set header for authentication
-		if (randProxy.getSource().equals(Proxies.CHARITY)) {
+		if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
 			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 			httpPost.addHeader("Proxy-Authorization", headerValue);
@@ -529,7 +529,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -681,7 +681,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -841,7 +841,7 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
@@ -999,7 +999,7 @@ public class DataFetcher {
 			httpPost.setEntity(input);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
