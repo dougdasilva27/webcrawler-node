@@ -499,7 +499,10 @@ public class ResultManager {
 		try {
 			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
 			while(rs.next()) {
-				return new JSONObject(rs.getString("digital_content"));
+				String referenceDigitalContent = rs.getString("digital_content");
+				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {
+					return new JSONObject(rs.getString("digital_content"));
+				}
 			}
 
 		} catch (Exception e) { 

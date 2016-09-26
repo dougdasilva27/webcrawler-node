@@ -49,7 +49,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 			// Pid
 			String internalPid = null;
-			Element internalPidElement = doc.select(".lstReference dd").get(1);
+			Element internalPidElement = doc.select(".lstReference dd").last();
 			if (internalPidElement != null) {
 				internalPid = internalPidElement.text().trim();
 			}
@@ -96,39 +96,47 @@ public class BrasilRamsonsCrawler extends Crawler {
 				primaryImage = elementPrimaryImage.attr("href");
 			} 
 			if (primaryImage == null || primaryImage.isEmpty()) {
-				Element elementPrimaryImage2 = elementPrimaryImage.select("img").first();
-				if (elementPrimaryImage2 != null) {
-					primaryImage = elementPrimaryImage2.attr("src").trim();
+				if (elementPrimaryImage != null) {
+					Element elementPrimaryImage2 = elementPrimaryImage.select("img").first();
+					if (elementPrimaryImage2 != null) {
+						primaryImage = elementPrimaryImage2.attr("src").trim();
+					}
 				}
 			}
 
 			// Imagens secundárias
-			Elements elementImages = elementProduct.select(".lstThumbs li a img");
+			Elements elementImages = null;
+			if (elementProduct != null) {
+				elementImages = elementProduct.select(".lstThumbs li a img");
+			}
+
 			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 
-			for(Element image : elementImages) {
-				if( !image.attr("src").isEmpty() ) {
-					if (doc.select(".cliqueParaAmpliar").first() != null) { // significa que tem a ampliada
+			if (elementImages != null) {
+				for(Element image : elementImages) {
+					if( !image.attr("src").isEmpty() ) {
+						if (doc.select(".cliqueParaAmpliar").first() != null) { // significa que tem a ampliada
 
-						// Olhar se a versão da imagem realmente existe
-						// Foi preciso fazer essa checagem, pois haviam imagens secundárias de um produto
-						// onde a url da imagem secundária de um produto não foi encontrada
-						String imgAmpliada = image.attr("src").replace("Detalhes", "Ampliada");
-						Integer responseCode = DataFetcher.getUrlResponseCode(imgAmpliada, this.session, 1);
+							// Olhar se a versão da imagem realmente existe
+							// Foi preciso fazer essa checagem, pois haviam imagens secundárias de um produto
+							// onde a url da imagem secundária de um produto não foi encontrada
+							String imgAmpliada = image.attr("src").replace("Detalhes", "Ampliada");
+							Integer responseCode = DataFetcher.getUrlResponseCode(imgAmpliada, this.session, 1);
 
-						if (responseCode != null && responseCode != 404) {
-							secondaryImagesArray.put(image.attr("src").replace("Detalhes", "Ampliada"));
+							if (responseCode != null && responseCode != 404) {
+								secondaryImagesArray.put(image.attr("src").replace("Detalhes", "Ampliada"));
+							} else {
+								secondaryImagesArray.put(image.attr("src"));
+							}
 						} else {
 							secondaryImagesArray.put(image.attr("src"));
 						}
-					} else {
-						secondaryImagesArray.put(image.attr("src"));
 					}
+				}			
+				if (secondaryImagesArray.length() > 0) {
+					secondaryImages = secondaryImagesArray.toString();
 				}
-			}			
-			if (secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
 			}
 
 			// Descrição
@@ -149,7 +157,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			
+
 			product.setUrl(this.session.getUrl());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
