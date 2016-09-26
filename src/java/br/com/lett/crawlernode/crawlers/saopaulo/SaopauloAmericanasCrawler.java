@@ -240,24 +240,28 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	 ************************************/
 
 	private boolean hasProductVariations(Document document) {
-		Elements skuChooser = document.select(".mb-sku-choose");
 		
-		if (skuChooser != null) {
-
-			if (skuChooser.size() > 0) {
+		Elements skuChooser = document.select(".mb-sku-choose .custom-label-sku input");
 		
-				Elements variations = document.select(".mb-sku-choose .custom-label-sku input");
-				if (variations.size() > 1) {
-					return true;
-				} else {
-					return false;
-				}
-			} else {
-				return false;
-			}
+		if (skuChooser.size() > 1) {
+			return true;
 		} else {
-			return false;
+			
+			Element sku = document.select("meta[itemprop=sku/list]").first();
+			
+			if (skuChooser != null) {
+				String ids = sku.attr("content");
+				String[] tokens = ids.split(",");
+				
+				if(tokens.length > 1){
+					return true;
+				}
+					
+			} 
 		}
+		
+		return false;
+
 	}
 
 	private String crawlInternalPid(Document document) {
