@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloPaodeacucarCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.paodeacucar.com.br/";
+	private final String HOME_PAGE = "http://www.paodeacucar.com";
 
 	public SaopauloPaodeacucarCrawler(CrawlerSession session) {
 		super(session);
@@ -25,9 +25,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getUrl().toLowerCase();
-
-		// Não pegaremos as páginas que contém "?ftr=" pois elas são categorias filtradas, que não nos interessam.
-		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE) && !href.contains("?ftr=");
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
 	@Override
@@ -139,12 +137,12 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			}
 
 			// Disponibilidade
-			boolean available = true;
-			Element elementUnavailable = doc.select(".flip-tab__content").first();
-			if (elementUnavailable == null) {
+			boolean available = false;
+			Element elementAvailable = doc.select(".btnComprarProd").first();
+			if (elementAvailable != null) {
 				available = true;
 			}
-			else if (elementUnavailable.text().equals("Indisponível")) available = false;
+			
 
 			// Estoque
 			Integer stock = null;
