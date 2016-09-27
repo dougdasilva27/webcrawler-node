@@ -33,7 +33,7 @@ public class Markets {
 				ArrayList<String> proxies = new ArrayList<String>();
 				String[] tokens = proxiesCharacterVarying.split(",");
 				for (String token : tokens) {
-					proxies.add(token.trim());
+					proxies.add(token.replaceAll("\"", "").trim());
 				}
 				
 				Market market = new Market(
