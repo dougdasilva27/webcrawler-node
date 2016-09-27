@@ -356,7 +356,12 @@ public class ResultManager {
 		// evaluate secondary images
 		JSONObject pic = new JSONObject();
 		try {
-			pic = pm.getDigitalContent().getJSONObject("pic");
+			JSONObject processedModelDigitalContent = pm.getDigitalContent();
+			if (processedModelDigitalContent != null) {
+				if (processedModelDigitalContent.has("pic")) {
+					pic = pm.getDigitalContent().getJSONObject("pic");
+				}
+			}
 		} 
 		catch (Exception e) { 
 			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));

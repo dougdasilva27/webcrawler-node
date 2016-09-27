@@ -37,7 +37,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if(session.getUrl().startsWith("http://www.walmart.com.br/produto/") || (session.getUrl().endsWith("/pr") || session.getUrl().contains("?attempt="))) {
+		if(session.getUrl().startsWith("http://www.walmart.com.br/produto/") || session.getUrl().startsWith("https://www.walmart.com.br/produto/") || (session.getUrl().endsWith("/pr"))) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
 
 			// Nome
