@@ -1,34 +1,19 @@
 package br.com.lett.crawlernode.core.task;
 
+
+import br.com.lett.crawlernode.core.session.CrawlerSession;
+
 public class ImageCrawler implements Runnable {
 	
-	private String market;
-	private String city;
+	protected CrawlerSession session;
 	
-	public ImageCrawler(String market, String city) {
-		this.market = market;
-		this.city = city;
+	public ImageCrawler(CrawlerSession session) {
+		this.session = session;
 	}
 	
 	@Override
 	public void run() {
 		System.out.println("Inside run method of Image Crawler.");
-	}
-
-	public String getMarket() {
-		return market;
-	}
-
-	public void setMarket(String market) {
-		this.market = market;
-	}
-
-	public String getCity() {
-		return city;
-	}
-
-	public void setCity(String city) {
-		this.city = city;
 	}
 
 }

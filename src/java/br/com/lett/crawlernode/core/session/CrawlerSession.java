@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.core.session;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
@@ -11,6 +14,8 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
+	
+	protected static final Logger logger = LoggerFactory.getLogger(CrawlerSession.class);
 
 	public static final String DISCOVERY_TYPE 	= "discovery";
 	public static final String SEED_TYPE 		= "seed";

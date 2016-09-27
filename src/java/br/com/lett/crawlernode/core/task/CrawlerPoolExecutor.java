@@ -83,8 +83,12 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	protected void beforeExecute(Thread t, Runnable r) {
 		super.beforeExecute(t, r);
 
-		Crawler task = (Crawler)r;
-		Logging.printLogDebug(logger, task.session, "START");
+		if (r instanceof Crawler) {
+			Logging.printLogDebug(logger, ((Crawler)r).session, "START");
+		}
+		else if (r instanceof ImageCrawler) {
+			Logging.printLogDebug(logger, ((ImageCrawler)r).session, "START");
+		}
 
 		synchronized(lock) {
 			activeTaskCount++;
@@ -96,8 +100,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	protected void afterExecute(Runnable r, Throwable t) {
 		super.afterExecute(r, t);
 
-		Crawler task = (Crawler)r;
-		ArrayList<CrawlerSessionError> errors = task.session.getErrors();
+		// get the array of errors
+		ArrayList<CrawlerSessionError> errors = retrieveTaskErrors(r);
 
 		synchronized(lock) {
 			activeTaskCount--;
@@ -109,7 +113,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			}
 		}
 
-		finalize(task.session, t);
+		// finalize the task
+		finalizeTask(r, t);
 	}
 
 	public int getActiveTaskCount() {
@@ -131,16 +136,41 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	}
 
 	/**
+	 * 
+	 * @param r
+	 * @return
+	 */
+	private ArrayList<CrawlerSessionError> retrieveTaskErrors(Runnable r) {
+		if (r instanceof Crawler) {
+			return ((Crawler)r).session.getErrors();
+		}
+		else if (r instanceof ImageCrawler) {
+			return ((ImageCrawler)r).session.getErrors();
+		}
+
+		return new ArrayList<CrawlerSessionError>();
+	}
+
+	private void finalizeTask(Runnable r, Throwable t) {
+		if (r instanceof Crawler) {
+			finalizeCrawlerTask(((Crawler)r).session, t);
+		}
+		else if (r instanceof ImageCrawler) {
+			finalizeImageTask(((ImageCrawler)r).session, t);
+		}
+	}
+
+	/**
 	 * Finalization routine.
 	 * 
 	 * @param session
 	 * @param t
 	 */
-	public void finalize(CrawlerSession session, Throwable t) {
+	private void finalizeCrawlerTask(CrawlerSession session, Throwable t) {
 		ArrayList<CrawlerSessionError> errors = session.getErrors();
-		
-		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getName() + "]");
-		
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
 		// in case of the thread pool get a non checked exception
 		if (t != null) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getUrl() + "]");
@@ -172,19 +202,56 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
 				Logging.printLogDebug(logger, session, "Task completed.");
 				Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + " ...");
-				
+
 				QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 
 				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
 			}
 		}
-		
+
 		// only print statistics of void and truco if we are running an Insights session crawling
 		if (session instanceof InsightsCrawlerSession) {
 			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
 			Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
 		}
-		
+
+		Logging.printLogDebug(logger, session, "END");
+	}
+
+	/**
+	 * 
+	 * @param session
+	 * @param t
+	 */
+	private void finalizeImageTask(CrawlerSession session, Throwable t) {
+		ArrayList<CrawlerSessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+		// in case of the thread pool get a non checked exception
+		if (t != null) {
+			Logging.printLogError(logger, session, "Task failed!");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(t));
+		}
+		else {
+			if (errors.size() > 0) {
+				Logging.printLogError(logger, session, "Task failed!");
+
+				// print all errors of type exceptions
+				for (CrawlerSessionError error : errors) {
+					if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
+						Logging.printLogError(logger, session, error.getErrorContent());
+					}
+				}
+			}
+
+			// only remove the task from queue if it was flawless
+			Logging.printLogDebug(logger, session, "Task completed.");
+			Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + " ...");
+
+			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+		}
+
 		Logging.printLogDebug(logger, session, "END");
 	}
 

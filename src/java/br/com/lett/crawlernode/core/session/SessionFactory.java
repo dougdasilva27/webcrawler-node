@@ -25,7 +25,11 @@ public class SessionFactory {
 			return new DiscoveryCrawlerSession(message, queueName, markets);
 		}
 		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
-			return new InsightsCrawlerSession(message, queueName, markets);
+			//return new InsightsCrawlerSession(message, queueName, markets);
+			return new ImageCrawlerSession(message, queueName, markets); // TODO remover
+		}
+		else if (queueName.equals(QueueHandler.IMAGES) || queueName.equals(QueueHandler.IMAGES_DEAD)) {
+			return new ImageCrawlerSession(message, queueName, markets);
 		}
 		else {
 			Logging.printLogDebug(logger, "Queue name not recognized.");

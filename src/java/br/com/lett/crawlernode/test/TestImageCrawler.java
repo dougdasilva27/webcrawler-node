@@ -72,8 +72,8 @@ public class TestImageCrawler {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		Runnable task = new ImageCrawler(marketName, cityName);
-		taskExecutor.executeTask(task);
+		//Runnable task = new ImageCrawler(marketName, cityName);
+		//taskExecutor.executeTask(task);
 		
 		taskExecutor.shutDown();
 	}
