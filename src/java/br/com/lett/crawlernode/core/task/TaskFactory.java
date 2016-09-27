@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
@@ -50,7 +51,10 @@ public class TaskFactory {
 //
 //		return null;
 
-		if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof TestCrawlerSession) {
+		if (session instanceof InsightsCrawlerSession || 
+				session instanceof SeedCrawlerSession || 
+				session instanceof TestCrawlerSession ||
+				session instanceof DiscoveryCrawlerSession) {
 			return createCrawlerTask(session);
 		}
 		
