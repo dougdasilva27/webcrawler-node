@@ -58,6 +58,7 @@ public class QueueService {
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
 	public static final String SECONDARY_IMAGES_MESSAGE_ATTR 	= "secondary";
+	public static final String NUMBER_MESSAGE_ATTR				= "number";
 	
 	/**
 	 * 
