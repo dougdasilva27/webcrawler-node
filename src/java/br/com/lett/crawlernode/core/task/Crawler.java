@@ -352,16 +352,16 @@ public class Crawler implements Runnable {
 		String url = handleURLBeforeFetch(session.getUrl());
 		session.setUrl(url);
 
-		if ( shouldVisit() ) {
+		//if ( shouldVisit() ) {
 			Document document = fetch();
 			List<Product> products = null;
 			products = extractInformation(document);
 			if (products == null) products = new ArrayList<Product>();
 
 			return products;
-		}
+		//}
 
-		return new ArrayList<Product>();
+		//return new ArrayList<Product>();
 	}
 
 
