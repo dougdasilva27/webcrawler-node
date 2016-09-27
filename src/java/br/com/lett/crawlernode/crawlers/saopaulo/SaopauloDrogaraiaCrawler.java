@@ -55,9 +55,9 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 			// Pid
 			String internalPid = null;
-			Element elementInternalPid = doc.select("#details .col-2 .data-table tr .data").first();
+			Element elementInternalPid = doc.select("input[name=product]").first();
 			if (elementInternalPid != null) {
-				internalPid = elementInternalPid.text().trim();
+				internalPid = elementInternalPid.attr("value").trim();
 			}
 
 			// Disponibilidade
