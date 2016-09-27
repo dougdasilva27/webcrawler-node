@@ -5,6 +5,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+
 import br.com.lett.crawlernode.database.DatabaseManager;
 
 public class Markets {
@@ -26,15 +28,15 @@ public class Markets {
 				int marketId = rs.getInt("id");
 				String city = rs.getString("city");
 				String name = rs.getString("name");
-				
-
-				// get the proxies used in this market
-				String proxiesCharacterVarying = rs.getString("proxies").replace("[", "").replace("]", "").trim();
 				ArrayList<String> proxies = new ArrayList<String>();
-				String[] tokens = proxiesCharacterVarying.split(",");
-				for (String token : tokens) {
-					proxies.add(token.replaceAll("\"", "").trim());
-				}
+				
+				// get the array from postgres, as a json array
+				JSONArray proxiesJSONArray = new JSONArray(rs.getString("proxies"));
+				
+				// populate the proxies array list
+				for (int i = 0; i < proxiesJSONArray.length(); i++) {
+					proxies.add( proxiesJSONArray.getString(i) );
+				}				
 				
 				Market market = new Market(
 						marketId, 
