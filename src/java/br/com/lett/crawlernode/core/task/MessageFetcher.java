@@ -59,7 +59,8 @@ public class MessageFetcher implements Runnable {
 					Logging.printLogDebug(logger, "Creating session...");
 					CrawlerSession session = SessionFactory.createSession(message, result.getQueueName(), markets);
 					
-					Logging.printLogDebug(logger, session.toString());
+					Logging.printLogDebug(logger, session, "Created a session of type: [" + session.getClass().getSimpleName() + "]");
+					Logging.printLogDebug(logger, session, session.toString());
 
 					// create the task
 					Runnable task = TaskFactory.createTask(session);
