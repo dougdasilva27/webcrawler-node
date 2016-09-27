@@ -91,7 +91,6 @@ public class Main {
 		// fetching proxies
 		proxies = new Proxies();
 		proxies.setBonanzaProxies();
-		proxies.setShaderProxies();
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
 		proxies.setCharityProxy();

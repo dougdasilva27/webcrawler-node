@@ -5,8 +5,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-
 import br.com.lett.crawlernode.database.DatabaseManager;
 
 public class Markets {
@@ -75,6 +73,15 @@ public class Markets {
 
 	public void setMarkets(List<Market> markets) {
 		this.markets = markets;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder stringBuilder = new StringBuilder();
+		for (Market market : this.markets) {
+			stringBuilder.append(market.toString());
+		}
+		return stringBuilder.toString();		
 	}
 
 }

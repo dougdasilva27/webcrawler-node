@@ -209,7 +209,7 @@ public class Processor {
 
 			// Detectando e registrando mudanças
 			// Recebe o banco Panel do Mongo porque grava urls que deverão ter um screenshot capturado
-			newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+			newProcessedProduct.registerChanges(previousProcessedProduct, br.com.lett.crawlernode.test.Test.dbManager.mongoBackendPanel);
 
 
 			// Atualizando LMT
@@ -376,7 +376,7 @@ public class Processor {
 
 				ResultSet rs = null;
 
-				rs = Main.dbManager.runSqlConsult(query.toString());
+				rs = br.com.lett.crawlernode.test.Test.dbManager.runSqlConsult(query.toString());
 
 				while(rs.next()) {
 

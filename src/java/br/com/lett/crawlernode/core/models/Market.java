@@ -19,36 +19,36 @@ public class Market {
 	 * 
 	 * @param message
 	 */
-	public Market(Message message) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-		
-		// market id
-		if (attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
-			this.id = Integer.parseInt(attrMap.get(QueueService.MARKET_ID_MESSAGE_ATTR).getStringValue());
-		}
-		
-		// market city
-		if (attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
-			this.city = attrMap.get(QueueService.CITY_MESSAGE_ATTR).getStringValue();
-		}		
-		
-		// market name
-		if (attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
-			this.name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
-		}
-		
-		// proxies
-		if (attrMap.containsKey(QueueService.PROXY_SERVICE_MESSAGE_ATTR)) {
-			String proxiesFromMessage = attrMap.get(QueueService.PROXY_SERVICE_MESSAGE_ATTR).getStringValue().replace("[", "").replace("]", "");
-			ArrayList<String> proxies = new ArrayList<String>();
-			String[] tokens = proxiesFromMessage.split(",");
-			for (String token : tokens) {
-				proxies.add(token.replaceAll("\"", "").trim());
-			}
-			this.setProxies(proxies);
-		}
-		
-	}
+//	public Market(Message message) {
+//		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+//		
+//		// market id
+//		if (attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
+//			this.id = Integer.parseInt(attrMap.get(QueueService.MARKET_ID_MESSAGE_ATTR).getStringValue());
+//		}
+//		
+//		// market city
+//		if (attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
+//			this.city = attrMap.get(QueueService.CITY_MESSAGE_ATTR).getStringValue();
+//		}		
+//		
+//		// market name
+//		if (attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
+//			this.name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
+//		}
+//		
+//		// proxies
+//		if (attrMap.containsKey(QueueService.PROXY_SERVICE_MESSAGE_ATTR)) {
+//			String proxiesFromMessage = attrMap.get(QueueService.PROXY_SERVICE_MESSAGE_ATTR).getStringValue().replace("[", "").replace("]", "");
+//			ArrayList<String> proxies = new ArrayList<String>();
+//			String[] tokens = proxiesFromMessage.split(",");
+//			for (String token : tokens) {
+//				proxies.add(token.replaceAll("\"", "").trim());
+//			}
+//			this.setProxies(proxies);
+//		}
+//		
+//	}
 	
 	/**
 	 * Default constructor used for testing.
@@ -99,7 +99,7 @@ public class Market {
 		return "Market [id=" + this.id + 
 				", city=" + this.city + 
 				", name=" + this.name +
-				", proxy=" + this.proxies.toString() + "]";
+				", proxy=" + this.proxies.toString();
 	}
 
 	public ArrayList<String> getProxies() {

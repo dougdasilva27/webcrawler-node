@@ -72,7 +72,6 @@ public class Test {
 		proxies = new Proxies();
 		proxies.setCharityProxy();
 		proxies.setBonanzaProxies();
-		proxies.setShaderProxies();
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
 
