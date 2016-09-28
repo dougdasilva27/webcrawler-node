@@ -19,6 +19,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -26,6 +27,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -55,6 +57,78 @@ public class S3Service {
 	static {
 		credentials = new BasicAWSCredentials(accessKey, secretKey);
 		s3client = new AmazonS3Client(credentials);
+	}
+	
+	/**
+	 * 
+	 * @param session
+	 * @param name
+	 * @return
+	 */
+	public static ObjectMetadata fetchObjectMetadata(CrawlerSession session, String name) {
+		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+		AmazonS3 s3client = new AmazonS3Client(credentials);
+		try {
+			return s3client.getObjectMetadata(cdnBucketName, name);
+		} catch (AmazonS3Exception s3Exception) {
+        	if (s3Exception.getStatusCode() == 404) {
+        		Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
+        		return null;
+        	} else {
+        		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+        		return null;
+        	}
+        } 
+        catch (Exception e) {
+        	Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+        	return null;
+		}
+	}
+	
+	public static void uploadImageToAmazon(CrawlerSession session, String md5) {
+		int number = ((ImageCrawlerSession)session).getNumber();
+		
+		String originalName = ((ImageCrawlerSession)session).getOriginalName();
+		String localOriginalFileDir = ((ImageCrawlerSession)session).getLocalOriginalFileDir();
+		
+		String smallName = ((ImageCrawlerSession)session).getSmallName();
+		String localSmallFileDir = ((ImageCrawlerSession)session).getLocalSmallFileDir();
+		
+		String regularName = ((ImageCrawlerSession)session).getRegularName();
+		String localRegularFileDir = ((ImageCrawlerSession)session).getLocalRegularFileDir();
+		
+		try {
+			s3client.putObject(new PutObjectRequest(cdnBucketName, originalName, new File(localOriginalFileDir)));
+			if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, ((ImageCrawlerSession)session).getOriginalName(), cdnBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
+			Logging.printLogDebug(logger, session, "Upload original OK!");
+
+			s3client.putObject(new PutObjectRequest(cdnBucketName, smallName, new File(localSmallFileDir)));
+			if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, smallName, cdnBucketName, smallName.replace(".jpg", "." + md5 + ".jpg")));
+			Logging.printLogDebug(logger, session, "Upload small OK!");
+
+			s3client.putObject(new PutObjectRequest(cdnBucketName, regularName, new File(localRegularFileDir)));
+			if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, regularName, cdnBucketName, regularName.replace(".jpg", "." + md5 + ".jpg")));
+			Logging.printLogDebug(logger, session, "Upload regular OK!");
+
+		} catch (AmazonServiceException ase) {
+			Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " +
+					"means your request made it " +
+					"to Amazon S3, but was rejected with an error response" +
+					" for some reason.");
+			Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
+			Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
+			Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
+			Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
+			Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
+
+		} catch (AmazonClientException ace) {
+			Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " +
+					"means the client encountered " +
+					"an internal error while trying to " +
+					"communicate with S3, " +
+					"such as not being able to access the network.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
+		}
 	}
 	
 	/**
