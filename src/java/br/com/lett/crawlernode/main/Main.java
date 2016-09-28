@@ -86,8 +86,6 @@ public class Main {
 		// fetch all markets information from database
 		markets = new Markets(dbManager);
 		
-		System.err.println(markets);
-		
 		// initialize temporary folder for images download
 		Persistence.initializeImagesDirectories(markets);
 		

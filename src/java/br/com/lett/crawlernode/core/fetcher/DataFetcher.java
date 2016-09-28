@@ -22,8 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
@@ -1138,7 +1136,11 @@ public class DataFetcher {
 
 			// choosing the preferred proxy service
 			String randUserAgent = randUserAgent();
-			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			if (session instanceof ImageCrawlerSession) {
+				randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies());
+			} else {
+				randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			}
 
 			CookieStore cookieStore = new BasicCookieStore();
 
