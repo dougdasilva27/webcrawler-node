@@ -65,9 +65,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 * apendado no início do tratamento de cada caso de produto (produto com variação 
 			 * e sem variação) 
 			 */
+			String internalId = null;
 			Element elementInternalId = doc.select("small[itemprop=productID]").first();
-			int begin = elementInternalId.text().indexOf(".com") + 4;
-			String internalId = elementInternalId.text().substring(begin).replace(")", "").trim();
+			if(elementInternalId != null){
+				int begin = elementInternalId.text().indexOf(".com") + 4;
+				internalId = elementInternalId.text().substring(begin).replace(")", "").trim();
+			}
 
 			// Pid
 			String internalPid = internalId;
@@ -134,13 +137,16 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = new JSONArray();
 
-			JSONArray skus = skuJsonInfo.getJSONArray("details");
-
+			JSONArray skus = new JSONArray();
+			if(skuJsonInfo.has("details")){
+				skus = skuJsonInfo.getJSONArray("details");
+			}
+			
 			/* ******************
 			 * Only one product *
 			 * ******************/
 
-			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) {
+			if (skus.length() == 1 && !BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skus)) {
 				
 				// append extra in the name
 				JSONObject sku = skus.getJSONObject(0);
@@ -226,7 +232,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 
 				// analyze if we have variations of the same sku or if they are different skus
-				if (BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skuJsonInfo)) { // seletor de voltagem o preço é o mesmo e não há url diferente para os skus e capturamos normalmente
+				if (BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skus)) { // seletor de voltagem o preço é o mesmo e não há url diferente para os skus e capturamos normalmente
 					for(int i = 0; i < skus.length(); i++) {
 
 						JSONObject sku = skus.getJSONObject(i);
