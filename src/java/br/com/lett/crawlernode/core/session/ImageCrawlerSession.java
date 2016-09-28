@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
@@ -12,14 +11,14 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.server.QueueService;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends CrawlerSession {
+	
+	public static final String PRIMARY_IMG_TYPE = "primary";
+	public static final String SECONDARY_IMG_TYPE = "secondary";
 
 	/** Internal id of the sku being processed */
 	private String internalId;
-	
 	
 	private Long processedId;
 	
@@ -28,13 +27,10 @@ public class ImageCrawlerSession extends CrawlerSession {
 	 * Primary image always have a number=1
 	 * First secondary image has number=2, and so on
 	 */
-	private String number;
-
-	/** Primary image URL */
-	private String primaryImage;
-
-	/** Array of secondary images */
-	private List<String> secondaryImages;
+	private int number;
+	
+	/** The image type: primary | secondary */
+	private String type;
 
 	private String localFileDir;  
 	private String localOriginalFileDir;  
@@ -50,20 +46,20 @@ public class ImageCrawlerSession extends CrawlerSession {
 
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 		
+		// get the type
+		this.type = attrMap.get("type").getStringValue();
+		
 		// get the internal id
-		this.setInternalId(attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue());
+		this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
 		
 		// get processed id
 		this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-
-		// the primary image url is the message body, that is already set up on the superclass CrawlerSession
-		this.primaryImage = super.url;
-
-		// get the list of secondary images
-		this.secondaryImages = parseSecondaryImages(message);
+		
+		// get the number
+		this.number = Integer.parseInt(attrMap.get("Number").getStringValue());
 
 		// set local directories
-//		localFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + FilenameUtils.getName(url);  
+//		this.localFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + FilenameUtils.getName(super.url);  
 //		localOriginalFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
 //		localRegularFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
 //		localSmallFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
@@ -73,34 +69,6 @@ public class ImageCrawlerSession extends CrawlerSession {
 //		smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
 //		regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
 
-	}
-
-	private ArrayList<String> parseSecondaryImages(Message message) {
-		try {
-			Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
-			ArrayList<String> secondaryImages = new ArrayList<String>();
-			String imagesString = attrMap.get("secondary").getStringValue();
-
-			JSONArray imagesJsonArray = new JSONArray(imagesString);
-			for (int i = 0; i < imagesJsonArray.length(); i++) {
-				secondaryImages.add( imagesJsonArray.getString(i) );
-			}
-
-			return secondaryImages;
-		}
-		catch (JSONException e) {
-			Logging.printLogDebug(logger, CommonMethods.getStackTraceString(e));
-			return new ArrayList<String>();
-		}
-	}
-
-	public String getPrimaryImage() {
-		return this.primaryImage;
-	}
-
-	public List<String> getSecondaryImages() {
-		return this.secondaryImages;
 	}
 
 	public String getLocalFileDir() {
@@ -135,11 +103,11 @@ public class ImageCrawlerSession extends CrawlerSession {
 		this.localRegularFileDir = localRegularFileDir;
 	}
 
-	public String getNumber() {
+	public int getNumber() {
 		return number;
 	}
 
-	public void setNumber(String number) {
+	public void setNumber(int number) {
 		this.number = number;
 	}
 
@@ -181,6 +149,14 @@ public class ImageCrawlerSession extends CrawlerSession {
 
 	public void setProcessedId(Long processedId) {
 		this.processedId = processedId;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 }
