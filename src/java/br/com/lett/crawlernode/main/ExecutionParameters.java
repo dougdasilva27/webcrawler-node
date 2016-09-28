@@ -33,6 +33,7 @@ public class ExecutionParameters {
 	private String environment;
 	private String version;
 	private Boolean debug;
+	private String tmpImageFolder;
 	private String[] args;
 	
 	/**
@@ -76,6 +77,7 @@ public class ExecutionParameters {
 		options.addOption("environment", true, "Environment [development, production]");
 		options.addOption("mode", true, "Mode [deprecated]");
 		options.addOption("version", true, "Crawler node version");
+		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
 
 	}
 
@@ -96,6 +98,13 @@ public class ExecutionParameters {
 					Logging.printLogError(logger, "Unrecognized environment.");
 					help();
 				}
+			} else {
+				help();
+			}
+			
+			// temporary images folder
+			if (cmd.hasOption("tmpImageFolder")) {
+				this.tmpImageFolder = cmd.getOptionValue("tmpImageFolder");
 			} else {
 				help();
 			}
@@ -161,6 +170,14 @@ public class ExecutionParameters {
 
 	public void setVersion(String version) {
 		this.version = version;
+	}
+
+	public String getTmpImageFolder() {
+		return this.tmpImageFolder;
+	}
+
+	public void setTmpImageFolder(String tmpImageFolder) {
+		this.tmpImageFolder = tmpImageFolder;
 	}
 
 }

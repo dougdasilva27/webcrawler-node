@@ -17,23 +17,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ImageRescaler {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ImageRescaler.class);
 	
-	public ImageRescaler() {
-		super();
-	}
-	
-	public void rescale(
+	public static void rescale(
 			CrawlerSession session,
 			BufferedImage image, 
-			File localFile, 
-			String localOriginalFileDir, 
-			String localSmallFileDir, 
-			String localRegularFileDir) throws FileNotFoundException, IOException {
+			File localFile) throws FileNotFoundException, IOException {
+		
+		String localOriginalFileDir = ((ImageCrawlerSession)session).getLocalOriginalFileDir(); 
+		String localSmallFileDir = ((ImageCrawlerSession)session).getLocalSmallFileDir(); 
+		String localRegularFileDir = ((ImageCrawlerSession)session).getLocalRegularFileDir();
 		
 		boolean converted = false;
 		
@@ -114,14 +112,14 @@ public class ImageRescaler {
         writer.dispose();
 	}
 	
-	private BufferedImage convertFromPNGtoJPG(BufferedImage image) {
+	private static BufferedImage convertFromPNGtoJPG(BufferedImage image) {
 		BufferedImage jpgImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 		jpgImage.createGraphics().drawImage(image, 0, 0, Color.white, null);
 		
 		return jpgImage;
 	}
 	
-	private String imageType(String absolutePath) {
+	private static String imageType(String absolutePath) {
 		String[] tokens = absolutePath.split("/");
 		String fileName = tokens[tokens.length-1];
 		

@@ -65,6 +65,7 @@ import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
@@ -148,10 +149,8 @@ public class DataFetcher {
 	 * @return
 	 * @throws IOException
 	 */
-	public static BufferedImage fetchImage(CrawlerSession session, String localFileDir) throws IOException {
-		File imageFile = downloadImageFromMarket(1, session, localFileDir);
-		if(imageFile != null) return ImageIO.read(imageFile);
-		return null;
+	public static File fetchImage(CrawlerSession session) throws IOException {
+		return downloadImageFromMarket(1, session);
 	}
 
 	/**
@@ -1129,8 +1128,7 @@ public class DataFetcher {
 	 */
 	private static File downloadImageFromMarket(
 			int attempt,
-			CrawlerSession session, 
-			String localFileDir) {
+			CrawlerSession session) {
 
 		LettProxy randProxy = null;
 		CloseableHttpResponse closeableHttpResponse = null;
@@ -1215,8 +1213,8 @@ public class DataFetcher {
 
 			// assembling request information log message
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
-
-			File localFile = new File(localFileDir);
+			
+			File localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
 			// get image bytes
 			BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());  
@@ -1228,9 +1226,7 @@ public class DataFetcher {
 			}  
 			bout.flush();  
 			bout.close();
-			is.close(); 
-
-			Logging.printLogDebug(logger, session, " Download OK!");
+			is.close();
 
 			return localFile;
 
@@ -1245,7 +1241,7 @@ public class DataFetcher {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getUrl() + "]");
 				return null;
 			} else {
-				return downloadImageFromMarket(attempt + 1, session, localFileDir);
+				return downloadImageFromMarket(attempt+1, session);
 			}
 		}
 

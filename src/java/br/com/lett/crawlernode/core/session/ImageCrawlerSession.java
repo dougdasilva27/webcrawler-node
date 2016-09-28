@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.util.ArrayList;
 import java.util.Map;
 
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.apache.commons.io.FilenameUtils;
 
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class ImageCrawlerSession extends CrawlerSession {
@@ -59,15 +58,15 @@ public class ImageCrawlerSession extends CrawlerSession {
 		this.number = Integer.parseInt(attrMap.get("Number").getStringValue());
 
 		// set local directories
-//		this.localFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + FilenameUtils.getName(super.url);  
-//		localOriginalFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
-//		localRegularFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
-//		localSmallFileDir = Main.tempFolder + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
+		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + FilenameUtils.getName(super.url);  
+		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
+		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
+		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
 
 		// set names
-//		originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-original.jpg";
-//		smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
-//		regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
+		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-original.jpg";
+		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
+		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
 
 	}
 

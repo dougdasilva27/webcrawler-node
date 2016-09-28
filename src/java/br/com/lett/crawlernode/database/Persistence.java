@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.database;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
@@ -17,6 +19,8 @@ import com.mongodb.client.MongoDatabase;
 
 import org.bson.Document;
 
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
@@ -204,12 +208,12 @@ public class Persistence {
 	 */
 	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
-		
+
 		ResultSet generatedKeys = null;
 		Long id = null;
-		
+
 		String query = "";
-		
+
 		if(newProcessedProduct.getId() == null) {
 			query = "INSERT INTO processed("
 					+ "internal_id, internal_pid, original_name, class, brand, recipient, quantity,"
@@ -287,21 +291,21 @@ public class Persistence {
 					+ "behaviour=" 		+ ((newProcessedProduct.getBehaviour() == null || newProcessedProduct.getBehaviour().length() == 0) ? "null" : "'" + newProcessedProduct.getBehaviour().toString().replace("'","''")  + "'" ) + ", "
 					+ "similars=" 		+ ((newProcessedProduct.getSimilars() == null || newProcessedProduct.getSimilars().length() == 0) ? "null" : "'" + newProcessedProduct.getSimilars().toString().replace("'","''")  + "'" ) + " "
 					+ "WHERE id = " + newProcessedProduct.getId();
-			
+
 			// get the id of the processed product that already exists
 			id = newProcessedProduct.getId();
 		}
 
 		try {
 			generatedKeys = Main.dbManager.runSqlExecute(query);
-			
+
 			// get the id of the new processed product insrted on database
 			if (generatedKeys != null && id == null) {
 				if (generatedKeys.next()) {
 					id = generatedKeys.getLong(1);
 				}
 			}
-			
+
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 		} catch (SQLException e) {
@@ -309,7 +313,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			return null;
 		}
-		
+
 		return id;
 	}
 
@@ -382,14 +386,14 @@ public class Persistence {
 		try {
 			Main.dbManager.runSqlExecute(query.toString());
 			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
-			
+
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 	}
-	
+
 	/**
 	 * Set the status field of the task document.
 	 * 
@@ -417,35 +421,35 @@ public class Persistence {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
 		}
 	}
-	
-	
+
+
 	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
 				String documentId = String.valueOf(session.getSessionId());
-				
+
 				Document search = new Document("_id", documentId);
 				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
-				
+
 				taskCollection.updateOne(search, modification);
-				
+
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
 		} catch (MongoWriteException mongoWriteException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
-			
+
 		} catch (MongoWriteConcernException mongoWriteConcernException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
-			
+
 		} catch (MongoException mongoException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param session
@@ -456,7 +460,7 @@ public class Persistence {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
 				String documentId = String.valueOf(session.getSessionId());
-				
+
 				// if processedId inside the session is null, it means
 				// we are processing a task that was inserted manually
 				// or a task from an URL scheduled by the webcrawler discover
@@ -468,7 +472,7 @@ public class Persistence {
 							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null))
 							);
 				}
-				
+
 				// in this case we are processing a task from insights queue
 				else {
 					taskCollection.updateOne(
@@ -482,11 +486,11 @@ public class Persistence {
 		} catch (MongoWriteException mongoWriteException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
-			
+
 		} catch (MongoWriteConcernException mongoWriteConcernException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
-			
+
 		} catch (MongoException mongoException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
@@ -500,6 +504,65 @@ public class Persistence {
 		} else {
 			return field.replace("'", "''").trim();
 		}
+	}
+	
+	/**
+	 * 
+	 * @param markets
+	 */
+	public static void initializeImagesDirectories(Markets markets) {
+		Logging.printLogDebug(logger, "Initializing temp directory at:" + Main.executionParameters.getTmpImageFolder() + "...");
+		
+		List<Market> marketsList = markets.getMarkets();
+
+		String[] subdirectories = new String[]{"images"};
+
+		// create folder for each market
+		for(Market m: marketsList) {
+			Logging.printLogInfo(logger, "Processing " + m.getCity());
+
+			File file = new File(Main.executionParameters.getTmpImageFolder() + "/" + m.getCity());
+			if (!file.exists()) {
+				if (file.mkdir()) {
+					Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
+				} else {
+					Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
+				}
+			} else {
+				Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " was already created...");
+			}
+
+
+			Logging.printLogInfo(logger, "Processing " + m.getCity() + " -> " + m.getName());
+			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + m.getCity() + "/" + m.getName());
+			if (!file.exists()) {
+				if (file.mkdir()) {
+					Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
+				} else {
+					Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
+				}
+			} else {
+				Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " was already created...");
+			}
+
+			for(String folder: subdirectories) {
+
+				file = new File(Main.executionParameters.getTmpImageFolder() + "/" + m.getCity() + "/" + m.getName() + "/" + folder);
+				if (!file.exists()) {
+					if (file.mkdir()) {
+						Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
+					} else {
+						Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
+					}
+				} else {
+					Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " was already created...");
+				}
+			}
+
+
+
+		}
+
 	}
 
 }

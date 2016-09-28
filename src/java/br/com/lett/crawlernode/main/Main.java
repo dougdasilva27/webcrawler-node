@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.task.TaskExecutorAgent;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.util.Logging;
@@ -84,6 +85,9 @@ public class Main {
 		
 		// fetch all markets information from database
 		markets = new Markets(dbManager);
+		
+		// initialize temporary folder for images download
+		Persistence.initializeImagesDirectories(markets);
 		
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
