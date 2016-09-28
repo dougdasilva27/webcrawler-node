@@ -11,7 +11,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilKabumCrawler extends Crawler {
@@ -48,72 +47,85 @@ public class BrasilKabumCrawler extends Crawler {
 
 			// internalPid
 			String internalPid = null;
-
-			// name
-			String name = null;
-			Element elementName = null;
-			if (elementProduct != null) {
-				elementName = elementProduct.select("#titulo_det h1").first();
-			}
-			if (elementName != null) {
-				name = elementName.text().replace("'","").replace("’","").trim();
-			}
-
+			
 			// price
 			Float price = null;
-			Element elementPrice = elementProduct.select(".preco_normal").first();
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			} else {
-				elementPrice = elementProduct.select(".preco_desconto-cm").first();
-				
-				if(elementPrice != null){
-					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				}
-			}
 
 			// availability
 			boolean available = true;
-			Element elementAvailability = elementProduct.select(".disponibilidade img").first();			
-			if(elementAvailability == null || !elementAvailability.attr("alt").equals("produto_disponivel")) {
-				available = false;
-			}
-
+			
 			// categories
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-
-			Elements elementCategories = elementProduct.select(".boxs .links_det a");
-			for(Element e : elementCategories) {
-				if(category1.isEmpty()) {
-					category1 = e.text().replace(">", "").trim();
-				} 
-				else if(category2.isEmpty()) {
-					category2 = e.text().replace(">", "").trim();
-				} 
-				else if(category3.isEmpty()) {
-					category3 = e.text().replace(">", "").trim();
-				}
-			}
-
-			// images
-			Elements elementImages = elementProduct.select("#imagens-carrossel li img");
+			
+			// Images
 			String primaryImage = null;
 			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
-			for(Element e : elementImages) {
-				if(primaryImage == null) {
-					primaryImage = e.attr("src").replace("_p.", "_g.");
+			
+			// name
+			String name = null;
+			
+			if(elementProduct != null){
+				
+				//Name 
+				Element elementName = elementProduct.select("#titulo_det h1").first();
+				if (elementName != null) {
+					name = elementName.text().replace("'","").replace("’","").trim();
+				}
+				
+								// Price
+				Element elementPrice = elementProduct.select(".preco_normal").first();
+				if(elementPrice != null) {
+					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 				} else {
-					secondaryImagesArray.put(e.attr("src").replace("_p.", "_g."));
+					elementPrice = elementProduct.select(".preco_desconto-cm").first();
+					
+					if(elementPrice != null){
+						price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					}
+				}
+				
+				//Available
+				Element elementAvailability = elementProduct.select(".disponibilidade img").first();			
+				if(elementAvailability == null || !elementAvailability.attr("alt").equals("produto_disponivel")) {
+					available = false;
+				}
+				
+				// Categories
+				
+				Elements elementCategories = elementProduct.select(".boxs .links_det a");
+				for(Element e : elementCategories) {
+					if(category1.isEmpty()) {
+						category1 = e.text().replace(">", "").trim();
+					} 
+					else if(category2.isEmpty()) {
+						category2 = e.text().replace(">", "").trim();
+					} 
+					else if(category3.isEmpty()) {
+						category3 = e.text().replace(">", "").trim();
+					}
+				}
+				
+				
+				// images
+				Elements elementImages = elementProduct.select("#imagens-carrossel li img");
+				JSONArray secondaryImagesArray = new JSONArray();
+				for(Element e : elementImages) {
+					if(primaryImage == null) {
+						primaryImage = e.attr("src").replace("_p.", "_g.");
+					} else {
+						secondaryImagesArray.put(e.attr("src").replace("_p.", "_g."));
+					}
+
 				}
 
+				if(secondaryImagesArray.length() > 0) {
+					secondaryImages = secondaryImagesArray.toString();
+				}
 			}
 
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+			
 
 			// description
 			String description = "";   

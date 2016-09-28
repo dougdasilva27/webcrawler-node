@@ -49,6 +49,8 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 12) InternalPid from the main page is used to make internalId final.
  * 
+ * 13) In cases without variations, price of americanas sometimes not appear in selector of marketplaces, then price is crawl in diferent selector.
+ * 
  * Examples:
  * ex1 (available): http://www.americanas.com.br/produto/127115083/smartphone-moto-g-4-dual-chip-android-6.0-tela-5.5-16gb-camera-13mp-preto
  * ex2 (unavailable): http://www.americanas.com.br/produto/119936092/pneu-toyo-tires-aro-18-235-60r18-107v
@@ -315,7 +317,16 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		for(Element e : partnersElements){
 			
 			String partnerName = e.select(".bp-name").text().toLowerCase().trim();
-			Float partnerPrice = Float.parseFloat(e.select(".bp-link .bp-lnk").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+			Float partnerPrice;
+			Element priceElement = e.select(".bp-link .bp-lnk").first();
+			
+			if( partnerName.equals(MAIN_SELLER_NAME_LOWER) && priceElement == null ){
+				priceElement = doc.select("span[itemprop=\"price/salesPrice\"]").first();
+				partnerPrice = Float.parseFloat(priceElement.attr("content").trim());
+			} else {
+				partnerPrice = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+		 
 			
 			marketplace.put(partnerName, partnerPrice);
 		}
