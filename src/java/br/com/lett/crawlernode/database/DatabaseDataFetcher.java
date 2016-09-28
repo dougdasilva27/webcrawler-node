@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public class DatabaseDataFetcher {
 		try {
 			StringBuilder stringBuilder = new StringBuilder();
 
-			stringBuilder.append("SELECT id, city, name, proxies FROM market WHERE ");
+			stringBuilder.append("SELECT id, city, name, proxies, proxies_images FROM market WHERE ");
 			stringBuilder.append("name=" + "'" + marketName + "'" + " AND ");
 			stringBuilder.append("city=" + "'" + marketCity + "'");
 
@@ -39,11 +40,17 @@ public class DatabaseDataFetcher {
 			if(rs.next()) {
 				
 				// get the proxies used in this market
-				String proxiesCharacterVarying = rs.getString("proxies").replace("[", "").replace("]", "").trim();
 				ArrayList<String> proxies = new ArrayList<String>();
-				String[] tokens = proxiesCharacterVarying.split(",");
-				for (String token : tokens) {
-					proxies.add(token.replaceAll("\"", "").trim());
+				JSONArray proxiesJSONArray = new JSONArray(rs.getString("proxies"));
+				for (int i = 0; i < proxiesJSONArray.length(); i++) {
+					proxies.add( proxiesJSONArray.getString(i) );
+				}
+				
+				// get the proxies used for images download in this market
+				ArrayList<String> imageProxies = new ArrayList<String>();
+				JSONArray imageProxiesJSONArray = new JSONArray(rs.getString("proxies_images"));
+				for (int i = 0; i < imageProxiesJSONArray.length(); i++) {
+					imageProxies.add( imageProxiesJSONArray.getString(i) );
 				}
 				
 				// create market
@@ -51,7 +58,8 @@ public class DatabaseDataFetcher {
 						rs.getInt("id"), 
 						rs.getString("city"), 
 						rs.getString("name"),
-						proxies);
+						proxies,
+						imageProxies);
 
 				return market;				
 			}

@@ -23,26 +23,34 @@ public class Markets {
 	
 	public void init() {
 		try {
-			ResultSet rs = dbManager.runSqlConsult("SELECT id, city, name, proxies FROM market");
+			ResultSet rs = dbManager.runSqlConsult("SELECT id, city, name, proxies, proxies_images FROM market");
 			while(rs.next()) {
 				int marketId = rs.getInt("id");
 				String city = rs.getString("city");
 				String name = rs.getString("name");
 				ArrayList<String> proxies = new ArrayList<String>();
+				ArrayList<String> imageProxies = new ArrayList<String>();
 				
-				// get the array from postgres, as a json array
+				// get the array of proxies from postgres, as a json array
 				JSONArray proxiesJSONArray = new JSONArray(rs.getString("proxies"));
 				
 				// populate the proxies array list
 				for (int i = 0; i < proxiesJSONArray.length(); i++) {
 					proxies.add( proxiesJSONArray.getString(i) );
-				}				
+				}
+				
+				// get the array of image proxies from postgres
+				JSONArray imageProxiesJSONArray = new JSONArray(rs.getString("proxies_images"));
+				for (int i = 0; i < imageProxiesJSONArray.length(); i++) {
+					imageProxies.add( imageProxiesJSONArray.getString(i) );
+				}
 				
 				Market market = new Market(
 						marketId, 
 						city, 
 						name,
-						proxies);
+						proxies,
+						imageProxies);
 
 				markets.add(market);				
 			}
@@ -82,6 +90,7 @@ public class Markets {
 		StringBuilder stringBuilder = new StringBuilder();
 		for (Market market : this.markets) {
 			stringBuilder.append(market.toString());
+			stringBuilder.append("\n");
 		}
 		return stringBuilder.toString();		
 	}

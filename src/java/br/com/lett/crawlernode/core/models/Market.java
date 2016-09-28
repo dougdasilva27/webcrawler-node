@@ -8,6 +8,7 @@ public class Market {
 	private String city;
 	private String name;
 	private ArrayList<String> proxies;
+	private ArrayList<String> imageProxies;
 	
 	/**
 	 * Default constructor used for testing.
@@ -20,12 +21,14 @@ public class Market {
 			int marketId,
 			String marketCity,
 			String marketName,
-			ArrayList<String> proxies) {
+			ArrayList<String> proxies,
+			ArrayList<String> imageProxies) {
 		
 		this.id = marketId;
 		this.city = marketCity;
 		this.name = marketName;
 		this.proxies = proxies;
+		this.imageProxies = imageProxies;
 		
 	}
 
@@ -58,7 +61,8 @@ public class Market {
 		return "Market [id=" + this.id + 
 				", city=" + this.city + 
 				", name=" + this.name +
-				", proxy=" + this.proxies.toString();
+				", proxies=" + this.proxies.toString() +
+				", image proxies=" + this.imageProxies.toString();
 	}
 
 	public ArrayList<String> getProxies() {
@@ -67,5 +71,13 @@ public class Market {
 
 	public void setProxies(ArrayList<String> proxies) {
 		this.proxies = proxies;
+	}
+
+	public ArrayList<String> getImageProxies() {
+		return imageProxies;
+	}
+
+	public void setImageProxies(ArrayList<String> imageProxies) {
+		this.imageProxies = imageProxies;
 	}
 }
