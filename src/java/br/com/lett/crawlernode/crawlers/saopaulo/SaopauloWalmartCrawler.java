@@ -125,7 +125,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 			Elements scriptTags = doc.getElementsByTag("script");
 			for (Element tag : scriptTags){                
 				for (DataNode node : tag.dataNodes()) {
-					if(tag.html().trim().startsWith("var dataLayer = ")) {
+					if(tag.html().trim().startsWith("var dataLayer = ") && tag.html().trim().contains("dataLayer.push(")) {
 
 						dataLayer = new JSONObject(
 								node.getWholeData().split(Pattern.quote("dataLayer.push("))[1] +
