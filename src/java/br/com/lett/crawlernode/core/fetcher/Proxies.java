@@ -65,7 +65,7 @@ public class Proxies {
 	}
 	
 	public void setAzureProxy() {
-		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "lett", "8vG5ehDu7YH9KCo3nUes"));
+		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
 	}
 
 	public void setBuyProxies() {
