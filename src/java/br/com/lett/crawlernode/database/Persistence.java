@@ -205,7 +205,6 @@ public class Persistence {
 	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
 		
-		ResultSet generatedKeys = null;
 		Long id = null;
 		
 		String query = "";
@@ -249,7 +248,7 @@ public class Persistence {
 					+ ((newProcessedProduct.getMarketplace() == null || newProcessedProduct.getMarketplace().length() == 0) ? "null" : "'" + newProcessedProduct.getMarketplace().toString().replace("'","''")  + "'" ) + ", "
 					+ ((newProcessedProduct.getBehaviour() == null || newProcessedProduct.getBehaviour().length() == 0) ? "null" : "'" + newProcessedProduct.getBehaviour().toString().replace("'","''")  + "'" ) + ", "
 					+ ((newProcessedProduct.getSimilars() == null || newProcessedProduct.getSimilars().length() == 0) ? "null" : "'" + newProcessedProduct.getSimilars().toString().replace("'","''")  + "'" ) + " "
-					+ ")";
+					+ ") RETURNING id";
 		} else {
 
 			query = "UPDATE processed SET "
@@ -293,13 +292,15 @@ public class Persistence {
 		}
 
 		try {
-			generatedKeys = Main.dbManager.runSqlExecute(query);
 			
-			// get the id of the new processed product insrted on database
-			if (generatedKeys != null && id == null) {
+			if (id == null) { //  a new processed was created
+				ResultSet generatedKeys = Main.dbManager.runSqlConsult(query);
 				if (generatedKeys.next()) {
 					id = generatedKeys.getLong(1);
 				}
+			}
+			else { // the processed already exists
+				Main.dbManager.runSqlExecute(query);
 			}
 			
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
