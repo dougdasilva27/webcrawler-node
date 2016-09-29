@@ -1352,6 +1352,13 @@ public class DataFetcher {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
 				}
 			}
+			else if (serviceName.equals(Proxies.AZURE)) { // azure
+				if (Main.proxies.azure.size() > 0) {
+					nextProxy = Main.proxies.azure.get(CommonMethods.randInt(0, Main.proxies.azure.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
 
 		// when testing
@@ -1382,6 +1389,13 @@ public class DataFetcher {
 					nextProxy = Test.proxies.charity.get(CommonMethods.randInt(0, Test.proxies.charity.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.AZURE)) { // azure
+				if (Test.proxies.azure.size() > 0) {
+					nextProxy = Test.proxies.azure.get(CommonMethods.randInt(0, Test.proxies.azure.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
