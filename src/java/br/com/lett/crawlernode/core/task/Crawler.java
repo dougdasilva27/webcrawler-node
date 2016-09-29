@@ -111,6 +111,11 @@ public class Crawler implements Runnable {
 		}
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
+		
+		// print crawled information
+		for (Product product : products) {
+			printCrawledInformation(product);
+		}
 
 		// insights session
 		// there is only one product that will be selected
@@ -220,9 +225,6 @@ public class Crawler implements Runnable {
 	 */
 	private void processProduct(Product product) throws Exception {
 		boolean mustEnterTrucoMode = false;
-
-		// print crawled information
-		printCrawledInformation(product);
 
 		// persist the product
 		Persistence.persistProduct(product, session);
