@@ -24,6 +24,7 @@ public class Proxies {
 	public static final String STORM = "storm";
 	public static final String NO_PROXY = "no_proxy";
 	public static final String CHARITY = "charity";
+	public static final String AZURE = "azure";
 
 	/**
 	 * ByProxies
@@ -44,6 +45,11 @@ public class Proxies {
 	 * Charity
 	 */
 	public ArrayList<LettProxy> charity;
+	
+	/**
+	 * Charity
+	 */
+	public ArrayList<LettProxy> azure;
 
 
 	public Proxies() {
@@ -51,10 +57,15 @@ public class Proxies {
 		this.bonanzaProxies = new ArrayList<LettProxy>();
 		this.storm = new ArrayList<LettProxy>();
 		this.charity = new ArrayList<LettProxy>();
+		this.azure = new ArrayList<LettProxy>();
 	}
 	
 	public void setCharityProxy() {
 		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
+	}
+	
+	public void setAzureProxy() {
+		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "lett", "8vG5ehDu7YH9KCo3nUes"));
 	}
 
 	public void setBuyProxies() {
