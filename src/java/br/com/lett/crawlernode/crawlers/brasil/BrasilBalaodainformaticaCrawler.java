@@ -56,7 +56,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			if(elementProduct != null){
 				Element element_name = elementProduct.select("#nome h1").first();
 				if(element_name != null){
-					name = element_name.text().replace("'", "").replace("’", "").trim();
+					name = element_name.ownText().replace("'", "").replace("’", "").trim();
 				}
 			}
 			
