@@ -97,6 +97,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			// Variations
 			boolean hasVariations = hasProductVariations(doc);
 			
+			if (hasVariations) Logging.printLogDebug(logger, session, "Identifiquei que possui variações");
+			
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
 
@@ -128,6 +130,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			 * crawling data of multiple variations *
 			 ****************************************/
 			if( hasVariations ) {
+				
+				Logging.printLogDebug(logger, session, "Pegando as variações, pois identifiquei que existe mais de um produto nessa página");
 
 				Elements productVariationElements = this.crawlSkuOptions(doc);
 
@@ -177,6 +181,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					product.setAvailable(available);
 
 					products.add(product);
+					Logging.printLogDebug(logger, session, "Adicionei um produto");
 
 				}
 			}
@@ -186,6 +191,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			 * crawling data of only one product in page *
 			 *********************************************/
 			else {
+				
+				Logging.printLogDebug(logger, session, "Pegando apenas um produto, pois identifiquei que tem apenas um.");
 
 				// InternalId
 				String internalID = this.crawlInternalIDSingleProduct(doc);
@@ -220,6 +227,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				product.setAvailable(available);
 
 				products.add(product);
+				Logging.printLogDebug(logger, session, "Adicionei um produto");
 			}
 
 		} else {
@@ -249,22 +257,27 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 	 ************************************/
 
 	private boolean hasProductVariations(Document document) {
+		Logging.printLogDebug(logger, session, "Dentro do método que identifica se existem variações.");
 		Elements skuChooser = document.select(".produtoSku option[value]:not([value=\"\"])");
 
 		if (skuChooser.size() > 1) {
-			if(skuChooser.size() == 2){
+			Logging.printLogDebug(logger, session, "O sku chooser possui tamanho " + skuChooser.size());
+			if(skuChooser.size() == 2) {
 				String prodOne = skuChooser.get(0).text();
 				if(prodOne.contains("|")){
 					prodOne = prodOne.split("|")[0].trim();
+					Logging.printLogDebug(logger, session, "Produto1: " + prodOne);
 				}
 				
 				String prodTwo = skuChooser.get(1).text();
 				if(prodTwo.contains("|")){
 					prodTwo = prodTwo.split("|")[0].trim();
+					Logging.printLogDebug(logger, session, "Produto2: " + prodTwo);
 				}
 				
 				
-				if(prodOne.equals(prodTwo)){
+				if(prodOne.equals(prodTwo)) {
+					Logging.printLogDebug(logger, session, "Detectei que os dois produtos são iguais");
 					return false;
 				}
 			}

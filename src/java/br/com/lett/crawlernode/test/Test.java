@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.fastshop.com.br/loja/tratamentodear/arcondicionado1/ar-condicionado-split-hi-wall-midea-elite-30-000-btus-quente-frio-220v-4363-fast?cm_re=FASTSHOP%3ASub-departamento%3AAr%2BCondicionado-_-Vitrine%2B36-_-4395", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.extra.com.br/Eletrodomesticos/FornodeMicroondas/Forno-de-micro-ondas-Brastemp-BMT45-Ative-com-Grill-e-Smart-Food-30-L-Inox-1679027.html", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		
