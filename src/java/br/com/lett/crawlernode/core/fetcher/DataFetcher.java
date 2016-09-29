@@ -341,6 +341,11 @@ public class DataFetcher {
 			httpPost.addHeader("X-Proxy-Country", "BR");
 		}
 
+		// if we are using azure, we must set header for authentication
+		if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+		}
+
 
 		if(payload != null) {
 
@@ -538,6 +543,11 @@ public class DataFetcher {
 				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -688,6 +698,11 @@ public class DataFetcher {
 
 				// setting header for proxy country
 				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
 			// do request
@@ -850,6 +865,11 @@ public class DataFetcher {
 				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
 				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
 				String[] urlParametersSplitted = urlParameters.split("&");
@@ -1008,6 +1028,11 @@ public class DataFetcher {
 				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+			
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
 			}
@@ -1203,6 +1228,11 @@ public class DataFetcher {
 				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -1352,6 +1382,13 @@ public class DataFetcher {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
 				}
 			}
+			else if (serviceName.equals(Proxies.AZURE)) { // azure
+				if (Main.proxies.azure.size() > 0) {
+					nextProxy = Main.proxies.azure.get(CommonMethods.randInt(0, Main.proxies.azure.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
+				}
+			}
 		}
 
 		// when testing
@@ -1382,6 +1419,13 @@ public class DataFetcher {
 					nextProxy = Test.proxies.charity.get(CommonMethods.randInt(0, Test.proxies.charity.size() - 1));
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
+				}
+			}
+			else if (serviceName.equals(Proxies.AZURE)) { // azure
+				if (Test.proxies.azure.size() > 0) {
+					nextProxy = Test.proxies.azure.get(CommonMethods.randInt(0, Test.proxies.azure.size() - 1));
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}

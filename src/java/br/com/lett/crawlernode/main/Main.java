@@ -94,6 +94,7 @@ public class Main {
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
 		proxies.setCharityProxy();
+		proxies.setAzureProxy();
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
