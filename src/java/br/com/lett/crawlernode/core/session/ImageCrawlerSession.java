@@ -2,7 +2,10 @@ package br.com.lett.crawlernode.core.session;
 
 import java.util.Map;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
@@ -57,8 +60,8 @@ public class ImageCrawlerSession extends CrawlerSession {
 		// get the number
 		this.number = Integer.parseInt(attrMap.get("Number").getStringValue());
 
-		// set local directories
-		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + FilenameUtils.getName(super.url);  
+		// set local directories 
+		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + createImageBaseName();  
 		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
 		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
 		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
@@ -68,6 +71,16 @@ public class ImageCrawlerSession extends CrawlerSession {
 		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
 		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
 
+	}
+	
+	/**
+	 * Create a base name for the image.
+	 * 
+	 * @return a String representing the name of the image.
+	 */
+	private String createImageBaseName() {
+		String s = super.url + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		return DigestUtils.md5Hex(s) + "." + FilenameUtils.getExtension(super.url);
 	}
 
 	public String getLocalFileDir() {
