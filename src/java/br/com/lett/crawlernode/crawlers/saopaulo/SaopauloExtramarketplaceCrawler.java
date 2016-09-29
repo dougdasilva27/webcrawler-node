@@ -131,8 +131,6 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			 ****************************************/
 			if( hasVariations ) {
 				
-				Logging.printLogDebug(logger, session, "Pegando as variações, pois identifiquei que existe mais de um produto nessa página");
-
 				Elements productVariationElements = this.crawlSkuOptions(doc);
 
 				// Array de ids para url para pegar marketplace
@@ -181,7 +179,6 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					product.setAvailable(available);
 
 					products.add(product);
-					Logging.printLogDebug(logger, session, "Adicionei um produto");
 
 				}
 			}
@@ -227,7 +224,6 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				product.setAvailable(available);
 
 				products.add(product);
-				Logging.printLogDebug(logger, session, "Adicionei um produto");
 			}
 
 		} else {
@@ -257,27 +253,22 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 	 ************************************/
 
 	private boolean hasProductVariations(Document document) {
-		Logging.printLogDebug(logger, session, "Dentro do método que identifica se existem variações.");
 		Elements skuChooser = document.select(".produtoSku option[value]:not([value=\"\"])");
-
+		
 		if (skuChooser.size() > 1) {
-			Logging.printLogDebug(logger, session, "O sku chooser possui tamanho " + skuChooser.size());
 			if(skuChooser.size() == 2) {
 				String prodOne = skuChooser.get(0).text();
-				if(prodOne.contains("|")){
-					prodOne = prodOne.split("|")[0].trim();
-					Logging.printLogDebug(logger, session, "Produto1: " + prodOne);
+				if(prodOne.contains("\\|")) {
+					prodOne = prodOne.split("\\|")[0].trim();
 				}
 				
 				String prodTwo = skuChooser.get(1).text();
-				if(prodTwo.contains("|")){
-					prodTwo = prodTwo.split("|")[0].trim();
-					Logging.printLogDebug(logger, session, "Produto2: " + prodTwo);
+				if(prodTwo.contains("\\|")) {
+					prodTwo = prodTwo.split("\\|")[0].trim();
 				}
 				
 				
 				if(prodOne.equals(prodTwo)) {
-					Logging.printLogDebug(logger, session, "Detectei que os dois produtos são iguais");
 					return false;
 				}
 			}
