@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.session.CrawlerSessionError;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
@@ -87,8 +88,13 @@ public class Crawler implements Runnable {
 	 */
 	@Override 
 	public void run() {
-		productionRun();
-		//testRun();
+		if (session instanceof TestCrawlerSession) {
+			testRun();
+		}
+		else {
+			productionRun();
+		}
+		
 	}
 
 	/**
