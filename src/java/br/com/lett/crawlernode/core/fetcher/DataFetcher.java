@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -14,6 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
+import java.net.SocketException;
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -49,9 +49,10 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -92,6 +93,10 @@ public class DataFetcher {
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
+	
+	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 15000; // ms
+	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 15000; // ms
+	private static final int DEFAULT_SOCKET_TIMEOUT_IMG = 15000; // ms
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
@@ -578,8 +583,14 @@ public class DataFetcher {
 		} catch (Exception e) {
 			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + url);
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getUrl());
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getUrl());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -904,8 +915,14 @@ public class DataFetcher {
 		} catch (Exception e) {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
-			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request: " + url);
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -1054,8 +1071,14 @@ public class DataFetcher {
 		} catch (Exception e) {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
-			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in POST request for URL: " + url);
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -1235,9 +1258,15 @@ public class DataFetcher {
 		} catch (Exception e) {			
 
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
-
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getUrl() + "]");
