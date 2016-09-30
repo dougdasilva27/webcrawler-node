@@ -141,6 +141,10 @@ public class CrawlerSession {
 	public void incrementTrucoAttemptsCounter() {
 		/* do nothing by default */
 	}
+	
+	public void clearSession() {
+		/* do nothing by default */
+	}
 
 	@Override
 	public String toString() {

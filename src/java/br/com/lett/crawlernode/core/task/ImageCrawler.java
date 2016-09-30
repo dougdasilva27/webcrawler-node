@@ -332,7 +332,7 @@ public class ImageCrawler implements Runnable {
 	 * 
 	 */
 	private void deleteLocalFiles() {
-		new File(((ImageCrawlerSession)session).getLocalFileDir() ).delete();
+		new File( ((ImageCrawlerSession)session).getLocalFileDir() ).delete();
 		new File( ((ImageCrawlerSession)session).getLocalOriginalFileDir() ).delete();
 		new File( ((ImageCrawlerSession)session).getLocalSmallFileDir() ).delete();
 		new File( ((ImageCrawlerSession)session).getLocalRegularFileDir() ).delete();

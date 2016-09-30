@@ -1,5 +1,10 @@
 package br.com.lett.crawlernode.core.session;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -13,6 +18,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends CrawlerSession {
@@ -88,6 +94,18 @@ public class ImageCrawlerSession extends CrawlerSession {
 		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
 		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
 
+	}
+	
+	@Override
+	public void clearSession() {
+		try {
+			Files.deleteIfExists(Paths.get(this.localFileDir));
+			Files.deleteIfExists(Paths.get(this.localOriginalFileDir));
+			Files.deleteIfExists(Paths.get(this.localSmallFileDir));
+			Files.deleteIfExists(Paths.get(this.localRegularFileDir));
+		} catch (IOException e) {
+			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	/**
