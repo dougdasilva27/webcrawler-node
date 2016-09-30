@@ -13,6 +13,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends CrawlerSession {
 	
@@ -49,17 +50,33 @@ public class ImageCrawlerSession extends CrawlerSession {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 		
 		// get the type
-		this.type = attrMap.get("type").getStringValue();
+		if (attrMap.containsKey("type")) {
+			this.type = attrMap.get("type").getStringValue();
+		} else {
+			Logging.printLogError(logger, "Error: 'type' field not found on message attributes.");
+		}
 		
 		// get the internal id
-		this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		} else {
+			Logging.printLogError(logger, "Error: " + QueueService.INTERNAL_ID_MESSAGE_ATTR + " field not found on message attributes.");
+		}
 		
 		// get processed id
-		this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		
+		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		} else {
+			Logging.printLogError(logger, "Error: " + QueueService.PROCESSED_ID_MESSAGE_ATTR + " field not found on message attributes.");
+		}
+				
 		// get the number
-		this.number = Integer.parseInt(attrMap.get("Number").getStringValue());
-
+		if (attrMap.containsKey(QueueService.NUMBER_MESSAGE_ATTR)) {
+			this.number = Integer.parseInt(attrMap.get(QueueService.NUMBER_MESSAGE_ATTR).getStringValue());
+		} else {
+			Logging.printLogError(logger, "Error: " + QueueService.NUMBER_MESSAGE_ATTR + " field not found on message attributes.");
+		}
+		
 		// set local directories 
 		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + createImageBaseName();  
 		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
