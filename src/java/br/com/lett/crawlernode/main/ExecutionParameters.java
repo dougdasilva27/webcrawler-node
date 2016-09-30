@@ -27,6 +27,10 @@ public class ExecutionParameters {
 	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 	
+	private static final String ENV_IMAGE_TASK 	= "IMAGE_TASK";
+	private static final String IMAGE_TASK_ON 	= "ON";
+	private static final String IMAGE_TASK_OFF 	= "OFF";
+	
 	private static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
 
 	private Options options;
@@ -34,6 +38,7 @@ public class ExecutionParameters {
 	private String version;
 	private Boolean debug;
 	private String tmpImageFolder;
+	private boolean imageTaskActivated;
 	private String[] args;
 	
 	/**
@@ -57,7 +62,11 @@ public class ExecutionParameters {
 		// get the number of threads on environment variable
 		this.nthreads = getEnvNumOfThreads();
 		
+		// get the number of core threads on environment variable
 		this.coreThreads = getEnvCoreThreads();
+		
+		// get the flag for image tasks on environment variable
+		this.imageTaskActivated = getEnvImageTaskActivated();
 
 		Logging.printLogDebug(logger, this.toString());
 	}
@@ -68,6 +77,10 @@ public class ExecutionParameters {
 
 	public String getEnvironment() {
 		return this.environment;
+	}
+	
+	public boolean isImageTaskActivated() {
+		return this.imageTaskActivated;
 	}
 
 	private void createOptions() {
@@ -128,9 +141,14 @@ public class ExecutionParameters {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("\n");
-		sb.append("Debug: " + this.debug + "\n");
-		sb.append("Environment: " + this.environment + "\n");
-		sb.append("Version: " + this.version + "\n");
+		sb.append("Debug: " + this.debug);
+		sb.append("\n");
+		sb.append("Environment: " + this.environment);
+		sb.append("\n");
+		sb.append("Image task activated: " + this.imageTaskActivated);
+		sb.append("\n");
+		sb.append("Version: " + this.version);
+		sb.append("\n");
 
 		return sb.toString();
 	} 
@@ -150,6 +168,13 @@ public class ExecutionParameters {
 		String coreThreads = System.getenv(ENV_CORE_THREADS);
 		if (coreThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
 		return Integer.parseInt(coreThreads);
+	}
+	
+	private boolean getEnvImageTaskActivated() {
+		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
+		if (imageTaskActivated == null) return false;
+		if (imageTaskActivated.equals(IMAGE_TASK_ON)) return true;
+		return false;
 	}
 	
 	public int getCoreThreads() {

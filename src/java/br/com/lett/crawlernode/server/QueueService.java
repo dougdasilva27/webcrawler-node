@@ -92,6 +92,15 @@ public class QueueService {
 			return result;
 		}
 		
+		if (Main.executionParameters.isImageTaskActivated()) {
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, maxNumberOfMessages);
+			if (!messages.isEmpty()) {
+				result.setMessages(messages);
+				result.setQueueName(QueueHandler.IMAGES);
+				return result;
+			}
+		}
+		
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
@@ -172,10 +181,6 @@ public class QueueService {
 	public static boolean checkMessageIntegrity(Message message, String queueName) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
-//		if (!attrMap.containsKey(QueueService.MARKET_ID_MESSAGE_ATTR)) {
-//			Logging.printLogError(logger, "Message is missing field [" + MARKET_ID_MESSAGE_ATTR + "]");
-//			return false;
-//		}
 		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
 			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
 			return false;
