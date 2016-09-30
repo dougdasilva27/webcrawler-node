@@ -29,11 +29,12 @@ public class Persistence {
 
 	public static final String MONGO_TASKS_COLLECTION = "Task";
 
-	public static final String MONGO_TASK_COLLECTION_PROCESSEDID_FIELD = "processed_id";
-	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD = "found_skus";
-	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD = "status";
+	public static final String MONGO_TASK_COLLECTION_PROCESSEDID_FIELD 	= "processed_id";
+	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD 	= "found_skus";
+	public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD		= "new_skus";
+	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD 		= "status";
 
-	public static final String MONGO_TASK_STATUS_DONE = "done";
+	public static final String MONGO_TASK_STATUS_DONE 	= "done";
 	public static final String MONGO_TASK_STATUS_FAILED = "failed";
 
 	/**
@@ -186,7 +187,6 @@ public class Persistence {
 
 			Main.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
 
-
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
 
 		} catch (SQLException e) {
@@ -196,15 +196,15 @@ public class Persistence {
 	}
 
 	/**
-	 * Persists the new processed model on the database.
 	 * 
 	 * @param newProcessedProduct
 	 * @param session
-	 * @return the id of the processed product in the database table
+	 * @return
 	 */
-	public static Long persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
+	public static PersistenceResult persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
 		
+		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
 		Long id = null;
 		
 		String query = "";
@@ -289,6 +289,10 @@ public class Persistence {
 			
 			// get the id of the processed product that already exists
 			id = newProcessedProduct.getId();
+			
+			if (persistenceResult instanceof ProcessedModelPersistenceResult) {
+				((ProcessedModelPersistenceResult)persistenceResult).addModifiedId(id);
+			}
 		}
 
 		try {
@@ -297,6 +301,9 @@ public class Persistence {
 				ResultSet generatedKeys = Main.dbManager.runSqlConsult(query);
 				if (generatedKeys.next()) {
 					id = generatedKeys.getLong(1);
+					if (persistenceResult instanceof ProcessedModelPersistenceResult) {
+						((ProcessedModelPersistenceResult)persistenceResult).addCreatedId(id);
+					}
 				}
 			}
 			else { // the processed already exists
@@ -311,7 +318,7 @@ public class Persistence {
 			return null;
 		}
 		
-		return id;
+		return persistenceResult;
 	}
 
 	/**
@@ -419,7 +426,12 @@ public class Persistence {
 		}
 	}
 	
-	
+	/**
+	 * 
+	 * @param processedId
+	 * @param session
+	 * @param mongoDatabase
+	 */
 	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
@@ -433,17 +445,36 @@ public class Persistence {
 				
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
-		} catch (MongoWriteException mongoWriteException) {
-			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
-			
-		} catch (MongoWriteConcernException mongoWriteConcernException) {
-			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
-			
 		} catch (MongoException mongoException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoException));
+			
+		}
+	}
+	
+	/**
+	 * 
+	 * @param processedId
+	 * @param session
+	 * @param mongoDatabase
+	 */
+	public static void appendCreatedProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
+		try {
+			if (mongoDatabase != null) {
+				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+				String documentId = String.valueOf(session.getSessionId());
+				
+				Document search = new Document("_id", documentId);
+				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_NEW_SKUS_FIELD, processedId));
+				
+				taskCollection.updateOne(search, modification);
+				
+				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
+			}
+		} catch (MongoException mongoException) {
+			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoException));
+			
 		}
 	}
 	
@@ -480,14 +511,6 @@ public class Persistence {
 			} else {
 				Logging.printLogError(logger, session, "MongoDatabase is null.");
 			}
-		} catch (MongoWriteException mongoWriteException) {
-			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
-			
-		} catch (MongoWriteConcernException mongoWriteConcernException) {
-			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
-			
 		} catch (MongoException mongoException) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
