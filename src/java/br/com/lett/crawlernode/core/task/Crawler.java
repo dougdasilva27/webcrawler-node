@@ -318,6 +318,7 @@ public class Crawler implements Runnable {
 
 		if (createdId != null) {
 			Persistence.appendProcessedIdOnMongo(createdId, session, Main.dbManager.mongoBackendPanel);
+			Persistence.appendCreatedProcessedIdOnMongo(createdId, session, Main.dbManager.mongoBackendPanel);
 		}
 		else if (modifiedId != null) {
 			Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.mongoBackendPanel);
