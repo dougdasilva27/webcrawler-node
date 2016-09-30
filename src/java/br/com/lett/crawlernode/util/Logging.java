@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 
 /**
@@ -99,6 +100,7 @@ public class Logging {
 			metadata.put("city", session.getMarket().getCity());
 			metadata.put("market", session.getMarket().getName());
 			metadata.put("session", session.getSessionId());
+			metadata.put("session_type", session.getClass().getSimpleName());
 		}
 		
 		return metadata;
