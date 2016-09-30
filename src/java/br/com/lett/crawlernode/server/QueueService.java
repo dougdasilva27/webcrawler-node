@@ -33,7 +33,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class QueueService {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
-	
+
 	private static final String SEED_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
 	private static final String SEED_DEAD_LETTER_QUEUE_URL 		= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed-dead";
 
@@ -42,7 +42,7 @@ public class QueueService {
 
 	private static final String DISCOVERY_QUEUE_URL 			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
 	private static final String DISCOVERY_DEAD_LETTER_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
-	
+
 	private static final String IMAGES_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images";
 	private static final String IMAGES_DEAD_LETTER_QUEUE_URL	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-dead";
 
@@ -59,7 +59,7 @@ public class QueueService {
 	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
 	public static final String SECONDARY_IMAGES_MESSAGE_ATTR 	= "secondary";
 	public static final String NUMBER_MESSAGE_ATTR				= "number";
-	
+
 	/**
 	 * 
 	 * @param queueHandler
@@ -69,7 +69,7 @@ public class QueueService {
 	public static SQSRequestResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
 		SQSRequestResult result = new SQSRequestResult();
 		List<Message> messages = null;
-		
+
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
 			Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DEVELOPMENT + "...");
 			messages = requestMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, maxNumberOfMessages);
@@ -77,21 +77,21 @@ public class QueueService {
 			result.setQueueName(QueueHandler.DEVELOPMENT);
 			return result;
 		}
-		
+
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
 			result.setQueueName(QueueHandler.SEED);
 			return result;
 		}
-		
+
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
 			result.setQueueName(QueueHandler.INSIGHTS);
 			return result;
 		}
-		
+
 		if (Main.executionParameters.isImageTaskActivated()) {
 			messages = requestMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, maxNumberOfMessages);
 			if (!messages.isEmpty()) {
@@ -100,19 +100,19 @@ public class QueueService {
 				return result;
 			}
 		}
-		
+
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
 			result.setQueueName(QueueHandler.DISCOVER);
 			return result;
 		}
-		
+
 		// if all the queues are empty, will return an empty list of messages
 		if (result.getMessages() == null) {
 			result.setMessages(new ArrayList<Message>());
 		}
-		
+
 		return result;
 	}
 
@@ -181,6 +181,11 @@ public class QueueService {
 	public static boolean checkMessageIntegrity(Message message, String queueName) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
+		// message from the images queue must have the secondary field in it's attributes
+		if (queueName.equals(QueueHandler.IMAGES)) {
+			return checkImageCrawlingMessageIntegrity(message);
+		}
+
 		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
 			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
 			return false;
@@ -203,13 +208,38 @@ public class QueueService {
 				}
 			}
 		}
-		
-		// message from the images queue must have the secondary field in it's attributes
-		if (queueName.equals(QueueHandler.IMAGES)) {
-			if (!attrMap.containsKey(QueueService.SECONDARY_IMAGES_MESSAGE_ATTR)) {
-				Logging.printLogError(logger, "Message is missing field [" + SECONDARY_IMAGES_MESSAGE_ATTR + "]");
-				return false;
-			}
+
+
+
+		return true;
+	}
+
+	private static boolean checkImageCrawlingMessageIntegrity(Message message) {
+		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+
+		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
+			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
+			return false;
+		}
+		if (!attrMap.containsKey("type")) {
+			Logging.printLogError(logger, "Message is missing field [" + "type" + "]");
+			return false;
+		}
+		if (!attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
+			Logging.printLogError(logger, "Message is missing field [" + CITY_MESSAGE_ATTR + "]");
+			return false;
+		}
+		if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
+			Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
+			return false;
+		}
+		if (!attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
+			Logging.printLogError(logger, "Message is missing field [" + INTERNAL_ID_MESSAGE_ATTR + "]");
+			return false;
+		}
+		if (!attrMap.containsKey(QueueService.NUMBER_MESSAGE_ATTR)) {
+			Logging.printLogError(logger, "Message is missing field [" + NUMBER_MESSAGE_ATTR + "]");
+			return false;
 		}
 
 		return true;
@@ -224,20 +254,20 @@ public class QueueService {
 	private static String selectQueueURL(String queueName) {
 		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
 		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
-		
+
 		if (queueName.equals(QueueHandler.INSIGHTS)) return INSIGHTS_QUEUE_URL;
 		if (queueName.equals(QueueHandler.INSIGHTS_DEAD)) return INSIGHTS_DEAD_LETTER_QUEUE_URL;
-		
+
 		if (queueName.equals(QueueHandler.IMAGES)) return IMAGES_QUEUE_URL;
 		if (queueName.equals(QueueHandler.IMAGES_DEAD)) return IMAGES_DEAD_LETTER_QUEUE_URL;
-		
+
 		if (queueName.equals(QueueHandler.DISCOVER)) return DISCOVERY_QUEUE_URL;
 		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
-		
+
 		if (queueName.equals(QueueHandler.DEVELOPMENT)) return DEVELOMENT_QUEUE_URL;
 
 		Logging.printLogError(logger, "Unrecognized queue.");
-		
+
 		return null;
 	}
 
