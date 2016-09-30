@@ -59,6 +59,7 @@ public class BrasilMagazineluizaCrawlerUtils {
 	 */
 	public static JSONObject crawlFullSKUInfo(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
+		JSONObject skuJsonProduct = new JSONObject();
 		JSONObject skuJson = null;
 
 		for (Element tag : scriptTags){                
@@ -74,11 +75,18 @@ public class BrasilMagazineluizaCrawlerUtils {
 			}        
 		}
 
-		return skuJson.getJSONObject("page").getJSONObject("product");
+		if(skuJson.has("page")){
+			JSONObject jsonPage = skuJson.getJSONObject("page");
+			
+			if(jsonPage.has("product")){
+				skuJsonProduct = jsonPage.getJSONObject("product");
+			}
+		}
+		
+		return skuJsonProduct;
 	}
 	
-	public static boolean hasVoltageSelector(JSONObject skuJsonInfo) {
-		JSONArray skus = skuJsonInfo.getJSONArray("details");
+	public static boolean hasVoltageSelector(JSONArray skus) {
 		for (int i = 0; i < skus.length(); i++) {
 			JSONObject sku = skus.getJSONObject(i);
 			if (sku.has("voltage")) {
@@ -98,12 +106,14 @@ public class BrasilMagazineluizaCrawlerUtils {
 	 */
 	public static boolean skusWithURL(Document document) {
 		Element ulElement = document.select(".js-buy-option-box.container-basic-information").last();
-		Elements options = ulElement.select("span.js-buy-option");
-		if (options.size() == 0) options = ulElement.select("li");
-		for (Element option : options) {
-			Element hrefElement = option.select("a[href]").first();
-			if (hrefElement != null) {
-				return true;
+		if(ulElement != null){
+			Elements options = ulElement.select("span.js-buy-option");
+			if (options.size() == 0) options = ulElement.select("li");
+			for (Element option : options) {
+				Element hrefElement = option.select("a[href]").first();
+				if (hrefElement != null) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -111,29 +121,32 @@ public class BrasilMagazineluizaCrawlerUtils {
 	
 	public static String selectCurrentSKUValue(Document document) {
 		Element ulElement = document.select(".js-buy-option-box.container-basic-information").last();
-		Elements options = ulElement.select("input");
-		for (Element option : options) {
-			Element checkedElement = option.select("[checked]").first();
-			if (checkedElement != null) {
-				return option.attr("value");
+		if(ulElement != null){
+			Elements options = ulElement.select("input");
+			for (Element option : options) {
+				Element checkedElement = option.select("[checked]").first();
+				if (checkedElement != null) {
+					return option.attr("value");
+				}
 			}
 		}
 		return null;
 	}
 	
 	public static JSONObject getSKUDetails(String selectedValue, JSONObject fullSKUInfoJson) {
-		JSONArray details = fullSKUInfoJson.getJSONArray("details");
-		
-		String idSku = fullSKUInfoJson.getString("idSku");
-		String idSkuFull = fullSKUInfoJson.getString("idSkuFull");
-		
-		for (int i = 0; i < details.length(); i++) {
-			JSONObject detail = details.getJSONObject(i);
-			if (idSku.equals(detail.getString("sku")) || idSkuFull.equals(detail.getString("sku"))) {
-				return detail;
+		if(fullSKUInfoJson.has("details")){
+			JSONArray details = fullSKUInfoJson.getJSONArray("details");
+			
+			String idSku = fullSKUInfoJson.getString("idSku");
+			String idSkuFull = fullSKUInfoJson.getString("idSkuFull");
+			
+			for (int i = 0; i < details.length(); i++) {
+				JSONObject detail = details.getJSONObject(i);
+				if (idSku.equals(detail.getString("sku")) || idSkuFull.equals(detail.getString("sku"))) {
+					return detail;
+				}
 			}
 		}
-		
 		return null;
 	}
 	

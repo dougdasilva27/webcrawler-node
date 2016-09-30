@@ -343,6 +343,11 @@ public class DataFetcher {
 			httpPost.addHeader("X-Proxy-Country", "BR");
 		}
 
+		// if we are using azure, we must set header for authentication
+		if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+		}
+
 
 		if(payload != null) {
 
@@ -540,6 +545,11 @@ public class DataFetcher {
 				httpGet.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -696,6 +706,11 @@ public class DataFetcher {
 
 				// setting header for proxy country
 				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
 			// do request
@@ -856,6 +871,11 @@ public class DataFetcher {
 
 				// setting header for proxy country
 				httpPost.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
@@ -1022,6 +1042,11 @@ public class DataFetcher {
 				httpPost.addHeader("X-Proxy-Country", "BR");
 			}
 
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+			
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
 			}
@@ -1224,6 +1249,11 @@ public class DataFetcher {
 
 				// setting header for proxy country
 				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
 			// do request

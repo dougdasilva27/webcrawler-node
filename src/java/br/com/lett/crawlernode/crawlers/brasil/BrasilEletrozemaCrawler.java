@@ -52,16 +52,16 @@ public class BrasilEletrozemaCrawler extends Crawler {
 			}
 
 			// name
+			String name = null;
 			Element elementName = doc.select(".produtoPrincipal .nomeMarca h1.nome").first();
-			String name = elementName.text().replace("'","").replace("’","").trim();
+			if(elementName != null){
+				name = elementName.text().replace("'","").replace("’","").trim();
+			}
 
 			// price
 			Float price = null;
 			Element elementPrice = doc.select(".valores .preco #PrecoProduto").first();
-			if(elementPrice == null) {
-				price = null;
-			} 
-			else {
+			if(elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
 

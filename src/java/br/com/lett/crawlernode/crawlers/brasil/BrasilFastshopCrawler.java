@@ -159,7 +159,13 @@ public class BrasilFastshopCrawler extends Crawler {
 				Float price = null;
 				if(available) {
 					if (dataLayerObject.has("installmentTotalValue")) {
-						price = Float.parseFloat( dataLayerObject.getString("installmentTotalValue") );
+						if(!dataLayerObject.getString("installmentTotalValue").isEmpty()){
+							price = Float.parseFloat( dataLayerObject.getString("installmentTotalValue") );
+						} else if (dataLayerObject.has("productSalePrice")) {
+							if(!dataLayerObject.getString("productSalePrice").isEmpty()){
+								price = Float.parseFloat( dataLayerObject.getString("productSalePrice") );
+							}
+						}
 					}
 					else if (dataLayerObject.has("productSalePrice")) {
 						price = Float.parseFloat( dataLayerObject.getString("productSalePrice") );

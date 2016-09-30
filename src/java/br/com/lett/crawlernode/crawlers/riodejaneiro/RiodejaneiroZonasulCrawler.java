@@ -40,7 +40,9 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			String internalId = null;
 			Element elementID = doc.select(".codigo").first();
 			if (elementID != null) {
-				internalId = Integer.toString(Integer.parseInt(elementID.text().replaceAll("[^0-9,]+", ""))).trim();
+				if(!elementID.text().trim().isEmpty()){
+					internalId = Integer.toString(Integer.parseInt(elementID.text().replaceAll("[^0-9,]+", ""))).trim();
+				}
 			}
 
 			// Pid

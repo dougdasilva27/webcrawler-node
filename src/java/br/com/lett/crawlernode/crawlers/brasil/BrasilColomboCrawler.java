@@ -63,7 +63,7 @@ public class BrasilColomboCrawler extends Crawler {
 			String name = null;
 			Element elementName = doc.select("h1.nome-produto").first();
 			if (elementName != null) {
-				name = elementName.text().trim();
+				name = elementName.ownText().trim();
 			}
 
 			// Preço
@@ -99,6 +99,34 @@ public class BrasilColomboCrawler extends Crawler {
 				description = description + elementSpecs.html();
 			}
 
+			Element elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=0]").first();
+			String primaryImage = null;
+			if(elementPrimaryImage != null){				
+				primaryImage = sanitizeImageURL("http:" + elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
+			} else {
+				elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=1]").first();
+				
+				if(elementPrimaryImage != null){
+					primaryImage = sanitizeImageURL("http:" + elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
+				}
+			}
+			
+			// Imagens -- Caso principal
+			Elements elementSecondaryImages = doc.select("li.js_slide picture img");
+			String secondaryImages = null;
+			JSONArray secondaryImagesArray = new JSONArray();
+			
+			for (Element el : elementSecondaryImages) {
+				String image = "http:" + el.attr("src").trim().replace("400x400", "800x800");
+				if (!image.equals(primaryImage)) { // imagem primária 
+					secondaryImagesArray.put( sanitizeImageURL( image ) );
+				}
+			}
+			
+			if (secondaryImagesArray.length() > 0) {
+				secondaryImages = secondaryImagesArray.toString();
+			}
+			
 			// Estoque
 			Integer stock = null;
 
@@ -116,24 +144,7 @@ public class BrasilColomboCrawler extends Crawler {
 				if (available == false) {
 					price = null;
 				}
-
-				// Imagens
-				Elements elementImages = doc.select("li.js_slide picture img");
-				String primaryImage = null;
-				String secondaryImages = null;
-				JSONArray secondaryImagesArray = new JSONArray();
-
-				for (Element e : elementImages) {
-					String image = "http:" + e.attr("src").trim().replace("400x400", "800x800");
-					if (primaryImage == null) {
-						primaryImage = this.sanitizeImageURL(image);						
-					} else {
-						secondaryImagesArray.put(this.sanitizeImageURL(image));
-					}
-				}
-				if (secondaryImagesArray.length() > 0) {
-					secondaryImages = secondaryImagesArray.toString();
-				}				
+	
 
 				Product product = new Product();
 				product.setUrl(session.getUrl());
@@ -158,8 +169,6 @@ public class BrasilColomboCrawler extends Crawler {
 			else { // múltiplas variações
 
 				Elements variations = doc.select(".dados-itens-table.dados-itens-detalhe tr");
-				String primaryImageTmp = null;
-				String secondaryImagesTmp = null;
 
 				for(Element e : variations) {
 
@@ -187,67 +196,6 @@ public class BrasilColomboCrawler extends Crawler {
 						}
 					}					
 
-					// Imagens -- Caso principal
-					Elements elementImages = doc.select("li.js_slide picture img");
-					String secondaryImages = null;
-					String primaryImage = null;
-					JSONArray secondaryImagesArray = new JSONArray();
-					boolean getTmp = true;
-					for (Element el : elementImages) {
-						String image = "http:" + el.attr("src").trim().replace("400x400", "800x800");
-						String tmp = el.attr("src").trim().replace("400x400", "800x800");
-						if (primaryImage == null && el.attr("data-item").equals(variationInternalId)) {
-							primaryImage = image;
-							for (Element im : elementImages) {
-								if ( !im.attr("src").trim().replace("400x400", "800x800").equals(tmp) ) {
-									secondaryImagesArray.put("http:" + im.attr("src").trim().replace("400x400", "800x800"));
-								}
-							}
-							if (secondaryImagesArray.length() > 0) {
-								secondaryImages = secondaryImagesArray.toString();
-							}
-							primaryImageTmp = image;
-							secondaryImagesTmp = secondaryImages;
-							getTmp = false;
-							break;
-						}
-					}
-					if (getTmp) {
-						primaryImage = primaryImageTmp;
-						secondaryImages = secondaryImagesTmp;
-					}
-
-					// Imagens -- caso especial
-					if (primaryImage == null && secondaryImages == null) {
-						for (Element el : elementImages) {
-							if (primaryImage == null && el.attr("data-slide-position").equals("0")) { // imagem primária 
-								primaryImage = "http:" + el.attr("src").trim().replace("400x400", "800x800");
-								getTmp = false;
-							} else {
-								secondaryImagesArray.put( "http:" + el.attr("src").trim().replace("400x400", "800x800") );
-							}
-						}
-						if (secondaryImagesArray.length() > 0) {
-							secondaryImages = secondaryImagesArray.toString();
-						}
-
-						primaryImageTmp = primaryImage;
-						secondaryImagesTmp = secondaryImages;
-						if (getTmp) {
-							primaryImage = primaryImageTmp;
-							secondaryImages = secondaryImagesTmp;
-						}
-					}
-
-					// sanitize secondary images
-					JSONArray sanitizedSecondaryImages = new JSONArray();
-					for (int j = 0; j < secondaryImagesArray.length(); j++) {
-						String image = (String) secondaryImagesArray.get(j);
-						String sanitized = this.sanitizeImageURL(image);
-
-						sanitizedSecondaryImages.put(sanitized);
-					}
-					secondaryImages = sanitizedSecondaryImages.toString();
 
 					Product product = new Product();
 					product.setUrl(session.getUrl());
@@ -258,7 +206,7 @@ public class BrasilColomboCrawler extends Crawler {
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
-					product.setPrimaryImage( this.sanitizeImageURL(primaryImage) );
+					product.setPrimaryImage( primaryImage );
 					product.setSecondaryImages(secondaryImages);
 					product.setDescription(description);
 					product.setStock(stock);
@@ -280,12 +228,14 @@ public class BrasilColomboCrawler extends Crawler {
 
 	private String sanitizeImageURL(String imageURL) {
 		String sanitizedURL = null;
-
-		if (imageURL.contains("?")) { // removendo parâmetros da url da imagem, senão não passa no crawler de imagens
-			int index = imageURL.indexOf("?");
-			sanitizedURL = imageURL.substring(0, index);
-		} else {
-			sanitizedURL = imageURL;
+		
+		if(imageURL != null){
+			if (imageURL.contains("?")) { // removendo parâmetros da url da imagem, senão não passa no crawler de imagens
+				int index = imageURL.indexOf("?");
+				sanitizedURL = imageURL.substring(0, index);
+			} else {
+				sanitizedURL = imageURL;
+			}
 		}
 
 		return sanitizedURL;		

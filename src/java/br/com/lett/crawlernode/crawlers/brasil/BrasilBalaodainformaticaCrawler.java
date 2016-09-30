@@ -44,18 +44,22 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			String internalId = null;
 			Element elementInternalID = doc.select(".produto-detalhe p").first();
 			if (elementInternalID != null) {
-				int begin = elementInternalID.text().indexOf(':') + 1;
-				internalId = elementInternalID.text().substring(begin).trim();
+				internalId = elementInternalID.ownText().trim();
 			}
 
 			// Pid
 			String internalPid = internalId;
 
 			// Nome
+			String name = null;
 			Element elementProduct = doc.select("#content-center").first();
-			Element element_name = elementProduct.select("#nome h1").first();
-			String name = element_name.text().replace("'", "").replace("’", "").trim();
-
+			if(elementProduct != null){
+				Element element_name = elementProduct.select("#nome h1").first();
+				if(element_name != null){
+					name = element_name.ownText().replace("'", "").replace("’", "").trim();
+				}
+			}
+			
 			// Disponibilidade
 			boolean available = true;
 			Element elementBuyButton = elementProduct.select("#btnAdicionarCarrinho").first();

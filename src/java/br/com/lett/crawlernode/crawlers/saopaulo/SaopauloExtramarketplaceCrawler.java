@@ -97,6 +97,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			// Variations
 			boolean hasVariations = hasProductVariations(doc);
 			
+			if (hasVariations) Logging.printLogDebug(logger, session, "Identifiquei que possui variações");
+			
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
 
@@ -128,7 +130,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			 * crawling data of multiple variations *
 			 ****************************************/
 			if( hasVariations ) {
-
+				
 				Elements productVariationElements = this.crawlSkuOptions(doc);
 
 				// Array de ids para url para pegar marketplace
@@ -186,6 +188,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			 * crawling data of only one product in page *
 			 *********************************************/
 			else {
+				
+				Logging.printLogDebug(logger, session, "Pegando apenas um produto, pois identifiquei que tem apenas um.");
 
 				// InternalId
 				String internalID = this.crawlInternalIDSingleProduct(doc);
@@ -250,21 +254,21 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 	private boolean hasProductVariations(Document document) {
 		Elements skuChooser = document.select(".produtoSku option[value]:not([value=\"\"])");
-
+		
 		if (skuChooser.size() > 1) {
-			if(skuChooser.size() == 2){
+			if(skuChooser.size() == 2) {
 				String prodOne = skuChooser.get(0).text();
-				if(prodOne.contains("|")){
-					prodOne = prodOne.split("|")[0].trim();
+				if(prodOne.contains("|")) {
+					prodOne = prodOne.split("\\|")[0].trim();
 				}
 				
 				String prodTwo = skuChooser.get(1).text();
-				if(prodTwo.contains("|")){
-					prodTwo = prodTwo.split("|")[0].trim();
+				if(prodTwo.contains("|")) {
+					prodTwo = prodTwo.split("\\|")[0].trim();
 				}
 				
 				
-				if(prodOne.equals(prodTwo)){
+				if(prodOne.equals(prodTwo)) {
 					return false;
 				}
 			}
