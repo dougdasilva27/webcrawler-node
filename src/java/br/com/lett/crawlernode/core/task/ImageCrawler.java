@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bson.Document;
+import org.json.JSONObject;
 import org.openimaj.feature.local.list.LocalFeatureList;
 import org.openimaj.image.feature.local.keypoints.Keypoint;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class ImageCrawler implements Runnable {
 
 	private static final Logger logger = LoggerFactory.getLogger(ImageCrawler.class);
-	
+
 	private final int IMAGE_CHECKING_TRY = 5;
 
 	protected CrawlerSession session;
@@ -54,13 +55,18 @@ public class ImageCrawler implements Runnable {
 
 		try {
 			
-			// download and process the image
-			String md5 = processImage();
-			
+			BufferedImage bufferedImage = null;
+			boolean mustUploadToAmazon = false;
+			JSONObject checkChangeResult = null;
+
+			// download the image and compute it's md5
+			File imageFile = downloadImage();
+			String md5 = CommonMethods.computeMD5(imageFile);
+
 			// get metada from the image on Amazon
 			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalName());
 			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getOriginalName());
-			
+
 			// looking for image change
 			boolean changedFirstCheck = false;
 			boolean changedSecondCheck = false;
@@ -68,17 +74,21 @@ public class ImageCrawler implements Runnable {
 			Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (first check)");
 			Logging.printLogDebug(logger, session, "Amazon MD5: " + (metadata == null ? null : metadata.getETag()));
 			Logging.printLogDebug(logger, session, "Local MD5: " + md5);
+			
 			changedFirstCheck = isDifferent(metadata, md5);
 
 			if(changedFirstCheck) {
 				Logging.printLogDebug(logger, session, "Imagem mudou na first check, vou conferir fazendo a second check...");
 
-				md5 = processImage();
+				// re-download image and compute it's md5
+				imageFile = downloadImage();
+				md5 = CommonMethods.computeMD5(imageFile);
 
 				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (second check)");
 				Logging.printLogDebug(logger, session, "Amazon MD5: " + (metadata == null ? null : metadata.getETag()));
 				Logging.printLogDebug(logger, session, "Local MD5: " + md5);
-
+				
+				// look for change
 				changedSecondCheck = isDifferent(metadata, md5);
 
 			} else {
@@ -91,21 +101,36 @@ public class ImageCrawler implements Runnable {
 
 			// Se passou pelo first e second check, antes de dizer se realmente mudou, vou fazer uma checagem mais minuciosa
 			if(changedFirstCheck && changedSecondCheck) {
-
 				Logging.printLogDebug(logger, session, "Imagem não passou no teste do first e second check. Checarei mais algumas vezes até obter duas imagens iguais");
 
-				// checagem mains minuciosa
-				boolean imageChanged = checkChange(metadata, md5);
+				// detailed checking
+				checkChangeResult = checkChange(metadata, md5);
 
-				if (imageChanged) {
-					Logging.printLogWarn(logger, session, "Image changed! Uploading to Amazon...");
-					S3Service.uploadImageToAmazon(session, md5);
+				if (checkChangeResult.getBoolean("changed")) {
+					Logging.printLogWarn(logger, session, "Image changed! Must upload to Amazon...");
+					mustUploadToAmazon = true;
 				}
 			}
 			
-			//Logging.printLogDebug(logger, session, "Deleting local files...");
-			//deleteLocalFiles();
+			// create a buffered image from the downloaded image
+			Logging.printLogDebug(logger, session, "Creating a buffered image...");
+			bufferedImage = createImage(imageFile);
+
+			// apply rescaling on the image
+			Logging.printLogDebug(logger, session, "Rescaling the image...");
+			rescale(bufferedImage, imageFile);
 			
+			// upload to Amazon
+			if (mustUploadToAmazon) {
+				Logging.printLogWarn(logger, session, "Uploading image to Amazon...");
+				S3Service.uploadImageToAmazon(session, checkChangeResult.getString("md5"));
+				
+				// store image metadata, including descriptors and hash
+				storeImageMetaData(bufferedImage, checkChangeResult.getString("md5"));
+			} else {
+				storeImageMetaData(bufferedImage, md5);
+			}
+
 		} catch (Exception e) {
 			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -120,24 +145,9 @@ public class ImageCrawler implements Runnable {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private String processImage() throws NullPointerException, FileNotFoundException, IOException {
-		
-		// download the image
+	private File downloadImage() throws NullPointerException, FileNotFoundException, IOException {
 		Logging.printLogDebug(logger, session, "Downloading image from market...");
-		File imageFile = DataFetcher.fetchImage(session);
-
-		// create a buffered image from the downloaded image
-		Logging.printLogDebug(logger, session, "Creating a buffered image...");
-		BufferedImage bufferedImage = createImage(imageFile);
-
-		// apply rescaling on the image
-		Logging.printLogDebug(logger, session, "Rescaling the image...");
-		rescale(bufferedImage, imageFile);
-
-		// store image metadata, including descriptors and hash
-		String md5 = storeImageMetaData(bufferedImage);
-		
-		return md5;
+		return DataFetcher.fetchImage(session);
 	}
 
 	/**
@@ -173,85 +183,60 @@ public class ImageCrawler implements Runnable {
 
 	/**
 	 * 
-	 * @return
-	 * @throws NullPointerException
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 */
-	private String computeMD5() throws NullPointerException, FileNotFoundException, IOException {
-		String md5 = null;
-		FileInputStream fis = new FileInputStream( new File(((ImageCrawlerSession)session).getLocalOriginalFileDir()) );
-		md5 = DigestUtils.md5Hex(fis);
-		fis.close();
-
-		return md5;
-	}
-
-	/**
-	 * 
 	 * @param image
 	 * @return
 	 * @throws NullPointerException
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private String storeImageMetaData(BufferedImage image) throws NullPointerException, FileNotFoundException, IOException {
-		if (image == null) {
-			Logging.printLogError(logger, session, "Image is null...returning...");
-			return null;
+	private void storeImageMetaData(BufferedImage image, String md5) throws NullPointerException, FileNotFoundException, IOException {
+		if (image == null || md5 == null) {
+			Logging.printLogError(logger, session, "Image or md5 is null...returning...");
+			return;
 		}
 
-		// compute image md5
-		String md5 = computeMD5();
+		Logging.printLogDebug(logger, session, "Loking for image features on Mongo...");
 
-		if(md5 != null) {
-			Logging.printLogDebug(logger, session, "Loking for image features on Mongo...");
+		// Só extraio as features e insiro no mongo, se elas já não estiverem presentes
+		MongoDatabase database = Main.dbManager.mongoMongoImages;
+		MongoCollection imageFeaturesCollection = database.getCollection("ImageFeatures");
+		FindIterable<Document> iterable = imageFeaturesCollection.find(Filters.eq("md5", md5));
+		Document document = iterable.first();
 
-			// Só extraio as features e insiro no mongo, se elas já não estiverem presentes
-			MongoDatabase database = Main.dbManager.mongoMongoImages;
-			MongoCollection imageFeaturesCollection = database.getCollection("ImageFeatures");
-			FindIterable<Document> iterable = imageFeaturesCollection.find(Filters.eq("md5", md5));
-			Document document = iterable.first();
+		if(document == null) {
+			try {
+				Logging.printLogDebug(logger, session, "Image features are not on Mongo yet.");
+				Logging.printLogDebug(logger, session, "Extraindo descritores da imagem...");
 
-			if(document == null) {
-				try {
-					Logging.printLogDebug(logger, session, "Image features are not on Mongo yet.");
-					Logging.printLogDebug(logger, session, "Extraindo descritores da imagem...");
+				// extract sift descriptors from image
+				LocalFeatureList<Keypoint> features = this.imageFeatureExtractor.extractFeatures(image);
 
-					// extract sift descriptors from image
-					LocalFeatureList<Keypoint> features = this.imageFeatureExtractor.extractFeatures(image);
+				// create serializable container class to store the image features
+				ImageFeatures imageFeatures = new ImageFeatures(features, md5);
 
-					// create serializable container class to store the image features
-					ImageFeatures imageFeatures = new ImageFeatures(features, md5);
+				// convert the object to json
+				Gson gson = new Gson();
+				Document doc = Document.parse(gson.toJson(imageFeatures));
 
-					// convert the object to json
-					Gson gson = new Gson();
-					Document doc = Document.parse(gson.toJson(imageFeatures));
-
-					// store on mongo
-					if(database != null) {
-						if(imageFeaturesCollection != null) {
-							Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
-							imageFeaturesCollection.insertOne(doc);	 
-						}
+				// store on mongo
+				if(database != null) {
+					if(imageFeaturesCollection != null) {
+						Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
+						imageFeaturesCollection.insertOne(doc);	 
 					}
-
-				} catch (Exception e) {
-					Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
-					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
-					session.registerError(error);
 				}
-				Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
-			} else {
-				Logging.printLogDebug(logger, session, "md5 desta imagem já está no mongo");
-			}
-		} else {
-			Logging.printLogError(logger, session, "Image MD5 is null");
-		}
 
-		return md5;
+			} catch (Exception e) {
+				Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+				session.registerError(error);
+			}
+			Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
+		} else {
+			Logging.printLogDebug(logger, session, "md5 desta imagem já está no mongo");
+		}
 	}
-	
+
 	/**
 	 * 
 	 * @param metadata
@@ -271,14 +256,16 @@ public class ImageCrawler implements Runnable {
 		}
 
 	}
-	
+
 	/**
 	 * 
 	 * @param metadata
 	 * @param md5SecondDownload
 	 * @return
 	 */
-	private boolean checkChange(ObjectMetadata metadata, String md5SecondDownload) {
+	private JSONObject checkChange(ObjectMetadata metadata, String md5SecondDownload) {
+		
+		JSONObject result = new JSONObject();
 
 		/*
 		 * Neste ponto temos o md5 da Amazon e o md5 do segundo download.
@@ -296,19 +283,28 @@ public class ImageCrawler implements Runnable {
 				Logging.printLogDebug(logger, session, "Iteração " + iteration + "...");
 
 				// Fazer um novo download da imagem
-				String imageNow = processImage();
+				File imageFile = downloadImage();
+				String imageNow = CommonMethods.computeMD5(imageFile);
 
 				// Comparar com a da iteração anterior, se der igual, retorno true
 				if ( imageNow != null && imageNow.equals(pastIterationMd5) ) {
 					Logging.printLogDebug(logger, session, "Fiz um download novo e constatei que era igual a imagem que eu tinha da iteração anterior");
-					return true;
+					
+					result.append("changed", true);
+					result.append("md5", imageNow);
+					
+					return result;
 				}
 
 				// Comparar o md5 do download atual com o da Amazon -- se chegou aqui, significa que o download
 				// atual não foi igual ao da iteração anterior
 				if ( !isDifferent(metadata, imageNow) ) {
 					Logging.printLogDebug(logger, session, "Imagem do download atual, que é a iteração " + iteration + " é igual a da Amazon.");
-					return false;
+					
+					result.append("changed", false);
+					result.append("md5", imageNow);
+					
+					return result;
 				}
 
 				// Se chegou até aqui significa que o novo download não foi igual ao download da iteração anterior e que também
@@ -326,18 +322,11 @@ public class ImageCrawler implements Runnable {
 		}
 
 		Logging.printLogDebug(logger, session, "Fiz todas as tentativas e conclui que a imagem realmente mudou.");
+		
+		result.append("changed", true);
+		result.append("md5", pastIterationMd5);
 
-		return true;
-	}
-	
-	/**
-	 * 
-	 */
-	private void deleteLocalFiles() {
-		new File( ((ImageCrawlerSession)session).getLocalFileDir() ).delete();
-		new File( ((ImageCrawlerSession)session).getLocalOriginalFileDir() ).delete();
-		new File( ((ImageCrawlerSession)session).getLocalSmallFileDir() ).delete();
-		new File( ((ImageCrawlerSession)session).getLocalRegularFileDir() ).delete();
+		return result;
 	}
 
 }

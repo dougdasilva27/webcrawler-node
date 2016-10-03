@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.util;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -10,6 +13,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -42,6 +46,22 @@ public class CommonMethods {
 		int randomNum = rand.nextInt((max - min) + 1) + min;
 
 		return randomNum;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws NullPointerException
+	 * @throws IOException
+	 */
+	public static String computeMD5(File file) throws IOException {
+		String md5 = null;
+		if (file != null) {
+			FileInputStream fis = new FileInputStream(file);
+			md5 = DigestUtils.md5Hex(fis);
+			fis.close();
+		}
+		return md5;
 	}
 	
 	/**
