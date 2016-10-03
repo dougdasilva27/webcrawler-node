@@ -25,6 +25,7 @@ import com.mongodb.client.model.Filters;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.imgprocessing.FeatureExtractor;
+import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.imgprocessing.ImageRescaler;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -54,81 +55,66 @@ public class ImageCrawler implements Runnable {
 	public void run() {
 
 		try {
-			
-			BufferedImage bufferedImage = null;
-			boolean mustUploadToAmazon = false;
-			JSONObject checkChangeResult = null;
 
-			// download the image and compute it's md5
-			File imageFile = downloadImage();
-			String md5 = CommonMethods.computeMD5(imageFile);
+			ImageDownloadResult result = simpleDownload();
 
-			// get metada from the image on Amazon
+			// get metadata from the image on Amazon
 			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalName());
 			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getOriginalName());
 
-			// looking for image change
-			boolean changedFirstCheck = false;
-			boolean changedSecondCheck = false;
-
-			Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (first check)");
+			// if this image isn't on Amazon yet
 			Logging.printLogDebug(logger, session, "Amazon MD5: " + (metadata == null ? null : metadata.getETag()));
-			Logging.printLogDebug(logger, session, "Local MD5: " + md5);
-			
-			changedFirstCheck = isDifferent(metadata, md5);
+			if ( !isOnAmazon(metadata) ) {
+				Logging.printLogDebug(logger, session, "This image isn't on Amazon yet.");
 
-			if(changedFirstCheck) {
-				Logging.printLogDebug(logger, session, "Imagem mudou na first check, vou conferir fazendo a second check...");
+				if (result.getImageFile() != null && result.getMd5() != null ) {
 
-				// re-download image and compute it's md5
-				imageFile = downloadImage();
-				md5 = CommonMethods.computeMD5(imageFile);
+					// create a buffered image from the downloaded image
+					Logging.printLogDebug(logger, session, "Creating a buffered image...");
+					BufferedImage bufferedImage = createImage(result.getImageFile());
 
-				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (second check)");
-				Logging.printLogDebug(logger, session, "Amazon MD5: " + (metadata == null ? null : metadata.getETag()));
-				Logging.printLogDebug(logger, session, "Local MD5: " + md5);
-				
-				// look for change
-				changedSecondCheck = isDifferent(metadata, md5);
+					// rescale the image
+					Logging.printLogDebug(logger, session, "Rescaling the image...");
+					rescale(bufferedImage, result.getImageFile());
 
-			} else {
-				Logging.printLogDebug(logger, session, "Image didn't changed. (md5: " + md5 + ")");
-			}
+					// upload to Amazon
+					Logging.printLogWarn(logger, session, "Uploading image to Amazon...");
+					S3Service.uploadImageToAmazon(session, result.getMd5());
 
-			if(changedFirstCheck && !changedSecondCheck) {
-				Logging.printLogDebug(logger, session, "Achei que a imagem tinha mudado, mas ao baixar de novo para conferir, vi que a imagem não mudou!");
-			}
-
-			// Se passou pelo first e second check, antes de dizer se realmente mudou, vou fazer uma checagem mais minuciosa
-			if(changedFirstCheck && changedSecondCheck) {
-				Logging.printLogDebug(logger, session, "Imagem não passou no teste do first e second check. Checarei mais algumas vezes até obter duas imagens iguais");
-
-				// detailed checking
-				checkChangeResult = checkChange(metadata, md5);
-
-				if (checkChangeResult.getBoolean("changed")) {
-					Logging.printLogWarn(logger, session, "Image changed! Must upload to Amazon...");
-					mustUploadToAmazon = true;
+					// store image metadata, including descriptors and hash
+					storeImageMetaData(bufferedImage, result.getMd5());
 				}
 			}
-			
-			// create a buffered image from the downloaded image
-			Logging.printLogDebug(logger, session, "Creating a buffered image...");
-			bufferedImage = createImage(imageFile);
 
-			// apply rescaling on the image
-			Logging.printLogDebug(logger, session, "Rescaling the image...");
-			rescale(bufferedImage, imageFile);
-			
-			// upload to Amazon
-			if (mustUploadToAmazon) {
-				Logging.printLogWarn(logger, session, "Uploading image to Amazon...");
-				S3Service.uploadImageToAmazon(session, checkChangeResult.getString("md5"));
-				
-				// store image metadata, including descriptors and hash
-				storeImageMetaData(bufferedImage, checkChangeResult.getString("md5"));
-			} else {
-				storeImageMetaData(bufferedImage, md5);
+			// the image is already on the Amazon
+			else {
+
+				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (first check)");
+				Logging.printLogDebug(logger, session, "Amazon MD5: " + (metadata == null ? null : metadata.getETag()));
+				Logging.printLogDebug(logger, session, "Local MD5: " + result.getMd5());
+
+				// let's see if the md5 has changed
+				if ( isDifferent(metadata, result.getMd5()) ) {
+					Logging.printLogDebug(logger, session, "Detectei mudança com relação ao MD5 da Amazon.");
+
+					// if the md5 has changed, truco!!
+					ImageDownloadResult trucoDownloadResult = trucoDownload(metadata, result.getMd5());
+
+					// create a buffered image from the downloaded image
+					Logging.printLogDebug(logger, session, "Creating a buffered image...");
+					BufferedImage bufferedImage = createImage(trucoDownloadResult.getImageFile());
+
+					// apply rescaling on the image
+					Logging.printLogDebug(logger, session, "Rescaling the image...");
+					rescale(bufferedImage, trucoDownloadResult.getImageFile());
+
+					// upload to Amazon
+					Logging.printLogWarn(logger, session, "Uploading image to Amazon...");
+					S3Service.uploadImageToAmazon(session, trucoDownloadResult.getMd5());
+
+					// store image metadata, including descriptors and hash
+					storeImageMetaData(bufferedImage, trucoDownloadResult.getMd5());
+				}
 			}
 
 		} catch (Exception e) {
@@ -136,6 +122,63 @@ public class ImageCrawler implements Runnable {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}		
 
+	}
+
+	private ImageDownloadResult simpleDownload() throws IOException {
+		ImageDownloadResult result = new ImageDownloadResult();
+		File imageFile = downloadImage();
+		String md5 = CommonMethods.computeMD5(imageFile);
+
+		result.setImageFile(imageFile);
+		result.setMd5(md5);
+
+		return result;
+	}
+
+	private ImageDownloadResult trucoDownload(ObjectMetadata metadata, String currentMd5) throws IOException {
+		String pastIterationMd5 = currentMd5;
+		int iteration = 1;
+		ImageDownloadResult result = null;
+		
+		Logging.printLogDebug(logger, session, "Iniciando truco download...");
+
+		while (iteration <= IMAGE_CHECKING_TRY) {
+			try {
+				Logging.printLogDebug(logger, session, "Iteração " + iteration + "...");
+
+				// Fazer um novo download da imagem
+				result = simpleDownload();
+
+				// Comparar com a da iteração anterior, se der igual, retorno
+				if ( result.getMd5() != null && result.getMd5().equals(pastIterationMd5) ) {
+					Logging.printLogDebug(logger, session, "Fiz um download novo e constatei que era igual a imagem que eu tinha da iteração anterior");
+					return result;
+				}
+
+				// Comparar o md5 do download atual com o da Amazon -- se chegou aqui, significa que o download
+				// atual não foi igual ao da iteração anterior
+				if ( metadata.getETag().equals(result.getMd5()) ) {
+					Logging.printLogDebug(logger, session, "Imagem do download atual, que é a iteração " + iteration + " é igual a da Amazon.");
+					return result;
+				}
+
+				// Se chegou até aqui significa que o novo download não foi igual ao download da iteração anterior e que também
+				// não foi igual ao da Amazon. Vamos atualizar o pastIterationMd5 com o download atual e partir para a próxima iteração
+				Logging.printLogDebug(logger, session, "O novo download não foi igual ao download da iteração anterior.");
+				Logging.printLogDebug(logger, session, "Vou partir para a próxima iteração.");
+
+				pastIterationMd5 = result.getMd5();
+
+				iteration++;
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		Logging.printLogDebug(logger, session, "Fiz todas as tentativas e conclui que a imagem realmente mudou.");
+
+		return result;
 	}
 
 	/**
@@ -257,6 +300,13 @@ public class ImageCrawler implements Runnable {
 
 	}
 
+	private boolean isOnAmazon(ObjectMetadata metadata) {
+		if(metadata == null || metadata.getETag() == null) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * 
 	 * @param metadata
@@ -264,7 +314,7 @@ public class ImageCrawler implements Runnable {
 	 * @return
 	 */
 	private JSONObject checkChange(ObjectMetadata metadata, String md5SecondDownload) {
-		
+
 		JSONObject result = new JSONObject();
 
 		/*
@@ -289,10 +339,10 @@ public class ImageCrawler implements Runnable {
 				// Comparar com a da iteração anterior, se der igual, retorno true
 				if ( imageNow != null && imageNow.equals(pastIterationMd5) ) {
 					Logging.printLogDebug(logger, session, "Fiz um download novo e constatei que era igual a imagem que eu tinha da iteração anterior");
-					
+
 					result.append("changed", true);
 					result.append("md5", imageNow);
-					
+
 					return result;
 				}
 
@@ -300,10 +350,10 @@ public class ImageCrawler implements Runnable {
 				// atual não foi igual ao da iteração anterior
 				if ( !isDifferent(metadata, imageNow) ) {
 					Logging.printLogDebug(logger, session, "Imagem do download atual, que é a iteração " + iteration + " é igual a da Amazon.");
-					
+
 					result.append("changed", false);
 					result.append("md5", imageNow);
-					
+
 					return result;
 				}
 
@@ -322,7 +372,7 @@ public class ImageCrawler implements Runnable {
 		}
 
 		Logging.printLogDebug(logger, session, "Fiz todas as tentativas e conclui que a imagem realmente mudou.");
-		
+
 		result.append("changed", true);
 		result.append("md5", pastIterationMd5);
 
