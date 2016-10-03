@@ -153,11 +153,11 @@ public class ImageCrawler implements Runnable {
 		int iteration = 1;
 		ImageDownloadResult result = null;
 		
-		Logging.printLogDebug(logger, session, "Iniciando truco download...");
+		Logging.printLogDebug(logger, session, "Initiating truco download...");
 
 		while (iteration <= IMAGE_CHECKING_TRY) {
 			try {
-				Logging.printLogDebug(logger, session, "Iteração " + iteration + "...");
+				Logging.printLogDebug(logger, session, "Iteration " + iteration + "...");
 
 				// Fazer um novo download da imagem
 				result = simpleDownload();

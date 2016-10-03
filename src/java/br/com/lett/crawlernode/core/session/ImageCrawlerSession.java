@@ -98,7 +98,7 @@ public class ImageCrawlerSession extends CrawlerSession {
 		
 		// set Amazon path name
 		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + number + "-md5.txt";
-		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "/" + ".rev-" + number + "-md5.txt";
+		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + ".rev-" + number + "-md5.txt";
 	}
 	
 	@Override
