@@ -79,7 +79,8 @@ public class ImageCrawler implements Runnable {
 					S3Service.uploadImageToAmazon(session, simpleDownloadResult.getMd5());
 
 					// store image metadata, including descriptors and hash
-					storeImageMetaData(bufferedImage, simpleDownloadResult.getMd5());
+					// using the md5 of the local original file, to maintain as the original code					
+					storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 				}
 			}
 
@@ -123,7 +124,7 @@ public class ImageCrawler implements Runnable {
 					}
 
 					// store image metadata, including descriptors and hash
-					storeImageMetaData(bufferedImage, trucoDownloadResult.getMd5());
+					storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 				}
 				else {
 					Logging.printLogDebug(logger, session, "The image md5 is already on Amazon.");
