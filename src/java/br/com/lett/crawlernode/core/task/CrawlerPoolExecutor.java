@@ -251,6 +251,9 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 		}
+		
+		// clear the session
+		session.clearSession();
 
 		Logging.printLogDebug(logger, session, "END");
 	}

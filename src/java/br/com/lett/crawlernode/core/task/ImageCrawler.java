@@ -103,8 +103,8 @@ public class ImageCrawler implements Runnable {
 				}
 			}
 			
-			Logging.printLogDebug(logger, session, "Deleting local files...");
-			deleteLocalFiles();
+			//Logging.printLogDebug(logger, session, "Deleting local files...");
+			//deleteLocalFiles();
 			
 		} catch (Exception e) {
 			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
@@ -237,7 +237,9 @@ public class ImageCrawler implements Runnable {
 					}
 
 				} catch (Exception e) {
-					e.printStackTrace();
+					Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+					session.registerError(error);
 				}
 				Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
 			} else {
