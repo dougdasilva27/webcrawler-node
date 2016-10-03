@@ -2,10 +2,12 @@ package br.com.lett.crawlernode.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -85,8 +87,38 @@ public class S3Service {
 		}
 	}
 	
+	public static S3Object fetchS3Object(CrawlerSession session, String name) {
+		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+		AmazonS3 s3client = new AmazonS3Client(credentials);
+		try {
+			return s3client.getObject(cdnBucketName, name);
+		} catch (AmazonS3Exception s3Exception) {
+        	if (s3Exception.getStatusCode() == 404) {
+        		Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
+        		return null;
+        	} else {
+        		Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+        		return null;
+        	}
+        } 
+        catch (Exception e) {
+        	Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+        	return null;
+		}
+	}
+	
 	public static void uploadImageToAmazon(CrawlerSession session, String md5) {
 		int number = ((ImageCrawlerSession)session).getNumber();
+		
+		String md5Path = ((ImageCrawlerSession)session).getMd5AmazonPath();
+		String localMd5Path = ((ImageCrawlerSession)session).getLocalMd5Path();
+		
+		File localMd5File = new File(localMd5Path);
+		try {
+			FileUtils.writeStringToFile(localMd5File, md5);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		String originalName = ((ImageCrawlerSession)session).getOriginalName();
 		String localOriginalFileDir = ((ImageCrawlerSession)session).getLocalOriginalFileDir();
@@ -98,6 +130,10 @@ public class S3Service {
 		String localRegularFileDir = ((ImageCrawlerSession)session).getLocalRegularFileDir();
 		
 		try {
+			s3client.putObject(new PutObjectRequest(cdnBucketName, md5Path, localMd5File));
+			//if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, ((ImageCrawlerSession)session).getOriginalName(), cdnBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
+			Logging.printLogDebug(logger, session, "Upload md5 file OK!");
+			
 			s3client.putObject(new PutObjectRequest(cdnBucketName, originalName, new File(localOriginalFileDir)));
 			if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, ((ImageCrawlerSession)session).getOriginalName(), cdnBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
 			Logging.printLogDebug(logger, session, "Upload original OK!");
@@ -129,6 +165,20 @@ public class S3Service {
 					"such as not being able to access the network.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
 		}
+	}
+	
+	public static String getAmazonImageFileMd5(S3Object s3Object) {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
+		String content = "";
+		String line = null;
+		try {
+			while((line = reader.readLine()) != null) {
+				content += line;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return content;
 	}
 	
 	/**

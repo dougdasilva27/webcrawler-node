@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -49,6 +47,9 @@ public class ImageCrawlerSession extends CrawlerSession {
 	private String originalName;
 	private String smallName;
 	private String regularName;
+	
+	private String md5AmazonPath;
+	private String localMd5AmazonPath;
 
 	public ImageCrawlerSession(Message message, String queueName, Markets markets) {
 		super(message, queueName, markets);
@@ -85,6 +86,7 @@ public class ImageCrawlerSession extends CrawlerSession {
 		
 		// set local directories 
 		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + createImageBaseName();  
+		
 		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
 		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
 		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
@@ -93,7 +95,10 @@ public class ImageCrawlerSession extends CrawlerSession {
 		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-original.jpg";
 		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
 		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
-
+		
+		// set Amazon path name
+		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + number + "-md5.txt";
+		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "/" + ".rev-" + number + "-md5.txt";
 	}
 	
 	@Override
@@ -103,9 +108,14 @@ public class ImageCrawlerSession extends CrawlerSession {
 			Files.deleteIfExists(Paths.get(this.localOriginalFileDir));
 			Files.deleteIfExists(Paths.get(this.localSmallFileDir));
 			Files.deleteIfExists(Paths.get(this.localRegularFileDir));
+			Files.deleteIfExists(Paths.get(this.localMd5AmazonPath));
 		} catch (IOException e) {
 			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
 		}
+	}
+	
+	public String getLocalMd5Path() {
+		return this.localMd5AmazonPath;
 	}
 	
 	/**
@@ -204,6 +214,14 @@ public class ImageCrawlerSession extends CrawlerSession {
 
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	public String getMd5AmazonPath() {
+		return md5AmazonPath;
+	}
+
+	public void setMd5AmazonPath(String md5AmazonPath) {
+		this.md5AmazonPath = md5AmazonPath;
 	}
 
 }
