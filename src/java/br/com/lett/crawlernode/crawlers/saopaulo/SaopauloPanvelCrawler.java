@@ -104,10 +104,16 @@ public class SaopauloPanvelCrawler extends Crawler {
 					Element elementSecondaryImage = elementSecondaryImages.get(i);
 					String image = null;
 					if (elementSecondaryImage.attr("src").contains("/4/")) {
-						image = "http:" + elementSecondaryImage.attr("src").replace("/4/", "/5/").replace("-4","-5");													
+						image = elementSecondaryImage.attr("src").replace("/4/", "/5/").replace("-4","-5");	
+						if(!image.startsWith("http")){
+							image = "http:" + image;
+						}
 					}
 					else if (elementSecondaryImage.attr("src").contains("/2/")) {
-						image = "http:" + elementSecondaryImage.attr("src").replace("/2/", "/5/").replace("-2","-5");							
+						image = elementSecondaryImage.attr("src").replace("/2/", "/5/").replace("-2","-5");
+						if(!image.startsWith("http")){
+							image = "http:" + image;
+						}
 					}
 					else if (elementSecondaryImage.attr("src").contains("produtos/default.jpg") || elementSecondaryImage.attr("src").contains("/video")) { // caso esteja sem imagem
 						image = "";
@@ -126,10 +132,16 @@ public class SaopauloPanvelCrawler extends Crawler {
 			String primaryImage = null;
 			if (elementSecondaryImages.first() != null) {
 				if (elementSecondaryImages.first().attr("src").contains("/4/")) {
-					primaryImage = "http:" + elementSecondaryImages.first().attr("src").replace("/4/", "/5/").replace("-4.jpg","-5.jpg");
+					primaryImage = elementSecondaryImages.first().attr("src").replace("/4/", "/5/").replace("-4.jpg","-5.jpg");
+					if(!primaryImage.startsWith("http")){
+						primaryImage = "http:" + primaryImage;
+					}
 				}
 				else if (elementSecondaryImages.first().attr("src").contains("/2/")) {
-					primaryImage = "http:" + elementSecondaryImages.first().attr("src").replace("/2/", "/5/").replace("-2.jpg","-5.jpg");
+					primaryImage = elementSecondaryImages.first().attr("src").replace("/2/", "/5/").replace("-2.jpg","-5.jpg");
+					if(!primaryImage.startsWith("http")){
+						primaryImage = "http:" + primaryImage;
+					}
 				}
 
 				else if (elementSecondaryImages.first().attr("src").contains("produtos/default.jpg") || elementSecondaryImages.first().attr("src").contains("/video")) {
