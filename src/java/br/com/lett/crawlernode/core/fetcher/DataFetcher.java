@@ -94,9 +94,9 @@ public class DataFetcher {
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
 	
-	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 15000; // ms
-	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 15000; // ms
-	private static final int DEFAULT_SOCKET_TIMEOUT_IMG = 15000; // ms
+	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 20000; // ms
+	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
+	private static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
@@ -1176,6 +1176,7 @@ public class DataFetcher {
 			int attempt,
 			CrawlerSession session) {
 
+		File localFile = null;
 		LettProxy randProxy = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
@@ -1213,18 +1214,18 @@ public class DataFetcher {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT_IMG)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
 						.setProxy(proxy)
 						.build();
 			} else {
 				requestConfig = RequestConfig.custom()
 						.setCookieSpec(CookieSpecs.STANDARD)
 						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT_IMG)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
 						.build();
 			}
 
@@ -1269,7 +1270,7 @@ public class DataFetcher {
 			// assembling request information log message
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 			
-			File localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
+			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
 			// get image bytes
 			BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());  
@@ -1289,6 +1290,10 @@ public class DataFetcher {
 
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 			
+			if (localFile != null && localFile.exists()) {
+				localFile.delete();
+			}
+			
 			if (e instanceof ResponseCodeException) {
 				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
@@ -1305,7 +1310,6 @@ public class DataFetcher {
 				return downloadImageFromMarket(attempt+1, session);
 			}
 		}
-
 
 	}
 
