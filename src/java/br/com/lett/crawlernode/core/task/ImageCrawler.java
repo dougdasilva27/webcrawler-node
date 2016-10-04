@@ -106,21 +106,27 @@ public class ImageCrawler implements Runnable {
 				if ( amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.getMd5()) ) {
 					Logging.printLogDebug(logger, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
-					// if the md5 has changed, truco!!
-					ImageDownloadResult trucoDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.getMd5());
-
+					
+					ImageDownloadResult finalDownloadResult;
+					
+					if(amazonMd5 != null) {
+						finalDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.getMd5());
+					} else {
+						finalDownloadResult = simpleDownloadResult;
+					}
+					
 					// create a buffered image from the downloaded image
 					Logging.printLogDebug(logger, session, "Creating a buffered image...");
-					BufferedImage bufferedImage = createImage(trucoDownloadResult.getImageFile());
+					BufferedImage bufferedImage = createImage(finalDownloadResult.getImageFile());
 
 					// apply rescaling on the image
 					Logging.printLogDebug(logger, session, "Rescaling the image...");
-					rescale(bufferedImage, trucoDownloadResult.getImageFile());
+					rescale(bufferedImage, finalDownloadResult.getImageFile());
 
 					// upload to Amazon
 					Logging.printLogWarn(logger, session, "Uploading image to Amazon...only the md5 isn't null");
-					if (trucoDownloadResult.getMd5() != null) {
-						S3Service.uploadImageToAmazon(session, trucoDownloadResult.getMd5());
+					if (finalDownloadResult.getMd5() != null) {
+						S3Service.uploadImageToAmazon(session, finalDownloadResult.getMd5());
 					}
 
 					// store image metadata, including descriptors and hash
