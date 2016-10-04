@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webcrawler-node</groupId>
 	<artifactId>webcrawler-node</artifactId>
-	<version>2016.10.03b</version>
+	<version>2016.10.03c</version>
 	<packaging>jar</packaging>
 
 	<build>
