@@ -77,6 +77,16 @@ public class QueueService {
 			result.setQueueName(QueueHandler.DEVELOPMENT);
 			return result;
 		}
+		
+		if (Main.executionParameters.isImageTaskActivated()) { // if image task is activated, we want to solve only those types of tasks.
+			messages = requestMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, maxNumberOfMessages);
+			if (!messages.isEmpty()) {
+				result.setMessages(messages);
+				result.setQueueName(QueueHandler.IMAGES);
+				return result;
+			}
+			return result;
+		}
 
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
@@ -90,15 +100,6 @@ public class QueueService {
 			result.setMessages(messages);
 			result.setQueueName(QueueHandler.INSIGHTS);
 			return result;
-		}
-
-		if (Main.executionParameters.isImageTaskActivated()) {
-			messages = requestMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, maxNumberOfMessages);
-			if (!messages.isEmpty()) {
-				result.setMessages(messages);
-				result.setQueueName(QueueHandler.IMAGES);
-				return result;
-			}
 		}
 
 		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
