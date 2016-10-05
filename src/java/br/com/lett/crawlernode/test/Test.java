@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("https://www.bemol.com.br/loja/pt/bemol/eletrodomesticos/cozinha/geladeira-2-portas/geladeira-electrolux-frost-free-df36a-310-litros-branca-000000000000142731", market);
+		CrawlerSession session = SessionFactory.createSession("https://www.nescafe-dolcegusto.com.br/marrakesh-style-tea", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

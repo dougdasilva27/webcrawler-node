@@ -48,14 +48,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			String name = elementName.text().trim();
 
 			// price
-			Float price = null;
-			Element elementPrice = doc.select(".price-box .regular-price .price").first();
-			if (elementPrice == null) {
-				elementPrice = doc.select(".price-box .special-price .price").first();
-			}
-			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
+			Float price = crawlPrice(doc);
 
 			// categories
 			Elements elementsCategories = doc.select(".breadcrumbs ul li");
@@ -160,6 +153,19 @@ public class BrasilDolcegustoCrawler extends Crawler {
 	private boolean isProductPage(String url, Document document) {
 		String[] tokens = url.split("/");
 		return (!document.select(".product-essential").isEmpty() && tokens.length == 4 && !url.endsWith("/"));
+	}
+	
+	private Float crawlPrice(Document doc) {
+		Float price = null;
+		Element elementPrice = doc.select(".product-shop .price-box .regular-price .price").first();
+		if (elementPrice == null) {
+			elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
+		}
+		if (elementPrice != null) {
+			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		}
+		
+		return price;
 	}
 
 }
