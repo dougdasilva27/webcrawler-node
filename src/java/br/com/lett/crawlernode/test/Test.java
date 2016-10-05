@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.fnac.com.br/case-logic-wmbp-11501-mochila-para-notebook-15--preta/p", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.magazineluiza.com.br/liquidificador-philips-walita-viva-ri2160-5-velocidades-com-filtro-550w/p/0887172/ep/liqu/", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

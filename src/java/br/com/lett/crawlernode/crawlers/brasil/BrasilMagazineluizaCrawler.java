@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -11,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -124,13 +126,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				secondaryImages = secondaryImagesArray.toString();
 			}
 
-			// Descrição
-			String description = "";
-			Element elementDescription = doc.select(".factsheet-main-container").first();
-			if (elementDescription != null) {
-				description = description + elementDescription.html();
-			}
-
 			// Estoque
 			Integer stock = null;
 
@@ -197,7 +192,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 						marketplace.put(seller);
 					}
-				}				
+				}
+				
+				// Descrição
+				String description = "";
+				Element elementDescription = doc.select(".factsheet-main-container").first();
+				if (elementDescription != null) {
+					description = description + elementDescription.html();
+				}
 
 				Product product = new Product();
 				product.setUrl(this.session.getUrl());
@@ -282,7 +284,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 								marketplace.put(seller);
 							}
 						}
-
+						
+						// Descrição -- tem uma para cada variacao -- usando uma API do magazineluiza para pegar a descricao correspondente
+						String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalIdsecondPart + "/";
+						String description = DataFetcher.fetchString("GET", session, descriptionURL, null, null);
+						
 						Product product = new Product();
 						product.setUrl(this.session.getUrl());
 						product.setInternalId(variationInternalId);
@@ -351,6 +357,13 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 							marketplace.put(seller);
 						}
+					}
+					
+					// Descrição
+					String description = "";
+					Element elementDescription = doc.select(".factsheet-main-container").first();
+					if (elementDescription != null) {
+						description = description + elementDescription.html();
 					}
 
 					Product product = new Product();
