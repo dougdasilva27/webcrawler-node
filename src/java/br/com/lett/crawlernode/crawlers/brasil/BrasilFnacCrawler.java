@@ -113,10 +113,7 @@ public class BrasilFnacCrawler extends Crawler {
 				}				
 
 				// name
-				String name = null;
-				if (fullSkuJson.has("name")) {
-					name = fullSkuJson.getString("name");
-				}
+				String name = crawlName(fullSkuJson, sku);
 
 				// availability
 				boolean available = false;
