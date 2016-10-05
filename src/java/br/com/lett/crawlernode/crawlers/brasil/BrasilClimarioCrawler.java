@@ -310,35 +310,35 @@ import br.com.lett.crawlernode.util.Logging;
 //}
 
 /************************************************************************************************************************************************************************************
-* Crawling notes (04/10/2016):
-* 
-* 1) For this crawler, we have one URL for multiple skus.
-*  
-* 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
-* 
-* 3) There is no marketplace in this ecommerce by the time this crawler was made.
-* 
-* 4) The sku page identification is done simply looking for an specific html element.
-* 
-* 5) If the sku is unavailable, it's price is not displayed.
-* 
-* 6) The price of sku, found in json script, is wrong when the same is unavailable, then it is not crawled.
-* 
-* 7) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
-* the variations of a given sku.
-* 
-* 7) The primary image is the first image on the secondary images.
-* 
-* 8) To get the internal_id is necessary to get a json , where internal_id is an attribute " sku ".
-* 
-* Examples:
-* ex1 (available): http://www.climario.com.br/ar-condicionado-de-janela-elgin-21000btuh-220-monofasico-frio-mecanico/p
-* ex2 (unavailable): http://www.climario.com.br/ar-condicionado-split-elgin-high-wall-18k-220v-frior410a/p
-*
-* Optimizations notes:
-* No optimizations.
-*
-************************************************************************************************************************************************************************************/
+ * Crawling notes (04/10/2016):
+ * 
+ * 1) For this crawler, we have one URL for multiple skus.
+ *  
+ * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
+ * 
+ * 3) There is no marketplace in this ecommerce by the time this crawler was made.
+ * 
+ * 4) The sku page identification is done simply looking for an specific html element.
+ * 
+ * 5) If the sku is unavailable, it's price is not displayed.
+ * 
+ * 6) The price of sku, found in json script, is wrong when the same is unavailable, then it is not crawled.
+ * 
+ * 7) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
+ * the variations of a given sku.
+ * 
+ * 7) The primary image is the first image on the secondary images.
+ * 
+ * 8) To get the internal_id is necessary to get a json , where internal_id is an attribute " sku ".
+ * 
+ * Examples:
+ * ex1 (available): http://www.climario.com.br/ar-condicionado-de-janela-elgin-21000btuh-220-monofasico-frio-mecanico/p
+ * ex2 (unavailable): http://www.climario.com.br/ar-condicionado-split-elgin-high-wall-18k-220v-frior410a/p
+ *
+ * Optimizations notes:
+ * No optimizations.
+ *
+ ************************************************************************************************************************************************************************************/
 
 public class BrasilClimarioCrawler extends Crawler {
 
@@ -347,7 +347,7 @@ public class BrasilClimarioCrawler extends Crawler {
 	public BrasilClimarioCrawler(CrawlerSession session) {
 		super(session);
 	}
-	
+
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getUrl().toLowerCase();
@@ -362,10 +362,10 @@ public class BrasilClimarioCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
-			
+
 			// Pid
 			String internalPid = crawlInternalPid(doc);
-			
+
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
 			String category1 = getCategory(categories, 0);
@@ -383,31 +383,31 @@ public class BrasilClimarioCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-			
+
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
-			
+
 			for(int i = 0; i < arraySkus.length(); i++){
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
-				
+
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
 
 				// InternalId 
 				String internalId = crawlInternalId(jsonSku);
-				
+
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
-				
+
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
-				
+
 				// Name
 				String name = crawlName(doc, jsonSku);
-				
+
 				// Secondary images
 				String secondaryImages = crawlSecondaryImages(doc);
-				
+
 				// Creating the product
 				Product product = new Product();
 
@@ -425,10 +425,10 @@ public class BrasilClimarioCrawler extends Crawler {
 				product.setDescription(description);
 				product.setStock(stock);
 				product.setMarketplace(marketplace);
-	
+
 				products.add(product);
 			}
-				
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
 		}
@@ -444,11 +444,11 @@ public class BrasilClimarioCrawler extends Crawler {
 		if ( document.select(".row-product-info").first() != null ) return true;
 		return false;
 	}
-	
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	/*******************
 	 * General methods *
 	 *******************/
@@ -477,17 +477,27 @@ public class BrasilClimarioCrawler extends Crawler {
 
 	private String crawlName(Document document, JSONObject jsonSku) {
 		String name = null;
+
+		String mainPageName = null;
 		Element nameElement = document.select(".productName").first();
-
-		String nameVariation = jsonSku.getString("skuname");
-
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
-			
-			if(name.length() > nameVariation.length()){
-				name += " " + nameVariation;
+			mainPageName = nameElement.text().trim();
+		}
+
+		String skuVariationName = null;
+		if (jsonSku.has("skuname")) {
+			skuVariationName = jsonSku.getString("skuname");
+		}
+
+		if (skuVariationName == null) return mainPageName;
+
+		if (mainPageName != null) {
+			name = mainPageName;
+
+			if (name.length() > skuVariationName.length()) {
+				name += skuVariationName;
 			} else {
-				name = nameVariation;
+				name = skuVariationName;
 			}
 		}
 
@@ -523,7 +533,7 @@ public class BrasilClimarioCrawler extends Crawler {
 		String primaryImage = null;
 
 		Element image = doc.select(".image-zoom").first();
-		
+
 		if (image != null) {
 			primaryImage = image.attr("href");
 		}
@@ -542,11 +552,11 @@ public class BrasilClimarioCrawler extends Crawler {
 
 			if(e.hasAttr("zoom")){
 				String urlImage = e.attr("zoom");
-				
+
 				if(!urlImage.startsWith("http")){
 					urlImage = e.attr("rel");
 				}
-				
+
 				secondaryImagesArray.put(urlImage);
 			}
 		}
