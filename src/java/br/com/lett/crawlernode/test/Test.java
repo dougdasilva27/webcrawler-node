@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.extra.com.br/Eletrodomesticos/FornodeMicroondas/Forno-de-micro-ondas-Brastemp-BMT45-Ative-com-Grill-e-Smart-Food-30-L-Inox-1679027.html", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.fnac.com.br/case-logic-wmbp-11501-mochila-para-notebook-15--preta/p", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		
