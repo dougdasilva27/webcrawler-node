@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.magazineluiza.com.br/liquidificador-philips-walita-viva-ri2160-5-velocidades-com-filtro-550w/p/0887172/ep/liqu/", market);
+		CrawlerSession session = SessionFactory.createSession("https://www.bemol.com.br/loja/pt/bemol/eletrodomesticos/cozinha/geladeira-2-portas/geladeira-electrolux-frost-free-df36a-310-litros-branca-000000000000142731", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

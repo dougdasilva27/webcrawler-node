@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class BrasilBemolCrawler extends Crawler {
 
 	private final String HOME_PAGE_HTTP = "http://www.bemol.com.br/loja/";
-	private final String HOME_PAGE_HTTPS = "http://www.bemol.com.br/loja/";
+	private final String HOME_PAGE_HTTPS = "https://www.bemol.com.br/loja/";
 
 	public BrasilBemolCrawler(CrawlerSession session) {
 		super(session);

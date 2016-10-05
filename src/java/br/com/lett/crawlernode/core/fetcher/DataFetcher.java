@@ -93,7 +93,7 @@ public class DataFetcher {
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
-	
+
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 20000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
@@ -504,22 +504,46 @@ public class DataFetcher {
 
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-						.setProxy(proxy)
-						.build();
+
+				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(30000)
+							.setConnectTimeout(30000)
+							.setSocketTimeout(30000)
+							.setProxy(proxy)
+							.build();
+				} else {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+							.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+							.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+							.setProxy(proxy)
+							.build();
+				}
+
 			} else {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-						.build();
+
+				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(30000)
+							.setConnectTimeout(30000)
+							.setSocketTimeout(30000)
+							.build();
+				} else {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+							.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+							.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+							.build();
+				}
 			}
 
 			CloseableHttpClient httpclient = HttpClients.custom()
@@ -1046,7 +1070,7 @@ public class DataFetcher {
 			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
 				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
-			
+
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
 			}
@@ -1269,7 +1293,7 @@ public class DataFetcher {
 
 			// assembling request information log message
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
-			
+
 			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
 			// get image bytes
@@ -1289,11 +1313,11 @@ public class DataFetcher {
 		} catch (Exception e) {			
 
 			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
-			
+
 			if (localFile != null && localFile.exists()) {
 				localFile.delete();
 			}
-			
+
 			if (e instanceof ResponseCodeException) {
 				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
@@ -1474,7 +1498,7 @@ public class DataFetcher {
 
 	private static String getProxyService(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
 		String service = null;
-		
+
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 
 		if (proxyServices == null || proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
@@ -1509,7 +1533,7 @@ public class DataFetcher {
 				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(4));
 			}
 		}
-		
+
 		// if it reaches this case it means that all proxy services for this market where used
 		if (service == null) {
 			service = Proxies.NO_PROXY;
