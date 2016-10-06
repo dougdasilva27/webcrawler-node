@@ -618,11 +618,11 @@ public class DataFetcher {
 			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getUrl());
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getUrl());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
@@ -960,11 +960,11 @@ public class DataFetcher {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
@@ -1121,11 +1121,11 @@ public class DataFetcher {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getUrl());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
@@ -1263,7 +1263,7 @@ public class DataFetcher {
 			HttpContext localContext = new BasicHttpContext();
 			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-			HttpGet httpGet = new HttpGet(session.getUrl());
+			HttpGet httpGet = new HttpGet(session.getOriginalURL());
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
@@ -1292,7 +1292,7 @@ public class DataFetcher {
 			}
 
 			// assembling request information log message
-			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
@@ -1312,23 +1312,23 @@ public class DataFetcher {
 
 		} catch (Exception e) {			
 
-			sendRequestInfoLog(session.getUrl(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
 
 			if (localFile != null && localFile.exists()) {
 				localFile.delete();
 			}
 
 			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getUrl());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getUrl() + "]");
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
 				return null;
 			} else {
 				return downloadImageFromMarket(attempt+1, session);

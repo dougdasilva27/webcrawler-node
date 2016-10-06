@@ -26,7 +26,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -35,8 +35,8 @@ public class BrasilNetshoesCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if( isProductPage(this.session.getOriginalURL()) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Pré nome
 			Elements elementPreName = doc.select(".product-name-holder h1.base-title");
@@ -128,7 +128,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 
 					JSONObject skuInformation = skus.getJSONObject(i);
 
-					if(skuInformation.getString("url").equals(this.session.getUrl())) {
+					if(skuInformation.getString("url").equals(this.session.getOriginalURL())) {
 
 						// ID interno
 						String internalID = skuInformation.getString("sku");
@@ -165,7 +165,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 
 						Product product = new Product();
 						
-						product.setUrl(this.session.getUrl());
+						product.setUrl(this.session.getOriginalURL());
 						product.setInternalId(internalID);
 						product.setName(name);
 						product.setPrice(price);
@@ -186,7 +186,7 @@ public class BrasilNetshoesCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

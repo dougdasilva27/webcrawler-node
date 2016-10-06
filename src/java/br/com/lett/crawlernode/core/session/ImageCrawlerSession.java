@@ -124,8 +124,8 @@ public class ImageCrawlerSession extends CrawlerSession {
 	 * @return a String representing the name of the image.
 	 */
 	private String createImageBaseName() {
-		String s = super.url + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		return DigestUtils.md5Hex(s) + "." + FilenameUtils.getExtension(super.url);
+		String s = super.originalURL + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		return DigestUtils.md5Hex(s) + "." + FilenameUtils.getExtension(super.originalURL);
 	}
 
 	public String getLocalFileDir() {

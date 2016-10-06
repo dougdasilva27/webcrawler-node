@@ -23,7 +23,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 
 		// Não pegaremos as páginas que contém "?ftr=" pois elas são categorias filtradas, que não nos interessam.
 		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
@@ -36,7 +36,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Id interno
 			Element span = doc.select("div.short-description").first();
@@ -110,7 +110,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			Product product = new Product();
-			product.setUrl(this.session.getUrl());
+			product.setUrl(this.session.getOriginalURL());
 			
 			product.setInternalId(internalID);
 			product.setName(name);
@@ -128,7 +128,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 		
 		return products;

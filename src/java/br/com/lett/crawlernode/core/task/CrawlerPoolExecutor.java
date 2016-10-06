@@ -173,7 +173,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 		// in case of the thread pool get a non checked exception
 		if (t != null) {
-			Logging.printLogError(logger, session, "Task failed [" + session.getUrl() + "]");
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(t));
 
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
@@ -185,7 +185,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			// they can be exceptions or business logic errors
 			// and are all gathered inside the session
 			if (errors.size() > 0) {
-				Logging.printLogError(logger, session, "Task failed [" + session.getUrl() + "]");
+				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
 				// print all errors of type exceptions
 				for (CrawlerSessionError error : errors) {
@@ -201,7 +201,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			// and if we are not testing, because when testing there is no message processing
 			else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
 				Logging.printLogDebug(logger, session, "Task completed.");
-				Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + " ...");
+				Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
 
 				QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 
@@ -247,7 +247,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 			// only remove the task from queue if it was flawless
 			Logging.printLogDebug(logger, session, "Task completed.");
-			Logging.printLogDebug(logger, session, "Deleting task: " + session.getUrl() + " ...");
+			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
 
 			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 		}

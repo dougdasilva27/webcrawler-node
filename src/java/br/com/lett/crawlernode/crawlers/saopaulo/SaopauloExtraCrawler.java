@@ -42,7 +42,7 @@ public class SaopauloExtraCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.deliveryextra.com.br/");
 	}
 
@@ -52,8 +52,8 @@ public class SaopauloExtraCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if(session.getUrl().contains("/produto/")) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if(session.getOriginalURL().contains("/produto/")) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// internal id
 			String internalId = crawlInternalId(doc);
@@ -114,7 +114,7 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -132,14 +132,14 @@ public class SaopauloExtraCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;
 	}
 
 	private String crawlInternalId(Document document) {
-		return Integer.toString(Integer.parseInt(session.getUrl().split("/")[4]));
+		return Integer.toString(Integer.parseInt(session.getOriginalURL().split("/")[4]));
 	}
 
 	private String crawlName(Document document) {

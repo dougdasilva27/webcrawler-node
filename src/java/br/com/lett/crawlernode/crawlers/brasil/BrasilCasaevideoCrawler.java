@@ -76,7 +76,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -87,7 +87,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Variations
 			boolean hasVariations = this.hasVariationsFunction(doc);
@@ -150,7 +150,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 
 					// Creating the product
 					Product product = new Product();
-					product.setUrl(session.getUrl());
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
 					product.setName(nameVariation);
@@ -185,7 +185,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 
 				// Creating the product
 				Product product = new Product();
-				product.setUrl(session.getUrl());
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);
@@ -204,7 +204,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

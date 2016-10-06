@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -36,8 +37,11 @@ public class CrawlerSession {
 	 */
 	protected String messageReceiptHandle;
 
-	/** Sku url being crawled */
-	protected String url;
+	/** Original url of the sku being crawled */
+	protected String originalURL;
+	
+	/** Association of URL and its final modified version, a redirection for instance */
+	Map<String, String> redirectionMap;
 
 	/** Market associated with this session */
 	protected Market market;
@@ -61,6 +65,9 @@ public class CrawlerSession {
 
 		// creating the errors list
 		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+		
+		// creating the map of redirections
+		this.redirectionMap = new HashMap<String, String>();
 
 		// setting session id
 		this.sessionId = message.getMessageId();
@@ -78,7 +85,7 @@ public class CrawlerSession {
 		}
 	
 		// setting URL and originalURL
-		this.url = message.getBody();
+		this.originalURL = message.getBody();
 
 	}
 
@@ -92,12 +99,20 @@ public class CrawlerSession {
 		return null;
 	}
 
-	public String getUrl() {
-		return url;
+	public String getOriginalURL() {
+		return originalURL;
 	}
 
-	public void setUrl(String url) {
-		this.url = url;
+	public void setOriginalURL(String originalURL) {
+		this.originalURL = originalURL;
+	}
+	
+	public void addRedirection(String originalURL, String redirectedURL) {
+		this.redirectionMap.put(originalURL, redirectedURL);
+	}
+	
+	public String getRedirectedToURL(String originalURL) {
+		return this.redirectionMap.get(originalURL);
 	}
 
 	public String getSessionId() {
@@ -152,7 +167,7 @@ public class CrawlerSession {
 
 		sb.append("session id: " + this.sessionId + "\n");
 		sb.append("queue name: " + this.getQueueName() + "\n");
-		sb.append("url: " + this.url + "\n");
+		sb.append("url: " + this.originalURL + "\n");
 		sb.append("market id: " + this.market.getNumber() + "\n");
 		sb.append("market name: " + this.market.getName() + "\n");
 		sb.append("market city: " + this.market.getCity() + "\n");

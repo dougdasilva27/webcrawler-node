@@ -22,7 +22,7 @@ public class BrasilColomboCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && href.startsWith("https://www.colombo.com.br");
 	}
 
@@ -34,8 +34,8 @@ public class BrasilColomboCrawler extends Crawler {
 
 		Element productElement = doc.select(".detalhe-produto").first();
 
-		if (session.getUrl().startsWith("https://www.colombo.com.br/produto/") && !session.getUrl().contains("?") && (productElement != null)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if (session.getOriginalURL().startsWith("https://www.colombo.com.br/produto/") && !session.getOriginalURL().contains("?") && (productElement != null)) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr");
 
@@ -147,7 +147,7 @@ public class BrasilColomboCrawler extends Crawler {
 	
 
 				Product product = new Product();
-				product.setUrl(session.getUrl());
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
@@ -198,7 +198,7 @@ public class BrasilColomboCrawler extends Crawler {
 
 
 					Product product = new Product();
-					product.setUrl(session.getUrl());
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(variationInternalId);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
@@ -220,7 +220,7 @@ public class BrasilColomboCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

@@ -56,7 +56,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -101,8 +101,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if( isProductPage(this.session.getUrl(), doc) ) {
-			Logging.printLogDebug(logger, "Product page identified: " + this.session.getUrl());
+		if( isProductPage(this.session.getOriginalURL(), doc) ) {
+			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
 			// InternalId
 			String internalId = crawlInternalId(doc);
@@ -149,7 +149,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			
 			// create the product
 			Product product = new Product();
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);

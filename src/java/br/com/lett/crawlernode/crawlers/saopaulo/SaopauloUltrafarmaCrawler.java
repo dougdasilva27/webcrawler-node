@@ -23,7 +23,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -33,11 +33,11 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if ( isProductPage(this.session.getOriginalURL()) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
-			String id = this.session.getUrl().split("/")[4];
+			String id = this.session.getOriginalURL().split("/")[4];
 			String internalID = id.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
 
 			// Pid
@@ -141,7 +141,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);
 			product.setName(name);

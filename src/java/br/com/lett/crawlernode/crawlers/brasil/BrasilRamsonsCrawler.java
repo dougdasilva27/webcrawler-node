@@ -24,7 +24,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -37,8 +37,8 @@ public class BrasilRamsonsCrawler extends Crawler {
 		// usar esse identificador para página de produto, caso necessite
 		Element elementProduct = doc.select(".product_info_container").first();
 
-		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if ( isProductPage(this.session.getOriginalURL()) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			String internalId = null;
@@ -158,7 +158,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 			Product product = new Product();
 
-			product.setUrl(this.session.getUrl());
+			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -176,7 +176,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

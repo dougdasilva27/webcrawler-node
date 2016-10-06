@@ -55,7 +55,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -75,7 +75,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 				Document skuDoc = this.fetchSkuURL(element);
 
 				if (skuDoc != null) {
-					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 					// InternalId
 					String internalID = crawlInternalId(skuDoc);
@@ -117,7 +117,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 						Product product = new Product();
 						
-						product.setUrl(session.getUrl());
+						product.setUrl(session.getOriginalURL());
 						product.setInternalId(internalID);
 						product.setInternalPid(internalPid);
 						product.setName(name);
@@ -136,7 +136,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 					} 
 				} else {
-					Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+					Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 				}
 			}
 		}
@@ -167,7 +167,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 				Product product = new Product();
 				
-				product.setUrl(session.getUrl());
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);

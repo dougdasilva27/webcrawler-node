@@ -23,7 +23,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href =  session.getUrl().toLowerCase();
+		String href =  session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith("http://www.balaodainformatica.com.br") || href.startsWith("https://www.balaodainformatica.com.br"));
 	}
 
@@ -33,12 +33,12 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if (session.getUrl().startsWith("https://www.balaodainformatica.com.br/Produto/")
-				|| session.getUrl().startsWith("http://www.balaodainformatica.com.br/Produto/")
-				|| session.getUrl().startsWith("https://www.balaodainformatica.com.br/ProdutoAnuncio/")
-				|| session.getUrl().startsWith("http://www.balaodainformatica.com.br/ProdutoAnuncio/")) {
+		if (session.getOriginalURL().startsWith("https://www.balaodainformatica.com.br/Produto/")
+				|| session.getOriginalURL().startsWith("http://www.balaodainformatica.com.br/Produto/")
+				|| session.getOriginalURL().startsWith("https://www.balaodainformatica.com.br/ProdutoAnuncio/")
+				|| session.getOriginalURL().startsWith("http://www.balaodainformatica.com.br/ProdutoAnuncio/")) {
 
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			String internalId = null;
@@ -133,7 +133,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				try {
 
 					Product product = new Product();
-					product.setUrl(session.getUrl());
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
@@ -157,7 +157,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

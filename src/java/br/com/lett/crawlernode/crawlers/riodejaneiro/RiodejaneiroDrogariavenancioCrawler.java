@@ -24,7 +24,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.drogariavenancio.com.br/");
 	}
 
@@ -34,8 +34,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if( session.getUrl().contains("/produto/") ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if( session.getOriginalURL().contains("/produto/") ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Element variationElement = doc.select(".variacao").first();
 
@@ -152,7 +152,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 				Product product = new Product();
 				
-				product.setUrl(session.getUrl());
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
@@ -208,7 +208,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					// Imagens
 
 					// Requisição POST para conseguir dados da imagem
-					String response = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp", assembleUrlParameters(session.getUrl().split("/")[4], posInternalId), null);
+					String response = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp", assembleUrlParameters(session.getOriginalURL().split("/")[4], posInternalId), null);
 					
 					String imageId = parseImageId(response);
 					Element elementPrimaryImage = doc.select(".produtoPrincipal .imagem .holder .cloud-zoom .foto").first();
@@ -235,7 +235,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 					Product product = new Product();
 					
-					product.setUrl(session.getUrl());
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
@@ -256,7 +256,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

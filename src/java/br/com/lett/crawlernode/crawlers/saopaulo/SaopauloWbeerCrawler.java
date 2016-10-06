@@ -23,7 +23,7 @@ public class SaopauloWbeerCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -33,10 +33,10 @@ public class SaopauloWbeerCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Id interno
-			String id = this.session.getUrl().split("/")[6];
+			String id = this.session.getOriginalURL().split("/")[6];
 			String internalID = Integer.toString(Integer.parseInt(id.replaceAll("[^0-9,]+", "").replaceAll("\\.", "")));
 
 			// Nome
@@ -75,7 +75,7 @@ public class SaopauloWbeerCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
@@ -92,7 +92,7 @@ public class SaopauloWbeerCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 		
 		return products;

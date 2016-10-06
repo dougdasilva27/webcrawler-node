@@ -26,7 +26,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -36,8 +36,8 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 		
-		if( isProductPage(this.session.getUrl(), doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if( isProductPage(this.session.getOriginalURL(), doc) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			String internalID = null;
@@ -132,7 +132,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 					boolean variationAvailable = available;
 					Float variationPrice = price;
 
-					if( !variationUrl.equals(this.session.getUrl()) ) { // se não for a url que já tenho preciso dar um fetch na nova url e colher os dados que faltam
+					if( !variationUrl.equals(this.session.getOriginalURL()) ) { // se não for a url que já tenho preciso dar um fetch na nova url e colher os dados que faltam
 						Document variationDocument =  DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, variationUrl, null, null);
 
 						// Disponibilidade
@@ -178,7 +178,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 			else {
 
 				Product product = new Product();
-				product.setUrl(this.session.getUrl());
+				product.setUrl(this.session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setName(name);
 				product.setPrice(price);
@@ -196,7 +196,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 		
 		return products;

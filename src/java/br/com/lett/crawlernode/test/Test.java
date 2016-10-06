@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("https://www.nescafe-dolcegusto.com.br/marrakesh-style-tea", market);
+		CrawlerSession session = SessionFactory.createSession("http://produto.casasbahia.com.br?IdProduto=6417487", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

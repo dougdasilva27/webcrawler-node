@@ -21,7 +21,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches();
 	}
 
@@ -30,8 +30,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl(), doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			Element elementInternalID = doc.select(".product-details .col-2 .data-table tr .data").first();
@@ -144,7 +144,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -163,7 +163,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 
 		return products;

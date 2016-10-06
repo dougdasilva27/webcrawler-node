@@ -26,7 +26,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();           
+		String href = this.session.getOriginalURL().toLowerCase();           
 		return !FILTERS.matcher(href).matches() && href.startsWith("https://www.bistekonline.com.br/") && !href.contains("popup_indicarproduto.asp");
 	}
 
@@ -36,10 +36,10 @@ public class FlorianopolisBistekCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getUrl()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if ( isProductPage(this.session.getOriginalURL()) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			String params = this.session.getUrl().split("\\?")[1];
+			String params = this.session.getOriginalURL().split("\\?")[1];
 			Map<String, String> paramsMap = new HashMap<String, String>();
 			for(String s: params.split("&")) {
 				paramsMap.put(s.split("=")[0], s.split("=")[1]);
@@ -118,7 +118,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
@@ -137,7 +137,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 			}
 			
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 
 		return products;

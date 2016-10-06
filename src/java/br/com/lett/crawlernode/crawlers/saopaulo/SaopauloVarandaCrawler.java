@@ -23,7 +23,7 @@ public class SaopauloVarandaCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -37,7 +37,7 @@ public class SaopauloVarandaCrawler extends Crawler {
 		// estamos visitando é uma página de produto.
 
 		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Id interno
 			Elements element_id = doc.select("input[name=product]");
@@ -89,7 +89,7 @@ public class SaopauloVarandaCrawler extends Crawler {
 
 			Product product = new Product();
 			
-			product.setUrl(session.getUrl());
+			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
@@ -106,7 +106,7 @@ public class SaopauloVarandaCrawler extends Crawler {
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 		
 		return products;

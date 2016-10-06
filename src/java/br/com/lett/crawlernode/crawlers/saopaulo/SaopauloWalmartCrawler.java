@@ -28,7 +28,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith("http://www.walmart.com.br/") || href.startsWith("https://www.walmart.com.br/"));
 	}
 
@@ -37,15 +37,15 @@ public class SaopauloWalmartCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if(session.getUrl().startsWith("http://www.walmart.com.br/produto/") || session.getUrl().startsWith("https://www.walmart.com.br/produto/") || (session.getUrl().endsWith("/pr"))) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if(session.getOriginalURL().startsWith("http://www.walmart.com.br/produto/") || session.getOriginalURL().startsWith("https://www.walmart.com.br/produto/") || (session.getOriginalURL().endsWith("/pr"))) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Nome
 			Elements elementName = doc.select("h1[itemprop=\"name\"]");
 			String name = elementName.text().replace("'","").replace("’","").trim();
 
 			// Pid
-			String internalPid = session.getUrl().split("/")[4].trim();
+			String internalPid = session.getOriginalURL().split("/")[4].trim();
 
 			// Categorias
 			Elements elementCategories = doc.select(".breadcrumb li"); 
@@ -178,7 +178,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 				Product product = new Product();
 				
-				product.setUrl(session.getUrl());
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(productId);
 				product.setInternalPid(internalPid);
 				product.setName(name + " " + productCustomName);
@@ -197,7 +197,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 			}
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;

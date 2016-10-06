@@ -371,8 +371,8 @@ public class Crawler implements Runnable {
 		}
 
 		// handle URL modifications
-		String url = handleURLBeforeFetch(session.getUrl());
-		session.setUrl(url);
+		String url = handleURLBeforeFetch(session.getOriginalURL());
+		session.setOriginalURL(url);
 
 		//if ( shouldVisit() ) {
 		Document document = fetch();
@@ -403,7 +403,7 @@ public class Crawler implements Runnable {
 	 * @return Parsed HTML in form of a Document
 	 */
 	private Document fetch() {
-		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getUrl(), null, cookies);
+		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
 		return Jsoup.parse(html);		
 	}
 
@@ -589,7 +589,7 @@ public class Crawler implements Runnable {
 		}
 
 		// get a screenshot from the page
-		File screenshot = webdriver.takeScreenshot(session.getUrl());
+		File screenshot = webdriver.takeScreenshot(session.getOriginalURL());
 
 		// upload screenshot to Amazon
 		S3Service.uploadFileToAmazon(session, screenshot);

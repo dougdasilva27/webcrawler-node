@@ -24,7 +24,7 @@ public class BrasilEfacilCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getUrl().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.efacil.com.br/");
 	}
 
@@ -34,8 +34,8 @@ public class BrasilEfacilCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if (session.getUrl().startsWith("http://www.efacil.com.br/loja/produto/")) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+		if (session.getOriginalURL().startsWith("http://www.efacil.com.br/loja/produto/")) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Element variationSelector = doc.select(".options_attributes").first();
 
@@ -143,7 +143,7 @@ public class BrasilEfacilCrawler extends Crawler {
 				if (mustInsert) {
 
 					Product product = new Product();
-					product.setUrl(session.getUrl());
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
@@ -214,7 +214,7 @@ public class BrasilEfacilCrawler extends Crawler {
 						if (mustInsert) {
 
 							Product product = new Product();
-							product.setUrl(session.getUrl());
+							product.setUrl(session.getOriginalURL());
 							product.setInternalId(internalId);
 							product.setInternalPid(internalPid);
 							product.setName(variationName);
@@ -239,7 +239,7 @@ public class BrasilEfacilCrawler extends Crawler {
 			} // fim do caso de múltiplas variacoes
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 		
 		return products;

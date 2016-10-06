@@ -57,7 +57,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 	
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getUrl().toLowerCase();
+		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
@@ -70,7 +70,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		
 		if ( isProductPage(doc) ) {
 
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			/* ***********************************
 			 * crawling data of only one product *
@@ -137,7 +137,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 					// Creating the product
 					Product product = new Product();
 					
-					product.setUrl(this.session.getUrl());
+					product.setUrl(this.session.getOriginalURL());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
 					product.setName(name);
@@ -167,7 +167,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 				// Creating the product
 				Product product = new Product();
 				
-				product.setUrl(this.session.getUrl());
+				product.setUrl(this.session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(nameMainPage);
@@ -188,7 +188,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getUrl());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 		
 		return products;
