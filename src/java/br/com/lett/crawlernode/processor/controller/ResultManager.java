@@ -423,7 +423,7 @@ public class ResultManager {
 				// compute similarity of the new image using the SIFT algorithm
 				JSONObject similaritySiftResult = null;
 				try {
-					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
+					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(session, mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
 				} catch (Exception e) {
 					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 				}				

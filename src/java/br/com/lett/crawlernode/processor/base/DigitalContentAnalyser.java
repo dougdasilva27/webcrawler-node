@@ -24,6 +24,7 @@ import com.mongodb.client.MongoDatabase;
 import br.com.lett.crawlernode.core.imgprocessing.ImageComparationResult;
 import br.com.lett.crawlernode.core.imgprocessing.ImageComparator;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
+import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
@@ -262,11 +263,17 @@ public class DigitalContentAnalyser {
 		return finalResult;
 	}
 
-	public static JSONObject similaritySIFT(MongoDatabase mongo, DatabaseManager db, String currentMd5, Long lettId, String referenceMd5) {
+	public static JSONObject similaritySIFT(
+			CrawlerSession session,
+			MongoDatabase mongo, 
+			DatabaseManager db, 
+			String currentMd5, 
+			Long lettId, 
+			String referenceMd5) {
 		JSONObject similaritySift = new JSONObject();
 
-		JSONObject analysis1 = DigitalContentAnalyser.compareReference(mongo, currentMd5, referenceMd5);
-		JSONObject analysis2 = DigitalContentAnalyser.compareSiblings(mongo, db, lettId, currentMd5);
+		JSONObject analysis1 = DigitalContentAnalyser.compareReference(session, mongo, currentMd5, referenceMd5);
+		JSONObject analysis2 = DigitalContentAnalyser.compareSiblings(session, mongo, db, lettId, currentMd5);
 
 		similaritySift.put("analysis1", analysis1);
 		similaritySift.put("analysis2", analysis2);
@@ -279,10 +286,14 @@ public class DigitalContentAnalyser {
 		return similaritySift;
 	}
 
-	public static JSONObject compareReference(MongoDatabase mongo, String md5, String referenceMd5) {
+	public static JSONObject compareReference(
+			CrawlerSession session,
+			MongoDatabase mongo, 
+			String md5, 
+			String referenceMd5) {
 		JSONObject referenceComparation = new JSONObject();
 
-		ImageComparationResult imageComparationResult = compareSIFT(mongo, md5, referenceMd5);
+		ImageComparationResult imageComparationResult = compareSIFT(session, mongo, md5, referenceMd5);
 
 		referenceComparation.put("comparation_type", "Reference");
 		referenceComparation.put("threshold_used", REFERENCE_SIMILARITY_SIFT_THRESHOLD);
@@ -307,7 +318,12 @@ public class DigitalContentAnalyser {
 	 * @param md5 md5 da imagem que acabou de ser baixada
 	 * @return
 	 */
-	public static JSONObject compareSiblings(MongoDatabase mongo, DatabaseManager db, Long lettId, String md5) {
+	public static JSONObject compareSiblings(
+			CrawlerSession session,
+			MongoDatabase mongo, 
+			DatabaseManager db, 
+			Long lettId, 
+			String md5) {
 		JSONObject siblingsComparations = new JSONObject();
 		JSONObject selfComparation = new JSONObject();
 		JSONObject result = new JSONObject();
@@ -342,7 +358,7 @@ public class DigitalContentAnalyser {
 							if(primary.has("md5")) siblingMd5 = primary.getString("md5");									
 
 							if( siblingMd5 != null &&  !siblingMd5.equals(md5) ) { //excluir o processed atual, porque já olhei a similaridade com ele
-								ImageComparationResult imageComparationResult = DigitalContentAnalyser.compareSIFT(mongo, md5, siblingMd5);
+								ImageComparationResult imageComparationResult = DigitalContentAnalyser.compareSIFT(session, mongo, md5, siblingMd5);
 
 								double candidate = 0;
 								if (imageComparationResult.getTotalNumberOfMatches() > 0) candidate = imageComparationResult.getRate();
@@ -365,7 +381,7 @@ public class DigitalContentAnalyser {
 							// que seria uma versão antiga da imagem. Com isso vamos impor um limiar um pouco maior para ver se é a mesma
 							// imagem, porém com pouca modificação, o que pode ser uma pequena mudança de resolução, por exemplo.
 							else if( siblingMd5 != null ) {
-								ImageComparationResult imageComparationResult = DigitalContentAnalyser.compareSIFT(mongo, md5, siblingMd5);
+								ImageComparationResult imageComparationResult = DigitalContentAnalyser.compareSIFT(session, mongo, md5, siblingMd5);
 								selfComparation.put("comparation_type", "Self");
 								selfComparation.put("threshold_used", SELF_SIMILARITY_SIFT_RATE_THRESHOLD);
 								if(imageComparationResult.getRate() >= SELF_SIMILARITY_SIFT_RATE_THRESHOLD) {
@@ -421,15 +437,33 @@ public class DigitalContentAnalyser {
 	 * @param md5Desired
 	 * @return Classe de resultado contendo dados de resultado da comparação
 	 */
-	public static ImageComparationResult compareSIFT(MongoDatabase mongo, String md5, String md5Desired) {
+	public static ImageComparationResult compareSIFT(
+			CrawlerSession session,
+			MongoDatabase mongo, 
+			String md5, 
+			String md5Desired) {
 		ImageComparator imageComparator = new ImageComparator();
 		ImageComparationResult result = null;
 
 		if(md5 != null && md5Desired != null) {
 
-			// Buscar no Mongo a imagem cujo md5 é igual ao passado de parâmetro
+			// search on mongo the image for which md5 is the same as the passed argument
+			Logging.printLogDebug(logger, session, "Searching for image features for md5: " + md5 + " ...");
 			ImageFeatures imageFeatures = DigitalContentAnalyserUtils.searchImageFeatures(mongo, md5);
+			if (imageFeatures == null) {
+				Logging.printLogDebug(logger, session, "Image features not found.");
+			} else {
+				Logging.printLogDebug(logger, session, "Image features found.");
+			}
+			
+			// search image features for the desired md5
+			Logging.printLogDebug(logger, session, "Searching for image features for md5: " + md5Desired + " ...");
 			ImageFeatures imageFeaturesDesired = DigitalContentAnalyserUtils.searchImageFeatures(mongo, md5Desired);
+			if (imageFeaturesDesired == null) {
+				Logging.printLogDebug(logger, session, "Image features not found.");
+			} else {
+				Logging.printLogDebug(logger, session, "Image features found.");
+			}
 
 			if(imageFeatures != null && imageFeaturesDesired != null) {
 
