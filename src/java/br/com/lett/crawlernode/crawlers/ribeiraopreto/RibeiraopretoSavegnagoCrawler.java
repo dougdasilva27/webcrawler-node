@@ -36,6 +36,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 	 */
 	
 	private final String HOME_PAGE = "http://www.savegnagoonline.com.br/";
+	private final String HOME_PAGE_SPECIAL = "http://www.savegnago.com.br/";
 	
 	public RibeiraopretoSavegnagoCrawler(CrawlerSession session) {
 		super(session);
@@ -121,10 +122,10 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-			Elements elementCategories = doc.select(".col-xs-25 .bread-crumb li a");
+			Elements elementCategories = doc.select(".bread-crumb li a");
 
 			if (elementCategories.size() > 1) {
-				for(int i = 1; i < elementCategories.size(); i++) {
+				for(int i = 1; i < elementCategories.size(); i++) {// start with index 1 because the first item is the home page
 					if (category1.isEmpty()) {
 						category1 = elementCategories.get(i).text();
 					} 
@@ -199,7 +200,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return (url.startsWith("http://www.savegnagoonline.com.br/") && url.contains("/p?sc="));
+		return ((url.startsWith(HOME_PAGE_SPECIAL) || url.startsWith(HOME_PAGE)) && url.contains("/p?sc="));
 	}
 
 }
