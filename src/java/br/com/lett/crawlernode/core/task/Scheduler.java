@@ -15,8 +15,8 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
@@ -38,7 +38,6 @@ public class Scheduler {
 		Integer counter = 0;
 		Integer insideBatchId = 0;
 
-		//Market market = Main.markets.getMarket(rs.getInt("market"));
 		String marketName = session.getMarket().getName();
 		String marketCity = session.getMarket().getCity();
 		String primaryPic = processed.getPic();
@@ -78,10 +77,9 @@ public class Scheduler {
 
 			// send the batch
 			SendMessageBatchResult result = null;
-			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			if (session instanceof TestCrawlerSession) {
 				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
-			}
-			else {
+			} else {
 				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
 			}
 
@@ -118,10 +116,9 @@ public class Scheduler {
 
 				// send the batch
 				SendMessageBatchResult result = null;
-				if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+				if (session instanceof TestCrawlerSession) {
 					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
-				}
-				else {
+				} else {
 					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
 				}
 
@@ -133,16 +130,13 @@ public class Scheduler {
 			}
 		}
 
-
-
 		if (entries.size() > 0) { // the left over
 			Logging.printLogDebug(logger, session, "Sending remaining batch of " + entries.size() + " messages...");
 
 			SendMessageBatchResult result = null;
-			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+			if (session instanceof TestCrawlerSession) {
 				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
-			}
-			else {
+			} else {
 				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
 			}
 
