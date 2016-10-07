@@ -13,7 +13,6 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
-import java.net.SocketException;
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -545,11 +544,16 @@ public class DataFetcher {
 							.build();
 				}
 			}
+			
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
 					.setDefaultCredentialsProvider(credentialsProvider)
 					.build();
 
@@ -609,6 +613,13 @@ public class DataFetcher {
 				if (content.equals(errorCode)) {
 					throw new ResponseCodeException(Integer.parseInt(errorCode));
 				}
+			}
+			
+			System.err.println(redirectStrategy.getFinalURL());
+			
+			// record the redirected URL on the session
+			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+				session.addRedirection(url, redirectStrategy.getFinalURL());
 			}
 
 			// process response and parse

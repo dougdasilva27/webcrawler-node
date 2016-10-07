@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
-	
+
 	protected static final Logger logger = LoggerFactory.getLogger(CrawlerSession.class);
 
 	public static final String DISCOVERY_TYPE 	= "discovery";
@@ -39,7 +39,7 @@ public class CrawlerSession {
 
 	/** Original url of the sku being crawled */
 	protected String originalURL;
-	
+
 	/** Association of URL and its final modified version, a redirection for instance */
 	Map<String, String> redirectionMap;
 
@@ -55,6 +55,13 @@ public class CrawlerSession {
 	 */
 	public CrawlerSession() {
 		super();
+
+		// creating the errors list
+		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+
+		// creating the map of redirections
+		this.redirectionMap = new HashMap<String, String>();
+		
 	}
 
 	public CrawlerSession(Message message, String queueName, Markets markets) {
@@ -65,7 +72,7 @@ public class CrawlerSession {
 
 		// creating the errors list
 		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
-		
+
 		// creating the map of redirections
 		this.redirectionMap = new HashMap<String, String>();
 
@@ -83,7 +90,7 @@ public class CrawlerSession {
 			name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
 			this.market = markets.getMarket(city, name);
 		}
-	
+
 		// setting URL and originalURL
 		this.originalURL = message.getBody();
 
@@ -106,11 +113,11 @@ public class CrawlerSession {
 	public void setOriginalURL(String originalURL) {
 		this.originalURL = originalURL;
 	}
-	
+
 	public void addRedirection(String originalURL, String redirectedURL) {
 		this.redirectionMap.put(originalURL, redirectedURL);
 	}
-	
+
 	public String getRedirectedToURL(String originalURL) {
 		return this.redirectionMap.get(originalURL);
 	}
@@ -156,7 +163,7 @@ public class CrawlerSession {
 	public void incrementTrucoAttemptsCounter() {
 		/* do nothing by default */
 	}
-	
+
 	public void clearSession() {
 		/* do nothing by default */
 	}
