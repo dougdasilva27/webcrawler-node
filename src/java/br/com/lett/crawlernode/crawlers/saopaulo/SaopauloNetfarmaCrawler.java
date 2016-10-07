@@ -47,51 +47,24 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			}
 
 			// Nome
-			Elements elementName = doc.select(".prodInfo h1.nome");
-			String name = elementName.text().trim();
+			String name = crawlName(doc);
 
 			// Preço
-			Float price = null;
-			Element elementPrice = doc.select(".compra-unica .precoPor #PrecoPromocaoProduto").first();
-			if(elementPrice == null) {
-				elementPrice = doc.select(".compra-unica .precoPor").first();
-				if (elementPrice != null) {
-					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				}
-			}
+			Float price = crawlPrice(doc);
 
 			// Categorias
 			String category1 = null; 
 			String category2 = null; 
 			String category3 = null;
 
-			// Imagem primária
-			Elements elementPrimaryImage = doc.select("#lupaZoom a");
-			String primaryImage = elementPrimaryImage.attr("href");
+			// primary image
+			String primaryImage = crawlPrimaryImage(doc);
 
-			// Imagens secudnárias
-			String secondaryImages = null;
+			// secondary images
+			String secondaryImages = crawlSecondaryImages(doc);
 
-			JSONArray secondaryImagesArray = new JSONArray();
-			Elements element_fotosecundaria = doc.select("#ListarMultiFotos li img");
-			if(element_fotosecundaria.size()>1){
-				for(int i=1; i<element_fotosecundaria.size();i++){
-					Element e = element_fotosecundaria.get(i);
-					if(e.attr("src").contains("/imagens/icon_video.png")){
-
-					}else{
-						secondaryImagesArray.put(e.attr("src"));
-					}
-				}
-
-			}
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
-
-			// Descrição
+			// description
 			String description = "";
-
 			try {
 				Element[] sections = new Element[]{
 						doc.select("div[name=infoProduto]").first(),
@@ -113,8 +86,8 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 				available = false;
 			}
 
-			// Estoque
-			Integer stock = null;
+			// stock
+			Integer stock = crawlStock(doc);
 
 			// Marketplace
 			JSONArray marketplace = null;
@@ -151,5 +124,79 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.netfarma.com.br/produto/");
+	}
+	
+	private String crawlName(Document document) {
+		String name = null;
+		
+		// get base name
+		Element elementName = document.select(".prodInfo h1.nome").first();
+		if (elementName != null) {
+			name = elementName.text().trim();
+		}
+		
+		// get 'gramatura' attribute
+		Element gramaturaElement = document.select(".prodInfo .gramatura").first();
+		if (gramaturaElement != null) {
+			if (name != null) name = name + " " + gramaturaElement.text().trim();
+		}
+		
+		return name;
+	}
+	
+	private Float crawlPrice(Document document) {
+		Float price = null;
+		Element elementPrice = document.select(".compra-unica .precoPor #PrecoPromocaoProduto").first();
+		if(elementPrice == null) {
+			elementPrice = document.select(".compra-unica .precoPor").first();
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+		}
+		return price;
+	}
+	
+	private String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		Element elementPrimaryImage = document.select("#lupaZoom a").first();
+		if (elementPrimaryImage != null) {
+			primaryImage = elementPrimaryImage.attr("href").trim();
+		}
+		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+		
+		Elements element_fotosecundaria = document.select("#ListarMultiFotos li img");
+		if(element_fotosecundaria.size()>1){
+			for(int i=1; i<element_fotosecundaria.size();i++){
+				Element e = element_fotosecundaria.get(i);
+				if(e.attr("src").contains("/imagens/icon_video.png")){
+
+				}else{
+					secondaryImagesArray.put(e.attr("src"));
+				}
+			}
+
+		}
+		if(secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
+	}
+	
+	private Integer crawlStock(Document document) {
+		Integer stock = null;
+		Element stockElement = document.select("#Estoque").first();
+		if (stockElement != null) {
+			String stockQuantityString = stockElement.attr("value").trim();
+			if (stockQuantityString != null && !stockQuantityString.isEmpty()) {
+				stock = Integer.parseInt(stockQuantityString);
+			}			
+		}
+		return stock;
 	}
 }

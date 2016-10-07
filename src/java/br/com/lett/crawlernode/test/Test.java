@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.novomundo.com.br/forno-de-micro-ondas-27-litros-branco-electrolux-mep37-2036468/p", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.netfarma.com.br/produto/39328/shampoo-dove-advanced-hair-series-regenerate-nutrition", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		
