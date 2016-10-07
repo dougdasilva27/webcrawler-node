@@ -163,7 +163,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 					Product product = new Product();
 					
-					product.setUrl(modifiedURL);
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(variationInternalID);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
@@ -208,7 +208,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 				Product product = new Product();
 				
-				product.setUrl(modifiedURL);
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);
