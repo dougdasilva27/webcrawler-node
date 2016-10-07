@@ -92,45 +92,45 @@ public class Scheduler {
 			}
 		}
 
-
+		//TODO comentando porque estava dando muita imagem
 		// assemble the secondary images
-		for (int i = 0; i < secondaryPicsJSON.length(); i++) {
-			Map<String, MessageAttributeValue> attrSecondary = assembleImageMessageAttributes(
-					marketCity, 
-					marketName, 
-					QueueService.SECONDARY_IMAGES_MESSAGE_ATTR, 
-					internalId, 
-					processedId, 
-					i+2);
-
-			SendMessageBatchRequestEntry secondaryEntry = new SendMessageBatchRequestEntry();
-			secondaryEntry.setId(String.valueOf(insideBatchId));	// the id must be unique in the batch
-			secondaryEntry.setMessageAttributes(attrSecondary);
-			secondaryEntry.setMessageBody(secondaryPicsJSON.getString(i));
-
-			entries.add(secondaryEntry);
-			counter++;
-			insideBatchId++;
-
-			// when the batch reaches size 10, we send them all to sqs and empty the list
-			if (entries.size() == 10) {
-				Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
-
-				// send the batch
-				SendMessageBatchResult result = null;
-				if (session instanceof TestCrawlerSession) {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
-				} else {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
-				}
-
-				// get send request results
-				List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
-
-				entries.clear();
-				insideBatchId = 0;
-			}
-		}
+//		for (int i = 0; i < secondaryPicsJSON.length(); i++) {
+//			Map<String, MessageAttributeValue> attrSecondary = assembleImageMessageAttributes(
+//					marketCity, 
+//					marketName, 
+//					QueueService.SECONDARY_IMAGES_MESSAGE_ATTR, 
+//					internalId, 
+//					processedId, 
+//					i+2);
+//
+//			SendMessageBatchRequestEntry secondaryEntry = new SendMessageBatchRequestEntry();
+//			secondaryEntry.setId(String.valueOf(insideBatchId));	// the id must be unique in the batch
+//			secondaryEntry.setMessageAttributes(attrSecondary);
+//			secondaryEntry.setMessageBody(secondaryPicsJSON.getString(i));
+//
+//			entries.add(secondaryEntry);
+//			counter++;
+//			insideBatchId++;
+//
+//			// when the batch reaches size 10, we send them all to sqs and empty the list
+//			if (entries.size() == 10) {
+//				Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
+//
+//				// send the batch
+//				SendMessageBatchResult result = null;
+//				if (session instanceof TestCrawlerSession) {
+//					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
+//				} else {
+//					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
+//				}
+//
+//				// get send request results
+//				List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
+//
+//				entries.clear();
+//				insideBatchId = 0;
+//			}
+//		}
 
 		if (entries.size() > 0) { // the left over
 			Logging.printLogDebug(logger, session, "Sending remaining batch of " + entries.size() + " messages...");
