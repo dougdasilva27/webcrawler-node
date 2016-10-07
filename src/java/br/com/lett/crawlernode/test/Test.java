@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.server.QueueHandler;
 
 /**
  * 
@@ -33,6 +34,7 @@ public class Test {
 	public static 	ResultManager 		processorResultManager;
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
+	public static 	QueueHandler		queueHandler;
 	
 	private static String market;
 	private static String city;
@@ -67,6 +69,9 @@ public class Test {
 
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
+		
+		// create a queue handler that will contain an Amazon SQS instance
+		queueHandler = new QueueHandler();
 
 		// fetching proxies
 		proxies = new Proxies();
@@ -82,7 +87,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://www.netfarma.com.br/produto/39328/shampoo-dove-advanced-hair-series-regenerate-nutrition", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.mundomax.com.br/caixa-multiuso-player-600-100w-rms-usb-hayonik", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

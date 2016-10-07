@@ -253,6 +253,7 @@ public class Crawler implements Runnable {
 					// persist the new created processed product
 					PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
 					processPersistenceResult(persistenceResult);
+					scheduleImages(persistenceResult, newProcessedProduct);
 
 					return;
 				}
@@ -289,6 +290,7 @@ public class Crawler implements Runnable {
 						// this id will be added to the found_products field on the task document on Mongo
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
 						processPersistenceResult(persistenceResult);
+						scheduleImages(persistenceResult, newProcessedProduct);
 						
 						return;
 					}
@@ -323,6 +325,20 @@ public class Crawler implements Runnable {
 		else if (modifiedId != null) {
 			Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.mongoBackendPanel);
 		}
+	}
+	
+	
+	private void scheduleImages(PersistenceResult persistenceResult, ProcessedModel processed) {
+		Long createdId = null;
+		if (persistenceResult instanceof ProcessedModelPersistenceResult) {
+			createdId = ((ProcessedModelPersistenceResult) persistenceResult).getCreatedId();
+		}
+
+		if (createdId != null) {
+			Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
+			Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+		}
+		
 	}
 
 
@@ -537,6 +553,7 @@ public class Crawler implements Runnable {
 						
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
 						processPersistenceResult(persistenceResult);
+						scheduleImages(persistenceResult, next);
 						
 						return;
 					}
