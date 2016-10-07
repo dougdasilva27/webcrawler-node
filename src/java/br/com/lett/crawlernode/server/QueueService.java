@@ -16,6 +16,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import br.com.lett.crawlernode.main.ExecutionParameters;
@@ -57,6 +58,9 @@ public class QueueService {
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
+	
+	public static final String IMAGE_TYPE 						= "type";
+	public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR 	= "primary";
 	public static final String SECONDARY_IMAGES_MESSAGE_ATTR 	= "secondary";
 	public static final String NUMBER_MESSAGE_ATTR				= "number";
 
@@ -244,6 +248,21 @@ public class QueueService {
 		}
 
 		return true;
+	}
+	
+	/**
+	 * Send a message batch to SQS
+	 * @param sqs
+	 * @param entries
+	 * @return
+	 */
+	public static SendMessageBatchResult sendBatchMessages(AmazonSQS sqs, String queueName, List<SendMessageBatchRequestEntry> entries) {
+		SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
+		String queueURL = selectQueueURL(queueName);
+		batchMessageBatchRequest.setQueueUrl(queueURL);
+		batchMessageBatchRequest.setEntries(entries);
+		
+		return sqs.sendMessageBatch(batchMessageBatchRequest);
 	}
 
 	/**
