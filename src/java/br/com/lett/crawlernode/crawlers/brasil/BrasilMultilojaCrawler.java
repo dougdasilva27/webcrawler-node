@@ -13,7 +13,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -59,7 +58,7 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilMultilojaCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.multiloja.com.br/";
 
 	public BrasilMultilojaCrawler(CrawlerSession session) {
@@ -79,7 +78,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 		if( isProductPage(session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			// Variations
 			boolean hasVariations = hasProductVariations(doc);
 
@@ -115,112 +114,47 @@ public class BrasilMultilojaCrawler extends Crawler {
 			/* **************************************
 			 * crawling data of multiple variations *
 			 ****************************************/
-			if( hasVariations ) {
+			if( hasVariations && !hasColorVariations(doc)) {
 
 				Logging.printLogDebug(logger, session, "Crawling information of more than one product...");
 
 				Elements productVariationElements = this.crawlSkuOptions(doc);
 
-				if(!hasColorVariations(doc)){
 
-					for(int i = 0; i < productVariationElements.size(); i++) {
+				for(int i = 0; i < productVariationElements.size(); i++) {
 
-						Element sku = productVariationElements.get(i);
+					Element sku = productVariationElements.get(i);
 
-						// InternalId
-						String variationInternalID = sku.attr("value");
+					// InternalId
+					String variationInternalID = sku.attr("value");
 
-						// Getting name variation
-						String variationName = name + " - " + sku.attr("title");				
+					// Getting name variation
+					String variationName = name + " - " + sku.attr("title");				
 
-						// Available
-						boolean available = this.crawlAvailabilityVoltage(sku);
+					// Available
+					boolean available = this.crawlAvailabilityVoltage(sku);
 
-						// Price
-						Float variationPrice = this.crawlPrice(doc, available);
+					// Price
+					Float variationPrice = this.crawlPrice(doc, available);
 
-						Product product = new Product();
-						product.setUrl(session.getOriginalURL());
-						product.setInternalId(variationInternalID);
-						product.setInternalPid(internalPid);
-						product.setName(variationName);
-						product.setPrice(variationPrice);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImage);
-						product.setSecondaryImages(secondaryImages);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplaces);
-						product.setAvailable(available);
+					Product product = new Product();
+					product.setUrl(session.getOriginalURL());
+					product.setInternalId(variationInternalID);
+					product.setInternalPid(internalPid);
+					product.setName(variationName);
+					product.setPrice(variationPrice);
+					product.setCategory1(category1);
+					product.setCategory2(category2);
+					product.setCategory3(category3);
+					product.setPrimaryImage(primaryImage);
+					product.setSecondaryImages(secondaryImages);
+					product.setDescription(description);
+					product.setStock(stock);
+					product.setMarketplace(marketplaces);
+					product.setAvailable(available);
 
-						products.add(product);
+					products.add(product);
 
-					}
-					/* **********************************
-					 * crawling data of moda variations *
-					 ************************************/
-
-				} else {
-
-
-					for(int i = 0; i < productVariationElements.size(); i++) {
-
-						Element sku = productVariationElements.get(i);
-
-						// InternalId
-						String internalId = sku.attr("value");
-						
-						// Url for color variation
-						String urlVariation = this.makeUrlForColorVariation(session.getOriginalURL(), internalId);
-						
-						Document docV;
-						
-						// se a url conter o internalId não é necessário acessá-la novamente.
-						if(!session.getOriginalURL().contains(internalId)){
-							docV = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlVariation, null, null);
-							
-							if(!isProductPage(urlVariation, docV)) continue;
-							
-						} else {
-							docV = doc;
-						}
-						
-						// Getting name variation
-						String variationName = this.crawlMainPageName(docV, true);
-
-						// Available
-						boolean available = this.crawlAvailability(docV);
-
-						// Price
-						Float variationPrice = this.crawlPrice(docV, available);
-
-						// PrimaryImage
-						String primaryImageColor = this.crawlPrimaryImage(docV);
-
-						// SecondaryImages
-						String secondaryImagesColor = this.crawlSecondaryImages(docV);
-
-						Product product = new Product();
-						product.setUrl(urlVariation);
-						product.setInternalId(internalId);
-						product.setInternalPid(internalPid);
-						product.setName(variationName);
-						product.setPrice(variationPrice);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImageColor);
-						product.setSecondaryImages(secondaryImagesColor);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplaces);
-						product.setAvailable(available);
-
-						products.add(product);
-
-					}	
 				}
 			}
 
@@ -256,13 +190,13 @@ public class BrasilMultilojaCrawler extends Crawler {
 				product.setAvailable(available);
 
 				products.add(product);
-				
+
 			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -276,12 +210,12 @@ public class BrasilMultilojaCrawler extends Crawler {
 		Element productElement = doc.select("#nomeproduto h1").first();
 
 		if (productElement != null && url.startsWith(HOME_PAGE + "produto/")){
-			
+
 			Element pageNotFound = doc.select("#codigoProduto").first();
-			
+
 			if(pageNotFound != null){
 				String cod = pageNotFound.text().replaceAll("[^0-9]", "").trim();
-				
+
 				if(!cod.isEmpty()){
 					return true;
 				}
@@ -372,17 +306,6 @@ public class BrasilMultilojaCrawler extends Crawler {
 		return false;
 	}
 
-
-	private String makeUrlForColorVariation(String url, String internalId){
-		String urlVariation;
-		
-		String[] tokens = url.split("/");
-		String tempId = tokens[tokens.length-1];
-		
-		urlVariation = url.replace(tempId, internalId);
-		
-		return urlVariation;
-	}
 
 	/*******************
 	 * General methods *
