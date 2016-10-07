@@ -614,9 +614,7 @@ public class DataFetcher {
 					throw new ResponseCodeException(Integer.parseInt(errorCode));
 				}
 			}
-			
-			System.err.println(redirectStrategy.getFinalURL());
-			
+						
 			// record the redirected URL on the session
 			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
 				session.addRedirection(url, redirectStrategy.getFinalURL());

@@ -92,7 +92,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL()); 
 
 			// Pegando url padrão no doc da página, para lidar com casos onde tem url em formato diferente no banco
-			String modifiedURL = makeUrlFinal(session.getOriginalURL());
+			String modifiedURL = makeUrlFinal(getRedirectUrl());
 			
 			// Variations
 			boolean hasVariations = hasProductVariations(doc);
@@ -306,6 +306,19 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 	 * Single product page methods *
 	 *******************************/
 
+	private String getRedirectUrl(){
+		String urlRedirect = null;
+		
+		if(session.getRedirectedToURL(session.getOriginalURL()) != null){
+			urlRedirect = session.getRedirectedToURL(session.getOriginalURL());
+		} else {
+			urlRedirect = session.getOriginalURL();
+		}
+		
+				
+		return urlRedirect;
+	}
+	
 	private String crawlInternalIDSingleProduct(Document document) {
 		String internalIDMainPage = null;
 		Element elementDataSku = document.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first();

@@ -94,10 +94,10 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 			
 			// Pegando url padrão no doc da página, para lidar com casos onde tem url em formato diferente no banco
-			String modifiedURL = makeUrlFinal(session.getOriginalURL());
+			String modifiedURL = makeUrlFinal(getRedirectUrl());
 			
 			// Variations
-			boolean hasVariations = hasProductVariations(doc);
+			boolean hasVariations = hasProductVariations(doc);			
 			
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
@@ -162,7 +162,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 					Product product = new Product();
 					
-					product.setUrl(modifiedURL);
+					product.setUrl(session.getOriginalURL());
 					product.setInternalId(variationInternalID);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
@@ -205,7 +205,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 				Product product = new Product();
 				
-				product.setUrl(modifiedURL);
+				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);
@@ -304,6 +304,19 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 	 * Single product page methods *
 	 *******************************/
 
+	private String getRedirectUrl(){
+		String urlRedirect = null;
+		
+		if(session.getRedirectedToURL(session.getOriginalURL()) != null){
+			urlRedirect = session.getRedirectedToURL(session.getOriginalURL());
+		} else {
+			urlRedirect = session.getOriginalURL();
+		}
+		
+				
+		return urlRedirect;
+	}
+	
 	private String crawlInternalIDSingleProduct(Document document) {
 		String internalIDMainPage = null;
 		Element elementDataSku = document.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first();

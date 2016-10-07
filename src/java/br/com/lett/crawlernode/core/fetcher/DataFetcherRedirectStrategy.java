@@ -196,7 +196,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
             final HttpResponse response,
             final HttpContext context) throws ProtocolException {
         final URI uri = getLocationURI(request, response, context);
-        this.finalURL = uri.getHost() + uri.getPath();
+        this.finalURL = uri.toString();
         final String method = request.getRequestLine().getMethod();
         if (method.equalsIgnoreCase(HttpHead.METHOD_NAME)) {
             return new HttpHead(uri);
