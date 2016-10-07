@@ -82,7 +82,7 @@ public class Test {
 		// fetch market information
 		Market market = fetchMarket();
 		
-		CrawlerSession session = SessionFactory.createSession("http://produto.casasbahia.com.br?IdProduto=6417487", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.novomundo.com.br/forno-de-micro-ondas-27-litros-branco-electrolux-mep37-2036468/p", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 		

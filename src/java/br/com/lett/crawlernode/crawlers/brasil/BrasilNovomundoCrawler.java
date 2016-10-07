@@ -70,62 +70,31 @@ public class BrasilNovomundoCrawler extends Crawler {
 
 					String internalId = null;
 					String internalPid = null;
-					String name = null;
-					Boolean available = null;
-					Float price = null;
+					
 					String primaryImage = null;
 					String secondaryImages = null;
-					JSONArray marketplace = new JSONArray();
-					Integer stock = null;
+
 
 					// Pegar dados da API
 					JSONObject productInfoJSON = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.novomundo.com.br/produto/sku/" + id.trim()), null, null).getJSONObject(0);
 
-					// ID interno
+					// internal id
 					internalId = String.valueOf(productInfoJSON.getInt("Id"));
 
-					// Pid
-					internalPid = null;
-					Element internalPidElement = doc.select("#___rc-p-id").first();
-					if (internalPidElement != null) {
-						internalPid = internalPidElement.attr("value");
-					}
+					// internal pid
+					internalPid = crawlInternalPid(doc);
 
-					// Nome
-					if (productInfoJSON.has("Name")) {
-						name = productInfoJSON.getString("Name");
-					}
+					// name
+					String name = crawlName(productInfoJSON);
 
-					// Disponibilidade
-					if (productInfoJSON.has("Availability")) {
-						available = productInfoJSON.getBoolean("Availability");
-					}
+					// availability
+					boolean available = crawlAvailability(productInfoJSON);
 
-					// Preço
-					price = null;
+					// marketplace
+					JSONArray marketplace = crawlMarketplace(productInfoJSON);
 
-					if (available != null && available == true) {
-						JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
-						for (int i = 0; i < skuSellersInfo.length(); i++) {
-							JSONObject seller = skuSellersInfo.getJSONObject(i);
-							String sellerId = seller.getString("SellerId");
-							String sellerName = seller.getString("Name");
-							Float sellerPrice = (float)seller.getDouble("Price");
-							Integer sellerStock = seller.getInt("AvailableQuantity");
-
-							// Marketplace
-							if (sellerId.equals("1")) { // Novomundo id = 1
-								price = sellerPrice; 
-								stock = sellerStock;
-							} else { // é um parceiro
-								JSONObject partner = new JSONObject();
-								partner.put("name", sellerName);
-								partner.put("price", sellerPrice);
-
-								marketplace.put(partner);
-							}
-						}
-					}
+					// price
+					Float price = crawlPrice(productInfoJSON);
 
 					// Imagens
 					primaryImage = null;
@@ -166,8 +135,11 @@ public class BrasilNovomundoCrawler extends Crawler {
 						description = description + elementSpecs.html();
 					}
 
+					// stock
+					Integer stock = crawlStock(productInfoJSON);
+
 					Product product = new Product();
-					
+
 					product.setUrl(this.session.getOriginalURL());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
@@ -192,7 +164,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -207,6 +179,105 @@ public class BrasilNovomundoCrawler extends Crawler {
 		return (url.endsWith("/p") && elementProduct != null);		
 	}
 	
+	private String crawlName(JSONObject productInfoJSON) {
+		String name = null;
+		if (productInfoJSON.has("Name")) {
+			name = productInfoJSON.getString("Name");
+		}
+		return name;
+	}
+	
+	private String crawlInternalPid(Document document) {
+		String internalPid = null;
+		Element internalPidElement = document.select("#___rc-p-id").first();
+		if (internalPidElement != null) {
+			internalPid = internalPidElement.attr("value");
+		}
+		return internalPid;
+	}
+
+	private boolean crawlAvailability(JSONObject productInfoJSON) {
+
+		// availability info from the field 'Availability'
+		Boolean availabilityFromJson = false;
+		if (productInfoJSON.has("Availability")) {
+			availabilityFromJson = productInfoJSON.getBoolean("Availability");
+		}
+
+		// looking if the main seller is the default seller
+		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
+		Boolean isDefaultSeller = false;
+		for (int i = 0; i < skuSellersInfo.length(); i++) {
+			JSONObject seller = skuSellersInfo.getJSONObject(i);
+			String sellerId = seller.getString("SellerId").toLowerCase().trim();
+			if (sellerId.equals("1")) {
+				isDefaultSeller = seller.getBoolean("IsDefaultSeller"); 
+			}
+		}
+
+		// cross the two informations
+		if (availabilityFromJson && isDefaultSeller) return true;
+		return false;
+	}
+
+	private JSONArray crawlMarketplace(JSONObject productInfoJSON) {
+		JSONArray marketplace = new JSONArray();
+		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
+
+		for (int i = 0; i < skuSellersInfo.length(); i++) {
+			JSONObject seller = skuSellersInfo.getJSONObject(i);
+		
+			String sellerName = seller.getString("Name").toLowerCase().trim();
+			Float sellerPrice = (float)seller.getDouble("Price");
+			String sellerId = seller.getString("SellerId");
+			
+			if (!sellerId.equals("1")) {
+				JSONObject partner = new JSONObject();
+				partner.put("name", sellerName);
+				partner.put("price", sellerPrice);
+				
+				marketplace.put(partner);
+			}
+
+		}
+
+		return marketplace;
+	}
+
+	private Float crawlPrice(JSONObject productInfoJSON) {
+		Float price = null;
+		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
+		for (int i = 0; i < skuSellersInfo.length(); i++) {
+			JSONObject seller = skuSellersInfo.getJSONObject(i);
+			String sellerId = seller.getString("SellerId").toLowerCase().trim();
+			if (sellerId.equals("1")) {
+				if (seller.has("Price")) {
+					price = (float)seller.getDouble("Price");
+				}
+			}
+		}
+
+		// when the product is unavailable for the seller, it's price field holds the value 0.0
+		if (price != null && Float.compare(price, 0.0f) == 0) price = null; 
+
+		return price;
+	}
+
+	private Integer crawlStock(JSONObject productInfoJSON) {
+		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
+
+		for (int i = 0; i < skuSellersInfo.length(); i++) {
+			JSONObject seller = skuSellersInfo.getJSONObject(i);
+			if (seller.has("SellerId")) {
+				if (seller.getString("SellerId").equals("1")) {
+					if (seller.has("AvailableQuantity")) return seller.getInt("AvailableQuantity");
+				}
+			}
+		}
+
+		return null;
+	}
+
 
 	private JSONObject extractLargestImage(JSONArray images) {
 		for (int i = 0; i < images.length(); i++) {
