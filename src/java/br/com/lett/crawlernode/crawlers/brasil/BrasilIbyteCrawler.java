@@ -66,7 +66,7 @@ public class BrasilIbyteCrawler extends Crawler {
 			// Preço
 			Float price = null;
 			if(available) {
-				Element elementPrice = doc.select("#product-price-" + internalId).first();
+				Element elementPrice = doc.select(".preco-produto span.price").first();
 				if(elementPrice != null) {
 					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 				}
