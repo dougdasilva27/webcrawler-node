@@ -110,13 +110,9 @@ public class ImageRescaler {
 				null);
 		g2d_regular.dispose();
 
-		// write original image
+		// write final images to file
 		writeImage(param, writer, ORIGINAL_IMAGE, localOriginalFileDir, outputImageOriginal);
-
-		// write small image
 		writeImage(param, writer, SMALL_IMAGE, localSmallFileDir, outputImageSmall);
-
-		// write regular image
 		writeImage(param, writer, REGULAR_IMAGE, localRegularFileDir, outputImageRegular);
 
 		writer.dispose();
@@ -178,13 +174,13 @@ public class ImageRescaler {
 		if (originalWidth <= newWidth) {
 			x = (newWidth - originalWidth)/2;
 		} else {
-			x = (originalWidth - newWidth)/2;
+			x = 0;
 		}
 
 		if (originalHeight <= newHeight) {
 			y = (newHeight - originalHeight)/2;
 		} else {
-			y = (originalHeight - newHeight)/2;
+			y = 0;
 		}
 
 		return new Point(Math.round((float)x), Math.round((float)y));
@@ -229,14 +225,12 @@ public class ImageRescaler {
 	private static BufferedImage convertFromPNGtoJPG(BufferedImage image) {
 		BufferedImage jpgImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 		jpgImage.createGraphics().drawImage(image, 0, 0, Color.white, null);
-
 		return jpgImage;
 	}
 
 	private static String imageType(String absolutePath) {
 		String[] tokens = absolutePath.split("/");
 		String fileName = tokens[tokens.length-1];
-
 		return fileName.split("\\.")[1];
 	}
 
