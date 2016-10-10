@@ -113,26 +113,22 @@ public class BrasilFastshopCrawler extends Crawler {
 			
 			Element variationSelector = doc.select(".options_dropdown").first();
 
+			String idSelector = "#entitledItem_" + internalPid;
+			Element elementInfo = doc.select(idSelector).first();
+			JSONArray jsonInfo = null;
+			if (elementInfo != null) {
+				jsonInfo = new JSONArray(elementInfo.text());
+			}
+			
 			/*
 			 * Produto sem variação
 			 */
-			if(variationSelector == null) {
-
-				String idSelector0 = "#entitledItem_" + internalPid;
-				Element elementInfo0 = doc.select(idSelector0).first();
-				JSONArray jsonInfo0 = null;
-				if (elementInfo0 != null) {
-					try{ 
-						jsonInfo0 = new JSONArray(elementInfo0.text());
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
+			if(variationSelector == null && jsonInfo.length() < 2){
 
 				// ID interno
 				String internalId = null;
-				if (jsonInfo0.getJSONObject(0).has("catentry_id")) {
-					internalId = jsonInfo0.getJSONObject(0).getString("catentry_id").trim();
+				if (jsonInfo.getJSONObject(0).has("catentry_id")) {
+					internalId = jsonInfo.getJSONObject(0).getString("catentry_id").trim();
 				}
 				
 				// assemble the marketplace map
@@ -216,13 +212,6 @@ public class BrasilFastshopCrawler extends Crawler {
 			}
 
 			else { // Produto com variação
-
-				String idSelector = "#entitledItem_" + internalPid;
-				Element elementInfo = doc.select(idSelector).first();
-				JSONArray jsonInfo = null;
-				if (elementInfo != null) {
-					jsonInfo = new JSONArray(elementInfo.text());
-				}
 
 				for (int i = 0; i < jsonInfo.length(); i++) {
 					JSONObject productInfo = jsonInfo.getJSONObject(i);
