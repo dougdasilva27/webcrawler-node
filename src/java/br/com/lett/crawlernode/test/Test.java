@@ -71,7 +71,7 @@ public class Test {
 		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 		
 		// create a queue handler that will contain an Amazon SQS instance
-		queueHandler = new QueueHandler();
+		//queueHandler = new QueueHandler();
 
 		// fetching proxies
 		proxies = new Proxies();
