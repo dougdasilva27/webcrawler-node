@@ -89,7 +89,6 @@ public class DataFetcher {
 	public static final String POST_REQUEST = "POST";
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
-	//private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -382,7 +381,9 @@ public class DataFetcher {
 		// analysing the status code
 		// if there was some response code that indicates forbidden access or server error we want to try again
 		int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-		if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+		if( Integer.toString(responseCode).charAt(0) != '2' && 
+			Integer.toString(responseCode).charAt(0) != '3' && 
+			responseCode != 404 ) { // errors
 			throw new ResponseCodeException(responseCode);
 		}
 
@@ -586,7 +587,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -754,7 +757,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -933,7 +938,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1094,7 +1101,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1167,17 +1176,17 @@ public class DataFetcher {
 			CloseableHttpResponse response,
 			String requestHash) {
 
-		JSONObject request_metadata = new JSONObject();
+		JSONObject requestMetadata = new JSONObject();
 
-		request_metadata.put("req_hash", requestHash);
-		request_metadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
-		request_metadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
-		request_metadata.put("req_method", requestType);
-		request_metadata.put("req_location", url);
-		request_metadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
-		request_metadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
+		requestMetadata.put("req_hash", requestHash);
+		requestMetadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
+		requestMetadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
+		requestMetadata.put("req_method", requestType);
+		requestMetadata.put("req_location", url);
+		requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
+		requestMetadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
 
-		Logging.printLogDebug(logger, session, request_metadata, "Registrando requisição...");
+		Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
 
 	}
 
@@ -1298,7 +1307,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 

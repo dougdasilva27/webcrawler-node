@@ -12,6 +12,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
@@ -97,7 +98,15 @@ public class CrawlerSession {
 			this.market = markets.getMarket(city, name);
 		}
 		
+		maxConnectionAttemptsWebcrawler = 0;
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.proxyMaxAttempts.get(proxy);
+		}
 		
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.proxyMaxAttempts.get(proxy);
+		}
 
 		// setting URL and originalURL
 		this.originalURL = message.getBody();
@@ -109,6 +118,14 @@ public class CrawlerSession {
 	
 	public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
 		this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
+	}
+	
+	public int getMaxConnectionAttemptsImages() {
+		return this.maxConnectionAttemptsImages;
+	}
+	
+	public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
+		this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
 	}
 
 	public String getInternalId() {
