@@ -9,6 +9,7 @@ import org.apache.commons.cli.ParseException;
 
 import br.com.lett.crawlernode.core.fetcher.Proxies;
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
@@ -35,17 +36,18 @@ public class Test {
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
 	public static 	QueueHandler		queueHandler;
-	
+	public static 	Markets				markets;
+
 	private static String market;
 	private static String city;
 
 	public static void main(String args[]) {
-		
+
 		// adding command line options
 		options = new Options();
 		options.addOption("market", true, "Market name");
 		options.addOption("city", true, "City name");
-		
+
 		// parsing command line options
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = null;
@@ -54,7 +56,7 @@ public class Test {
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
-		
+
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
@@ -69,12 +71,17 @@ public class Test {
 
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
-		
+
 		// create a queue handler that will contain an Amazon SQS instance
 		//queueHandler = new QueueHandler();
 
+		// fetch market information
+		Market market = fetchMarket();
+		
+		markets = new Markets(dbManager);
+
 		// fetching proxies
-		proxies = new Proxies();
+		proxies = new Proxies(markets);
 		proxies.setCharityProxy();
 		proxies.setBonanzaProxies();
 		proxies.setBuyProxies();
@@ -83,22 +90,19 @@ public class Test {
 		// create a task executor
 		// for testing we use 1 thread, there is no need for more
 		taskExecutor = new TaskExecutor(1, 1);
-		
-		// fetch market information
-		Market market = fetchMarket();
-		
+
 		CrawlerSession session = SessionFactory.createSession("http://www.mundomax.com.br/caixa-multiuso-player-600-100w-rms-usb-hayonik", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
-		
+
 		taskExecutor.shutDown();
 	}
-	
+
 	private static Market fetchMarket() {
 		DatabaseDataFetcher fetcher = new DatabaseDataFetcher(dbManager);
 		return fetcher.fetchMarket(city, market);
 	}
-	
+
 	private static void help() {
 		new HelpFormatter().printHelp("Main", options);
 		System.exit(0);

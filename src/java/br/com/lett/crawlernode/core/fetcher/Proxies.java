@@ -15,8 +15,12 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONObject;
 
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
+
 
 public class Proxies {
 
@@ -35,12 +39,14 @@ public class Proxies {
 	public static final int MAX_ATTEMPTS_AZURE 		= 2;
 	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 2;
 
-	public Map<String, Integer> proxyMaxAttempts;
+	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMap; // global information
 
-	public Map<String, List<LettProxy>> proxyMap;
-	
+	public Map<String, Integer> proxyMaxAttempts; // global information
 
-	public Proxies() {
+	public Map<String, List<LettProxy>> proxyMap; // global information
+
+
+	public Proxies(Markets markets) {
 		this.proxyMap = new HashMap<String, List<LettProxy>>();
 
 		this.proxyMaxAttempts = new HashMap<String, Integer>();
@@ -51,6 +57,10 @@ public class Proxies {
 		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_RPOXY);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
+		
+		this.intervalsMarketsMap = new HashMap<Integer, List<Interval<Integer>>>();
+		
+		this.assembleIntervals(markets);
 	}
 
 	public void setCharityProxy() {
@@ -64,7 +74,7 @@ public class Proxies {
 		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
 		this.proxyMap.put(AZURE, azure);
 	}
-	
+
 	public void setStormProxies() {
 		List<LettProxy> storm = new ArrayList<LettProxy>();
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
@@ -113,7 +123,7 @@ public class Proxies {
 
 	}
 
-	
+
 	public void setBonanzaProxies() {
 		try {
 
@@ -163,7 +173,7 @@ public class Proxies {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	/**
 	 * Get the array of proxy units corresponding to a proxy service name.
 	 * 
@@ -175,10 +185,39 @@ public class Proxies {
 		if (this.proxyMap.containsKey(serviceName)) {
 			return this.proxyMap.get(serviceName);
 		} 
-		
+
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
-		
+
 		return new ArrayList<LettProxy>();		
+	}
+	
+	private void assembleIntervals(Markets markets) {
+		List<Market> marketList = markets.getMarkets();
+		for (Market m : marketList) {
+			List<Interval<Integer>> intervals = new ArrayList<Interval<Integer>>();
+			ArrayList<String> proxies = m.getProxies();
+			int index = 1;
+			for (int i = 0; i < proxies.size(); i++) {
+				intervals.add( new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1) );
+				index = index + proxyMaxAttempts.get(proxies.get(i));
+			}
+			this.intervalsMarketsMap.put(m.getNumber(), intervals);
+		}		
+	}
+	
+	/**
+	 * Get the maximum number of attempts of connections for a market.
+	 * 
+	 * @param market
+	 * @return
+	 */
+	private int getMaxAttempts(Market market) {
+		ArrayList<String> proxies = market.getProxies();
+		int max = 0;
+		for (String proxy : proxies) {
+			max = max + this.proxyMaxAttempts.get(proxy);
+		}
+		return max;
 	}
 
 }

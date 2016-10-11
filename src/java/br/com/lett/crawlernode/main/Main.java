@@ -93,7 +93,7 @@ public class Main {
 		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
 
 		// fetching proxies
-		proxies = new Proxies();
+		proxies = new Proxies(markets);
 		proxies.setBonanzaProxies();
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
