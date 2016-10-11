@@ -40,7 +40,7 @@ public class Proxies {
 	public static final int MAX_ATTEMPTS_STORM		= 2;
 	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 2;
 
-	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMap; // global information
+	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMap; // global information -- used to select proxy service according to attempt number
 
 	public Map<String, Integer> proxyMaxAttempts; // global information
 
@@ -205,6 +205,29 @@ public class Proxies {
 			}
 			this.intervalsMarketsMap.put(m.getNumber(), intervals);
 		}		
+	}
+	
+	/**
+	 * Select a proxy service to be used, given the number of attempt.
+	 * To solve this, we create a list of intervals from the maximmum number
+	 * of attempts per proxy. The list contains all intervals ordered and disjoints.
+	 * Thus, the problem is: given a a list of ordered and disjoint sets, select the one
+	 * in which a point is.
+	 * 
+	 * e.g:
+	 * buy[1, 1]
+	 * bonanza[2, 3]
+	 * attempt = 1
+	 * result = buy
+	 * 
+	 * @param attempt
+	 * @return a String representing the name of the proxy service.
+	 */
+	public String selectProxy(Market market, int attempt) {
+		List<Interval<Integer>> intervals = this.intervalsMarketsMap.get(market.getNumber());
+		Interval<Integer> interval = CommonMethods.findInterval(intervals, attempt);
+		if (interval != null) return interval.getName();
+		return null;
 	}
 
 }
