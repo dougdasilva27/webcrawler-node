@@ -37,7 +37,7 @@ public class CrawlerSession {
 	 */
 	protected String messageReceiptHandle;
 
-	/** Original url of the sku being crawled */
+	/** Original URL of the sku being crawled */
 	protected String originalURL;
 
 	/** Association of URL and its final modified version, a redirection for instance */
@@ -46,8 +46,14 @@ public class CrawlerSession {
 	/** Market associated with this session */
 	protected Market market;
 
-	/** Errors ocurred during crawling session */
+	/** Errors occurred during crawling session */
 	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
+	
+	/** The maximum number of connection attempts to be made when crawling normal information */
+	protected int maxConnectionAttemptsWebcrawler;
+	
+	/** The maximum number of connection attempts to be made when downloading images */
+	protected int maxConnectionAttemptsImages;
 
 
 	/**
@@ -90,10 +96,19 @@ public class CrawlerSession {
 			name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
 			this.market = markets.getMarket(city, name);
 		}
+		
+		
 
 		// setting URL and originalURL
 		this.originalURL = message.getBody();
-
+	}
+	
+	public int getMaxConnectionAttemptsCrawler() {
+		return this.maxConnectionAttemptsWebcrawler;
+	}
+	
+	public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
+		this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
 	}
 
 	public String getInternalId() {
