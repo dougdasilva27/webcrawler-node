@@ -6,22 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.result.UpdateResult;
 
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -41,7 +32,7 @@ public class DatabaseManager {
 	 */
 	public Connection conn = null;
 
-	public MongoClient mongoClientDataCrawler = null;
+	//public MongoClient mongoClientDataCrawler = null;
 	public MongoClient mongoClientBackendPanel = null;
 	public MongoClient mongoClientBackendDashboard = null;
 	public MongoClient mongoClientMongoImages = null;
@@ -55,7 +46,7 @@ public class DatabaseManager {
 		this.mongoCredentials = credentials.getMongoCredentials();
 		this.postgresCredentials = credentials.getPostgresCredentials();
 	}
-	
+
 	/**
 	 * Connect to databases when not testing crawler logic.
 	 */
@@ -79,31 +70,12 @@ public class DatabaseManager {
 
 		// connect to mongodb
 		try {
+			setMongoPanel();
+			setMongoInsights();
+			setMongoImages();
 
-			/* ************************
-			 * Production environment *
-			 **************************/
-			if ( Main.executionParameters != null && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
-				this.setMongoPanel();
-				this.setMongoInsights();
-				this.setMongoImages();
-			} 
+			testMongoConnection();			
 
-			/* *************************
-			 * Development environment *
-			 ***************************/
-			else {
-				mongoClientBackendPanel = new MongoClient("localhost", 27017);
-				mongoBackendPanel = mongoClientBackendPanel.getDatabase("panel");
-				mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
-				mongoMongoImages = mongoClientBackendPanel.getDatabase("images");
-			}
-			
-			// Verifying connection (if fail, with throw Exception)
-			mongoClientBackendPanel.getAddress();
-			mongoClientBackendDashboard.getAddress();
-			mongoClientMongoImages.getAddress();
-			
 			Logging.printLogDebug(logger, "Successfully connected to Mongo: " + mongoCredentials.getMongoPanelHost());
 		} catch (Exception e) {
 			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo.");
@@ -111,42 +83,11 @@ public class DatabaseManager {
 		}
 
 	}
-
-	/**
-	 * Connect to databases when running crawler tests.
-	 */
-	public void connectTest() {		
-		Logging.printLogDebug(logger, "Starting connection with databases...");
-
-		// connect to postgres
-		try {
-			Class.forName("org.postgresql.Driver");
-			String url = "jdbc:postgresql://" + postgresCredentials.getHost() + ":" + postgresCredentials.getPort() + "/" + postgresCredentials.getDatabase();
-			conn = DriverManager.getConnection(url, postgresCredentials.getUsername(), postgresCredentials.getPass());
-
-			Logging.printLogDebug(logger, "Successfully connected to Postgres!");
-		} catch (SQLException e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		} catch (ClassNotFoundException e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-
-		// connect to mongodb
-		try {
-
-			mongoClientBackendPanel = new MongoClient("localhost", 27017);
-			mongoBackendPanel = mongoClientBackendPanel.getDatabase("panel");
-			mongoBackendInsights = mongoClientBackendPanel.getDatabase("insights");
-			mongoMongoImages = mongoClientBackendPanel.getDatabase("images");
-
-			Logging.printLogDebug(logger, "Successfully connected to Mongo!");
-		} catch (Exception e) {
-			Logging.printLogError(logger, "An error occurred when trying to connect to Mongo.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-
+	
+	private void testMongoConnection() {
+		mongoClientBackendPanel.getAddress();
+		mongoClientBackendDashboard.getAddress();
+		mongoClientMongoImages.getAddress();
 	}
 
 	private void setMongoPanel() {
@@ -199,86 +140,6 @@ public class DatabaseManager {
 	public void runSqlExecute(String sql) throws SQLException {
 		Statement sta = conn.createStatement();
 		sta.executeUpdate(sql);
-	}
-
-	public Document fetchSeedDocument(String url, Integer market) {
-
-		if(this.mongoBackendPanel != null) {
-
-			try {
-				MongoCollection<Document> seedCollection =  this.mongoBackendPanel.getCollection("Seed");
-
-				FindIterable<Document> iterable = seedCollection.find(
-						Filters.and(
-								Filters.eq("url", url), 
-								Filters.eq("market", market)
-								)
-						);
-				return iterable.first();
-
-			} catch (Exception e) {
-				System.err.println("ERROR fetching Seed document to update logs!");
-				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-			}			
-		}
-
-		return null;
-
-	}
-
-
-	public void appendLogToSeedDocument(String seedId, BasicDBObject log) {
-
-		if(this.mongoBackendPanel != null) {
-
-			try {
-				MongoCollection<Document> seedCollection =  this.mongoBackendPanel.getCollection("Seed");
-
-				Document mod = new Document();
-				mod.append("logs", log);
-
-				Document updateQuery = new Document();
-				updateQuery.append("$push", mod);
-
-				Document filterQuery = new Document();
-				filterQuery.append("_id", new ObjectId(seedId));
-
-				UpdateResult updateResult = seedCollection.updateOne(filterQuery, updateQuery);
-
-			} catch (Exception e) {
-				//System.err.println("ERROR appending log to Seed document!");
-				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-			}			
-		}
-
-	}
-
-
-	public void markSeedAsDone(String seedId) {
-		System.out.println("markSeedAsDone: " + seedId);
-
-		if(this.mongoBackendPanel != null) {
-
-			try {
-				MongoCollection<Document> seedCollection =  this.mongoBackendPanel.getCollection("Seed");
-
-				Document mod = new Document();
-				mod.append("status", "done");
-
-				Document updateQuery = new Document();
-				updateQuery.append("$set", mod);
-
-				Document filterQuery = new Document();
-				filterQuery.append("_id", new ObjectId(seedId));
-
-				UpdateResult updateResult = seedCollection.updateOne(filterQuery, updateQuery);
-
-			} catch (Exception e) {
-				//System.err.println("ERROR appending log to Seed document!");
-				Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-			}			
-		}
-
 	}
 
 }
