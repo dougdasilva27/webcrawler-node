@@ -64,6 +64,7 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
@@ -88,7 +89,7 @@ public class DataFetcher {
 	public static final String POST_REQUEST = "POST";
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
-	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
+	//private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -1448,49 +1449,26 @@ public class DataFetcher {
 		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
 	}
 
+	/**
+	 * Select a proxy service according to the number of attempt.
+	 * 
+	 * @param attempt
+	 * @param session
+	 * @param proxyServices
+	 * @return
+	 */
 	private static String getProxyService(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
 		String service = null;
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
-
-		if (proxyServices == null || proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
-			service = Proxies.NO_PROXY;
-			Logging.printLogDebug(logger, session, "The proxy services arrays for this market is null or it's size is 0. Selected proxy: " + Proxies.NO_PROXY);
+		
+		if (session instanceof TestCrawlerSession) {
+			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), attempt);
+		} else {
+			service = Main.proxies.selectProxy(session.getMarket(), attempt);
 		}
-		else if (attempt <= MAX_ATTEMPTS_PER_PROXY) { // first interval of attempts...the first proxy service on the list
-			service = proxyServices.get(0);
-			Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(0));
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY && attempt <= MAX_ATTEMPTS_PER_PROXY*2) { // second interval of attempts
-			if (proxyServices.size() > 1) {
-				service = proxyServices.get(1);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(1));
-			}
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*2 && attempt <= MAX_ATTEMPTS_PER_PROXY*3) { // third interval of attempts
-			if (proxyServices.size() > 2) {
-				service = proxyServices.get(2);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(2));
-			}
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*3 && attempt <= MAX_ATTEMPTS_PER_PROXY*4) { // fourth interval of attempts
-			if (proxyServices.size() > 3) {
-				service = proxyServices.get(3);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(3));
-			}
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*4 && attempt <= MAX_ATTEMPTS_PER_PROXY*5) { // fourth interval of attempts
-			if (proxyServices.size() > 4) {
-				service = proxyServices.get(4);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(4));
-			}
-		}
-
-		// if it reaches this case it means that all proxy services for this market where used
-		if (service == null) {
-			service = Proxies.NO_PROXY;
-			Logging.printLogDebug(logger, session, "Selected proxy: " + Proxies.NO_PROXY);
-		}
+		
+		Logging.printLogDebug(logger, session, "Selected proxy: " + service);
 
 		return service;
 	}
