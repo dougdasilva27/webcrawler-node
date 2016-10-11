@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.fetcher;
+package br.com.lett.crawlernode.exceptions;
 
 /**
  * Checked exception used when request return
