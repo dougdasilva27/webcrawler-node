@@ -1418,23 +1418,22 @@ public class DataFetcher {
 	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
 		LettProxy nextProxy = null;
 
-		// when not testing
-		if (Main.proxies != null) {
-			List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+		if (session instanceof TestCrawlerSession) { // testing
+			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
 			if (proxies.size() > 0) {
 				nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
 			} else {
 				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 			}
 		}
-
-		// when testing
 		else {
-			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-			if (proxies.size() > 0) {
-				nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
-			} else {
-				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+			if (Main.proxies != null) { // production
+				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+				if (proxies.size() > 0) {
+					nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+				}
 			}
 		}
 
@@ -1463,9 +1462,14 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 		
 		if (session instanceof TestCrawlerSession) {
-			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), attempt);
+			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
 		} else {
-			service = Main.proxies.selectProxy(session.getMarket(), attempt);
+			if (session instanceof ImageCrawlerSession) {
+				service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
+			} else {
+				service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
+			}
+			
 		}
 		
 		Logging.printLogDebug(logger, session, "Selected proxy: " + service);
