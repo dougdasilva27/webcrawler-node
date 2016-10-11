@@ -37,6 +37,7 @@ public class Proxies {
 	public static final int MAX_ATTEMPTS_BONANZA 	= 2;
 	public static final int MAX_ATTEMPTS_CHARITY 	= 2;
 	public static final int MAX_ATTEMPTS_AZURE 		= 2;
+	public static final int MAX_ATTEMPTS_STORM		= 2;
 	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 2;
 
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMap; // global information
@@ -54,6 +55,7 @@ public class Proxies {
 		this.proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
 		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
+		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
 		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_RPOXY);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
@@ -203,21 +205,6 @@ public class Proxies {
 			}
 			this.intervalsMarketsMap.put(m.getNumber(), intervals);
 		}		
-	}
-	
-	/**
-	 * Get the maximum number of attempts of connections for a market.
-	 * 
-	 * @param market
-	 * @return
-	 */
-	private int getMaxAttempts(Market market) {
-		ArrayList<String> proxies = market.getProxies();
-		int max = 0;
-		for (String proxy : proxies) {
-			max = max + this.proxyMaxAttempts.get(proxy);
-		}
-		return max;
 	}
 
 }
