@@ -33,12 +33,12 @@ public class Proxies {
 	public static final String CHARITY 	= "charity";
 	public static final String AZURE 	= "azure";
 
-	public static final int MAX_ATTEMPTS_BUY 		= 2;
-	public static final int MAX_ATTEMPTS_BONANZA 	= 2;
-	public static final int MAX_ATTEMPTS_CHARITY 	= 2;
-	public static final int MAX_ATTEMPTS_AZURE 		= 2;
-	public static final int MAX_ATTEMPTS_STORM		= 2;
-	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 2;
+	public static final int MAX_ATTEMPTS_BUY 		= 3;
+	public static final int MAX_ATTEMPTS_BONANZA 	= 3;
+	public static final int MAX_ATTEMPTS_CHARITY 	= 3;
+	public static final int MAX_ATTEMPTS_AZURE 		= 3;
+	public static final int MAX_ATTEMPTS_STORM		= 3;
+	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 3;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
