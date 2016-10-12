@@ -46,7 +46,7 @@ public class Proxies {
 	/** Intervals used to select proxy service when downloading images */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapImages; // global information
 	
-	public Map<String, Integer> proxyMaxAttempts; // global information
+	private Map<String, Integer> proxyMaxAttempts; // global information
 	public Map<String, List<LettProxy>> proxyMap; // global information
 
 
@@ -196,6 +196,20 @@ public class Proxies {
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
 
 		return new ArrayList<LettProxy>();		
+	}
+	
+	/**
+	 * Get the maximum number of attempts allowed with this proxy service.
+	 * If the proxy service is not found on the map, the method returns 0 attempts.
+	 * 
+	 * @param serviceName
+	 * @return
+	 */
+	public Integer getProxyMaxAttempts(String serviceName) {
+		if (this.proxyMaxAttempts.containsKey(serviceName)) {
+			return this.proxyMaxAttempts.get(serviceName);
+		}
+		return 0;
 	}
 	
 	private void assembleIntervalsWebcrawler(Markets markets) {

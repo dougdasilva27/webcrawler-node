@@ -100,12 +100,12 @@ public class CrawlerSession {
 		
 		maxConnectionAttemptsWebcrawler = 0;
 		for (String proxy : market.getProxies()) {
-			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.proxyMaxAttempts.get(proxy);
+			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.getProxyMaxAttempts(proxy);
 		}
 		
 		maxConnectionAttemptsImages = 0;
 		for (String proxy : market.getImageProxies()) {
-			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.proxyMaxAttempts.get(proxy);
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
 		}
 
 		// setting URL and originalURL
