@@ -64,6 +64,8 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
@@ -87,7 +89,6 @@ public class DataFetcher {
 	public static final String POST_REQUEST = "POST";
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
-	private static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -380,7 +381,9 @@ public class DataFetcher {
 		// analysing the status code
 		// if there was some response code that indicates forbidden access or server error we want to try again
 		int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-		if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+		if( Integer.toString(responseCode).charAt(0) != '2' && 
+			Integer.toString(responseCode).charAt(0) != '3' && 
+			responseCode != 404 ) { // errors
 			throw new ResponseCodeException(responseCode);
 		}
 
@@ -475,7 +478,7 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
+					
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
 				if (cookies.size() > 0) {
@@ -584,7 +587,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -752,7 +757,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -931,7 +938,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1092,7 +1101,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1165,17 +1176,17 @@ public class DataFetcher {
 			CloseableHttpResponse response,
 			String requestHash) {
 
-		JSONObject request_metadata = new JSONObject();
+		JSONObject requestMetadata = new JSONObject();
 
-		request_metadata.put("req_hash", requestHash);
-		request_metadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
-		request_metadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
-		request_metadata.put("req_method", requestType);
-		request_metadata.put("req_location", url);
-		request_metadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
-		request_metadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
+		requestMetadata.put("req_hash", requestHash);
+		requestMetadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
+		requestMetadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
+		requestMetadata.put("req_method", requestType);
+		requestMetadata.put("req_location", url);
+		requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
+		requestMetadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
 
-		Logging.printLogDebug(logger, session, request_metadata, "Registrando requisição...");
+		Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
 
 	}
 
@@ -1296,7 +1307,9 @@ public class DataFetcher {
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if(Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1416,80 +1429,21 @@ public class DataFetcher {
 	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
 		LettProxy nextProxy = null;
 
-		// when not testing
-		if (Main.proxies != null) {
-			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Main.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Main.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Main.proxies.bonanzaProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
-				}
-			} 
-			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Main.proxies.buyProxies.size() > 0) {
-					nextProxy = Main.proxies.buyProxies.get(CommonMethods.randInt(0, Main.proxies.buyProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Main.proxies.storm.size() > 0) {
-					nextProxy = Main.proxies.storm.get(CommonMethods.randInt(0, Main.proxies.storm.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.CHARITY)) { // charity
-				if (Main.proxies.charity.size() > 0) {
-					nextProxy = Main.proxies.charity.get(CommonMethods.randInt(0, Main.proxies.charity.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.AZURE)) { // azure
-				if (Main.proxies.azure.size() > 0) {
-					nextProxy = Main.proxies.azure.get(CommonMethods.randInt(0, Main.proxies.azure.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
-				}
+		if (session instanceof TestCrawlerSession) { // testing
+			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+			if (proxies.size() > 0) {
+				nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+			} else {
+				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 			}
 		}
-
-		// when testing
 		else {
-			if (serviceName.equals(Proxies.BONANZA)) { // bonanza
-				if (Test.proxies.bonanzaProxies.size() > 0) {
-					nextProxy = Test.proxies.bonanzaProxies.get(CommonMethods.randInt(0, Test.proxies.bonanzaProxies.size() - 1));
+			if (Main.proxies != null) { // production
+				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+				if (proxies.size() > 0) {
+					nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
 				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BONANZA + ", but there was no proxy fetched for this service.");
-				}
-			} 
-			else if (serviceName.equals(Proxies.BUY)) { // buy
-				if (Test.proxies.buyProxies.size() > 0) {
-					nextProxy = Test.proxies.buyProxies.get(CommonMethods.randInt(0, Test.proxies.buyProxies.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.BUY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.STORM)) { // storm
-				if (Test.proxies.storm.size() > 0) {
-					nextProxy = Test.proxies.storm.get(CommonMethods.randInt(0, Test.proxies.storm.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.STORM + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.CHARITY)) { // charity
-				if (Test.proxies.charity.size() > 0) {
-					nextProxy = Test.proxies.charity.get(CommonMethods.randInt(0, Test.proxies.charity.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.CHARITY + ", but there was no proxy fetched for this service.");
-				}
-			}
-			else if (serviceName.equals(Proxies.AZURE)) { // azure
-				if (Test.proxies.azure.size() > 0) {
-					nextProxy = Test.proxies.azure.get(CommonMethods.randInt(0, Test.proxies.azure.size() - 1));
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + Proxies.AZURE + ", but there was no proxy fetched for this service.");
+					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 				}
 			}
 		}
@@ -1505,49 +1459,31 @@ public class DataFetcher {
 		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
 	}
 
+	/**
+	 * Select a proxy service according to the number of attempt.
+	 * 
+	 * @param attempt
+	 * @param session
+	 * @param proxyServices
+	 * @return
+	 */
 	private static String getProxyService(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
 		String service = null;
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
-
-		if (proxyServices == null || proxyServices.size() == 0) { // there is no proxy...this should not happen...for no proxy we still must have a string in the ArrayList
-			service = Proxies.NO_PROXY;
-			Logging.printLogDebug(logger, session, "The proxy services arrays for this market is null or it's size is 0. Selected proxy: " + Proxies.NO_PROXY);
-		}
-		else if (attempt <= MAX_ATTEMPTS_PER_PROXY) { // first interval of attempts...the first proxy service on the list
-			service = proxyServices.get(0);
-			Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(0));
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY && attempt <= MAX_ATTEMPTS_PER_PROXY*2) { // second interval of attempts
-			if (proxyServices.size() > 1) {
-				service = proxyServices.get(1);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(1));
+		
+		if (session instanceof TestCrawlerSession) {
+			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
+		} else {
+			if (session instanceof ImageCrawlerSession) {
+				service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
+			} else {
+				service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
 			}
+			
 		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*2 && attempt <= MAX_ATTEMPTS_PER_PROXY*3) { // third interval of attempts
-			if (proxyServices.size() > 2) {
-				service = proxyServices.get(2);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(2));
-			}
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*3 && attempt <= MAX_ATTEMPTS_PER_PROXY*4) { // fourth interval of attempts
-			if (proxyServices.size() > 3) {
-				service = proxyServices.get(3);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(3));
-			}
-		}
-		else if (attempt > MAX_ATTEMPTS_PER_PROXY*4 && attempt <= MAX_ATTEMPTS_PER_PROXY*5) { // fourth interval of attempts
-			if (proxyServices.size() > 4) {
-				service = proxyServices.get(4);
-				Logging.printLogDebug(logger, session, "Selected proxy: " + proxyServices.get(4));
-			}
-		}
-
-		// if it reaches this case it means that all proxy services for this market where used
-		if (service == null) {
-			service = Proxies.NO_PROXY;
-			Logging.printLogDebug(logger, session, "Selected proxy: " + Proxies.NO_PROXY);
-		}
+		
+		Logging.printLogDebug(logger, session, "Selected proxy: " + service);
 
 		return service;
 	}

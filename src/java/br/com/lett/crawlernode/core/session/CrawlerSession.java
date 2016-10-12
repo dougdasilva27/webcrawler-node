@@ -12,6 +12,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
 
 public class CrawlerSession {
@@ -37,7 +38,7 @@ public class CrawlerSession {
 	 */
 	protected String messageReceiptHandle;
 
-	/** Original url of the sku being crawled */
+	/** Original URL of the sku being crawled */
 	protected String originalURL;
 
 	/** Association of URL and its final modified version, a redirection for instance */
@@ -46,8 +47,14 @@ public class CrawlerSession {
 	/** Market associated with this session */
 	protected Market market;
 
-	/** Errors ocurred during crawling session */
+	/** Errors occurred during crawling session */
 	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
+	
+	/** The maximum number of connection attempts to be made when crawling normal information */
+	protected int maxConnectionAttemptsWebcrawler;
+	
+	/** The maximum number of connection attempts to be made when downloading images */
+	protected int maxConnectionAttemptsImages;
 
 
 	/**
@@ -90,10 +97,35 @@ public class CrawlerSession {
 			name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
 			this.market = markets.getMarket(city, name);
 		}
+		
+		maxConnectionAttemptsWebcrawler = 0;
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.getProxyMaxAttempts(proxy);
+		}
+		
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
+		}
 
 		// setting URL and originalURL
 		this.originalURL = message.getBody();
-
+	}
+	
+	public int getMaxConnectionAttemptsCrawler() {
+		return this.maxConnectionAttemptsWebcrawler;
+	}
+	
+	public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
+		this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
+	}
+	
+	public int getMaxConnectionAttemptsImages() {
+		return this.maxConnectionAttemptsImages;
+	}
+	
+	public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
+		this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
 	}
 
 	public String getInternalId() {

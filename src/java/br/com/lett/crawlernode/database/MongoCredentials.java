@@ -147,29 +147,4 @@ public class MongoCredentials {
 		this.mongoImagesDatabase = mongoImagesDatabase;
 	}
 
-	private String getCredentials() { // TODO remove...only to test -- private only
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append("mongoInsightsUser: " + this.mongoInsightsUser + "\n");
-		sb.append("mongoInsightsPass: " + this.mongoInsightsPass + "\n");
-		sb.append("mongoInsightsHost: " + this.mongoInsightsHost + "\n");
-		sb.append("mongoInsightsPort: " + this.mongoInsightsPort + "\n");
-		sb.append("mongoInsightsDatabase: " + this.mongoInsightsDatabase);
-		
-		sb.append("mongoPanelUser: " + this.mongoPanelUser + "\n");
-		sb.append("mongoPanelPass: " + this.mongoPanelPass + "\n");
-		sb.append("mongoPanelHost: " + this.mongoPanelHost + "\n");
-		sb.append("mongoPanelPort: " + this.mongoPanelPort + "\n");
-		sb.append("mongoPanelDatabase: " + this.mongoPanelDatabase);
-		
-		sb.append("mongoImagesUser: " + this.mongoImagesUser + "\n");
-		sb.append("mongoImagesPass: " + this.mongoImagesPass + "\n");
-		sb.append("mongoImagesHost: " + this.mongoImagesHost + "\n");
-		sb.append("mongoImagesPort: " + this.mongoImagesPort + "\n");
-		sb.append("mongoImagesDatabase: " + this.mongoImagesDatabase);
-
-		return sb.toString();
-	}
-
-
 }
