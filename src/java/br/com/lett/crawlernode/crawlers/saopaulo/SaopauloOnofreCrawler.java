@@ -256,8 +256,12 @@ public class SaopauloOnofreCrawler extends Crawler {
 		} else {
 			primaryImage = elementPrimaryImage.attr("href");
 		}
-
-		primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
+		
+		if (!primaryImage.startsWith("http://img")) {
+			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
+		} else {
+			primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super");
+		}
 
 		if(primaryImage.contains("imagem_prescricao")) { // only for meds
 			primaryImage = "";
