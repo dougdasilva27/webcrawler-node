@@ -256,6 +256,8 @@ public class CommonMethods {
 	 * @return
 	 */
 	public static Interval<Integer> findInterval(List<Interval<Integer>> intervals, Integer n) {
+		if (intervals == null) return null;
+		
 		int beg = 0;
 		int end = intervals.size() - 1;
 		
