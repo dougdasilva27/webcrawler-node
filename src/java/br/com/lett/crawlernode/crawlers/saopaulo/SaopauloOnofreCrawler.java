@@ -283,7 +283,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 				}
 				else{
-					secondaryImagesArray.put("http://www.onofre.com.br/" + e.attr("src").replace("Produto/Normal", "Produto/Super"));
+					secondaryImagesArray.put(e.attr("src").replace("Produto/Normal", "Produto/Super"));
 				}
 			}
 
