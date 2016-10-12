@@ -33,7 +33,7 @@ public class Proxies {
 	public static final String CHARITY 	= "charity";
 	public static final String AZURE 	= "azure";
 
-	public static final int MAX_ATTEMPTS_BUY 		= 3;
+	public static final int MAX_ATTEMPTS_BUY 		= 2;
 	public static final int MAX_ATTEMPTS_BONANZA 	= 3;
 	public static final int MAX_ATTEMPTS_CHARITY 	= 3;
 	public static final int MAX_ATTEMPTS_AZURE 		= 3;
