@@ -64,6 +64,7 @@ public class Proxies {
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		
 		this.intervalsMarketsMapWebcrawler = new HashMap<Integer, List<Interval<Integer>>>();
+		this.intervalsMarketsMapImages = new HashMap<Integer, List<Interval<Integer>>>();
 		
 		this.assembleIntervalsWebcrawler(markets);
 		this.assembleIntervalsImages(markets);
@@ -204,8 +205,10 @@ public class Proxies {
 			ArrayList<String> proxies = m.getProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
-				intervals.add( new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1) );
-				index = index + proxyMaxAttempts.get(proxies.get(i));
+				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
+					intervals.add( new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1) );
+					index = index + proxyMaxAttempts.get(proxies.get(i));
+				}
 			}
 			this.intervalsMarketsMapWebcrawler.put(m.getNumber(), intervals);
 		}		
@@ -218,8 +221,10 @@ public class Proxies {
 			ArrayList<String> proxies = m.getImageProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
-				intervals.add( new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1) );
-				index = index + proxyMaxAttempts.get(proxies.get(i));
+				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
+					intervals.add( new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1) );
+					index = index + proxyMaxAttempts.get(proxies.get(i));
+				}
 			}
 			this.intervalsMarketsMapImages.put(m.getNumber(), intervals);
 		}		
@@ -246,7 +251,12 @@ public class Proxies {
 	 * @return a String representing the name of the proxy service.
 	 */
 	public String selectProxy(Market market, boolean webcrawler, int attempt) {
-		List<Interval<Integer>> intervals = this.intervalsMarketsMapWebcrawler.get(market.getNumber());
+		List<Interval<Integer>> intervals = null;
+		if (webcrawler) {
+			intervals = this.intervalsMarketsMapWebcrawler.get(market.getNumber());
+		} else {
+			intervals = this.intervalsMarketsMapImages.get(market.getNumber());
+		}
 		Interval<Integer> interval = CommonMethods.findInterval(intervals, attempt);
 		if (interval != null) return interval.getName();
 		return null;

@@ -478,7 +478,7 @@ public class DataFetcher {
 
 			String randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-
+					
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
 				if (cookies.size() > 0) {
