@@ -176,6 +176,7 @@ public class ProcessedModel {
 
 				DateTime lrt = f.parseDateTime(compareTo.getLrt());
 
+				// Se já tinha sido lido hoje, acumula
 				if(compareTo.getChanges() != null && lrt.isAfter(new DateTime().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0))) {
 					newChanges = new JSONObject(compareTo.getChanges(), JSONObject.getNames(compareTo.getChanges())); //clone
 				} else {
