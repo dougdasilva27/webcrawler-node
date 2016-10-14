@@ -25,8 +25,8 @@ public class SessionFactory {
 			return new DiscoveryCrawlerSession(message, queueName, markets);
 		}
 		else if (queueName.equals(QueueHandler.DEVELOPMENT)) {
-			//return new InsightsCrawlerSession(message, queueName, markets);
-			return new ImageCrawlerSession(message, queueName, markets); // TODO remover
+			return new InsightsCrawlerSession(message, queueName, markets);
+			//return new ImageCrawlerSession(message, queueName, markets);
 		}
 		else if (queueName.equals(QueueHandler.IMAGES) || queueName.equals(QueueHandler.IMAGES_DEAD)) {
 			return new ImageCrawlerSession(message, queueName, markets);

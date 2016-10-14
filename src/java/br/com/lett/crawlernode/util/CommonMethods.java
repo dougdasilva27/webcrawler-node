@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -245,6 +244,34 @@ public class CommonMethods {
 			e.printStackTrace();
 		}
 
+		return null;
+	}
+	
+	/**
+	 * Given a list of ordered disjoint intervals, select the interval where
+	 * the number n fits, using a binary search algorithm.
+	 * 
+	 * @param n
+	 * @param intervals
+	 * @return
+	 */
+	public static Interval<Integer> findInterval(List<Interval<Integer>> intervals, Integer n) {
+		if (intervals == null) return null;
+		
+		int beg = 0;
+		int end = intervals.size() - 1;
+		
+		while(beg <= end) {
+			int mid = (beg + end)/2;
+			if (intervals.get(mid).getStart() <= n && intervals.get(mid).getEnd() >= n) {
+				return intervals.get(mid);
+			} else if (intervals.get(mid).getStart() <= n) {
+				beg = mid + 1;
+			} else {
+				end = mid - 1;
+			}
+		}
+		
 		return null;
 	}
 	

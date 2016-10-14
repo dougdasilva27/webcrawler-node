@@ -57,6 +57,9 @@ public class BrasilColomboCrawler extends Crawler {
 			Element elementInternalPid = doc.select(".codigo-produto").first();
 			if (elementInternalPid != null) {
 				internalPid = elementInternalPid.attr("content").trim();
+				if(internalPid.isEmpty()){
+					internalPid = elementInternalPid.text().replaceAll("[^0-9]", "").trim();
+				}
 			}
 
 			// Nome

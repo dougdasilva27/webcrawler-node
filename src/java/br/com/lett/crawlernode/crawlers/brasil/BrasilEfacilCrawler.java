@@ -104,6 +104,11 @@ public class BrasilEfacilCrawler extends Crawler {
 				Element elementInternalPid = doc.select("input#productId").first();
 				if (elementInternalPid != null) {
 					internalPid = elementInternalPid.attr("value").trim();
+				} else {
+					elementInternalPid = doc.select("input[name=productId]").first();
+					if (elementInternalPid != null) {
+						internalPid = elementInternalPid.attr("value").trim();
+					}
 				}
 				
 				// ID interno

@@ -42,6 +42,13 @@ public class BrasilMegamamuteCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 
+			// Pid
+			String internalPid = null;
+			Element elementPid = doc.select("#___rc-p-id").first();
+			if(elementPid != null){
+				internalPid = elementPid.attr("value");
+			}
+			
 			Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
 			String[] internalIds = null;
 			if (elementInternalId != null) {
@@ -52,9 +59,6 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
 				// ID interno
 				String internalId = skuId;
-
-				// Pid
-				String internalPid = internalId;
 
 				// requisitar informações da API
 				JSONArray jsonArrayAPI = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.megamamute.com.br/produto/sku/" + internalId), null, null);
