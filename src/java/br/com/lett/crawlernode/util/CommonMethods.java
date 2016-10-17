@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.NameValuePair;
@@ -87,6 +89,23 @@ public class CommonMethods {
 		String typeStr = (contentType != null) ? contentType.toLowerCase() : "";
 
 		return typeStr.contains("text") && !typeStr.contains("html");
+	}
+	
+	/**
+	 * Parse all numbers from a string and returns a list containing
+	 * all the found numbers.
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public static List<String> parseNumbers(String s) {
+		List<String> numbers = new ArrayList<String>();
+		Pattern p = Pattern.compile("-?\\d+");
+		Matcher m = p.matcher(s);
+		while (m.find()) {
+		  numbers.add(m.group());
+		}
+		return numbers;
 	}
 	
 	/**

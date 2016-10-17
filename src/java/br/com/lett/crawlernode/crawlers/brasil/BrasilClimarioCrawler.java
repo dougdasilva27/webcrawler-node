@@ -13,9 +13,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 //import java.util.ArrayList;
@@ -399,6 +401,9 @@ public class BrasilClimarioCrawler extends Crawler {
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
 
+				// prices
+				Prices prices = crawlPrices(doc);
+
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
 
@@ -416,6 +421,7 @@ public class BrasilClimarioCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -511,6 +517,79 @@ public class BrasilClimarioCrawler extends Crawler {
 			price = Float.parseFloat( json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		}
 
+		return price;
+	}
+
+	private Prices crawlPrices(Document doc) {
+		Prices prices = new Prices();
+		Float bankTicketPrice = crawlBankTicketPrice(doc);
+		Map<Integer, Float> installmentPriceMap = crawlCardInstallments(doc);
+
+		prices.insertBankTicket(bankTicketPrice);
+		prices.insertCardInstallment(installmentPriceMap);
+
+		return prices;
+	}
+	
+	/**
+	 * Cartão.
+	 * 
+	 * @param doc
+	 * @return
+	 */
+	private Map<Integer, Float> crawlCardInstallments(Document doc) {
+		Map<Integer, Float> installmentPriceMap = new HashMap<Integer, Float>();
+		Elements paymentElements = doc.select(".other-payment-method ul.other-payment-method-ul li");
+
+		// 1x
+		Element firstPrice = paymentElements.first();
+		if (firstPrice != null) {
+			Float price = Float.parseFloat( firstPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			if (price != null) {
+				installmentPriceMap.put(1, price);
+			}
+		}
+		
+		// get each installment number from the text inside the span tag
+		// e.g : <span> 4X de</span>
+		for (int i = 1; i < paymentElements.size(); i++) {
+			Element span = paymentElements.get(i).select("span").first();
+			if (span != null) {
+				List<String> numbers = CommonMethods.parseNumbers(span.text());
+				if (numbers.size() > 0) {
+					
+					// the installment number
+					Integer installment = Integer.parseInt(numbers.get(0));
+					
+					// the installment value
+					Float price = null;
+					Element priceElement = paymentElements.get(i).select("strong").first();
+					if (priceElement != null) {
+						price = Float.parseFloat( priceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+					}
+					
+					if (installment != null && price != null) {
+						installmentPriceMap.put(installment, price);
+					}
+				}
+			}
+			
+		}
+
+		return installmentPriceMap;
+	}
+
+	/**
+	 * Boleto.
+	 * 
+	 * @return
+	 */
+	private Float crawlBankTicketPrice(Document doc) {
+		Float price = null;
+		Element paymentElement = doc.select(".other-payment-method ul.other-payment-method-ul li").first();
+		if (paymentElement != null) {
+			price = Float.parseFloat( paymentElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		}
 		return price;
 	}
 
@@ -610,10 +689,9 @@ public class BrasilClimarioCrawler extends Crawler {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
 
 					skuJson = new JSONObject
-							(
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-									);
+							(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+							 node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+							);
 
 				}
 			}        

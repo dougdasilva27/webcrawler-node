@@ -75,5 +75,10 @@ public class Prices {
 	public JSONObject getPricesJson() {
 		return this.prices;
 	}
+	
+	@Override
+	public String toString() {
+		return this.prices.toString();
+	}
 
 }
