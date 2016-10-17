@@ -4,20 +4,21 @@ import org.json.JSONArray;
 
 public class Product {
 	
-	private String url;
-	private String internalId;
-	private String internalPid;
-	private String name;
-	private Float price;
-	private boolean available;
-	private String category1;
-	private String category2;
-	private String category3;
-	private String primaryImage;
-	private String secondaryImages;
-	private String description;
-	private JSONArray marketplace;
-	private Integer stock;
+	private String 		url;
+	private String 		internalId;
+	private String 		internalPid;
+	private String 		name;
+	private Float 		price;
+	private Prices 		prices;
+	private boolean 	available;
+	private String 		category1;
+	private String 		category2;
+	private String 		category3;
+	private String 		primaryImage;
+	private String 		secondaryImages;
+	private String 		description;
+	private JSONArray 	marketplace;
+	private Integer 	stock;
 	
 	public Product() {
 		this.description = "";
@@ -150,6 +151,14 @@ public class Product {
 		if(name == null || name.isEmpty()) return true;
 		
 		return false;
+	}
+
+	public Prices getPrices() {
+		return prices;
+	}
+
+	public void setPrices(Prices prices) {
+		this.prices = prices;
 	}
 	
 	@Override
