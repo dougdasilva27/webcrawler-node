@@ -176,24 +176,30 @@ public class DigitalContentAnalyser {
 	private static String sanitizeBeforeValidateRule(String content) {
 
 		String sanitizedContent = content;
-
+		
 		// Essas palavras ou caracteres devem ser substituídas em qualquer situação, não apenas na lista negra
 		sanitizedContent = sanitizedContent.replace("'", "");
 		sanitizedContent = sanitizedContent.replace("`", "");
 		sanitizedContent = sanitizedContent.replace("+", " ");
 		sanitizedContent = sanitizedContent.replace(",", " ");
-		sanitizedContent = sanitizedContent.replace(".", " ");
+		//sanitizedContent = sanitizedContent.replace(".", " ");
 		sanitizedContent = sanitizedContent.replace("!", " ");
 		sanitizedContent = sanitizedContent.replace("?", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u00a0"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u2007"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u202F"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u3000"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u1680"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u180e"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u200a"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\xA0"," ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u205f"," ");
+
+		sanitizedContent = sanitizedContent.replaceAll("\\u00a0", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u2007", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u202F", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u3000", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u1680", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u180e", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u200a", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\xA0", " ");
+		sanitizedContent = sanitizedContent.replaceAll("\\u205f", " ");	
+		
+		// create replacement for double quotes
+		sanitizedContent = sanitizedContent.replaceAll("\\u201d", "\""); // ”
+		sanitizedContent = sanitizedContent.replaceAll("\\u201e", "\""); // „
+		sanitizedContent = sanitizedContent.replaceAll("\\u201c", "\""); // “
 
 		// Básico - Remover caixa alta e espaços vazios no começo e fim
 		sanitizedContent = sanitizedContent.toLowerCase();
@@ -455,7 +461,7 @@ public class DigitalContentAnalyser {
 			} else {
 				Logging.printLogDebug(logger, session, "Image features found.");
 			}
-			
+
 			// search image features for the desired md5
 			Logging.printLogDebug(logger, session, "Searching for image features for md5: " + md5Desired + " ...");
 			ImageFeatures imageFeaturesDesired = DigitalContentAnalyserUtils.searchImageFeatures(mongo, md5Desired);
