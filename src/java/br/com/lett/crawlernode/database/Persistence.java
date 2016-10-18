@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ public class Persistence {
 		String internal_pid = product.getInternalPid();
 		String name = product.getName();
 		Float price = product.getPrice();
+		JSONObject prices = (product.getPrices() == null ? null : product.getPrices().getPricesJson());
 		String cat1 = product.getCategory1();
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
@@ -118,6 +120,7 @@ public class Persistence {
 			fields.append(", internal_pid"); 
 			fields.append(", url");
 			fields.append(", price");
+			fields.append(", prices");
 			fields.append(", stock");
 			fields.append(", name");
 			fields.append(", pic");
@@ -132,29 +135,17 @@ public class Persistence {
 			values += available;
 			values += ", " + session.getMarket().getNumber();
 			values += ", '" + internal_id + "'"; 
-
-			if (internal_pid != null) values += ", '" + internal_pid + "'";
-			else values += ", NULL";
-
+			values += (internal_pid == null ? ", NULL" : ", '" + internal_pid + "'");
 			values += ", '" + url + "'";			
 			values += ", " + price;
-			values += ", " + stock;
+			values += (prices == null ? ", NULL" : ", " + "'" + prices.toString() + "'" + "::json");
+			values += (stock == null ? ", NULL" : ", " + stock);
 			values += ", '" + name + "'";
-
-			if (foto != null) values += ", '" + foto + "'";
-			else values += ", NULL";
-
-			if (secondary_pics != null) values += ", '" + secondary_pics + "'";
-			else values += ", NULL";
-
-			if (cat1 != null) values += ", '" + cat1 + "'";
-			else values += ", NULL";
-
-			if (cat2 != null) values += ", '" + cat2 + "'";
-			else values += ", NULL";
-
-			if (cat3 != null) values += ", '" + cat3 + "'";
-			else values += ", NULL";
+			values += (foto == null ? ", NULL" : ", '" + foto + "'");
+			values += (secondary_pics == null ? ", NULL" : ", '" + secondary_pics + "'");
+			values += (cat1 == null ? ", NULL" : ", '" + cat1 + "'");
+			values += (cat2 == null ? ", NULL" : ", '" + cat2 + "'");
+			values += (cat3 == null ? ", NULL" : ", '" + cat3 + "'");
 
 			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
 				fields.append(", description");
@@ -178,7 +169,7 @@ public class Persistence {
 			sqlExecuteCrawler.append("( ");
 			sqlExecuteCrawler.append(values);
 			sqlExecuteCrawler.append("); ");
-
+			
 			sqlExecuteCrawler.append("INSERT INTO crawler_old ");
 			sqlExecuteCrawler.append("( ");
 			sqlExecuteCrawler.append(fields.toString());
