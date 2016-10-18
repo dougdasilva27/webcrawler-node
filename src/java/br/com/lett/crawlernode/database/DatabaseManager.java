@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +58,19 @@ public class DatabaseManager {
 		try {
 			Class.forName("org.postgresql.Driver");
 			String url = "jdbc:postgresql://" + postgresCredentials.getHost() + ":" + postgresCredentials.getPort() + "/" + postgresCredentials.getDatabase();
-			conn = DriverManager.getConnection(url, postgresCredentials.getUsername(), postgresCredentials.getPass());
-
+			
+			String userName = postgresCredentials.getUsername();
+			String pass = postgresCredentials.getPass();
+			
+			// setting connection properties
+			Properties connectionProperties = new Properties();
+			
+			connectionProperties.put("tcpKeepAlive", "true");			
+			if (userName != null) connectionProperties.put("user", userName);
+	        if (pass != null) connectionProperties.put("password", pass);
+	        
+			conn = DriverManager.getConnection(url, connectionProperties);
+			
 			Logging.printLogDebug(logger, "Successfully connected to Postgres!");
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "An error occurred when trying to connect to Postgres.");
