@@ -24,23 +24,23 @@ public class SaopauloExtraCrawler extends Crawler {
 		super(session);
 	}
 	
-//	@Override
-//	public void handleCookiesBeforeFetch() {
-//	    
-//		// Criando cookie da loja 21 = São Paulo capital
-//	    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
-//	    cookie.setDomain(".deliveryextra.com.br");
-//	    cookie.setPath("/");
-//	    cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-//	    this.cookies.add(cookie);
-//	    
-//		// Criando cookie simulando um usuário logado
-//	    BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
-//	    cookie2.setDomain(".deliveryextra.com.br");
-//	    cookie2.setPath("/");
-//	    cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-//	    this.cookies.add(cookie2);
-//	}
+	@Override
+	public void handleCookiesBeforeFetch() {
+	    
+		// Criando cookie da loja 21 = São Paulo capital
+	    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
+	    cookie.setDomain(".deliveryextra.com.br");
+	    cookie.setPath("/");
+	    cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+	    this.cookies.add(cookie);
+	    
+		// Criando cookie simulando um usuário logado
+	    BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
+	    cookie2.setDomain(".deliveryextra.com.br");
+	    cookie2.setPath("/");
+	    cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+	    this.cookies.add(cookie2);
+	}
 
 
 	@Override
