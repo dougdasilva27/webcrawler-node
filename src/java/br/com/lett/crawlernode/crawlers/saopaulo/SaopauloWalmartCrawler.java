@@ -15,9 +15,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloWalmartCrawler extends Crawler {
@@ -45,7 +47,8 @@ public class SaopauloWalmartCrawler extends Crawler {
 			String name = elementName.text().replace("'","").replace("’","").trim();
 
 			// Pid
-			String internalPid = session.getOriginalURL().split("/")[4].trim();
+			String[] tokens = session.getOriginalURL().split("/");
+			String internalPid = tokens[tokens.length-2].trim();
 
 			// Categorias
 			Elements elementCategories = doc.select(".breadcrumb li"); 
@@ -148,9 +151,6 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 				String productCustomName = productsListInfo.getJSONObject(p).getString("name");
 
-				// Fazendo request da página com informações de lojistas
-				Document infoDoc = this.fetchMarketplaceInfoDoc(productId, internalPid);
-
 				// Estoque
 				Integer stock = null;
 
@@ -161,7 +161,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				boolean available = false;
 
 				// availability, price and marketplace
-				Map<String, Float> marketplaceMap = this.extractMarketplace(infoDoc, doc);
+				Map<String, Float> marketplaceMap = this.extractMarketplace(productId, internalPid);
 				JSONArray marketplace = new JSONArray();
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
@@ -175,6 +175,9 @@ public class SaopauloWalmartCrawler extends Crawler {
 						marketplace.put(partner);
 					}
 				}
+				
+				//Prices
+//				Prices prices = crawlPrices(internalPid, price);
 
 				Product product = new Product();
 				
@@ -183,6 +186,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name + " " + productCustomName);
 				product.setPrice(price);
+				//product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -203,52 +207,56 @@ public class SaopauloWalmartCrawler extends Crawler {
 		return products;
 	}
 
-	private Map<String, Float> extractMarketplace(Document docMarketplace, Document doc) {
+	private Map<String, Float> extractMarketplace(String productId, String internalPid) {
 		Map<String, Float> marketplace = new HashMap<String, Float>();
 
-		Elements marketplaceMainpage = doc.select("#buy-box-accordion section");
-
-		for(Element e : marketplaceMainpage){
-
-			//Name
+		// Fazendo request da página com informações de lojistas
+		Document infoDoc = fetchMarketplaceInfoDocMainPage(productId);
+		Elements sellers = infoDoc.select(".content-wrapper");
+		
+		for(Element e : sellers){
 			Element nameElement = e.select(".seller-name a").first();
-
+			
 			if(nameElement != null){
-				String name = nameElement.text().trim().toLowerCase();
-
-				Element priceElement = e.select(".payment-price").first();
+				String name = nameElement.ownText().trim().toLowerCase();
 				Float price = null;
-
+				
+				Element priceElement = e.select(".product-price").first();
+				
 				if(priceElement != null){
-					price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					price = Float.parseFloat(priceElement.attr("data-sellprice").trim());
 				}
-
+				
 				marketplace.put(name, price);
 			}
-
 		}
+		
+		Element moreSellers = infoDoc.select(".more-sellers-link").first();
+		
+		if(moreSellers != null){
+			Document docMarketPlaceMoreSellers = fetchMarketplaceInfoDoc(productId, internalPid);
+						
+			Elements marketplaces = docMarketPlaceMoreSellers.select(".sellers-list tr:not([class])");
 
+			for (Element e : marketplaces) {	
 
-		Elements marketplaces = docMarketplace.select(".sellers-list tr:not([class])");
+				//Name
+				Element nameElement = e.select("td span[data-seller]").first();
 
-		for (Element e : marketplaces) {	
+				if(nameElement != null){
+					String name = nameElement.text().trim().toLowerCase();
 
-			//Name
-			Element nameElement = e.select("td span[data-seller]").first();
+					Element priceElement = e.select(".payment-price").first();
+					Float price = null;
 
-			if(nameElement != null){
-				String name = nameElement.text().trim().toLowerCase();
+					if(priceElement != null){
+						price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					}
 
-				Element priceElement = e.select(".payment-price").first();
-				Float price = null;
-
-				if(priceElement != null){
-					price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					marketplace.put(name, price);
 				}
 
-				marketplace.put(name, price);
 			}
-
 		}
 
 		return marketplace;
@@ -260,6 +268,49 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 		return Jsoup.parse(fetchResult);
 	}
+	
+	private Document fetchMarketplaceInfoDocMainPage(String productId) {
+		String infoUrl = "https://www.walmart.com.br/xhr/sku/buybox/"+ productId +"/?isProductPage=true";					
+		String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+
+		return Jsoup.parse(fetchResult);
+	}
 
 
+	private Prices crawlPrices(String internalPid, Float price){
+		Prices p = new Prices();
+		Map<Integer, Float> installmentPriceMap = new HashMap<>();
+		
+		//preço principal é o mesmo preço do boleto
+		p.insertBankTicket(price);
+		
+		if(price != null){
+			//preço principal é o mesmo preço de 1x no cartão
+			installmentPriceMap.put(1, price);
+			
+			String urlInstallmentPrice = "https://www.walmart.com.br/produto/installment/1,"+ internalPid +","+ price +",VISA/"; 
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlInstallmentPrice, null, cookies);
+			Elements installments = doc.select(".installment-table tr:not([id])");
+			
+			for(Element e : installments){
+				Element parc = e.select("td.parcelas").first();
+				
+				if(parc != null){
+					Integer installment = Integer.parseInt(parc.text().replaceAll("[^0-9]", "").trim());
+					
+					Element parcValue = e.select(".valor-parcela").first();
+					
+					if(parcValue != null){
+						Float installmentValue = Float.parseFloat(parcValue.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						
+						installmentPriceMap.put(installment, installmentValue);
+					}
+				}
+			}
+			
+			p.insertCardInstallment(installmentPriceMap);
+		}
+		
+		return p;
+	}
 }
