@@ -1,18 +1,19 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -179,6 +180,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					price = priceDouble.floatValue();
 				}
 
+				Element idForPriceElement = doc.select(".buy-option").first();
+				String idForPrice = null;
+				if(idForPriceElement != null){
+					idForPrice = idForPriceElement.attr("value");
+				}
+				
 				// marketplace
 				Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
 				if (marketplaceName != null) {
@@ -194,6 +201,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					}
 				}
 				
+//				Prices prices = crawlPrices(idForPrice, price);
+				
 				// Descrição
 				String description = "";
 				Element elementDescription = doc.select(".factsheet-main-container").first();
@@ -207,6 +216,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+//				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -269,7 +279,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							Double priceDouble = skuJsonInfo.getDouble("salePrice");
 							price = priceDouble.floatValue();
 						}
-
+						
 						// marketplace
 						Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
 						if (marketplaceName != null) {
@@ -285,6 +295,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							}
 						}
 						
+//						Prices prices = crawlPrices(internalIdsecondPart, price);
+						
 						// Descrição -- tem uma para cada variacao -- usando uma API do magazineluiza para pegar a descricao correspondente
 						String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalIdsecondPart + "/";
 						String description = DataFetcher.fetchString("GET", session, descriptionURL, null, null);
@@ -295,6 +307,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						product.setInternalPid(variationInternalPid);
 						product.setName(variationName);
 						product.setPrice(price);
+//						product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);
@@ -359,6 +372,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						}
 					}
 					
+					Element idForPriceElement = doc.select(".buy-option").first();
+					String idForPrice = null;
+					if(idForPriceElement != null){
+						idForPrice = idForPriceElement.attr("value");
+					}
+					
+//					Prices prices = crawlPrices(idForPrice, price);
+					
 					// Descrição
 					String description = "";
 					Element elementDescription = doc.select(".factsheet-main-container").first();
@@ -372,6 +393,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					product.setInternalPid(variationInternalPid);
 					product.setName(variationName);
 					product.setPrice(price);
+//					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -429,5 +451,55 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		return price;
 	}
 
+	private Prices crawlPrices(String internalId, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			String urlPrices = "http://www.magazineluiza.com.br/produto/"+ internalId +"/preco.json";
+			
+			Map<Integer, Float> installmentsPriceMap = new HashMap<>();
+			
+			JSONObject jsonPrices = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, urlPrices, null, cookies);
+			
+			if(jsonPrices.has("payload")){
+				JSONObject payload = jsonPrices.getJSONObject("payload");
+				
+				if(payload.has("data")){
+					JSONObject data = payload.getJSONObject("data");
+					
+					if(data.has("product")){
+						JSONObject product = data.getJSONObject("product");
+						
+						if(product.has("ownCardPaymentOption")){
+							JSONArray installments = product.getJSONArray("ownCardPaymentOption");
+							
+							for(int i = 0; i < installments.length()-1; i++){
+								JSONObject installment = installments.getJSONObject(i);
+								
+								if(installment.has("number")){
+									Integer parcela = installment.getInt("number");
+									
+									if(installment.has("value")){
+										Float value = Float.parseFloat(installment.getString("value"));
+										
+										installmentsPriceMap.put(parcela, value);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			//preço uma vez no cartão é igual ao do boleto.
+			if(installmentsPriceMap.containsKey(1)){
+				prices.insertBankTicket(installmentsPriceMap.get(1));
+			}
+			
+			prices.insertCardInstallment(installmentsPriceMap);
+		}
+		
+		return prices;
+	}
 
 }
