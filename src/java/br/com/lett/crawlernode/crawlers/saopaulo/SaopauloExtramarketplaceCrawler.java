@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -149,8 +150,11 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					// Getting name variation
 					String variationName = makeVariationName(name, sku).trim();
 
+					// Document marketplace
+					Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
+					
 					// Marketplace map
-					Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(modifiedURL, sku, documentsMarketPlaces, variationName);
+					Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(docMarketplace);
 
 					// Assemble marketplace from marketplace map
 					JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
@@ -160,7 +164,13 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 					// Price
 					Float variationPrice = this.crawlPrice(marketplaceMap);
-
+					
+					// Principal Seller
+					boolean isPrincipalSeller = verifyPrincipalSellerVariations(marketplaceMap, docMarketplace);
+					
+					// Prices
+//					Prices prices = crawlPricesVariations(doc, variationPrice, isPrincipalSeller);
+					
 					Product product = new Product();
 					
 					product.setUrl(session.getOriginalURL());
@@ -168,6 +178,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
 					product.setPrice(variationPrice);
+//					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -206,6 +217,12 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				// Price
 				Float price = this.crawlPrice(marketplaceMap);
 
+				// Lojista Principal
+				boolean isPrincipalSeller = verifyPrincipalSeller(doc);
+				
+				// Prices
+//				Prices prices = this.crawlPricesSingleProduct(doc, price, isPrincipalSeller);
+				
 				Product product = new Product();
 				
 				product.setUrl(session.getOriginalURL());
@@ -213,6 +230,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+//				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -343,7 +361,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 				String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
 				Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
 
-				marketplace.put(partnerName, partnerPrice);
+				Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+				
+				if(comprar == null) marketplace.put(partnerName, partnerPrice);
 
 			}
 		}
@@ -361,14 +381,14 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		if(idsForUrlMarketPlace != null){
 			Document docMarketPlaceProdOne = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(0), url);
 			String[] namev = docMarketPlaceProdOne.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
-			documentsMarketPlaces.put(namev[namev.length-1].trim(),docMarketPlaceProdOne);
+			documentsMarketPlaces.put(namev[namev.length-1].trim().toLowerCase(),docMarketPlaceProdOne);
 
 			if(idsForUrlMarketPlace.size() == 2){
 				Document docMarketPlaceProdTwo = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(1), url);
 				String[] namev2 = docMarketPlaceProdTwo.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
 				documentsMarketPlaces.put(namev2[namev2.length-1].trim(), docMarketPlaceProdTwo);
 			} else {
-				documentsMarketPlaces.put(namev[namev.length-1].trim(), docMarketPlaceProdOne);
+				documentsMarketPlaces.put(namev[namev.length-1].trim().toLowerCase(), docMarketPlaceProdOne);
 			}
 		}
 
@@ -435,40 +455,19 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		return skuOptions;
 	}
 
-	private Map<String, Float> crawlMarketplacesForMutipleVariations(String url, Element sku, Map<String, Document> documentsMarketPlaces, String name ) {
+	private Map<String, Float> crawlMarketplacesForMutipleVariations(Document docMarketplaceInfo ) {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 
-		if(!sku.text().contains("Esgotado")){
-			Document docMarketplaceInfo = new Document(url);
-			if(documentsMarketPlaces.size() > 0){
-				
-				if(documentsMarketPlaces.size() == 1){
-					for(String key : documentsMarketPlaces.keySet()){
-						docMarketplaceInfo = documentsMarketPlaces.get(key);
-					}
-				} else {
-					String[] tokens = name.split("-");
-					String nameV = tokens[tokens.length-1].trim();
-					
-					if(documentsMarketPlaces.containsKey(nameV)){
-						docMarketplaceInfo = documentsMarketPlaces.get(nameV);
-					}
-				}
-				
-			} else {
-				docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
-			}
+		Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
 
-			Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
+		for(Element linePartner: lines) {
 
-			for(Element linePartner: lines) {
+			String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
+			Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
-				String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-				Float partnerPrice = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-
-				marketplace.put(partnerName, partnerPrice);
-
-			}
+			Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+			
+			if(comprar == null) marketplace.put(partnerName, partnerPrice);
 		}
 
 		return marketplace;
@@ -643,6 +642,141 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		}
 
 		return urlFinal;
+	}
+	
+	private Document getDocumentMarketpalceForSku(Map<String,Document> documentsMarketPlaces, String name, Element sku, String url){
+		Document docMarketplaceInfo = new Document(url);
+		if(!sku.text().contains("Esgotado")){
+			if(documentsMarketPlaces.size() > 0){
+				
+				if(documentsMarketPlaces.size() == 1){
+					for(String key : documentsMarketPlaces.keySet()){
+						docMarketplaceInfo = documentsMarketPlaces.get(key);
+					}
+				} else {
+					String[] tokens = name.split("-");
+					String nameV = tokens[tokens.length-1].trim().toLowerCase();
+					
+					if(documentsMarketPlaces.containsKey(nameV)){
+						docMarketplaceInfo = documentsMarketPlaces.get(nameV);
+					}
+				}
+				
+			} else {
+				docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
+			}
+		}
+		
+		return docMarketplaceInfo;
+	}
+	
+	private Prices crawlPricesSingleProduct(Document doc, Float price, boolean isPrincipalSeller){
+		Prices prices = new Prices();
+	
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		
+			// Preço no boleto e preço á vista no cartão são iguais
+			Element priceDiscount = doc.select(".price.discount").first();
+			
+			if(priceDiscount != null){
+				Float priceVista = Float.parseFloat(priceDiscount.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				prices.insertBankTicket(priceVista);
+				installmentPriceMap.put(1, priceVista);
+			} else {
+				prices.insertBankTicket(price);
+				installmentPriceMap.put(1, price);
+			}
+			
+			if(isPrincipalSeller){
+				Elements installments = doc.select(".tabsCont tr");
+				
+				for(int i = 1; i < installments.size(); i++){ // start with index 1 because the first item is the title
+					Element e = installments.get(i);
+					String id = e.attr("id");
+					
+					if(!id.contains("CartaoFlex")){
+					
+						Element parcela = e.select("> th").first();
+						
+						if(parcela != null){
+							String parcelaText = parcela.text().toLowerCase();
+							int x = parcelaText.indexOf("x");
+							
+							Integer installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
+							
+							Element valor = e.select("> td").first();
+							
+							if(valor != null){
+								Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+								
+								installmentPriceMap.put(installment, value);
+							}
+						}
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
+	private Prices crawlPricesVariations(Document doc, Float price, boolean isPrincipalSeller){
+		Prices prices = new Prices();
+		
+		if(!isPrincipalSeller){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			prices.insertBankTicket(price);
+			installmentPriceMap.put(1, price);
+			
+			prices.insertCardInstallment(installmentPriceMap);
+		} else {
+			prices = crawlPricesSingleProduct(doc, price, isPrincipalSeller);
+		}
+		
+		
+		return prices;
+	}
+
+	private boolean verifyPrincipalSeller(Document doc){
+		Element seller = doc.select("#ctl00_Conteudo_ctl25_lnkNomeLojistaEleito").first();
+		
+		if(seller != null){
+			String sellerName = seller.text().toLowerCase().trim();
+			
+			if(sellerName.equals(MAIN_SELLER_NAME_LOWER)) return true;
+		}
+		
+		return false;
+	}
+	
+	private boolean verifyPrincipalSellerVariations(Map<String, Float> sellers, Document docMarketplace){
+		Float bestPrice = null;
+		String bestSeller = null;
+		
+		if(sellers.size() > 0){
+				for(String sellerName : sellers.keySet()){
+				if(bestPrice == null){
+					bestPrice = sellers.get(sellerName);
+					bestSeller = sellerName;
+				} else if(sellers.get(sellerName) < bestPrice) {
+					bestPrice = sellers.get(sellerName);
+					bestSeller = sellerName;
+				} else if(sellers.get(sellerName).equals(bestPrice) && sellerName.equals(MAIN_SELLER_NAME_LOWER)){
+					bestPrice = sellers.get(sellerName);
+					bestSeller = sellerName;
+				}
+			}
+			
+			if(bestSeller.equals(MAIN_SELLER_NAME_LOWER)){				
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 }

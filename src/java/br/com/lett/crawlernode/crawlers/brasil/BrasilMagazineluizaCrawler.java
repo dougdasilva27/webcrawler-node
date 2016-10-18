@@ -473,7 +473,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						if(product.has("ownCardPaymentOption")){
 							JSONArray installments = product.getJSONArray("ownCardPaymentOption");
 							
-							for(int i = 0; i < installments.length()-1; i++){
+							for(int i = 0; i < installments.length(); i++){
 								JSONObject installment = installments.getJSONObject(i);
 								
 								if(installment.has("number")){
