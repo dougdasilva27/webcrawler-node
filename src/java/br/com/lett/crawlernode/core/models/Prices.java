@@ -5,16 +5,16 @@ import java.util.Map;
 import org.json.JSONObject;
 
 public class Prices {
-	
+
 	public static final String BANK_TICKET_FIELD_NAME = "bank_ticket";
 	public static final String CARD_FIELD_NAME = "card";
-	
+
 	private JSONObject prices;
-	
+
 	public Prices() {
 		this.prices = new JSONObject();
 	}
-	
+
 	/**
 	 * Boleto bancario.
 	 * If price is null, the field will not exist.
@@ -28,14 +28,11 @@ public class Prices {
 	 * @param bankTicketPrice
 	 */
 	public void insertBankTicket(Float bankTicketPrice) {
-		if (bankTicketPrice != null) {
-			JSONObject bankTicket = new JSONObject();
-			bankTicket.put("1", bankTicketPrice);
-			
-			this.prices.put(BANK_TICKET_FIELD_NAME, bankTicket);
-		}
+		JSONObject bankTicket = new JSONObject();
+		bankTicket.put("1", bankTicketPrice);
+		this.prices.put(BANK_TICKET_FIELD_NAME, bankTicket);
 	}
-	
+
 	/**
 	 * 
 	 * @return
@@ -48,7 +45,7 @@ public class Prices {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Parcelado.
 	 * 
@@ -71,11 +68,11 @@ public class Prices {
 			this.prices.put(CARD_FIELD_NAME, installmentPrices);
 		}
 	}
-	
+
 	public JSONObject getPricesJson() {
 		return this.prices;
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.prices.toString();
