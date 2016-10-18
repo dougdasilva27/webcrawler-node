@@ -170,7 +170,7 @@ public class Product {
 		sb.append("internalPid: " + this.internalPid + "\n");
 		sb.append("name: " + this.name + "\n");
 		sb.append("price: " + this.price + "\n");
-		sb.append("prices: " + this.prices.toString() + "\n");
+		if (this.prices != null) sb.append("prices: " + this.prices.toString() + "\n");
 		sb.append("available: " + this.available + "\n");
 		sb.append("marketplace: " + this.marketplace + "\n");
 		sb.append("category1: " + this.category1 + "\n");
