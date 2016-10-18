@@ -15,7 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+
 import com.google.gson.Gson;
+
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -29,6 +31,7 @@ import br.com.lett.crawlernode.core.imgprocessing.ImageRescaler;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.CrawlerSessionError;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
+
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -66,21 +69,7 @@ public class ImageCrawler implements Runnable {
 
 				if (simpleDownloadResult.getImageFile() != null && simpleDownloadResult.getMd5() != null ) {
 
-					// create a buffered image from the downloaded image
-					Logging.printLogDebug(logger, session, "Creating a buffered image...");
-					BufferedImage bufferedImage = createImage(simpleDownloadResult.getImageFile());
-
-					// rescale the image
-					Logging.printLogDebug(logger, session, "Rescaling the image...");
-					rescale(bufferedImage, simpleDownloadResult.getImageFile());
-
-					// upload to Amazon
-					Logging.printLogWarn(logger, session, "Uploading image to Amazon...");
-					S3Service.uploadImageToAmazon(session, simpleDownloadResult.getMd5());
-
-					// store image metadata, including descriptors and hash
-					// using the md5 of the local original file, to maintain as the original code					
-					storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
+					update(simpleDownloadResult);
 				}
 			}
 
@@ -106,7 +95,6 @@ public class ImageCrawler implements Runnable {
 				if ( amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.getMd5()) ) {
 					Logging.printLogDebug(logger, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
-					
 					ImageDownloadResult finalDownloadResult;
 					
 					if(amazonMd5 != null) {
@@ -115,22 +103,12 @@ public class ImageCrawler implements Runnable {
 						finalDownloadResult = simpleDownloadResult;
 					}
 					
-					// create a buffered image from the downloaded image
-					Logging.printLogDebug(logger, session, "Creating a buffered image...");
-					BufferedImage bufferedImage = createImage(finalDownloadResult.getImageFile());
-
-					// apply rescaling on the image
-					Logging.printLogDebug(logger, session, "Rescaling the image...");
-					rescale(bufferedImage, finalDownloadResult.getImageFile());
-
-					// upload to Amazon
-					Logging.printLogWarn(logger, session, "Uploading image to Amazon...only the md5 isn't null");
-					if (finalDownloadResult.getMd5() != null) {
-						S3Service.uploadImageToAmazon(session, finalDownloadResult.getMd5());
-					}
-
-					// store image metadata, including descriptors and hash
-					storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
+					update(finalDownloadResult);
+				}
+				else if (Main.executionParameters.mustForceImageUpdate()) {
+					Logging.printLogDebug(logger, session, "The image md5 is already on Amazon, but i want to force the update.");
+					
+					update(simpleDownloadResult);
 				}
 				else {
 					Logging.printLogDebug(logger, session, "The image md5 is already on Amazon.");
@@ -142,6 +120,36 @@ public class ImageCrawler implements Runnable {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}		
 
+	}
+	
+	/**
+	 * This method takes the following steps:
+	 * 1) Create all rescaled versions of the image
+	 * 2) Upload all the content to the Amazon bucket
+	 * 3) Stores all the image metadata on Mongo
+	 * 
+	 * @param imageDownloadResult
+	 * @throws IOException
+	 */
+	private void update(ImageDownloadResult imageDownloadResult) throws IOException {
+		
+		// create a buffered image from the downloaded image
+		Logging.printLogDebug(logger, session, "Creating a buffered image...");
+		BufferedImage bufferedImage = createImage(imageDownloadResult.getImageFile());
+
+		// apply rescaling on the image
+		Logging.printLogDebug(logger, session, "Rescaling the image...");
+		rescale(bufferedImage, imageDownloadResult.getImageFile());
+
+		// upload to Amazon
+		Logging.printLogWarn(logger, session, "Uploading image to Amazon...only the md5 isn't null");
+		if (imageDownloadResult.getMd5() != null) {
+			S3Service.uploadImageToAmazon(session, imageDownloadResult.getMd5());
+		}
+
+		// store image metadata, including descriptors and hash
+		// using the md5 of the local original file, to maintain as the original code
+		storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 	}
 
 	private ImageDownloadResult simpleDownload() throws IOException {

@@ -21,32 +21,40 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
-	
+
 	/**
 	 * The maximum number of threads that can be used by the crawler
 	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
-	
+
 	private static final String ENV_IMAGE_TASK 	= "IMAGE_TASK";
 	private static final String IMAGE_TASK_ON 	= "ON";
 	private static final String IMAGE_TASK_OFF 	= "OFF";
-	
+
 	private static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
 
 	private Options options;
 	private String environment;
 	private String version;
 	private Boolean debug;
+
+	/** 
+	 * In case we want to force image update on Amazon bucket, when downloading images
+	 * In some cases the crawler must update the redimensioned versions of images, and we must use
+	 * this option in case we want to force this, even if the image on market didn't changed. 
+	 */
+	private boolean forceImageUpdate;
+
 	private String tmpImageFolder;
 	private boolean imageTaskActivated;
 	private String[] args;
-	
+
 	/**
 	 * Number of threads used by the crawler
 	 * Value is passed by an environment variable
 	 */
 	private int nthreads;
-	
+
 	private int coreThreads;
 
 	public ExecutionParameters(String[] args) {
@@ -58,13 +66,13 @@ public class ExecutionParameters {
 	public void setUpExecutionParameters() {
 		this.createOptions();
 		this.parseCommandLineOptions();
-		
+
 		// get the number of threads on environment variable
 		this.nthreads = getEnvNumOfThreads();
-		
+
 		// get the number of core threads on environment variable
 		this.coreThreads = getEnvCoreThreads();
-		
+
 		// get the flag for image tasks on environment variable
 		this.imageTaskActivated = getEnvImageTaskActivated();
 
@@ -78,7 +86,7 @@ public class ExecutionParameters {
 	public String getEnvironment() {
 		return this.environment;
 	}
-	
+
 	public boolean isImageTaskActivated() {
 		return this.imageTaskActivated;
 	}
@@ -87,6 +95,7 @@ public class ExecutionParameters {
 
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
+		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
 		options.addOption("environment", true, "Environment [development, production]");
 		options.addOption("version", true, "Crawler node version");
 		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
@@ -103,6 +112,9 @@ public class ExecutionParameters {
 			// debug mode
 			debug = cmd.hasOption("debug");
 
+			// force image update flag
+			forceImageUpdate = cmd.hasOption("force_image_update");
+
 			// environment
 			if (cmd.hasOption("environment")) {
 				environment = cmd.getOptionValue("environment");
@@ -113,14 +125,14 @@ public class ExecutionParameters {
 			} else {
 				help();
 			}
-			
+
 			// temporary images folder
 			if (cmd.hasOption("tmpImageFolder")) {
 				this.tmpImageFolder = cmd.getOptionValue("tmpImageFolder");
 			} else {
 				help();
 			}
-			
+
 			// version
 			if (cmd.hasOption("version")) {
 				version = cmd.getOptionValue("version");
@@ -138,13 +150,15 @@ public class ExecutionParameters {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		
+
 		sb.append("\n");
 		sb.append("Debug: " + this.debug);
 		sb.append("\n");
 		sb.append("Environment: " + this.environment);
 		sb.append("\n");
 		sb.append("Image task activated: " + this.imageTaskActivated);
+		sb.append("\n");
+		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
 		sb.append("\n");
@@ -156,19 +170,19 @@ public class ExecutionParameters {
 		new HelpFormatter().printHelp("Main", this.options);
 		System.exit(0);
 	}
-	
+
 	private int getEnvNumOfThreads() {
 		String nThreads = System.getenv(ENV_NTHREADS);
 		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
 		return Integer.parseInt(nThreads);
 	}
-	
+
 	private int getEnvCoreThreads() {
 		String coreThreads = System.getenv(ENV_CORE_THREADS);
 		if (coreThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
 		return Integer.parseInt(coreThreads);
 	}
-	
+
 	private boolean getEnvImageTaskActivated() {
 		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
 		if (imageTaskActivated == null) return false;
@@ -176,6 +190,10 @@ public class ExecutionParameters {
 		return false;
 	}
 	
+	public boolean mustForceImageUpdate() {
+		return forceImageUpdate;
+	}
+
 	public int getCoreThreads() {
 		return this.coreThreads;
 	}
