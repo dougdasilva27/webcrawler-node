@@ -72,6 +72,10 @@ public class Prices {
 	public JSONObject getPricesJson() {
 		return this.prices;
 	}
+	
+	public void setPricesJson(JSONObject prices) {
+		this.prices = prices;
+	}
 
 	@Override
 	public String toString() {

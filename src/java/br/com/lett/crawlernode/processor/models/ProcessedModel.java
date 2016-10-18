@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoDatabase;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -51,6 +52,7 @@ public class ProcessedModel {
 	private String 		originalName;
 	private String 		originalDescription;
 	private Float 		price;
+	private Prices		prices;
 	private Integer 	stock;
 	private JSONObject 	digitalContent;
 	private JSONArray 	behaviour;
@@ -99,7 +101,8 @@ public class ProcessedModel {
 			String status, 
 			JSONObject changes, 
 			String originalDescription, 
-			Float price, 
+			Float price,
+			Prices prices,
 			JSONObject digitalContent, 
 			Long lettId, 
 			JSONArray similars, 
@@ -109,7 +112,6 @@ public class ProcessedModel {
 			JSONArray behaviour, 
 			JSONArray marketplace) {
 		
-		super();
 		this.id = id;
 		this.internalId = internalId;
 		this.internalPid = internalPid;
@@ -136,6 +138,7 @@ public class ProcessedModel {
 		this.changes = changes;
 		this.originalDescription = originalDescription;
 		this.price = price;
+		this.prices = prices;
 		this.stock = stock;
 		this.digitalContent = digitalContent;
 		this.lettId = lettId;
@@ -313,7 +316,8 @@ public class ProcessedModel {
 				this.status, 
 				(this.changes == null) ? this.changes : new JSONObject(this.changes.toString()), 
 				this.originalDescription, 
-				this.price, 
+				this.price,
+				this.prices,
 				(this.digitalContent == null) ? this.digitalContent : new JSONObject(this.digitalContent.toString()), 
 				this.lettId, this.similars, this.available, this.void_product, this.stock, 
 				(this.behaviour == null) ? this.behaviour : new JSONArray(this.behaviour.toString()),
@@ -577,6 +581,14 @@ public class ProcessedModel {
 
 	public void setPrice(Float price) {
 		this.price = price;
+	}
+	
+	public Prices getPrices() {
+		return prices;
+	}
+
+	public void setPrices(Prices prices) {
+		this.prices = prices;
 	}
 
 	public JSONObject getChanges() {

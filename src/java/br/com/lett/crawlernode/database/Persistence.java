@@ -203,12 +203,14 @@ public class Persistence {
 		Long id = null;
 
 		String query = "";
+		
+		JSONObject prices = (newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().getPricesJson());
 
 		if(newProcessedProduct.getId() == null) {
 			query = "INSERT INTO processed("
 					+ "internal_id, internal_pid, original_name, class, brand, recipient, quantity,"
 					+ "unit, extra, pic, url, market, ect, lmt, lat, lrt, lms, status, available, void, cat1, cat2, cat3, "
-					+ "multiplier, original_description, price, stock, secondary_pics, changes, digital_content, marketplace, behaviour, similars)"
+					+ "multiplier, original_description, price, prices, stock, secondary_pics, changes, digital_content, marketplace, behaviour, similars)"
 					+ "VALUES ("
 					+ "'" + newProcessedProduct.getInternalId() + "', "
 					+ (newProcessedProduct.getInternalPid() 		== null ? "NULL" : "'" + newProcessedProduct.getInternalPid()  + "'") + ", "
@@ -236,6 +238,7 @@ public class Persistence {
 					+ (newProcessedProduct.getMultiplier() == null ? "null" : newProcessedProduct.getMultiplier() ) + ", "
 					+ (newProcessedProduct.getOriginalDescription() == null ? "null" : "'" + newProcessedProduct.getOriginalDescription()  + "'" ) + ", "
 					+ newProcessedProduct.getPrice() + ", "
+					+ (prices == null ? "NULL" : "'" + prices.toString() + "'" + "::json") + ", "
 					+ newProcessedProduct.getStock() + ", "
 					+ (newProcessedProduct.getSecondary_pics() == null ? "null" : "'" + newProcessedProduct.getSecondary_pics()  + "'" ) + ", "
 					+ (newProcessedProduct.getChanges() == null ? "null" : "'" + newProcessedProduct.getChanges().toString().replace("'","''")  + "'" ) + ", "
@@ -273,6 +276,7 @@ public class Persistence {
 					+ "multiplier=" 		+ (newProcessedProduct.getMultiplier() == null ? "null" : newProcessedProduct.getMultiplier() ) + ", "
 					+ "original_description=" 		+ (newProcessedProduct.getOriginalDescription() == null ? "null" : "'" + newProcessedProduct.getOriginalDescription()  + "'" ) + ", "
 					+ "price=" 		+ newProcessedProduct.getPrice() + ", "
+					+ "prices=" + (prices == null ? "NULL" : "'" + prices.toString() + "'" + "::json") + ", "
 					+ "stock=" 		+ newProcessedProduct.getStock() + ", "
 					+ "secondary_pics=" 		+ (newProcessedProduct.getSecondary_pics() == null ? "null" : "'" + newProcessedProduct.getSecondary_pics()  + "'" ) + ", "
 					+ "changes=" 		+ (newProcessedProduct.getChanges() == null ? "null" : "'" + newProcessedProduct.getChanges().toString().replace("'","''")  + "'" ) + ", "

@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.main.Main;
@@ -54,6 +55,7 @@ public class Processor {
 		String internal_pid = product.getInternalPid();
 		String name = product.getName();
 		Float price = product.getPrice();
+		Prices prices = product.getPrices();
 		String cat1 = product.getCategory1();
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
@@ -127,6 +129,7 @@ public class Processor {
 
 				newProcessedProduct.setPic(foto);
 				newProcessedProduct.setPrice(price);
+				newProcessedProduct.setPrices(prices);
 				newProcessedProduct.setSecondary_pics(secondary_pics);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
@@ -136,7 +139,8 @@ public class Processor {
 
 			// if the product doesn't exists yet, then we must create a new processed model
 			if(newProcessedProduct == null) {
-				newProcessedProduct = new ProcessedModel(null, 
+				newProcessedProduct = new ProcessedModel(
+						null, 
 						internal_id, 
 						internal_pid, 
 						name, 
@@ -162,10 +166,11 @@ public class Processor {
 						null,
 						null,
 						description, 
-						price, 
+						price,
+						prices,
 						null, 
 						null, 
-						null, 
+						null,
 						false, 
 						false, 
 						stock, 
@@ -427,6 +432,15 @@ public class Processor {
 					} catch (Exception e) {	
 						actual_price = null; 
 					}
+					
+					JSONObject actualPricesJson;
+					try {
+						actualPricesJson = new JSONObject(rs.getString("prices"));
+					} catch (Exception e) {
+						actualPricesJson = null;
+					}
+					Prices actualPrices = new Prices();
+					actualPrices.setPricesJson(actualPricesJson);
 
 					actualProcessedProduct = new ProcessedModel(
 							rs.getLong("id"), 
@@ -455,7 +469,8 @@ public class Processor {
 							rs.getString("status"), 
 							changes,
 							rs.getString("original_description"), 
-							actual_price, 
+							actual_price,
+							actualPrices,
 							digitalContent, 
 							rs.getLong("lett_id"), 
 							similars, 
