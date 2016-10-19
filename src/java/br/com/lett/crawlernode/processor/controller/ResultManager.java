@@ -421,14 +421,16 @@ public class ResultManager {
 				picPrimary.put("similarity", 0);
 
 				// compute similarity of the new image using the SIFT algorithm
-				JSONObject similaritySiftResult = null;
-				try {
-					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(session, mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
-				} catch (Exception e) {
-					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-				}				
+				// commented...looking for a better way to deal with image features TODO
+				
+//				JSONObject similaritySiftResult = null;
+//				try {
+//					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(session, mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
+//				} catch (Exception e) {
+//					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+//				}				
 
-				picPrimary.put("similarity_sift", similaritySiftResult);
+				picPrimary.put("similarity_sift", new JSONObject()); // TODO put an empty object....we don't know if some program is looking for this field
 
 				// setting fields of the new primary image
 				picPrimary.put("md5", primaryMd5); // updated md5
