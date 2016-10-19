@@ -84,7 +84,7 @@ public class BrasilAdiasCrawler extends Crawler {
 			Float price = crawlMainPagePrice(doc);
 			
 			// Price options
-			Prices prices = crawlPrices(doc);
+			//Prices prices = crawlPrices(doc);
 			
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -120,7 +120,7 @@ public class BrasilAdiasCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
-			product.setPrices(prices);
+			//product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
