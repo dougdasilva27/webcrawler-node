@@ -4,15 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -192,6 +195,63 @@ public class BrasilCamicadoCrawler extends Crawler {
 		} 
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document doc) {
+		Prices prices = new Prices();
+		
+		// bank ticket
+		Float bankTicketPrice = crawlMainPagePrice(doc);
+		
+		// payment options
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements installmentsElements = doc.select(".paymentForm .content-parcel ul.content-parcels-item");
+		if (installmentsElements.size() > 0) {
+			/*
+			 * <ul class="content-parcels-item alternate">
+			 *	<li>à vista</li>
+			 *	<li>R$ 399,90</li>
+			 *	<li>sem juros</li>
+			 *	<li>R$ 399,90</li>
+			 * </ul>
+			 */
+			
+			/*
+			 * <ul class="content-parcels-item ">
+			 *	<li>2x</li>
+			 *	<li>R$ 199,95</li>
+			 *	<li>sem juros</li>
+			 *	<li>R$ 399,90</li>
+			 * </ul>
+			 */
+			
+			for (Element installmentElement : installmentsElements) {
+				Element installmentNumberElement = installmentElement.select("li").first(); // <li>2x</li> or <li>à vista</li>
+				Element installmentPriceElement = installmentElement.select("li").get(1); // <li>R$ 399,90</li>
+				Integer installmentNumber = null;
+				Float installmentPrice = null;
+				
+				if (installmentNumberElement != null) {
+					List<String> parsedNumbers = CommonMethods.parseNumbers(installmentElement.text().trim());
+					if (parsedNumbers.size() == 0) { // à vista
+						installmentNumber = 1;
+					} else {
+						installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+					}
+				}
+				if (installmentPriceElement != null) {
+					installmentPrice = Float.parseFloat( installmentPriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				}
+				
+				installments.put(installmentNumber, installmentPrice);
+			}
+			
+		}
+		
+		prices.insertCardInstallment(installments);
+		prices.insertBankTicket(bankTicketPrice);
+		
+		return prices;
 	}
 	
 	private boolean crawlAvailability(Document document) {
