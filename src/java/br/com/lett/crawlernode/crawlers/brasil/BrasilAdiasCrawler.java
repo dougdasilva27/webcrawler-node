@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 
@@ -11,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -187,6 +189,47 @@ public class BrasilAdiasCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document doc) {
+		Prices prices = new Prices();
+		
+		// crawl the bank ticket price
+		Float bankTicketPrice = null;
+		Element bankTicketPriceElement = doc.select("#divFormaPagamento .precoVista .fbits-boleto-preco").first();		
+		if (bankTicketPriceElement != null) {
+			bankTicketPrice = Float.parseFloat( bankTicketPriceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		}
+		
+		// crawl the card payment options
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements installmentsElements = doc.select(".colunaProduto.produto-info .fbits-parcelamento-padrao .details-content p");
+		if (installmentsElements.size() > 0) {
+			for (Element installmentElement : installmentsElements) {
+				Element installmentNumberElement = installmentElement.select("b").first();
+				Element installmentValueElement = installmentElement.select("b").last();
+				Integer installmentNumber = null;
+				Float installmentValue = null;
+				
+				if (installmentNumberElement != null) {
+					installmentNumber = Integer.parseInt(installmentElement.text().trim());
+				}
+				if (installmentValueElement != null) {
+					installmentValue = Float.parseFloat( installmentValueElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				}
+				
+				// insert the installment on the map
+				if (installmentNumber != null && installmentValue != null) {
+					installments.put(installmentNumber, installmentValue);
+				}
+			}
+		}
+		
+		// insert the payment options
+		prices.insertBankTicket(bankTicketPrice);
+		prices.insertCardInstallment(installments);
+		
+		return prices;
 	}
 	
 	private boolean crawlAvailability(Document document) {
