@@ -357,12 +357,12 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			Elements lines = marketplaceDocPage.select("table.offers-table tbody tr.partner-line");
 	
 			for(Element linePartner: lines) {
-	
+				String idPartner = linePartner.attr("data-partner-id").trim();
+				
 				Element partnerNameElement = linePartner.select("td .part-logo a [alt]").first();
 				if (partnerNameElement != null) {
 					String partnerName = partnerNameElement.attr("alt").trim().toLowerCase();
 					Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-					String idPartner = lines.attr("data-partner-id").trim();
 					
 					if (partnerName.contains("submarino")) partnerName = "submarino";
 					
