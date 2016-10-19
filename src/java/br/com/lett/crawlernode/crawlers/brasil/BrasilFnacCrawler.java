@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -11,9 +13,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -181,6 +185,51 @@ public class BrasilFnacCrawler extends Crawler {
 		}
 
 		return "";
+	}
+	
+	private Prices crawlPrices(Document doc) {
+		Prices prices = new Prices();
+		
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements installmentElements = doc.select("#x-cartao-credito .other-payment-method-ul li");
+		if (installmentElements.size() > 0) {
+			
+			// the first installment is a different html element
+			Element firstInstallmentElement = installmentElements.get(0);
+			Float firstInstallmentPrice = Float.parseFloat(firstInstallmentElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			installments.put(1, firstInstallmentPrice);
+			
+			// the first installment is also the bank ticket price (boleto bancario)
+			prices.insertBankTicket(firstInstallmentPrice);
+			
+			// the others installments
+			for (int i = 1; i < installmentElements.size(); i++) { // the first one is always the cash price (a vista)
+				Element installmentElement = installmentElements.get(i);
+				Element installmentNumberElement = installmentElement.select("span").first();
+				Element installmentPriceElement = installmentElement.select("strong").first();
+				Integer installmentNumber = null;
+				Float installmentPrice = null;
+				
+				if (installmentNumberElement != null) {
+					String installmentText = CommonMethods.parseNumbers(installmentNumberElement.text().trim()).get(0);
+					if (installmentText != null && !installmentText.isEmpty()) {
+						installmentNumber = Integer.parseInt(installmentText);
+					}
+				}
+				if (installmentPriceElement != null) {
+					installmentPrice = Float.parseFloat(installmentPriceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				}
+				
+				if (installmentNumber != null && installmentPrice != null) {
+					installments.put(installmentNumber, installmentPrice);
+				}
+			}
+		}
+		
+		// set the payment options on Prices
+		prices.insertCardInstallment(installments);
+		
+		return prices;
 	}
 	
 	/**
