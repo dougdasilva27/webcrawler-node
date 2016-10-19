@@ -164,7 +164,7 @@ public class Processor {
 						null, 
 						null);
 			}
-			
+
 			// run the processor for the new model
 			processorResultManager.processProduct(newProcessedProduct, session);
 
@@ -197,107 +197,8 @@ public class Processor {
 				newProcessedProduct.setPrice(null);
 			}
 
-			// Atualiza comportamento intra-day (behaviour)
-			JSONArray oldBehaviour = newProcessedProduct.getBehaviour();
-
-			// Instanciamos o Map como TreeMap para que seja ordenado pelas keys automaticamente
-			Map<String, JSONObject> newBehaviourMap = new TreeMap<String, JSONObject>();
-
-			if(oldBehaviour == null) oldBehaviour = new JSONArray();
-
-			DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-
-			JSONObject lastBehaviorBeforeToday = new JSONObject();
-
-			// Populando newBehaviour
-			for(int i=0; i < oldBehaviour.length(); i++) {
-
-				// Adicionando no mapa (para depois ser filtrado)
-				newBehaviourMap.put(oldBehaviour.getJSONObject(i).getString("date"), oldBehaviour.getJSONObject(i));
-
-				// Adicionando primeiro behavior do dia (leitura na hora 00:00:01.000)
-				DateTime dateTimeFor = null;
-				DateTime dateTimeNow = null;
-				DateTime dateTimeLast = null;
-
-				try {
-					dateTimeFor = f.parseDateTime(oldBehaviour.getJSONObject(i).getString("date"));
-					dateTimeNow = new DateTime().withTimeAtStartOfDay();
-					if(lastBehaviorBeforeToday.has("date")) dateTimeLast = f.parseDateTime(lastBehaviorBeforeToday.getString("date"));
-
-					// Se a data do behavior que estou analisando é anterior à hoje
-					if(dateTimeFor.isBefore(dateTimeNow)) {
-
-						// Se o candidato atual a primeiro behavior do dia não existe ou é antes do behavior 
-						// que estou analisando, então atualizo o candidato à primeiro behavior do dia
-
-						if(dateTimeLast == null || dateTimeLast.isBefore(dateTimeFor)) {
-							lastBehaviorBeforeToday = oldBehaviour.getJSONObject(i);
-						}
-					}
-
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			}
-
-
-			// Criando behaviour do início de hoje (supostamente)
-			String startOfDayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
-
-			if(lastBehaviorBeforeToday != null && (!newBehaviourMap.containsKey(startOfDayISO) || !newBehaviourMap.get(startOfDayISO).has("status"))) {
-
-				JSONObject behaviourStart = lastBehaviorBeforeToday;
-				behaviourStart.put("date", startOfDayISO);
-				if(!behaviourStart.has("status")) behaviourStart.put("status", "void");
-
-				if(behaviourStart.has("price") && behaviourStart.getDouble("price") == 0.0) {
-					behaviourStart.remove("price");
-				}
-
-				newBehaviourMap.put(startOfDayISO, behaviourStart);
-
-			}
-
-			// Criando behaviour de agora
-			JSONObject behaviour = new JSONObject();
-			behaviour.put("date", nowISO);
-			behaviour.put("stock", stock);
-			behaviour.put("available", available);
-			behaviour.put("status", newProcessedProduct.getStatus());
-			if(price != null) behaviour.put("price", price);
-			if(marketplace != null && marketplace.length() > 0) behaviour.put("marketplace", marketplace);
-			newBehaviourMap.put(nowISO, behaviour);
-
-			JSONArray newBehaviour = new JSONArray();
-
-			// Criando novo arrray behaviour apenas com as datas de hoje e
-			// mantendo apenas os que tem os campos obrigatórios
-			for(Entry<String, JSONObject> e: newBehaviourMap.entrySet()) {
-				String dateString = e.getKey();
-				DateTime dateTime = null;
-
-				if(!dateString.contains(".")) dateString = dateString + ".000";
-
-				try {
-					dateTime = f.parseDateTime(dateString);
-
-					if(
-							dateTime.isAfter(new DateTime().withTimeAtStartOfDay())
-							&&
-							e.getValue().has("status")) {
-
-						newBehaviour.put(e.getValue());
-
-					}
-
-				} catch (Exception e1) {
-					Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e1));
-				}
-
-			}
-
-			newProcessedProduct.setBehaviour(newBehaviour);
+			// update behavior
+			updateBehavior(newProcessedProduct, nowISO, stock, available, price, marketplace, session);
 
 			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
@@ -336,6 +237,129 @@ public class Processor {
 		return true;
 	}
 
+	/**
+	 * Updates the intra day behavior of the sku.
+	 * 
+	 * @param newProcessedProduct
+	 * @param nowISO
+	 * @param stock
+	 * @param available
+	 * @param price
+	 * @param marketplace
+	 * @param session
+	 */
+	private static void updateBehavior(
+			ProcessedModel newProcessedProduct,
+			String nowISO,
+			Integer stock,
+			boolean available,
+			Float price,
+			JSONArray marketplace,
+			CrawlerSession session) {
+		
+		DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+		
+		// get the previous behavior object
+		JSONArray oldBehaviour = newProcessedProduct.getBehaviour();
+		if(oldBehaviour == null) {
+			oldBehaviour = new JSONArray();
+		}
+
+		// using a TreeMap to automatically order by the keys
+		Map<String, JSONObject> newBehaviorTreeMap = new TreeMap<String, JSONObject>();
+
+		JSONObject lastBehaviorBeforeToday = new JSONObject();
+
+		// Populando newBehaviour
+		DateTime dateTimeNow = new DateTime().withTimeAtStartOfDay();
+		for (int i = 0; i < oldBehaviour.length(); i++) {
+
+			// Adicionando no mapa (para depois ser filtrado)
+			newBehaviorTreeMap.put(oldBehaviour.getJSONObject(i).getString("date"), oldBehaviour.getJSONObject(i));
+
+			// Adicionando primeiro behavior do dia (leitura na hora 00:00:01.000)
+			DateTime currentIterationDateTime = null;
+			DateTime dateTimeLast = null;
+
+			try {
+				currentIterationDateTime = f.parseDateTime(oldBehaviour.getJSONObject(i).getString("date"));
+				if (lastBehaviorBeforeToday.has("date")) {
+					dateTimeLast = f.parseDateTime(lastBehaviorBeforeToday.getString("date"));
+				}
+
+				// Se a data do behavior que estou analisando é anterior à hoje
+				if (currentIterationDateTime.isBefore(dateTimeNow)) {
+
+					// Se o candidato atual a primeiro behavior do dia não existe ou é antes do behavior 
+					// que estou analisando, então atualizo o candidato à primeiro behavior do dia
+					if (dateTimeLast == null || dateTimeLast.isBefore(currentIterationDateTime)) {
+						lastBehaviorBeforeToday = oldBehaviour.getJSONObject(i);
+					}
+				}
+
+			} catch (Exception e) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
+		}
+
+
+		// Criando behaviour do início de hoje (supostamente)
+		String startOfDayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+
+		if( lastBehaviorBeforeToday != null && 
+			(!newBehaviorTreeMap.containsKey(startOfDayISO) || !newBehaviorTreeMap.get(startOfDayISO).has("status")) ) {
+			
+			JSONObject behaviourStart = lastBehaviorBeforeToday;
+			behaviourStart.put("date", startOfDayISO);
+			if(!behaviourStart.has("status")) behaviourStart.put("status", "void");
+
+			if(behaviourStart.has("price") && behaviourStart.getDouble("price") == 0.0) {
+				behaviourStart.remove("price");
+			}
+
+			newBehaviorTreeMap.put(startOfDayISO, behaviourStart);
+		}
+
+		// Criando behaviour de agora
+		JSONObject behaviour = new JSONObject();
+		
+		behaviour.put("date", nowISO);
+		behaviour.put("stock", stock);
+		behaviour.put("available", available);
+		behaviour.put("status", newProcessedProduct.getStatus());
+		if(price != null) behaviour.put("price", price);
+		if (newProcessedProduct.getPrices() != null) behaviour.put("prices", newProcessedProduct.getPrices().getPricesJson());
+		if(marketplace != null && marketplace.length() > 0) behaviour.put("marketplace", marketplace);
+		
+		newBehaviorTreeMap.put(nowISO, behaviour);
+
+		JSONArray newBehaviour = new JSONArray();
+
+		// Criando novo arrray behaviour apenas com as datas de hoje e
+		// mantendo apenas os que tem os campos obrigatórios
+		for(Entry<String, JSONObject> e: newBehaviorTreeMap.entrySet()) {
+			String dateString = e.getKey();
+			DateTime dateTime = null;
+
+			if(!dateString.contains(".")) dateString = dateString + ".000";
+
+			try {
+				dateTime = f.parseDateTime(dateString);
+
+				if( dateTime.isAfter(new DateTime().withTimeAtStartOfDay()) &&
+					e.getValue().has("status") ) {
+					
+					newBehaviour.put(e.getValue());
+				}
+
+			} catch (Exception e1) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e1));
+			}
+		}
+
+		newProcessedProduct.setBehaviour(newBehaviour);
+	}
+
 	private static void updateStatus(ProcessedModel newProcessedProduct) {
 		String newStatus = "available";
 		if(!newProcessedProduct.getAvailable()) {
@@ -351,7 +375,7 @@ public class Processor {
 	private static void updateChanges(
 			ProcessedModel newProcessedProduct,
 			ProcessedModel previousProcessedProduct) {
-		
+
 		// detect and register changes
 		// an instance of mongo panel must be passed, so we can schedule url to take screenshot
 		newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
