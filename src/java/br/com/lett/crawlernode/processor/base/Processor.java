@@ -32,6 +32,7 @@ public class Processor {
 
 	/**
 	 * Process the product and create a new ProcessedModel based on the crawled product.
+	 * 
 	 * @param product
 	 * @param session
 	 * @return a new ProcessedModel or null in case the Product model has invalid informations
@@ -85,22 +86,8 @@ public class Processor {
 
 
 		// checking fields
-		if((price == null || price.equals(0f)) && available) {
-			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
-			return null;
-		} else if(internal_id == null || internal_id.isEmpty()) {
-			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
-			return null;
-		} else if(session.getMarket().getNumber() == 0) {
-			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
-			return null;
-		} else if(url == null || url.isEmpty()) {
-			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
-			return null;
-		} else if(name == null || name.isEmpty()) {
-			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
-			return null;
-		}
+		boolean checkResult = checkFields(price, available, internal_id, url, name, session);
+		if (checkResult == false) return null;
 
 		if(price != null && price == 0.0) {
 			price = null;
@@ -177,50 +164,33 @@ public class Processor {
 						null, 
 						null);
 			}
-
+			
+			// run the processor for the new model
 			processorResultManager.processProduct(newProcessedProduct, session);
 
-			// Atualizando disponibilidade
+			// update availability
 			newProcessedProduct.setAvailable(available);
 
-			// Atualizando LRT
+			// update LRT
 			newProcessedProduct.setLrt(nowISO);
 
-			// Atualizando VOID
+			// update void
 			newProcessedProduct.setVoid(false);
 
-			// Atualizando LAT
+			// update LAT
 			if(available) newProcessedProduct.setLat(nowISO);
 
-			// Calculando Status
-			String newStatus = "available";
-			if(!newProcessedProduct.getAvailable()) {
-				if(newProcessedProduct.getMarketplace() != null && newProcessedProduct.getMarketplace().length() > 0) {
-					newStatus = "only_marketplace";
-				} else {
-					newStatus = "unavailable";
-				}
-			}
+			// update status
+			updateStatus(newProcessedProduct);
 
-			// Atualizando status
-			newProcessedProduct.setStatus(newStatus);
+			// update LMS
+			updateLMS(newProcessedProduct, previousProcessedProduct, nowISO);
 
-			// Pegando status anterior para verificar mudança
-			String oldStatus = "void";
-			if(previousProcessedProduct != null) oldStatus = previousProcessedProduct.getStatus();
+			// update changes
+			updateChanges(newProcessedProduct, previousProcessedProduct);
 
-			// Atualizando LMS se status mudou
-			if(oldStatus == null || !newStatus.equals(oldStatus)) newProcessedProduct.setLms(nowISO);
-
-			// Detectando e registrando mudanças
-			// Recebe o banco Panel do Mongo porque grava urls que deverão ter um screenshot capturado
-			newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
-
-
-			// Atualizando LMT
-			if(newProcessedProduct.getChanges() != null && (newProcessedProduct.getChanges().has("pic") || newProcessedProduct.getChanges().has("originals"))) {
-				newProcessedProduct.setLmt(nowISO);
-			}
+			// update LMT
+			updateLMT(newProcessedProduct, nowISO);
 
 			// Retirando price = 0
 			if(newProcessedProduct.getPrice() != null && newProcessedProduct.getPrice() == 0.0) {
@@ -339,6 +309,77 @@ public class Processor {
 		return newProcessedProduct;
 	}
 
+	private static boolean checkFields(
+			Float price,
+			boolean available,
+			String internal_id,
+			String url,
+			String name,
+			CrawlerSession session) {
+		if((price == null || price.equals(0f)) && available) {
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
+			return false;
+		} else if(internal_id == null || internal_id.isEmpty()) {
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
+			return false;
+		} else if(session.getMarket().getNumber() == 0) {
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
+			return false;
+		} else if(url == null || url.isEmpty()) {
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
+			return false;
+		} else if(name == null || name.isEmpty()) {
+			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
+			return false;
+		}
+
+		return true;
+	}
+
+	private static void updateStatus(ProcessedModel newProcessedProduct) {
+		String newStatus = "available";
+		if(!newProcessedProduct.getAvailable()) {
+			if(newProcessedProduct.getMarketplace() != null && newProcessedProduct.getMarketplace().length() > 0) {
+				newStatus = "only_marketplace";
+			} else {
+				newStatus = "unavailable";
+			}
+		}
+		newProcessedProduct.setStatus(newStatus);
+	}
+
+	private static void updateChanges(
+			ProcessedModel newProcessedProduct,
+			ProcessedModel previousProcessedProduct) {
+		
+		// detect and register changes
+		// an instance of mongo panel must be passed, so we can schedule url to take screenshot
+		newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+	}
+
+	private static void updateLMS(
+			ProcessedModel newProcessedProduct, 
+			ProcessedModel previousProcessedProduct,
+			String nowISO) {
+
+		// get previous status to verify change
+		String oldStatus = "void";
+		if(previousProcessedProduct != null) {
+			oldStatus = previousProcessedProduct.getStatus();
+		}
+
+		// update lms in case we had a status change
+		if(oldStatus == null || !newProcessedProduct.getStatus().equals(oldStatus)) {
+			newProcessedProduct.setLms(nowISO);
+		}
+	}
+
+	private static void updateLMT(ProcessedModel newProcessedProduct, String nowISO) {
+		if(newProcessedProduct.getChanges() != null && (newProcessedProduct.getChanges().has("pic") || newProcessedProduct.getChanges().has("originals"))) {
+			newProcessedProduct.setLmt(nowISO);
+		}
+	}
+
 	/**
 	 * Fetch from database the current ProcessedModel from processed table.
 	 * 
@@ -432,7 +473,7 @@ public class Processor {
 					} catch (Exception e) {	
 						actual_price = null; 
 					}
-					
+
 					JSONObject actualPricesJson;
 					try {
 						actualPricesJson = new JSONObject(rs.getString("prices"));
