@@ -4,6 +4,24 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
+/**
+ * 
+ * This class is a holder for the different crawled prices.
+ * 
+ * e.g:
+ * 
+ * bank_ticket : {
+ * 	1: 985
+ * }
+ * card : {
+ * 	1 : 1000
+ * 	2 : 1010
+ * 	3 : 1500
+ * }
+ * 
+ * @author Samir Leao
+ *
+ */
 public class Prices {
 
 	public static final String BANK_TICKET_FIELD_NAME = "bank_ticket";
