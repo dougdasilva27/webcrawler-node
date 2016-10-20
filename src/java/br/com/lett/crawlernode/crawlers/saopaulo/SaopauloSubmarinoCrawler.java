@@ -732,35 +732,37 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 						url = url + "?loja=03";
 						
 						Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-						Elements installmentsElements = doc.select(".all-installment > .lp tr");
-						JSONArray installmentsJsonArray = new JSONArray();
+						Element parcels = doc.select(".all-installment").first();
 						
-						for(Element e : installmentsElements){
-							JSONObject jsonTemp = new JSONObject();
-							Element parcel = e.select(".qtd-parcel").first();
+						if(parcels != null){
+							Elements installmentsElements = parcels.select("> .lp tr");
+							JSONArray installmentsJsonArray = new JSONArray();
 							
-							if(parcel != null){
-								Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+							for(Element e : installmentsElements){
+								JSONObject jsonTemp = new JSONObject();
+								Element parcel = e.select(".qtd-parcel").first();
 								
-								Element values = e.select(".parcel").first();
-								
-								if(values != null){
-									Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+								if(parcel != null){
+									Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
 									
-									jsonTemp.put("quantity", installment);
-									jsonTemp.put("value", priceInstallment);
-									installmentsJsonArray.put(jsonTemp);
+									Element values = e.select(".parcel").first();
+									
+									if(values != null){
+										Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+										
+										jsonTemp.put("quantity", installment);
+										jsonTemp.put("value", priceInstallment);
+										installmentsJsonArray.put(jsonTemp);
+									}
 								}
 							}
+							
+							jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 						}
-						
-						jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 					}
 				}
 			}
 		}
-		
-		System.err.println(jsonPrices);
 		
 		return jsonPrices;
 	}
