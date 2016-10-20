@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -13,11 +14,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import net.sf.saxon.functions.Doc;
 
 /**
  * e.g:
@@ -53,7 +56,6 @@ public class BrasilFastshopCrawler extends Crawler {
 
 			JSONObject dataLayer = BrasilFastshopCrawlerUtils.crawlFullSKUInfo(doc);
 			
-			
 			String script = getDataLayerJson(doc);
 			JSONObject dataLayerObject = null;
 			try {
@@ -65,8 +67,6 @@ public class BrasilFastshopCrawler extends Crawler {
 				dataLayerObject = new JSONObject();
 			}
 
-			
-
 			// internal pid
 			String internalPid = crawlInternalPid(doc);
 
@@ -77,7 +77,7 @@ public class BrasilFastshopCrawler extends Crawler {
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-			Elements elementCategories = doc.select("#widget_breadcrumb ul li");
+			Elements elementCategories = doc.select("#widget_breadcrumb ul li:not(.current)");
 			ArrayList<String> categories = new ArrayList<String>();
 			for(Element e : elementCategories) {
 				if( e.select("a").first() != null ) {
@@ -130,9 +130,6 @@ public class BrasilFastshopCrawler extends Crawler {
 				if (jsonInfo.getJSONObject(0).has("catentry_id")) {
 					internalId = jsonInfo.getJSONObject(0).getString("catentry_id").trim();
 				}
-				
-				// assemble the marketplace map
-				Map<String, Float> marketplaceMap = assembleMarketplaceMap(dataLayer);
 
 				// Disponibilidade
 				boolean available = true;
@@ -191,12 +188,19 @@ public class BrasilFastshopCrawler extends Crawler {
 					marketplace.put(partner);
 				}
 
+				// Page of Prices
+				Document docPrices = fetchPrices(internalId, price);
+				
+				// Prices
+				Prices prices = crawlPrices(docPrices);
+				
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -238,6 +242,12 @@ public class BrasilFastshopCrawler extends Crawler {
 					if (variationAvailable) {
 						price = crawlPriceFromApi(internalId, internalPid);
 					}
+					
+					// Page of Prices
+					Document docPrices = fetchPrices(internalId, price);
+					
+					// Prices
+					Prices prices = crawlPrices(docPrices);
 
 					Product product = new Product();
 					product.setUrl(this.session.getOriginalURL());
@@ -245,6 +255,7 @@ public class BrasilFastshopCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -379,41 +390,41 @@ public class BrasilFastshopCrawler extends Crawler {
 	 * @param dataLayer
 	 * @return
 	 */
-	private Map<String, Float> assembleMarketplaceMap(JSONObject dataLayer) {
-		Map<String, Float> marketplaceMap = new HashMap<String, Float>();
-		
-		// get the name on the field 'mktPlacePartner' on dataLayer json
-		String partnerName = null;
-		if (dataLayer.has("mktPlacePartner")) {
-			String marketplace = dataLayer.getString("mktPlacePartner");
-			if(marketplace != null && !marketplace.isEmpty()) {
-				if (!marketplace.equals("fastshop")) {
-					partnerName = marketplace.toLowerCase().trim();
-				}
-			}
-		}
-		
-		// get the price
-		if(partnerName != null) {
-			Float partnerPrice = null;
-			if (dataLayer.has("installmentTotalValue")) {
-				if (!dataLayer.getString("installmentTotalValue").isEmpty()) {
-					partnerPrice = Float.parseFloat( dataLayer.getString("installmentTotalValue") );
-				}
-				else if (dataLayer.has("productSalePrice")) {
-					if (!dataLayer.getString("productSalePrice").isEmpty()) {
-						partnerPrice = Float.parseFloat( dataLayer.getString("productSalePrice") );
-					}
-				}
-			}
-			
-			if ( (partnerName != null && !partnerName.isEmpty()) && (partnerPrice != null) ) {
-				marketplaceMap.put(partnerName, partnerPrice);
-			}
-		}
-		
-		return marketplaceMap;
-	}
+//	private Map<String, Float> assembleMarketplaceMap(JSONObject dataLayer) {
+//		Map<String, Float> marketplaceMap = new HashMap<String, Float>();
+//		
+//		// get the name on the field 'mktPlacePartner' on dataLayer json
+//		String partnerName = null;
+//		if (dataLayer.has("mktPlacePartner")) {
+//			String marketplace = dataLayer.getString("mktPlacePartner");
+//			if(marketplace != null && !marketplace.isEmpty()) {
+//				if (!marketplace.equals("fastshop")) {
+//					partnerName = marketplace.toLowerCase().trim();
+//				}
+//			}
+//		}
+//		
+//		// get the price
+//		if(partnerName != null) {
+//			Float partnerPrice = null;
+//			if (dataLayer.has("installmentTotalValue")) {
+//				if (!dataLayer.getString("installmentTotalValue").isEmpty()) {
+//					partnerPrice = Float.parseFloat( dataLayer.getString("installmentTotalValue") );
+//				}
+//				else if (dataLayer.has("productSalePrice")) {
+//					if (!dataLayer.getString("productSalePrice").isEmpty()) {
+//						partnerPrice = Float.parseFloat( dataLayer.getString("productSalePrice") );
+//					}
+//				}
+//			}
+//			
+//			if ( (partnerName != null && !partnerName.isEmpty()) && (partnerPrice != null) ) {
+//				marketplaceMap.put(partnerName, partnerPrice);
+//			}
+//		}
+//		
+//		return marketplaceMap;
+//	}
 	
 //	private JSONArray crawlMarkeplace(Map<String, Float> marketplaceMap) {
 //		JSONArray marketplace = new JSONArray();
@@ -425,9 +436,9 @@ public class BrasilFastshopCrawler extends Crawler {
 	
 	private Float crawlPriceFromApi(String internalId, String internalPid) {
 		Float price = null;
-		String url = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?"
-				+ "storeId=10151&langId=-6&catalogId=11052"
-				+ "&catalogEntryId="+ internalId +"&productId="+ internalPid +"&hotsite=fastshop";
+		
+		String url = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10151"
+				+ "&langId=-6&catalogId=11052&catalogEntryId="+ internalId +"&productId="+ internalPid +"&hotsite=fastshop";
 		
 		String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, "", null);
 		
@@ -436,12 +447,10 @@ public class BrasilFastshopCrawler extends Crawler {
 		
 		json = json.substring(x+2, y);
 		
-		
-		JSONObject jsonPrice;
+		JSONObject jsonPrice = new JSONObject();
 		try{
 			jsonPrice = new JSONObject(json);
 		} catch(Exception e){
-			jsonPrice = new JSONObject();
 			e.printStackTrace();
 		}
 		
@@ -458,4 +467,62 @@ public class BrasilFastshopCrawler extends Crawler {
 		return price;
 	}
 
+	
+	private Document fetchPrices(String internalId, Float price){
+		Document doc = new Document(internalId);
+		
+		if(price != null){
+			String url = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/AjaxFastShopPaymentOptionsView?"
+					+ "catEntryIdentifier="+ internalId +"&hotsite=fastshop&storeId=10151";
+			
+			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		}
+		
+		return doc;
+	}
+	
+	private Prices crawlPrices(Document docPrices){
+		Prices prices = new Prices();
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		
+		Element priceBank = docPrices.select(".boleto #price1x").first();
+		
+		if(priceBank != null){
+			Float banckTicket = Float.parseFloat(priceBank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			
+			prices.insertBankTicket(banckTicket);
+		}
+		
+		Elements installmentsElements = docPrices.select("#paymentMethod_VISA tbody tr");
+		
+		for(Element e : installmentsElements){
+			Elements tags = e.select("td");
+			Element parcel = tags.get(0);
+			
+			if(parcel != null){
+				String temp = parcel.text().toLowerCase();
+				Integer installment;
+				
+				if(!temp.contains("vista")){
+					int x = temp.indexOf("x");
+					
+					installment = Integer.parseInt(temp.substring(0, x).trim());
+				} else {
+					installment = 1;
+				}
+				
+				Element parcelValue = tags.get(1);
+				
+				if(parcelValue != null){
+					Float value = Float.parseFloat(parcelValue.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+		}
+		
+		prices.insertCardInstallment(installmentPriceMap);	
+		
+		return prices;
+	}
 }
