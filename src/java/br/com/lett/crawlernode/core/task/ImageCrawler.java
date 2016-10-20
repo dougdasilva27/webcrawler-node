@@ -149,7 +149,9 @@ public class ImageCrawler implements Runnable {
 
 		// store image metadata, including descriptors and hash
 		// using the md5 of the local original file, to maintain as the original code
-		storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
+		// for now is commented...looking for a better way to deal with image features TODO
+		
+		//storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 	}
 
 	private ImageDownloadResult simpleDownload() throws IOException {

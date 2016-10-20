@@ -56,7 +56,7 @@ public class BrasilIkesakiCrawler extends Crawler {
 	public BrasilIkesakiCrawler(CrawlerSession session) {
 		super(session);
 	}
-	
+
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
@@ -71,10 +71,10 @@ public class BrasilIkesakiCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			// Pid
 			String internalPid = crawlInternalPid(doc);
-			
+
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
 			String category1 = getCategory(categories, 0);
@@ -92,31 +92,31 @@ public class BrasilIkesakiCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-			
+
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
-			
+
 			for(int i = 0; i < arraySkus.length(); i++){
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
-				
+
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
 
 				// InternalId 
 				String internalId = crawlInternalId(jsonSku);
-				
+
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
-				
+
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
-				
+
 				// Name
 				String name = crawlName(doc, jsonSku);
-				
+
 				// Secondary images
 				String secondaryImages = crawlSecondaryImages(doc);
-				
+
 				// Creating the product
 				Product product = new Product();
 
@@ -134,10 +134,10 @@ public class BrasilIkesakiCrawler extends Crawler {
 				product.setDescription(description);
 				product.setStock(stock);
 				product.setMarketplace(marketplace);
-	
+
 				products.add(product);
 			}
-				
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
@@ -153,11 +153,11 @@ public class BrasilIkesakiCrawler extends Crawler {
 		if ( document.select(".x-product-container").first() != null ) return true;
 		return false;
 	}
-	
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	/*******************
 	 * General methods *
 	 *******************/
@@ -192,7 +192,7 @@ public class BrasilIkesakiCrawler extends Crawler {
 
 		if (nameElement != null) {
 			name = nameElement.text().toString().trim();
-			
+
 			if(name.length() > nameVariation.length()){
 				name += " " + nameVariation;
 			} else {
@@ -232,9 +232,15 @@ public class BrasilIkesakiCrawler extends Crawler {
 		String primaryImage = null;
 
 		Element image = doc.select(".image-zoom").first();
-		
+
 		if (image != null) {
 			primaryImage = image.attr("href");
+		}
+		if (primaryImage == null) {
+			Element imageMainElement = doc.select("#image-main").last();
+			if (imageMainElement != null) {
+				primaryImage = imageMainElement.attr("src").trim();
+			}
 		}
 
 		return primaryImage;
@@ -244,20 +250,15 @@ public class BrasilIkesakiCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements images = doc.select("#botaoZoom");
+		Element imageThumbs = doc.select(".x-product-image ul.thumbs").first();
+		Elements images = null;
+		if (imageThumbs != null) {
+			images = imageThumbs.select("li a");
+		}
 
 		for (int i = 1; i < images.size(); i++) {				//starts with index 1, because the first image is the primary image
-			Element e = images.get(i);
-
-			if(e.hasAttr("zoom")){
-				String urlImage = e.attr("zoom");
-				
-				if(!urlImage.startsWith("http")){
-					urlImage = e.attr("rel");
-				}
-				
-				secondaryImagesArray.put(urlImage);
-			}
+			String url = images.get(i).attr("rel");
+			if (url != null && !url.isEmpty()) secondaryImagesArray.put(url);
 		}
 
 		if (secondaryImagesArray.length() > 0) {
