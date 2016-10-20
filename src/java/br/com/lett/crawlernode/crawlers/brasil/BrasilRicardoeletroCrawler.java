@@ -1,13 +1,17 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
@@ -113,10 +117,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			if(elementDescription != null) description = elementDescription.html().replace("’","").trim();
 
 			// Estoque
-			Integer stock = null;
+			Integer stock = crawlStock(doc);
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 			
@@ -125,6 +132,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -150,5 +158,75 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.ricardoeletro.com.br/Produto/");
+	}
+	
+	private Integer crawlStock(Document doc){
+		Integer stock = null;
+		Elements scripts = doc.select("script");
+		JSONObject jsonDataLayer = new JSONObject();
+		
+		for(Element e : scripts){
+			String dataLayer = e.outerHtml().trim();
+			
+			if(dataLayer.contains("var dataLayer = [")){
+				int x = dataLayer.indexOf("= [") + 3;
+				int y = dataLayer.indexOf("];", x);
+				
+				jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+			}
+		}
+		
+		if(jsonDataLayer.has("productID")){
+			String productId = jsonDataLayer.getString("productID");
+			
+			if(jsonDataLayer.has("productSKUList")){
+				JSONArray skus = jsonDataLayer.getJSONArray("productSKUList");
+				
+				for(int i = 0; i < skus.length(); i++){
+					JSONObject sku = skus.getJSONObject(i);
+					
+					if(sku.has("id")){
+						String id = sku.getString("id").trim();
+						
+						if(id.equals(productId)){
+							if(sku.has("stock")){
+								stock = sku.getInt("stock");
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return stock;
+	}
+	
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+			Elements parcelas = doc.select("#ProdutoDetalhesParcelamentoJuros p");
+			
+			if(parcelas.size() > 0){
+				for(Element e : parcelas){
+					String parcela = e.text().toLowerCase();
+					
+					int x = parcela.indexOf("x");
+					int y = parcela.indexOf("r$");
+					
+					Integer installment = Integer.parseInt(parcela.substring(0, x).trim());
+					Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					installmentsPriceMap.put(installment, priceInstallment);
+				}
+				
+				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.insertCardInstallment(installmentsPriceMap);
+			}
+		}
+		
+		return prices;
 	}
 }
