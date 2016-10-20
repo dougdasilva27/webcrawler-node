@@ -77,7 +77,7 @@ public class Test {
 
 		// fetch market information
 		Market market = fetchMarket();
-		
+				
 		markets = new Markets(dbManager);
 
 		// fetching proxies
@@ -91,7 +91,7 @@ public class Test {
 		// for testing we use 1 thread, there is no need for more
 		taskExecutor = new TaskExecutor(1, 1);
 
-		CrawlerSession session = SessionFactory.createSession("https://www.walmart.com.br/cafeteira-eletrica-single-colors-caf112--cadence/2037026/pr", market);
+		CrawlerSession session = SessionFactory.createSession("http://www.ikesaki.com.br/creme-novex-santo-black-poderoso-1000g-17980-00/p", market);
 		Runnable task = TaskFactory.createTask(session);
 		taskExecutor.executeTask(task);
 
