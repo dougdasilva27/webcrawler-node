@@ -216,7 +216,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
-				product.setPrices(prices);
+				//product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -307,7 +307,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						product.setInternalPid(variationInternalPid);
 						product.setName(variationName);
 						product.setPrice(price);
-						product.setPrices(prices);
+						//product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);
@@ -393,7 +393,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					product.setInternalPid(variationInternalPid);
 					product.setName(variationName);
 					product.setPrice(price);
-					product.setPrices(prices);
+					//product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
