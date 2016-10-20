@@ -103,6 +103,26 @@ public class Prices {
 			this.prices.put(CARD_FIELD_NAME, currentCardObject);
 		}
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public JSONObject getRawCardPaymentOptions() {
+		return this.prices.getJSONObject(CARD_FIELD_NAME);
+	}
+	
+	/**
+	 * 
+	 * @param cardBrand
+	 * @return
+	 */
+	public JSONObject getRawCardPaymentOptions(String cardBrand) {
+		if (this.prices.getJSONObject(CARD_FIELD_NAME).has(cardBrand)) {
+			return this.prices.getJSONObject(CARD_FIELD_NAME).getJSONObject(cardBrand);
+		}
+		return null;
+	}
 
 	public JSONObject getPricesJson() {
 		return this.prices;
