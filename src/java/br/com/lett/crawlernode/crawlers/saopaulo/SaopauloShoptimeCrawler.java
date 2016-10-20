@@ -660,11 +660,52 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					}
 
 				}
+				
+				if(jsonPrices.has("moreQuantityOfInstallments")){
+					if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
+						String url = session.getOriginalURL();
+						
+						if(url.contains("?")){
+							int x = url.indexOf("?");
+							
+							url = url.substring(0, x);
+						}
+						
+						url = url + "?loja=01";
+						
+						Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
+						Element parcels = doc.select(".picard-tabs-cont").first();
+						
+						if(parcels != null){
+							Elements installmentsElements = parcels.select("li#tab-cont1 tr");
+							JSONArray installmentsJsonArray = new JSONArray();
+							
+							for(Element e : installmentsElements){
+								JSONObject jsonTemp = new JSONObject();
+								Element parcel = e.select(".qtd-parcel").first();
+								
+								if(parcel != null){
+									Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+									
+									Element values = e.select(".price-highlight").first();
+									
+									if(values != null){
+										Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+										
+										jsonTemp.put("quantity", installment);
+										jsonTemp.put("value", priceInstallment);
+										installmentsJsonArray.put(jsonTemp);
+									}
+								}
+							}
+							
+							jsonPrices.put("installmentsMainPage", installmentsJsonArray);
+						}
+					}
+				}
 
 			}
 		}
-
-		System.err.println(jsonPrices);
 		
 		return jsonPrices;
 	}
@@ -679,7 +720,6 @@ public class SaopauloShoptimeCrawler extends Crawler {
 		return api;
 	}
 
-	
 	private Prices crawlPrices(JSONObject apiJson, Float priceBase, String id){
 		Prices prices = new Prices();
 
@@ -687,6 +727,11 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			JSONArray moreQuantityOfInstallments = new JSONArray();
 			if(apiJson.has("moreQuantityOfInstallments")){
 				moreQuantityOfInstallments = apiJson.getJSONArray("moreQuantityOfInstallments");
+			}
+			
+			JSONArray installmentsMainPage = new JSONArray();
+			if(apiJson.has("installmentsMainPage")){
+				installmentsMainPage = apiJson.getJSONArray("installmentsMainPage");
 			}
 			
 			if(apiJson.has(id)){
@@ -702,8 +747,14 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					Map<Integer,Float> installmentPriceMap = new HashMap<>();
 					JSONArray installmentsArray = pricesJson.getJSONArray("installments");
 					
-					if(installmentsArray.length() == 1){
+					if(installmentsArray.length() == 1 && installmentsArray.length() < moreQuantityOfInstallments.length()){
 						installmentsArray = moreQuantityOfInstallments;
+					}
+					
+					if(installmentsArray.length() == 1 && installmentsArray.length() < installmentsMainPage.length()){
+						for(int i = 0; i < installmentsMainPage.length(); i++){
+							installmentsArray.put(installmentsMainPage.getJSONObject(i));
+						}
 					}
 					
 					for(int i = 0; i < installmentsArray.length(); i++){

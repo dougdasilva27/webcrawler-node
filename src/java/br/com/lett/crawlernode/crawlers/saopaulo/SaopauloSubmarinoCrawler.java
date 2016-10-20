@@ -719,45 +719,44 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 				}
 
-			}
-		}
-		
-		if(jsonPrices.has("moreQuantityOfInstallments")){
-			if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
-				String url = session.getOriginalURL();
-				
-				if(url.contains("?")){
-					int x = url.indexOf("?");
-					
-					url = url.substring(0, x);
-				}
-				
-				url = url + "?loja=03";
-				
-				Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-				Elements installmentsElements = doc.select(".all-installment > .lp tr");
-				JSONArray installmentsJsonArray = new JSONArray();
-				
-				for(Element e : installmentsElements){
-					JSONObject jsonTemp = new JSONObject();
-					Element parcel = e.select(".qtd-parcel").first();
-					
-					if(parcel != null){
-						Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+				if(jsonPrices.has("moreQuantityOfInstallments")){
+					if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
+						String url = session.getOriginalURL();
 						
-						Element values = e.select(".parcel").first();
-						
-						if(values != null){
-							Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						if(url.contains("?")){
+							int x = url.indexOf("?");
 							
-							jsonTemp.put("quantity", installment);
-							jsonTemp.put("value", priceInstallment);
-							installmentsJsonArray.put(jsonTemp);
+							url = url.substring(0, x);
 						}
+						
+						url = url + "?loja=03";
+						
+						Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
+						Elements installmentsElements = doc.select(".all-installment > .lp tr");
+						JSONArray installmentsJsonArray = new JSONArray();
+						
+						for(Element e : installmentsElements){
+							JSONObject jsonTemp = new JSONObject();
+							Element parcel = e.select(".qtd-parcel").first();
+							
+							if(parcel != null){
+								Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+								
+								Element values = e.select(".parcel").first();
+								
+								if(values != null){
+									Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+									
+									jsonTemp.put("quantity", installment);
+									jsonTemp.put("value", priceInstallment);
+									installmentsJsonArray.put(jsonTemp);
+								}
+							}
+						}
+						
+						jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 					}
 				}
-				
-				jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 			}
 		}
 		
