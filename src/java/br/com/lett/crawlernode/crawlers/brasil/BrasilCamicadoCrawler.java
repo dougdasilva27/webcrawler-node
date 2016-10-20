@@ -248,7 +248,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 			
 		}
 		
-		prices.insertCardInstallment(installments);
+		prices.insertCardInstallment(Prices.VISA, installments);
 		prices.insertBankTicket(bankTicketPrice);
 		
 		return prices;

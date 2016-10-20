@@ -308,7 +308,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 			}
 			
-			p.insertCardInstallment(installmentPriceMap);
+			p.insertCardInstallment(Prices.VISA, installmentPriceMap);
 		}
 		
 		return p;

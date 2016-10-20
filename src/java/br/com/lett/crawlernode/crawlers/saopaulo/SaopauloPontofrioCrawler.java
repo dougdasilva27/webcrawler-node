@@ -714,7 +714,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 				}
 			}
 			
-			prices.insertCardInstallment(installmentPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 		}
 		
 		return prices;
@@ -729,7 +729,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 			prices.insertBankTicket(price);
 			installmentPriceMap.put(1, price);
 			
-			prices.insertCardInstallment(installmentPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 		} else {
 			prices = crawlPricesSingleProduct(doc, price, isPrincipalSeller);
 		}

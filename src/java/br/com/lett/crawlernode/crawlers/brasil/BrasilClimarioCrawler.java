@@ -236,7 +236,7 @@ public class BrasilClimarioCrawler extends Crawler {
 		Map<Integer, Float> installmentPriceMap = crawlCardInstallments(doc);
 
 		prices.insertBankTicket(bankTicketPrice);
-		prices.insertCardInstallment(installmentPriceMap);
+		prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 
 		return prices;
 	}

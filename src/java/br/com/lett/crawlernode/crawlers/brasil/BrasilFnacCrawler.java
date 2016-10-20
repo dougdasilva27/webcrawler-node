@@ -231,7 +231,7 @@ public class BrasilFnacCrawler extends Crawler {
 		}
 		
 		// set the payment options on Prices
-		prices.insertCardInstallment(installments);
+		prices.insertCardInstallment(Prices.VISA, installments);
 		
 		return prices;
 	}

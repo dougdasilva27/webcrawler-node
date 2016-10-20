@@ -772,7 +772,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 						}
 					}
 		
-					prices.insertCardInstallment(installmentPriceMap);
+					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 				}
 			}
 		}

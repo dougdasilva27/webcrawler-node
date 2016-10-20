@@ -378,7 +378,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						idForPrice = idForPriceElement.attr("value");
 					}
 					
-//					Prices prices = crawlPrices(idForPrice, price);
+					Prices prices = crawlPrices(idForPrice, price);
 					
 					// Descrição
 					String description = "";
@@ -393,7 +393,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					product.setInternalPid(variationInternalPid);
 					product.setName(variationName);
 					product.setPrice(price);
-//					product.setPrices(prices);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -496,7 +496,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				prices.insertBankTicket(installmentsPriceMap.get(1));
 			}
 			
-			prices.insertCardInstallment(installmentsPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentsPriceMap);
 		}
 		
 		return prices;

@@ -26,11 +26,15 @@ public class Prices {
 
 	public static final String BANK_TICKET_FIELD_NAME = "bank_ticket";
 	public static final String CARD_FIELD_NAME = "card";
+	
+	public static final String VISA = "visa";
 
 	private JSONObject prices;
 
 	public Prices() {
 		this.prices = new JSONObject();
+		this.prices.put(BANK_TICKET_FIELD_NAME, new JSONObject());
+		this.prices.put(CARD_FIELD_NAME, new JSONObject());
 	}
 
 	/**
@@ -47,7 +51,11 @@ public class Prices {
 	 */
 	public void insertBankTicket(Float bankTicketPrice) {
 		JSONObject bankTicket = new JSONObject();
-		bankTicket.put("1", bankTicketPrice);
+		if (bankTicketPrice == null) {
+			bankTicket.put("1", JSONObject.NULL);
+		} else {
+			bankTicket.put("1", bankTicketPrice);
+		}
 		this.prices.put(BANK_TICKET_FIELD_NAME, bankTicket);
 	}
 
@@ -56,10 +64,13 @@ public class Prices {
 	 * @return
 	 */
 	public Float getBankTicketPrice() {
-		if (this.prices.has(BANK_TICKET_FIELD_NAME)) {
-			JSONObject bankTicket = this.prices.getJSONObject(BANK_TICKET_FIELD_NAME);
-			Double v = bankTicket.getDouble("1");
-			return v.floatValue();
+		JSONObject bankTicket = this.prices.getJSONObject("BANK_TICKET_FIELD_NAME");
+		if (bankTicket.has("1")) {
+			Object value = bankTicket.get("1");
+			if (value != JSONObject.NULL) {
+				Double valueDouble = bankTicket.getDouble("1");
+				return valueDouble.floatValue();
+			}
 		}
 		return null;
 	}
@@ -77,13 +88,19 @@ public class Prices {
 	 * 
 	 * @param installmentPriceMap
 	 */
-	public void insertCardInstallment(Map<Integer, Float> installmentPriceMap) {
+	public void insertCardInstallment(String cardBrand, Map<Integer, Float> installmentPriceMap) {
 		if (installmentPriceMap.size() > 0) {
+			JSONObject currentCardObject = this.prices.getJSONObject(CARD_FIELD_NAME);
+			
+			// create the new card json object
 			JSONObject installmentPrices = new JSONObject();
 			for (Integer installmentNumber : installmentPriceMap.keySet()) {
 				installmentPrices.put(installmentNumber.toString(), installmentPriceMap.get(installmentNumber));
 			}
-			this.prices.put(CARD_FIELD_NAME, installmentPrices);
+			currentCardObject.put(cardBrand, installmentPrices);
+			
+			// update the card price options on prices
+			this.prices.put(CARD_FIELD_NAME, currentCardObject);
 		}
 	}
 

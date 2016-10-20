@@ -223,7 +223,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				}
 				
 				prices.insertBankTicket(installmentsPriceMap.get(1));
-				prices.insertCardInstallment(installmentsPriceMap);
+				prices.insertCardInstallment(Prices.VISA, installmentsPriceMap);
 			}
 		}
 		

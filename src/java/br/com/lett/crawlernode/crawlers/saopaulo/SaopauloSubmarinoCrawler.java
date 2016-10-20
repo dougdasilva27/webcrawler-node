@@ -830,7 +830,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 						}
 					}
 		
-					prices.insertCardInstallment(installmentPriceMap);
+					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 				}
 			}
 		}

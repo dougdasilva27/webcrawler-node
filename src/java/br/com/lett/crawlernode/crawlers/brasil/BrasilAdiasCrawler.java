@@ -231,7 +231,7 @@ public class BrasilAdiasCrawler extends Crawler {
 		
 		// insert the payment options
 		prices.insertBankTicket(bankTicketPrice);
-		prices.insertCardInstallment(installments);
+		prices.insertCardInstallment("visa", installments);
 		
 		return prices;
 	}
