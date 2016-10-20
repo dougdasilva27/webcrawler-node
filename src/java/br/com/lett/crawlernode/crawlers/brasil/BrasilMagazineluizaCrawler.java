@@ -201,7 +201,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					}
 				}
 				
-//				Prices prices = crawlPrices(idForPrice, price);
+				Prices prices = crawlPrices(idForPrice, price);
 				
 				// Descrição
 				String description = "";
@@ -216,7 +216,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
-//				product.setPrices(prices);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -295,7 +295,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							}
 						}
 						
-//						Prices prices = crawlPrices(internalIdsecondPart, price);
+						Prices prices = crawlPrices(internalIdsecondPart, price);
 						
 						// Descrição -- tem uma para cada variacao -- usando uma API do magazineluiza para pegar a descricao correspondente
 						String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalIdsecondPart + "/";
@@ -307,7 +307,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						product.setInternalPid(variationInternalPid);
 						product.setName(variationName);
 						product.setPrice(price);
-//						product.setPrices(prices);
+						product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);

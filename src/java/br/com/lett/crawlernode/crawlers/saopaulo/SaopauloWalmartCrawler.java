@@ -177,7 +177,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 				
 				//Prices
-//				Prices prices = crawlPrices(internalPid, price);
+				Prices prices = crawlPrices(internalPid, price);
 
 				Product product = new Product();
 				
@@ -186,7 +186,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name + " " + productCustomName);
 				product.setPrice(price);
-				//product.setPrices(prices);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -233,7 +233,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 		
 		Element moreSellers = infoDoc.select(".more-sellers-link").first();
 		
-		if(moreSellers != null){
+		if(moreSellers != null) {
 			Document docMarketPlaceMoreSellers = fetchMarketplaceInfoDoc(productId, internalPid);
 						
 			Elements marketplaces = docMarketPlaceMoreSellers.select(".sellers-list tr:not([class])");
