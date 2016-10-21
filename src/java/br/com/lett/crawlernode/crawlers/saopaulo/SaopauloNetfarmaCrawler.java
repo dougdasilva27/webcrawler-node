@@ -152,6 +152,8 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			if (elementPrice != null) {
 				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
+		} else {
+			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 		}
 		return price;
 	}
