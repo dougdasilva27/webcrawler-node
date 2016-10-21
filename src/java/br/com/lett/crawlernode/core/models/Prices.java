@@ -38,14 +38,6 @@ public class Prices {
 	}
 
 	/**
-	 * Boleto bancario.
-	 * If price is null, the field will not exist.
-	 * 
-	 * e.g
-	 * 
-	 * bank_ticket : {
-	 * 	1 : 985
-	 * }
 	 * 
 	 * @param bankTicketPrice
 	 */
@@ -76,16 +68,8 @@ public class Prices {
 	}
 
 	/**
-	 * Parcelado.
 	 * 
-	 * e.g
-	 * 
-	 * card : {
-	 * 	1 : 1000
-	 * 	2 : 1010
-	 * 	3 : 1500
-	 * }
-	 * 
+	 * @param cardBrand
 	 * @param installmentPriceMap
 	 */
 	public void insertCardInstallment(String cardBrand, Map<Integer, Float> installmentPriceMap) {
@@ -132,6 +116,9 @@ public class Prices {
 		this.prices = prices;
 	}
 
+	/**
+	 * The string representation of the json object.
+	 */
 	@Override
 	public String toString() {
 		return this.prices.toString();
