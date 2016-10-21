@@ -325,7 +325,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 	 * @return
 	 */
 	private Elements crawlSkuOptions(String internalIdMainPage, String urlProduct) {
-		Elements skuOptions = null;
+		Elements skuOptions = new Elements();
 		String payload = "{\"ProdutoCodigo\": \""+ internalIdMainPage +"\", \""+ VARIATION_NAME_PAYLOAD +"\": \"0\"}";
 		
 		JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD);
