@@ -231,6 +231,16 @@ public class DataFetcher {
 		}
 	}
 
+	/**
+	 * 
+	 * @param reqType
+	 * @param session
+	 * @param url
+	 * @param payload
+	 * @param cookies
+	 * @param attempt
+	 * @return a json object string, even if it is an empty json object
+	 */
 	private static String fetchJson(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) {
 		try {
 
@@ -258,8 +268,8 @@ public class DataFetcher {
 			}
 
 		}
-
-		return null;
+		
+		return new JSONObject().toString();
 
 	}
 
