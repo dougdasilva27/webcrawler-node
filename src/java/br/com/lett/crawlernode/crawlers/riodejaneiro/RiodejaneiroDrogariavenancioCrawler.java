@@ -72,8 +72,10 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			String category2 = "";
 			String category3 = "";
 			ArrayList<String> categories = new ArrayList<String>();
-
-			categories.add(doc.select("#miolo .breadCrumbs a").get(1).text());
+			
+			Elements categ = doc.select("#miolo .breadCrumbs a");
+			
+			if(categ.size() > 1) categories.add(categ.get(1).text());
 			Elements subCategoriesElements = doc.select("#miolo .breadCrumbs h3 p");
 			for(Element e : subCategoriesElements) {
 				categories.add(e.text());
@@ -108,7 +110,10 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
 				// Id interno
 				Element internalIdElement = doc.select("input[name=IdProduto]").first();
-				String internalId = preInternalId + "-" + internalIdElement.attr("value");
+				String internalId = null;
+				if(internalIdElement != null){
+					internalId = preInternalId + "-" + internalIdElement.attr("value");
+				}
 
 				// Nome
 				String name = preName;
@@ -244,7 +249,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					product.setCategory2(category2);
 					product.setCategory3(category3);
 					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(null);
+					product.setSecondaryImages(secondaryImages);
 					product.setDescription(description);
 					product.setStock(stock);
 					product.setMarketplace(marketplace);
