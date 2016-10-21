@@ -712,10 +712,13 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 	private JSONObject fetchAPIPrices(String internalPid){
 		JSONObject api = new JSONObject();
-		String url = "http://product-v3.shoptime.com.br/product?q=itemId:("+ internalPid +")"
-				+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
-
-		api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(internalPid != null){
+			String url = "http://product-v3.shoptime.com.br/product?q=itemId:("+ internalPid +")"
+					+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
+	
+			api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		}
 
 		return api;
 	}

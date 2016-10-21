@@ -259,10 +259,10 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		if (skuChooser.size() > 1) {
 			return true;
 		} else {
-
+			
 			Element sku = document.select("meta[itemprop=sku/list]").first();
 
-			if (skuChooser != null) {
+			if (sku != null) {
 				String ids = sku.attr("content");
 				String[] tokens = ids.split(",");
 
@@ -420,7 +420,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 			Document docMarketplaceInfo = fetchMarketplace(internalID, url);		
 			if(hasPidInMarketplacePage(docMarketplaceInfo, pid)){
-
+				
 				Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
 
 				for(Element linePartner: lines) {
@@ -438,6 +438,17 @@ public class SaopauloAmericanasCrawler extends Crawler {
 						marketplace.put(partnerName, partnerPrice);
 					}
 
+				}
+				
+			}  else {
+				
+				Elements lines = docMarketplaceInfo.select(".card-seller-offer");
+				
+				for(Element linePartner: lines) {
+					String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
+					Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+					
+					marketplace.put(partnerName, partnerPrice);	
 				}
 			}
 		}
@@ -826,10 +837,13 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 	private JSONObject fetchAPIPrices(String internalPid){
 		JSONObject api = new JSONObject();
-		String url = "http://product-v3.americanas.com.br/product?q=itemId:("+ internalPid +")"
-				+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
-
-		api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(internalPid != null){
+			String url = "http://product-v3.americanas.com.br/product?q=itemId:("+ internalPid +")"
+					+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
+	
+			api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		}
 
 		return api;
 	}
