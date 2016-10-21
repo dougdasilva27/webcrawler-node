@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.crawler;
 
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.session.CrawlerSessionError;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;

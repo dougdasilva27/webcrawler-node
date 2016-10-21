@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.crawler;
 
 import java.awt.image.BufferedImage;
 import java.io.File;

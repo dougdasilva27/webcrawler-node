@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.crawler.ImageCrawler;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
