@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.crawler.CrawlerPoolExecutor;
 import br.com.lett.crawlernode.main.Main;
 
 public class TaskExecutor {

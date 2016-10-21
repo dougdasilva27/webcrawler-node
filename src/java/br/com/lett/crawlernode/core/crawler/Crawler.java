@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.crawler;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
