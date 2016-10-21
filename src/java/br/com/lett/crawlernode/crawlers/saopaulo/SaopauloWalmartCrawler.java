@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloWalmartCrawler extends Crawler {
@@ -147,9 +146,17 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 			for(int p = 0; p < productsListInfo.length(); p++) {
 
-				String productId = productsListInfo.getJSONObject(p).get("skuId").toString();
+				JSONObject jsonProducts = productsListInfo.getJSONObject(p);
+				
+				String productId = null;
+				if(jsonProducts.has("skuId")){
+					productId = jsonProducts.get("skuId").toString();
+				}
 
-				String productCustomName = productsListInfo.getJSONObject(p).getString("name");
+				String productCustomName = null;
+				if(jsonProducts.has("name")){
+					productCustomName = jsonProducts.getString("name");
+				}
 
 				// Estoque
 				Integer stock = null;
