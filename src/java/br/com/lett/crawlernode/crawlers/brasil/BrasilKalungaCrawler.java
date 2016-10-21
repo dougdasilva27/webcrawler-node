@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,6 +13,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -144,6 +147,9 @@ public class BrasilKalungaCrawler extends Crawler {
 				description = description + elementDescription.html();
 			}
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Estoque
 			Integer stock = null;
 
@@ -156,6 +162,7 @@ public class BrasilKalungaCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -195,5 +202,30 @@ public class BrasilKalungaCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return (url.contains("/prod/"));
+	}
+	
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+			
+			// Preço de boleto e 1x no cartao são iguais
+			prices.insertBankTicket(price);
+			installmentsPriceMap.put(1, price);
+			
+			Elements installments = doc.select(".line_parcelamento");
+			
+			for(Element e : installments){
+				Integer installment = Integer.parseInt(e.select("span").first().text().replaceAll("[^0-9]", ""));
+				Float value = Float.parseFloat(e.select("span").last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				
+				installmentsPriceMap.put(installment, value);
+			}
+			
+			prices.insertCardInstallment("visa", installmentsPriceMap);
+		}
+		
+		return prices;
 	}
 }
