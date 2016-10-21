@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -216,7 +215,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
-				//product.setPrices(prices);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -307,7 +306,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						product.setInternalPid(variationInternalPid);
 						product.setName(variationName);
 						product.setPrice(price);
-						//product.setPrices(prices);
+						product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);
@@ -393,7 +392,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					product.setInternalPid(variationInternalPid);
 					product.setName(variationName);
 					product.setPrice(price);
-					//product.setPrices(prices);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -470,8 +469,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					if(data.has("product")){
 						JSONObject product = data.getJSONObject("product");
 						
-						if(product.has("ownCardPaymentOption")){
-							JSONArray installments = product.getJSONArray("ownCardPaymentOption");
+						if(product.has("bestPaymentOption")){
+							JSONArray installments = product.getJSONArray("bestPaymentOption");
 							
 							for(int i = 0; i < installments.length(); i++){
 								JSONObject installment = installments.getJSONObject(i);
