@@ -52,66 +52,71 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 
 			// Nome
 			String name = null;
+
+			// Disponibilidade
+			boolean available = false;
+
+			// Categoria
+			String category1 = "";
+			String category2 = "";
+			String category3 = "";
+
+			
+			String primaryImage = null;
+			String secondaryImages = null;
+			JSONArray secondaryImagesArray = new JSONArray();
+
+			if (secondaryImagesArray.length() > 0) {
+				secondaryImages = secondaryImagesArray.toString();
+			}
+
 			Element elementProduct = doc.select("#content-center").first();
 			if(elementProduct != null){
 				Element element_name = elementProduct.select("#nome h1").first();
 				if(element_name != null){
 					name = element_name.ownText().replace("'", "").replace("’", "").trim();
 				}
-			}
-			
-			// Disponibilidade
-			boolean available = true;
-			Element elementBuyButton = elementProduct.select("#btnAdicionarCarrinho").first();
-			if (elementBuyButton == null) {
-				available = false;
-			}
 
-			// Preço
-			Float price = calculatePrice(elementProduct);
-
-			// Categoria
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
-			Element elementCategories = elementProduct.select("h2").first();
-			String[] categories = elementCategories.text().split(">");
-			for (String c : categories) {
-				if (category1.isEmpty()) {
-					category1 = c.trim();
-				} else if (category2.isEmpty()) {
-					category2 = c.trim();
-				} else if (category3.isEmpty()) {
-					category3 = c.trim();
-				}
-			}
-
-			// Imagens secundárias e primária
-			Elements elementImages = elementProduct.select("#imagens-minis img");
-			String primaryImage = null;
-			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
-
-			if (elementImages.isEmpty()) {
-
-				Element elementImage = elementProduct.select("#imagem-principal img").first();
-				if (elementImage != null) {
-					primaryImage = elementImage.attr("src");
+				Element elementBuyButton = elementProduct.select("#btnAdicionarCarrinho").first();
+				if (elementBuyButton != null) {
+					available = true;
 				}
 
-			} else {
-				for (Element e : elementImages) {
-					if (primaryImage == null) {
-						primaryImage = e.attr("src").replace("imagem2", "imagem1");
-					} else {
-						secondaryImagesArray.put(e.attr("src").replace("imagem2", "imagem1"));
+				Element elementCategories = elementProduct.select("h2").first();
+				String[] categories = elementCategories.text().split(">");
+				for (String c : categories) {
+					if (category1.isEmpty()) {
+						category1 = c.trim();
+					} else if (category2.isEmpty()) {
+						category2 = c.trim();
+					} else if (category3.isEmpty()) {
+						category3 = c.trim();
+					}
+				}
+				
+				// Imagens secundárias e primária
+				Elements elementImages = elementProduct.select("#imagens-minis img");
+				
+				if (elementImages.isEmpty()) {
+
+					Element elementImage = elementProduct.select("#imagem-principal img").first();
+					if (elementImage != null) {
+						primaryImage = elementImage.attr("src");
+					}
+
+				} else {
+					for (Element e : elementImages) {
+						if (primaryImage == null) {
+							primaryImage = e.attr("src").replace("imagem2", "imagem1");
+						} else {
+							secondaryImagesArray.put(e.attr("src").replace("imagem2", "imagem1"));
+						}
 					}
 				}
 			}
 
-			if (secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+			// Preço
+			Float price = calculatePrice(elementProduct);
 
 			// Descrição
 			String description = "";
@@ -162,38 +167,41 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 
 		return products;
 	} 
-	
+
 	private Float calculatePrice(Element elementProduct){
 		Float price = null;
-		Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
-		if (elementPrice != null) {
-			price = Float.parseFloat(
-					elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-		}
-		
-		if(price != null){
-			Elements descontoElement = elementProduct.select("#preco-comprar p");
-			
-			String descontoString = null;
-			
-			for(Element e : descontoElement){
-				String temp = e.ownText().toLowerCase();
-				
-				if(temp.contains("desconto")){
-					descontoString = temp.trim();
+
+		if(elementProduct != null){
+			Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
+			if (elementPrice != null) {
+				price = Float.parseFloat(
+						elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+
+			if(price != null){
+				Elements descontoElement = elementProduct.select("#preco-comprar p");
+
+				String descontoString = null;
+
+				for(Element e : descontoElement){
+					String temp = e.ownText().toLowerCase();
+
+					if(temp.contains("desconto")){
+						descontoString = temp.trim();
+					}
+				}
+
+				if(descontoString != null){
+					int desconto = Integer.parseInt(descontoString.replaceAll("[^0-9]", "").trim());
+
+					price = normalizeTwoDecimalPlaces((float) ((price * 100) / (100 - desconto)));
 				}
 			}
-			
-			if(descontoString != null){
-				int desconto = Integer.parseInt(descontoString.replaceAll("[^0-9]", "").trim());
-				
-				price = normalizeTwoDecimalPlaces((float) ((price * 100) / (100 - desconto)));
-			}
 		}
-		
+
 		return price;
 	}
-	
+
 	/**
 	 * Round and normalize Double to have only two decimal places
 	 * eg: 23.45123 --> 23.45
@@ -203,7 +211,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 	public static Float normalizeTwoDecimalPlaces(Float number) {
 		BigDecimal big = new BigDecimal(number);
 		String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
-		
+
 		return Float.parseFloat(rounded);
 	}
 }
