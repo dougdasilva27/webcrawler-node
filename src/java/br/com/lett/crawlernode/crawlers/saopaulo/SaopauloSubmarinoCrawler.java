@@ -844,15 +844,13 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	}
 	
 	private Map<String,Map<Integer,Float>> crawlPricesMarketPlaces(Document doc){
-		Elements marketplaces = doc.select(".bp-list li.bp-it");
-		
 		Map<String,Map<Integer,Float>> installmentsMarketplaces = new HashMap<>();
 		
 		Element parcels = doc.select(".all-installment").first();
+		Map<Integer,Float> installmentsMarketplacesPricesPrincipal = new HashMap<>();
 		
 		if(parcels != null){
 			Elements installmentsElements = parcels.select("> .lp tr");
-			Map<Integer,Float> installmentsMarketplacesPrices = new HashMap<>();
 			
 			for(Element e : installmentsElements){
 				Element parcel = e.select(".qtd-parcel").first();
@@ -865,16 +863,19 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					if(values != null){
 						Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 						
-						installmentsMarketplacesPrices.put(installment, priceInstallment);
+						installmentsMarketplacesPricesPrincipal.put(installment, priceInstallment);
 					}
 				}
 			}
-			
-			Element principalSeller = doc.select(".stock-highlight").first();
-			if(principalSeller != null){
-				installmentsMarketplaces.put(principalSeller.text().trim().toLowerCase(), installmentsMarketplacesPrices);
-			}
 		}
+		
+		Element principalSeller = doc.select(".stock-highlight").first();
+		if(principalSeller != null){
+			installmentsMarketplaces.put(principalSeller.text().trim().toLowerCase(), installmentsMarketplacesPricesPrincipal);
+		}
+		
+		Elements marketplaces = doc.select(".bp-list li.bp-it");
+		
 		
 		for(Element e : marketplaces){
 			String namePartner = e.select(".bp-name a").text().trim().toLowerCase();
