@@ -54,23 +54,26 @@ public class BrasilFastshopCrawlerUtils {
 		String dataLayer = getDataLayerScript(document);
 		String processedDataLayer = "";
 		
-		Scanner scanner = new Scanner(dataLayer);
+		try {
+			Scanner scanner = new Scanner(dataLayer);
 
-		while (scanner.hasNextLine()) {
-			String line = scanner.nextLine();
-			if ( !line.contains("visitorId") 		&& 
-					!line.contains("visitorState") 	&& 
-					!line.contains("visitorCity") 	&&
-					!line.contains("visitorGender") && 
-					!line.contains("visitorAge") 	&&
-					!line.contains("visitorSource")	&&
-					!line.contains("visitorCampaign")) {
-				processedDataLayer = processedDataLayer + line.substring(0, line.length()) + "\n";
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				if ( !line.contains("visitorId") 		&& 
+						!line.contains("visitorState") 	&& 
+						!line.contains("visitorCity") 	&&
+						!line.contains("visitorGender") && 
+						!line.contains("visitorAge") 	&&
+						!line.contains("visitorSource")	&&
+						!line.contains("visitorCampaign")) {
+					processedDataLayer = processedDataLayer + line.substring(0, line.length()) + "\n";
+				}
 			}
-		}
-		
-		if (scanner != null) {
-			scanner.close();
+			
+			if (scanner != null) {
+				scanner.close();
+			}
+		} catch (Exception e) {
 		}
 		
 		return new JSONObject(processedDataLayer);
