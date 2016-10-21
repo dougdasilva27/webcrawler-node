@@ -103,9 +103,11 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				
 				// Api onde se consegue todos os preços
 				JSONObject apiJson = fetchAPIPrices(internalPid);
-
+				
 				// Pega só o que interessa do json da api
 				JSONObject infoProductJson = assembleJsonPrices(apiJson);
+				
+				Map<String,Map<Integer,Float>> installmentsMarketplaces = crawlPricesMarketPlaces(doc);
 				
 				for(String internalId : skuOptions){				
 					//variation name
@@ -127,8 +129,11 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					// Marketplace map
 					Map<String, Float> marketplaceMap = crawlMarketplace(doc, docMarketplace, mapPartners, hasVariations, internalPid);
 					
+					// Prices marketplace
+					Map<String, Prices> pricesMarketplace = assembleMapPricesMarketPlaces(installmentsMarketplaces, marketplaceMap);
+					
 					// Marketplace
-					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, pricesMarketplace);
 					
 					// Availability
 					boolean available = crawlAvailability(marketplaceMap);
@@ -398,7 +403,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return false;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, Map<String,Prices> marketplacesPrices) {
 		JSONArray marketplace = new JSONArray();
 		for (String partnerName : marketplaceMap.keySet()) {
 			if (!partnerName.equals("submarino")) { 
@@ -406,6 +411,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				JSONObject partner = new JSONObject();
 				partner.put("name", partnerName);
 				partner.put("price", marketplaceMap.get(partnerName));
+				if(marketplacesPrices.containsKey(partnerName)) partner.put("prices", marketplacesPrices.get(partnerName).getPricesJson());
 
 				marketplace.put(partner);
 			}
@@ -630,7 +636,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	 *	}
 	 *}
 	 */
-	
+		
 	private JSONObject assembleJsonPrices(JSONObject api){
 		JSONObject jsonPrices = new JSONObject();
 
@@ -776,7 +782,6 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 		return api;
 	}
-
 	
 	private Prices crawlPrices(JSONObject apiJson, Float priceBase, String id){
 		Prices prices = new Prices();
@@ -835,6 +840,86 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			}
 		}
 
+		return prices;
+	}
+	
+	private Map<String,Map<Integer,Float>> crawlPricesMarketPlaces(Document doc){
+		Elements marketplaces = doc.select(".bp-list li.bp-it");
+		
+		Map<String,Map<Integer,Float>> installmentsMarketplaces = new HashMap<>();
+		
+		Element parcels = doc.select(".all-installment").first();
+		
+		if(parcels != null){
+			Elements installmentsElements = parcels.select("> .lp tr");
+			Map<Integer,Float> installmentsMarketplacesPrices = new HashMap<>();
+			
+			for(Element e : installmentsElements){
+				Element parcel = e.select(".qtd-parcel").first();
+				
+				if(parcel != null){
+					Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+					
+					Element values = e.select(".parcel").first();
+					
+					if(values != null){
+						Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						
+						installmentsMarketplacesPrices.put(installment, priceInstallment);
+					}
+				}
+			}
+			
+			Element principalSeller = doc.select(".stock-highlight").first();
+			if(principalSeller != null){
+				installmentsMarketplaces.put(principalSeller.text().trim().toLowerCase(), installmentsMarketplacesPrices);
+			}
+		}
+		
+		for(Element e : marketplaces){
+			String namePartner = e.select(".bp-name a").text().trim().toLowerCase();
+			
+			Elements installmentsElements = e.select(".lp tr");
+			Map<Integer,Float> installmentsMarketplacesPrices = new HashMap<>();
+			
+			for(Element x : installmentsElements){
+				Element parcel = x.select(".qtd-parcel").first();
+				
+				if(parcel != null){
+					Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+					
+					Element values = x.select(".parcel").first();
+					
+					if(values != null){
+						Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						
+						installmentsMarketplacesPrices.put(installment, priceInstallment);
+					}
+				}
+			}
+			
+			installmentsMarketplaces.put(namePartner, installmentsMarketplacesPrices);
+		}
+		
+		return installmentsMarketplaces;
+	}
+
+	private Map<String, Prices> assembleMapPricesMarketPlaces(Map<String,Map<Integer,Float>> marketplacesInstallments, Map<String, Float> marketplaceMap){
+		Map<String, Prices> prices = new HashMap<>();
+				
+		for(String name : marketplacesInstallments.keySet()){
+			if(marketplaceMap.containsKey(name)){
+				Prices p = new Prices();
+				Map<Integer,Float> installments = marketplacesInstallments.get(name);
+				installments.put(1, marketplaceMap.get(name));
+				
+				p.insertBankTicket(marketplaceMap.get(name));
+				p.insertCardInstallment("visa", installments);
+				
+				prices.put(name, p);
+			}
+		}
+		
 		return prices;
 	}
 }
