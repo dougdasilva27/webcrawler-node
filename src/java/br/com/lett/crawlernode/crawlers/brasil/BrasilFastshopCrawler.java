@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -20,7 +19,6 @@ import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.core.task.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import net.sf.saxon.functions.Doc;
 
 /**
  * e.g:
