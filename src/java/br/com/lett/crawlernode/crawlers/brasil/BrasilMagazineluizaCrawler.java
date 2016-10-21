@@ -371,7 +371,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						}
 					}
 					
-					Element idForPriceElement = doc.select(".buy-option").first();
+					Element idForPriceElement = doc.select(".buy-option[checked]").first();
 					String idForPrice = null;
 					if(idForPriceElement != null){
 						idForPrice = idForPriceElement.attr("value");
@@ -458,7 +458,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			
 			Map<Integer, Float> installmentsPriceMap = new HashMap<>();
 			
-			JSONObject jsonPrices = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, urlPrices, null, cookies);
+			JSONObject jsonPrices = new JSONObject();
+			
+			try{
+				String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlPrices, null, cookies);
+				jsonPrices = new JSONObject(json);
+			} catch(Exception e){
+				
+			}
 			
 			if(jsonPrices.has("payload")){
 				JSONObject payload = jsonPrices.getJSONObject("payload");
