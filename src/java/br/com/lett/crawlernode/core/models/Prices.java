@@ -116,6 +116,9 @@ public class Prices {
 		this.prices = prices;
 	}
 
+	/**
+	 * The string representation of the json object.
+	 */
 	@Override
 	public String toString() {
 		return this.prices.toString();
