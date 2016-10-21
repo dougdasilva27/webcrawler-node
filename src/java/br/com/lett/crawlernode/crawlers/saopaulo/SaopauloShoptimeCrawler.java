@@ -85,13 +85,13 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 			// Pega só o que interessa do json da api
 			JSONObject infoProductJson = assembleJsonPrices(apiJson);
-			
+
 			if(elementsProductOptions.size() > 0){
 
 				for(Element e : elementsProductOptions){				
 
 					String secondPartInternalId = e.attr("value");
-					
+
 					String variationInternalId = internalIDFirstPiece + "-" + secondPartInternalId;
 
 					//variation name
@@ -127,7 +127,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 					// Stock
 					Integer stock = crawlStock(infoProductJson, secondPartInternalId);
-					
+
 					// Creating the product
 					Product product = new Product();
 
@@ -177,13 +177,13 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 				// Marketplace
 				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-				
+
 				// Prices
 				Prices prices = crawlPrices(infoProductJson, price, secondPartInternalId);
 
 				// Stock
 				Integer stock = crawlStock(infoProductJson, secondPartInternalId);
-				
+
 				// Creating the product
 				Product product = new Product();
 
@@ -518,15 +518,15 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 	private Integer crawlStock(JSONObject jsonProduct, String id){
 		Integer stock = null;
-		
+
 		if(jsonProduct.has(id)){
 			JSONObject product = jsonProduct.getJSONObject(id);
-			
+
 			if(product.has("stock")){
 				stock = product.getInt("stock");
 			}
 		}
-		
+
 		return stock;
 	}
 
@@ -572,151 +572,153 @@ public class SaopauloShoptimeCrawler extends Crawler {
 	 *	}
 	 *}
 	 */
-	
+
 	private JSONObject assembleJsonPrices(JSONObject api){
 		JSONObject jsonPrices = new JSONObject();
 
 		if(api.has("products")){
-			JSONObject productJson = api.getJSONArray("products").getJSONObject(0);
+			if(api.getJSONArray("products").length() > 0){
+				JSONObject productJson = api.getJSONArray("products").getJSONObject(0);
 
-			if(productJson.has("offers")){
-				JSONArray offersJson = productJson.getJSONArray("offers");
-				JSONObject correctSeller = new JSONObject();
-				JSONArray moreQuantityOfInstallments = new JSONArray();
-				
-				for(int i = 0; i < offersJson.length(); i++){
-					JSONObject jsonOffer = offersJson.getJSONObject(i);
-					JSONObject jsonSeller = new JSONObject();
-					String idProduct = null;
+				if(productJson.has("offers")){
+					JSONArray offersJson = productJson.getJSONArray("offers");
+					JSONObject correctSeller = new JSONObject();
+					JSONArray moreQuantityOfInstallments = new JSONArray();
 
-					if(jsonOffer.has("_embedded")){
-						JSONObject embedded = jsonOffer.getJSONObject("_embedded");
+					for(int i = 0; i < offersJson.length(); i++){
+						JSONObject jsonOffer = offersJson.getJSONObject(i);
+						JSONObject jsonSeller = new JSONObject();
+						String idProduct = null;
 
-						if(embedded.has("seller")){
-							JSONObject seller = embedded.getJSONObject("seller");
+						if(jsonOffer.has("_embedded")){
+							JSONObject embedded = jsonOffer.getJSONObject("_embedded");
 
-							if(seller.has("name")){
-								if(seller.getString("name").toLowerCase().equals("b2w")){
-									correctSeller = jsonOffer;
-								}
-							}
-						}
-					}
+							if(embedded.has("seller")){
+								JSONObject seller = embedded.getJSONObject("seller");
 
-					if(correctSeller.has("_links")){
-						JSONObject links = correctSeller.getJSONObject("_links");
-
-						if(links.has("sku")){
-							JSONObject sku = links.getJSONObject("sku");
-
-							if(sku.has("id")){
-								idProduct = sku.getString("id");
-							}
-						}
-
-						if(correctSeller.has("paymentOptions")){
-							JSONObject payment = correctSeller.getJSONObject("paymentOptions");
-
-							if(payment.has("BOLETO")){
-								JSONObject boleto = payment.getJSONObject("BOLETO");
-
-								if(boleto.has("price")){
-									jsonSeller.put("bankTicket", boleto.getDouble("price"));
-								}
-							}
-
-							if(payment.has("CARTAO_VISA")){
-								JSONObject visa = payment.getJSONObject("CARTAO_VISA");
-
-								if(visa.has("installments")){
-									JSONArray installments = visa.getJSONArray("installments");
-									jsonSeller.put("installments", installments);
-									
-									if(installments.length() > moreQuantityOfInstallments.length()){
-										moreQuantityOfInstallments = installments;
+								if(seller.has("name")){
+									if(seller.getString("name").toLowerCase().equals("b2w")){
+										correctSeller = jsonOffer;
 									}
 								}
 							}
-							
-							if(correctSeller.has("availability")){
-								JSONObject availability = correctSeller.getJSONObject("availability");
-								
-								if(availability.has("_embedded")){
-									JSONObject embeddedStock = availability.getJSONObject("_embedded");
-									
-									if(embeddedStock.has("stock")){
-										JSONObject jsonStock = embeddedStock.getJSONObject("stock");
-										
-										if(jsonStock.has("quantity")){
-											jsonSeller.put("stock", jsonStock.getInt("quantity"));
+						}
+
+						if(correctSeller.has("_links")){
+							JSONObject links = correctSeller.getJSONObject("_links");
+
+							if(links.has("sku")){
+								JSONObject sku = links.getJSONObject("sku");
+
+								if(sku.has("id")){
+									idProduct = sku.getString("id");
+								}
+							}
+
+							if(correctSeller.has("paymentOptions")){
+								JSONObject payment = correctSeller.getJSONObject("paymentOptions");
+
+								if(payment.has("BOLETO")){
+									JSONObject boleto = payment.getJSONObject("BOLETO");
+
+									if(boleto.has("price")){
+										jsonSeller.put("bankTicket", boleto.getDouble("price"));
+									}
+								}
+
+								if(payment.has("CARTAO_VISA")){
+									JSONObject visa = payment.getJSONObject("CARTAO_VISA");
+
+									if(visa.has("installments")){
+										JSONArray installments = visa.getJSONArray("installments");
+										jsonSeller.put("installments", installments);
+
+										if(installments.length() > moreQuantityOfInstallments.length()){
+											moreQuantityOfInstallments = installments;
+										}
+									}
+								}
+
+								if(correctSeller.has("availability")){
+									JSONObject availability = correctSeller.getJSONObject("availability");
+
+									if(availability.has("_embedded")){
+										JSONObject embeddedStock = availability.getJSONObject("_embedded");
+
+										if(embeddedStock.has("stock")){
+											JSONObject jsonStock = embeddedStock.getJSONObject("stock");
+
+											if(jsonStock.has("quantity")){
+												jsonSeller.put("stock", jsonStock.getInt("quantity"));
+											}
 										}
 									}
 								}
 							}
+
+							jsonPrices.put(idProduct, jsonSeller);
+							jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
 						}
 
-						jsonPrices.put(idProduct, jsonSeller);
-						jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
 					}
 
-				}
-				
-				if(jsonPrices.has("moreQuantityOfInstallments")){
-					if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
-						String url = session.getOriginalURL();
-						
-						if(url.contains("?")){
-							int x = url.indexOf("?");
-							
-							url = url.substring(0, x);
-						}
-						
-						url = url + "?loja=01";
-						
-						Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-						Element parcels = doc.select(".picard-tabs-cont").first();
-						
-						if(parcels != null){
-							Elements installmentsElements = parcels.select("li#tab-cont1 tr");
-							JSONArray installmentsJsonArray = new JSONArray();
-							
-							for(Element e : installmentsElements){
-								JSONObject jsonTemp = new JSONObject();
-								Element parcel = e.select(".qtd-parcel").first();
-								
-								if(parcel != null){
-									Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
-									
-									Element values = e.select(".price-highlight").first();
-									
-									if(values != null){
-										Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-										
-										jsonTemp.put("quantity", installment);
-										jsonTemp.put("value", priceInstallment);
-										installmentsJsonArray.put(jsonTemp);
+					if(jsonPrices.has("moreQuantityOfInstallments")){
+						if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
+							String url = session.getOriginalURL();
+
+							if(url.contains("?")){
+								int x = url.indexOf("?");
+
+								url = url.substring(0, x);
+							}
+
+							url = url + "?loja=01";
+
+							Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
+							Element parcels = doc.select(".picard-tabs-cont").first();
+
+							if(parcels != null){
+								Elements installmentsElements = parcels.select("li#tab-cont1 tr");
+								JSONArray installmentsJsonArray = new JSONArray();
+
+								for(Element e : installmentsElements){
+									JSONObject jsonTemp = new JSONObject();
+									Element parcel = e.select(".qtd-parcel").first();
+
+									if(parcel != null){
+										Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+
+										Element values = e.select(".price-highlight").first();
+
+										if(values != null){
+											Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+											jsonTemp.put("quantity", installment);
+											jsonTemp.put("value", priceInstallment);
+											installmentsJsonArray.put(jsonTemp);
+										}
 									}
 								}
+
+								jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 							}
-							
-							jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 						}
 					}
-				}
 
+				}
 			}
 		}
-		
+
 		return jsonPrices;
 	}
 
 	private JSONObject fetchAPIPrices(String internalPid){
 		JSONObject api = new JSONObject();
-		
+
 		if(internalPid != null){
 			String url = "http://product-v3.shoptime.com.br/product?q=itemId:("+ internalPid +")"
 					+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
-	
+
 			api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
 		}
 
@@ -731,50 +733,50 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			if(apiJson.has("moreQuantityOfInstallments")){
 				moreQuantityOfInstallments = apiJson.getJSONArray("moreQuantityOfInstallments");
 			}
-			
+
 			JSONArray installmentsMainPage = new JSONArray();
 			if(apiJson.has("installmentsMainPage")){
 				installmentsMainPage = apiJson.getJSONArray("installmentsMainPage");
 			}
-			
+
 			if(apiJson.has(id)){
 				JSONObject pricesJson = apiJson.getJSONObject(id);
-				
+
 				if(pricesJson.has("bankTicket")){
 					Double price = pricesJson.getDouble("bankTicket");
-		
+
 					prices.insertBankTicket(price.floatValue());
 				}
-		
+
 				if(pricesJson.has("installments")){
 					Map<Integer,Float> installmentPriceMap = new HashMap<>();
 					JSONArray installmentsArray = pricesJson.getJSONArray("installments");
-					
+
 					if(installmentsArray.length() == 1 && installmentsArray.length() < moreQuantityOfInstallments.length()){
 						installmentsArray = moreQuantityOfInstallments;
 					}
-					
+
 					if(installmentsArray.length() == 1 && installmentsArray.length() < installmentsMainPage.length()){
 						for(int i = 0; i < installmentsMainPage.length(); i++){
 							installmentsArray.put(installmentsMainPage.getJSONObject(i));
 						}
 					}
-					
+
 					for(int i = 0; i < installmentsArray.length(); i++){
 						JSONObject installmentJson = installmentsArray.getJSONObject(i);
-		
+
 						if(installmentJson.has("quantity")){
 							Integer installment = installmentJson.getInt("quantity");
-		
+
 							if(installmentJson.has("value")){
 								Double valueDouble = installmentJson.getDouble("value");
 								Float value = valueDouble.floatValue();
-		
+
 								installmentPriceMap.put(installment, value);
 							}
 						}
 					}
-		
+
 					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 				}
 			}
