@@ -33,7 +33,7 @@ public class Prices {
 
 	public Prices() {
 		this.prices = new JSONObject();
-		this.prices.put(BANK_TICKET_FIELD_NAME, new JSONObject());
+		this.prices.put(BANK_TICKET_FIELD_NAME, new JSONObject().put("1", JSONObject.NULL));
 		this.prices.put(CARD_FIELD_NAME, new JSONObject());
 	}
 
