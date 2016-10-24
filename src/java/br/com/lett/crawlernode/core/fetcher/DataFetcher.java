@@ -386,7 +386,7 @@ public class DataFetcher {
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
-		sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+		sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 		// analysing the status code
 		// if there was some response code that indicates forbidden access or server error we want to try again
@@ -480,13 +480,14 @@ public class DataFetcher {
 			int attempt) {
 
 		LettProxy randProxy = null;
+		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
-			String randUserAgent = randUserAgent();
+			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 					
 			CookieStore cookieStore = new BasicCookieStore();
@@ -609,7 +610,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// assembling request information log message
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -639,7 +640,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
 				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
@@ -679,13 +680,14 @@ public class DataFetcher {
 			int attempt) {
 
 		LettProxy randProxy = null;
+		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
-			String randUserAgent = randUserAgent();
+			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -779,7 +781,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// assembling request information log message
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -818,7 +820,7 @@ public class DataFetcher {
 			return "";
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -845,6 +847,7 @@ public class DataFetcher {
 	 */
 	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		LettProxy randProxy = null;
+		String randUserAgent = null;
 
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
@@ -852,7 +855,7 @@ public class DataFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
-			String randUserAgent = randUserAgent();
+			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -960,7 +963,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// assembling request information log message
-			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -985,7 +988,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
 				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
@@ -1015,6 +1018,7 @@ public class DataFetcher {
 			Map<String,String> headers) {
 
 		LettProxy randProxy = null;
+		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
 
@@ -1022,7 +1026,7 @@ public class DataFetcher {
 
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
-			String randUserAgent = randUserAgent();
+			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -1123,7 +1127,7 @@ public class DataFetcher {
 			pageContent.setUrl(url); // setting url
 
 			// assembling request information log message
-			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -1148,7 +1152,7 @@ public class DataFetcher {
 			return processContent(pageContent, session);
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, POST_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
 				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
@@ -1181,7 +1185,8 @@ public class DataFetcher {
 	private static void sendRequestInfoLog(
 			String url, 
 			String requestType, 
-			LettProxy proxy, 
+			LettProxy proxy,
+			String userAgent,
 			CrawlerSession session, 
 			CloseableHttpResponse response,
 			String requestHash) {
@@ -1191,6 +1196,7 @@ public class DataFetcher {
 		requestMetadata.put("req_hash", requestHash);
 		requestMetadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
 		requestMetadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
+		requestMetadata.put("user_agent", 	userAgent);
 		requestMetadata.put("req_method", requestType);
 		requestMetadata.put("req_location", url);
 		requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
@@ -1232,13 +1238,14 @@ public class DataFetcher {
 
 		File localFile = null;
 		LettProxy randProxy = null;
+		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		String requestHash = generateRequestHash(session);
 
 		try {
 
 			// choosing the preferred proxy service
-			String randUserAgent = randUserAgent();
+			randUserAgent = randUserAgent();
 			if (session instanceof ImageCrawlerSession) {
 				randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies());
 			} else {
@@ -1324,7 +1331,7 @@ public class DataFetcher {
 			}
 
 			// assembling request information log message
-			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
@@ -1344,7 +1351,7 @@ public class DataFetcher {
 
 		} catch (Exception e) {			
 
-			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			if (localFile != null && localFile.exists()) {
 				localFile.delete();
