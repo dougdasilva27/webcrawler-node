@@ -416,10 +416,21 @@ public class SaopauloShoptimeCrawler extends Crawler {
 		JSONArray marketplace = new JSONArray();
 		for (String partnerName : marketplaceMap.keySet()) {
 			if (!partnerName.equals("shoptime")) { 
-
+				Float price =  marketplaceMap.get(partnerName);
+				
 				JSONObject partner = new JSONObject();
 				partner.put("name", partnerName);
-				partner.put("price", marketplaceMap.get(partnerName));
+				partner.put("price", price);
+				
+				Prices prices = new Prices();
+				
+				Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+				prices.insertBankTicket(price);
+				installmentPriceMap.put(1, price);
+				prices.insertCardInstallment("visa", installmentPriceMap);
+				
+				partner.put("prices", prices.getPricesJson());
 
 				marketplace.put(partner);
 			}
