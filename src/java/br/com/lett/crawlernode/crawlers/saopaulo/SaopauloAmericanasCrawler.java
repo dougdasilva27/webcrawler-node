@@ -141,7 +141,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				String variationName = (name + " " + skuOptions.get(internalId)).trim();
 
 				// Marketplace map
-				Map<String, Float> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
+				Map<String, Prices> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
 
 				// Assemble marketplace from marketplace map
 				JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
@@ -257,44 +257,63 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return skus;
 	}
 
-	private Map<String, Float> crawlMarketplace(String internalId, String pid) {
-		Map<String, Float>  marketplace = new HashMap<String, Float> ();
+	private Map<String,Prices> crawlMarketplace(String internalId, String pid) {
+		Map<String,Prices> marketplaces = new HashMap<>();
 
-		String url = "http://www.americanas.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
+		String url = "http://www.submarino.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
 
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
 		Elements lines = doc.select(".card-seller-offer");
 
 		for(Element linePartner: lines) {
+			Prices prices = new Prices();
+			Map<Integer,Float> installmentMapPrice = new HashMap<>();
+			
 			String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
-			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
-			marketplace.put(partnerName, partnerPrice);	
+			installmentMapPrice.put(1, partnerPrice);
+			prices.insertBankTicket(partnerPrice);
+			
+			Element installmentElement = linePartner.select(".installment-price").first();
+			if(installmentElement != null){
+				String text = installmentElement.text().toLowerCase().trim();
+				int x = text.indexOf("x");
+				
+				Integer installment = Integer.parseInt(text.substring(0, x).trim());
+				Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				
+				installmentMapPrice.put(installment, value);
+			}
+			
+			prices.insertCardInstallment(Prices.VISA, installmentMapPrice);
+			marketplaces.put(partnerName, prices);
 		}
 
-
-
-		return marketplace;
+		return marketplaces;
 	}
 
 	/*******************
 	 * General methods *
 	 *******************/
 
-	private Float crawlPrice(Map<String, Float> marketplaces) {
+	private Float crawlPrice(Map<String, Prices> marketplaces) {
 		Float price = null;
 
 		for (String seller : marketplaces.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-				price = marketplaces.get(seller);
+				if(marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Prices.VISA).has("1")){
+					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
+					price = priceDouble.floatValue(); 
+				}
+				
 				break;
 			}
 		}		
 		return price;
 	}
-
-	private boolean crawlAvailability(Map<String, Float> marketplaces) {
+	private boolean crawlAvailability(Map<String, Prices> marketplaces) {
 		boolean available = false;
 
 		for (String seller : marketplaces.keySet()) {
@@ -373,19 +392,27 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return "";
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
 		JSONArray marketplace = new JSONArray();
 
 		for(String sellerName : marketplaceMap.keySet()) {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
-				seller.put("price", marketplaceMap.get(sellerName));
+				
+				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).has("1")){
+					// Pegando o preço de uma vez no cartão
+					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
+					Float priceFloat = price.floatValue();				
+					
+					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
+				}
+				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
 
 				marketplace.put(seller);
 			}
 		}
-
+		
 		return marketplace;
 	}
 

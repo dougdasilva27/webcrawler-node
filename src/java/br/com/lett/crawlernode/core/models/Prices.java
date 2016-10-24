@@ -56,7 +56,7 @@ public class Prices {
 	 * @return
 	 */
 	public Float getBankTicketPrice() {
-		JSONObject bankTicket = this.prices.getJSONObject("BANK_TICKET_FIELD_NAME");
+		JSONObject bankTicket = this.prices.getJSONObject(BANK_TICKET_FIELD_NAME);
 		if (bankTicket.has("1")) {
 			Object value = bankTicket.get("1");
 			if (value != JSONObject.NULL) {
