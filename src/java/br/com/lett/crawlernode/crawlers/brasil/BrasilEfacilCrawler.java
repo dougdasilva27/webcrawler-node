@@ -310,16 +310,20 @@ public class BrasilEfacilCrawler extends Crawler {
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
 							Float result = valueInstallment * 2;
 							
-							price = Float.parseFloat(df.format(result).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+							price = Float.parseFloat(df.format(result));
+							
 							break;
+							
 						} else if(installment.contains("1")){
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
-							price = Float.parseFloat(df.format(valueInstallment).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+							price = Float.parseFloat(df.format(valueInstallment));
 						}
 					}
 				}
 			}
 		}
+		
+		
 		
 		return price;
 	}
@@ -357,7 +361,7 @@ public class BrasilEfacilCrawler extends Crawler {
 										DecimalFormat df = new DecimalFormat("0.00");
 										df.setMaximumFractionDigits(2);
 										
-										Float value = Float.parseFloat(df.format(priceBig).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+										Float value = Float.parseFloat(df.format(priceBig));
 										
 										installmentPriceMap.put(installment, value);
 									}
