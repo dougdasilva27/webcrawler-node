@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -20,20 +21,19 @@ import br.com.lett.crawlernode.util.Logging;
 
 
 /************************************************************************************************************************************************************************************
- * Crawling notes (19/07/2016):
+ * Crawling notes (24/10/2016):
  * 
  * 1) For this crawler, we have one url for mutiples skus.
  *  
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
+ * 2) There is stock information for skus in this ecommerce by the time this crawler was made.
  * 
  * 3) There is marketplace for mutiple variations in this ecommerce accessed via the url to 
  *  mutiple variations "http://www.americanas.com.br/parceiros/" + internalID + "/?codItemFusion=" + variationID, 
  *  and for single product is a simply selector in htmlPage.
  *  
- * 4) First to get marketplaces in mutiple variations, is crawled ids from partners in main page looking a simply the html element and put this in map
- * 	  Second accessed the url "http://www.americanas.com.br/parceiros/" + internalID + "/?codItemFusion=" + variationID for getting marketPlaces
- * 
- * 5) The sku page identification is done simply looking the URL format or simply looking the html element.
+ * 4) The most important information of skus are in a json in html.
+ *  
+ * 5) The sku page identification is done simply looking the URL format.
  * 
  * 6) Even if a product is unavailable, its price is not displayed, then price is null.
  * 
@@ -63,7 +63,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.americanas.com.br/";
 
 	private final String MAIN_SELLER_NAME_LOWER = "americanas.com";
-	private final String MAIN_SELLER_ID_PARTNER = "02";
 
 	public SaopauloAmericanasCrawler(CrawlerSession session) {
 		super(session);
@@ -73,6 +72,22 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+	}
+
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+
+		/**
+		 * O cookie abaixo foi colocado pois no dia que foi feito
+		 * esse crawler, o site americanas.com estava fazendo um testeAB
+		 * e o termo new, seria de um suposto site novo.
+		 */
+		
+		BasicClientCookie cookie = new BasicClientCookie("catalogTestAB", "new");
+		cookie.setDomain(".americanas.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
 	}
 
 	@Override
@@ -88,131 +103,67 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			 * crawling data common to both the cases of product page  *
 			 ***********************************************************/
 
+			// Api onde se consegue todos os preços
+			JSONObject initialJson = getDataLayer(doc);
+
+			// Pega só o que interessa do json da api
+			JSONObject infoProductJson = assembleJsonProduct(initialJson);
+
 			// Pid
-			String internalPid = this.crawlInternalPid(doc);
+			String internalPid = this.crawlInternalPid(infoProductJson);
 
 			// Name
 			String name = this.crawlMainPageName(doc);
 
 			// Categories
-			ArrayList<String> categories = this.crawlCategories(doc);
+			ArrayList<String> categories = this.crawlCategories(infoProductJson);
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
 
 			// Primary image
-			String primaryImage = this.crawlPrimaryImage(doc);
+			String primaryImage = this.crawlPrimaryImage(infoProductJson);
 
 			// Secondary images
-			String secondaryImages = this.crawlSecondaryImages(doc);
+			String secondaryImages = this.crawlSecondaryImages(infoProductJson);
 
 			// Description
 			String description = this.crawlDescription(doc);
 
-			// Api onde se consegue todos os preços
-			JSONObject apiJson = fetchAPIPrices(internalPid);
+			// sku data in json
+			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
-			// Pega só o que interessa do json da api
-			JSONObject infoProductJson = assembleJsonPrices(apiJson);
-			
-			/* **************************************
-			 * crawling data of multiple variations *
-			 ****************************************/
-			if( hasProductVariations(doc) ) {
-
-				Logging.printLogDebug(logger, session, "Crawling information of more than one product...");
-
-				// sku data in json
-				ArrayList<String> skuOptions = this.crawlSkuOptions(doc);		
-
-				for(String internalId : skuOptions){	
-					// InternalId
-					String variationInternalID = internalPid + "-" + internalId;
-
-					//variation name
-					String variation = crawlNameVariation(doc, internalId);
-
-					// Name
-					String nameVariations = name;
-
-					if(variation != null){
-						nameVariations += " " + variation;
-					}
-
-					// Map of partners
-					Map<String, String> partners = getIdsForMarketplaces(doc, internalId);
-
-					// Marketplace map
-					Map<String, Float> marketplaceMap = this.crawlMarketplacesForMutipleVariations(internalPid, internalId, partners, internalPid);
-
-					// Assemble marketplace from marketplace map
-					JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
-
-					// Available
-					boolean available = this.crawlAvailability(marketplaceMap);
-
-					// Price
-					Float variationPrice = this.crawlPrice(marketplaceMap);
-
-					// Prices 
-					Prices prices = crawlPrices(infoProductJson, variationPrice, internalId);
-
-					// Stock
-					Integer stock = crawlStock(infoProductJson, internalId);
-					
-					Product product = new Product();
-					product.setUrl(this.session.getOriginalURL());
-					product.setInternalId(variationInternalID);
-					product.setInternalPid(internalPid);
-					product.setName(nameVariations);
-					product.setPrice(variationPrice);
-					product.setPrices(prices);
-					product.setCategory1(category1);
-					product.setCategory2(category2);
-					product.setCategory3(category3);
-					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(secondaryImages);
-					product.setDescription(description);
-					product.setStock(stock);
-					product.setMarketplace(variationMarketplace);
-					product.setAvailable(available);
-
-					products.add(product);
-
-				}
-			
-			} else {
-
-				// idvariation
-				String idVariation = this.crawlInternalIDSingleProduct(doc);
-
+			for(String internalId : skuOptions.keySet()){	
 				// InternalId
-				String internalID = internalPid + "-" + idVariation;
+				String variationInternalID = internalPid + "-" + internalId;
+
+				//variation name
+				String variationName = (name + " " + skuOptions.get(internalId)).trim();
 
 				// Marketplace map
-				Map<String, Float> marketplaceMap = this.crawlMarketplacesForSingleProduct(doc);
+				Map<String, Float> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
 
 				// Assemble marketplace from marketplace map
-				JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
+				JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
 				// Available
 				boolean available = this.crawlAvailability(marketplaceMap);
 
 				// Price
-				Float price = this.crawlPrice(marketplaceMap);
+				Float variationPrice = this.crawlPrice(marketplaceMap);
 
-				// Prices
-				Prices prices = crawlPrices(infoProductJson, price, idVariation);
+				// Prices 
+				Prices prices = crawlPrices(infoProductJson, variationPrice, internalId);
 
 				// Stock
-				Integer stock = crawlStock(infoProductJson, idVariation);
-				
+				Integer stock = crawlStock(infoProductJson, internalId);
+
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(internalID);
+				product.setInternalId(variationInternalID);
 				product.setInternalPid(internalPid);
-				product.setName(name);
-				product.setPrice(price);
+				product.setName(variationName);
+				product.setPrice(variationPrice);
 				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -221,11 +172,13 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				product.setSecondaryImages(secondaryImages);
 				product.setDescription(description);
 				product.setStock(stock);
-				product.setMarketplace(marketplace);
+				product.setMarketplace(variationMarketplace);
 				product.setAvailable(available);
 
 				products.add(product);
+
 			}
+
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -246,262 +199,84 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return false;
 	}
 
+	private String crawlInternalPid(JSONObject assembleJsonProduct) {
+		String internalPid = null;
 
-
-	/************************************
-	 * Multiple products identification *
-	 ************************************/
-
-	private boolean hasProductVariations(Document document) {
-
-		Elements skuChooser = document.select(".mb-sku-choose .custom-label-sku input");
-
-		if (skuChooser.size() > 1) {
-			return true;
-		} else {
-			
-			Element sku = document.select("meta[itemprop=sku/list]").first();
-
-			if (sku != null) {
-				String ids = sku.attr("content");
-				String[] tokens = ids.split(",");
-
-				if(tokens.length > 1){
-					return true;
-				}
-
-			} 
+		if (assembleJsonProduct.has("internalPid")) {
+			internalPid = assembleJsonProduct.getString("internalPid").trim();
 		}
 
-		return false;
-
+		return internalPid;
 	}
 
-	private String crawlInternalPid(Document document) {
-		String internalId = null;
-		Element elementInternalId = document.select(".a-cod-prod span[itemprop=productID]").first();
-		if (elementInternalId != null) {
-			internalId = elementInternalId.text().trim();
-		}
+	private Map<String,String> crawlSkuOptions(JSONObject infoProductJson){
+		Map<String,String> skuMap = new HashMap<>();
 
-		return internalId;
-	}
+		if(infoProductJson.has("skus")){
+			JSONArray skus = infoProductJson.getJSONArray("skus");
 
+			for(int i = 0; i < skus.length(); i++){
+				JSONObject sku = skus.getJSONObject(i);
 
-	/*******************************
-	 * Single product page methods *
-	 *******************************/
+				if(sku.has("internalId")){
+					String internalId = sku.getString("internalId");
+					String name = "";
 
-	private String crawlInternalIDSingleProduct(Document document) {
-		String internalIDMainPage = null;
-		Element elementDataSku = document.select(".mp-pricebox-wrp").first();
+					if(sku.has("variationName")){
+						name = sku.getString("variationName");
+					}
 
-		if(elementDataSku != null) {
-			internalIDMainPage = elementDataSku.attr("data-sku");
-		}
-		else {
-			elementDataSku = document.select("meta[itemprop=sku/list]").first();
-			if(elementDataSku != null) {
-				internalIDMainPage = elementDataSku.attr("content");
-			}
-		}
-
-		return internalIDMainPage;
-	}
-
-	private Map<String, Float> crawlMarketplacesForSingleProduct(Document doc) {
-		Map<String, Float>  marketplace = new HashMap<String, Float> ();
-		
-		Element elementPartnerName = doc.select(".pickup-store .stock-highlight").first();
-		Element elementPartnerPrice = doc.select("span[itemprop=price/salesPrice]").first();
-		
-		if(elementPartnerName != null && elementPartnerPrice != null){
-			String partnerPrincipalName = elementPartnerName.text().toLowerCase().trim();		
-			Float partnerPrincipalPrice = Float.parseFloat(elementPartnerPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			
-			marketplace.put(partnerPrincipalName, partnerPrincipalPrice);
-		}
-		
-		
-		Elements partnersElements = doc.select("ul.bp-list > li > div");
-		
-		for(Element e : partnersElements){
-			
-			String partnerName = e.select(".bp-name").text().toLowerCase().trim();
-			Float partnerPrice;
-			Element priceElement = e.select(".bp-link .bp-lnk").first();
-			
-			if( partnerName.equals(MAIN_SELLER_NAME_LOWER) && priceElement == null ){
-				priceElement = doc.select("span[itemprop=\"price/salesPrice\"]").first();
-				partnerPrice = Float.parseFloat(priceElement.attr("content").trim());
-			} else {
-				partnerPrice = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
-		 
-			
-			marketplace.put(partnerName, partnerPrice);
-		}
-		
-		return marketplace;
-	}
-	/*********************************
-	 * Multiple product page methods *
-	 *********************************/
-
-
-	private String crawlNameVariation(Document doc, String internalId) {
-		String name = null;
-		Element elementName = doc.select("input[value="+ internalId +"][data-value-name]").first();
-		if(elementName == null) elementName = doc.select("option[content="+ internalId +"][data-value-name]").first();
-
-		if(elementName != null){
-			name = elementName.attr("data-value-name").replace("'","").replace("’","").trim();
-		}
-
-		return name;
-	}
-
-	private ArrayList<String> crawlSkuOptions(Document doc){
-		ArrayList<String> internalIds = new ArrayList<String>();
-				
-		String ids = getIdsFromDataLayer(doc);
-
-		if(ids != null){			
-			String[] tokens = ids.split(",");			
-			for(int i = 0; i < tokens.length; i++){
-				internalIds.add(tokens[i].trim());
-			}
-		} else {
-			Element elementsProductOptions = doc.select("meta[itemprop=\"sku/list\"]").first();
-
-			if(elementsProductOptions != null){
-				String[] tokens = elementsProductOptions.attr("content").split(",");			
-				for(int i = 0; i < tokens.length; i++){
-					internalIds.add(tokens[i].trim());
+					skuMap.put(internalId, name);
 				}
 			}
 		}
 
-
-		return internalIds;
+		return skuMap;
 	}
 
-	private String getIdsFromDataLayer(Document doc){
-		String internalIds = null;
-		Elements scripts = doc.select("script[type=text/javascript]");
+	private JSONObject getDataLayer(Document doc){
+		JSONObject skus = new JSONObject();
+		Elements scripts = doc.select("script");
 
 		for(Element e : scripts){
-			String json = e.html();
+			String json = e.outerHtml();
 
-			if(json.contains("var objProduct")){
-				int x = json.indexOf("objProduct =") + 12;
+			if(json.contains("INITIAL_STATE")){
+
+				int x = json.indexOf("_ =") + 3;
 				int y = json.indexOf("};", x);
 
 				json = json.substring(x, y+1);
 
-				JSONObject skus = new JSONObject(json);
-
-				if(skus.has("objSKUsProduto")){
-					internalIds = skus.getString("objSKUsProduto");
-				}
+				skus = new JSONObject(json);
 
 				break;
 			}
 		}
 
-		return internalIds;
+		return skus;
 	}
 
-	private Map<String, Float> crawlMarketplacesForMutipleVariations(String internalID, String internalIDVariation, Map<String, String> idsMarketplaces, String pid) {
+	private Map<String, Float> crawlMarketplace(String internalId, String pid) {
 		Map<String, Float>  marketplace = new HashMap<String, Float> ();
 
-		if(idsMarketplaces.size() > 0){
-			String url = "http://www.americanas.com.br/parceiros/" + internalID + "/" + "?codItemFusion=" + internalIDVariation;
+		String url = "http://www.americanas.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
 
-			Document docMarketplaceInfo = fetchMarketplace(internalID, url);		
-			if(hasPidInMarketplacePage(docMarketplaceInfo, pid)){
-				
-				Elements lines = docMarketplaceInfo.select("table.offers-table tbody tr.partner-line");
+		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-				for(Element linePartner: lines) {
+		Elements lines = doc.select(".card-seller-offer");
 
-					String partnerName = linePartner.select(".part-info.part-name").first().text().trim().toLowerCase();
-					Float partnerPrice = Float.parseFloat(linePartner.select(".value-prod").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+		for(Element linePartner: lines) {
+			String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
+			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
 
-					String id = linePartner.attr("data-partner-id").trim();
-
-					if(idsMarketplaces != null){
-						if(idsMarketplaces.containsKey(id) || (partnerName.equals(MAIN_SELLER_NAME_LOWER) && idsMarketplaces.containsKey(MAIN_SELLER_ID_PARTNER))){
-							marketplace.put(partnerName, partnerPrice);
-						}
-					} else {
-						marketplace.put(partnerName, partnerPrice);
-					}
-
-				}
-				
-			}  else {
-				
-				Elements lines = docMarketplaceInfo.select(".card-seller-offer");
-				
-				for(Element linePartner: lines) {
-					String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
-					Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-					
-					marketplace.put(partnerName, partnerPrice);	
-				}
-			}
+			marketplace.put(partnerName, partnerPrice);	
 		}
+
+
 
 		return marketplace;
 	}
-
-	private boolean hasPidInMarketplacePage(Document doc, String internalPid){
-		if(doc != null){
-			Element hasPid = doc.select("input[name=codProdFusion]").first();
-
-			if(hasPid != null){
-				String pid = hasPid.attr("value").trim();
-
-				if(pid.equals(internalPid)){
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	private Map<String, String> getIdsForMarketplaces(Document doc, String internalID){
-		Map<String, String> idsMarketplaces = new HashMap<String, String>();
-
-		Elements ids = doc.select("span.custom-input-radio > input");
-		String[] tokens = null;
-
-		if(ids.size() >=1){
-			for(Element e : ids){
-				if(e.attr("value").equals(internalID)){
-					String partnersCode = e.attr("data-partners");
-
-					if(!partnersCode.isEmpty()){
-						tokens = e.attr("data-partners").split(",");
-					}
-
-					break;
-				}
-			}
-
-			if(tokens != null){
-				for(int i = 0; i < tokens.length; i++){
-					idsMarketplaces.put(tokens[i].trim(), internalID);
-				}
-			}
-		}
-
-		return idsMarketplaces;
-	}
-
-
 
 	/*******************
 	 * General methods *
@@ -531,49 +306,60 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return available;
 	}
 
-	private String crawlPrimaryImage(Document document) {
-
+	private String crawlPrimaryImage(JSONObject infoProductJson) {
 		String primaryImage = null;
 
-		Element primaryImageElements = document.select(".mp-picture img").first();
+		if(infoProductJson.has("images")){
+			JSONObject images = infoProductJson.getJSONObject("images");
 
-		if(primaryImageElements != null){
-			if(primaryImageElements.hasAttr("data-zoom-image")){
-				primaryImage = primaryImageElements.attr("data-zoom-image");
-				if(primaryImage.equals("#")){
-					primaryImage = primaryImageElements.attr("src");
-				}
-			} else {
-				primaryImage = primaryImageElements.attr("src");
-			}
-	
-			if(primaryImage != null && primaryImage.contains("notFound.gif")) {
-				primaryImage = null;
+			if(images.has("primaryImage")){
+				primaryImage = images.getString("primaryImage");
 			}
 		}
 
 		return primaryImage;
 	}
 
+	private String crawlSecondaryImages(JSONObject infoProductJson) {
+		String secondaryImages = null;
+
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		if(infoProductJson.has("images")){
+			JSONObject images = infoProductJson.getJSONObject("images");
+
+			if(images.has("secondaryImages")){
+				secondaryImagesArray = images.getJSONArray("secondaryImages");
+			}
+		}
+
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
+	}	
+
 	private String crawlMainPageName(Document document) {
 		String name = null;
-		Elements elementName = document.select(".mp-title h1 span");
-		if(elementName.size() > 0) {
+		Element elementName = document.select(".product-name").first();
+		if(elementName != null) {
 			name = elementName.text().replace("'","").replace("’","").trim();
 		}
 		return name;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		Elements elementCategories = document.select(".breadcrumb span[itemprop=\"name\"]");
+	private ArrayList<String> crawlCategories(JSONObject infoProductJson) {
 		ArrayList<String> categories = new ArrayList<String>();
+		if(infoProductJson.has("categories")){
+			JSONArray categoriesJson = infoProductJson.getJSONArray("categories");
+			for(int i = 0; i < categoriesJson.length(); i++) {
+				JSONObject categorie = categoriesJson.getJSONObject(i);
 
-		for(int i = 0; i < elementCategories.size(); i++) {
-			Element e = elementCategories.get(i);
-			String tmp = e.text().toString();
-
-			tmp = tmp.replace(">", "");
-			categories.add(tmp);
+				if(categorie.has("name")){
+					categories.add(categorie.getString("name"));
+				}
+			}
 		}
 
 		return categories;
@@ -586,29 +372,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 		return "";
 	}
-
-	private String crawlSecondaryImages(Document document) {
-		String secondaryImages = null;
-
-		JSONArray secondaryImagesArray = new JSONArray();
-		Elements elementFotoSecundaria = document.select(".a-carousel-item img");
-
-		if (elementFotoSecundaria.size()>1) {
-			for(int i = 1; i < elementFotoSecundaria.size(); i++) { //starts with index 1 because de primary image is the first image
-				Element e = elementFotoSecundaria.get(i);
-
-				if(e.hasAttr("data-szimg"))	secondaryImagesArray.put(e.attr("data-szimg"));
-				else 						secondaryImagesArray.put(e.attr("src"));
-			}
-
-		}
-
-		if (secondaryImagesArray.length() > 0) {
-			secondaryImages = secondaryImagesArray.toString();
-		}
-
-		return secondaryImages;
-	}	
 
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
 		JSONArray marketplace = new JSONArray();
@@ -626,281 +389,308 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return marketplace;
 	}
 
-	private Document fetchMarketplace(String internalID, String url) {
-		Document docMarketplaceInfo = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
-
-		return docMarketplaceInfo;
-	}
-
-
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element elementProductDetails = document.select("#productdetails").first();
+		Element elementProductDetails = document.select(".card-info").first();
 		if(elementProductDetails != null) 	description = description + elementProductDetails.html();
 
 		return description;
 	}	
-	
+
 	private Integer crawlStock(JSONObject jsonProduct, String id){
 		Integer stock = null;
-		
+
 		if(jsonProduct.has(id)){
 			JSONObject product = jsonProduct.getJSONObject(id);
-			
+
 			if(product.has("stock")){
 				stock = product.getInt("stock");
 			}
 		}
-		
+
 		return stock;
 	}
 
 	/**
-	 * Para pegar todos os preços acessamos uma api que retorna um json
-	 * com todos preços de todos os marketplaces, depois pegamos somente
-	 * as parcelas e o preço no boleto do shoptime. Em seguida coloco somente
-	 * o id do produto com seu preço no boleto e as parcelas no cartão, também coloco
-	 * as parcelas do produto com maior quantidade de parcelas, pois foi verificado
-	 * que produtos com variações, a segunda variação está vindo com apenas
-	 * uma parcela no json da api. Vale lembrar que pegamos as parcelas do Cartão VISA. ex:
+	 * Nesse novo site da americanas todas as principais informações dos skus
+	 * estão em um json no html, esse json é muito grande, por isso pego somente
+	 * o que preciso e coloco em outro json para facilitar a captura de informações
 	 * 
-	 * Endereço api: 
-	 * http://product-v3.shoptime.com.br/product?q=itemId:(125628846)&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO
-	 * 
-	 * Parse Json:
-	 * http://json.parser.online.fr/
-	 * 
-	 *{ 125628854":{
-	 *	"installments":[
+	 *{ 
+	 *	internalPid = '51612',
+	 *	skus:[
 	 *		{
-	 *			"interestRate":0,
-	 * 			"total":1699,
-	 *			"quantity":1,
-	 *			"interestAmount":0,
-	 *			"value":1699,
-	 *			"annualCET":0
-	 *		},
-	 *		{...},
-	 *		{...}
+	 *			internal_id: '546',
+	 *			variationName: '110v'
+	 *		}
 	 *	],
-	 *	"bankTicket":1699,
-	 *	"stock":72
+	 *	images:{
+	 *		primaryImage: '123.jpg'.
+	 *		secondaryImages: [
+	 *			'1.jpg',
+	 *			'2.jpg'
+	 *		]
 	 *	},
-	 *  "moreQuantityOfInstallments":[
-	 *	{
-	 *		"interestRate":0,
-	 *		"total":1699,
-	 *		"quantity":1,
-	 *		"interestAmount":0,
-	 *		"value":1699,
-	 *		"annualCET":0
+	 *	categories:[
+	 *		{
+	 *			id: '123',
+	 *			name: 'cafeteira'
+	 *		}
+	 *	],
+	 *	prices:{
+	 *		546:{
+	 *			stock: 1706
+	 *			bankTicket: 59.86
+	 *			installments: [
+	 *				{
+	 *					quantity: 1,
+	 *					value: 54.20
+	 *				}
+	 *			]
+	 *		}
 	 *	}
+	 *	
 	 *}
 	 */
-	
-	private JSONObject assembleJsonPrices(JSONObject api){
+
+	private JSONObject assembleJsonProduct(JSONObject initialJson){
+		JSONObject jsonProduct = new JSONObject();
+
+		if(initialJson.has("product")){
+			JSONObject productJson = initialJson.getJSONObject("product");
+
+			if(productJson.has("id")){
+				jsonProduct.put("internalPid", productJson.getString("id"));
+			}
+
+			JSONObject jsonPrices = getJsonPrices(initialJson);
+			jsonProduct.put("prices", jsonPrices);
+
+			JSONObject jsonImages = getJSONImages(productJson);
+			jsonProduct.put("images", jsonImages);
+
+			JSONArray jsonCategories = getJSONCategories(productJson);
+			jsonProduct.put("categories", jsonCategories);
+
+			JSONArray skus = getJSONSkus(initialJson);
+			jsonProduct.put("skus", skus);
+		}
+
+		return jsonProduct;
+
+	}
+
+	private JSONArray getJSONSkus(JSONObject initialJson){
+		JSONArray skus = new JSONArray();
+
+		if(initialJson.has("skus")){
+			JSONArray skusJson = initialJson.getJSONArray("skus");
+
+			for(int i = 0; i < skusJson.length(); i++){
+				JSONObject skuJson = skusJson.getJSONObject(i);
+				JSONObject sku = new JSONObject();
+
+				if(skuJson.has("id")){
+					sku.put("internalId", skuJson.getString("id"));
+
+					if(skuJson.has("name")){
+						String name = "";
+
+						if(skuJson.has("diffs")){
+							JSONArray diffs = skuJson.getJSONArray("diffs");
+
+							for(int j = 0; j < diffs.length(); j++){
+								JSONObject variation = diffs.getJSONObject(j);
+
+								if(variation.has("value")){
+									name += " " + variation.getString("value").trim();
+								}
+							}
+
+							sku.put("variationName", name);
+						}
+					}
+				}
+				skus.put(sku);
+			}
+		}
+
+		return skus;
+	}
+
+	private JSONArray getJSONCategories(JSONObject productJson){
+		JSONArray jsonCategories = new JSONArray();
+
+		if(productJson.has("category")){
+			JSONObject category = productJson.getJSONObject("category");
+
+			if(category.has("breadcrumb")){
+				jsonCategories = category.getJSONArray("breadcrumb");
+			}
+		}
+
+		return jsonCategories;
+	}
+
+	private JSONObject getJSONImages(JSONObject productJson){
+		JSONObject jsonImages = new JSONObject();
+
+		if(productJson.has("images")){
+			JSONArray imagesArray = productJson.getJSONArray("images");
+			JSONArray secondaryImages = new JSONArray();
+
+			for(int i = 0; i < imagesArray.length(); i++){
+				JSONObject images = imagesArray.getJSONObject(i);
+				String image = null;
+
+				if(images.has("extraLarge")){
+					image = images.getString("extraLarge");
+				} else if(images.has("large")){
+					image = images.getString("large");
+				} else if(images.has("big")){
+					image = images.getString("big");
+				} else if(images.has("medium")){
+					image = images.getString("medium");
+				}
+
+				if(i == 0){
+					jsonImages.put("primaryImage", image);
+				} else {
+					secondaryImages.put(image);
+				}
+			}
+
+			jsonImages.put("secondaryImages", secondaryImages);
+		}
+
+		return jsonImages;
+	}
+
+	private JSONObject getJsonPrices(JSONObject initialJson){
 		JSONObject jsonPrices = new JSONObject();
 
-		if(api.has("products")){
-			JSONObject productJson = api.getJSONArray("products").getJSONObject(0);
+		if(initialJson.has("offers")){
+			JSONArray offersJson = initialJson.getJSONArray("offers");
+			JSONObject correctSeller = new JSONObject();
+			JSONArray moreQuantityOfInstallments = new JSONArray();
 
-			if(productJson.has("offers")){
-				JSONArray offersJson = productJson.getJSONArray("offers");
-				JSONObject correctSeller = new JSONObject();
-				JSONArray moreQuantityOfInstallments = new JSONArray();
-				
-				for(int i = 0; i < offersJson.length(); i++){
-					JSONObject jsonOffer = offersJson.getJSONObject(i);
-					JSONObject jsonSeller = new JSONObject();
-					String idProduct = null;
+			for(int i = 0; i < offersJson.length(); i++){
+				JSONObject jsonOffer = offersJson.getJSONObject(i);
+				JSONObject jsonSeller = new JSONObject();
+				String idProduct = null;
 
-					if(jsonOffer.has("_embedded")){
-						JSONObject embedded = jsonOffer.getJSONObject("_embedded");
+				if(jsonOffer.has("_embedded")){
+					JSONObject embedded = jsonOffer.getJSONObject("_embedded");
 
-						if(embedded.has("seller")){
-							JSONObject seller = embedded.getJSONObject("seller");
+					if(embedded.has("seller")){
+						JSONObject seller = embedded.getJSONObject("seller");
 
-							if(seller.has("name")){
-								if(seller.getString("name").toLowerCase().equals("b2w")){
-									correctSeller = jsonOffer;
-								}
+						if(seller.has("name")){
+							if(seller.getString("name").toLowerCase().equals("b2w")){
+								correctSeller = jsonOffer;
 							}
 						}
 					}
-
-					if(correctSeller.has("_links")){
-						JSONObject links = correctSeller.getJSONObject("_links");
-
-						if(links.has("sku")){
-							JSONObject sku = links.getJSONObject("sku");
-
-							if(sku.has("id")){
-								idProduct = sku.getString("id");
-							}
-						}
-
-						if(correctSeller.has("paymentOptions")){
-							JSONObject payment = correctSeller.getJSONObject("paymentOptions");
-
-							if(payment.has("BOLETO")){
-								JSONObject boleto = payment.getJSONObject("BOLETO");
-
-								if(boleto.has("price")){
-									jsonSeller.put("bankTicket", boleto.getDouble("price"));
-								}
-							}
-
-							if(payment.has("CARTAO_VISA")){
-								JSONObject visa = payment.getJSONObject("CARTAO_VISA");
-
-								if(visa.has("installments")){
-									JSONArray installments = visa.getJSONArray("installments");
-									jsonSeller.put("installments", installments);
-									
-									if(installments.length() > moreQuantityOfInstallments.length()){
-										moreQuantityOfInstallments = installments;
-									}
-								}
-							}
-							
-							if(correctSeller.has("availability")){
-								JSONObject availability = correctSeller.getJSONObject("availability");
-								
-								if(availability.has("_embedded")){
-									JSONObject embeddedStock = availability.getJSONObject("_embedded");
-									
-									if(embeddedStock.has("stock")){
-										JSONObject jsonStock = embeddedStock.getJSONObject("stock");
-										
-										if(jsonStock.has("quantity")){
-											jsonSeller.put("stock", jsonStock.getInt("quantity"));
-										}
-									}
-								}
-							}
-						}
-
-						jsonPrices.put(idProduct, jsonSeller);
-						jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
-					}
-
 				}
-				
-				if(jsonPrices.has("moreQuantityOfInstallments")){
-					if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
-						String url = session.getOriginalURL();
-						
-						if(url.contains("?")){
-							int x = url.indexOf("?");
-							
-							url = url.substring(0, x);
+
+				if(correctSeller.has("_links")){
+					JSONObject links = correctSeller.getJSONObject("_links");
+
+					if(links.has("sku")){
+						JSONObject sku = links.getJSONObject("sku");
+
+						if(sku.has("id")){
+							idProduct = sku.getString("id");
 						}
-						
-						url = url + "?loja=02";
-						
-						Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-						Element parcels = doc.select(".all-installment").first();
-						
-						if(parcels != null){
-							Elements installmentsElements = parcels.select("> .lp tr");
-							JSONArray installmentsJsonArray = new JSONArray();
-							
-							for(Element e : installmentsElements){
-								JSONObject jsonTemp = new JSONObject();
-								Element parcel = e.select(".qtd-parcel").first();
-								
-								if(parcel != null){
-									Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
-									
-									Element values = e.select(".parcel").first();
-									
-									if(values != null){
-										Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-										
-										jsonTemp.put("quantity", installment);
-										jsonTemp.put("value", priceInstallment);
-										installmentsJsonArray.put(jsonTemp);
+					}
+
+					if(correctSeller.has("paymentOptions")){
+						JSONObject payment = correctSeller.getJSONObject("paymentOptions");
+
+						if(payment.has("BOLETO")){
+							JSONObject boleto = payment.getJSONObject("BOLETO");
+
+							if(boleto.has("price")){
+								jsonSeller.put("bankTicket", boleto.getDouble("price"));
+							}
+						}
+
+						if(payment.has("CARTAO_VISA")){
+							JSONObject visa = payment.getJSONObject("CARTAO_VISA");
+
+							if(visa.has("installments")){
+								JSONArray installments = visa.getJSONArray("installments");
+								jsonSeller.put("installments", installments);
+
+								if(installments.length() > moreQuantityOfInstallments.length()){
+									moreQuantityOfInstallments = installments;
+								}
+							}
+						}
+
+						if(correctSeller.has("availability")){
+							JSONObject availability = correctSeller.getJSONObject("availability");
+
+							if(availability.has("_embedded")){
+								JSONObject embeddedStock = availability.getJSONObject("_embedded");
+
+								if(embeddedStock.has("stock")){
+									JSONObject jsonStock = embeddedStock.getJSONObject("stock");
+
+									if(jsonStock.has("quantity")){
+										jsonSeller.put("stock", jsonStock.getInt("quantity"));
 									}
 								}
 							}
-							
-							jsonPrices.put("installmentsMainPage", installmentsJsonArray);
 						}
 					}
+
+					jsonPrices.put(idProduct, jsonSeller);
 				}
 
 			}
 		}
-		
+
 		return jsonPrices;
 	}
 
-	private JSONObject fetchAPIPrices(String internalPid){
-		JSONObject api = new JSONObject();
-		
-		if(internalPid != null){
-			String url = "http://product-v3.americanas.com.br/product?q=itemId:("+ internalPid +")"
-					+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
-	
-			api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		}
-
-		return api;
-	}
-
-	private Prices crawlPrices(JSONObject apiJson, Float priceBase, String id){
+	private Prices crawlPrices(JSONObject infoProductJson, Float priceBase, String id){
 		Prices prices = new Prices();
 
 		if(priceBase != null){
-			JSONArray moreQuantityOfInstallments = new JSONArray();
-			if(apiJson.has("moreQuantityOfInstallments")){
-				moreQuantityOfInstallments = apiJson.getJSONArray("moreQuantityOfInstallments");
-			}
-			
-			JSONArray installmentsMainPage = new JSONArray();
-			if(apiJson.has("installmentsMainPage")){
-				installmentsMainPage = apiJson.getJSONArray("installmentsMainPage");
-			}
-			
-			if(apiJson.has(id)){
-				JSONObject pricesJson = apiJson.getJSONObject(id);
+			if(infoProductJson.has("prices")){
+				JSONObject pricesJson = infoProductJson.getJSONObject("prices");
 				
-				if(pricesJson.has("bankTicket")){
-					Double price = pricesJson.getDouble("bankTicket");
-		
-					prices.insertBankTicket(price.floatValue());
-				}
-		
-				if(pricesJson.has("installments")){
-					Map<Integer,Float> installmentPriceMap = new HashMap<>();
-					JSONArray installmentsArray = pricesJson.getJSONArray("installments");
-					
-					if(installmentsArray.length() == 1 && installmentsArray.length() < moreQuantityOfInstallments.length()){
-						installmentsArray = moreQuantityOfInstallments;
+				if(pricesJson.has(id)){
+					JSONObject pricesJsonProduct = pricesJson.getJSONObject(id);
+
+					if(pricesJsonProduct.has("bankTicket")){
+						Double price = pricesJsonProduct.getDouble("bankTicket");
+
+						prices.insertBankTicket(price.floatValue());
 					}
-					
-					if(installmentsArray.length() == 1 && installmentsArray.length() < installmentsMainPage.length()){
-						for(int i = 0; i < installmentsMainPage.length(); i++){
-							installmentsArray.put(installmentsMainPage.getJSONObject(i));
-						}
-					}
-					
-					for(int i = 0; i < installmentsArray.length(); i++){
-						JSONObject installmentJson = installmentsArray.getJSONObject(i);
-		
-						if(installmentJson.has("quantity")){
-							Integer installment = installmentJson.getInt("quantity");
-		
-							if(installmentJson.has("value")){
-								Double valueDouble = installmentJson.getDouble("value");
-								Float value = valueDouble.floatValue();
-		
-								installmentPriceMap.put(installment, value);
+
+					if(pricesJsonProduct.has("installments")){
+						Map<Integer,Float> installmentPriceMap = new HashMap<>();
+						JSONArray installmentsArray = pricesJsonProduct.getJSONArray("installments");
+
+						for(int i = 0; i < installmentsArray.length(); i++){
+							JSONObject installmentJson = installmentsArray.getJSONObject(i);
+
+							if(installmentJson.has("quantity")){
+								Integer installment = installmentJson.getInt("quantity");
+
+								if(installmentJson.has("value")){
+									Double valueDouble = installmentJson.getDouble("value");
+									Float value = valueDouble.floatValue();
+
+									installmentPriceMap.put(installment, value);
+								}
 							}
 						}
+
+						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 					}
-		
-					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 				}
 			}
 		}
