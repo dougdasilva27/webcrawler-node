@@ -134,7 +134,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 			for(String internalId : skuOptions.keySet()){	
 				// InternalId
-				String variationInternalID = internalPid + "-" + internalId;
+				String variationInternalID = internalId;
 
 				//variation name
 				String variationName = (name + " " + skuOptions.get(internalId)).trim();
