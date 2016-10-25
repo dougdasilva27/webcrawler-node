@@ -85,9 +85,15 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		 */
 		
 		BasicClientCookie cookie = new BasicClientCookie("catalogTestAB", "new");
-		cookie.setDomain(".americanas.com.br");
+		cookie.setDomain("www.americanas.com.br");
 		cookie.setPath("/");
+		
+		BasicClientCookie cookie2 = new BasicClientCookie("catalogTestAB", "new");
+		cookie2.setDomain(".americanas.com.br");
+		cookie2.setPath("/");
+		
 		this.cookies.add(cookie);
+		this.cookies.add(cookie2);
 	}
 
 	@Override
@@ -260,7 +266,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	private Map<String,Prices> crawlMarketplace(String internalId, String pid) {
 		Map<String,Prices> marketplaces = new HashMap<>();
 
-		String url = "http://www.submarino.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
+		String url = "http://www.americanas.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
 
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
