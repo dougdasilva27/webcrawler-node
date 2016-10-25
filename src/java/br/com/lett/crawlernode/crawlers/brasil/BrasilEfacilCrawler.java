@@ -198,10 +198,22 @@ public class BrasilEfacilCrawler extends Crawler {
 						JSONObject attributes = variationJsonObject.getJSONObject("Attributes");
 						String variationName = null;
 						if (attributes.has("Voltagem_110V")) {
-							variationName = name + " 110V";
+							if(name.contains("110V")){
+								variationName = name;
+							} else if(name.contains("220V")){
+								variationName = name.replace("220V", "110V");
+							} else {
+								variationName = name + " 110V";
+							}
 						}
 						else if (attributes.has("Voltagem_220V")) {
-							variationName = name + " 220V";
+							if(name.contains("220V")){
+								variationName = name;
+							} else if(name.contains("110V")){
+								variationName = name.replace("110V", "220V");
+							} else {
+								variationName = name + " 220V";
+							}
 						}
 
 						// Disponibilidade

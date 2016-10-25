@@ -218,7 +218,7 @@ public class BrasilKalungaCrawler extends Crawler {
 			
 			for(Element e : installments){
 				Integer installment = Integer.parseInt(e.select("span").first().text().replaceAll("[^0-9]", ""));
-				Float value = Float.parseFloat(e.select("span").last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				Float value = Float.parseFloat(e.select("span.font_12_preto").last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 				
 				installmentsPriceMap.put(installment, value);
 			}
