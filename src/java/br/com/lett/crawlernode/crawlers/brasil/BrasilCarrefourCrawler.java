@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -106,6 +109,9 @@ public class BrasilCarrefourCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
+			// Prices
+			Prices prices = crawlPrices(price);
+			
 			// Creating the product
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
@@ -113,6 +119,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -272,5 +279,94 @@ public class BrasilCarrefourCrawler extends Crawler {
 
 		return description;
 	}
+	
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			prices.insertBankTicket(price);
+			
+			String url = "https://www.carrefour.com.br/installment/creditCard?productPrice="+ price;
+			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			
+			JSONObject jsonPrices = new JSONObject();
+			
+			try{
+				jsonPrices = new JSONObject(json);
+			}catch(Exception e){
+				
+			}
+			
+			if(jsonPrices.has("maestroInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "maestroInstallments");
+				
+				prices.insertCardInstallment("maestro", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("carrefourInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "carrefourInstallments");
+				
+				prices.insertCardInstallment("shop_card", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("mastercardInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "mastercardInstallments");
+				
+				prices.insertCardInstallment("mastercard", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("dinersInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "dinersInstallments");
+				
+				prices.insertCardInstallment("diners", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("visaInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "visaInstallments");
+				
+				prices.insertCardInstallment("visa", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("hipercardInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "hipercardInstallments");
+				
+				prices.insertCardInstallment("hipercard", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("amexInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "amexInstallments");
+				
+				prices.insertCardInstallment("amex", installmentPriceMap);
+			}
+			
+			if(jsonPrices.has("eloInstallments")){
+				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "eloInstallments");
+				
+				prices.insertCardInstallment("elo", installmentPriceMap);
+			}
+		}
+		
+		return prices;
+	}
 
+	private Map<Integer,Float> crawlInstallment(JSONObject jsonPrices, String keyCard){
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		JSONArray installments = jsonPrices.getJSONArray(keyCard);
+		
+		for(int i = 0; i < installments.length(); i++){
+			JSONObject jsonInstallment = installments.getJSONObject(i);
+			
+			if(jsonInstallment.has("index")){
+				Integer installment = jsonInstallment.getInt("index");
+				
+				if(jsonInstallment.has("value")){
+					Float value = Float.parseFloat(jsonInstallment.getString("value").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+		}
+		
+		return installmentPriceMap;
+	}
 }
