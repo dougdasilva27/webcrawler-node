@@ -1,7 +1,11 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.text.DecimalFormat;
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,6 +15,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -87,11 +92,16 @@ public class BrasilNovomundoCrawler extends Crawler {
 					// name
 					String name = crawlName(productInfoJSON);
 
+					// stock
+					Integer stock = crawlStock(productInfoJSON);
+					
 					// availability
 					boolean available = crawlAvailability(productInfoJSON);
 
+					int discountBoleto = crawlDiscountBoleto(doc);
+					
 					// marketplace
-					JSONArray marketplace = crawlMarketplace(productInfoJSON);
+					JSONArray marketplace = crawlMarketplace(productInfoJSON, internalId, discountBoleto);
 
 					// price
 					Float price = crawlPrice(productInfoJSON);
@@ -135,9 +145,9 @@ public class BrasilNovomundoCrawler extends Crawler {
 						description = description + elementSpecs.html();
 					}
 
-					// stock
-					Integer stock = crawlStock(productInfoJSON);
-
+					// Prices 
+					Prices prices = crawlPrices(internalId, price, marketplace, discountBoleto);
+					
 					Product product = new Product();
 
 					product.setUrl(this.session.getOriginalURL());
@@ -145,6 +155,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(name);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -220,10 +231,10 @@ public class BrasilNovomundoCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray crawlMarketplace(JSONObject productInfoJSON) {
+	private JSONArray crawlMarketplace(JSONObject productInfoJSON, String internalId, int discountBoleto) {
 		JSONArray marketplace = new JSONArray();
 		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
-
+		
 		for (int i = 0; i < skuSellersInfo.length(); i++) {
 			JSONObject seller = skuSellersInfo.getJSONObject(i);
 		
@@ -235,6 +246,12 @@ public class BrasilNovomundoCrawler extends Crawler {
 				JSONObject partner = new JSONObject();
 				partner.put("name", sellerName);
 				partner.put("price", sellerPrice);
+				
+				if(seller.has("IsDefaultSeller")){
+					if(seller.getBoolean("IsDefaultSeller")){
+						partner.put("prices", crawlPrices(internalId, sellerPrice, marketplace, discountBoleto).getPricesJson());
+					}
+				}
 				
 				marketplace.put(partner);
 			}
@@ -290,5 +307,100 @@ public class BrasilNovomundoCrawler extends Crawler {
 		}
 
 		return null;
+	}
+	
+	private Prices crawlPrices(String internalId, Float price, JSONArray marketplace, Integer discountBoleto){
+		Prices prices = new Prices();
+		
+		DecimalFormat df = new DecimalFormat("0.00");
+		df.setMaximumFractionDigits(2);
+		
+		if(price != null || marketplace.length() > 0){
+			String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku=" + internalId + "&d=" + discountBoleto;
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			
+			Element bankTicketElement = doc.select("#divBoleto .valor").first();
+			if(bankTicketElement != null){
+				Float bankTicketPrice = Float.parseFloat(bankTicketElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				
+				bankTicketPrice = Float.parseFloat(df.format((bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)))).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Elements installmentsElements = doc.select("#divCredito table tbody");
+			
+			for(Element e : installmentsElements){
+				Map<Integer,Float> installmentPriceMap = new HashMap<>();
+				String cardName = null;
+				
+				Elements installmentsCard = e.select("tr");
+				for(Element i : installmentsCard){
+					Element installmentElement = i.select("td.parcelas").first();
+					
+					if(installmentElement != null){
+						String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+						Integer installment = null;
+						
+						if(textInstallment.contains("vista")){
+							installment = 1;
+							
+							if(cardName == null){
+								int x = textInstallment.indexOf(" a ");
+								cardName = textInstallment.substring(0, x).replaceAll(" ", "");
+							}
+							
+						} else {
+							installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+							
+							if(cardName == null){
+								int x = textInstallment.indexOf((installment.toString()));
+								cardName = textInstallment.substring(0, x).replaceAll(" ", "");
+							}
+						}
+						
+						Element valueElement = i.select("td:not(.parcelas)").first();
+						
+						if(valueElement != null){
+							Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							
+							if(installment.equals(1)) value = Float.parseFloat(df.format((value - (value * (discountBoleto.floatValue()/100.0)))).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							
+							installmentPriceMap.put(installment, value);
+						}
+					}
+				}
+				
+				if(installmentPriceMap.size() > 0 && cardName != null){
+					prices.insertCardInstallment(cardName, installmentPriceMap);
+				}
+			}
+			
+		}
+		
+		return prices;
+	}
+
+	private int crawlDiscountBoleto(Document doc){
+		int x = 0;
+		Elements discount = doc.select(".product-discount-hight-light > p");
+		
+		if(discount.size() > 0){
+			for(Element e : discount){
+				String boleto = e.text();
+				
+				if(boleto.contains("boleto")){
+					x = Integer.parseInt(boleto.replaceAll("[^0-9]", ""));
+				}
+			}
+		}
+		
+		return x;
+	}
+	
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
 	}
 }
