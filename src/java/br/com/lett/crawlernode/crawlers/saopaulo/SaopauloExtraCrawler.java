@@ -82,7 +82,7 @@ public class SaopauloExtraCrawler extends Crawler {
 			String category3 = getCategory(categories, 2);
 
 			// primary image
-			String primaryImage = crawlPrimaryImage(chaordicSKUJson);
+			String primaryImage = crawlPrimaryImage(doc);
 
 			// secondary images
 			String secondaryImages = null;			
@@ -185,21 +185,25 @@ public class SaopauloExtraCrawler extends Crawler {
 		return "";
 	}
 
-	private String crawlPrimaryImage(JSONObject chaordicSKUJson) {
+	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		if (chaordicSKUJson.has("images")) {
-			JSONObject images = chaordicSKUJson.getJSONObject("images");
-			if (images.has("1200x1200")) {
-				primaryImage = images.getString("1200x1200").trim();
-			} 
-			else if (images.has("200x200")) {
-				primaryImage = images.getString("200x200").trim();
-			}
-			else if (images.has("80x80")) {
-				primaryImage = images.getString("80x80").trim();
-			}
+		Element primaryImageElement = doc.select("#product-image .zoomImage.product-image__zoom-trigger img").first();
+		if (primaryImageElement != null) {
+			primaryImage = primaryImageElement.attr("src").trim();
 		}
-		
+//		if (chaordicSKUJson.has("images")) {
+//			JSONObject images = chaordicSKUJson.getJSONObject("images");
+//			if (images.has("1200x1200")) {
+//				primaryImage = images.getString("1200x1200").trim();
+//			} 
+//			else if (images.has("200x200")) {
+//				primaryImage = images.getString("200x200").trim();
+//			}
+//			else if (images.has("80x80")) {
+//				primaryImage = images.getString("80x80").trim();
+//			}
+//		}
+//		
 		if (primaryImage != null) primaryImage = "http://www.deliveryextra.com.br" + primaryImage;
 		
 		return primaryImage;
