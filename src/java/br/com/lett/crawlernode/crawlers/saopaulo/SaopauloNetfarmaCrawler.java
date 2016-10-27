@@ -17,6 +17,39 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
+/************************************************************************************************************************************************************************************
+ * Crawling notes (27/10/2016):
+ * 
+ * 1) For this crawler, we have one url per each sku.
+ *  
+ * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
+ * 
+ * 3) There is marketplace information in this ecommerce. 
+ *  
+ * 4) InternalId, Pid and Price is crawl in json like this:
+ * 
+ * {
+    "page": "product",
+    "sku": "C00497LRE00",
+    "price": 19.90,
+    "pid": "21397"
+ * }
+ * 
+ * 
+ * 5) The sku page identification is done simply looking the html element.
+ * 
+ * 6) Even if a product is unavailable, its price is not displayed, then price is null.
+ * 
+ * Examples:
+ * ex1 (available): https://www.netfarma.com.br/mascara-para-cilios-maybelline-the-colossal-volum-express-preto-a-prova-dagua-1un.-21397
+ * ex2 (unavailable): https://www.netfarma.com.br/formula-infantil-nan-supreme-2-lata-400g
+ * 
+ * Optimizations notes:
+ * No optimizations.
+ *
+ ************************************************************************************************************************************************************************************/
+
+
 public class SaopauloNetfarmaCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "https://www.netfarma.com.br/";
