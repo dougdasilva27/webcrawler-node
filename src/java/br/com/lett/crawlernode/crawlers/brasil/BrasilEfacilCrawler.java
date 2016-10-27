@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -290,11 +289,16 @@ public class BrasilEfacilCrawler extends Crawler {
 		return products;
 	}
 
+	/**
+	 * Foi definido que o preço principal seria a menor parcela a prazo
+	 * Logo tento sempre pegar a 2 parcela do produto
+	 * caso esse produto tenha somente uma parcela, o preço principal será
+	 * o preço da primeira parcela.
+	 * @param jsonPrices
+	 * @return
+	 */
 	private Float crawlPrice(JSONArray jsonPrices){
 		Float price = null;
-		
-		DecimalFormat df = new DecimalFormat("0.00");
-		df.setMaximumFractionDigits(2);
 		
 		for(int i = 0; i < jsonPrices.length(); i++){
 			JSONObject json = jsonPrices.getJSONObject(i);
@@ -308,17 +312,22 @@ public class BrasilEfacilCrawler extends Crawler {
 					if(installmentJSON.has("option")){
 						String installment = installmentJSON.getString("option");
 						
+						// Vai rodando os cartões até achar a segunda parcela
+						// se achar para o loop
 						if(installment.contains("2")){
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
 							Float result = valueInstallment * 2;
 							
-							price = Float.parseFloat(df.format(result));
+							price = CommonMethods.normalizeTwoDecimalPlaces(result);
 							
 							break;
 							
+							
+							// se não achar o preço será o da primeira parcela.
+							
 						} else if(installment.contains("1")){
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
-							price = Float.parseFloat(df.format(valueInstallment));
+							price = CommonMethods.normalizeTwoDecimalPlaces(valueInstallment);
 						}
 					}
 				}
@@ -358,12 +367,8 @@ public class BrasilEfacilCrawler extends Crawler {
 									Integer installment = Integer.parseInt(text.substring(0, x));
 									
 									if(installmentJSON.has("amount")){
-										Float priceBig = Float.parseFloat(installmentJSON.getString("amount"));
-										
-										DecimalFormat df = new DecimalFormat("0.00");
-										df.setMaximumFractionDigits(2);
-										
-										Float value = Float.parseFloat(df.format(priceBig));
+										Float priceBig = Float.parseFloat(installmentJSON.getString("amount"));							
+										Float value = CommonMethods.normalizeTwoDecimalPlaces(priceBig);
 										
 										installmentPriceMap.put(installment, value);
 									}
