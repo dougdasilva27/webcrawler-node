@@ -372,7 +372,19 @@ public class BrasilNovomundoCrawler extends Crawler {
 				}
 				
 				if(installmentPriceMap.size() > 0 && cardName != null){
-					prices.insertCardInstallment(cardName, installmentPriceMap);
+					if(cardName.equals("amex")){
+						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+					} else if(cardName.equals("visa")){
+						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+					} else if(cardName.equals("mastercard")){
+						prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+					} else if(cardName.equals("diners")){
+						prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+					} else if(cardName.equals("americanexpress")){
+						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+					} else if(cardName.equals("elo")){
+						prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+					}
 				}
 			}
 			

@@ -223,7 +223,7 @@ public class BrasilKalungaCrawler extends Crawler {
 				installmentsPriceMap.put(installment, value);
 			}
 			
-			prices.insertCardInstallment("visa", installmentsPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentsPriceMap);
 		}
 		
 		return prices;

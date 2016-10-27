@@ -300,49 +300,49 @@ public class BrasilCarrefourCrawler extends Crawler {
 			if(jsonPrices.has("maestroInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "maestroInstallments");
 				
-				prices.insertCardInstallment("maestro", installmentPriceMap);
+				prices.insertCardInstallment(Prices.MAESTRO, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("carrefourInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "carrefourInstallments");
 				
-				prices.insertCardInstallment("shop_card", installmentPriceMap);
+				prices.insertCardInstallment(Prices.SHOP_CARD, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("mastercardInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "mastercardInstallments");
 				
-				prices.insertCardInstallment("mastercard", installmentPriceMap);
+				prices.insertCardInstallment(Prices.MASTERCARD , installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("dinersInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "dinersInstallments");
 				
-				prices.insertCardInstallment("diners", installmentPriceMap);
+				prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("visaInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "visaInstallments");
 				
-				prices.insertCardInstallment("visa", installmentPriceMap);
+				prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("hipercardInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "hipercardInstallments");
 				
-				prices.insertCardInstallment("hipercard", installmentPriceMap);
+				prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("amexInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "amexInstallments");
 				
-				prices.insertCardInstallment("amex", installmentPriceMap);
+				prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
 			}
 			
 			if(jsonPrices.has("eloInstallments")){
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "eloInstallments");
 				
-				prices.insertCardInstallment("elo", installmentPriceMap);
+				prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
 			}
 		}
 		

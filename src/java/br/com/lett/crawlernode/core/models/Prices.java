@@ -29,6 +29,7 @@ public class Prices {
 	
 	public static final String VISA = "visa";
 	public static final String MASTERCARD = "mastercard";
+	public static final String MAESTRO = "maestro";
 	public static final String AMEX = "amex";
 	public static final String DINERS = "diners";
 	public static final String ELO = "elo";
