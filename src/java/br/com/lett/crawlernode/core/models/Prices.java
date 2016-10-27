@@ -32,6 +32,7 @@ public class Prices {
 	public static final String MAESTRO = "maestro";
 	public static final String AMEX = "amex";
 	public static final String DINERS = "diners";
+	public static final String CREDICARD = "credicard";
 	public static final String ELO = "elo";
 	public static final String HIPERCARD = "hipercard";
 	public static final String AURA = "aura";

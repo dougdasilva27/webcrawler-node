@@ -1,16 +1,22 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -125,6 +131,9 @@ public class BrasilNagemCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(internalId, price, crawlBankTicketPrice(doc));
 
 			Product product = new Product();
 			
@@ -133,6 +142,7 @@ public class BrasilNagemCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -190,6 +200,90 @@ public class BrasilNagemCrawler extends Crawler {
 		}
 
 		return images;
+	}
+	
+	private Float crawlBankTicketPrice(Document doc){
+		Float bankTicketPrice = null;
+		Element boleto = doc.select(".detalhePrecoBoleto strong").first();
+		
+		if(boleto != null){
+			bankTicketPrice = Float.parseFloat(boleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		}
+		
+		return bankTicketPrice;
+	}
+	
+	private Prices crawlPrices(String internalId, Float price, Float bankTicketPrice){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			String url = "http://www.nagem.com.br/modulos/produto/ajaxparcelamento.php?requestTime=1477589708033&cp=" + internalId;
+			
+			JSONObject jsonPrices = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			
+			if(jsonPrices.has("html")){
+				String html = jsonPrices.getString("html").replaceAll("\\t", "").replaceAll("\\n", "");
+				Document doc = Jsoup.parse(html);
+
+				prices.insertBankTicket(bankTicketPrice);				
+				
+				Elements cardsElements = doc.select("#selDetalheParcelamento" + internalId + " option");
+				
+				for(Element e : cardsElements){
+					String text = e.text().toLowerCase();
+					
+					if(text.contains("visa")){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+					} else if(text.contains("mastercard")){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+					} else if(text.contains("diners")){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+					} else if(text.contains("credicard")){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);					} else if(text.contains("american") || text.contains("amex")){
+					} else if(text.contains("hipercard") || text.contains("amex")){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);					
+					} else if(text.contains("credicard") ){
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						
+						prices.insertCardInstallment(Prices.CREDICARD, installmentPriceMap);					
+					}
+				} 
+			
+			}
+		}
+		
+		return prices;
+	}
+	
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard, String id){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+		
+		Elements installments = doc.select("#divDetalheParcelamento"+ id +"_" + idCard + " li");
+		
+		for(Element e : installments){
+			String text = e.ownText().trim().toLowerCase();
+			
+			if(!text.isEmpty()){
+				int x = text.indexOf("x");
+				
+				Integer installment = Integer.parseInt(text.substring(0, x).trim());
+				Float value = Float.parseFloat(text.substring(x+1).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				
+				mapInstallments.put(installment, value);
+			}
+		}
+		
+		return mapInstallments;
 	}
 	
 	/*******************************
