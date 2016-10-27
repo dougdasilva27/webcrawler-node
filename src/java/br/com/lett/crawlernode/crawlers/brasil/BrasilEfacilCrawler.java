@@ -224,6 +224,8 @@ public class BrasilEfacilCrawler extends Crawler {
 							} else {
 								variationName = name + " 220V";
 							}
+						} else {
+							variationName = name;
 						}
 
 						// Disponibilidade
