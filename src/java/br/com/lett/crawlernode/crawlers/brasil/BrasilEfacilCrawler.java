@@ -113,7 +113,7 @@ public class BrasilEfacilCrawler extends Crawler {
 						internalPid = elementInternalPid.attr("value").trim();
 					}
 				}
-				
+
 				// ID interno
 				String internalId = null;
 				Element internalIdElement = doc.select("#entitledItem_" + internalPid).first();
@@ -121,10 +121,10 @@ public class BrasilEfacilCrawler extends Crawler {
 				if(internalIdElement != null){
 					JSONArray infoArray = new JSONArray(internalIdElement.text().trim());
 					info = infoArray.getJSONObject(0);
-					
+
 					internalId = info.getString("catentry_id");
 				} 
-				
+
 
 				// Disponibilidade
 				boolean available = true;
@@ -132,23 +132,23 @@ public class BrasilEfacilCrawler extends Crawler {
 				if (elementAvailable == null) {
 					available = false;
 				}
-				
+
 				// Prices
 				Prices prices = new Prices();
-				
+
 				// Price
 				Float price = null;
-				
+
 				if (available) {
 					// Price BankTicket 1x
 					Float priceBank = Float.parseFloat(info.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-					
+
 					// Prices Json
 					JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank);
-					
+
 					// Prices
 					prices = crawlPrices(info, priceBank, jsonPrices);
-					
+
 					// Price
 					price = crawlPrice(jsonPrices);
 				}
@@ -232,28 +232,28 @@ public class BrasilEfacilCrawler extends Crawler {
 						if (variationJsonObject.getString("hasInventory").equals("false")) {
 							available = false;
 						}
-						
+
 						// Prices
 						Prices prices = new Prices();
-						
+
 						// Preço
 						Float price = null;
-						
+
 						if(available){
 							// Price BankTicket 1x
 							Float priceBank = Float.parseFloat(variationJsonObject.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-							
+
 							// Prices Json
 							JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank);
-							
+
 							// Prices
 							prices = crawlPrices(variationJsonObject, priceBank, jsonPrices);
-							
+
 							// Price
 							price = crawlPrice(jsonPrices);
-	
+
 						}
-						
+
 						if (mustInsert) {
 
 							Product product = new Product();
@@ -285,7 +285,7 @@ public class BrasilEfacilCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -294,38 +294,36 @@ public class BrasilEfacilCrawler extends Crawler {
 	 * Logo tento sempre pegar a 2 parcela do produto
 	 * caso esse produto tenha somente uma parcela, o preço principal será
 	 * o preço da primeira parcela.
+	 * 
 	 * @param jsonPrices
 	 * @return
 	 */
 	private Float crawlPrice(JSONArray jsonPrices){
 		Float price = null;
-		
+
 		for(int i = 0; i < jsonPrices.length(); i++){
 			JSONObject json = jsonPrices.getJSONObject(i);
-			
+
 			if(json.has("installmentOptions")){
 				JSONArray installments = json.getJSONArray("installmentOptions");
-				
+
 				for(int j = 0; j < installments.length(); j++){
 					JSONObject installmentJSON = installments.getJSONObject(j);
-					
+
 					if(installmentJSON.has("option")){
 						String installment = installmentJSON.getString("option");
-						
+
 						// Vai rodando os cartões até achar a segunda parcela
 						// se achar para o loop
 						if(installment.contains("2")){
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
 							Float result = valueInstallment * 2;
-							
+
 							price = CommonMethods.normalizeTwoDecimalPlaces(result);
-							
+
 							break;
 							
-							
-							// se não achar o preço será o da primeira parcela.
-							
-						} else if(installment.contains("1")){
+						} else if(installment.contains("1")) { // se não achar o preço será o da primeira parcela
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
 							price = CommonMethods.normalizeTwoDecimalPlaces(valueInstallment);
 						}
@@ -333,72 +331,79 @@ public class BrasilEfacilCrawler extends Crawler {
 				}
 			}
 		}
-		
-		
-		
+
+
+
 		return price;
 	}
-	
-	private Prices crawlPrices(JSONObject info, Float price, JSONArray jsonPrices){
+
+	private Prices crawlPrices(JSONObject info, Float price, JSONArray jsonPrices) {
 		Prices prices = new Prices();
-		
+
 		if(price != null){
-		
+
 			prices.insertBankTicket(price);
-			
+
 			try{
-				for(int i = 0; i < jsonPrices.length(); i++){
+				for(int i = 0; i < jsonPrices.length(); i++) {
 					JSONObject json = jsonPrices.getJSONObject(i);
 					Map<Integer,Float> installmentPriceMap = new HashMap<>();
-					
-					if(json.has("paymentMethodName")){
+
+					if (json.has("paymentMethodName")) {
 						String cardName = json.getString("paymentMethodName").replaceAll(" ", "").toLowerCase().trim();
-						
-						if(json.has("installmentOptions")){
+
+						if (json.has("installmentOptions")) {
 							JSONArray installments = json.getJSONArray("installmentOptions");
-							
-							for(int j = 0; j < installments.length(); j++){
+
+							for(int j = 0; j < installments.length(); j++) {
 								JSONObject installmentJSON = installments.getJSONObject(j);
-								
+
 								if(installmentJSON.has("option")){
 									String text = installmentJSON.getString("option").toLowerCase();
 									int x = text.indexOf("x");
-									
+
 									Integer installment = Integer.parseInt(text.substring(0, x));
-									
+
 									if(installmentJSON.has("amount")){
 										Float priceBig = Float.parseFloat(installmentJSON.getString("amount"));							
 										Float value = CommonMethods.normalizeTwoDecimalPlaces(priceBig);
-										
+
 										installmentPriceMap.put(installment, value);
 									}
 								}
 							}
-							
+
 							prices.insertCardInstallment(cardName, installmentPriceMap);
 						}
 					}
 				}
 			} catch(Exception e){
-				
+
 			}
 		}
-		
+
 		return prices;
 	}
-	
+
+	/**
+	 * Pega o JSON filho que possui informações sobre as parecelas.
+	 * 
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
 	private JSONArray crawlPriceFromApi(String internalId, Float price){
 		String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
 				+ "&catalogEntryId="+ internalId +"&nonInstallmentPrice="+ price;
-		
+
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		
+
 		int x = json.indexOf("/*");
 		int y = json.indexOf("*/", x + 2);
-		
+
 		json = json.substring(x+2, y);
-		
-		
+
+
 		JSONArray jsonPrice;
 		try{
 			jsonPrice = new JSONArray(json);
@@ -406,8 +411,8 @@ public class BrasilEfacilCrawler extends Crawler {
 			jsonPrice = new JSONArray();
 			e.printStackTrace();
 		}
-		
-		
+
+
 		return jsonPrice;
 	}
 }
