@@ -34,6 +34,7 @@ public class Prices {
 	public static final String DINERS = "diners";
 	public static final String ELO = "elo";
 	public static final String HIPERCARD = "hipercard";
+	public static final String AURA = "aura";
 	public static final String SHOP_CARD = "shop_card";
 
 	private JSONObject prices;

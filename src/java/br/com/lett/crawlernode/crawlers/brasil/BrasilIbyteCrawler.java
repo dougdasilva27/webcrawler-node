@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -127,12 +130,16 @@ public class BrasilIbyteCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 			
+			// Prices 
+			Prices prices = crawlPrices(doc);
+			
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -153,6 +160,50 @@ public class BrasilIbyteCrawler extends Crawler {
 	}
 
 
+	private Prices crawlPrices(Document doc){
+		Prices prices = new Prices();
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		
+		Elements installments = doc.select(".bloco-formas-pagamento li");
+		
+		for(Element e : installments){
+			String text = e.text().toLowerCase();
+			int x = text.indexOf("x");
+			
+			Integer installment = Integer.parseInt(text.substring(0,x).trim());
+			Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			
+			installmentPriceMap.put(installment, value);
+		}
+		
+		if(installmentPriceMap.size() > 0){
+			prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+			prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+			prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+			prices.insertCardInstallment(Prices.AURA, installmentPriceMap);
+			prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
+		}
+		
+		Element priceBoleto = doc.select(".in-cash").first();
+		
+		if(priceBoleto != null){
+			Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			
+			if(bankTicketPrice > 0){
+				prices.insertBankTicket(bankTicketPrice);
+			} else if(installmentPriceMap.size() > 0) {
+				prices.insertBankTicket(installmentPriceMap.get(1));
+			}
+			
+		} else if(installmentPriceMap.size() > 0) {
+			prices.insertBankTicket(installmentPriceMap.get(1));
+		}
+		
+		return prices;
+	}
+	
 	/*******************************
 	 * Product page identification *
 	 *******************************/
