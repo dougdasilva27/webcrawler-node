@@ -283,15 +283,15 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			prices.insertBankTicket(partnerPrice);
 			
 			Element installmentElement = linePartner.select(".installment-price").first();
-			if(installmentElement != null){
-				String text = installmentElement.text().toLowerCase().trim();
-				int x = text.indexOf("x");
-				
-				Integer installment = Integer.parseInt(text.substring(0, x).trim());
-				Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				
-				installmentMapPrice.put(installment, value);
-			}
+//			if(installmentElement != null){ // TODO esta dando problema no text....voltando vazio
+//				String text = installmentElement.text().toLowerCase().trim();
+//				int x = text.indexOf("x");
+//				
+//				Integer installment = Integer.parseInt(text.substring(0, x).trim());
+//				Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+//				
+//				installmentMapPrice.put(installment, value);
+//			}
 			
 			prices.insertCardInstallment(Prices.VISA, installmentMapPrice);
 			marketplaces.put(partnerName, prices);
