@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -66,7 +69,13 @@ public class BrasilKabumCrawler extends Crawler {
 			// name
 			String name = null;
 			
+			// Prices
+			Prices prices = new Prices();
+			
 			if(elementProduct != null){
+				
+				// Prices
+				prices = crawlPrices(elementProduct);
 				
 				//Name 
 				Element elementName = elementProduct.select("#titulo_det h1").first();
@@ -137,13 +146,14 @@ public class BrasilKabumCrawler extends Crawler {
 
 			// marketplace
 			JSONArray marketplace = null;
-
+			
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -164,6 +174,42 @@ public class BrasilKabumCrawler extends Crawler {
 	}
 
 
+	private Prices crawlPrices(Element product){
+		Prices prices = new Prices();
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		
+		Element priceBoleto = product.select(".preco_desconto strong").first();
+		
+		if(priceBoleto != null){
+			Float bankTicket = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			prices.insertBankTicket(bankTicket);
+		}
+		
+		Elements installmentsPrices = product.select(".ParcelamentoCartao li");
+		
+		for(Element e : installmentsPrices){
+			String text = e.text().toLowerCase();
+			
+			int x = text.indexOf("x");
+			
+			Integer installment = Integer.parseInt(text.substring(0,x).trim());
+			Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			
+			installmentPriceMap.put(installment, value);
+		}
+		
+		if(installmentPriceMap.size() > 0){
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+			prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+			prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+			prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+			prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
 	/*******************************
 	 * Product page identification *
 	 *******************************/

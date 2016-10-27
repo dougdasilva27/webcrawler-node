@@ -28,6 +28,12 @@ public class Prices {
 	public static final String CARD_FIELD_NAME = "card";
 	
 	public static final String VISA = "visa";
+	public static final String MASTERCARD = "mastercard";
+	public static final String AMEX = "amex";
+	public static final String DINERS = "diners";
+	public static final String ELO = "elo";
+	public static final String HIPERCARD = "hipercard";
+	public static final String SHOP_CARD = "shop_card";
 
 	private JSONObject prices;
 
