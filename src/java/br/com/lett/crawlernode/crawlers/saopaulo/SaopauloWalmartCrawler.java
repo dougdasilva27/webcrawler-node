@@ -168,16 +168,18 @@ public class SaopauloWalmartCrawler extends Crawler {
 				boolean available = false;
 
 				// availability, price and marketplace
-				Map<String, Float> marketplaceMap = this.extractMarketplace(productId, internalPid);
+				Map<String, Prices> marketplaceMap = this.extractMarketplace(productId, internalPid);
 				JSONArray marketplace = new JSONArray();
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
 						available = true;
-						price = marketplaceMap.get(partnerName);
+						price = marketplaceMap.get(partnerName).getBankTicketPrice();
 					} else { // se não for o walmart, insere no json array de lojistas
 						JSONObject partner = new JSONObject();
 						partner.put("name", partnerName);
-						partner.put("price", marketplaceMap.get(partnerName));
+						partner.put("price", marketplaceMap.get(partnerName).getBankTicketPrice());
+						
+						partner.put("prices", marketplaceMap.get(partnerName).getPricesJson());
 
 						marketplace.put(partner);
 					}
@@ -214,8 +216,8 @@ public class SaopauloWalmartCrawler extends Crawler {
 		return products;
 	}
 
-	private Map<String, Float> extractMarketplace(String productId, String internalPid) {
-		Map<String, Float> marketplace = new HashMap<String, Float>();
+	private Map<String, Prices> extractMarketplace(String productId, String internalPid) {
+		Map<String, Prices> marketplace = new HashMap<>();
 
 		// Fazendo request da página com informações de lojistas
 		Document infoDoc = fetchMarketplaceInfoDocMainPage(productId);
@@ -228,13 +230,36 @@ public class SaopauloWalmartCrawler extends Crawler {
 				String name = nameElement.ownText().trim().toLowerCase();
 				Float price = null;
 				
+				Integer installment = null;
+				Float value = null;
+				
+				Prices prices = new Prices();
+				Map<Integer,Float> installmentPriceMap = new HashMap<>();
+				
 				Element priceElement = e.select(".product-price").first();
 				
 				if(priceElement != null){
 					price = Float.parseFloat(priceElement.attr("data-sellprice").trim());
+					installmentPriceMap.put(1, price);
+					prices.insertBankTicket(price);
 				}
 				
-				marketplace.put(name, price);
+				Element installmentElement = e.select(".payment-installment-amount").first();
+				
+				if(installmentElement != null){
+					installment = Integer.parseInt(installmentElement.ownText().trim().replaceAll("[^0-9]", ""));
+					
+					Element installmentValueElement = e.select(".payment-installment-price").first();
+					
+					if(installmentValueElement != null){
+						value = Float.parseFloat(installmentValueElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						
+						installmentPriceMap.put(installment, value);
+						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+					}
+				}
+				
+				marketplace.put(name, prices);
 			}
 		}
 		
@@ -252,15 +277,39 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 				if(nameElement != null){
 					String name = nameElement.text().trim().toLowerCase();
+					
+
+					Integer installment = null;
+					Float value = null;
+					
+					Prices prices = new Prices();
+					Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 					Element priceElement = e.select(".payment-price").first();
 					Float price = null;
 
 					if(priceElement != null){
 						price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+						installmentPriceMap.put(1, price);
+						prices.insertBankTicket(price);
 					}
 
-					marketplace.put(name, price);
+					Element installmentElement = e.select(".payment-installment-amount").first();
+					
+					if(installmentElement != null){
+						installment = Integer.parseInt(installmentElement.ownText().trim().replaceAll("[^0-9]", ""));
+						
+						Element installmentValueElement = e.select(".payment-installment-price").first();
+						
+						if(installmentValueElement != null){
+							value = Float.parseFloat(installmentValueElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							
+							installmentPriceMap.put(installment, value);
+							prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+						}
+					}
+					
+					marketplace.put(name, prices);
 				}
 
 			}
