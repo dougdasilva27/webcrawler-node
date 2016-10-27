@@ -1,21 +1,25 @@
 package br.com.lett.crawlernode.crawlers.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloNetfarmaCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.netfarma.com.br/";
+	private final String HOME_PAGE = "https://www.netfarma.com.br/";
 
 	public SaopauloNetfarmaCrawler(CrawlerSession session) {
 		super(session);
@@ -32,25 +36,30 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
+		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+			// Json Product
+			JSONObject jsonProduct = crawlJSONProduct(doc);
+			
 			// ID interno
-			String id = this.session.getOriginalURL().split("/")[4];
-			String internalID = Integer.toString(Integer.parseInt(id));
+			String internalID = crawlInternalId(jsonProduct);
 
 			// Pid
-			String internalPid = null;
-			Element elementInternalPid = doc.select(".codigo").first();
-			if (elementInternalPid != null) {
-				internalPid = elementInternalPid.text().split(":")[1].trim();
-			}
+			String internalPid = crawlInternalPid(jsonProduct);
 
 			// Nome
 			String name = crawlName(doc);
 
+			// Disponibilidade
+			boolean available = true;
+			Element elementOutOfStock = doc.select(".product-details__unavailable").first();
+			if(elementOutOfStock != null) {
+				available = false;
+			}
+			
 			// Preço
-			Float price = crawlPrice(doc);
+			Float price = crawlPrice(jsonProduct, available);
 
 			// Categorias
 			String category1 = null; 
@@ -64,33 +73,16 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 
 			// description
-			String description = "";
-			try {
-				Element[] sections = new Element[]{
-						doc.select("div[name=infoProduto]").first(),
-				};
-				for(Element e: sections) {
-					if(e != null) {
-						description = description + e.html(); 
-					}
-				}
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-
-
-			// Disponibilidade
-			boolean available = true;
-			Elements elementOutOfStock = doc.select("#SemEstoque");
-			if(elementOutOfStock != null && elementOutOfStock.attr("style").contains("display:block")) {
-				available = false;
-			}
-
+			String description = crawlDescription(doc);
+			
 			// stock
-			Integer stock = crawlStock(doc);
+			Integer stock = null;
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(price);
 
 			Product product = new Product();
 			
@@ -99,6 +91,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -122,21 +115,41 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		return url.startsWith("http://www.netfarma.com.br/produto/");
+	private boolean isProductPage(Document doc) {
+		return (doc.select(".product-details__code").first() != null);
+	}
+	
+	private String crawlInternalPid(JSONObject jsonProduct){
+		String internalPid = null;
+		
+		if(jsonProduct.has("sku")){
+			internalPid = jsonProduct.getString("sku").trim();
+		}
+		
+		return internalPid;
+	}
+	
+	private String crawlInternalId(JSONObject jsonProduct){
+		String internalId = null;
+		
+		if(jsonProduct.has("pid")){
+			internalId = jsonProduct.getString("pid").trim();
+		}
+		
+		return internalId;
 	}
 	
 	private String crawlName(Document document) {
 		String name = null;
 		
 		// get base name
-		Element elementName = document.select(".prodInfo h1.nome").first();
+		Element elementName = document.select(".product-details__title").first();
 		if (elementName != null) {
 			name = elementName.text().trim();
 		}
 		
 		// get 'gramatura' attribute
-		Element gramaturaElement = document.select(".prodInfo .gramatura").first();
+		Element gramaturaElement = document.select(".product-details__measurement").first();
 		if (gramaturaElement != null) {
 			if (name != null) name = name + " " + gramaturaElement.text().trim();
 		}
@@ -144,25 +157,24 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return name;
 	}
 	
-	private Float crawlPrice(Document document) {
+	private Float crawlPrice(JSONObject jsonProduct, boolean available) {
 		Float price = null;
-		Element elementPrice = document.select(".compra-unica .precoPor #PrecoPromocaoProduto").first();
-		if(elementPrice == null) {
-			elementPrice = document.select(".compra-unica .precoPor").first();
-			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		
+		if(available){
+			if(jsonProduct.has("price")){
+				Double priceDouble = jsonProduct.getDouble("price");
+				price = priceDouble.floatValue();
 			}
-		} else {
-			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 		}
+		
 		return price;
 	}
 	
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element elementPrimaryImage = document.select("#lupaZoom a").first();
+		Element elementPrimaryImage = document.select(".product-image img[data-zoom-image]").first();
 		if (elementPrimaryImage != null) {
-			primaryImage = elementPrimaryImage.attr("href").trim();
+			primaryImage = elementPrimaryImage.attr("src").trim();
 		}
 		return primaryImage;
 	}
@@ -171,14 +183,14 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 		
-		Elements element_fotosecundaria = document.select("#ListarMultiFotos li img");
+		Elements element_fotosecundaria = document.select("#product-gallery > a");
 		if(element_fotosecundaria.size()>1){
 			for(int i=1; i<element_fotosecundaria.size();i++){
 				Element e = element_fotosecundaria.get(i);
 				if(e.attr("src").contains("/imagens/icon_video.png")){
 
 				}else{
-					secondaryImagesArray.put(e.attr("src"));
+					secondaryImagesArray.put(e.attr("href"));
 				}
 			}
 
@@ -190,15 +202,50 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return secondaryImages;
 	}
 	
-	private Integer crawlStock(Document document) {
-		Integer stock = null;
-		Element stockElement = document.select("#Estoque").first();
-		if (stockElement != null) {
-			String stockQuantityString = stockElement.attr("value").trim();
-			if (stockQuantityString != null && !stockQuantityString.isEmpty()) {
-				stock = Integer.parseInt(stockQuantityString);
-			}			
+	private JSONObject crawlJSONProduct(Document doc){
+		JSONObject jsonProduct = new JSONObject();
+		Elements scripts = doc.select("script:not([src])");
+		
+		for(Element e : scripts){
+			String script = e.outerHtml();
+			
+			if(script.contains("chaordic_meta")){
+				int x = script.indexOf("meta =")+6;
+				int y = script.indexOf(";", x);
+				
+				String json = script.substring(x, y);
+				jsonProduct = new JSONObject(json);
+			}
 		}
-		return stock;
+		
+		return jsonProduct;
+	}
+	
+	private String crawlDescription(Document document) {
+		String description = "";
+		Element elementProductDetails = document.select(".product-description").first();
+		if(elementProductDetails != null) 	description = description + elementProductDetails.html();
+
+		return description;
+	}
+	
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+			
+			prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+			prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+			prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+		}
+				
+		
+		return prices;
 	}
 }
