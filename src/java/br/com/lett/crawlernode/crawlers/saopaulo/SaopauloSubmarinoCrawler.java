@@ -82,7 +82,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		 * esse crawler, o site submarino.com estava fazendo um testeAB
 		 * e o termo new, seria de um suposto site novo.
 		 */
-		
+
 		BasicClientCookie cookie = new BasicClientCookie("catalogTestAB", "new");
 		cookie.setDomain("www.submarino.com.br");
 		cookie.setPath("/");
@@ -101,7 +101,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			/* *********************************************************
 			 * crawling data common to both the cases of product page  *
 			 ***********************************************************/
-			
+
 			// Api onde se consegue todos os preços
 			JSONObject initialJson = getDataLayer(doc);
 
@@ -241,7 +241,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			String json = e.outerHtml();
 
 			if(json.contains("INITIAL_STATE")) {
-				
+
 				int x = json.indexOf("_ =") + 3;
 				int y = json.indexOf("};", x);
 
@@ -268,24 +268,27 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		for(Element linePartner: lines) {
 			Prices prices = new Prices();
 			Map<Integer,Float> installmentMapPrice = new HashMap<>();
-			
+
 			String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
 			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
 			installmentMapPrice.put(1, partnerPrice);
 			prices.insertBankTicket(partnerPrice);
-			
+
 			Element installmentElement = linePartner.select(".installment-price").first();
 			if(installmentElement != null){
 				String text = installmentElement.text().toLowerCase().trim();
-				int x = text.indexOf("x");
-				
-				Integer installment = Integer.parseInt(text.substring(0, x).trim());
-				Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				
-				installmentMapPrice.put(installment, value);
+
+				if(!text.isEmpty()){
+					int x = text.indexOf("x");
+
+					Integer installment = Integer.parseInt(text.substring(0, x).trim());
+					Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+
+					installmentMapPrice.put(installment, value);
+				}
 			}
-			
+
 			prices.insertCardInstallment(Prices.VISA, installmentMapPrice);
 			marketplaces.put(partnerName, prices);
 		}
@@ -306,7 +309,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
 					price = priceDouble.floatValue(); 
 				}
-				
+
 				break;
 			}
 		}		
@@ -399,12 +402,12 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
-				
+
 				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).has("1")){
 					// Pegando o preço de uma vez no cartão
 					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
 					Float priceFloat = price.floatValue();				
-					
+
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
 				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
@@ -687,7 +690,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		if(priceBase != null){
 			if(infoProductJson.has("prices")){
 				JSONObject pricesJson = infoProductJson.getJSONObject("prices");
-				
+
 				if(pricesJson.has(id)){
 					JSONObject pricesJsonProduct = pricesJson.getJSONObject(id);
 
