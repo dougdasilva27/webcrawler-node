@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -48,7 +50,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 			if(elementPid != null){
 				internalPid = elementPid.attr("value");
 			}
-			
+
 			Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
 			String[] internalIds = null;
 			if (elementInternalId != null) {
@@ -132,8 +134,10 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				Float price = crawlPrice(marketplaceMap);
 
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 
+				// Prices
+				Prices prices = crawlPrices(internalId, price);
 
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
@@ -142,6 +146,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				product.setName(name);
 				product.setAvailable(available);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -204,7 +209,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 		return marketplaceMap;		
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
 		JSONArray marketplace = new JSONArray();
 
 		for (String seller : marketplaceMap.keySet()) {
@@ -214,12 +219,100 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				JSONObject partner = new JSONObject();
 				partner.put("name", seller);
 				partner.put("price", price);
+				partner.put("prices", crawlPrices(internalId, price).getPricesJson());
 
 				marketplace.put(partner);
 			}
 		}
 
 		return marketplace;
+	}
+
+	private Prices crawlPrices(String internalId, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.megamamute.com.br/productotherpaymentsystems/" + internalId;
+
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bank = doc.select("#ltlPrecoWrapper em").first();
+			if(bank != null){
+				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+			}
+
+			Elements cardsElements = doc.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if(text.contains("visa")){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+
+					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+				} else if(text.contains("mastercard")){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+
+					prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+				} else if(text.contains("diners")){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+
+					prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+				} else if(text.contains("american") || text.contains("amex")){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					
+					prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);		
+				} else if(text.contains("hipercard") || text.contains("amex")){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+
+					prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);					
+				} else if(text.contains("credicard") ){
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+
+					prices.insertCardInstallment(Prices.CREDICARD, installmentPriceMap);					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+			
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+				
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+				
+				Element valueElement = i.select("td:not(.parcelas)").first();
+				
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+	
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
 	}
 
 	/*******************************

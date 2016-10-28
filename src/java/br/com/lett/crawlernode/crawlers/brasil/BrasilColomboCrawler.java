@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -75,6 +78,9 @@ public class BrasilColomboCrawler extends Crawler {
 			if (elementPrice != null) {
 			    price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			// Categoria
 			String category1 = "";
@@ -146,6 +152,7 @@ public class BrasilColomboCrawler extends Crawler {
 				}
 				if (available == false) {
 					price = null;
+					prices = new Prices();
 				}
 	
 
@@ -155,6 +162,7 @@ public class BrasilColomboCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -206,6 +214,7 @@ public class BrasilColomboCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -242,5 +251,52 @@ public class BrasilColomboCrawler extends Crawler {
 		}
 
 		return sanitizedURL;		
+	}
+	
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			Element bankPrice = doc.select(".dados-preco-valor").first();
+			
+			if(bankPrice != null){
+				Float bankTicketPrice = Float.parseFloat(bankPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Element installments = doc.select(".parcelas-produto-table").first();
+			
+			if(installments != null){
+				Elements parcelas = installments.select("tr");
+				
+				for(Element e : parcelas){
+					Element index = e.select(".parcelas-produto-table-index").first();
+					
+					if(index != null){
+						Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
+						
+						Element valor = e.select(".parcelas-produto-table-valor").first();
+						
+						if(valor != null){
+							Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							
+							installmentPriceMap.put(installment, value);
+						}
+					}
+				}
+				
+				prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+				prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+				prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+				prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+				prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+				prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
+				prices.insertCardInstallment(Prices.HIPER, installmentPriceMap);
+			}
+		}
+		
+		return prices;
 	}
 }

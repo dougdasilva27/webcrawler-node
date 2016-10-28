@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
-import java.text.DecimalFormat;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilNovomundoCrawler extends Crawler {
@@ -146,7 +146,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 					}
 
 					// Prices 
-					Prices prices = crawlPrices(internalId, price, marketplace, discountBoleto);
+					Prices prices = crawlPrices(internalId, price, new JSONArray(), discountBoleto);
 					
 					Product product = new Product();
 
@@ -311,10 +311,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 	
 	private Prices crawlPrices(String internalId, Float price, JSONArray marketplace, Integer discountBoleto){
 		Prices prices = new Prices();
-		
-		DecimalFormat df = new DecimalFormat("0.00");
-		df.setMaximumFractionDigits(2);
-		
+				
 		if(price != null || marketplace.length() > 0){
 			String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku=" + internalId + "&d=" + discountBoleto;
 			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
@@ -323,7 +320,8 @@ public class BrasilNovomundoCrawler extends Crawler {
 			if(bankTicketElement != null){
 				Float bankTicketPrice = Float.parseFloat(bankTicketElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 				
-				bankTicketPrice = Float.parseFloat(df.format((bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)))).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)));
+				bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
 				
 				prices.insertBankTicket(bankTicketPrice);
 			}
@@ -364,7 +362,10 @@ public class BrasilNovomundoCrawler extends Crawler {
 						if(valueElement != null){
 							Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 							
-							if(installment.equals(1)) value = Float.parseFloat(df.format((value - (value * (discountBoleto.floatValue()/100.0)))).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							if(installment.equals(1)){
+								Float result = (float) (value - (value * (discountBoleto.floatValue()/100.0)));
+								value = CommonMethods.normalizeTwoDecimalPlaces(result);
+							}
 							
 							installmentPriceMap.put(installment, value);
 						}
