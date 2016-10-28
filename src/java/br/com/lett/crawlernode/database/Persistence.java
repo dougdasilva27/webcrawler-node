@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.CrawlerSessionError;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -187,6 +188,8 @@ public class Persistence {
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -314,6 +317,9 @@ public class Persistence {
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			
 			return null;
 		}
 		
@@ -345,6 +351,8 @@ public class Persistence {
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product void.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -369,6 +377,8 @@ public class Persistence {
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LRT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -393,6 +403,8 @@ public class Persistence {
 		} catch(SQLException e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 
 	}
