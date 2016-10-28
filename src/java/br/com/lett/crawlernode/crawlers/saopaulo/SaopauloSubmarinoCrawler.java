@@ -279,6 +279,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			if(installmentElement != null){
 				String text = installmentElement.text().toLowerCase().trim();
 
+				// When text is empty has no installment for this marketplace.
 				if(!text.isEmpty()){
 					int x = text.indexOf("x");
 

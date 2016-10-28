@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -10,6 +12,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -155,6 +158,9 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 
@@ -163,6 +169,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -182,6 +189,56 @@ public class BrasilRamsonsCrawler extends Crawler {
 		return products;
 	}
 
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			Element vista = doc.select("#spanPrecoAVista span#valorPc").first();
+			
+			// Preço 1x no cartão e boleto são iguais
+			if(vista != null){
+				Float priceVista = Float.parseFloat(vista.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				installmentPriceMap.put(1, priceVista);
+				prices.insertBankTicket(priceVista);
+			}
+			
+			// Caso de parcelamento sem juros(Ex: 6x R$94,83)
+			Element installmentInterestFree = doc.select("#spanParcelamento1 strong").first();
+			
+			if(installmentInterestFree != null){
+				Integer installment = Integer.parseInt(installmentInterestFree.text().replaceAll("[^0-9]", "").trim());
+				
+				Element installmentInterestFreeValue = doc.select("#spanParcelamento2 strong").first();
+				
+				if(installmentInterestFreeValue != null){
+					Float value = Float.parseFloat(installmentInterestFreeValue.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			// Caso de parcelamento com juros(Ex: 12x R$56,58)
+			Elements installmentsWithInterest = doc.select("#spanOutroParc strong");
+			
+			if(installmentsWithInterest.size() > 1){
+				Element installmentElement = installmentsWithInterest.first();
+				Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", "").trim());
+				
+				Element installmentValue = installmentsWithInterest.last();
+				Float value = Float.parseFloat(installmentValue.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				
+				installmentPriceMap.put(installment, value);
+			}
+			
+			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
 	/*******************************
 	 * Product page identification *
 	 *******************************/

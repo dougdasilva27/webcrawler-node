@@ -283,9 +283,10 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			prices.insertBankTicket(partnerPrice);
 			
 			Element installmentElement = linePartner.select(".installment-price").first();
-			if(installmentElement != null){ // TODO esta dando problema no text....voltando vazio (http://www.americanas.com.br/produto/10698055)
+			if(installmentElement != null){ 
 				String text = installmentElement.text().toLowerCase().trim();
 				
+				// When text is empty has no installment for this marketplace.
 				if(!text.isEmpty()){
 					int x = text.indexOf("x");
 					
