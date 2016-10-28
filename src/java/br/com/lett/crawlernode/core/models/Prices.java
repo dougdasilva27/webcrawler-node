@@ -35,6 +35,7 @@ public class Prices {
 	public static final String CREDICARD = "credicard";
 	public static final String ELO = "elo";
 	public static final String HIPERCARD = "hipercard";
+	public static final String HIPER = "hiper";
 	public static final String AURA = "aura";
 	public static final String SHOP_CARD = "shop_card";
 
