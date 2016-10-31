@@ -31,6 +31,8 @@ import org.apache.http.util.Args;
 import org.apache.http.util.Asserts;
 import org.apache.http.util.TextUtils;
 
+import br.com.lett.crawlernode.util.CommonMethods;
+
 /**
  * Default implementation of {@link RedirectStrategy}. This strategy honors the restrictions
  * on automatic redirection of entity enclosing methods such as POST and PUT imposed by the
@@ -115,7 +117,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
                     "Received redirect response " + response.getStatusLine()
                     + " but no location header");
         }
-        final String location = locationHeader.getValue();
+        final String location = CommonMethods.removeIllegalArguments(locationHeader.getValue());
         if (this.log.isDebugEnabled()) {
             this.log.debug("Redirect requested to location '" + location + "'");
         }
@@ -215,5 +217,4 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
     public String getFinalURL() {
     	return this.finalURL;
     }
-
 }

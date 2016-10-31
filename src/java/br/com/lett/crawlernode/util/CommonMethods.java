@@ -244,4 +244,20 @@ public class CommonMethods {
         return Float.parseFloat(rounded);
     }
 
+    /**
+     * Replace argument "`" to "%60" from url
+     * @param url
+     * @return urlFinal
+     */
+    public static String removeIllegalArguments(String url){
+    	String finalUrl = url;
+    	
+    	// In cases with argument (`), it is repalce to %60
+    	if(url.contains("`")){
+    		finalUrl = url.replaceAll("`","%60");
+    	}
+    	
+    	
+    	return finalUrl;
+    }
 }

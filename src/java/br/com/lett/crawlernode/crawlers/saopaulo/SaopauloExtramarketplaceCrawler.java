@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -547,7 +548,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		}
 
 
-		return primaryImage;
+		return CommonMethods.removeIllegalArguments(primaryImage);
 	}
 
 	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
@@ -564,9 +565,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					Element e = elementFotoSecundaria.get(i);
 
 					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
-						secondaryImagesArray.put(e.attr("rev"));
+						secondaryImagesArray.put(CommonMethods.removeIllegalArguments(e.attr("rev")));
 					} else {
-						secondaryImagesArray.put(e.attr("href"));
+						secondaryImagesArray.put(CommonMethods.removeIllegalArguments(e.attr("href")));
 					}
 				}
 
