@@ -140,8 +140,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
 			for(String internalId : skuOptions.keySet()){	
-				// InternalId
-				String variationInternalID = internalPid + "-" + internalId;
 
 				//variation name
 				String variationName = (name + " " + skuOptions.get(internalId)).trim();
@@ -166,7 +164,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(variationInternalID);
+				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(variationName);
 				product.setPrice(variationPrice);

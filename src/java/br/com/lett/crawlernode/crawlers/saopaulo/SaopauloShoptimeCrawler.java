@@ -45,14 +45,8 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			//Variações indisponíveis
 			boolean allVariationsUnnavailable = this.allVariationsAreUnnavailable(doc);
 
-			// InternalId
-			String internalId = crawlInternalIdFirstPiece(doc);
-
-			// First Piece internalId
-			String internalIDFirstPiece = internalId;
-
 			// internalPid
-			String internalPid = internalIDFirstPiece;
+			String internalPid = crawlInternalIdFirstPiece(doc);;
 
 			// Variations
 			boolean hasMoreProducts = this.hasMoreProducts(doc);
@@ -88,11 +82,9 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 			if(elementsProductOptions.size() > 0){
 
-				for(Element e : elementsProductOptions){				
+				for(Element e : elementsProductOptions){			
 
-					String secondPartInternalId = e.attr("value");
-
-					String variationInternalId = internalIDFirstPiece + "-" + secondPartInternalId;
+					String variationInternalId = e.attr("value");
 
 					//variation name
 					String variation = crawlNameVariation(e);
@@ -108,7 +100,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					Map<String, String> mapPartners = crawlIdPartners(e);
 
 					// Document market places
-					Document docMarketplace  = fetchMarketplaceInfoDoc(internalPid, secondPartInternalId, allVariationsUnnavailable);
+					Document docMarketplace  = fetchMarketplaceInfoDoc(internalPid, variationInternalId, allVariationsUnnavailable);
 
 					// Marketplace map
 					Map<String, Float> marketplaceMap = crawlMarketplace(doc, docMarketplace, mapPartners, hasMoreProducts, internalPid);
@@ -123,10 +115,10 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					Float price = crawlPrice(marketplaceMap, available);
 
 					// Prices 
-					Prices prices = crawlPrices(infoProductJson, price, secondPartInternalId);
+					Prices prices = crawlPrices(infoProductJson, price, variationInternalId);
 
 					// Stock
-					Integer stock = crawlStock(infoProductJson, secondPartInternalId);
+					Integer stock = crawlStock(infoProductJson, variationInternalId);
 
 					// Creating the product
 					Product product = new Product();
@@ -159,12 +151,10 @@ public class SaopauloShoptimeCrawler extends Crawler {
 				if (unavailableProductName != null) name = unavailableProductName.text().trim();
 
 				// Montando o internalId
-				String secondPartInternalId = crawlInternalIdSingleProduct(doc, internalIDFirstPiece);
-
-				internalId += "-" + secondPartInternalId;
+				String internalId = crawlInternalIdSingleProduct(doc);
 
 				// Document market places
-				Document docMarketplace  = fetchMarketplaceInfoDoc(internalPid, secondPartInternalId, false);
+				Document docMarketplace  = fetchMarketplaceInfoDoc(internalPid, internalId, false);
 
 				// Marketplace map
 				Map<String, Float> marketplaceMap = crawlMarketplace(doc, docMarketplace, null, false, internalPid);
@@ -179,10 +169,10 @@ public class SaopauloShoptimeCrawler extends Crawler {
 				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
 				// Prices
-				Prices prices = crawlPrices(infoProductJson, price, secondPartInternalId);
+				Prices prices = crawlPrices(infoProductJson, price, internalId);
 
 				// Stock
-				Integer stock = crawlStock(infoProductJson, secondPartInternalId);
+				Integer stock = crawlStock(infoProductJson, internalId);
 
 				// Creating the product
 				Product product = new Product();
@@ -265,7 +255,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 	}
 
 
-	private String crawlInternalIdSingleProduct(Document doc, String id){
+	private String crawlInternalIdSingleProduct(Document doc){
 		String secondInternalId = null;
 
 		// montando restante do internalId
