@@ -14,8 +14,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /*********************************************************************************************************************
@@ -47,7 +49,7 @@ import br.com.lett.crawlernode.util.Logging;
  *******************************************************************************************************************/
 
 public class BrasilLebesCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.lebes.com.br/";
 
 	public BrasilLebesCrawler(CrawlerSession session) {
@@ -67,7 +69,7 @@ public class BrasilLebesCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc, session.getOriginalURL()) ) {
-			
+
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Pid
@@ -84,10 +86,10 @@ public class BrasilLebesCrawler extends Crawler {
 
 			// Primary image
 			String primaryImage = crawlPrimaryImage(doc);
-			
+
 			// Secondary images
 			String secondaryImages = crawlSecondaryImages(doc);
-			
+
 			// Stock
 			Integer stock = null;
 
@@ -100,12 +102,12 @@ public class BrasilLebesCrawler extends Crawler {
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
 
-			for(int i = 0; i < arraySkus.length(); i++){
+			for (int i = 0; i < arraySkus.length(); i++) {
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
 
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
-				
+
 				// InternalId 
 				String internalId = crawlInternalId(jsonSku);
 
@@ -138,7 +140,7 @@ public class BrasilLebesCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -186,7 +188,7 @@ public class BrasilLebesCrawler extends Crawler {
 
 		if (nameElement != null) {
 			name = nameElement.text().toString().trim();
-			
+
 			if(name.length() > nameVariation.length()){
 				name += " " + nameVariation;
 			} else {
@@ -226,10 +228,10 @@ public class BrasilLebesCrawler extends Crawler {
 		String primaryImage = null;
 
 		Element image = doc.select("#botaoZoom").first();
-		
+
 		if (image != null) {
 			String urlImage = image.attr("zoom");
-			
+
 			if(!urlImage.startsWith("http")){
 				urlImage = image.attr("rel");
 			}
@@ -250,11 +252,11 @@ public class BrasilLebesCrawler extends Crawler {
 
 			if(e.hasAttr("zoom")){
 				String urlImage = e.attr("zoom");
-				
+
 				if(!urlImage.startsWith("http")){
 					urlImage = e.attr("rel");
 				}
-				
+
 				secondaryImagesArray.put(urlImage);
 			}
 		}
@@ -295,34 +297,59 @@ public class BrasilLebesCrawler extends Crawler {
 	}
 
 	/**
-	 * Get the script having a json with the availability information
+	 * Get the json array containing information about the skus in this page.
+	 * 
 	 * @return
 	 */
 	private JSONArray crawlSkuJsonArray(Document document) {
-		Elements scriptTags = document.getElementsByTag("script");
-		JSONObject skuJson = null;
+		JSONObject skuJson = crawlSKUJson(document);
 		JSONArray skuJsonArray = null;
 
+		if (skuJson != null) {
+			try {
+				skuJsonArray = skuJson.getJSONArray("skus");
+			} catch(Exception e) {
+				skuJsonArray = new JSONArray();
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
+		}
+
+		return skuJsonArray;
+	}
+
+	/**
+	 * Get the json containing all skus info.
+	 * In case we can't find the json on the already loaded html from the
+	 * sku page, we try to fetch this json from an API.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private JSONObject crawlSKUJson(Document document) {
+		JSONObject skuJson = null;
+		Elements scriptTags = document.getElementsByTag("script");
+		
+		// first we will try to get the json object in the html
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
-							(
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-									);
-
+							( node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0] );
 				}
 			}        
 		}
 
-		try {
-			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		// if we couldn't find the json on the html, we will use the API
+		if (skuJson == null) {
+			Element elementId = document.select("#___rc-p-id").first();
+			if (elementId != null) {
+				String id = elementId.attr("value").trim();
+				String apiURL = "http://www.lebes.com.br/api/catalog_system/pub/products/variations/" + id;
+				skuJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiURL, null, null);
+			}
 		}
-
-		return skuJsonArray;
+		
+		return skuJson;
 	}
 }
