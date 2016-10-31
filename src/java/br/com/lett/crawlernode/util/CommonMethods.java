@@ -257,6 +257,11 @@ public class CommonMethods {
     		finalUrl = url.replaceAll("`","%60");
     	}
     	
+    	// In cases with argument (´), it is repalce to %C2%B4
+    	if(url.contains("´")){
+    		finalUrl = url.replaceAll("´","%C2%B4");
+    	}
+    	
     	
     	return finalUrl;
     }
