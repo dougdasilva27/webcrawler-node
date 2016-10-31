@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -294,7 +295,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				}
 			}
 			
-			prices.insertCardInstallment(Prices.VISA, installmentMapPrice);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
 			marketplaces.put(partnerName, prices);
 		}
 
@@ -310,8 +311,8 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 		for (String seller : marketplaces.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-				if(marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Prices.VISA).has("1")){
-					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
+				if(marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.VISA.toString()).has("1")){
+					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.VISA.toString()).getDouble("1");
 					price = priceDouble.floatValue(); 
 				}
 				
@@ -414,9 +415,9 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				
-				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).has("1")){
+				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).has("1")){
 					// Pegando o preço de uma vez no cartão
-					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Prices.VISA).getDouble("1");
+					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).getDouble("1");
 					Float priceFloat = price.floatValue();				
 					
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
@@ -730,7 +731,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 							}
 						}
 
-						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 					}
 				}
 			}

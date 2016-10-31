@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -245,7 +246,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 	private Prices crawlPrices(Float price, Float priceBank){
 		Prices prices = new Prices();
 		
-		if(price != null){
+		if (price != null) {
 			prices.insertBankTicket(priceBank);
 			
 			String url = "http://www.balaodainformatica.com.br/PagSeguro/GetInstallmentsByValue";
@@ -260,17 +261,17 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				jsonInstallments = new JSONObject();
 			}
 			
-			if(jsonInstallments.has("parcelas")){
+			if (jsonInstallments.has("parcelas")) {
 				Map<Integer,Float> installmentPriceMap = new HashMap<>();
 				JSONArray arrayInstallments = jsonInstallments.getJSONArray("parcelas");
 				
-				for(int i = 0; i < arrayInstallments.length(); i++){
+				for (int i = 0; i < arrayInstallments.length(); i++) {
 					JSONObject jsonInstallment = arrayInstallments.getJSONObject(i);
 					
-					if(jsonInstallment.has("quantity")){
+					if (jsonInstallment.has("quantity")) {
 						Integer installment = jsonInstallment.getInt("quantity");
 						
-						if(jsonInstallment.has("amount")){
+						if (jsonInstallment.has("amount")) {
 							Double valueDouble = jsonInstallment.getDouble("amount");
 							
 							Float value = CommonMethods.normalizeTwoDecimalPlaces(valueDouble.floatValue());
@@ -279,7 +280,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 					}
 				}
 				
-				prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+				prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			}
 		}
 		return prices;

@@ -16,6 +16,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -234,28 +235,27 @@ public class BrasilNagemCrawler extends Crawler {
 					
 					if(text.contains("visa")){
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 						
-						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
 					} else if(text.contains("mastercard")){
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 						
-						prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
 					} else if(text.contains("diners")){
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 						
-						prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
-					} else if(text.contains("credicard")){
+					} else if(text.contains("american") || text.contains("amex")) {
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);					
 						
-						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);					} else if(text.contains("american") || text.contains("amex")){
 					} else if(text.contains("hipercard") || text.contains("amex")){
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
+						prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 						
-						prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);					
 					} else if(text.contains("credicard") ){
 						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), internalId);
-						
-						prices.insertCardInstallment(Prices.CREDICARD, installmentPriceMap);					
+						prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);					
 					}
 				} 
 			

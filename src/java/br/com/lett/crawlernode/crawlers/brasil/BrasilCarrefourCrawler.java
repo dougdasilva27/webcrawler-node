@@ -13,6 +13,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -297,52 +298,45 @@ public class BrasilCarrefourCrawler extends Crawler {
 				
 			}
 			
-			if(jsonPrices.has("maestroInstallments")){
+			if (jsonPrices.has("maestroInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "maestroInstallments");
-				
-				prices.insertCardInstallment(Prices.MAESTRO, installmentPriceMap);
+				prices.insertCardInstallment(Card.MAESTRO.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("carrefourInstallments")){
+			if (jsonPrices.has("carrefourInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "carrefourInstallments");
 				
-				prices.insertCardInstallment(Prices.SHOP_CARD, installmentPriceMap);
+				prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("mastercardInstallments")){
+			if (jsonPrices.has("mastercardInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "mastercardInstallments");
-				
-				prices.insertCardInstallment(Prices.MASTERCARD , installmentPriceMap);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("dinersInstallments")){
+			if (jsonPrices.has("dinersInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "dinersInstallments");
-				
-				prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("visaInstallments")){
+			if (jsonPrices.has("visaInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "visaInstallments");
-				
-				prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+				prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("hipercardInstallments")){
+			if (jsonPrices.has("hipercardInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "hipercardInstallments");
-				
-				prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("amexInstallments")){
+			if (jsonPrices.has("amexInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "amexInstallments");
-				
-				prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			}
 			
-			if(jsonPrices.has("eloInstallments")){
+			if (jsonPrices.has("eloInstallments")) {
 				Map<Integer,Float> installmentPriceMap = crawlInstallment(jsonPrices, "eloInstallments");
-				
-				prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+				prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 			}
 		}
 		

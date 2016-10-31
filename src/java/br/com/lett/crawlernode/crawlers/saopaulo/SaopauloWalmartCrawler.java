@@ -16,6 +16,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -255,7 +256,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 						value = Float.parseFloat(installmentValueElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 						
 						installmentPriceMap.put(installment, value);
-						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 					}
 				}
 				
@@ -305,7 +306,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 							value = Float.parseFloat(installmentValueElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 							
 							installmentPriceMap.put(installment, value);
-							prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+							prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 						}
 					}
 					
@@ -364,7 +365,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 			}
 			
-			p.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 		}
 		
 		return p;

@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -223,7 +224,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				}
 				
 				prices.insertBankTicket(installmentsPriceMap.get(1));
-				prices.insertCardInstallment(Prices.VISA, installmentsPriceMap);
+				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
 			}
 		}
 		

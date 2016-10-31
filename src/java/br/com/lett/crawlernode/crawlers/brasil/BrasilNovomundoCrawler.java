@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -373,18 +374,23 @@ public class BrasilNovomundoCrawler extends Crawler {
 				}
 				
 				if(installmentPriceMap.size() > 0 && cardName != null){
-					if(cardName.equals("amex")){
-						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
-					} else if(cardName.equals("visa")){
-						prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
-					} else if(cardName.equals("mastercard")){
-						prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
-					} else if(cardName.equals("diners")){
-						prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
-					} else if(cardName.equals("americanexpress")){
-						prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
-					} else if(cardName.equals("elo")){
-						prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+					if (cardName.equals("amex")) {
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+						
+					} else if (cardName.equals("visa")) {
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+						
+					} else if (cardName.equals("mastercard")) {
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+						
+					} else if (cardName.equals("diners")) {
+						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+						
+					} else if (cardName.equals("americanexpress")) {
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+						
+					} else if (cardName.equals("elo")) {
+						prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 					}
 				}
 			}

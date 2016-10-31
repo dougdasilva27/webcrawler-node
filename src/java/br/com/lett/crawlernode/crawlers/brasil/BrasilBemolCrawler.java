@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -226,16 +227,20 @@ public class BrasilBemolCrawler extends Crawler {
 								}
 							}
 							
-							if(cardName.contains("amex") || cardName.contains("americanexpress")){
-								prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
-							} else if(cardName.contains("visa")){
-								prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
-							} else if(cardName.contains("mastercard") || cardName.contains("master")){
-								prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
-							} else if(cardName.contains("diners") || cardName.contains("discover")){
-								prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
-							} else if(cardName.contains("elo")){
-								prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+							if (cardName.contains("amex") || cardName.contains("americanexpress")) {
+								prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+								
+							} else if (cardName.contains("visa")) {
+								prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+								
+							} else if (cardName.contains("mastercard") || cardName.contains("master")) {
+								prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+								
+							} else if (cardName.contains("diners") || cardName.contains("discover")) {
+								prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+								
+							} else if (cardName.contains("elo")) {
+								prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 							}
 						}
 					}

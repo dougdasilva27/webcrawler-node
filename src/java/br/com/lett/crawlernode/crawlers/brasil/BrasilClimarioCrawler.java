@@ -14,6 +14,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -236,7 +237,7 @@ public class BrasilClimarioCrawler extends Crawler {
 		Map<Integer, Float> installmentPriceMap = crawlCardInstallments(doc);
 
 		prices.insertBankTicket(bankTicketPrice);
-		prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+		prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
 		return prices;
 	}

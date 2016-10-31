@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -199,12 +200,12 @@ public class BrasilKabumCrawler extends Crawler {
 		}
 		
 		if(installmentPriceMap.size() > 0){
-			prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
-			prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
-			prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
-			prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
-			prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
-			prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 		}
 		
 		return prices;
