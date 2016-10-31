@@ -29,6 +29,12 @@ public class ImageRescaler {
 	private static final String ORIGINAL_IMAGE = "original";
 	private static final String REGULAR_IMAGE = "regular";
 	private static final String SMALL_IMAGE = "small";
+	
+	private static final int SMALL_WIDTH = 200;
+	private static final int SMALL_HEIGHT = 200;
+	
+	private static final int REGULAR_WIDTH = 800;
+	private static final int REGULAR_HEIGHT = 800;
 
 	private static final float SMALL_IMAGE_COMPRESSION_QUALITY = 0.8f;
 	private static final float REGULAR_IMAGE_COMPRESSION_QUALITY = 0.5f;
@@ -191,12 +197,12 @@ public class ImageRescaler {
 		int height;
 
 		if(isWide(originalDimension.width, originalDimension.height)) {
-			width = 200;
-			height = Math.round(200*((float)originalDimension.height/(float)originalDimension.width));
+			width = SMALL_WIDTH;
+			height = Math.round(SMALL_HEIGHT*((float)originalDimension.height/(float)originalDimension.width));
 
 		} else {
-			width = Math.round(200*((float)originalDimension.width/(float)originalDimension.height));
-			height = 200;
+			width = Math.round(SMALL_WIDTH*((float)originalDimension.width/(float)originalDimension.height));
+			height = SMALL_HEIGHT;
 		}
 
 		return new Dimension(width, height);
@@ -207,12 +213,12 @@ public class ImageRescaler {
 		int height;
 
 		if(isWide(originalDimension.width, originalDimension.height)) {
-			width = 800;
-			height = Math.round(800*((float)originalDimension.height/(float)originalDimension.width));
+			width = REGULAR_WIDTH;
+			height = Math.round(REGULAR_HEIGHT*((float)originalDimension.height/(float)originalDimension.width));
 
 		} else {
-			width = Math.round(800*((float)originalDimension.width/(float)originalDimension.height));
-			height = 800;
+			width = Math.round(REGULAR_WIDTH*((float)originalDimension.width/(float)originalDimension.height));
+			height = REGULAR_HEIGHT;
 		}
 
 		return new Dimension(width, height);
