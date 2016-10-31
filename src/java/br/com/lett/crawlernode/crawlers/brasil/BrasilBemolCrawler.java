@@ -2,14 +2,19 @@ package br.com.lett.crawlernode.crawlers.brasil;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -113,12 +118,39 @@ public class BrasilBemolCrawler extends Crawler {
 				description = elementDescription.html().trim();
 
 			// Disponibilidade
-			Element elementNotAvailable = doc.select("#divProdutoIndisponivel").first();
+			JSONObject jsonInfo = crawlJsonInfo(internalID);
 			boolean available = true;
-			if (!elementNotAvailable.attr("style").contains("display:none")) {
+			
+			if (jsonInfo.has("onlineInventory")) {
+				JSONObject inventory = jsonInfo.getJSONObject("onlineInventory");
+				
+				if(inventory.has("name")){
+					String text = inventory.getString("name").trim().toLowerCase();
+					
+					if(text.equals("available")){
+						available = true;
+					} else {
+						available = false;
+					}
+				} else if(inventory.has("literal")) {
+					String text = inventory.getString("literal").trim().toLowerCase();
+					
+					if(text.equals("available")){
+						available = true;
+					} else {
+						available = false;
+					}
+				}
+			} else {
 				available = false;
 			}
 
+			// JSON Prices
+			JSONArray jsonPrices = crawlPriceFromApi(internalID, price);
+			
+			// Prices
+			Prices prices = crawlPrices(price, jsonPrices);
+			
 			// Estoque
 			Integer stock = null;
 
@@ -131,6 +163,7 @@ public class BrasilBemolCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -158,5 +191,115 @@ public class BrasilBemolCrawler extends Crawler {
 	private boolean isProductPage(Document doc) {
 		return (doc.select("#product").first() != null);
 	}
+	
+	private Prices crawlPrices(Float price, JSONArray jsonPrices) {
+		Prices prices = new Prices();
 
+		if(price != null){
+
+			prices.insertBankTicket(price);
+
+			try{
+				for(int i = 0; i < jsonPrices.length(); i++) {
+					JSONObject json = jsonPrices.getJSONObject(i);
+					Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+					if (json.has("paymentMethodName")) {
+						String cardName = json.getString("paymentMethodName").replaceAll(" ", "").toLowerCase().trim();
+
+						if (json.has("installmentOptions")) {
+							JSONArray installments = json.getJSONArray("installmentOptions");
+
+							for(int j = 0; j < installments.length(); j++) {
+								JSONObject installmentJSON = installments.getJSONObject(j);
+
+								if(installmentJSON.has("option")){
+									String text = installmentJSON.getString("option").toLowerCase();
+
+									Integer installment = Integer.parseInt(text.replaceAll("[^0-9]", "").trim());
+
+									if(installmentJSON.has("amount")){				
+										Float value = Float.parseFloat(installmentJSON.getString("amount").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+
+										installmentPriceMap.put(installment, value);
+									}
+								}
+							}
+							
+							if(cardName.contains("amex") || cardName.contains("americanexpress")){
+								prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);
+							} else if(cardName.contains("visa")){
+								prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+							} else if(cardName.contains("mastercard") || cardName.contains("master")){
+								prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+							} else if(cardName.contains("diners") || cardName.contains("discover")){
+								prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+							} else if(cardName.contains("elo")){
+								prices.insertCardInstallment(Prices.ELO, installmentPriceMap);
+							}
+						}
+					}
+				}
+			} catch(Exception e){
+
+			}
+		}
+
+		return prices;
+	}
+
+	/**
+	 * Pega o JSON que possui informações sobre as parcelas.
+	 * 
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
+	private JSONArray crawlPriceFromApi(String internalId, Float price){
+		String url = "https://www.bemol.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10001"
+				+ "&langId=-6&catalogId=10001&catalogEntryId="+ internalId +"&nonInstallmentPrice="+ price;
+
+		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+		int x = json.indexOf("/*");
+		int y = json.indexOf("*/", x + 2);
+
+		json = json.substring(x+2, y);
+
+
+		JSONArray jsonPrice;
+		try{
+			jsonPrice = new JSONArray(json);
+		} catch(Exception e){
+			jsonPrice = new JSONArray();
+			e.printStackTrace();
+		}
+
+
+		return jsonPrice;
+	}
+
+	private JSONObject crawlJsonInfo(String internalId){
+		JSONObject jsonInfo = new JSONObject();
+		
+		String url = "https://www.bemol.com.br/loja/GetCatalogEntryInventoryData?storeId=10001&langId=-6"
+				+ "&catalogId=10001&itemId="+ internalId +"&displayAdditionalStores=false&requesttype=ajax";
+
+		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+		int x = json.indexOf("/*");
+		int y = json.indexOf("*/", x + 2);
+
+		json = json.substring(x+2, y);
+
+		try{
+			jsonInfo = new JSONObject(json);
+		} catch(Exception e){
+			jsonInfo = new JSONObject();
+			e.printStackTrace();
+		}
+		
+		
+		return jsonInfo;
+	}
 }
