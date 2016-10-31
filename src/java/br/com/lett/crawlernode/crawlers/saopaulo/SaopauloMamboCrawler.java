@@ -177,6 +177,13 @@ public class SaopauloMamboCrawler extends Crawler {
 
 		if (image != null) {
 			primaryImage = image.attr("href");
+		} else {
+			image = doc.select("#image img").first();
+			
+
+			if (image != null) {
+				primaryImage = image.attr("src");
+			}
 		}
 
 		return primaryImage;
