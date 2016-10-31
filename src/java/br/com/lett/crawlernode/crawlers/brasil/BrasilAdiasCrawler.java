@@ -13,6 +13,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
@@ -67,10 +68,6 @@ public class BrasilAdiasCrawler extends Crawler {
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// InternalId
 			String internalId = crawlInternalId(doc);
 
@@ -84,7 +81,7 @@ public class BrasilAdiasCrawler extends Crawler {
 			Float price = crawlMainPagePrice(doc);
 			
 			// Price options
-			//Prices prices = crawlPrices(doc);
+			Prices prices = crawlPrices(doc);
 			
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -120,7 +117,7 @@ public class BrasilAdiasCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
-			//product.setPrices(prices);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -214,9 +211,9 @@ public class BrasilAdiasCrawler extends Crawler {
 				Element installmentValueElement = installmentElement.select("b").last();
 				Integer installmentNumber = null;
 				Float installmentValue = null;
-				
+								
 				if (installmentNumberElement != null) {
-					installmentNumber = Integer.parseInt(installmentElement.text().trim());
+					installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
 				}
 				if (installmentValueElement != null) {
 					installmentValue = Float.parseFloat( installmentValueElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
@@ -230,8 +227,19 @@ public class BrasilAdiasCrawler extends Crawler {
 		}
 		
 		// insert the payment options
+		
+		// bank ticket
 		prices.insertBankTicket(bankTicketPrice);
-		prices.insertCardInstallment("visa", installments);
+		
+		// all card payment options are the same for all card brands
+		// the available card brands are displayed once we hit the buy button
+		prices.insertCardInstallment(Card.VISA.toString(), installments);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+		prices.insertCardInstallment(Card.ELO.toString(), installments);
+		prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		prices.insertCardInstallment(Card.DISCOVER.toString(), installments);
+		prices.insertCardInstallment(Card.BNDES.toString(), installments);
+		prices.insertCardInstallment(Card.AMEX.toString(), installments);
 		
 		return prices;
 	}

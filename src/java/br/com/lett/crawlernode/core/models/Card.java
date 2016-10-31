@@ -12,6 +12,8 @@ public enum Card {
 	HIPERCARD,
 	HIPER,
 	AURA,
+	BNDES,
+	DISCOVER,
 	SHOP_CARD;
 	
 	@Override
@@ -27,6 +29,8 @@ public enum Card {
 			case HIPERCARD: return "hipercard";
 			case HIPER: return "hiper";
 			case AURA: return "aura";
+			case BNDES: return "bndes";
+			case DISCOVER: return "discover";
 			case SHOP_CARD: return "shop_card";
 			default: return "not_a_card";
 		}
