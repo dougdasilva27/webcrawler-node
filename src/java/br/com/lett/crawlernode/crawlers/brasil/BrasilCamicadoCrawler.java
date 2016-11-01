@@ -73,10 +73,6 @@ public class BrasilCamicadoCrawler extends Crawler {
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// InternalId
 			String internalId = crawlInternalId(doc);
 
@@ -117,7 +113,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
 			// Prices
-			Prices prices = crawlPrices(doc, price);
+			Prices prices = crawlPrices(doc);
 			
 			// Creating the product
 			Product product = new Product();
@@ -202,62 +198,59 @@ public class BrasilCamicadoCrawler extends Crawler {
 		return price;
 	}
 	
-	private Prices crawlPrices(Document doc, Float price) {
+	private Prices crawlPrices(Document document) {
 		Prices prices = new Prices();
+		Float bankTicketPrice = null;
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
 		
-		if(price != null){
-			// bank ticket
-			Float bankTicketPrice = crawlMainPagePrice(doc);
-			
-			// payment options
-			Map<Integer, Float> installments = new TreeMap<Integer, Float>();
-			installments.put(1, price);
-			Elements installmentsElements = doc.select(".paymentForm .content-parcel ul.content-parcels-item");
-			if (installmentsElements.size() > 0) {
-				/*
-				 * <ul class="content-parcels-item alternate">
-				 *	<li>à vista</li>
-				 *	<li>R$ 399,90</li>
-				 *	<li>sem juros</li>
-				 *	<li>R$ 399,90</li>
-				 * </ul>
-				 */
-				
-				/*
-				 * <ul class="content-parcels-item ">
-				 *	<li>2x</li>
-				 *	<li>R$ 199,95</li>
-				 *	<li>sem juros</li>
-				 *	<li>R$ 399,90</li>
-				 * </ul>
-				 */
-				
-				for (Element installmentElement : installmentsElements) {
-					Element installmentNumberElement = installmentElement.select("li").first(); // <li>2x</li> or <li>à vista</li>
-					Element installmentPriceElement = installmentElement.select("li").get(1); // <li>R$ 399,90</li>
-					Integer installmentNumber = null;
-					Float installmentPrice = null;
-					
-					if (installmentNumberElement != null) {
-						List<String> parsedNumbers = CommonMethods.parseNumbers(installmentElement.text().trim());
-						if (parsedNumbers.size() == 0) { // à vista
-							installmentNumber = 1;
-						} else {
-							installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-						}
-					}
-					if (installmentPriceElement != null) {
-						installmentPrice = Float.parseFloat( installmentPriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-					}
-					
-					installments.put(installmentNumber, installmentPrice);
-				}
-				
-			}
-			
-			prices.insertCardInstallment(Card.VISA.toString(), installments);
-			prices.insertBankTicket(bankTicketPrice);
+		// bank ticket
+		Element bankTicketPriceElement = document.select(".box-price div.price strong").first();
+		if (bankTicketPriceElement != null) {
+			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text().trim());
 		}
+		
+		// card payment options
+		// the payment options are the same across all card brands
+		Elements installmentsElements = document.select(".paymentForm div.content-parcel ul.content-parcels-item");
+		for (Element installmentElement : installmentsElements) {
+			Integer installmentNumber = null;
+			Float installmentPrice = null;
+			
+			//<ul>
+			//	<li>à vista</li>
+			//	<li>R$ 349,90</li>
+			//	<li>sem juros</li>
+			//	<li>R$ 349,90</li>
+			//</ul>
+			
+			//<ul>
+			//	<li>2x</li>
+			//	<li>R$ 174,95</li>
+			//	<li>sem juros</li>
+			//<li>R$ 349,90</li>
+			
+			Element installmentNumberElement = installmentElement.select("li").first(); // <li>2x</li> or <li>à vista</li>
+			Element installmentPriceElement = installmentElement.select("li").get(1); // <li>R$ 349,90</li>
+			List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberElement.text());
+			
+			if ( parsedNumbers.size() == 0 ) { // <li>à vista</li>
+				installmentNumber = 1;
+			} else { // <li>2x</li>
+				installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+			}
+			installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+			
+			installments.put(installmentNumber, installmentPrice);
+		}
+		
+		// insert prices on Prices object
+		prices.insertBankTicket(bankTicketPrice);
+		
+		prices.insertCardInstallment(Card.VISA.toString(), installments);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+		prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		prices.insertCardInstallment(Card.AMEX.toString(), installments);
+		prices.insertCardInstallment(Card.ELO.toString(), installments);
 		
 		return prices;
 	}
