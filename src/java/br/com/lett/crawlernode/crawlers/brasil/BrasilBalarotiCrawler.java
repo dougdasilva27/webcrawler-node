@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,8 +13,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -84,6 +88,9 @@ public class BrasilBalarotiCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(doc);
 			
+			// Prices
+			Prices prices = crawlPrices(doc);
+			
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -118,6 +125,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -197,6 +205,109 @@ public class BrasilBalarotiCrawler extends Crawler {
 		} 
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		Float bankTicketPrice = null;
+		
+		// bank ticket
+		Element bankTicketPriceElement = document.select("#comDesconto span").first();
+		if (bankTicketPriceElement != null) {
+			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+		}
+		
+		// card payment options
+		Elements validCardsElements = document.select("#floaterFormas .contFloaterFormas .box.branco");
+		Elements installmentsElements = document.select("#floaterFormas .contFloaterFormas #floateparcelas");
+		
+		// valid card element
+		//<div> class="box branco"
+		//	"	
+		//	CARTÃO DE CRÉDITO MASTERCARD,CARTÃO DE CRÉDITO VISA, 
+		//	Diners Club,CARTÃO DE CRÉDITO ELO,Cartão de crédito Amex,
+		//	CARTÃO DE CRÉDITO HIPERCARD,CARTÃO DE CRÉDITO AURA,
+		//	Cartão de crédito BNDES
+		//	"
+		//</div>
+		
+		// installment element
+		//<div id="linhafloateparcelas">
+		//	<div class="linhafloaterparcelas"> ignore this because it's the header of the table. They are not html tables.
+		//	<div class="linhafloaterparcelas" style="background:#fff">
+		//	<div class="linhafloaterparcelas" style="background:#fff">
+		//	<div class="linhafloaterparcelas" style="background:#fff">
+        //</div>
+		
+		// get only the first one that contains cards names
+		if (validCardsElements.size() > 1 && installmentsElements.size() > 0) {
+			String text = validCardsElements.get(1).text().toLowerCase().replaceAll(",", " ");
+			Map<Integer, Float> installments = getInstallmentsFromElement(installmentsElements.first());
+						
+			if (text.contains(Card.VISA.toString())) {
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+			}
+			if (text.contains(Card.DINERS.toString())) {
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+			}
+			if (text.contains(Card.ELO.toString())) {
+				prices.insertCardInstallment(Card.ELO.toString(), installments);
+			}
+			if (text.contains(Card.BNDES.toString())) {
+				prices.insertCardInstallment(Card.BNDES.toString(), installments);
+			}
+			if (text.contains(Card.MASTERCARD.toString())) {
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			}
+			if (text.contains(Card.AMEX.toString())) {
+				prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			}
+			if (text.contains(Card.HIPERCARD.toString())) {
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+			}
+			if (text.contains(Card.AURA.toString())) {
+				prices.insertCardInstallment(Card.AURA.toString(), installments);
+			}
+		}
+		
+		// insert prices on Price object
+		prices.insertBankTicket(bankTicketPrice);
+		
+		return prices;
+	}
+	
+	/**
+	 * Auxiliar method used in crawlPrices method.
+	 * 
+	 * @param floatParcelas
+	 * @return
+	 */
+	private TreeMap<Integer, Float> getInstallmentsFromElement(Element floatParcelas) {
+		TreeMap<Integer, Float> installments = new TreeMap<Integer, Float>();
+				
+		Elements linhaFloatsParcelasElements = floatParcelas.select(".linhafloaterparcelas");
+		for (int i = 1; i < linhaFloatsParcelasElements.size(); i++) {
+			Integer installmentNumber = null;
+			Float installmentPrice = null;
+			Element installmentNumberElement = linhaFloatsParcelasElements.get(i).select(".fpagNParc").first();
+			Element installmentPriceElement = linhaFloatsParcelasElements.get(i).select(".fpagVlrParc").first();
+			
+			if (installmentNumberElement != null) {
+				List<String> numbers = CommonMethods.parseNumbers(installmentNumberElement.text());
+				if (numbers.size() == 0) { // à vista
+					installmentNumber = 1;
+				} else {
+					installmentNumber = Integer.parseInt(numbers.get(0));
+				}
+				if (installmentPriceElement != null) {
+					installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+				}
+				
+				installments.put(installmentNumber, installmentPrice);
+			}			
+		}
+		
+		return installments;
 	}
 	
 	private boolean crawlAvailability(Document document) {
