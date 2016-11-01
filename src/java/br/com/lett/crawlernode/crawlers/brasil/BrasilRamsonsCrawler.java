@@ -244,7 +244,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return url.endsWith("/p");
+		return url.endsWith("/p") || url.contains("/prod");
 	}
 
 }
