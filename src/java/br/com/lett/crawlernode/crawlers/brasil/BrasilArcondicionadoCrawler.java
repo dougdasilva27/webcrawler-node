@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -12,8 +13,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -80,6 +84,9 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(doc);
 			
+			// prices
+			Prices prices = crawlPrices(doc);
+			
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -114,6 +121,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -193,6 +201,60 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		} 
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		Float bankTicketPrice = null;
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		
+		// bank ticket
+		Element bankTicketPriceElement = document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
+		if (bankTicketPriceElement != null) {
+			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+		}
+		
+		// card payment options
+		// the payment options are the same across all the card brands
+		Elements installmentsElements = document.select(".fbits-parcelamento-padrao .details .details-content p");
+		for (Element installmentElement : installmentsElements) {
+			Integer installmentNumber = null;
+			Float installmentPrice = null;
+			
+			// installmentElement is the <p></p> html element
+			// <p> 
+			// 	<b>1</b> 
+			//		x sem juros de 
+			// 	<b>R$ 1.931,58</b> 
+			// </p>
+			
+			// installment number is the first <b></b> child element
+			Element installmentNumberElement = installmentElement.select("b").first();
+			if (installmentNumberElement != null) {
+				installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
+			}
+			
+			// installment price is the last <b></b> child element
+			Element installmentPriceElement = installmentElement.select("b").last();
+			if (installmentPriceElement != null) {
+				installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+			}
+			
+			installments.put(installmentNumber, installmentPrice);			
+		}
+		
+		// insert the prices on the Prices object
+		prices.insertBankTicket(bankTicketPrice);
+		
+		prices.insertCardInstallment(Card.VISA.toString(), installments);
+		prices.insertCardInstallment(Card.AMEX.toString(), installments);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+		prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		prices.insertCardInstallment(Card.ELO.toString(), installments);
+		prices.insertCardInstallment(Card.DISCOVER.toString(), installments);
+		prices.insertCardInstallment(Card.BNDES.toString(), installments);
+		
+		return prices;
 	}
 	
 	private boolean crawlAvailability(Document document) {
