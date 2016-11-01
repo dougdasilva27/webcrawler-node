@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -11,8 +12,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -87,6 +91,9 @@ public class BrasilCentraltecCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
+			
+			// prices
+			Prices prices = crawlPrices(doc);
 
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -122,6 +129,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -138,7 +146,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -199,6 +207,55 @@ public class BrasilCentraltecCrawler extends Crawler {
 		}
 
 		return price;
+	}
+
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		Float bankTicketPrice = null;
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		// bank ticket price
+		Element bankTicketPriceElement = document.select("div[itemprop=offers] .prod_valor_avista span[itemprop=price]").first();
+		if (bankTicketPriceElement != null) {
+			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+		}
+
+		// installments prices
+		// for this ecommerce we have only two installment informations: 1x on card and 10x (sem juros)
+		// all the payment options are the same for all card brands
+		Element firstInstallmentElement = document.select("div[itemprop=offers] .prod_valor_por span").last(); // 1x
+		if (firstInstallmentElement != null) {
+			installments.put(1, CommonMethods.parseFloat(firstInstallmentElement.text()));
+		}
+
+		Element lastInstallmentElement = document.select("div[itemprop=offers] .prod_valor_parc").first();
+		if (lastInstallmentElement != null) {
+			String line = lastInstallmentElement.text().trim(); // 10x de R$ 308,80 sem juros
+			Integer installmentNumber = null;
+			Float installmentPrice = null;
+
+			// parsing the installment number
+			int indexOfX = line.indexOf('x') + 1;
+			String installmentNumberString = line.substring(0, indexOfX); // "10x"
+			installmentNumber = Integer.parseInt( CommonMethods.parseNumbers(installmentNumberString).get(0) );
+
+			// parsing the installment price
+			String installmentPriceString = line.substring(indexOfX, line.length()); // " de R$ 308,80 sem juros"
+			installmentPrice = CommonMethods.parseFloat(installmentPriceString);
+
+			// the payment options are the same for all cards brands
+			installments.put(installmentNumber, installmentPrice);
+		}
+		
+		// insert the prices on the Prices object
+		prices.insertBankTicket(bankTicketPrice);
+		
+		// insert the installments, they are all the same across all the card brands
+		prices.insertCardInstallment(Card.VISA.toString(), installments);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+		prices.insertCardInstallment(Card.AMEX.toString(), installments);
+
+		return prices;
 	}
 
 	private boolean crawlAvailability(Document document) {
