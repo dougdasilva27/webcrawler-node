@@ -40,7 +40,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 		// usar esse identificador para página de produto, caso necessite
 		Element elementProduct = doc.select(".product_info_container").first();
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
+		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
@@ -243,8 +243,8 @@ public class BrasilRamsonsCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		return url.endsWith("/p") || url.contains("/prod");
+	private boolean isProductPage(String url, Document doc) {
+		return url.endsWith("/p") || doc.select("#ProdutoCodigo").first() != null;
 	}
 
 }
