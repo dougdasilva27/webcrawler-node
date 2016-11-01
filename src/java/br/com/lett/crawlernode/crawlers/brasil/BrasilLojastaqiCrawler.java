@@ -149,7 +149,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 				 *************************************/
 
 				// InternalId
-				String internalId = crawlInternalId(doc);
+				String internalId = crawlInternalId(doc, internalPid);
 				
 				// Availability
 				boolean available = crawlAvailability(internalId, doc);
@@ -202,25 +202,33 @@ public class BrasilLojastaqiCrawler extends Crawler {
 	 * General methods *
 	 *******************/
 	
-	private String crawlInternalId(Document document) {
+	private String crawlInternalId(Document document, String pid) {
 		String internalId = null;
 		
-		Element internalIdElement = document.select("meta[itemprop=sku]").first();
-
-		if(internalIdElement != null){
-			String pid = internalIdElement.attr("content");
-			Element id = document.select("input#productSkuId_" + pid).first();
+		Element id = document.select("input#productSkuId_" + pid).first();
+		
+		if(id != null){
+			internalId = id.attr("value");
+		} else {
+			id = document.select("#skuSelected").first();
 			
 			if(id != null){
 				internalId = id.attr("value");
 			}
 		}
 		
+		
 		return internalId;
 	}
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
+		
+		Element internalIdElement = document.select("meta[itemprop=sku]").first();
+
+		if(internalIdElement != null){
+			internalPid = internalIdElement.attr("content");
+		}
 		
 		return internalPid;
 	}
@@ -252,7 +260,11 @@ public class BrasilLojastaqiCrawler extends Crawler {
 	private boolean crawlAvailability(String internalId, Document doc) {
 		Element eAvailability = doc.select("#detailsSkuId_" + internalId).first();
 		
-		if(eAvailability.hasClass("detalhes_unavailable")){
+		if(eAvailability != null){
+			if(eAvailability.hasClass("detalhes_unavailable")){
+				return false;
+			}
+		} else {
 			return false;
 		}
 		

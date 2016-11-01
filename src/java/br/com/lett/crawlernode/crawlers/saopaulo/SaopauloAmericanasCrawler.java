@@ -372,7 +372,14 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		Element elementName = document.select(".product-name").first();
 		if(elementName != null) {
 			name = elementName.text().replace("'","").replace("’","").trim();
+		} else {
+			elementName = document.select(".card-title h3").first();
+			
+			if(elementName != null) {
+				name = elementName.text().replace("'","").replace("’","").trim();
+			}
 		}
+		
 		return name;
 	}
 
