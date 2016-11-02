@@ -177,7 +177,7 @@ public class Product {
 		sb.append("category2: " + this.category2 + "\n");
 		sb.append("category3: " + this.category3 + "\n");
 		sb.append("primary image: " + this.primaryImage + "\n");
-		sb.append("secondary images: " + this.secondaryImages + "\n");
+		sb.append("secondary images: " + (this.secondaryImages != null ? "yes" : "no")  + "\n");
 		sb.append("description: " + "html code with " + this.description.length() + " characters" + "\n");
 		sb.append("stock: " + this.stock + "\n");
 
