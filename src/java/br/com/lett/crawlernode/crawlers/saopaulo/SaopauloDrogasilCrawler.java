@@ -53,15 +53,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 			}
 
 			// Nome
-			Element elementName = doc.select(".product-view .limit.columns .col-1 .product-info .product-name h1").first();
-			Element elementBrand = doc.select(".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca").first();
-			String name = "";
-			if(elementName != null) {
-				name = elementName.text().trim();
-			}
-			if(elementBrand != null) { // adicionar a marca do produto também
-				name = name + " " + elementBrand.text().trim();
-			}
+			String name= crawlName(doc);
 
 			// Preço
 			Float price = null;
@@ -178,6 +170,31 @@ public class SaopauloDrogasilCrawler extends Crawler {
 		Elements elementProductShop = document.select(".product-shop");
 		Elements elementShippingQuote = document.select(".shipping-quote");
 		return (elementProductShop.size() > 0 || elementShippingQuote.size() > 0);
+	}
+	
+	private String crawlName(Document document) {
+		String name = null;
+		Element elementName = document.select(".product-view .limit.columns .col-1 .product-info .product-name h1").first();
+		if(elementName != null) {
+			name = elementName.text().trim();
+			
+			// brand
+			Element elementBrand = document.select(".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca").first();
+			if(elementBrand != null) {
+				name = name + " " + elementBrand.text().trim();
+			}
+			
+			// quantity
+			Element productAttributes = document.select(".product-attributes").last();
+			if (productAttributes != null) {
+				Element quantity = productAttributes.select("ul li.quantidade").first();
+				if (quantity != null) {
+					name = name + " - " + quantity.text().trim();
+				}
+			}
+		}
+		
+		return name;
 	}
 
 }
