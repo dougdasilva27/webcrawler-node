@@ -377,28 +377,28 @@ public class BrasilShopfatoCrawler extends Crawler {
 
 				if(text.contains("visa")){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
 					prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+					
 				} else if(text.contains("mastercard")){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
 					prices.insertCardInstallment(Prices.MASTERCARD, installmentPriceMap);
+					
 				} else if(text.contains("diners")){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
 					prices.insertCardInstallment(Prices.DINERS, installmentPriceMap);
+					
 				} else if(text.contains("american") || text.contains("amex")){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
-					prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);		
+					prices.insertCardInstallment(Prices.AMEX, installmentPriceMap);	
+					
 				} else if(text.contains("hipercard") || text.contains("amex")){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
-					prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);					
+					prices.insertCardInstallment(Prices.HIPERCARD, installmentPriceMap);	
+					
 				} else if(text.contains("credicard") ){
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-
-					prices.insertCardInstallment(Prices.CREDICARD, installmentPriceMap);					
+					prices.insertCardInstallment(Prices.CREDICARD, installmentPriceMap);
+					
 				}
 			} 
 
