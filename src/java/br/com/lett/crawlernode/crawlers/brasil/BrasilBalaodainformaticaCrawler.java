@@ -1,17 +1,23 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilBalaodainformaticaCrawler extends Crawler {
@@ -115,9 +121,15 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				}
 			}
 
+			// Preço Boleto
+			Float priceBank = crawlPriceBank(elementProduct);
+			
 			// Preço
-			Float price = calculatePrice(elementProduct);
+			Float price = calculatePrice(elementProduct, priceBank);
 
+			// Prices
+			Prices prices = crawlPrices(price, priceBank);
+			
 			// Descrição
 			String description = "";
 			Element elementDescription = doc.select("#especificacoes").first();
@@ -143,6 +155,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(name);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -168,17 +181,12 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 		return products;
 	} 
 
-	private Float calculatePrice(Element elementProduct){
+	private Float calculatePrice(Element elementProduct, Float priceBank){
 		Float price = null;
 
 		if(elementProduct != null){
-			Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
-			if (elementPrice != null) {
-				price = Float.parseFloat(
-						elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
 
-			if(price != null){
+			if(priceBank != null){
 				Elements descontoElement = elementProduct.select("#preco-comprar p");
 
 				String descontoString = null;
@@ -194,7 +202,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				if(descontoString != null){
 					int desconto = Integer.parseInt(descontoString.replaceAll("[^0-9]", "").trim());
 
-					price = normalizeTwoDecimalPlaces((float) ((price * 100) / (100 - desconto)));
+					price = CommonMethods.normalizeTwoDecimalPlaces((float) ((priceBank * 100) / (100 - desconto)));
 				}
 			}
 		}
@@ -203,15 +211,91 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 	}
 
 	/**
-	 * Round and normalize Double to have only two decimal places
-	 * eg: 23.45123 --> 23.45
-	 * @param number
-	 * @return A rounded Double with only two decimal places
+	 * To crawl installment is acessed a api 
+	 * this api return a json like this:
+	 * 
+	 {
+		"success":true,
+		"parcelas":[
+			{
+				"cardBrand":"visa",
+				"quantity":1,
+				"amount":12.7080,
+				"amountFormatado":"R$ 12,71",
+				"totalAmount":12.71,
+				"totalAmountFormatado":"R$ 12,71",
+				"interestFree":true
+			},
+			{
+				"cardBrand":"visa",
+				"quantity":2,
+				"amount":7.06,
+				"amountFormatado":"R$ 7,06",
+				"totalAmount":14.12,
+				"totalAmountFormatado":"R$ 14,12",
+				"interestFree":true
+			}
+		]
+	 }
+	 * 
+	 * @param price
+	 * @param priceBank
+	 * @return
 	 */
-	public static Float normalizeTwoDecimalPlaces(Float number) {
-		BigDecimal big = new BigDecimal(number);
-		String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
-
-		return Float.parseFloat(rounded);
+	private Prices crawlPrices(Float price, Float priceBank){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			prices.insertBankTicket(priceBank);
+			
+			String url = "http://www.balaodainformatica.com.br/PagSeguro/GetInstallmentsByValue";
+			String payload = "value=" + price.toString().replace(".", ",");		
+			
+			String op = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, payload, cookies);
+			
+			JSONObject jsonInstallments;
+			try {
+				jsonInstallments = new JSONObject(op);
+			} catch (JSONException e) {
+				jsonInstallments = new JSONObject();
+			}
+			
+			if(jsonInstallments.has("parcelas")){
+				Map<Integer,Float> installmentPriceMap = new HashMap<>();
+				JSONArray arrayInstallments = jsonInstallments.getJSONArray("parcelas");
+				
+				for(int i = 0; i < arrayInstallments.length(); i++){
+					JSONObject jsonInstallment = arrayInstallments.getJSONObject(i);
+					
+					if(jsonInstallment.has("quantity")){
+						Integer installment = jsonInstallment.getInt("quantity");
+						
+						if(jsonInstallment.has("amount")){
+							Double valueDouble = jsonInstallment.getDouble("amount");
+							
+							Float value = CommonMethods.normalizeTwoDecimalPlaces(valueDouble.floatValue());
+							installmentPriceMap.put(installment, value);
+						}
+					}
+				}
+				
+				prices.insertCardInstallment(Prices.VISA, installmentPriceMap);
+			}
+		}
+		return prices;
+	}
+	
+	private Float crawlPriceBank(Element elementProduct){
+		Float price = null;
+		
+		if(elementProduct != null){
+			Element elementPrice = elementProduct.select("#preco-comprar .avista").first();
+			if (elementPrice != null) {
+				price = Float.parseFloat(
+						elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
+		}
+		
+		return price;
 	}
 }
