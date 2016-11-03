@@ -238,15 +238,14 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return skuMap;
 	}
 
-	private JSONObject getDataLayer(Document doc){
+	private JSONObject getDataLayer(Document doc) {
 		JSONObject skus = new JSONObject();
 		Elements scripts = doc.select("script");
 
-		for(Element e : scripts){
+		for (Element e : scripts) {
 			String json = e.outerHtml();
 
-			if(json.contains("INITIAL_STATE")){
-
+			if (json.contains("__INITIAL_STATE__")) {
 				int x = json.indexOf("_ =") + 3;
 				int y = json.indexOf("};", x);
 

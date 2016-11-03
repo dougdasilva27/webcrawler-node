@@ -76,25 +76,31 @@ public class Test {
 
 		// fetch market information
 		Market market = fetchMarket();
-				
+
 		markets = new Markets(dbManager);
 
-		// fetching proxies
-		proxies = new Proxies(markets);
-		proxies.setCharityProxy();
-		proxies.setBonanzaProxies();
-		proxies.setBuyProxies();
-		proxies.setStormProxies();
+		if (market != null) {
 
-		// create a task executor
-		// for testing we use 1 thread, there is no need for more
-		taskExecutor = new TaskExecutor(1, 1);
+			// fetching proxies
+			proxies = new Proxies(markets);
+			proxies.setCharityProxy();
+			proxies.setBonanzaProxies();
+			proxies.setBuyProxies();
+			proxies.setStormProxies();
 
-		CrawlerSession session = SessionFactory.createSession("http://www.drogasil.com.br/mamae-e-bebe/alimentacao/compostos-lacteos/ninho-leite-infantil-instantaneo-400-g.html", market);
-		Runnable task = TaskFactory.createTask(session);
-		taskExecutor.executeTask(task);
+			// create a task executor
+			// for testing we use 1 thread, there is no need for more
+			taskExecutor = new TaskExecutor(1, 1);
 
-		taskExecutor.shutDown();
+			CrawlerSession session = SessionFactory.createSession("http://www.americanas.com.br/produto/8595693/cafeteira-expresso-dolce-gusto-piccolo-vermelha-110v-32-capsulas", market);
+			Runnable task = TaskFactory.createTask(session);
+			taskExecutor.executeTask(task);
+
+			taskExecutor.shutDown();
+		}
+		else {
+			System.err.println("Market não encontrado no banco!");
+		}
 	}
 
 	private static Market fetchMarket() {
