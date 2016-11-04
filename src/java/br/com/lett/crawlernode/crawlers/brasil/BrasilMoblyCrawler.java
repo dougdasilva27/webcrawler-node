@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -44,6 +45,11 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 9) In json has variations of product.
  * 
+ * 10)Apparently this market when accessing the api prices may see a different product 
+ * 	   because of a "hash" in the url of api, 
+ * 	   then was found a script with the information that appears to be commented on html, 
+ * 	   so when the api returns another product, we took the script information.
+ * 
  * Examples:
  * ex1 (available): http://www.mobly.com.br/ar-condicionado-portatil-quente-e-frio-10500-btus-branco-160252.html
  * ex2 (unavailable): http://www.mobly.com.br/armario-multiuso-madeira-178cm-decoracao-marrom-venus-158006.html
@@ -74,10 +80,6 @@ public class BrasilMoblyCrawler extends Crawler {
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// Pid
 			String internalPid = crawlInternalPid(doc);
 
@@ -101,15 +103,12 @@ public class BrasilMoblyCrawler extends Crawler {
 
 			// Stock
 			Integer stock = null;
-
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
-			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-
+			
 			// Sku variations
 			Elements skus = doc.select("li[data-sku]");
+			
+			// JSON of Product in Html
+			JSONObject jsonProduct = crawlJSONProduct(doc, internalPid);
 			
 			if(skus.size() > 0){
 				
@@ -119,27 +118,33 @@ public class BrasilMoblyCrawler extends Crawler {
 				// IntenalIDS para requisição
 				String internalIDS = crawlInternalIDS(skus);
 				
-				// Json page
-				JSONObject jsonPage = this.fetchSkuInformation(internalIDS);
+				// Json from api
+				JSONObject jsonProductsApi = this.fetchSkuInformation(internalIDS);
 				
 				for(Element sku : skus){
 					// InternalId
 					String internalID = crawlInternalIdForMutipleVariations(sku);
 					
 					// Sku Json
-					JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonPage);
+					JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonProductsApi, jsonProduct);
 					
 					// Name
 					String name = crawlNameForMutipleVariations(jsonSku, nameMainPage);
 	
+					// Marketplace map
+					Map<String, Float> marketplaceMap = crawlMarketplace(doc, jsonSku);
+					
 					// Price
-					Float price = crawlPrice(jsonSku);
+					Float price = crawlPrice(marketplaceMap);
 					
 					// Availability
-					boolean available = crawlAvailability(jsonSku);
+					boolean available = crawlAvailability(marketplaceMap);
 					
 					// Prices
 					Prices prices = crawlPrices(jsonSku, price);
+					
+					// Marketplace
+					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
 					
 					// Creating the product
 					Product product = new Product();
@@ -171,20 +176,26 @@ public class BrasilMoblyCrawler extends Crawler {
 				// InternalId
 				String internalID = crawlInternalIdSingleProduct(doc);
 				
-				// Json page
-				JSONObject jsonPage = this.fetchSkuInformation(internalID);
+				// Json from api
+				JSONObject jsonProductApi = this.fetchSkuInformation(internalID);
 				
 				// Sku Json
-				JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonPage);
+				JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonProductApi, jsonProduct);
+				
+				// Marketplace map
+				Map<String, Float> marketplaceMap = crawlMarketplace(doc, jsonSku);
 				
 				// Price
-				Float price = crawlPrice(jsonSku);
+				Float price = crawlPrice(marketplaceMap);
 				
 				// Availability
-				boolean available = crawlAvailability(jsonSku);
+				boolean available = crawlAvailability(marketplaceMap);
 				
 				// Prices
 				Prices prices = crawlPrices(jsonSku, price);
+				
+				// Marketplace
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
 
 				// Creating the product
 				Product product = new Product();
@@ -275,20 +286,20 @@ public class BrasilMoblyCrawler extends Crawler {
 		return internalId;
 	}
 	
-	private Float crawlPrice(JSONObject jsonSku) {
+	private Float crawlPrice(Map<String,Float> marketplaces) {
 		Float price = null;	
 		
-		if(jsonSku.has("Price")){
-			price = Float.parseFloat( jsonSku.getString("Price").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		if(marketplaces.containsKey("mobly")){
+			price = marketplaces.get("mobly");
 		}	
 
 		return price;
 	}
 	
-	private boolean crawlAvailability(JSONObject jsonSku) {
+	private boolean crawlAvailability(Map<String,Float> marketplaces) {
 		
-		if (jsonSku.has("Available")) {
-			return jsonSku.getBoolean("Available");
+		if(marketplaces.containsKey("mobly")){
+			return true;
 		}
 		
 		return false;
@@ -304,7 +315,7 @@ public class BrasilMoblyCrawler extends Crawler {
 		return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, null);
 	}
 	
-	private JSONObject assembleJsonProduct(String internalID, String internalPid, JSONObject jsonPage){
+	private JSONObject assembleJsonProduct(String internalID, String internalPid, JSONObject jsonPage, JSONObject jsonProduct){
 		JSONObject jsonSku = new JSONObject();
 		JSONObject jsonInformation = new JSONObject();
 		
@@ -319,6 +330,27 @@ public class BrasilMoblyCrawler extends Crawler {
 					if(jsonPrices.has(internalID)){
 						jsonInformation = jsonPrices.getJSONObject(internalID);
 					}
+				}
+				
+				/**
+				 * in which case the api prices did not return the correct product, 
+				 * so the json is caught in a javascript script in hmtl
+				 */
+				
+			} else {	
+				if(jsonProduct.has("prices")){
+					JSONObject jsonPrices = jsonProduct.getJSONObject("prices");
+					if(jsonPrices.has(internalID)){
+						jsonInformation = jsonPrices.getJSONObject(internalID);
+					}
+				}
+			}
+		} else {				
+			if(jsonProduct.has("prices")){
+				JSONObject jsonPrices = jsonProduct.getJSONObject("prices");
+				
+				if(jsonPrices.has(internalID)){
+					jsonInformation = jsonPrices.getJSONObject(internalID);
 				}
 			}
 		}
@@ -355,12 +387,50 @@ public class BrasilMoblyCrawler extends Crawler {
 		return name;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+	private Map<String, Float> crawlMarketplace(Document document, JSONObject jsonSku) {
+		Map<String,Float> marketplaces = new HashMap<String, Float>();
+		
+		Element marketplace = document.select(".prd-supplier").first();
+		if(marketplace != null){
+			String text = marketplace.text().toLowerCase().trim();
+			if(jsonSku.has("Available")){
+				if(jsonSku.getBoolean("Available")){
+					if(jsonSku.has("Price")){
+						Float price = Float.parseFloat( jsonSku.getString("Price").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+						marketplaces.put(text, price);
+					}
+				}
+			}
+		} else {
+			Float price = null;
+			if(jsonSku.has("Available")){
+				if(jsonSku.getBoolean("Available")){
+					if(jsonSku.has("Price")){
+						price = Float.parseFloat( jsonSku.getString("Price").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+						marketplaces.put("mobly", price);
+					}
+				}
+			}
+		}
+		
+		return marketplaces;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		return new JSONArray();
+	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, JSONObject jsonSku) {
+		JSONArray marketplace = new JSONArray();
+		
+		for(String sellerName : marketplaceMap.keySet()){
+			if(!sellerName.equals("mobly")){
+				JSONObject seller = new JSONObject();
+				seller.put("name", sellerName);
+				seller.put("price", marketplaceMap.get(sellerName));
+				seller.put("prices", crawlPrices(jsonSku, marketplaceMap.get(sellerName)).getPricesJson());
+				
+				marketplace.put(seller);
+			}
+		}
+		
+		return marketplace;
 	}
 
 	private String crawlPrimaryImage(Document document) {
@@ -460,4 +530,25 @@ public class BrasilMoblyCrawler extends Crawler {
 		return prices;
 	}
 
+	private JSONObject crawlJSONProduct(Document doc, String internalPid){
+		JSONObject jsonProduct = new JSONObject();
+		Element scriptElement = doc.select("#lazyJavascriptInFileCode").first();
+		
+		String indexPid = "detail.priceStore[\""+ internalPid +"\"] =";
+		String script = scriptElement.outerHtml();
+		
+		if(script.contains(indexPid)){
+			int x = script.indexOf(indexPid) + indexPid.length();
+			int y = script.indexOf(";", x);
+			
+			String json = script.substring(x, y).trim();
+			
+			try {
+				jsonProduct = new JSONObject(json);
+			} catch (JSONException e) {
+			}
+		}
+		
+		return jsonProduct;
+	}
 }
