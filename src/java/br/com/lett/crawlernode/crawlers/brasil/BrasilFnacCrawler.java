@@ -108,7 +108,7 @@ public class BrasilFnacCrawler extends Crawler {
 			JSONArray skus = fullSkuJson.getJSONArray("skus");
 			
 			// payment options
-			//Prices prices = crawlPrices(doc);
+			Prices prices = crawlPrices(doc);
 
 			for (int i = 0; i < skus.length(); i++) {
 
@@ -142,7 +142,7 @@ public class BrasilFnacCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
-				//product.setPrices(prices);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -328,7 +328,6 @@ public class BrasilFnacCrawler extends Crawler {
 	private JSONObject crawlSkuJsonArray(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		JSONArray skuJsonArray = null;
 
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
