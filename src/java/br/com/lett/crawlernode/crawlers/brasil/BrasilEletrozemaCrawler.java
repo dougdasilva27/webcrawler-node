@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -58,19 +63,22 @@ public class BrasilEletrozemaCrawler extends Crawler {
 				name = elementName.text().replace("'","").replace("’","").trim();
 			}
 
-			// price
-			Float price = null;
-			Element elementPrice = doc.select(".valores .preco #PrecoProduto").first();
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
-
 			// availability
 			Element elementNotifyButton = doc.select(".flagEsgotado").first();
 			boolean available = true;
 			if(elementNotifyButton != null) {
 				if( elementNotifyButton.attr("style").equals("display:block;") ) {
 					available = false;
+				}
+			}
+			
+			// price
+			Float price = null;
+			
+			if(available){
+				Element elementPrice = doc.select(".valores .preco #PrecoProduto").first();
+				if(elementPrice != null) {
+					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 				}
 			}
 
@@ -126,12 +134,16 @@ public class BrasilEletrozemaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 			
+			// Prices
+			Prices prices = crawlPrices(price);
+			
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -152,6 +164,66 @@ public class BrasilEletrozemaCrawler extends Crawler {
 	}
 
 
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			String url = "https://www.zema.com/simulador_parcelas.asp?ValorParcelar=" + price.toString().replace(".", ",");
+			
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);		
+			Elements formasElements = doc.select(".forma");
+			
+			for(Element e : formasElements){
+				Element nomeFormaElement = e.select("> p").first();
+				
+				if(nomeFormaElement != null){
+					String nomeForma = nomeFormaElement.ownText().toLowerCase();
+					
+					if(nomeForma.contains("boleto")){
+						Element priceElement = e.select(".parcelamento li").first();
+						
+						if(priceElement != null){
+							Float priceBank = Float.parseFloat(priceElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+							prices.insertBankTicket(priceBank);
+						}
+						
+					} else if(nomeForma.contains("american")){
+						Map<Integer,Float> installmentPriceMap = crawlInstallments(e);
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+						
+					} else if(nomeForma.contains("mastercard")){
+						Map<Integer,Float> installmentPriceMap = crawlInstallments(e);
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+						
+					} else if(nomeForma.contains("visa")){
+						Map<Integer,Float> installmentPriceMap = crawlInstallments(e);
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+						
+					}
+				}
+			}
+		}
+		
+		return prices;
+	}
+	
+	private Map<Integer,Float> crawlInstallments(Element e){
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		Elements priceElements = e.select(".parcelamento li span");
+		
+		for(Element l : priceElements){
+			String text = l.text().toLowerCase();
+			int x = text.indexOf("x");
+			
+			Integer installment = Integer.parseInt(text.substring(0, x).trim());
+			Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			
+			installmentPriceMap.put(installment, value);
+		}
+		
+		return installmentPriceMap;
+	}
+	
 	/*******************************
 	 * Product page identification *
 	 *******************************/
