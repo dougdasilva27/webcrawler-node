@@ -98,11 +98,6 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		if( isProductPage(session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
-			/* *********************************************************
-			 * crawling data common to both the cases of product page  *
-			 ***********************************************************/
-
 			// Api onde se consegue todos os preços
 			JSONObject initialJson = getDataLayer(doc);
 
@@ -133,7 +128,8 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			// sku data in json
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
-			for(String internalId : skuOptions.keySet()){	
+			for (String internalId : skuOptions.keySet()) {
+
 				// InternalId
 				String variationInternalID = internalId;
 
@@ -212,7 +208,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	private Map<String,String> crawlSkuOptions(JSONObject infoProductJson){
 		Map<String,String> skuMap = new HashMap<>();
 
-		if(infoProductJson.has("skus")){
+		if (infoProductJson.has("skus")) {
 			JSONArray skus = infoProductJson.getJSONArray("skus");
 
 			for(int i = 0; i < skus.length(); i++){
@@ -237,21 +233,25 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	private JSONObject getDataLayer(Document doc){
 		JSONObject skus = new JSONObject();
 		Elements scripts = doc.select("script");
+		String json = null;
 
-		for(Element e : scripts){
-			String json = e.outerHtml();
+		for (Element e : scripts) {
+			json = e.outerHtml();
 
-			if(json.contains("INITIAL_STATE")) {
-
+			if (json.contains("__INITIAL_STATE__")) {
 				int x = json.indexOf("_ =") + 3;
 				int y = json.indexOf("};", x);
 
 				json = json.substring(x, y+1);
 
-				skus = new JSONObject(json);
-
 				break;
 			}
+		}
+
+		try {
+			skus = new JSONObject(json);
+		} catch (Exception e) {
+			skus = new JSONObject();
 		}
 
 		return skus;
@@ -371,12 +371,12 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			name = elementName.text().replace("'","").replace("’","").trim();
 		} else {
 			elementName = document.select(".card-title h3").first();
-			
+
 			if(elementName != null) {
 				name = elementName.text().replace("'","").replace("’","").trim();
 			}
 		}
-		
+
 		return name;
 	}
 
