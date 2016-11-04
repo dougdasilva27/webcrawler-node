@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -96,12 +99,6 @@ public class BrasilHavanCrawler extends Crawler {
 
 			// Stock
 			Integer stock = null;
-
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
-			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 			
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
@@ -109,14 +106,8 @@ public class BrasilHavanCrawler extends Crawler {
 			for(int i = 0; i < arraySkus.length(); i++){
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
 				
-				// Availability
-				boolean available = crawlAvailability(jsonSku);
-					
 				// InternalId 
 				String internalId = crawlInternalId(jsonSku);
-				
-				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
 				
 				// Primary image
 				String primaryImage = crawlPrimaryImage(jsonSku);
@@ -127,6 +118,21 @@ public class BrasilHavanCrawler extends Crawler {
 				// Secondary images
 				String secondaryImages = crawlSecondaryImages(internalId);
 				
+				// Marketplace map
+				Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
+
+				// Marketplace
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				
+				// Availability
+				boolean available = crawlAvailability(marketplaceMap);
+				
+				// Price
+				Float price = crawlMainPagePrice(marketplaceMap);
+				
+				// Prices
+				Prices prices = crawlPrices(internalId, price);
+				
 				// Creating the product
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
@@ -134,6 +140,7 @@ public class BrasilHavanCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -163,18 +170,7 @@ public class BrasilHavanCrawler extends Crawler {
 		if ( document.select(".product-qd-v1-name").first() != null ) return true;
 		return false;
 	}
-	
-//	/*************************************
-//	 * Product variations identification *
-//	 *************************************/
-//	
-//	private boolean hasVolts(Document doc) {
-//		Element variations = doc.select(".volts").first();	
-//		
-//		if(variations != null) 	return true;
-//		return false;
-//	}
-	
+
 	
 	/*******************
 	 * General methods *
@@ -219,29 +215,62 @@ public class BrasilHavanCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlMainPagePrice(Map<String, Float> marketplace) {
 		Float price = null;
 		
-		if (json.has("bestPriceFormated") && available) {
-			price = Float.parseFloat( json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		if (marketplace.containsKey("havan")) {
+			price = marketplace.get("havan");
 		}
 
 		return price;
 	}
 	
-	private boolean crawlAvailability(JSONObject json) {
+	private boolean crawlAvailability(Map<String, Float> marketplace) {
+
+		if(marketplace.containsKey("havan")) return true;
+		
+		return false;
+	}
+	
+	private boolean crawlAvailabilityMarketPlace(JSONObject json) {
 
 		if(json.has("available")) return json.getBoolean("available");
 		
 		return false;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+	private Map<String, Float> crawlMarketplace(JSONObject json) {
+		Map<String, Float> marketplace = new HashMap<String, Float>();
+		
+		if(json.has("seller")){
+			String nameSeller = json.getString("seller").toLowerCase().trim();
+			
+			if (json.has("bestPriceFormated") && crawlAvailabilityMarketPlace(json)) {
+				Float price = Float.parseFloat( json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				marketplace.put(nameSeller, price);
+			}
+		}
+		
+		return marketplace;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		return new JSONArray();
+	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+		JSONArray marketplace = new JSONArray();
+
+		for (String seller : marketplaceMap.keySet()) {
+			if ( !seller.equals("havan") ) { 
+				Float price = marketplaceMap.get(seller);
+
+				JSONObject partner = new JSONObject();
+				partner.put("name", seller);
+				partner.put("price", price);
+				partner.put("prices", crawlPrices(internalId, price).getPricesJson());
+
+				marketplace.put(partner);
+			}
+		}
+
+		return marketplace;
 	}
 
 	private String crawlPrimaryImage(JSONObject json) {
@@ -327,13 +356,107 @@ public class BrasilHavanCrawler extends Crawler {
 	private String crawlDescription(Document document) {
 		String description = "";
 		Element descriptionElement = document.select("#product-qd-v1-description").first();
+		Element descriptionElementWithClass = document.select(".product-qd-v1-description").first();
 		Element specElement = document.select("#caracteristicas").first();
 
 		if (descriptionElement != null) description = description + descriptionElement.html();
+		if (descriptionElementWithClass != null && description.equals("")) description = description + descriptionElementWithClass.html();
 		if (specElement != null) description = description + specElement.html();
 
 		return description;
 	}
+	
+	private Prices crawlPrices(String internalId, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.havan.com.br/productotherpaymentsystems/" + internalId;
+
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bank = doc.select("#ltlPrecoWrapper em").first();
+			if(bank != null){
+				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+			}
+
+			Elements cardsElements = doc.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if (text.contains("visa")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("mastercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("diners")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+					
+				} else if (text.contains("american") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("hipercard") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("credicard") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("elo") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
+	}
+
 	
 	/**
 	 * Get the script having a json with the availability information
