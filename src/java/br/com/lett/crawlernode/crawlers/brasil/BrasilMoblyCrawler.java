@@ -13,8 +13,11 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -135,6 +138,9 @@ public class BrasilMoblyCrawler extends Crawler {
 					// Availability
 					boolean available = crawlAvailability(jsonSku);
 					
+					// Prices
+					Prices prices = crawlPrices(jsonSku, price);
+					
 					// Creating the product
 					Product product = new Product();
 					product.setUrl(this.session.getOriginalURL());
@@ -142,6 +148,7 @@ public class BrasilMoblyCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(name);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setAvailable(available);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
@@ -169,12 +176,15 @@ public class BrasilMoblyCrawler extends Crawler {
 				
 				// Sku Json
 				JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonPage);
-
+				
 				// Price
 				Float price = crawlPrice(jsonSku);
 				
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
+				
+				// Prices
+				Prices prices = crawlPrices(jsonSku, price);
 
 				// Creating the product
 				Product product = new Product();
@@ -183,6 +193,7 @@ public class BrasilMoblyCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(nameMainPage);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -280,7 +291,7 @@ public class BrasilMoblyCrawler extends Crawler {
 			return jsonSku.getBoolean("Available");
 		}
 		
-		return true;
+		return false;
 	}
 
 	/*******************
@@ -315,6 +326,8 @@ public class BrasilMoblyCrawler extends Crawler {
 		if(jsonInformation.has("finalPrice")) 		jsonSku.put("Price", jsonInformation.getString("finalPrice"));
 		if(jsonInformation.has("stock_available")) 	jsonSku.put("Available", jsonInformation.getBoolean("stock_available"));
 		if(jsonInformation.has("option")) 			jsonSku.put("NameVariation", jsonInformation.getString("option"));
+		if(jsonInformation.has("installmentsCount"))jsonSku.put("InstallmentMax", Integer.parseInt(jsonInformation.get("installmentsCount").toString()));
+		if(jsonInformation.has("installmentsValue"))jsonSku.put("InstallmentMaxValue", CommonMethods.normalizeTwoDecimalPlaces(Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
 		
 		return jsonSku;
 	}
@@ -418,6 +431,33 @@ public class BrasilMoblyCrawler extends Crawler {
 		if (specElement != null) description = description + specElement.html();
 
 		return description;
+	}
+	
+	private Prices crawlPrices(JSONObject jsonSku, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			// Preço 1 vez no cartão é igual do boleto
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+			
+			if(jsonSku.has("InstallmentMax")){
+				Integer installment = jsonSku.getInt("InstallmentMax");
+				
+				if(jsonSku.has("InstallmentMaxValue")){
+					Double valueDouble = jsonSku.getDouble("InstallmentMaxValue");
+					Float value = valueDouble.floatValue();
+					
+					installmentPriceMap.put(installment, value);
+					
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+				}
+			}
+		}
+		
+		return prices;
 	}
 
 }
