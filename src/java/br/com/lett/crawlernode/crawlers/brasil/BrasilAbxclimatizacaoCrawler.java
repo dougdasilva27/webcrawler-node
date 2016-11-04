@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -44,7 +46,7 @@ import br.com.lett.crawlernode.util.Logging;
  *
  ************************************************************************************************************************************************************************************/
 public class BrasilAbxclimatizacaoCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "https://www.abxclimatizacao.com.br/";
 
 	public BrasilAbxclimatizacaoCrawler(CrawlerSession session) {
@@ -81,7 +83,10 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
-			
+
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -108,9 +113,6 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-			
-			// Prices
-			Prices prices = crawlPrices(doc, price);
 
 			// Creating the product
 			Product product = new Product();
@@ -135,7 +137,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 
 	}
@@ -150,22 +152,22 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		if (doc.select(".product-name") != null ) return true;
 		return false;
 	}
-	
-	
+
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	private String crawlInternalId(Document document) {
 		String internalId = null;
 		Elements internalIdElements = document.select(".data-table tr");
 
 		for(Element e : internalIdElements){
 			String ref = e.text().trim();
-			
+
 			if(ref.toLowerCase().startsWith("ref")){
 				int x = ref.indexOf(":") + 1;
-				
+
 				internalId = ref.substring(x).trim();
 			}
 		}
@@ -175,10 +177,10 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
-		
+
 		return internalPid;
 	}
-	
+
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select(".product-name h1").first();
@@ -193,28 +195,28 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
 		Element specialPrice = document.select(".precos .new").first();		
-		
+
 		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		} 
 
 		return price;
 	}
-	
+
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".availability.out-of-stock").first();
-		
+
 		if (notifyMeElement != null) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
 		return new HashMap<String, Float>();
 	}
-	
+
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
 		return new JSONArray();
 	}
@@ -238,11 +240,11 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 		for (int i = 0; i < imagesElement.size(); i++) { 
 			String image = imagesElement.get(i).attr("href").trim();
-			
+
 			if(!image.replace("thumbnail", "image").equals(primaryImage)) {
 				secondaryImagesArray.put( image );	
 			}
-			
+
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -270,41 +272,46 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select(".short-description").first();
 		Element princElement = document.select(".product-collateral").first();
-		
+
 		if (descriptionElement != null) description = description + descriptionElement.html();
 		if (princElement != null) description = description + princElement.html();
 
 		return description;
 	}
-	
+
 	private Prices crawlPrices(Document doc, Float price){
 		Prices prices = new Prices();
-		
+
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();
-			
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+
+			// bank ticket
 			Element boleto = doc.select(".boleto_bancario_view").first();
-			
 			if(boleto != null){
-				Float bankTicket = Float.parseFloat(boleto.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				Float bankTicket = CommonMethods.parseFloat(boleto.ownText());
 				prices.insertBankTicket(bankTicket);
 			}
-			
+
+			// card payment conditions
 			Elements installments = doc.select(".tabela1 td");
-			
 			for(Element e : installments){
 				String text = e.text();
 				int x = text.indexOf("x");
-				
+
 				Integer installment = Integer.parseInt(text.substring(0, x).trim());
-				Float value = Float.parseFloat(text.substring(x+1).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-				
+				Float value = CommonMethods.parseFloat(text.substring(x+1));
+
 				installmentPriceMap.put(installment, value);
 			}
-			
+
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.BNDES.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
 
