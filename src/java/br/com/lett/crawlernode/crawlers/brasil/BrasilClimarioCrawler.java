@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -14,6 +15,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -110,10 +112,10 @@ public class BrasilClimarioCrawler extends Crawler {
 				String internalId = crawlInternalId(jsonSku);
 
 				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
+				Float price = crawlPrice(jsonSku, available);
 
 				// prices
-				Prices prices = crawlPrices(doc);
+				Prices prices = crawlPrices(jsonSku, available);
 
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
@@ -161,10 +163,6 @@ public class BrasilClimarioCrawler extends Crawler {
 		if ( document.select(".row-product-info").first() != null ) return true;
 		return false;
 	}
-
-	/*******************
-	 * General methods *
-	 *******************/
 
 	/*******************
 	 * General methods *
@@ -221,7 +219,7 @@ public class BrasilClimarioCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 
 		if (json.has("bestPriceFormated") && available) {
@@ -231,77 +229,116 @@ public class BrasilClimarioCrawler extends Crawler {
 		return price;
 	}
 
-	private Prices crawlPrices(Document doc) {
+	private Prices crawlPrices(JSONObject skuInformationsJson, boolean available) {
 		Prices prices = new Prices();
-		Float bankTicketPrice = crawlBankTicketPrice(doc);
-		Map<Integer, Float> installmentPriceMap = crawlCardInstallments(doc);
 
-		prices.insertBankTicket(bankTicketPrice);
-		prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+		if (available) {
 
-		return prices;
-	}
-	
-	/**
-	 * Cartão.
-	 * 
-	 * @param doc
-	 * @return
-	 */
-	private Map<Integer, Float> crawlCardInstallments(Document doc) {
-		Map<Integer, Float> installmentPriceMap = new HashMap<Integer, Float>();
-		Elements paymentElements = doc.select(".other-payment-method ul.other-payment-method-ul li");
-
-		// 1x
-		Element firstPrice = paymentElements.first();
-		if (firstPrice != null) {
-			Float price = Float.parseFloat( firstPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-			if (price != null) {
-				installmentPriceMap.put(1, price);
+			// bank slip
+			Float bankSlipPrice = null;
+			if (skuInformationsJson.has("bestPriceFormated") && available) {
+				bankSlipPrice = Float.parseFloat( skuInformationsJson.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				prices.insertBankTicket(bankSlipPrice);
 			}
-		}
-		
-		// get each installment number from the text inside the span tag
-		// e.g : <span> 4X de</span>
-		for (int i = 1; i < paymentElements.size(); i++) {
-			Element span = paymentElements.get(i).select("span").first();
-			if (span != null) {
-				List<String> numbers = CommonMethods.parseNumbers(span.text());
-				if (numbers.size() > 0) {
-					
-					// the installment number
-					Integer installment = Integer.parseInt(numbers.get(0));
-					
-					// the installment value
-					Float price = null;
-					Element priceElement = paymentElements.get(i).select("strong").first();
-					if (priceElement != null) {
-						price = Float.parseFloat( priceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-					}
-					
-					if (installment != null && price != null) {
-						installmentPriceMap.put(installment, price);
+
+			// installments
+			Document installmentsPricesDocument = fetchInstallmentPricesOptions(skuInformationsJson);
+			if (installmentsPricesDocument != null) {
+				Elements cardInstallmentsElements = installmentsPricesDocument.select(".tbl-payment-system"); // one for each card brand
+				for (Element cardInstallmentElement : cardInstallmentsElements) {
+					String cardName = getCardNameFromInstallmentLineElement(cardInstallmentElement);
+					if (cardName != null) {
+						prices.insertCardInstallment(cardName, getInstallmentsAndValuesFromElement(cardInstallmentElement));
 					}
 				}
 			}
-			
 		}
 
-		return installmentPriceMap;
+		return prices;
+	}
+
+	private String getCardNameFromInstallmentLineElement(Element cardInstallmentElement) {
+		String cardName = null;
+		Element tableLine = cardInstallmentElement.select("tr.even").last();
+		if (tableLine != null) {
+			Element parcelasElement = tableLine.select(".parcelas").first();
+			if (parcelasElement != null) {
+				String text = parcelasElement.text().toLowerCase();
+				if (text.contains(Card.AMEX.toString()) || text.contains("american express")) return Card.AMEX.toString();
+				else if (text.contains(Card.VISA.toString())) return Card.VISA.toString();
+				else if (text.contains(Card.DINERS.toString())) return Card.DINERS.toString();
+				else if (text.contains(Card.MASTERCARD.toString())) return Card.MASTERCARD.toString();
+				else if (text.contains(Card.ELO.toString())) return Card.ELO.toString();
+				else if (text.contains(Card.HIPERCARD.toString())) return Card.HIPERCARD.toString();
+			}
+		}
+
+		return cardName;
 	}
 
 	/**
-	 * Boleto.
-	 * 
+	 * 	
+	 * Nº de Parcelas	Valor de cada parcela (table header)
+	 *	American Express à vista	R$ 1.205,00
+	 *	American Express 2 vezes sem juros	R$ 602,50
+	 *	American Express 3 vezes sem juros	R$ 401,66
+	 *	American Express 4 vezes sem juros	R$ 301,25
+	 *	American Express 5 vezes sem juros	R$ 241,00
+	 *	American Express 6 vezes sem juros	R$ 200,83
+	 *	American Express 7 vezes sem juros	R$ 172,14
+	 *	American Express 8 vezes sem juros	R$ 150,62
+	 *	American Express 9 vezes sem juros	R$ 133,88
+	 *	American Express 10 vezes sem juros	R$ 120,50
+	 *	American Express 11 vezes sem juros	R$ 109,54
+	 *	American Express 12 vezes sem juros	R$ 100,41
+	 *
+	 * @param cardInstallmentElement
 	 * @return
 	 */
-	private Float crawlBankTicketPrice(Document doc) {
-		Float price = null;
-		Element paymentElement = doc.select(".other-payment-method ul.other-payment-method-ul li").first();
-		if (paymentElement != null) {
-			price = Float.parseFloat( paymentElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+	private Map<Integer, Float> getInstallmentsAndValuesFromElement(Element cardInstallmentElement) {
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		Elements installmentsTableLinesElements = cardInstallmentElement.select("tbody tr");
+		for (int i = 1; i < installmentsTableLinesElements.size(); i++) { // the first element is just the table header
+			Element tableLineElement = installmentsTableLinesElements.get(i);
+			
+            //<tr>
+			//	<td class="parcelas">American Express à vista</td>
+			//	<td>R$   1.205,00</td>
+            //</tr>
+			
+			Element installmentNumberElement = tableLineElement.select("td").first();
+			Element installmentPriceElement = tableLineElement.select("td").last();
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				Integer installmentNumber = null;
+				Float installmentPrice = null;
+				String installmentNumberLineText = installmentNumberElement.text();
+				String installmentPriceLineText = installmentPriceElement.text();
+				
+				// get the installment number from the line
+				List<String> numbersParsedFromLine = CommonMethods.parseNumbers(installmentNumberLineText);
+				if (numbersParsedFromLine.size() == 0) installmentNumber = 1;
+				else {
+					installmentNumber = Integer.parseInt(numbersParsedFromLine.get(0));
+				}
+				
+				// get the installment price from the line
+				installmentPrice = CommonMethods.parseFloat(installmentPriceLineText);
+				
+				installments.put(installmentNumber, installmentPrice);
+			}
 		}
-		return price;
+
+		return installments;
+	}
+
+	private Document fetchInstallmentPricesOptions(JSONObject skuInformationJson) {
+		String skuInternalId = crawlInternalId(skuInformationJson);		
+		if (skuInternalId != null) {
+			String url = "http://www.climario.com.br/productotherpaymentsystems/" + skuInternalId;
+			return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
+		}
+		return null;
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
@@ -401,8 +438,8 @@ public class BrasilClimarioCrawler extends Crawler {
 
 					skuJson = new JSONObject
 							(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							 node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+									);
 
 				}
 			}        
