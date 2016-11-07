@@ -70,10 +70,6 @@ public class BrasilStrarCrawler extends Crawler {
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// InternalId
 			String internalId = crawlInternalId(doc);
 
