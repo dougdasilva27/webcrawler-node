@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,8 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -105,6 +110,9 @@ public class BrasilDufrioCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = crawlMarketplace(doc);
+			
+			// Prices 
+			Prices prices = crawlPrices(price, doc);
 
 			// Creating the product
 			Product product = new Product();
@@ -113,6 +121,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -272,6 +281,49 @@ public class BrasilDufrioCrawler extends Crawler {
 
 	private String sanitizeName(String name) {
 		return name.replace("'","").replace("’","").trim();
+	}
+	
+	private Prices crawlPrices(Float price, Document doc){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element aVista = doc.select(".price-2 .priceContainer .savings .instant-price").first();
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			if(aVista != null){
+				// Preço de boleto e 1 vez no cartão são iguais
+				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				prices.insertBankTicket(bankTicketPrice);
+				installmentPriceMap.put(1, bankTicketPrice);
+			}
+	
+			Elements installments = doc.select(".price-2 .condition");
+			
+			Element parcels = installments.select(".parcels").first();
+			
+			if(parcels != null){				
+				Integer installment = Integer.parseInt(parcels.text().replaceAll("[^0-9]", "").trim());
+				
+				Element parcelValue = installments.select(".parcel-value").first();
+				
+				if(parcelValue != null){		
+					Float value = CommonMethods.parseFloat(parcelValue.text());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 
 }
