@@ -11,8 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -110,6 +113,9 @@ public class BrasilStrarCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Creating the product
 			Product product = new Product();
 			
@@ -118,6 +124,7 @@ public class BrasilStrarCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -276,4 +283,39 @@ public class BrasilStrarCrawler extends Crawler {
 		return description;
 	}
 
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element aVista = doc.select(".avista span").first();
+			
+			if(aVista != null){
+				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			Elements installments = doc.select("#formas-parcelamento ul li");
+			
+			for(Element e : installments) {
+				Integer installment = Integer.parseInt(e.ownText().replaceAll("[^0-9]", "").trim());
+				
+				Element ePrice = e.select(".price").first();
+				
+				if(ePrice != null){
+					Float value = CommonMethods.parseFloat(ePrice.text());
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
 }
