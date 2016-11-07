@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -12,8 +14,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -98,6 +103,9 @@ public class BrasilPoloarCrawler extends Crawler {
 			
 			// Price
 			Float price = crawlMainPagePrice(doc);
+			
+			// Prices
+			Prices prices = crawlPrices(doc);
 
 			// Availability
 			boolean available = crawlAvailability(skuJson);
@@ -131,6 +139,7 @@ public class BrasilPoloarCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -203,6 +212,47 @@ public class BrasilPoloarCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Element discountElement = document.select(".flag.desconto-de-5--no-boleto").first();
+		if (discountElement != null) {
+			Element bestPriceElement = document.select(".skuBestPrice").first();
+			if (bestPriceElement != null) {
+				Float bestPrice = CommonMethods.parseFloat(bestPriceElement.text());
+				Float priceWithDiscount = bestPrice - (0.05f * bestPrice);
+				Float bankSlipPrice = CommonMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
+				prices.insertBankTicket(bankSlipPrice);
+			}
+		}
+		
+		// installments
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Element firstInstallmentPriceElement = document.select(".plugin-preco .skuBestPrice").first();
+		if (firstInstallmentPriceElement != null) { // 1x
+			installments.put(1, CommonMethods.parseFloat(firstInstallmentPriceElement.text()));
+		}
+		
+		Element maxInstallmentNumberElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentNumber").first();
+		if (maxInstallmentNumberElement != null) {
+			Integer maxInstallmentNumber = Integer.parseInt(maxInstallmentNumberElement.text());
+			
+			Element maxInstallmentPriceElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentValue").first();
+			if (maxInstallmentPriceElement != null) {
+				installments.put(maxInstallmentNumber, CommonMethods.parseFloat(maxInstallmentPriceElement.text()));
+				
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.HIPER.toString(), installments);
+			}
+		}
+		
+		return prices;
 	}
 
 	private boolean crawlAvailability(JSONObject skuJson) {
