@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,8 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -106,6 +111,9 @@ public class BrasilCentralarCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = crawlMarketplace(doc);
+			
+			// Prices 
+			Prices prices = crawlPrices(price, doc);
 
 			// Creating the product
 			Product product = new Product();
@@ -114,6 +122,7 @@ public class BrasilCentralarCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -252,5 +261,39 @@ public class BrasilCentralarCrawler extends Crawler {
 		return name.replace("'","").replace("’","").trim();
 	}
 	
+	private Prices crawlPrices(Float price, Document doc){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element aVista = doc.select(".preco4 .preco1").first();
+			
+			if(aVista != null){
+				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			Elements installments = doc.select(".parcelasAbertas span");
+			
+			for(Element e : installments) {
+				String text = e.text().toLowerCase();
+				int x = text.indexOf("x");
+				
+				Integer installment = Integer.parseInt(text.substring(0,x).replaceAll("[^0-9]", "").trim());
+				Float value = CommonMethods.parseFloat(text.substring(x+1));
+				
+				installmentPriceMap.put(installment, value);
+			}
+			
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
 
 }
