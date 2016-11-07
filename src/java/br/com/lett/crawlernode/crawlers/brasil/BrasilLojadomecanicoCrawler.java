@@ -11,9 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -36,7 +38,6 @@ import br.com.lett.crawlernode.util.Logging;
  * Examples:
  * ex1 (available): http://www.lojadomecanico.com.br/produto/34988/21/159/mini-compressor-de-ar-air-plus-digital-de-12v-schulz-9201163-0
  * ex2 (unavailable): http://www.lojadomecanico.com.br/produto/96544/3/163/tampa-de-reservatorio-arrefecimento-do-onix-para-sa1000-planatc-10201195867 
- * ex3 (variations): http://www.lojadomecanico.com.br//produto/18790/21/221/furadeira--parafusadeira-eletrica-280w-220v
  * 
  * Optimizations notes:
  * No optimizations.
@@ -70,7 +71,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 			
 			// Pid
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = internalId;
 			
 			// Stock
 			Integer stock = null;
@@ -104,6 +105,9 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
 			// Description
 			String description = crawlDescription(doc);
+			
+			// Prices
+			Prices prices = crawlPrices(price, doc);
 
 			// Creating the product
 			Product product = new Product();
@@ -112,6 +116,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -123,72 +128,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			product.setMarketplace(marketplace);
 
 			products.add(product);	
-			
-			/* ***********************************
-			 * crawling data of mutiple products *
-			 *************************************/
-			if(hasVariations(doc)) {
-				
-				Elements skuVariations = doc.select("td[align=left] div[style=padding-top:20px;padding-bottom:30px;width:100%;border-bottom:1px solid #E2E2E2;] div > a");
-				
-				for(int i = 0; i < skuVariations.size(); i++){
-					Element e = skuVariations.get(i);
-					
-					String urlVariation =  e.attr("href");
-					
-					if(!urlVariation.contains(internalId)){
-						doc = this.fetchPageVariation(urlVariation); // if url contains internalID, is the atual url
-					
-						
-						// InternalId
-						String internalIdVariation = crawlInternalId(doc);
-	
-						// Name
-						String nameVariation = crawlName(doc);
-	
-						// Price
-						Float priceVariation = crawlMainPagePrice(doc);
-						
-						// Availability
-						boolean availableVariation = crawlAvailability(doc);
-	
-						// Categories
-						ArrayList<String> categoriesVariation = crawlCategories(doc);
-						String category1Variation = getCategory(categoriesVariation, 0);
-						String category2Variation = getCategory(categoriesVariation, 1);
-						String category3Variation = getCategory(categoriesVariation, 2);
-	
-						// Primary image
-						String primaryImageVariation = crawlPrimaryImage(doc);
-	
-						// Secondary images
-						String secondaryImagesVariation = crawlSecondaryImages(doc);
-	
-						// Description
-						String descriptionVariation = crawlDescription(doc);
-	
-						// Creating the product
-						Product productVariation = new Product();
-						productVariation.setUrl(urlVariation );
-						productVariation.setInternalId(internalIdVariation );
-						productVariation.setInternalPid(internalPid);
-						productVariation.setName(nameVariation );
-						productVariation.setPrice(priceVariation );
-						productVariation.setAvailable(availableVariation );
-						productVariation.setCategory1(category1Variation );
-						productVariation.setCategory2(category2Variation );
-						productVariation.setCategory3(category3Variation );
-						productVariation.setPrimaryImage(primaryImageVariation );
-						productVariation.setSecondaryImages(secondaryImagesVariation );
-						productVariation.setDescription(descriptionVariation);
-						productVariation.setStock(stock);
-						productVariation.setMarketplace(marketplace);
-	
-						products.add(productVariation);
-					}
-					
-				}
-			} 
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -208,24 +147,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		return false;
 	}
 	
-	/*********************
-	 * Product variation *
-	 *********************/
-	
-	private boolean hasVariations(Document doc){
-		Element variation = doc.select(".tensao_ativa").first();
-		
-		if(variation != null) return true;
-		
-		return false;
-	}
-	
-	private Document fetchPageVariation(String url){
-		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
-		
-		return doc;
-	}
-	
 	/*******************
 	 * General methods *
 	 *******************/
@@ -239,12 +160,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		}
 
 		return internalId;
-	}
-
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
 	}
 	
 	private String crawlName(Document document) {
@@ -319,10 +234,10 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
 	private ArrayList<String> crawlCategories(Document document) {
 		ArrayList<String> categories = new ArrayList<String>();
-		Elements elementCategories = document.select(".Menu_Navegacao > a");
+		Elements elementCategories = document.select(".Menu_Navegacao a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).attr("title").trim() );
+			categories.add( elementCategories.get(i).text().replace("+", "").trim() );
 		}
 
 		return categories;
@@ -343,6 +258,44 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 		if (descriptionElement != null) description = description + descriptionElement.html();
 
 		return description;
+	}
+	
+	private Prices crawlPrices(Float price, Document doc){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element aVista = doc.select(".preco0 span[itemprop=price]").first();
+			
+			if(aVista != null){
+				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			installmentPriceMap.put(1, price);
+						
+			Element parcels = doc.select(".produto > div[style=\"\"] > div[style=\"font-size:13px;color:#666;\"]").first();
+			
+			if(parcels != null){
+				String text = parcels.ownText().toLowerCase();
+				int x = text.indexOf("x");
+				
+				Integer installment = Integer.parseInt(text.substring(0,x).replaceAll("[^0-9]", "").trim());
+				Float value = CommonMethods.parseFloat(text.substring(x+1));
+					
+				installmentPriceMap.put(installment, value);
+			}
+			
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 
 }
