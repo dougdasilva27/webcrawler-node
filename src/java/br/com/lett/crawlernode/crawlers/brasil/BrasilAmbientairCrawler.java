@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,8 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -65,10 +70,6 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// InternalId
 			String internalId = crawlInternalId(doc);
 
@@ -80,6 +81,8 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
+
+			Prices prices = crawlPrices(doc);
 
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -107,12 +110,13 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 			// Creating the product
 			Product product = new Product();
-			//			product.setSeedId(seedId);
+
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -191,6 +195,132 @@ public class BrasilAmbientairCrawler extends Crawler {
 		}
 
 		return price;
+	}
+
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+
+		// bank slip
+		Element bankSlipLineElement = document.select("#descontoParcelamento .colunaPagamento ul.tabVista li").first();
+		if (bankSlipLineElement != null) {
+			String bankSlipText = bankSlipLineElement.text().toLowerCase();
+			Element bankSlipPriceTextElement = bankSlipLineElement.select("span.precoDesc").first();
+
+			if (!bankSlipText.isEmpty() && bankSlipPriceTextElement != null) {
+				String bankSlipPriceText = bankSlipPriceTextElement.text();
+				if (bankSlipText.contains("boleto")) {
+					prices.insertBankTicket(CommonMethods.parseFloat(bankSlipPriceText));
+				}
+			}
+		}
+
+		// installments
+		Element skuPayments = document.select(".parcelamentoProduto").first();
+		if (skuPayments != null) {
+			Map<Integer, Float> installments = getInstallmentsAndValuesFromElement(skuPayments);
+			Elements cardsElements = document.select("#descontoParcelamento .colunaPagamento ul.tabVista li");
+			for (int i = 1; i < cardsElements.size(); i++) { // the first one is the bank slip price
+				String cardLineText = cardsElements.get(i).text().toLowerCase();
+				Element cardPriceTextElement = cardsElements.get(i).select("span.precoDesc").first();
+
+				if (!cardLineText.isEmpty() && cardPriceTextElement != null)  {
+					String cardPriceText = cardPriceTextElement.text();
+
+					if (cardLineText.contains(Card.MASTERCARD.toString())) {
+						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
+
+						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						for (Integer installmentNumber : installments.keySet()) {
+							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
+						}
+
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), cardInstallments);
+					}
+					else if (cardLineText.contains(Card.VISA.toString())) {
+						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
+
+						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						for (Integer installmentNumber : installments.keySet()) {
+							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
+						}
+
+						prices.insertCardInstallment(Card.VISA.toString(), cardInstallments);
+					}
+					else if (cardLineText.contains(Card.DINERS.toString())) {
+						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
+
+						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						for (Integer installmentNumber : installments.keySet()) {
+							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
+						}
+
+						prices.insertCardInstallment(Card.DINERS.toString(), cardInstallments);
+					}
+					else if (cardLineText.contains(Card.AMEX.toString()) || cardLineText.contains("american express")) {
+						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
+
+						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						for (Integer installmentNumber : installments.keySet()) {
+							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
+						}
+
+						prices.insertCardInstallment(Card.AMEX.toString(), cardInstallments);
+					}
+					else if (cardLineText.contains(Card.ELO.toString())) {
+						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
+
+						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						for (Integer installmentNumber : installments.keySet()) {
+							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
+						}
+
+						prices.insertCardInstallment(Card.ELO.toString(), cardInstallments);
+					}
+				}
+			}
+		}
+
+
+		return prices;
+	}
+
+
+	/**
+	 * Opções de parcelamento no cartão
+	 *	2x R$ 3.089,50 sem juros 
+	 *	3x R$ 2.059,65 sem juros 
+	 *	4x R$ 1.544,75 sem juros 
+	 *	5x R$ 1.235,80 sem juros 
+	 *	6x R$ 1.029,79 sem juros 
+	 *	7x R$ 882,67 sem juros 
+	 *	8x R$ 772,38 sem juros 
+	 *	9x R$ 686,55 sem juros 
+	 *	10x R$ 617,90 sem juros
+	 *
+	 *	The payment options are the same across all card brands.
+	 *
+	 * @param paymentsElements
+	 * @return
+	 */
+	private Map<Integer, Float> getInstallmentsAndValuesFromElement(Element skuPayments) {
+		Elements installmentsLineElements = skuPayments.select("ul.listaParcelamento li");
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		for (Element installmentLineElement : installmentsLineElements) {
+			Element installmentNumberElement = installmentLineElement.select(".tdParcela").first();
+			Element installmentPriceElement = installmentLineElement.select(".tdValparcela").first();
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				String installmentNumberText = installmentNumberElement.text();
+				String installmentPriceText = installmentPriceElement.text();
+
+				if (!installmentNumberText.isEmpty() && !installmentPriceText.isEmpty()) {
+					List<String> numbersFromInstallmentNumberText = CommonMethods.parseNumbers(installmentNumberText);
+					installments.put(Integer.parseInt(numbersFromInstallmentNumberText.get(0)), CommonMethods.parseFloat(installmentPriceText));
+				}
+			}
+		}
+
+		return installments;
 	}
 
 	private boolean crawlAvailability(Document document) {
