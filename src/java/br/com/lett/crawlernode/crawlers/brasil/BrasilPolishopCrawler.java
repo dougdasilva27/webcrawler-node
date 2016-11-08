@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
@@ -16,6 +15,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -104,9 +105,6 @@ public class BrasilPolishopCrawler extends Crawler {
 			// Description
 			String description = crawlDescription(doc);
 
-			// Stock
-			Integer stock = null;
-
 			// Marketplace map
 			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 
@@ -146,14 +144,23 @@ public class BrasilPolishopCrawler extends Crawler {
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
 				
+				// JSON info
+				JSONObject jsonProduct = crawlApi(internalId);
+				
 				// Json Images
-				JSONObject jsonimages = this.fetchImagesFromApi(internalId, hasColors);
+				JSONObject jsonimages = this.fetchImagesFromApi(jsonProduct, hasColors);
 				
 				// Primary image
 				String primaryImageVariation = crawlPrimaryImageForColors(jsonimages, hasColors, primaryImage);
 				
 				// Secondary images
 				String secondaryImagesVariation = crawlSecondaryImagesForColors(jsonimages, hasColors, secondaryImages);
+				
+				// Prices
+				Prices prices = crawlPrices(jsonProduct, price);
+				
+				// Stock
+				Integer stock = crawlStock(jsonProduct);
 				
 				// Creating the product
 				Product product = new Product();
@@ -163,6 +170,7 @@ public class BrasilPolishopCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(namevariation);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -424,6 +432,18 @@ public class BrasilPolishopCrawler extends Crawler {
 		return description;
 	}
 	
+	private JSONObject crawlApi(String internalId){
+		String url = "http://www.polishop.com.br/produto/sku/" + internalId;
+		
+		JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(jsonArray.length() > 0){
+			return jsonArray.getJSONObject(0);
+		}
+		
+		return new JSONObject();
+	}
+	
 	/**
 	 * Get the script having a json with the availability information
 	 * @return
@@ -482,34 +502,23 @@ public class BrasilPolishopCrawler extends Crawler {
 		return secondaryImages;
 	}
 	
-	private JSONObject fetchImagesFromApi(String internalId, boolean hasColor){
+	private JSONObject fetchImagesFromApi(JSONObject jsonProduct, boolean hasColor){
 		JSONObject jsonImages = new JSONObject();
 		JSONArray secondaryImagesArray = new JSONArray();
 		String primaryImage = null;
 		
-		if(hasColor){
-			String url = "http://www.polishop.com.br/produto/sku/" + internalId;
-			String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); //GET request to get secondary images
-			
-			JSONObject jsonObjectImages;
-			try {
-				jsonObjectImages = new JSONArray(stringJsonImages).getJSONObject(0);
-			} catch (JSONException e) {
-				jsonObjectImages = new JSONObject();
-				e.printStackTrace();
-			}
-			
+		if(hasColor){	
 			JSONArray rightImages = new JSONArray();
 			
-			if (jsonObjectImages.has("Images")) {
-				JSONArray jsonArrayImages = jsonObjectImages.getJSONArray("Images");
+			if (jsonProduct.has("Images")) {
+				JSONArray jsonArrayImages = jsonProduct.getJSONArray("Images");
 				
 				for (int i = 0; i < jsonArrayImages.length(); i++) { 
 					JSONArray arrayImage = jsonArrayImages.getJSONArray(i);
 					JSONObject jsonImage = arrayImage.getJSONObject(0);
 					
 					if(jsonImage.has("Name")){
-						if(jsonImage.getString("Name").trim().length() < 1){
+						if(jsonImage.get("Name").toString().trim().isEmpty()){
 							if(jsonImage.has("Path")){
 								String urlImage = modifyImageURL(jsonImage.getString("Path")).trim();
 								rightImages.put(urlImage);
@@ -535,5 +544,48 @@ public class BrasilPolishopCrawler extends Crawler {
 		
 	}
 	
+	private Prices crawlPrices(JSONObject jsonProduct, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			if(jsonProduct.has("BestInstallmentNumber")){
+				Integer installment = jsonProduct.getInt("BestInstallmentNumber");
+				
+				if(jsonProduct.has("BestInstallmentValue")){
+					Double valueDouble = jsonProduct.getDouble("BestInstallmentValue");
+					Float value = valueDouble.floatValue();
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
+	private Integer crawlStock(JSONObject jsonProduct){
+		Integer stock = null;
+		
+		if(jsonProduct.has("SkuSellersInformation")){
+			JSONObject sku = jsonProduct.getJSONArray("SkuSellersInformation").getJSONObject(0);
+			
+			if(sku.has("AvailableQuantity")){
+				stock = sku.getInt("AvailableQuantity");
+			}
+		}
+		
+		return stock;
+	}
 	
 }
