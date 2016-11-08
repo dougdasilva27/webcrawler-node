@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -11,8 +12,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -72,10 +76,6 @@ public class BrasilMundomaxCrawler extends Crawler {
 		if ( isProductPage(doc, session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
 			// InternalId
 			String internalId = crawlInternalId(doc);
 
@@ -87,6 +87,9 @@ public class BrasilMundomaxCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
+			
+			// Prices
+			Prices prices = crawlPrices(doc);
 			
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -115,13 +118,14 @@ public class BrasilMundomaxCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
-			// Creating the product
 			Product product = new Product();
+			
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -195,6 +199,52 @@ public class BrasilMundomaxCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	/**
+	 * Card payment options are the same across all card brands.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Element bankSlipPriceElement = document.select(".desconto label").first();
+		if (bankSlipPriceElement != null) {
+			Float bankSlipPrice = CommonMethods.parseFloat(bankSlipPriceElement.text());
+			prices.insertBankTicket(bankSlipPrice);
+		}
+		
+		// installments
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements installmentsElements = document.select(".parcels .parcel_list ul li");
+		for (Element installmentElement : installmentsElements) {
+			Element installmentNumberElement = installmentElement.select("p.p-obs").first();
+			Element installmentPriceElement = installmentElement.select("p.p-value").first();
+			
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberElement.text());
+				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+				
+				installments.put(installmentNumber, installmentPrice);
+			}
+		}
+		
+		// only insert the installments is they are not empty
+		if (installments.size() > 0) {
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.HIPER.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
+			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+		}
+				
+		return prices;
 	}
 	
 	private boolean crawlAvailability(Document document) {

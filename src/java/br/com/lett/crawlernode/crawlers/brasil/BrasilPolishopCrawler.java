@@ -550,13 +550,6 @@ public class BrasilPolishopCrawler extends Crawler {
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 			
-			// TODO se o json nao tiver o campo BestInstallmentNumber vai aparecer um monte de prices
-			// com nomes de cartoes e as parcelas todas vazias. O método de pagamento (parcelas e preços)
-			// é o mesmo pra todas as bandeiras de cartões? olhando aqui pelo código aparenta que sim, mas cade
-			// comentários e a documentação?!
-			// as outras parcelas não podem ser crawleadas (supus isso pois apenas esta sendo crawleado o maior numero de parcela
-			// e a maior divisão possível, o BestInstallmentNumber e Value, mas novamente, em qual comentário do código isso está firmado?)
-			
 			if(jsonProduct.has("BestInstallmentNumber")){
 				Integer installment = jsonProduct.getInt("BestInstallmentNumber");
 				
