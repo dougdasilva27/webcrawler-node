@@ -441,12 +441,14 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 	private Integer crawlStock(JSONObject jsonProduct, String id){
 		Integer stock = null;
-
-		if(jsonProduct.has(id)){
-			JSONObject product = jsonProduct.getJSONObject(id);
-
-			if(product.has("stock")){
-				stock = product.getInt("stock");
+		
+		if(jsonProduct.has("prices")){
+			if(jsonProduct.getJSONObject("prices").has(id)){
+				JSONObject product = jsonProduct.getJSONObject("prices").getJSONObject(id);
+				
+				if(product.has("stock")){
+					stock = product.getInt("stock");
+				}
 			}
 		}
 
