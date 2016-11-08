@@ -98,6 +98,9 @@ public class DataFetcher {
 	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
+	private static final String CONTENT_ENCODING = "compress, gzip";
+
+
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
 	private static List<String> userAgents;
 
@@ -326,7 +329,7 @@ public class DataFetcher {
 
 		List<Header> headers = new ArrayList<Header>();
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-		headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+		headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 		CloseableHttpClient httpclient = HttpClients.custom()
 				.setDefaultCookieStore(cookieStore)
@@ -564,7 +567,7 @@ public class DataFetcher {
 			
 			
 			List<Header> headers = new ArrayList<Header>();
-			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -741,7 +744,7 @@ public class DataFetcher {
 			
 
 			List<Header> reqHeaders = new ArrayList<Header>();
-			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -913,7 +916,7 @@ public class DataFetcher {
 			}
 
 			List<Header> headers = new ArrayList<Header>();
-			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -1086,7 +1089,7 @@ public class DataFetcher {
 			}
 
 			List<Header> reqHeaders = new ArrayList<Header>();
-			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 			
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -1309,7 +1312,7 @@ public class DataFetcher {
 			
 
 			List<Header> headers = new ArrayList<Header>();
-			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 			
 
 			CloseableHttpClient httpclient = HttpClients.custom()
