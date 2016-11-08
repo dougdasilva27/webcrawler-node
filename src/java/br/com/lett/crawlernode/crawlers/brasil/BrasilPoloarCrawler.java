@@ -214,6 +214,15 @@ public class BrasilPoloarCrawler extends Crawler {
 		return price;
 	}
 	
+	/**
+	 * The bank slip price must be calculated. We can crawl the percentage of discount,
+	 * and then we must apply this discount on the best price. It was observed that the
+	 * final value is rounded up. So we use a method from CommonMethods class to round
+	 * this way.
+	 * 
+	 * @param document
+	 * @return
+	 */
 	private Prices crawlPrices(Document document) {
 		Prices prices = new Prices();
 		
