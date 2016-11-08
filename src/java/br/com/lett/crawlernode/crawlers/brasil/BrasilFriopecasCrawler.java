@@ -295,6 +295,8 @@ public class BrasilFriopecasCrawler extends Crawler {
 
 			Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
+			// O preço no boleto não aparece com javascript desligado, mas aparece a porcentagem de desconto
+			// Assim é calculado o preço no boleto de acordo com o preço principal.
 			Element bankDiscount = doc.select("#desconto-avista").first();
 			if(bankDiscount != null){
 				Integer discount = Integer.parseInt(bankDiscount.text().trim());
@@ -325,7 +327,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
 					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
 					
-				} else if (text.contains("hipercard") || text.contains("amex")) {
+				} else if (text.contains("hipercard")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
 					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
 					
