@@ -125,6 +125,23 @@ public class CommonMethods {
 	}
 	
 	/**
+	 * Parse all numbers from a string and returns a list containing
+	 * all the found numbers.
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public static List<String> parsePositiveNumbers(String s) {
+		List<String> numbers = new ArrayList<String>();
+		Pattern p = Pattern.compile("\\d+");
+		Matcher m = p.matcher(s);
+		while (m.find()) {
+		  numbers.add(m.group());
+		}
+		return numbers;
+	}
+	
+	/**
 	 * Modify an URL parameter with a new value
 	 * @param url the URL to be modified
 	 * @param parameter the name of the paramter to have it's value modified
