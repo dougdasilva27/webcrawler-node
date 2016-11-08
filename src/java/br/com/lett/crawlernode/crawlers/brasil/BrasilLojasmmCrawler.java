@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -11,9 +12,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/08/2016):
@@ -44,7 +48,7 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilLojasmmCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "https://www.lojasmm.com/";
 
 	public BrasilLojasmmCrawler(CrawlerSession session) {
@@ -65,10 +69,6 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
 
 			// Pid
 			String internalPid = crawlInternalPid(doc);
@@ -102,35 +102,39 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 			// Availability all products (caso específico que todos produtos estão indisponíveis)
 			boolean unnavailableForAll = false;
-			
+
 			if(skus.size() < 1){
 				skus = doc.select(".ciq option[class]");
 				unnavailableForAll = true;
 			}
-			
+
 			// Price
 			Float price = crawlPrice(doc, unnavailableForAll);
 
+			// Prices
+			Prices prices = crawlPrices(doc, unnavailableForAll);
+
 			for(Element sku : skus){
+
 				// InternalId
 				String internalID = crawlInternalId(sku);
 
 				// Name
 				String name = crawlNameFinal(nameMainPage, sku);
-				
+
 				// Primary image
 				String primaryImage = crawlPrimaryImage(sku, unnavailableForAll, doc);
 
 				// Availability
 				boolean available = crawlAvailability(doc, internalID, unnavailableForAll);
 
-				// Creating the product
 				Product product = new Product();
 				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -148,7 +152,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -158,7 +162,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 	private boolean isProductPage(Document document) {
 		if ( document.select("span[itemprop=productID]").first() != null ) return true;
-		
+
 		return false;
 	}
 
@@ -178,12 +182,12 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 		return internalPid;
 	}
-	
+
 	private String crawlInternalId(Element sku) {
 		String internalId = null;
 
 		internalId = sku.attr("id").trim();
-		
+
 		if(internalId.isEmpty()){
 			internalId = sku.attr("value").trim();
 		}
@@ -201,63 +205,113 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 		return name;
 	}
-	
+
 	private String crawlNameFinal(String name, Element sku) {
 		String nameVariation = name;	
 		Element e = sku.select("a span").first();
-		
+
 		if(e != null){
 			String variation = e.text().trim();
-			
+
 			nameVariation = name + " " + variation;
-			
+
 		} else {
 			String variation = sku.text().trim();
-			
+
 			if(variation.toLowerCase().contains("esgotado")){
 				String[] tokens = variation.split("-");
-				
+
 				variation = variation.replace(tokens[tokens.length-1], "").trim().replaceAll("-", "");
 			}
-			
+
 			nameVariation = name + " " + variation;
 		}
-		
+
 		return nameVariation;
 	}
-	
+
 	private Float crawlPrice(Document doc, boolean unnavailableForAll) {
 		Float price = null;	
-		
+
 		if(!unnavailableForAll){
 			Element priceElement = doc.select("span[itemprop=price]:not([name])").first();
-		
+
 			if(priceElement != null){
 				price = Float.parseFloat( priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 			}
 		}
-		
+
 		return price;
+	}
+
+	/**
+	 * Card installments are all the same across card brands.
+	 * 
+	 * @param document
+	 * @param unnavailableForAll
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, boolean unnavailableForAll) {
+		Prices prices = new Prices();
+
+		if (!unnavailableForAll) {
+			
+			// bank slip
+			Float bankSlipPrice = null;
+			Element bankSlipPriceElement = document.select("#navpa ul.Menupa div.bcaa b").first();
+			if (bankSlipPriceElement != null) {
+				bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+				prices.insertBankTicket(bankSlipPrice);
+			}
+
+			// installments
+			Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+			Elements installmentElements = document.select("#navpa ul.Menupa li p");
+			for (int i = 0; i < installmentElements.size() - 1; i+=2) {
+				Element installmentNumberElement = installmentElements.get(i);
+				Element installmentPriceElement = installmentElements.get(i+1);
+				
+				List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(installmentNumberElement.text());				
+				if (parsedNumbers.size() > 0) {
+					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+					Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.ownText());
+					
+					installments.put(installmentNumber, installmentPrice);
+				}
+			}
+			
+			if (installments.size() > 0) {
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			}
+			
+		}
+
+
+		return prices;
 	}
 
 	private boolean crawlAvailability(Document doc, String internalId, boolean unnavailableForAll){
 		Elements es = doc.select(".conteudo script:not([src])");
-		
+
 		if(!unnavailableForAll){
-			
+
 			for(Element e : es){
 				String script = e.outerHtml();
-				
+
 				if(script.contains("function Alerta()")){
-					
+
 					script = script.replaceAll("\"", "").replaceAll("'", "").toLowerCase();
 					String ifScrpit = "if(a == "+ internalId +")";
-	
+
 					int x = script.indexOf(ifScrpit);
 					int y = script.indexOf("}", x + ifScrpit.length());
-					
+
 					String element = script.substring(x + ifScrpit.length(), y);
-					
+
 					if(element.contains("outofstock")){
 						return false;
 					} else {
@@ -266,10 +320,10 @@ public class BrasilLojasmmCrawler extends Crawler {
 				}
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	private Map<String, Float> crawlMarketplace(Document document) {
 		return new HashMap<String, Float>();
 	}
@@ -281,20 +335,20 @@ public class BrasilLojasmmCrawler extends Crawler {
 	private String crawlPrimaryImage(Element sku, boolean unnavailableForAll, Document doc) {
 		String primaryImage = null;
 		Element primaryImageElement;
-		
+
 		if(unnavailableForAll){
 			primaryImageElement = doc.select("#FotoProdutoM5 div a").first();
 		} else {
 			primaryImageElement = sku.select("a").first();
 		}
-		
+
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("href").trim();
-			
+
 			if(!image.startsWith("https:")){
 				image = "https:" + image;
 			}
-					
+
 			primaryImage = image;
 		}
 
@@ -309,11 +363,11 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 		for (Element e : imagesElement) { 
 			String image = e.attr("href");
-			
+
 			if(!image.startsWith("https:")){
 				image = "https:" + image;
 			}
-			
+
 			secondaryImagesArray.put( image.trim() );
 		}
 
