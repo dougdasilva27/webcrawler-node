@@ -11,8 +11,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -119,6 +122,9 @@ public class BrasilLojastaqiCrawler extends Crawler {
 					
 					// Price
 					Float price = crawlPrice(internalId, doc, available);
+					
+					// Prices
+					Prices prices = crawlPrices(internalId, doc, price);
 
 					// Creating the product
 					Product product = new Product();
@@ -127,6 +133,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 					product.setInternalPid(internalPid);
 					product.setName(nameVariation);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setAvailable(available);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
@@ -157,6 +164,9 @@ public class BrasilLojastaqiCrawler extends Crawler {
 				// Price
 				Float price = crawlPrice(internalId, doc, available);
 
+				// Prices
+				Prices prices = crawlPrices(internalId, doc, price);
+				
 				// Creating the product
 				Product product = new Product();
 				product.setUrl(session.getOriginalURL());
@@ -164,6 +174,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -248,7 +259,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 		Float price = null;
 		
 		if(available){
-			Element ePrice = doc.select("#detailsSkuId_" + internalId + "  .valor span").first();
+			Element ePrice = doc.select("#detailsSkuId_" + internalId + "  .parcelamento span").first();
 			if(ePrice != null){
 				price = Float.parseFloat(ePrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 			}
@@ -357,4 +368,43 @@ public class BrasilLojastaqiCrawler extends Crawler {
 		return description;
 	}
 
+	private Prices crawlPrices(String internalId, Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element ePrice = doc.select("#detailsSkuId_" + internalId + "  .valor span").first();
+			if(ePrice != null){
+				Float bankTicketPrice = CommonMethods.parseFloat(ePrice.text());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
+			Elements installments = doc.select("#detailsSkuId_" + internalId + " .dropparcelamento tr");
+			
+			for(Element e : installments){
+				Element td = e.select("td").first();
+				
+				if(td != null){
+					String text = td.text().toLowerCase();
+					int x = text.indexOf("x");
+					
+					Integer installment = Integer.parseInt(text.substring(0, x).trim());
+					Float value = CommonMethods.parseFloat(text.substring(x+1));
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HSCARD.toString(), installmentPriceMap);
+
+		}
+		
+		return prices;
+	}
 }
