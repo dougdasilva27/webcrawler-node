@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,9 +15,12 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /************************************************************************************************************************************************************************************
@@ -65,7 +69,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 	private final String VARIATIONS_AJAX_METHOD = "CarregaSKU";
 	private final String SKU_AJAX_METHOD 		= "DisponibilidadeSKU";
 	private final String VARIATION_NAME_PAYLOAD = "ColorCode";
-	
+
 	public BrasilSipolattiCrawler(CrawlerSession session) {
 		super(session);
 	}
@@ -83,11 +87,6 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 		if( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-
-			/* *********************************************************
-			 * crawling data common to both the cases of product page  *
-			 ***********************************************************/
 
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
@@ -115,56 +114,62 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 			// Description
 			String description = this.crawlDescription(doc);
+			
+			// Prices
+			// It wasn't observed any price difference between variations
+			// the only type of variations found was in product colors
+			Prices prices = crawlPrices(doc);
 
 			// Variations
 			Elements productVariationElements = this.crawlSkuOptions(internalIDMainPage, this.session.getOriginalURL());
 
 			if(productVariationElements.size() > 1){
-				
+
 				Logging.printLogDebug(logger, session, "Crawling information of more than one product...");
-				
+
 				/*
 				 * Multiple variations
 				 */
 				for(int i = 0; i < productVariationElements.size(); i++) {
-					
+
 					Element sku = productVariationElements.get(i);
-					
+
 					// idVariation
 					String[] tokens = sku.attr("href").split(",");
 					String idVariation = tokens[tokens.length-3];
-					
+
 					// InternalId and images
 					JSONObject skuInformation = this.crawlSkuInformations(idVariation, internalIDMainPage, this.session.getOriginalURL());
-					
+
 					// Varitation name
 					String variationName = sku.select("img").attr("alt").trim().toLowerCase();
-					
+
 					// Name
 					String nameVariation = this.crawlNameVariation(variationName, name);
-					
+
 					// InternalId
 					String internalIdVariation = this.crawlInternalIdVariation(internalIDMainPage, idVariation);
-					
+
 					// PrimaryImage
 					String primaryImageVariation = this.crawlPrimaryImageVariation(skuInformation);
-					
+
 					// SecondaryImage
 					String secondaryImagesVariation = this.crawlSecondaryImagesVariation(skuInformation);
-					
+
 					// Available
 					boolean availableVariation = crawlAvailabilityVariation(skuInformation);
-					
+
 					// Price
 					Float priceVariation = crawlPriceVariation(skuInformation, availableVariation);
-					
+
 					Product product = new Product();
-					
+
 					product.setUrl(this.session.getOriginalURL());
 					product.setInternalId(internalIdVariation);
 					product.setInternalPid(internalPid);
 					product.setName(nameVariation);
 					product.setPrice(priceVariation);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -174,37 +179,38 @@ public class BrasilSipolattiCrawler extends Crawler {
 					product.setStock(stock);
 					product.setMarketplace(marketplaces);
 					product.setAvailable(availableVariation);
-	
+
 					products.add(product);
-	
+
 				}			
-				
+
 			} 
-			
+
 			/*
 			 * Single product
 			 */
 			else {
-				
+
 				// PrimaryImage
 				String primaryImage= this.crawlPrimaryImage(doc);
 
 				// Secondary Images
 				String secondaryImages= this.crawlSecondaryImages(doc, primaryImage);
-				
+
 				// Price
 				Float price = this.crawlPrice(doc);
-				
+
 				// Available
 				boolean available = this.crawlAvailability(doc);
-				
+
 				Product product = new Product();
-				
+
 				product.setUrl(this.session.getOriginalURL());
 				product.setInternalId(internalIDMainPage);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -214,14 +220,14 @@ public class BrasilSipolattiCrawler extends Crawler {
 				product.setStock(stock);
 				product.setMarketplace(marketplaces);
 				product.setAvailable(available);
-				
+
 				products.add(product);
 			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -245,19 +251,21 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 	private Float crawlPriceVariation(JSONObject jsonSku, boolean availbale){
 		Float price = null;
-		
-		if(jsonSku.has("price") && availbale) price = Float.parseFloat(jsonSku.getString("price"));
-		
+
+		if(jsonSku.has("price") && availbale) {
+			price = Float.parseFloat(jsonSku.getString("price"));
+		}
+
 		return price;
 	}
-	
+
 	private boolean crawlAvailabilityVariation(JSONObject skuInformation) {		
 		if(skuInformation.has("available")) return skuInformation.getBoolean("available");
 
 		return false;
 	}
-	
-	
+
+
 	private String crawlInternalIdVariation(String internalIDMainPage, String idVariation){
 		String internalID = null;
 
@@ -265,20 +273,20 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 		return internalID;
 	}
-	
+
 	private String crawlPrimaryImageVariation(JSONObject json) {
 		String primaryImage = null;
-		
+
 		if(json.has("primaryImage")) primaryImage = json.getString("primaryImage");
-		
+
 		return primaryImage;
 	}
-	
+
 	private String crawlNameVariation(String variationName, String name) {
 		String nameVariation = null;
-		
+
 		nameVariation = name + " " + variationName.trim();
-		
+
 		return nameVariation;
 	}
 
@@ -293,11 +301,11 @@ public class BrasilSipolattiCrawler extends Crawler {
 		if(secondaryImagesArray.length() > 0){
 			secondaryImages = secondaryImagesArray.toString();
 		}
-		
+
 		return secondaryImages;
 	}	
 
-	
+
 	/**
 	 * fetch json from api
 	 * @param idColor
@@ -306,20 +314,21 @@ public class BrasilSipolattiCrawler extends Crawler {
 	 * @return
 	 */
 	private JSONObject fetchJSONFromApi(String urlProduct, String payload, String method){
-		
+
 		Map<String,String> headers = new HashMap<>();
-		
+
 		headers.put("Content-Type", CONTENT_TYPE);
 		headers.put("Referer", urlProduct);
 		headers.put("X-AjaxPro-Method", method);
-		
+
 		String response = DataFetcher.fetchPagePOSTWithHeaders(URL_API, session, payload, null, 1, headers);
-		
+
 		return new JSONObject(response);
 	}
-	
+
 	/**
-	 * Get all variations of sku from json
+	 * Get all variations of sku from json.
+	 * 
 	 * @param internalIdMainPage
 	 * @param urlProduct
 	 * @return
@@ -327,20 +336,20 @@ public class BrasilSipolattiCrawler extends Crawler {
 	private Elements crawlSkuOptions(String internalIdMainPage, String urlProduct) {
 		Elements skuOptions = new Elements();
 		String payload = "{\"ProdutoCodigo\": \""+ internalIdMainPage +"\", \""+ VARIATION_NAME_PAYLOAD +"\": \"0\"}";
-		
+
 		JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD);
-		
+
 		if(colorsJson.has("value")){
 			String htmlColors = (colorsJson.getJSONArray("value").getString(0)).replaceAll("\t", "");
-			
+
 			Document doc = Jsoup.parse(htmlColors);
-			
+
 			skuOptions = doc.select("li > a");
 		}
-		
+
 		return skuOptions;
 	}
-	
+
 	/**
 	 * Get informations of sku from json
 	 * @param idVariation
@@ -350,46 +359,46 @@ public class BrasilSipolattiCrawler extends Crawler {
 	 */
 	private JSONObject crawlSkuInformations(String idVariation, String internalIdMainPage, String urlProduct) {
 		JSONObject returnJson = new JSONObject();
-		
+
 		String payload = "{\"ProdutoCodigo\": \""+ internalIdMainPage +"\", \"CarValorCodigo1\": \""+ idVariation +"\", "
 				+ "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", "
 				+ "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\"}";
-		
+
 		JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD);
-				
+
 		if(jsonSku.has("value")){
 			JSONArray valueArray = jsonSku.getJSONArray("value");
 			int numberProduct = valueArray.getInt(valueArray.length()-1);
 			String price = getPriceFromJSON(valueArray);
 			boolean available = false;
-			
+
 			if(numberProduct != 0){
 				available = true;
 			}
-			
+
 			Map<String, String> imagesMap = new HashMap<String,String>();
 			JSONArray imagesArray = valueArray.getJSONArray(1);
-			
+
 			for(int i = 0; i < imagesArray.length(); i++){
 				String temp = imagesArray.getString(i);
-				
+
 				if(temp.startsWith("http://www.sipolatti.com.br/Imagens/produtos/")){
 					if(i < imagesArray.length()-1){
 						imagesMap.put(imagesArray.getString(i+1), temp);
 					}
 				}
 			}
-			
+
 			String primaryImage = null;
-			
+
 			if(imagesMap.containsKey("ImagemAmpliadaFoto")){
 				primaryImage = imagesMap.get("ImagemAmpliadaFoto");
 			} else if(imagesMap.containsKey("ProdutoImagem")) {
 				primaryImage = imagesMap.get("ProdutoImagem");
 			}
-			
+
 			JSONArray secondaryImagesArray = new JSONArray();
-			
+
 			for(String key : imagesMap.keySet()){
 				if(key.startsWith("[name=liImgDetalhe")){
 					if(primaryImage.contains("Ampliada")){
@@ -399,17 +408,17 @@ public class BrasilSipolattiCrawler extends Crawler {
 					}
 				}
 			}
-			
+
 			returnJson.put("available", available);
 			if(price != null)						returnJson.put("price", price);
 			if(primaryImage != null)				returnJson.put("primaryImage", primaryImage);
 			if(secondaryImagesArray.length() > 0) 	returnJson.put("secondaryImages", secondaryImagesArray);
-			
+
 		}
-		
+
 		return returnJson;
 	}
-	
+
 	/**
 	 * get price from json picked in api
 	 * @param skuArray
@@ -417,24 +426,24 @@ public class BrasilSipolattiCrawler extends Crawler {
 	 */
 	private String getPriceFromJSON(JSONArray skuArray){
 		String price = null;
-		
+
 		JSONArray priceArray = skuArray.getJSONArray(0);
-		
+
 		if(!priceArray.getString(0).contains("Indisponível")){
-			
+
 			for(int i = 0; i < priceArray.length(); i++){
 				String temp = priceArray.getString(i);
-				
+
 				if(temp.startsWith("<em>por")){
 					price = temp.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
 				}
 			}
 		}
-		
+
 		return price;
 	}
-	
-	
+
+
 	/*******************
 	 * General methods *
 	 *******************/
@@ -448,7 +457,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 		return internalPid;
 	}
-	
+
 	private Float crawlPrice(Document doc) {
 		Float price = null;	
 		Element priceElement = doc.select("#lblPrecos #lblPrecoPor strong").first();
@@ -458,6 +467,64 @@ public class BrasilSipolattiCrawler extends Crawler {
 		}
 
 		return price;
+	}
+
+	/**
+	 * The prices are the same across all variations and card brands.
+	 * There is no bank slip payment option in this ecommerce (sem boleto bancário).
+	 * 
+	 * @param doc
+	 * @param unnavailableForAll
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc) {
+		Prices prices = new Prices();
+		
+		// installments
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		// 1x
+		Element firstPaymentElement = doc.select("#infoPrices .price sale price-to strong").first();
+		if (firstPaymentElement != null) { // 1x
+			Float firstInstallmentPrice = MathCommonsMethods.parseFloat(firstPaymentElement.text());
+			installments.put(1, firstInstallmentPrice);
+		}
+
+		// max installment number without intereset (maior número de parcelas sem taxa de juros)
+		Element maxInstallmentNumberWithoutInterestElement = doc.select("#lblParcelamento1 strong").first();
+		Element maxInstallmentPriceWithoutInterestElement = doc.select("#lblParcelamento2 strong").first();
+		if (maxInstallmentNumberWithoutInterestElement != null && maxInstallmentPriceWithoutInterestElement != null) {
+			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(maxInstallmentNumberWithoutInterestElement.text());
+			if (parsedNumbers.size() > 0) {
+				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = MathCommonsMethods.parseFloat(maxInstallmentPriceWithoutInterestElement.text());
+
+				installments.put(installmentNumber, installmentPrice);
+			}
+		}
+
+		// max installment number with intereset (maior número de parcelas com taxa de juros)
+		Element maxInstallmentNumberWithInterestElement = doc.select("#lblOutroParc strong").first();
+		Element maxInstallmentPriceWithInterestElement = doc.select("#lblOutroParc strong").last();
+		if (maxInstallmentNumberWithInterestElement != null && maxInstallmentPriceWithInterestElement != null) {
+			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(maxInstallmentNumberWithInterestElement.text());
+			if (parsedNumbers.size() > 0) {
+				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = MathCommonsMethods.parseFloat(maxInstallmentPriceWithInterestElement.text());
+
+				installments.put(installmentNumber, installmentPrice);
+			}
+		}
+
+		if (installments.size() > 0) {
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
+			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+		}
+
+		return prices;
 	}
 
 	private String crawlInternalId(Document doc){
@@ -473,7 +540,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 	private boolean crawlAvailability(Document doc) {
 		Element availableElement = doc.select("#lblPrecos #lblPrecoPor strong").first();
-		
+
 		if(availableElement != null) return true;
 
 		return false;
@@ -498,7 +565,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 	private String crawlSecondaryImages(Document document, String primaryImage) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
-		
+
 		Elements elementFotoSecundaria = document.select("ul.thumbs li a");
 
 		if (elementFotoSecundaria.size()>1) {
@@ -510,7 +577,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 					secondaryImagesArray.put(secondaryImagesTemp); 
 				} else {
 					Element x = e.select("img").first();
-					
+
 					if(!x.attr("src").isEmpty()){
 						secondaryImagesArray.put(x.attr("src").replaceAll("Detalhes", "Ampliada"));
 					}
@@ -519,7 +586,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 			}
 		}
 
-		
+
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
