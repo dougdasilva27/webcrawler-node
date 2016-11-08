@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -12,8 +15,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -122,6 +129,9 @@ public class BrasilFriopecasCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = crawlMarketplace(doc);
 
+			// Prices
+			Prices prices = crawlPrices(internalId, price, doc);
+			
 			// Creating the product
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
@@ -129,6 +139,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -142,7 +153,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 			products.add(product);
 			
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 		
 		return products;
@@ -275,6 +286,112 @@ public class BrasilFriopecasCrawler extends Crawler {
 		return description;
 	}
 
+	
+	private Prices crawlPrices(String internalId, Float price, Document doc){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.friopecas.com.br/productotherpaymentsystems/" + internalId;
+
+			Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bankDiscount = doc.select("#desconto-avista").first();
+			if(bankDiscount != null){
+				Integer discount = Integer.parseInt(bankDiscount.text().trim());
+				Float result = (float) (price - (price * (discount.floatValue()/100.0)));
+				
+				Float bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
+				prices.insertBankTicket(bankTicketPrice);
+			}
+
+			Elements cardsElements = docPrices.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if (text.contains("visa")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("mastercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("diners")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+					
+				} else if (text.contains("american") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("hipercard") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("credicard") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("elo") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+					
+				} else if (text.contains("aura") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("discover") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
+	}
+
+	
+	
 	/**************************
 	 * Specific manipulations *
 	 **************************/
