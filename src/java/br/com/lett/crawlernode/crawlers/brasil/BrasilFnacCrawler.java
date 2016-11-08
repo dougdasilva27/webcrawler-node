@@ -18,8 +18,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /**
  * 1) Only one page per sku.
@@ -216,7 +216,7 @@ public class BrasilFnacCrawler extends Crawler {
 				Float installmentPrice = null;
 				
 				if (installmentNumberElement != null) {
-					String installmentText = CommonMethods.parseNumbers(installmentNumberElement.text().trim()).get(0);
+					String installmentText = MathCommonsMethods.parseNumbers(installmentNumberElement.text().trim()).get(0);
 					if (installmentText != null && !installmentText.isEmpty()) {
 						installmentNumber = Integer.parseInt(installmentText);
 					}

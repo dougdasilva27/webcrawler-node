@@ -16,8 +16,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (20/07/2016):
@@ -217,7 +217,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 			// parsing the installment number
 			int indexOfX = line.indexOf('x') + 1;
 			String installmentNumberString = line.substring(0, indexOfX); // "1x"
-			installmentNumber = Integer.parseInt( CommonMethods.parseNumbers(installmentNumberString).get(0) );
+			installmentNumber = Integer.parseInt( MathCommonsMethods.parseNumbers(installmentNumberString).get(0) );
 			
 			// parsing the installment price
 			String installmentPriceString = line.substring(indexOfX, line.length()); // " de R$2.399,00 sem juros"

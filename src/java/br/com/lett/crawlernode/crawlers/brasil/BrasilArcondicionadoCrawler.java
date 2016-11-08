@@ -17,8 +17,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (25/08/2016):
@@ -211,7 +211,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		// bank ticket
 		Element bankTicketPriceElement = document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
 		}
 		
 		// card payment options
@@ -237,7 +237,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 			// installment price is the last <b></b> child element
 			Element installmentPriceElement = installmentElement.select("b").last();
 			if (installmentPriceElement != null) {
-				installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+				installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
 			}
 			
 			installments.put(installmentNumber, installmentPrice);			

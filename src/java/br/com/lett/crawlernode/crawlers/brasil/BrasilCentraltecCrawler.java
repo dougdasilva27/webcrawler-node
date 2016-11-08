@@ -16,8 +16,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /************************************************************************************************************************************************************************************
@@ -217,7 +217,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 		// bank ticket price
 		Element bankTicketPriceElement = document.select("div[itemprop=offers] .prod_valor_avista span[itemprop=price]").first();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
 		}
 
 		// installments prices
@@ -225,7 +225,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 		// all the payment options are the same for all card brands
 		Element firstInstallmentElement = document.select("div[itemprop=offers] .prod_valor_por span").last(); // 1x
 		if (firstInstallmentElement != null) {
-			installments.put(1, CommonMethods.parseFloat(firstInstallmentElement.text()));
+			installments.put(1, MathCommonsMethods.parseFloat(firstInstallmentElement.text()));
 		}
 
 		Element lastInstallmentElement = document.select("div[itemprop=offers] .prod_valor_parc").first();
@@ -237,11 +237,11 @@ public class BrasilCentraltecCrawler extends Crawler {
 			// parsing the installment number
 			int indexOfX = line.indexOf('x') + 1;
 			String installmentNumberString = line.substring(0, indexOfX); // "10x"
-			installmentNumber = Integer.parseInt( CommonMethods.parseNumbers(installmentNumberString).get(0) );
+			installmentNumber = Integer.parseInt( MathCommonsMethods.parseNumbers(installmentNumberString).get(0) );
 
 			// parsing the installment price
 			String installmentPriceString = line.substring(indexOfX, line.length()); // " de R$ 308,80 sem juros"
-			installmentPrice = CommonMethods.parseFloat(installmentPriceString);
+			installmentPrice = MathCommonsMethods.parseFloat(installmentPriceString);
 
 			// the payment options are the same for all cards brands
 			installments.put(installmentNumber, installmentPrice);

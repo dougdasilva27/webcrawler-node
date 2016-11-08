@@ -17,8 +17,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (17/08/2016):
@@ -214,7 +214,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 		// bank ticket
 		Element bankTicketPriceElement = document.select("#comDesconto span").first();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = CommonMethods.parseFloat(bankTicketPriceElement.text());
+			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
 		}
 		
 		// card payment options
@@ -293,14 +293,14 @@ public class BrasilBalarotiCrawler extends Crawler {
 			Element installmentPriceElement = linhaFloatsParcelasElements.get(i).select(".fpagVlrParc").first();
 			
 			if (installmentNumberElement != null) {
-				List<String> numbers = CommonMethods.parseNumbers(installmentNumberElement.text());
+				List<String> numbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
 				if (numbers.size() == 0) { // à vista
 					installmentNumber = 1;
 				} else {
 					installmentNumber = Integer.parseInt(numbers.get(0));
 				}
 				if (installmentPriceElement != null) {
-					installmentPrice = CommonMethods.parseFloat(installmentPriceElement.text());
+					installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
 				}
 				
 				installments.put(installmentNumber, installmentPrice);

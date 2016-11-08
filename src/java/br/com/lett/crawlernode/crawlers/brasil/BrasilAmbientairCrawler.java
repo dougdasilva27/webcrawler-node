@@ -15,8 +15,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (11/07/2016):
@@ -209,7 +209,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 			if (!bankSlipText.isEmpty() && bankSlipPriceTextElement != null) {
 				String bankSlipPriceText = bankSlipPriceTextElement.text();
 				if (bankSlipText.contains("boleto")) {
-					prices.insertBankTicket(CommonMethods.parseFloat(bankSlipPriceText));
+					prices.insertBankTicket(MathCommonsMethods.parseFloat(bankSlipPriceText));
 				}
 			}
 		}
@@ -229,7 +229,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 					if (cardLineText.contains(Card.MASTERCARD.toString())) {
 						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
 
-						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						cardInstallments.put(1, MathCommonsMethods.parseFloat(cardPriceText));
 						for (Integer installmentNumber : installments.keySet()) {
 							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
 						}
@@ -239,7 +239,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 					else if (cardLineText.contains(Card.VISA.toString())) {
 						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
 
-						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						cardInstallments.put(1, MathCommonsMethods.parseFloat(cardPriceText));
 						for (Integer installmentNumber : installments.keySet()) {
 							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
 						}
@@ -249,7 +249,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 					else if (cardLineText.contains(Card.DINERS.toString())) {
 						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
 
-						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						cardInstallments.put(1, MathCommonsMethods.parseFloat(cardPriceText));
 						for (Integer installmentNumber : installments.keySet()) {
 							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
 						}
@@ -259,7 +259,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 					else if (cardLineText.contains(Card.AMEX.toString()) || cardLineText.contains("american express")) {
 						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
 
-						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						cardInstallments.put(1, MathCommonsMethods.parseFloat(cardPriceText));
 						for (Integer installmentNumber : installments.keySet()) {
 							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
 						}
@@ -269,7 +269,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 					else if (cardLineText.contains(Card.ELO.toString())) {
 						Map<Integer, Float> cardInstallments = new TreeMap<Integer, Float>();
 
-						cardInstallments.put(1, CommonMethods.parseFloat(cardPriceText));
+						cardInstallments.put(1, MathCommonsMethods.parseFloat(cardPriceText));
 						for (Integer installmentNumber : installments.keySet()) {
 							cardInstallments.put(installmentNumber, installments.get(installmentNumber));
 						}
@@ -314,8 +314,8 @@ public class BrasilAmbientairCrawler extends Crawler {
 				String installmentPriceText = installmentPriceElement.text();
 
 				if (!installmentNumberText.isEmpty() && !installmentPriceText.isEmpty()) {
-					List<String> numbersFromInstallmentNumberText = CommonMethods.parseNumbers(installmentNumberText);
-					installments.put(Integer.parseInt(numbersFromInstallmentNumberText.get(0)), CommonMethods.parseFloat(installmentPriceText));
+					List<String> numbersFromInstallmentNumberText = MathCommonsMethods.parseNumbers(installmentNumberText);
+					installments.put(Integer.parseInt(numbersFromInstallmentNumberText.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
 				}
 			}
 		}

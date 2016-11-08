@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /*********************************************************************************************************************************************
@@ -231,7 +232,7 @@ public class BrasilPoloarCrawler extends Crawler {
 		if (discountElement != null) {
 			Element bestPriceElement = document.select(".skuBestPrice").first();
 			if (bestPriceElement != null) {
-				Float bestPrice = CommonMethods.parseFloat(bestPriceElement.text());
+				Float bestPrice = MathCommonsMethods.parseFloat(bestPriceElement.text());
 				Float priceWithDiscount = bestPrice - (0.05f * bestPrice);
 				Float bankSlipPrice = CommonMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
 				prices.insertBankTicket(bankSlipPrice);
@@ -242,7 +243,7 @@ public class BrasilPoloarCrawler extends Crawler {
 		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
 		Element firstInstallmentPriceElement = document.select(".plugin-preco .skuBestPrice").first();
 		if (firstInstallmentPriceElement != null) { // 1x
-			installments.put(1, CommonMethods.parseFloat(firstInstallmentPriceElement.text()));
+			installments.put(1, MathCommonsMethods.parseFloat(firstInstallmentPriceElement.text()));
 		}
 		
 		Element maxInstallmentNumberElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentNumber").first();
@@ -251,7 +252,7 @@ public class BrasilPoloarCrawler extends Crawler {
 			
 			Element maxInstallmentPriceElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentValue").first();
 			if (maxInstallmentPriceElement != null) {
-				installments.put(maxInstallmentNumber, CommonMethods.parseFloat(maxInstallmentPriceElement.text()));
+				installments.put(maxInstallmentNumber, MathCommonsMethods.parseFloat(maxInstallmentPriceElement.text()));
 				
 				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
 				prices.insertCardInstallment(Card.VISA.toString(), installments);

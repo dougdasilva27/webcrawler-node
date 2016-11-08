@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (02/08/2016):
@@ -293,11 +294,11 @@ public class BrasilCatralCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text().toLowerCase();
 				String installPriceText = installmentPriceElement.text();
 
-				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, CommonMethods.parseFloat(installPriceText));
+					installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), CommonMethods.parseFloat(installPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
 				}
 			}
 		}
@@ -324,7 +325,7 @@ public class BrasilCatralCrawler extends Crawler {
 
 		if (available) {
 			if (jsonSku.has("bestPriceFormated") && available) {
-				Float basePrice = CommonMethods.parseFloat(jsonSku.getString("bestPriceFormated"));
+				Float basePrice = MathCommonsMethods.parseFloat(jsonSku.getString("bestPriceFormated"));
 				Float discountPercentage = crawlDiscountPercentage(document);
 
 				// apply the discount on base price
@@ -350,7 +351,7 @@ public class BrasilCatralCrawler extends Crawler {
 		Float discountPercentage = null;
 		Element discountElement = document.select(".product-discount-hight-light p[class^=flag boleto]").first();
 		if (discountElement != null) {
-			List<String> parsedNumbers = CommonMethods.parsePositiveNumbers(discountElement.attr("class"));
+			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(discountElement.attr("class"));
 			if (parsedNumbers.size() > 0) {
 				try {
 					Integer discount = Integer.parseInt(parsedNumbers.get(0));

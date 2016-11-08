@@ -17,8 +17,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (05/07/2016):
@@ -372,7 +372,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 					int x = text.indexOf("x");
 					
 					Integer installment = Integer.parseInt(text.substring(0, x).trim());
-					Float value = CommonMethods.parseFloat(text.substring(x+1));
+					Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
 					
 					installmentPriceMap.put(installment, value);
 				}

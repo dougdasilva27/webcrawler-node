@@ -20,8 +20,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /************************************************************************************************************************************************************************************
@@ -316,14 +316,14 @@ public class BrasilClimarioCrawler extends Crawler {
 				String installmentPriceLineText = installmentPriceElement.text();
 				
 				// get the installment number from the line
-				List<String> numbersParsedFromLine = CommonMethods.parseNumbers(installmentNumberLineText);
+				List<String> numbersParsedFromLine = MathCommonsMethods.parseNumbers(installmentNumberLineText);
 				if (numbersParsedFromLine.size() == 0) installmentNumber = 1;
 				else {
 					installmentNumber = Integer.parseInt(numbersParsedFromLine.get(0));
 				}
 				
 				// get the installment price from the line
-				installmentPrice = CommonMethods.parseFloat(installmentPriceLineText);
+				installmentPrice = MathCommonsMethods.parseFloat(installmentPriceLineText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

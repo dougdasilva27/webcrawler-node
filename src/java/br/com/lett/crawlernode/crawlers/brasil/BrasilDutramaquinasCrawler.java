@@ -17,8 +17,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (16/08/2016):
@@ -280,7 +280,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 		if (bankSlipPriceElement != null) {
 			String bankSlipPriceText = bankSlipPriceElement.ownText();
 			if (!bankSlipPriceText.isEmpty()) {
-				bankSlipPrice = CommonMethods.parseFloat(bankSlipPriceText);
+				bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceText);
 			}
 		}
 		
@@ -308,9 +308,9 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text();
 				String installmentPriceText = installmentPriceElement.text();
 				
-				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = CommonMethods.parseFloat(installmentPriceText);
+				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}
@@ -325,9 +325,9 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text();
 				String installmentPriceText = installmentPriceElement.text();
 				
-				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = CommonMethods.parseFloat(installmentPriceText);
+				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

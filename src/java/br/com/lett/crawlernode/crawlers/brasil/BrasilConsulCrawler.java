@@ -23,6 +23,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/07/2016):
@@ -307,7 +308,7 @@ public class BrasilConsulCrawler extends Crawler {
 		if (skuIsAvailable) {
 			if (skuInformationJson.has("bestPriceFormated")) {
 				String bestPriceString = skuInformationJson.getString("bestPriceFormated");
-				Float bestPrice = CommonMethods.parseFloat(bestPriceString);
+				Float bestPrice = MathCommonsMethods.parseFloat(bestPriceString);
 
 				// get discount to apply on calculation
 				Element discountElement = document.select(".flag.-cns--desconto-5--boleto").first();
@@ -357,11 +358,11 @@ public class BrasilConsulCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text().toLowerCase();
 				String installPriceText = installmentPriceElement.text();
 
-				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, CommonMethods.parseFloat(installPriceText));
+					installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), CommonMethods.parseFloat(installPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
 				}
 			}
 		}

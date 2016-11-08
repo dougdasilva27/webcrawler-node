@@ -71,6 +71,7 @@ import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /**
@@ -1472,7 +1473,7 @@ public class DataFetcher {
 		if (session instanceof TestCrawlerSession) { // testing
 			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
 			if (proxies.size() > 0) {
-				nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+				nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 			} else {
 				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 			}
@@ -1481,7 +1482,7 @@ public class DataFetcher {
 			if (Main.proxies != null) { // production
 				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
 				if (proxies.size() > 0) {
-					nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 				}
@@ -1496,7 +1497,7 @@ public class DataFetcher {
 	 * @return
 	 */
 	public static String randUserAgent() {
-		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
+		return userAgents.get(MathCommonsMethods.randInt(0, userAgents.size() - 1));
 	}
 
 	/**

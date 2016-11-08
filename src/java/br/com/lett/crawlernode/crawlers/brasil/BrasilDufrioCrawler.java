@@ -15,8 +15,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /*****************************************************************************************************************************
@@ -292,7 +292,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			
 			if(aVista != null){
 				// Preço de boleto e 1 vez no cartão são iguais
-				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
 				prices.insertBankTicket(bankTicketPrice);
 				installmentPriceMap.put(1, bankTicketPrice);
 			}
@@ -307,7 +307,7 @@ public class BrasilDufrioCrawler extends Crawler {
 				Element parcelValue = installments.select(".parcel-value").first();
 				
 				if(parcelValue != null){		
-					Float value = CommonMethods.parseFloat(parcelValue.text());
+					Float value = MathCommonsMethods.parseFloat(parcelValue.text());
 					
 					installmentPriceMap.put(installment, value);
 				}

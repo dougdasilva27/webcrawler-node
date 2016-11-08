@@ -15,8 +15,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (20/07/2016):
@@ -267,7 +267,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			Element aVista = doc.select(".preco0 span[itemprop=price]").first();
 			
 			if(aVista != null){
-				Float bankTicketPrice = CommonMethods.parseFloat(aVista.text().trim());
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
 				prices.insertBankTicket(bankTicketPrice);
 			}
 			
@@ -281,7 +281,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 				int x = text.indexOf("x");
 				
 				Integer installment = Integer.parseInt(text.substring(0,x).replaceAll("[^0-9]", "").trim());
-				Float value = CommonMethods.parseFloat(text.substring(x+1));
+				Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
 					
 				installmentPriceMap.put(installment, value);
 			}
