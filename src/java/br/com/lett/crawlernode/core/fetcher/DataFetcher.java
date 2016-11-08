@@ -324,10 +324,9 @@ public class DataFetcher {
 					.build();
 		}
 
-
-		Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 		List<Header> headers = new ArrayList<Header>();
-		headers.add(header);
+		headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+		headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
 		CloseableHttpClient httpclient = HttpClients.custom()
 				.setDefaultCookieStore(cookieStore)
@@ -562,6 +561,10 @@ public class DataFetcher {
 			// creating the redirect strategy
 			// so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+			
+			
+			List<Header> headers = new ArrayList<Header>();
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -569,6 +572,7 @@ public class DataFetcher {
 					.setDefaultRequestConfig(requestConfig)
 					.setRedirectStrategy(redirectStrategy)
 					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(headers)
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
@@ -734,12 +738,17 @@ public class DataFetcher {
 						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
+			
+
+			List<Header> reqHeaders = new ArrayList<Header>();
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
 					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(reqHeaders)
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
@@ -903,11 +912,15 @@ public class DataFetcher {
 						.build();
 			}
 
+			List<Header> headers = new ArrayList<Header>();
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
 					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(headers)
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
@@ -1072,11 +1085,15 @@ public class DataFetcher {
 						.build();
 			}
 
+			List<Header> reqHeaders = new ArrayList<Header>();
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
 					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(reqHeaders)
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
@@ -1289,11 +1306,17 @@ public class DataFetcher {
 						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
 						.build();
 			}
+			
+
+			List<Header> headers = new ArrayList<Header>();
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+			
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
+					.setDefaultHeaders(headers)
 					.setDefaultCredentialsProvider(credentialsProvider)
 					.build();
 
