@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -12,8 +15,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -53,7 +60,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 	private final String SECONDARY_IMAGES_SELECTOR_ATTRIBUTE				= "zoom";
 
 	private final String CATEGORIES_SELECTOR 								= ".bread-crumb ul li a";
-	
+
 	private final String DESCRIPTION_SELECTOR 								= "#product-description";
 	private final String SPECS_SELECTOR										= "#product-specification";
 
@@ -79,7 +86,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 			/* ***********************************
 			 * crawling data of only one product *
 			 *************************************/
-			
+
 			// crawl the skuJson
 			JSONObject skuJson = crawlSkuJson(doc);
 
@@ -91,7 +98,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 
 			// Name
 			String name = crawlName(doc);
-			
+
 			// Price
 			Float price = crawlMainPagePrice(doc);
 
@@ -119,6 +126,9 @@ public class BrasilFrigelarCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = crawlMarketplace(doc);
 
+			// Prices
+			Prices prices = crawlPrices(price, doc, skuJson);
+
 			// Creating the product
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
@@ -126,6 +136,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -141,7 +152,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 
 	}
@@ -192,7 +203,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
 		Element mainPagePriceElement = document.select(PRICE_SELECTOR).first();
-		
+
 		if (mainPagePriceElement != null) {
 			price = Float.parseFloat( mainPagePriceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		}
@@ -233,7 +244,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 
 		Elements imagesElement = document.select(SECONDARY_IMAGES_SELECTOR);
-	
+
 		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
 			secondaryImagesArray.put(imagesElement.get(i).attr(SECONDARY_IMAGES_SELECTOR_ATTRIBUTE));
 		}
@@ -273,6 +284,153 @@ public class BrasilFrigelarCrawler extends Crawler {
 		return description;
 	}
 
+	private Prices crawlPrices(Float price, Document doc, JSONObject skuJson){
+		Prices prices = new Prices();
+
+		if(price != null){
+			// Pegando o id para acessar a página de preços
+			String id = null;
+			if (skuJson != null && skuJson.has("skus")) {
+				JSONArray skus = skuJson.getJSONArray("skus");
+				if (skus.length() > 0) {
+					JSONObject sku = skus.getJSONObject(0);
+
+					if(sku.has("sku")){
+						id = Integer.toString(sku.getInt("sku"));
+					}
+				}
+			}
+
+			if(id != null){
+				String url = "http://www.frigelar.com.br/productotherpaymentsystems/" + id;
+
+				Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+				Float bankTicketPrice = calculateBankTicketPrice(doc, price);
+				prices.insertBankTicket(bankTicketPrice);
+
+				Elements cardsElements = docPrices.select("#ddlCartao option");
+
+				for(Element e : cardsElements){
+					String text = e.text().toLowerCase();
+
+					if (text.contains("visa")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+
+					} else if (text.contains("mastercard")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+
+					} else if (text.contains("diners")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+
+					} else if (text.contains("american") || text.contains("amex")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+
+					} else if (text.contains("hipercard")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+
+					} else if (text.contains("credicard") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+
+					} else if (text.contains("elo") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+
+					} else if (text.contains("aura") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+
+					} else if (text.contains("discover") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+
+					}
+				} 
+			}
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard, Float price, Document docMain){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;
+					Float value = calculate1xCard(docMain, price);
+
+					mapInstallments.put(installment, value);
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+
+					Element valueElement = i.select("td:not(.parcelas)").first();
+
+					if(valueElement != null){
+						Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+						mapInstallments.put(installment, value);
+					}
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
+	// O preço no boleto não aparece com javascript desligado, mas aparece a porcentagem de desconto
+	// Assim é calculado o preço no boleto de acordo com o preço principal.
+	private Float calculateBankTicketPrice(Document doc, Float price){
+		Float bankTicketPrice = null;
+		Element e = doc.select("#desconto-boleto").first();
+
+		String text = e.text().toLowerCase();
+
+		Integer discount = Integer.parseInt(text.replaceAll("[^0-9]", "").trim());
+		Float result = (float) (price - (price * (discount.floatValue()/100.0)));
+
+		bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
+
+		return bankTicketPrice;
+	}
+
+	// O preço de 1x no cartão não aparece com javascript desligado na pagina principal, mas aparece a porcentagem de desconto
+	// Assim é calculado o preço no boleto de acordo com o preço principal.
+	// O preço correspondente na página acessada de preços, está errado, com isso necessita ser calculado.
+	private Float calculate1xCard(Document doc, Float price){
+		Float oneXCard = null;
+		Element e = doc.select("#desconto-avista").first();
+
+		String text = removeAccents(e.text().toLowerCase());
+
+		Integer discount = Integer.parseInt(text.replaceAll("[^0-9]", "").trim());
+		Float result = (float) (price - (price * (discount.floatValue()/100.0)));
+
+		oneXCard = CommonMethods.normalizeTwoDecimalPlaces(result);
+
+		return oneXCard;
+	}
+
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
+	}
+
 	/**************************
 	 * Specific manipulations *
 	 **************************/
@@ -280,7 +438,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 	private String sanitizeName(String name) {
 		return name.replace("'","").replace("’","").trim();
 	}
-	
+
 	/**
 	 * Get the script having a json with the availability information
 	 * @return
@@ -288,21 +446,21 @@ public class BrasilFrigelarCrawler extends Crawler {
 	private JSONObject crawlSkuJson(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		
+
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
 
 					skuJson = new JSONObject
 							(
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+									);
 
 				}
 			}        
 		}
-		
+
 		return skuJson;
 	}
 
