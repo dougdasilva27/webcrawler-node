@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -16,6 +17,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -102,6 +105,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
 			
 			for(int i = 0; i < arraySkus.length(); i++){
+				
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
 				
 				// Availability
@@ -112,6 +116,9 @@ public class BrasilElectroluxCrawler extends Crawler {
 				
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
+				
+				// Prices
+				Prices prices = crawlPrices(jsonSku);
 				
 				// Primary image
 				String primaryImage = crawlPrimaryImage(jsonSku);
@@ -129,6 +136,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -211,10 +219,53 @@ public class BrasilElectroluxCrawler extends Crawler {
 		return price;
 	}
 	
-	private boolean crawlAvailability(JSONObject json) {
-
-		if(json.has("available")) return json.getBoolean("available");
+	/**
+	 * This method will use the skuId to fetch another json object response from an endpoint.
+	 * 
+	 * @param skuJsonInformation the json object with the current sku info, parsed from the crawled skuJson0 array.
+	 * @return
+	 */
+	private Prices crawlPrices(JSONObject skuJsonInformation) {
+		Prices prices = new Prices();
 		
+		if (skuJsonInformation.has("sku")) {
+			Integer skuId = skuJsonInformation.getInt("sku");
+			String url = "http://loja.electrolux.com.br/produto/sku/" + skuId;
+			JSONArray apiSkuInformationResponseArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
+			JSONObject apiSkuInformationResponse = apiSkuInformationResponseArray.getJSONObject(0);
+			
+			// bank slip
+			if (apiSkuInformationResponse.has("Price")) {
+				Float bankSlipPrice = new Float(apiSkuInformationResponse.getDouble("Price"));
+				prices.insertBankTicket(bankSlipPrice);
+			}
+			
+			// installments
+			Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+			if (apiSkuInformationResponse.has("Price")) { // 1x
+				Float firstInstallmentPrice = new Float(apiSkuInformationResponse.getDouble("Price"));
+				installments.put(1, firstInstallmentPrice);
+			}
+			if (apiSkuInformationResponse.has("BestInstallmentNumber") && apiSkuInformationResponse.has("BestInstallmentValue")) {
+				Integer bestInstallmentNumber = apiSkuInformationResponse.getInt("BestInstallmentNumber");
+				Float bestInstallmentPrice = new Float(apiSkuInformationResponse.getDouble("BestInstallmentValue"));
+				
+				installments.put(bestInstallmentNumber, bestInstallmentPrice);
+				
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.AMEX.toString(), installments);
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+			}
+			
+		}
+		
+		return prices;
+	}
+	
+	private boolean crawlAvailability(JSONObject json) {
+		if(json.has("available")) return json.getBoolean("available");
 		return false;
 	}
 
