@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -15,8 +16,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -53,7 +58,7 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilConsulCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://loja.consul.com.br/";
 
 	public BrasilConsulCrawler(CrawlerSession session) {
@@ -101,8 +106,12 @@ public class BrasilConsulCrawler extends Crawler {
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
 
-			for(int i = 0; i < arraySkus.length(); i++){
+			for (int i = 0; i < arraySkus.length(); i++) {
+
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
+
+				// Name
+				String name = crawlName(doc, jsonSku);
 
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
@@ -111,22 +120,22 @@ public class BrasilConsulCrawler extends Crawler {
 				String internalId = crawlInternalId(jsonSku);
 
 				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
+				Float price = crawlPrice(jsonSku, available);
+
+				// Prices
+				Prices prices = crawlPrices(doc, jsonSku);
 
 				// Primary image
 				String primaryImage = crawlPrimaryImage(jsonSku);
 
-				// Name
-				String name = crawlName(doc, jsonSku);
-
-				// Creating the product
 				Product product = new Product();
-				
+
 				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -143,7 +152,7 @@ public class BrasilConsulCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;		
 	}
 
@@ -199,7 +208,7 @@ public class BrasilConsulCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 
 		if (json.has("bestPriceFormated") && available) {
@@ -207,6 +216,157 @@ public class BrasilConsulCrawler extends Crawler {
 		}
 
 		return price;
+	}
+
+	/**
+	 * For the card payment options we must fetch a page whose URL is assembled using the sku id found inside
+	 * the json object passed as parameter.
+	 * This new page has all payment options, for all card brands, and it also contains
+	 * the bank slip price, but this one is not the same as displayed to the user on the
+	 * sku main page.
+	 * The bank slip price on the sku main page is computed applying a discount using the best price
+	 * as basis.
+	 * 
+	 * We are not considering that all payment options are the same for all card brands, as in the page
+	 * containing the payment options we have one table for each card brands. On the examples used during this
+	 * crawler development, all the tables were the same, but we want to make robust informations crawling ;)
+	 * 
+	 * @param document
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, JSONObject skuInformationJson) {
+		Prices prices = new Prices();
+
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document, skuInformationJson);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+
+		// installments
+		if (skuInformationJson.has("sku")) {
+
+			// fetch the page with payment options
+			String skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
+			String paymentOptionsURL = "http://loja.consul.com.br/productotherpaymentsystems/" + skuId;
+			Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+
+			// get all cards brands
+			List<String> cardBrands = new ArrayList<String>();
+			Elements cardsBrandsElements = paymentOptionsDocument.select(".div-card-flag #ddlCartao option");
+			for (Element cardBrandElement : cardsBrandsElements) {
+				String cardBrandText = cardBrandElement.text().toLowerCase();
+				if (cardBrandText.contains("american express") || cardBrandText.contains(Card.AMEX.toString())) cardBrands.add(Card.AMEX.toString());
+				else if (cardBrandText.contains(Card.VISA.toString())) cardBrands.add(Card.VISA.toString());
+				else if (cardBrandText.contains(Card.DINERS.toString())) cardBrands.add(Card.DINERS.toString());
+				else if (cardBrandText.contains(Card.MASTERCARD.toString())) cardBrands.add(Card.MASTERCARD.toString());
+				else if (cardBrandText.contains(Card.HIPERCARD.toString())) cardBrands.add(Card.HIPERCARD.toString());
+			}
+
+			// get each table payment option in the same sequence as we got the cards brands (the html logic was this way)
+			Elements paymentElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system tbody");
+
+			for (int i = 0; i < cardBrands.size(); i++) {
+				if (paymentElements.size() > i) {
+					Element paymentElement = paymentElements.get(i);
+					Map<Integer, Float> installments = crawlInstallmentsFromTableElement(paymentElement);
+					prices.insertCardInstallment(cardBrands.get(i), installments);
+				}
+			}
+		}
+
+
+		return prices;
+	}
+
+	/**
+	 * The bank slip price must be calculated, using the sku best price as basis.
+	 * De: R$ 2.799,00
+	 * Por: R$ 2.789,00 (this is the sku best price)
+	 * 
+	 * For the discount value we must look for a particular html element, indicating
+	 * the percentag evalue to apply as discount. It was observed that all the discounts
+	 * in bank slip are 5%. The html element is ".flag.-cns--desconto-5--boleto".
+	 * If this element is found, then we apply the 5% discount on the best price, otherwise
+	 * we consider the bestPrice as being the bank slip price.
+	 * 
+	 * @param document
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Float crawlBankSlipPrice(Document document, JSONObject skuInformationJson) {
+		Float bankSlipPrice = null;
+
+		// check availability
+		boolean skuIsAvailable = false;
+		if (skuInformationJson.has("available")) {
+			skuIsAvailable = skuInformationJson.getBoolean("available");
+		}
+
+		if (skuIsAvailable) {
+			if (skuInformationJson.has("bestPriceFormated")) {
+				String bestPriceString = skuInformationJson.getString("bestPriceFormated");
+				Float bestPrice = CommonMethods.parseFloat(bestPriceString);
+
+				// get discount to apply on calculation
+				Element discountElement = document.select(".flag.-cns--desconto-5--boleto").first();
+				if (discountElement != null) {
+					bankSlipPrice = CommonMethods.normalizeTwoDecimalPlaces(bestPrice - (0.05f * bestPrice));
+				} else {
+					bankSlipPrice = bestPrice;
+				}
+			}
+		}
+
+		return bankSlipPrice;
+	}
+
+	/**
+	 * 
+	 * 
+	 * 
+	 * e.g:
+	 * 	Nº de Parcelas	Valor de cada parcela
+	 *	American Express à vista	R$ 1.799,00
+	 *	American Express 2 vezes sem juros	R$ 899,50
+	 *	American Express 3 vezes sem juros	R$ 599,66
+	 *	American Express 4 vezes sem juros	R$ 449,75
+	 *	American Express 5 vezes sem juros	R$ 359,80
+	 *	American Express 6 vezes sem juros	R$ 299,83
+	 *	American Express 7 vezes sem juros	R$ 257,00
+	 *	American Express 8 vezes sem juros	R$ 224,87
+	 *	American Express 9 vezes sem juros	R$ 199,88
+	 *	American Express 10 vezes sem juros	R$ 179,90
+	 *	American Express 11 vezes com juros	R$ 173,41
+	 *	American Express 12 vezes com juros	R$ 159,73
+	 *
+	 * @param tableElement
+	 * @return
+	 */
+	private Map<Integer, Float> crawlInstallmentsFromTableElement(Element tableElement) {
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		Elements tableLinesElements = tableElement.select("tr");
+		for (int j = 1; j < tableLinesElements.size(); j++) { // the first one is just the table header
+			Element tableLineElement = tableLinesElements.get(j);
+			Element installmentNumberElement = tableLineElement.select("td.parcelas").first();
+			Element installmentPriceElement = tableLineElement.select("td").last();
+
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				String installmentNumberText = installmentNumberElement.text().toLowerCase();
+				String installPriceText = installmentPriceElement.text();
+
+				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				if (parsedNumbers.size() == 0) { // à vista
+					installments.put(1, CommonMethods.parseFloat(installPriceText));
+				} else {
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), CommonMethods.parseFloat(installPriceText));
+				}
+			}
+		}
+
+		return installments;
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
