@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -12,8 +13,11 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -96,6 +100,8 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(docVariation);
 			
+			Prices prices = crawlPrices(doc);
+			
 			// Availability
 			boolean available = crawlAvailability(docVariation);
 
@@ -122,6 +128,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -132,80 +139,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 
-			products.add(product);	
-			
-//			/* ***********************************
-//			 * crawling data of mutiple products *
-//			 *************************************/
-//			if(hasSkuVariations){
-//				
-//				Elements skuVariations = docVariation.select(".variacao select option");
-//				
-//				if(skuVariations.size() > 1){
-//				
-//					for(int i = 0; i < skuVariations.size(); i++){
-//						Element e = skuVariations.get(i);
-//						
-//						String urlVariation =  makeUrlVariation(e);
-//						
-//						if(!e.hasAttr("selected")){
-//							doc = this.fetchPageVariation(urlVariation); // if url contains internalID, is the atual url
-//						
-//							// InternalId
-//							String internalIdVariation = crawlInternalId(doc);
-//		
-//							// Name
-//							String nameMainPageVariation = crawlMainPageName(doc);
-//							
-//							// Name
-//							String nameVariation = crawlNameVariations(e, true, nameMainPageVariation, null);
-//		
-//							// Price
-//							Float priceVariation = crawlMainPagePrice(doc);
-//							
-//							// Availability
-//							boolean availableVariation = crawlAvailability(doc);
-//		
-//							// Categories
-//							ArrayList<String> categoriesVariation = crawlCategories(doc);
-//							String category1Variation = getCategory(categoriesVariation, 0);
-//							String category2Variation = getCategory(categoriesVariation, 1);
-//							String category3Variation = getCategory(categoriesVariation, 2);
-//		
-//							// Primary image
-//							String primaryImageVariation = crawlPrimaryImage(doc);
-//		
-//							// Secondary images
-//							String secondaryImagesVariation = crawlSecondaryImages(doc);
-//		
-//							// Description
-//							String descriptionVariation = crawlDescription(doc);
-//		
-//							// Creating the product
-//							Product productVariation = new Product();
-//							productVariation.setSeedId(seedId);
-//							productVariation.setUrl(urlVariation );
-//							productVariation.setInternalId(internalIdVariation );
-//							productVariation.setInternalPid(internalPid);
-//							productVariation.setName(nameVariation );
-//							productVariation.setPrice(priceVariation );
-//							productVariation.setAvailable(availableVariation );
-//							productVariation.setCategory1(category1Variation );
-//							productVariation.setCategory2(category2Variation );
-//							productVariation.setCategory3(category3Variation );
-//							productVariation.setPrimaryImage(primaryImageVariation );
-//							productVariation.setSecondaryImages(secondaryImagesVariation );
-//							productVariation.setDescription(descriptionVariation);
-//							productVariation.setStock(stock);
-//							productVariation.setMarketplace(marketplace);
-//		
-//							// execute finalization routines of this sku crawling
-//							executeFinishingRoutines(productVariation, truco);
-//						}
-//						
-//					}
-//				}
-//			} 
+			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -229,19 +163,14 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 	 * Product variation *
 	 *********************/
 	
-	private boolean hasVariations(Document doc){
+	private boolean hasVariations(Document doc) {
 		Element variation = doc.select(".variacao").first();
 		if(variation != null) return true;
 		
 		return false;
 	}
 	
-	private Document fetchPageVariation(String url){
-		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
-		return doc;
-	}
-	
-	private Document crawlVariationsFromApi(String internalID){
+	private Document crawlVariationsFromApi(String internalID) {
 		String urlParameters = "id_produto=" + internalID;
 		return DataFetcher.fetchDocument(DataFetcher.POST_REQUEST, session, "http://www.dutramaquinas.com.br/model/md_interna_produtos_dados.php", urlParameters, null);
 	}
@@ -271,16 +200,6 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 		}
 
 		return name;
-	}
-	
-	private String makeUrlVariation(Element e){
-		String url = null;
-		String variation = e.attr("value");
-		
-		String[] tokens = variation.split("\\|");
-		url = HOME_PAGE + tokens[tokens.length-1];
-		
-		return url;
 	}
 	
 	/*******************
@@ -324,6 +243,97 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+		
+		// installments
+		Map<Integer, Float> installments = crawlCardInstallments(document);
+		prices.insertCardInstallment(Card.VISA.toString(), installments);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+		prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		prices.insertCardInstallment(Card.AMEX.toString(), installments);
+		prices.insertCardInstallment(Card.ELO.toString(), installments);
+				
+		return prices;
+	}
+	
+	/**
+	 * Get the bank slip price that is displayed on the product main page.
+	 * Only one price is displayed as cash price, so we consider it to be the
+	 * bank slip price too.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private Float crawlBankSlipPrice(Document document) {
+		Float bankSlipPrice = null;
+		
+		Element bankSlipPriceElement = document.select(".valor div.preco").first();
+		if (bankSlipPriceElement != null) {
+			String bankSlipPriceText = bankSlipPriceElement.ownText();
+			if (!bankSlipPriceText.isEmpty()) {
+				bankSlipPrice = CommonMethods.parseFloat(bankSlipPriceText);
+			}
+		}
+		
+		return bankSlipPrice;
+	}
+	
+	/**
+	 * Get all cards payment options. They are all the same across
+	 * the cards brands.
+	 * The first installment price is in a separated html element. On this
+	 * ecommerce is a cash price payment option.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private Map<Integer, Float> crawlCardInstallments(Document document) {
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		
+		// first installment
+		Element firstInstallmentElement = document.select(".parcelas .parcelamento #cartao-avista .txt").first();
+		if (firstInstallmentElement != null) {
+			Element installmentNumberElement = document.select(".numero-parcela").first();
+			Element installmentPriceElement = document.select(".valor-parcela span").first();
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				String installmentNumberText = installmentNumberElement.text();
+				String installmentPriceText = installmentPriceElement.text();
+				
+				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = CommonMethods.parseFloat(installmentPriceText);
+				
+				installments.put(installmentNumber, installmentPrice);
+			}
+		}
+		
+		// the remaining installments
+		Elements installmentsElements = document.select(".parcelas .parcelamento .cartao-parcelas .txt");
+		for (Element installmentElement : installmentsElements) {
+			Element installmentNumberElement = installmentElement.select(".numero-parcela").first();
+			Element installmentPriceElement = installmentElement.select(".valor-parcela span").first();
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				String installmentNumberText = installmentNumberElement.text();
+				String installmentPriceText = installmentPriceElement.text();
+				
+				List<String> parsedNumbers = CommonMethods.parseNumbers(installmentNumberText);
+				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = CommonMethods.parseFloat(installmentPriceText);
+				
+				installments.put(installmentNumber, installmentPrice);
+			}
+		}
+		
+		return installments;
 	}
 	
 	private boolean crawlAvailability(Document document) {
