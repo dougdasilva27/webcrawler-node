@@ -20,8 +20,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /*****************************************************************************************************************************
@@ -302,7 +302,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 				Integer discount = Integer.parseInt(bankDiscount.text().trim());
 				Float result = (float) (price - (price * (discount.floatValue()/100.0)));
 				
-				Float bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
+				Float bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				prices.insertBankTicket(bankTicketPrice);
 			}
 

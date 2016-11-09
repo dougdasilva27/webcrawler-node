@@ -18,8 +18,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilBalaodainformaticaCrawler extends Crawler {
 
@@ -203,7 +203,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 				if(descontoString != null){
 					int desconto = Integer.parseInt(descontoString.replaceAll("[^0-9]", "").trim());
 
-					price = CommonMethods.normalizeTwoDecimalPlaces((float) ((priceBank * 100) / (100 - desconto)));
+					price = MathCommonsMethods.normalizeTwoDecimalPlaces((float) ((priceBank * 100) / (100 - desconto)));
 				}
 			}
 		}
@@ -274,7 +274,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 						if (jsonInstallment.has("amount")) {
 							Double valueDouble = jsonInstallment.getDouble("amount");
 							
-							Float value = CommonMethods.normalizeTwoDecimalPlaces(valueDouble.floatValue());
+							Float value = MathCommonsMethods.normalizeTwoDecimalPlaces(valueDouble.floatValue());
 							installmentPriceMap.put(installment, value);
 						}
 					}

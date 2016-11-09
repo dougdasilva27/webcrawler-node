@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -234,7 +233,7 @@ public class BrasilPoloarCrawler extends Crawler {
 			if (bestPriceElement != null) {
 				Float bestPrice = MathCommonsMethods.parseFloat(bestPriceElement.text());
 				Float priceWithDiscount = bestPrice - (0.05f * bestPrice);
-				Float bankSlipPrice = CommonMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
+				Float bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
 				prices.insertBankTicket(bankSlipPrice);
 			}
 		}

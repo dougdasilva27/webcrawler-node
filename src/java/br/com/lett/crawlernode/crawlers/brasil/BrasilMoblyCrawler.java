@@ -18,8 +18,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (04/08/2016):
@@ -359,7 +359,7 @@ public class BrasilMoblyCrawler extends Crawler {
 		if(jsonInformation.has("stock_available")) 	jsonSku.put("Available", jsonInformation.getBoolean("stock_available"));
 		if(jsonInformation.has("option")) 			jsonSku.put("NameVariation", jsonInformation.getString("option"));
 		if(jsonInformation.has("installmentsCount"))jsonSku.put("InstallmentMax", Integer.parseInt(jsonInformation.get("installmentsCount").toString()));
-		if(jsonInformation.has("installmentsValue"))jsonSku.put("InstallmentMaxValue", CommonMethods.normalizeTwoDecimalPlaces(Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
+		if(jsonInformation.has("installmentsValue"))jsonSku.put("InstallmentMaxValue", MathCommonsMethods.normalizeTwoDecimalPlaces(Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
 		
 		return jsonSku;
 	}

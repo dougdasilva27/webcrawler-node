@@ -18,8 +18,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilNovomundoCrawler extends Crawler {
 
@@ -322,7 +322,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 				Float bankTicketPrice = Float.parseFloat(bankTicketElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 				
 				Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)));
-				bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
+				bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				
 				prices.insertBankTicket(bankTicketPrice);
 			}
@@ -365,7 +365,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 							
 							if(installment.equals(1)){
 								Float result = (float) (value - (value * (discountBoleto.floatValue()/100.0)));
-								value = CommonMethods.normalizeTwoDecimalPlaces(result);
+								value = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 							}
 							
 							installmentPriceMap.put(installment, value);

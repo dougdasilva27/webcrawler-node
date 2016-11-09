@@ -21,7 +21,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -313,7 +312,7 @@ public class BrasilConsulCrawler extends Crawler {
 				// get discount to apply on calculation
 				Element discountElement = document.select(".flag.-cns--desconto-5--boleto").first();
 				if (discountElement != null) {
-					bankSlipPrice = CommonMethods.normalizeTwoDecimalPlaces(bestPrice - (0.05f * bestPrice));
+					bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(bestPrice - (0.05f * bestPrice));
 				} else {
 					bankSlipPrice = bestPrice;
 				}

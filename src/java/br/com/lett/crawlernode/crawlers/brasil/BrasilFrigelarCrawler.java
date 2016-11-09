@@ -20,8 +20,8 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /*****************************************************************************************************************************
@@ -403,7 +403,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 		Integer discount = Integer.parseInt(text.replaceAll("[^0-9]", "").trim());
 		Float result = (float) (price - (price * (discount.floatValue()/100.0)));
 
-		bankTicketPrice = CommonMethods.normalizeTwoDecimalPlaces(result);
+		bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 
 		return bankTicketPrice;
 	}
@@ -420,7 +420,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 		Integer discount = Integer.parseInt(text.replaceAll("[^0-9]", "").trim());
 		Float result = (float) (price - (price * (discount.floatValue()/100.0)));
 
-		oneXCard = CommonMethods.normalizeTwoDecimalPlaces(result);
+		oneXCard = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 
 		return oneXCard;
 	}

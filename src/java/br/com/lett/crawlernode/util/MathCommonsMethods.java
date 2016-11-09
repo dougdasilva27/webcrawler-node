@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.util;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -96,4 +97,37 @@ public class MathCommonsMethods {
 		return randomNum;
 	}
 
+	/**
+     * Round and normalize Double to have only two decimal places
+     * eg: 23.45123 --> 23.45
+     * If number is null, the method returns null.
+     * 
+     * @param number
+     * @return A rounded Double with only two decimal places
+     */
+    public static Float normalizeTwoDecimalPlaces(Float number) {
+        if (number == null) return null;
+        
+        BigDecimal big = new BigDecimal(number);
+        String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
+        
+        return Float.parseFloat(rounded);
+    }
+    
+    /**
+     * Round and normalize Double to have only two decimal places
+     * eg: 23.45123 --> 23.45
+     * If number is null, the method returns null.
+     * 
+     * @param number
+     * @return A rounded Double with only two decimal places
+     */
+    public static Float normalizeTwoDecimalPlacesUp(Float number) {
+        if (number == null) return null;
+        
+        BigDecimal big = new BigDecimal(number);
+        String rounded = big.setScale(2, BigDecimal.ROUND_UP).toString();
+        
+        return Float.parseFloat(rounded);
+    }
 }
