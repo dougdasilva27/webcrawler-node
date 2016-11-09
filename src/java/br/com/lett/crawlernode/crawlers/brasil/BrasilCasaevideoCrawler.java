@@ -45,6 +45,9 @@ import br.com.lett.crawlernode.util.Logging;
  * ex1 (available): http://www.casaevideo.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId=772514
  * ex2 (unavailable): http://www.casaevideo.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId=142536
  * ex3 (Available 1 variation) : http://www.casaevideo.com.br/webapp/wcs/stores/servlet/pt/auroraesite/cafeteira-expresso-15bar-arno-dolce-gusto-piccolo-127v
+ * 
+ * TODO crawler está quebrado para o caso abaixo, precisa revisar
+ * With variations: http://www.casaevideo.com.br/loja/liquidificador-com-filtro-370w--capacidade-de-1-5l-e-4-velocidades-brit%C3%A2nia-diamante-black-filter-preto-127v
  *
  * Optimizations notes: no optimization
  *
