@@ -21,7 +21,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -350,7 +349,7 @@ public class BrasilSchumannCrawler extends Crawler {
 
 				// apply the discount on base price
 				if (discountPercentage != null) {
-					bankSlipPrice = CommonMethods.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
+					bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
 				}
 			}
 		}
@@ -376,7 +375,7 @@ public class BrasilSchumannCrawler extends Crawler {
 				try {
 					Integer discount = Integer.parseInt(parsedNumbers.get(0));
 					Float discountFloat = new Float(discount);
-					discountPercentage = CommonMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
+					discountPercentage = MathCommonsMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
 				} catch (NumberFormatException e) {
 					Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
 				}
