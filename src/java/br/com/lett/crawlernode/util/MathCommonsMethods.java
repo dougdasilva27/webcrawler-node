@@ -58,6 +58,26 @@ public class MathCommonsMethods {
 	}
 	
 	/**
+	 * Takes a String representing a non formated Float, and inserts a '.'.
+	 * This method is mostly used to parse sku prices, when they are in a non
+	 * formated form in Json. We always use two decimal places to format the Float,
+	 * as we are representing prices.
+	 * 
+	 * e.g:
+	 * 11999 -> 119.99
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public static Float formatStringToFloat(String input) {
+		int index = input.length() - 2;
+		String firstPart = input.substring(0, index);
+		String secondPart = input.substring(index, input.length());
+		String formatedValue = firstPart + "." + secondPart;
+		return new Float(formatedValue);
+	}
+	
+	/**
 	 * Generates a random integer in the interval between min and max
 	 * @param min
 	 * @param max

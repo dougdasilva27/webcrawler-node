@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -16,9 +17,12 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (12/08/2016):
@@ -115,7 +119,10 @@ public class BrasilTelhanorteCrawler extends Crawler {
 				String internalId = crawlInternalId(jsonSku);
 				
 				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
+				Float price = crawlPrice(jsonSku, available);
+				
+				// Prices
+				Prices prices = crawlPrices(jsonSku);
 				
 				// Primary image
 				String primaryImage = crawlPrimaryImage(jsonSku);
@@ -133,6 +140,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -205,7 +213,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 		
 		if (json.has("bestPriceFormated") && available) {
@@ -213,6 +221,65 @@ public class BrasilTelhanorteCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	/**
+	 * Prices are crawled only if the sku is available.
+	 * The prices informations on the sku json object holds inconsistent
+	 * information when the sku is unavailable.
+	 * 
+	 * For the installments prices we get the installment price, which is non formated.
+	 * As we now that prices as displayed with two decimal places, we format it by hand.
+	 * 
+	 * The card payment options are all the same across the card brands.
+	 * 
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Prices crawlPrices(JSONObject skuInformationJson) {
+		Prices prices = new Prices();
+		
+		// check availability
+		boolean skuIsAvailable = false;
+		if(skuInformationJson.has("available")) {
+			skuIsAvailable = skuInformationJson.getBoolean("available");
+		}
+		
+		if (skuIsAvailable) {
+			
+			// bank slip
+			Float bankSlipPrice = null;
+			if (skuInformationJson.has("bestPriceFormated") && skuIsAvailable) {
+				bankSlipPrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+				prices.insertBankTicket(bankSlipPrice);
+			}
+			
+			// installments
+			Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+			if (bankSlipPrice != null) { // 1x is the same price as the bank slip
+				installments.put(1, bankSlipPrice);
+			}
+			
+			// get the maximum installment number an it's price
+			if (skuInformationJson.has("installments") && skuInformationJson.has("installmentsValue")) {
+				Integer maxInstallmentNumber = skuInformationJson.getInt("installments");
+				Float installmentPrice = MathCommonsMethods.formatStringToFloat(String.valueOf(skuInformationJson.getInt("installmentsValue")));
+				
+				installments.put(maxInstallmentNumber, installmentPrice);
+			}
+			
+			if (installments.size() > 0) {
+				prices.insertCardInstallment(Card.SHOP_CARD.toString(), installments);
+				prices.insertCardInstallment(Card.AMEX.toString(), installments);
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+				prices.insertCardInstallment(Card.ELO.toString(), installments);
+			}
+			
+		}
+		
+		return prices;
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
