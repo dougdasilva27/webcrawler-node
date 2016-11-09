@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -16,9 +17,13 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (23/08/2016):
@@ -112,7 +117,10 @@ public class BrasilSchumannCrawler extends Crawler {
 				String internalId = crawlInternalId(jsonSku);
 				
 				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
+				Float price = crawlPrice(jsonSku, available);
+				
+				// Prices
+				Prices prices = crawlPrices(doc, jsonSku);
 				
 				// Primary image
 				String primaryImage = crawlPrimaryImage(jsonSku);
@@ -123,13 +131,13 @@ public class BrasilSchumannCrawler extends Crawler {
 				// Secondary images
 				String secondaryImages = crawlSecondaryImages(internalId, arraySkus, doc);
 				
-				// Creating the product
 				Product product = new Product();
 				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -155,7 +163,7 @@ public class BrasilSchumannCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") || url.contains("/p?attempt=") ) return true;
+		if ( url.endsWith("/p") ) return true;
 		return false;
 	}
 	
@@ -178,7 +186,6 @@ public class BrasilSchumannCrawler extends Crawler {
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
 		Element internalPidElement = document.select("#___rc-p-id").first();
-		
 		if (internalPidElement != null) {
 			internalPid = internalPidElement.attr("value").toString().trim();
 		}
@@ -213,7 +220,7 @@ public class BrasilSchumannCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 		
 		if (json.has("bestPriceFormated") && available) {
@@ -221,6 +228,161 @@ public class BrasilSchumannCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	/**
+	 * 
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, JSONObject skuInformationJson) {
+		Prices prices = new Prices();
+
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document, skuInformationJson);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+
+		// installments
+		if (skuInformationJson.has("sku")) {
+
+			// fetch the page with payment options
+			String skuId = Integer.toString(skuInformationJson.getInt("sku"));
+			String paymentOptionsURL = "http://www.schumann.com.br/productotherpaymentsystems/" + skuId;
+			Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+
+			// get all cards brands
+			List<String> cardBrands = new ArrayList<String>();
+			Elements cardsBrandsElements = paymentOptionsDocument.select(".div-card-flag #ddlCartao option");
+			for (Element cardBrandElement : cardsBrandsElements) {
+				String cardBrandText = cardBrandElement.text().toLowerCase();
+				if (cardBrandText.contains("american express") || cardBrandText.contains(Card.AMEX.toString())) cardBrands.add(Card.AMEX.toString());
+				else if (cardBrandText.contains(Card.VISA.toString())) cardBrands.add(Card.VISA.toString());
+				else if (cardBrandText.contains(Card.DINERS.toString())) cardBrands.add(Card.DINERS.toString());
+				else if (cardBrandText.contains(Card.MASTERCARD.toString())) cardBrands.add(Card.MASTERCARD.toString());
+				else if (cardBrandText.contains(Card.HIPERCARD.toString())) cardBrands.add(Card.HIPERCARD.toString());
+				else if (cardBrandText.contains(Card.ELO.toString())) cardBrands.add(Card.ELO.toString());
+			}
+
+			// get each table payment option in the same sequence as we got the cards brands (the html logic was this way)
+			Elements paymentElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system tbody");
+
+			for (int i = 0; i < cardBrands.size(); i++) {
+				if (paymentElements.size() > i) {
+					Element paymentElement = paymentElements.get(i);
+					Map<Integer, Float> installments = crawlInstallmentsFromTableElement(paymentElement);
+					if (installments.size() > 0) prices.insertCardInstallment(cardBrands.get(i), installments);
+				}
+			}
+		}	
+		
+		return prices;
+	}
+	
+	/**
+	 * Extract all installments from a table html element.
+	 * 
+	 * e.g:
+	 * 	Nº de Parcelas	Valor de cada parcela
+	 *	American Express à vista	R$ 1.799,00
+	 *	American Express 2 vezes sem juros	R$ 899,50
+	 *	American Express 3 vezes sem juros	R$ 599,66
+	 *	American Express 4 vezes sem juros	R$ 449,75
+	 *	American Express 5 vezes sem juros	R$ 359,80
+	 *	American Express 6 vezes sem juros	R$ 299,83
+	 *	American Express 7 vezes sem juros	R$ 257,00
+	 *	American Express 8 vezes sem juros	R$ 224,87
+	 *	American Express 9 vezes sem juros	R$ 199,88
+	 *	American Express 10 vezes sem juros	R$ 179,90
+	 *	American Express 11 vezes com juros	R$ 173,41
+	 *	American Express 12 vezes com juros	R$ 159,73
+	 *
+	 * @param tableElement
+	 * @return
+	 */
+	private Map<Integer, Float> crawlInstallmentsFromTableElement(Element tableElement) {
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+
+		Elements tableLinesElements = tableElement.select("tr");
+		for (int j = 1; j < tableLinesElements.size(); j++) { // the first one is just the table header
+			Element tableLineElement = tableLinesElements.get(j);
+			Element installmentNumberElement = tableLineElement.select("td.parcelas").first();
+			Element installmentPriceElement = tableLineElement.select("td").last();
+
+			if (installmentNumberElement != null && installmentPriceElement != null) {
+				String installmentNumberText = installmentNumberElement.text().toLowerCase();
+				String installPriceText = installmentPriceElement.text();
+
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				if (parsedNumbers.size() == 0) { // à vista
+					installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
+				} else {
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
+				}
+			}
+		}
+
+		return installments;
+	}
+	
+	/**
+	 * Computes the bank slip price by applying a discount on the base price.
+	 * The base price is the same that is crawled on crawlPrice method.
+	 * 
+	 * @param document
+	 * @param jsonSku
+	 * @return
+	 */
+	private Float crawlBankSlipPrice(Document document, JSONObject jsonSku) {
+		Float bankSlipPrice = null;
+
+		// check availability
+		boolean available = false;
+		if(jsonSku.has("available")) {
+			available = jsonSku.getBoolean("available");
+		}
+
+		if (available) {
+			if (jsonSku.has("bestPriceFormated") && available) {
+				Float basePrice = MathCommonsMethods.parseFloat(jsonSku.getString("bestPriceFormated"));
+				Float discountPercentage = crawlDiscountPercentage(document);
+
+				// apply the discount on base price
+				if (discountPercentage != null) {
+					bankSlipPrice = CommonMethods.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
+				}
+			}
+		}
+
+		return bankSlipPrice;
+	}
+
+	/**
+	 * Look for the discount html element and parses the discount percentage
+	 * from the element name. 
+	 * In this ecommerce we have elements in this form 
+	 * <p class="flag boleto-10--off">Boleto 10% Off</p> where the 10 in the name 
+	 * of the class indicates the percentual value we must apply on the base value.
+	 * 
+	 * @return
+	 */
+	private Float crawlDiscountPercentage(Document document) {
+		Float discountPercentage = null;
+		Element discountElement = document.select(".product-info-container p[class^=flag desconto-boleto]").first();
+		if (discountElement != null) {
+			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(discountElement.attr("class"));
+			if (parsedNumbers.size() > 0) {
+				try {
+					Integer discount = Integer.parseInt(parsedNumbers.get(0));
+					Float discountFloat = new Float(discount);
+					discountPercentage = CommonMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
+				} catch (NumberFormatException e) {
+					Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
+				}
+			}
+		}
+		return discountPercentage;
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
