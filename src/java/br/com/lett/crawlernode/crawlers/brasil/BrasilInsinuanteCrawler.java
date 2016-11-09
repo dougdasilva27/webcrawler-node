@@ -1,14 +1,19 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -48,6 +53,18 @@ public class BrasilInsinuanteCrawler extends Crawler {
 			Element elementName = doc.select("#ProdutoDetalhesNomeProduto h1").first();
 			if(elementName != null) {
 				name = elementName.text().replace("'","").replace("’","").trim();
+				
+				Element nameVariation = doc.select(".selectAtributo option[selected]").first();
+				
+				if(nameVariation != null){
+					String textName = nameVariation.text();
+					
+					if(textName.contains("|")){						
+						name = name + " " + textName.split("\\|")[0].trim();;
+					} else {
+						name = name + " " + textName.trim();
+					}
+				}
 			}
 
 			// Preço
@@ -112,8 +129,11 @@ public class BrasilInsinuanteCrawler extends Crawler {
 			}	
 
 			// Estoque
-			Integer stock = null;
+			Integer stock = crawlStock(doc);
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Marketplace
 			JSONArray marketplace = null;
 
@@ -122,6 +142,7 @@ public class BrasilInsinuanteCrawler extends Crawler {
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -141,6 +162,80 @@ public class BrasilInsinuanteCrawler extends Crawler {
 		return products;
 	}
 	
+	
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+			Elements parcelas = doc.select("#ProdutoDetalhesParcelamentoJuros p");
+			
+			if(parcelas.size() > 0){
+				for(Element e : parcelas){
+					String parcela = e.text().toLowerCase();
+					
+					int x = parcela.indexOf("x");
+					int y = parcela.indexOf("r$");
+					
+					Integer installment = Integer.parseInt(parcela.substring(0, x).trim());
+					Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					installmentsPriceMap.put(installment, priceInstallment);
+				}
+				
+				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
+			}
+		}
+		
+		return prices;
+	}
+	
+	private Integer crawlStock(Document doc){
+		Integer stock = null;
+		Elements scripts = doc.select("script");
+		JSONObject jsonDataLayer = new JSONObject();
+		
+		for(Element e : scripts){
+			String dataLayer = e.outerHtml().trim();
+			
+			if(dataLayer.contains("var dataLayer = [")){
+				int x = dataLayer.indexOf("= [") + 3;
+				int y = dataLayer.indexOf("];", x);
+				
+				jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+			}
+		}
+		
+		if(jsonDataLayer.has("productID")){
+			String productId = jsonDataLayer.getString("productID");
+			
+			if(jsonDataLayer.has("productSKUList")){
+				JSONArray skus = jsonDataLayer.getJSONArray("productSKUList");
+				
+				for(int i = 0; i < skus.length(); i++){
+					JSONObject sku = skus.getJSONObject(i);
+					
+					if(sku.has("id")){
+						String id = sku.getString("id").trim();
+						
+						if(id.equals(productId)){
+							if(sku.has("stock")){
+								stock = sku.getInt("stock");
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return stock;
+	}
 	
 	/*******************************
 	 * Product page identification *

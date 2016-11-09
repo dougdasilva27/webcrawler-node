@@ -56,6 +56,18 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			Element elementName = doc.select("#ProdutoDetalhesNomeProduto h1").first();
 			if (elementName != null) {
 				name = elementName.text().replace("'","").replace("’","").trim();
+				
+				Element nameVariation = doc.select(".selectAtributo option[selected]").first();
+				
+				if(nameVariation != null){
+					String textName = nameVariation.text();
+					
+					if(textName.contains("|")){						
+						name = name + " " + textName.split("\\|")[0].trim();;
+					} else {
+						name = name + " " + textName.trim();
+					}
+				}
 			}
 
 			// Preço
@@ -225,6 +237,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				
 				prices.insertBankTicket(installmentsPriceMap.get(1));
 				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
 			}
 		}
 		
