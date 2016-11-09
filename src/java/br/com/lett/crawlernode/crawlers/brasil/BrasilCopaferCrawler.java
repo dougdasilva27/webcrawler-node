@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -11,9 +12,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (22/08/2016):
@@ -43,7 +47,7 @@ import br.com.lett.crawlernode.util.Logging;
  ************************************************************************************************************************************************************************************/
 
 public class BrasilCopaferCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.copafer.com.br/";
 
 	public BrasilCopaferCrawler(CrawlerSession session) {
@@ -63,25 +67,23 @@ public class BrasilCopaferCrawler extends Crawler {
 		List<Product> products = new ArrayList<Product>();
 
 		if ( isProductPage(doc) ) {
-
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
 
 			// Pid
 			String internalPid = crawlInternalPid(doc);
 
 			// Name
 			String nameMainPage = crawlName(doc);
-			
+
 			// Price
 			Float price = crawlPrice(doc);
 			
+			// Prices
+			Prices prices = crawlPrices(doc);
+
 			// Availability
 			boolean available = crawlAvailability(doc);
-			
+
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
 			String category1 = getCategory(categories, 0);
@@ -108,28 +110,28 @@ public class BrasilCopaferCrawler extends Crawler {
 
 			// Sku variations
 			Elements skus = doc.select(".prod-skulist");
-			
+
 			if(skus.size() > 0){
-				
+
 				/* ***********************************
 				 * crawling data of mutiple products *
 				 *************************************/
-	
+
 				for(Element sku : skus){
-					
+
 					// InternalId
 					String internalID = crawlInternalIdForMutipleVariations(sku);
-					
+
 					// Name
 					String name = crawlNameForMutipleVariations(sku, nameMainPage);
-	
-					// Creating the product
+
 					Product product = new Product();
 					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalID);
 					product.setInternalPid(internalPid);
 					product.setName(name);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setAvailable(available);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
@@ -139,26 +141,26 @@ public class BrasilCopaferCrawler extends Crawler {
 					product.setDescription(description);
 					product.setStock(stock);
 					product.setMarketplace(marketplace);
-		
+
 					products.add(product);
 				}
-				
+
 				/* *********************************
 				 * crawling data of single product *
 				 ***********************************/
-				
+
 			} else {
-				
+
 				// InternalId
 				String internalID = crawlInternalIdSingleProduct(doc);
 
-				// Creating the product
 				Product product = new Product();
 				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalID);
 				product.setInternalPid(internalPid);
 				product.setName(nameMainPage);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -168,7 +170,7 @@ public class BrasilCopaferCrawler extends Crawler {
 				product.setDescription(description);
 				product.setStock(stock);
 				product.setMarketplace(marketplace);
-	
+
 				products.add(product);
 			}
 
@@ -176,7 +178,7 @@ public class BrasilCopaferCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -188,23 +190,23 @@ public class BrasilCopaferCrawler extends Crawler {
 		if ( document.select(".productbox").first() != null ) return true;
 		return false;
 	}
-	
+
 	/*********************
 	 * Variation methods *
 	 *********************/
-	
+
 	private String crawlInternalIdForMutipleVariations(Element sku) {
 		String internalId = null;
 		Element e = sku.select("input").first();
-		
+
 		internalId = e.attr("idproduct").trim();
-		
+
 		return internalId;
 	}
-	
+
 	private String crawlNameForMutipleVariations(Element sku, String name) {
 		String nameVariation = name;	
-		
+
 		if(!sku.text().isEmpty()){
 			nameVariation = nameVariation + " - " + sku.text();
 		}	
@@ -215,7 +217,7 @@ public class BrasilCopaferCrawler extends Crawler {
 	/**********************
 	 * Single Sku methods *
 	 **********************/
-	
+
 	private String crawlInternalIdSingleProduct(Document document) {
 		String internalId = null;
 		Element internalIdElement = document.select(".info-side h2").first();
@@ -226,11 +228,11 @@ public class BrasilCopaferCrawler extends Crawler {
 
 		return internalId;
 	}
-	
+
 	private Float crawlPrice(Document doc) {
 		Float price = null;	
 		Element priceElement = doc.select(".text_preco_prod_listagem_por").first();
-		
+
 		if(priceElement != null){
 			price = Float.parseFloat( priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim() );
 		}	
@@ -238,26 +240,81 @@ public class BrasilCopaferCrawler extends Crawler {
 		return price;
 	}
 	
+	/**
+	 * We consider the 1x payment option the same as the bank slip price.
+	 * The payment options are the same across all the card brands, and we only have
+	 * 1x or 5x payment (or any other maximum number of installments).
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+		
+		// installments
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		if (bankSlipPrice != null) { // 1x
+			installments.put(1, bankSlipPrice);
+		}
+		
+		Element maxInstallmentNumberElement = document.select("#ContentSite_divAvailable .text_preco_prod_listagem_parcelas").first();
+		Element installmentPriceElement = document.select("#ContentSite_divAvailable .text_preco_prod_listagem_parcelado").first();
+		if (maxInstallmentNumberElement != null && installmentPriceElement != null) {
+			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(maxInstallmentNumberElement.text());
+			if (parsedNumbers.size() > 0) {
+				Integer maxInstallmentNumber = Integer.parseInt(parsedNumbers.get(0));
+				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+				
+				installments.put(maxInstallmentNumber, installmentPrice);
+			}
+		}
+		
+		if (installments.size() > 0) {
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		}
+		
+		return prices;
+	}
+	
+	private Float crawlBankSlipPrice(Document document) {
+		Float bankSlipPrice = null;
+		Element bankSlipPriceElement = document.select("#ContentSite_divAvailable3 div.conteudo_preco_selos_detalhe #ContentSite_divAvailable .text_preco_prod_listagem_por").first();
+		if (bankSlipPriceElement != null) {
+			bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+		}
+		return bankSlipPrice;
+	}
+
 	private boolean crawlAvailability(Document doc) {
 		Element e = doc.select(".text_produto_indisponivel").first();
-		
+
 		if (e != null) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
 
 		return internalPid;
 	}
-	
+
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select("#dsProductName").first();
@@ -272,7 +329,7 @@ public class BrasilCopaferCrawler extends Crawler {
 	private Map<String, Float> crawlMarketplace(Document document) {
 		return new HashMap<String, Float>();
 	}
-	
+
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
 		return new JSONArray();
 	}
@@ -296,14 +353,14 @@ public class BrasilCopaferCrawler extends Crawler {
 
 		for (int i = 1; i < imagesElement.size(); i++) { // start with indez 1 because the first image is the primary image
 			Element e = imagesElement.get(i);
-			
+
 			if(e.hasAttr("rel") && e.attr("rel").startsWith("http"))	{
 				secondaryImagesArray.put( e.attr("rel").trim().toLowerCase() );
 			} else if(e.hasAttr("rel2") && e.attr("rel2").startsWith("http")){
 				secondaryImagesArray.put( e.attr("rel2").trim().toLowerCase() );
 			} else {
 				Element img = e.select("img").first();
-				
+
 				if(img != null){
 					secondaryImagesArray.put( e.attr("src").trim() );
 				}
