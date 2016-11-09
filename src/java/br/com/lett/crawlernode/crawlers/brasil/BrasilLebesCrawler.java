@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -15,36 +16,31 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /*********************************************************************************************************************
  * Crawling notes (19/08/2016):
  * 
  * 1) For this crawler, we have one URL for multiple skus.
- *  
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
  * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 
  * 4) The sku page identification is done simply looking for an specific html element.
- * 
  * 5) If the sku is unavailable, it's price is not displayed.
- * 
  * 6) The price of sku, found in json script, is wrong when the same is unavailable, then it is not crawled.
- * 
  * 7) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
  * the variations of a given sku.
- * 
- * 7) The primary image is the first image on the secondary images.
- * 
+ * 8) The primary image is the first image on the secondary images. * 
  * 
  * Examples:
  * ex1 (available): http://www.lebes.com.br/gaveteiro-madesa-tutti-colors-34256p1a-rosa-se-568992/p
  * ex2 (unavailable): http://www.lebes.com.br/receptor-analogico-century-nanobox-sem-antena-557510/p
- *
+ * ex3 (color variations): http://www.lebes.com.br/maquina-multibebidas-tres-coracoes-preto-1-543433/p
  *
  *******************************************************************************************************************/
 
@@ -112,7 +108,10 @@ public class BrasilLebesCrawler extends Crawler {
 				String internalId = crawlInternalId(jsonSku);
 
 				// Price
-				Float price = crawlMainPagePrice(jsonSku, available);
+				Float price = crawlPrice(jsonSku, available);
+				
+				// Prices
+				Prices prices = crawlPrices(doc, jsonSku);
 
 				// Name
 				String name = crawlName(doc, jsonSku);
@@ -124,6 +123,7 @@ public class BrasilLebesCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -199,7 +199,7 @@ public class BrasilLebesCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(JSONObject json, boolean available) {
+	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 
 		if (json.has("bestPriceFormated") && available) {
@@ -207,6 +207,173 @@ public class BrasilLebesCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	/**
+	 * We use the sku internal id to fetch a page containing the card payment options.
+	 * URL format: http://www.lebes.com.br/productotherpaymentsystems/skuId
+	 * 
+	 * @param document
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, JSONObject skuInformationJson) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document, skuInformationJson);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+		
+		// installments
+		String skuId = null;
+		if (skuInformationJson.has("sku")) {
+			skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
+			String paymentOptionsURL = "http://www.lebes.com.br/productotherpaymentsystems/" + skuId;
+			Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+			
+			Elements tableElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system");
+			for (Element tableElement : tableElements) {
+				Card card = crawlCardFromTableElement(tableElement);
+				Map<Integer, Float> installments = crawlInstallmentsFromTable(tableElement);
+				
+				prices.insertCardInstallment(card.toString(), installments);
+			}
+			
+		}
+		
+		return prices;
+	}
+	
+	/**
+	 * We use the sku internal id to fetch a page containing the card payment options.
+	 * URL format: http://www.lebes.com.br/productotherpaymentsystems/skuId
+	 *  
+	 * @param skuInformationJson
+	 * @return
+	 */
+	private Map<Integer, Float> crawlInstallmentsFromTable(Element tableElement) {
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements lines = tableElement.select("tr");
+		for (int i = 1; i < lines.size(); i++) { // first line is the table header
+			Element installmentTextElement = lines.get(i).select("td.parcelas").first();
+			Element installmentPriceTextElement = lines.get(i).select("td").last();
+			
+			if (installmentTextElement != null && installmentPriceTextElement != null) {
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentTextElement.text());
+				if (parsedNumbers.size() == 0) { // à vista
+					installments.put(1, MathCommonsMethods.parseFloat(installmentPriceTextElement.text()));
+				} else {
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceTextElement.text()));
+				}
+			}
+		}
+		
+		return installments;
+	}
+	
+	/**
+	 *
+	 * Crawl the card brand from a table html element.
+	 * 
+	 * e.g:
+	 * 
+	 *	Nº de Parcelas	Valor de cada parcela
+	 *	Visa à vista	R$ 479,90
+	 *	Visa 2 vezes sem juros	R$ 239,95
+	 *	Visa 3 vezes sem juros	R$ 159,96
+	 *	Visa 4 vezes sem juros	R$ 119,97
+	 *	Visa 5 vezes sem juros	R$ 95,98
+	 *	Visa 6 vezes sem juros	R$ 79,98
+	 *	Visa 7 vezes sem juros	R$ 68,55
+	 *	Visa 8 vezes sem juros	R$ 59,98
+	 *	Visa 9 vezes sem juros	R$ 53,32
+	 *	Visa 10 vezes sem juros	R$ 47,99
+	 *	Visa 11 vezes com juros	R$ 46,26
+	 *	Visa 12 vezes com juros	R$ 42,61
+	 *
+	 * @param table
+	 * @return
+	 */
+	private Card crawlCardFromTableElement(Element table) {
+		Elements lines = table.select("tr");
+		for (int i = 1; i < lines.size(); i++) { // the first is the table header
+			Element installmentTextElement = lines.get(i).select("td.parcelas").first();
+			if (installmentTextElement != null) {
+				String installmentText = installmentTextElement.text().toLowerCase();
+				if (installmentText.contains(Card.VISA.toString())) return Card.VISA;
+				if (installmentText.contains(Card.AMEX.toString())) return Card.AMEX;
+				if (installmentText.contains(Card.DINERS.toString())) return Card.DINERS;
+				if (installmentText.contains(Card.MASTERCARD.toString())) return Card.MASTERCARD;
+				if (installmentText.contains(Card.HIPERCARD.toString())) return Card.HIPERCARD;
+				if (installmentText.contains(Card.ELO.toString())) return Card.ELO;
+			}
+		}
+		return Card.NO_CARD;
+	}
+	
+	/**
+	 * Computes the bank slip price by applying a discount on the base price.
+	 * The base price is the same that is crawled on crawlPrice method.
+	 * 
+	 * For the calculations we round the final number to the lower bound, as
+	 * observed on the ecommerce.
+	 * 
+	 * @param document
+	 * @param jsonSku
+	 * @return
+	 */
+	private Float crawlBankSlipPrice(Document document, JSONObject skuInformationJson) {
+		Float bankSlipPrice = null;
+
+		// check availability
+		boolean available = false;
+		if(skuInformationJson.has("available")) {
+			available = skuInformationJson.getBoolean("available");
+		}
+
+		if (available) {
+			if (skuInformationJson.has("bestPriceFormated") && available) {
+				Float basePrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+				Float discountPercentage = crawlDiscountPercentage(document);
+
+				// apply the discount on base price
+				if (discountPercentage != null) {
+					bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesDown(basePrice - (discountPercentage * basePrice));
+				}
+			}
+		}
+
+		return bankSlipPrice;
+	}
+	
+	/**
+	 * Look for the discount html element and parses the discount percentage
+	 * from the element name. 
+	 * In this ecommerce we have elements in this form 
+	 * <p class="flag 5--no-boleto">5% no boleto</p> where the 5 in the name 
+	 * of the class indicates the percentual value we must apply on the base value.
+	 * But we must search for the suffix '--no-boleto'.
+	 * 
+	 * @return
+	 */
+	private Float crawlDiscountPercentage(Document document) {
+		Float discountPercentage = null;
+		Element discountElement = document.select(".abaProduto .discount p[class$=--no-boleto]").first();
+		if (discountElement != null) {
+			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(discountElement.attr("class"));
+			if (parsedNumbers.size() > 0) {
+				try {
+					Integer discount = Integer.parseInt(parsedNumbers.get(0));
+					Float discountFloat = new Float(discount);
+					discountPercentage = MathCommonsMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
+				} catch (NumberFormatException e) {
+					Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
+				}
+			}
+		}
+		return discountPercentage;
 	}
 
 	private boolean crawlAvailability(JSONObject json) {

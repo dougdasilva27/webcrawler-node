@@ -16,7 +16,8 @@ public enum Card {
 	DISCOVER,
 	SHOP_CARD,
 	HSCARD,
-	CABAL;
+	CABAL,
+	NO_CARD;
 	
 	@Override
 	public String toString() {

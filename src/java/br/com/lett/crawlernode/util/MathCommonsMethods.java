@@ -130,4 +130,21 @@ public class MathCommonsMethods {
         
         return Float.parseFloat(rounded);
     }
+    
+    /**
+     * Round and normalize Double to have only two decimal places
+     * eg: 23.41123 --> 23.40
+     * If number is null, the method returns null.
+     * 
+     * @param number
+     * @return A rounded Double with only two decimal places
+     */
+    public static Float normalizeTwoDecimalPlacesDown(Float number) {
+        if (number == null) return null;
+        
+        BigDecimal big = new BigDecimal(number);
+        String rounded = big.setScale(2, BigDecimal.ROUND_DOWN).toString();
+        
+        return Float.parseFloat(rounded);
+    }
 }
