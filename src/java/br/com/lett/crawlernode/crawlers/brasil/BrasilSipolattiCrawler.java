@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -64,8 +65,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 public class BrasilSipolattiCrawler extends Crawler {
 
 	private final String HOME_PAGE 				= "http://www.sipolatti.com.br/";
-	private final String CONTENT_TYPE 			= "text/plain";
-	private final String URL_API 				= "http://www.sipolatti.com.br/ajaxpro/IKCLojaMaster.detalhes,Sipolatti.ashx";
+	private final String URL_API 				= "http://www.sipolatti.com.br/ajaxpro/IKCLojaMaster.detalhes,IKCLojaMaster%202.2.ashx";
 	private final String VARIATIONS_AJAX_METHOD = "CarregaSKU";
 	private final String SKU_AJAX_METHOD 		= "DisponibilidadeSKU";
 	private final String VARIATION_NAME_PAYLOAD = "ColorCode";
@@ -79,6 +79,21 @@ public class BrasilSipolattiCrawler extends Crawler {
 		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
+	
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "http://www.sipolatti.com.br/", cookies, 1);
+		
+		for(String cookieName : cookiesMap.keySet()){
+			BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
+			cookie.setDomain("www.sipolatti.com.br");
+			cookie.setPath("/");
+			this.cookies.add(cookie);
+		}
+	
+	}
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
@@ -87,7 +102,10 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 		if( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+			
+			// Token to access apis
+			String token = crawlToken(doc);
+			
 			// Pid
 			String internalPid = this.crawlInternalPid(doc);
 
@@ -121,7 +139,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 			Prices prices = crawlPrices(doc);
 
 			// Variations
-			Elements productVariationElements = this.crawlSkuOptions(internalIDMainPage, this.session.getOriginalURL());
+			Elements productVariationElements = this.crawlSkuOptions(internalIDMainPage, this.session.getOriginalURL(), token);
 
 			if(productVariationElements.size() > 1){
 
@@ -139,10 +157,10 @@ public class BrasilSipolattiCrawler extends Crawler {
 					String idVariation = tokens[tokens.length-3];
 
 					// InternalId and images
-					JSONObject skuInformation = this.crawlSkuInformations(idVariation, internalIDMainPage, this.session.getOriginalURL());
+					JSONObject skuInformation = this.crawlSkuInformations(idVariation, internalIDMainPage, this.session.getOriginalURL(), token);
 
 					// Varitation name
-					String variationName = sku.select("img").attr("alt").trim().toLowerCase();
+					String variationName = sku.select("img").attr("alt").trim();
 
 					// Name
 					String nameVariation = this.crawlNameVariation(variationName, name);
@@ -313,31 +331,36 @@ public class BrasilSipolattiCrawler extends Crawler {
 	 * @param urlProduct
 	 * @return
 	 */
-	private JSONObject fetchJSONFromApi(String urlProduct, String payload, String method){
+	private JSONObject fetchJSONFromApi(String urlProduct, String payload, String method, String token){
 
 		Map<String,String> headers = new HashMap<>();
 
-		headers.put("Content-Type", CONTENT_TYPE);
 		headers.put("Referer", urlProduct);
 		headers.put("X-AjaxPro-Method", method);
+		headers.put("X-AjaxPro-Token", token);
 
-		String response = DataFetcher.fetchPagePOSTWithHeaders(URL_API, session, payload, null, 1, headers);
-
+		String response = DataFetcher.fetchPagePOSTWithHeaders(URL_API, session, payload, this.cookies, 1, headers);
+		
 		return new JSONObject(response);
 	}
 
 	/**
 	 * Get all variations of sku from json.
 	 * 
+	 * Essa api contém as variações(caso tenha) com o nome e o internalId do produto
+	 * Nesse json contém um html com essas informações
+	 * Os ids dos produtos também servem para acessar outra api com informações
+	 * específicas de cada sku
+	 * 
 	 * @param internalIdMainPage
 	 * @param urlProduct
 	 * @return
 	 */
-	private Elements crawlSkuOptions(String internalIdMainPage, String urlProduct) {
+	private Elements crawlSkuOptions(String internalIdMainPage, String urlProduct, String token) {
 		Elements skuOptions = new Elements();
 		String payload = "{\"ProdutoCodigo\": \""+ internalIdMainPage +"\", \""+ VARIATION_NAME_PAYLOAD +"\": \"0\"}";
-
-		JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD);
+		
+		JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD, token);
 
 		if(colorsJson.has("value")){
 			String htmlColors = (colorsJson.getJSONArray("value").getString(0)).replaceAll("\t", "");
@@ -352,23 +375,37 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 	/**
 	 * Get informations of sku from json
+	 * 
+	 * Nessa api conseguimos pegar as imagens e a disponibilidade de cada sku.
+	 * 
 	 * @param idVariation
 	 * @param internalIdMainPage
 	 * @param urlProduct
 	 * @return
 	 */
-	private JSONObject crawlSkuInformations(String idVariation, String internalIdMainPage, String urlProduct) {
+	private JSONObject crawlSkuInformations(String idVariation, String internalIdMainPage, String urlProduct, String token) {
 		JSONObject returnJson = new JSONObject();
 
 		String payload = "{\"ProdutoCodigo\": \""+ internalIdMainPage +"\", \"CarValorCodigo1\": \""+ idVariation +"\", "
 				+ "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", "
 				+ "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\"}";
 
-		JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD);
+		JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD, token);
 
+		System.err.println(jsonSku);
+		
 		if(jsonSku.has("value")){
 			JSONArray valueArray = jsonSku.getJSONArray("value");
-			int numberProduct = valueArray.getInt(valueArray.length()-1);
+			
+			Integer numberProduct = 0;
+			
+			for(int i = 0; i < valueArray.length(); i++){				
+				if(isInteger(valueArray.get(i))){
+					numberProduct = valueArray.getInt(i);
+					break;
+				}
+			}
+		
 			String price = getPriceFromJSON(valueArray);
 			boolean available = false;
 
@@ -380,9 +417,14 @@ public class BrasilSipolattiCrawler extends Crawler {
 			JSONArray imagesArray = valueArray.getJSONArray(1);
 
 			for(int i = 0; i < imagesArray.length(); i++){
-				String temp = imagesArray.getString(i);
+				String temp = imagesArray.getString(i).toLowerCase();
 
-				if(temp.startsWith("http://www.sipolatti.com.br/Imagens/produtos/")){
+				if(temp.startsWith("/imagens/produtos/")){
+					if(i < imagesArray.length()-1){
+						
+						imagesMap.put(imagesArray.getString(i+1), "http://www.sipolatti.com.br"+temp);
+					}
+				} else if(temp.startsWith("http://www.sipolatti.com.br/imagens/produtos/")){
 					if(i < imagesArray.length()-1){
 						imagesMap.put(imagesArray.getString(i+1), temp);
 					}
@@ -596,7 +638,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 	private String crawlName(Document doc) {
 		String name = null;
-		Element elementName = doc.select(".head-product .name").first();
+		Element elementName = doc.select("#productName").first();
 		if(elementName != null) {
 			name = elementName.text().replace("'","").replace("’","").trim();
 		}
@@ -643,6 +685,42 @@ public class BrasilSipolattiCrawler extends Crawler {
 		if(elementProductDetails != null) 	description = description + elementProductDetails.html();
 
 		return description;
+	}
+	
+	private String crawlToken(Document doc){
+		String token = "";
+		
+		Elements scripts = doc.select("script[type=text/javascript]");
+		
+		for(Element e : scripts){
+			String script = e.outerHtml();
+			
+			if(script.contains("AjaxPro.token")){
+				
+				if(script.contains("=")){
+					int x = script.indexOf("token =")+7;
+					int y = script.indexOf(";", x);
+					
+					token = script.substring(x, y).replaceAll("\"", "").trim();
+				}
+				break;
+			}
+		}
+		
+		return token;
+	}
+	
+	/**
+	 * Integer
+	 * @param object 
+	 * @return Boolean - se é Integer ou não
+	 */
+	public static boolean isInteger(Object object) {
+		if (object instanceof Integer) {
+			return true;
+		}
+
+		return false;
 	}
 
 }

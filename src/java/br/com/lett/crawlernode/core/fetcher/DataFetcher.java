@@ -17,6 +17,7 @@ import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -372,6 +373,7 @@ public class DataFetcher {
 
 			if(payloadJson != null && payloadJson.length() > 0) {
 				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
+				@SuppressWarnings("rawtypes")
 				Iterator iterator = payloadJson.keySet().iterator();
 
 				while(iterator.hasNext()) {
@@ -666,6 +668,188 @@ public class DataFetcher {
 		}
 	}
 
+
+	/**
+	 * Fetch a page
+	 * By default the redirects are enabled in the RequestConfig
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookieName
+	 * @param cookies
+	 * @param attempt
+	 * @return the header value. Will return an empty string if the cookie wasn't found.
+	 */
+	public static Map<String,String> fetchCookies(
+			CrawlerSession session, 
+			String url,
+			List<Cookie> cookies, 
+			int attempt) {
+
+		LettProxy randProxy = null;
+		String randUserAgent = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
+
+		try {
+			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
+
+			randUserAgent = randUserAgent();
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+
+			CookieStore cookieStore = new BasicCookieStore();
+			if (cookies != null) {
+				if (cookies.size() > 0) {
+					for (Cookie cookie : cookies) {
+						cookieStore.addCookie(cookie);
+					}
+				}
+			}
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.build();
+			}
+			
+
+			List<Header> reqHeaders = new ArrayList<Header>();
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(reqHeaders)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
+			// do request
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
+			// assembling request information log message
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
+			}
+			S3Service.uploadContentToAmazon(session, requestHash, content);
+
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
+			
+			Map<String,String> cookiesMap = new HashMap<>();
+			
+			// get all cookie headers
+			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
+
+			for (Header header : headers) {
+				String cookieHeader = header.getValue();
+				String cookieName = cookieHeader.split("=")[0].trim();
+				
+				int x = cookieHeader.indexOf(cookieName+"=") + cookieName.length()+1;
+				int y = cookieHeader.indexOf(";", x);
+				
+				String cookieValue = cookieHeader.substring(x, y).trim();
+				
+				cookiesMap.put(cookieName, cookieValue);
+			}
+			
+			return cookiesMap;
+
+
+		} catch (Exception e) {
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+				return null;
+			} else {
+				return fetchCookies(session, url, cookies, attempt+1);	
+			}
+
+		}
+	}
+	
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
