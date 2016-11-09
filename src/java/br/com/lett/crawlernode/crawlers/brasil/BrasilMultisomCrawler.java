@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -12,15 +13,18 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (01/08/2016):
  * 
- * 1) For this crawler, we have one url per each sku, but are urls from variations in url product.
+ * 1) For this crawler, we have one url per each sku.
  *  
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
  * 
@@ -41,6 +45,7 @@ import br.com.lett.crawlernode.util.Logging;
  * Examples:
  * ex1 (available): http://www.multisom.com.br/produto/ar-condicionado-split-lg-inverter-libero-18-000-btus-quente-frio-220v-tecnologia-inverter-economia-de-energia-modelo-art-cool-asuw182crg2-2535
  * ex2 (unavailable): http://www.multisom.com.br/produto/escaleta-stagg-melosta-32-teclas-preto-5668
+ * ex3 (variations): https://www.multisom.com.br/produto/tv-65-lg-led-uf8500-ultra-hd-4k-webos-3d-smart-tv-sistema-webos-wi-fi-painel-ips-entradas-3-hdmi-e-3-usb-controle-smart-magic-4-oculos-3d-6516
  *
  * Optimizations notes:
  * No optimizations.
@@ -86,6 +91,9 @@ public class BrasilMultisomCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(doc);
 			
+			// Prices
+			Prices prices = crawlPrices(doc);
+			
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -121,6 +129,7 @@ public class BrasilMultisomCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -133,57 +142,57 @@ public class BrasilMultisomCrawler extends Crawler {
 
 			products.add(product);
 
-			ArrayList<String> variationsUrls = this.crawlUrlForMutipleVariations(doc, internalIDFirstProduct);
-			
-			for(String urlVariation : variationsUrls){
-				Document docVariation = this.fetchPageVariation(urlVariation);
-				
-				// InternalId
-				String internalIDVariation = crawlInternalId(docVariation);
-
-				// Name
-				String nameVariation  = crawlName(docVariation);
-
-				// Price
-				Float priceVariation  = crawlMainPagePrice(docVariation);
-				
-				// Availability
-				boolean availableVariation  = crawlAvailability(docVariation);
-
-				// Categories
-				ArrayList<String> categoriesVariation  = crawlCategories(docVariation);
-				String category1Variation  = getCategory(categoriesVariation , 0);
-				String category2Variation  = getCategory(categoriesVariation , 1);
-				String category3Variation  = getCategory(categoriesVariation , 2);
-
-				// Primary image
-				String primaryImageVariation = crawlPrimaryImage(docVariation);
-
-				// Secondary images
-				String secondaryImagesVariation = crawlSecondaryImages(docVariation);
-
-				// Description
-				String descriptionVariation = crawlDescription(doc);
-
-				// Creating the product
-				Product productVariation = new Product();
-				productVariation.setUrl(urlVariation);
-				productVariation.setInternalId(internalIDVariation);
-				productVariation.setInternalPid(internalPid);
-				productVariation.setName(nameVariation);
-				productVariation.setPrice(priceVariation);
-				productVariation.setAvailable(availableVariation);
-				productVariation.setCategory1(category1Variation);
-				productVariation.setCategory2(category2Variation);
-				productVariation.setCategory3(category3Variation);
-				productVariation.setPrimaryImage(primaryImageVariation);
-				productVariation.setSecondaryImages(secondaryImagesVariation);
-				productVariation.setDescription(descriptionVariation);
-				productVariation.setStock(stock);
-				productVariation.setMarketplace(marketplace);
-
-				products.add(productVariation);
-			}
+//			ArrayList<String> variationsUrls = this.crawlUrlForMutipleVariations(doc, internalIDFirstProduct);
+//			
+//			for(String urlVariation : variationsUrls){
+//				Document docVariation = this.fetchPageVariation(urlVariation);
+//				
+//				// InternalId
+//				String internalIDVariation = crawlInternalId(docVariation);
+//
+//				// Name
+//				String nameVariation  = crawlName(docVariation);
+//
+//				// Price
+//				Float priceVariation  = crawlMainPagePrice(docVariation);
+//				
+//				// Availability
+//				boolean availableVariation  = crawlAvailability(docVariation);
+//
+//				// Categories
+//				ArrayList<String> categoriesVariation  = crawlCategories(docVariation);
+//				String category1Variation  = getCategory(categoriesVariation , 0);
+//				String category2Variation  = getCategory(categoriesVariation , 1);
+//				String category3Variation  = getCategory(categoriesVariation , 2);
+//
+//				// Primary image
+//				String primaryImageVariation = crawlPrimaryImage(docVariation);
+//
+//				// Secondary images
+//				String secondaryImagesVariation = crawlSecondaryImages(docVariation);
+//
+//				// Description
+//				String descriptionVariation = crawlDescription(doc);
+//
+//				// Creating the product
+//				Product productVariation = new Product();
+//				productVariation.setUrl(urlVariation);
+//				productVariation.setInternalId(internalIDVariation);
+//				productVariation.setInternalPid(internalPid);
+//				productVariation.setName(nameVariation);
+//				productVariation.setPrice(priceVariation);
+//				productVariation.setAvailable(availableVariation);
+//				productVariation.setCategory1(category1Variation);
+//				productVariation.setCategory2(category2Variation);
+//				productVariation.setCategory3(category3Variation);
+//				productVariation.setPrimaryImage(primaryImageVariation);
+//				productVariation.setSecondaryImages(secondaryImagesVariation);
+//				productVariation.setDescription(descriptionVariation);
+//				productVariation.setStock(stock);
+//				productVariation.setMarketplace(marketplace);
+//
+//				products.add(productVariation);
+//			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -269,12 +278,66 @@ public class BrasilMultisomCrawler extends Crawler {
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
 		Element specialPrice = document.select("p.prices ins").first();		
-		
 		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		}
 
 		return price;
+	}
+	
+	/**
+	 * The card payment options are the same across all card brands.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		// bank slip
+		Float bankSlipPrice = crawlBankSlipPrice(document);
+		if (bankSlipPrice != null) {
+			prices.insertBankTicket(bankSlipPrice);
+		}
+		
+		// installments
+		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+		Elements installmentElements = document.select(".productRight .plots tbody tr");
+		for (Element installmentElement : installmentElements) {
+			Elements tdElements = installmentElement.select("td");
+			if (tdElements.size() >= 2) {
+				String installmentNumberText = tdElements.get(0).text();
+				String installmentPriceText = tdElements.get(1).text();
+				
+				if (!installmentNumberText.isEmpty() && !installmentPriceText.isEmpty()) {
+					List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+					if (parsedNumbers.size() > 0) {
+						installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+					}
+				}
+			}
+		}
+		
+		if (installments.size() > 0) {
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
+		}
+		
+		return prices;
+	}
+	
+	private Float crawlBankSlipPrice(Document document) {
+		Float bankSlipPrice = null;
+		Element bankSlipPriceElement = document.select(".productRight small strong").first();
+		if (bankSlipPriceElement != null) {
+			bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+		}
+		return bankSlipPrice;
 	}
 	
 	private boolean crawlAvailability(Document document) {
