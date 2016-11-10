@@ -247,8 +247,8 @@ public class BrasilLebesCrawler extends Crawler {
 	}
 	
 	/**
-	 * We use the sku internal id to fetch a page containing the card payment options.
-	 * URL format: http://www.lebes.com.br/productotherpaymentsystems/skuId
+	 * Crawl all the installments numbers and values from a table element.
+	 * It's the same form as the example on crawlCardFromTableElement method.
 	 *  
 	 * @param skuInformationJson
 	 * @return
@@ -310,7 +310,7 @@ public class BrasilLebesCrawler extends Crawler {
 				if (installmentText.contains(Card.ELO.toString())) return Card.ELO;
 			}
 		}
-		return Card.NO_CARD;
+		return Card.UNKNOWN_CARD;
 	}
 	
 	/**

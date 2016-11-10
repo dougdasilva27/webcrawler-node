@@ -14,10 +14,11 @@ public enum Card {
 	AURA,
 	BNDES,
 	DISCOVER,
-	SHOP_CARD,
 	HSCARD,
 	CABAL,
-	NO_CARD;
+	
+	SHOP_CARD,
+	UNKNOWN_CARD;
 	
 	@Override
 	public String toString() {
@@ -37,7 +38,7 @@ public enum Card {
 			case SHOP_CARD: return "shop_card";
 			case HSCARD: return "hscard";
 			case CABAL: return "cabal";
-			default: return "not_a_card";
+			default: return "unkown_card";
 		}
 	}
 
