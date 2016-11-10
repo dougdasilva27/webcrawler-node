@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,9 +14,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilEletrocityCrawler extends Crawler {
 
@@ -101,7 +106,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 					Map<String, Float> marketplaceMap = crawlMarketplaceFromElement(sku);
 
 					// Marketplace
-					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 
 					// Availability and Price from marketplace
 					boolean available = false;
@@ -119,6 +124,9 @@ public class BrasilEletrocityCrawler extends Crawler {
 					}					
 					if (!available) price = null;
 
+					// Prices
+					Prices prices = crawlPrices(internalId, price);
+					
 					// Creating the product
 					Product product = new Product();
 					product.setInternalId(internalId);
@@ -126,6 +134,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 					product.setName(name);
 					product.setAvailable(available);
 					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -158,7 +167,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 				Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 				
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 				
 				// Availability and Price from marketplace
 				boolean available = false;
@@ -175,6 +184,9 @@ public class BrasilEletrocityCrawler extends Crawler {
 					}
 				}					
 				if (!available) price = null;
+				
+				// Prices
+				Prices prices = crawlPrices(internalId, price);
 
 				// Creating the product
 				Product product = new Product();
@@ -183,6 +195,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -390,7 +403,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 		return description;
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
 		JSONArray marketplace = new JSONArray();
 
 		for(String sellerName : marketplaceMap.keySet()) {
@@ -398,7 +411,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				seller.put("price", marketplaceMap.get(sellerName));
-
+				seller.put("prices", crawlPrices(internalId, marketplaceMap.get(sellerName)).getPricesJson());
 				marketplace.put(seller);
 			}
 		}
@@ -443,6 +456,112 @@ public class BrasilEletrocityCrawler extends Crawler {
 		}
 		
 		return categories;
+	}
+
+	/**
+	 * No momento em que peguei os preços não foi achado prçeo no boleto com desconto
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(String internalId, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.eletrocity.com.br/productotherpaymentsystems/" + internalId;
+
+			Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bankTicketElement = docPrices.select("#divBoleto em").first();
+			if(bankTicketElement != null){				
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketElement.text());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+
+			Elements cardsElements = docPrices.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if (text.contains("visa")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("mastercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("diners")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+					
+				} else if (text.contains("american") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("hipercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("credicard") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("elo") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+					
+				} else if (text.contains("aura") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("discover") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
 	}
 
 }
