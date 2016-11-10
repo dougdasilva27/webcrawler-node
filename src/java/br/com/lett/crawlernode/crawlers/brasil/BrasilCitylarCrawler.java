@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -120,7 +121,7 @@ public class BrasilCitylarCrawler extends Crawler {
 			}
 
 			// Estoque
-			Integer stock = null;
+			Integer stock = crawlStock(doc);
 
 			// Marketplace
 			JSONArray marketplace = null;
@@ -212,5 +213,47 @@ public class BrasilCitylarCrawler extends Crawler {
 		}
 
 		return prices;
+	}
+	
+	private Integer crawlStock(Document doc){
+		Integer stock = null;
+		Elements scripts = doc.select("script");
+		JSONObject jsonDataLayer = new JSONObject();
+		
+		for(Element e : scripts){
+			String dataLayer = e.outerHtml().trim();
+			
+			if(dataLayer.contains("var dataLayer = [")){
+				int x = dataLayer.indexOf("= [") + 3;
+				int y = dataLayer.indexOf("];", x);
+				
+				jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+			}
+		}
+		
+		if(jsonDataLayer.has("productID")){
+			String productId = jsonDataLayer.getString("productID");
+			
+			if(jsonDataLayer.has("productSKUList")){
+				JSONArray skus = jsonDataLayer.getJSONArray("productSKUList");
+				
+				for(int i = 0; i < skus.length(); i++){
+					JSONObject sku = skus.getJSONObject(i);
+					
+					if(sku.has("id")){
+						String id = sku.getString("id").trim();
+						
+						if(id.equals(productId)){
+							if(sku.has("stock")){
+								stock = sku.getInt("stock");
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return stock;
 	}
 }

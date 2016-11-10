@@ -2,15 +2,19 @@ package br.com.lett.crawlernode.crawlers.brasil;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -35,7 +39,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
-		
+
 		if( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -44,13 +48,25 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 			Element elementInternalID = doc.select("#ProdutoDetalhesCodigoProduto").first();
 			if(elementInternalID != null) {
 				internalID = elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
-			}
+			}	
 
 			// Nome
 			String name = null;
 			Element elementName = doc.select("#ProdutoDetalhesNomeProduto h1").first();
 			if(elementName != null) {
 				name = elementName.text().replace("'","").replace("’","").trim();
+
+				Element nameVariation = doc.select(".selectAtributo option[selected]").first();
+
+				if(nameVariation != null){
+					String textName = nameVariation.text();
+
+					if(textName.contains("|")){						
+						name = name + " " + textName.split("\\|")[0].trim();;
+					} else {
+						name = name + " " + textName.trim();
+					}
+				}
 			}
 
 			// Disponibilidade
@@ -113,97 +129,115 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 			if(elementDescription != null) description = elementDescription.html().replace("'", "").trim();
 
 			// Estoque
-			Integer stock = null;
+			Integer stock = crawlStock(doc);
 
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Elements elementsProductVariation = doc.select("#ProdutoDetalhesDoProduto .atributo .input-container .selectAtributo option");
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
-			// tem mais de um produto
-			if(elementsProductVariation.size() > 1) {
+			Product product = new Product();
+			product.setUrl(this.session.getOriginalURL());
+			product.setInternalId(internalID);
+			product.setName(name);
+			product.setPrice(price);
+			product.setPrices(prices);
+			product.setCategory1(category1);
+			product.setCategory2(category2);
+			product.setCategory3(category3);
+			product.setPrimaryImage(primaryImage);
+			product.setSecondaryImages(secondaryImages);
+			product.setDescription(description);
+			product.setStock(stock);
+			product.setMarketplace(marketplace);
+			product.setAvailable(available);
 
-				// inserir cada produto
-				for(Element variation : elementsProductVariation) {
-
-					String variationUrl = variation.attr("link");
-					String variationName = name + " - " + variation.text().substring(0, variation.text().indexOf('|')).trim();
-					String variationInternalID = variation.attr("value");
-					boolean variationAvailable = available;
-					Float variationPrice = price;
-
-					if( !variationUrl.equals(this.session.getOriginalURL()) ) { // se não for a url que já tenho preciso dar um fetch na nova url e colher os dados que faltam
-						Document variationDocument =  DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, variationUrl, null, null);
-
-						// Disponibilidade
-						Element elementVariationBuyButton = variationDocument.select("#btnComprar").first();
-						variationAvailable = true;
-						if(elementVariationBuyButton == null) {
-							variationAvailable = false;
-						}
-
-						// Preço
-						variationPrice = null;
-						Element elementVariationPrice = variationDocument.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
-						if(elementVariationPrice == null) {
-							variationPrice = null;
-						} 
-						else {
-							variationPrice = Float.parseFloat(elementVariationPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-						}
-					}
-
-					Product product = new Product();
-					product.setUrl(variationUrl);
-					product.setInternalId(variationInternalID);
-					product.setName(variationName);
-					product.setPrice(variationPrice);
-					product.setCategory1(category1);
-					product.setCategory2(category2);
-					product.setCategory3(category3);
-					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(secondaryImages);
-					product.setDescription(description);
-					product.setStock(stock);
-					product.setMarketplace(marketplace);
-					product.setAvailable(variationAvailable);
-
-					products.add(product);
-
-				}
-
-			}
-
-			// tem um produto apenas
-			else {
-
-				Product product = new Product();
-				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(internalID);
-				product.setName(name);
-				product.setPrice(price);
-				product.setCategory1(category1);
-				product.setCategory1(category2);
-				product.setCategory1(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
-				product.setAvailable(available);
-
-				products.add(product);
-			}
+			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 
 	}
 
 
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+			Elements parcelas = doc.select("#ProdutoDetalhesParcelamentoJuros p");
+
+			if(parcelas.size() > 0){
+				for(Element e : parcelas){
+					String parcela = e.text().toLowerCase();
+
+					int x = parcela.indexOf("x");
+					int y = parcela.indexOf("r$");
+
+					Integer installment = Integer.parseInt(parcela.substring(0, x).trim());
+					Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					installmentsPriceMap.put(installment, priceInstallment);
+				}
+
+				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
+			}
+		}
+
+		return prices;
+	}
+	
+	private Integer crawlStock(Document doc){
+		Integer stock = null;
+		Elements scripts = doc.select("script");
+		JSONObject jsonDataLayer = new JSONObject();
+		
+		for(Element e : scripts){
+			String dataLayer = e.outerHtml().trim();
+			
+			if(dataLayer.contains("var dataLayer = [")){
+				int x = dataLayer.indexOf("= [") + 3;
+				int y = dataLayer.indexOf("];", x);
+				
+				jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+			}
+		}
+		
+		if(jsonDataLayer.has("productID")){
+			String productId = jsonDataLayer.getString("productID");
+			
+			if(jsonDataLayer.has("productSKUList")){
+				JSONArray skus = jsonDataLayer.getJSONArray("productSKUList");
+				
+				for(int i = 0; i < skus.length(); i++){
+					JSONObject sku = skus.getJSONObject(i);
+					
+					if(sku.has("id")){
+						String id = sku.getString("id").trim();
+						
+						if(id.equals(productId)){
+							if(sku.has("stock")){
+								stock = sku.getInt("stock");
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return stock;
+	}
+	
 	/*******************************
 	 * Product page identification *
 	 *******************************/
