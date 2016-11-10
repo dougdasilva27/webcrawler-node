@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,7 +11,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.CrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
@@ -39,12 +42,30 @@ public class BrasilCitylarCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
+			String internalID = null;
 			Element elementInternalID = doc.select("#ProdutoDetalhesCodigoProduto").first();
-			String internalID = elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
+			if(elementInternalID != null) {
+				internalID = elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
+			}	
 
 			// Nome
+			String name = null;
 			Element elementName = doc.select("#ProdutoDetalhesNomeProduto h1").first();
-			String name = elementName.text().replace("'", "").replace("’", "").trim();
+			if(elementName != null) {
+				name = elementName.text().replace("'","").replace("’","").trim();
+				
+				Element nameVariation = doc.select(".selectAtributo option[selected]").first();
+				
+				if(nameVariation != null){
+					String textName = nameVariation.text();
+					
+					if(textName.contains("|")){						
+						name = name + " " + textName.split("\\|")[0].trim();;
+					} else {
+						name = name + " " + textName.trim();
+					}
+				}
+			}
 
 			// Preço
 			Float price = null;
@@ -63,21 +84,13 @@ public class BrasilCitylarCrawler extends Crawler {
 				available = false;
 			}
 
-			// Categorias
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
-			Elements element_categories = doc.select("#Breadcrumbs .breadcrumbs-itens").select("a");
-			for (Element e : element_categories) {
-				if (category1.isEmpty()) {
-					category1 = e.text();
-				} else if (category2.isEmpty()) {
-					category2 = e.text();
-				} else if (category3.isEmpty()) {
-					category3 = e.text();
-				}
-			}
 
+			// Categories
+			ArrayList<String> categories = crawlCategories(doc);
+			String category1 = getCategory(categories, 0);
+			String category2 = getCategory(categories, 1);
+			String category3 = getCategory(categories, 2);
+			
 			// Imagens
 			Elements elementImages = doc.select("#ProdutoDetalhesFotosFotosPequenas").select("a img");
 			String primaryImage = null;
@@ -112,101 +125,31 @@ public class BrasilCitylarCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Elements elementsProductVariation = doc.select("#ProdutoDetalhesDoProduto .atributo .input-container option");
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
+			Product product = new Product();
+			product.setUrl(this.session.getOriginalURL());
+			product.setInternalId(internalID);
+			product.setName(name);
+			product.setPrice(price);
+			product.setPrices(prices);
+			product.setCategory1(category1);
+			product.setCategory2(category2);
+			product.setCategory3(category3);
+			product.setPrimaryImage(primaryImage);
+			product.setSecondaryImages(secondaryImages);
+			product.setDescription(description);
+			product.setStock(stock);
+			product.setMarketplace(marketplace);
+			product.setAvailable(available);
 
-			// tem mais de um produto
-			if (elementsProductVariation.size() > 1) {
-
-				// inserir cada produto
-				for (Element variation : elementsProductVariation) {
-
-					String variationUrl = variation.attr("link");
-					String variationName = name + " - "
-							+ variation.text().substring(0, variation.text().indexOf('|')).trim();
-					String variationInternalID = variation.attr("value");
-					boolean variationAvailable = available;
-					Float variationPrice = price;
-
-					if (!variationUrl.equals(this.session.getOriginalURL())) { 
-
-						// se não for a url que
-						// já tenho preciso
-						// dar um fetch na
-						// nova url e colher
-						// os dados que
-						// faltam
-
-						Document variationDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, variationUrl, null, null);
-
-						// Disponibilidade
-						Element elementVariationBuyButton = variationDocument.select("#btnComprar").first();
-						variationAvailable = true;
-						if (elementVariationBuyButton == null) {
-							variationAvailable = false;
-						}
-
-						// Preço
-						variationPrice = null;
-						Element elementVariationPrice = variationDocument
-								.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
-						if (elementVariationPrice == null) {
-							variationPrice = null;
-						} else {
-							variationPrice = Float.parseFloat(elementVariationPrice.text()
-									.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-						}
-					}
-
-
-					Product product = new Product();
-					product.setUrl(variationUrl);
-					product.setInternalId(variationInternalID);
-					product.setName(variationName);
-					product.setPrice(variationPrice);
-					product.setCategory1(category1);
-					product.setCategory2(category2);
-					product.setCategory3(category3);
-					product.setPrimaryImage(primaryImage);
-					product.setSecondaryImages(secondaryImages);
-					product.setDescription(description);
-					product.setStock(stock);
-					product.setMarketplace(marketplace);
-					product.setAvailable(variationAvailable);
-
-					products.add(product);
-
-				}
-
-			}
-
-			// tem um produto apenas
-			else {
-
-				Product product = new Product();
-				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(internalID);
-				product.setName(name);
-				product.setPrice(price);
-				product.setCategory1(category1);
-				product.setCategory1(category2);
-				product.setCategory1(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
-				product.setAvailable(available);
-
-				products.add(product);
-
-			}
-
-
+			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -218,5 +161,56 @@ public class BrasilCitylarCrawler extends Crawler {
 	private boolean isProductPage(String url, Document document) {
 		Element elementProduct = document.select("#ProdutoDetalhes").first();
 		return url.startsWith("http://www.citylar.com.br/Produto/") && (elementProduct != null);
+	}
+	
+	private ArrayList<String> crawlCategories(Document document) {
+		ArrayList<String> categories = new ArrayList<String>();
+		Elements elementCategories = document.select(".breadcrumbs-itens a");
+
+		for (int i = 0; i < elementCategories.size(); i++) { 
+			categories.add( elementCategories.get(i).text().trim() );
+		}
+
+		return categories;
+	}
+
+	private String getCategory(ArrayList<String> categories, int n) {
+		if (n < categories.size()) {
+			return categories.get(n);
+		}
+
+		return "";
+	}
+
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+			Elements parcelas = doc.select("#ProdutoDetalhesParcelamentoJuros p");
+
+			if(parcelas.size() > 0){
+				for(Element e : parcelas){
+					String parcela = e.text().toLowerCase();
+
+					int x = parcela.indexOf("x");
+					int y = parcela.indexOf("r$");
+
+					Integer installment = Integer.parseInt(parcela.substring(0, x).trim());
+					Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					installmentsPriceMap.put(installment, priceInstallment);
+				}
+
+				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
+			}
+		}
+
+		return prices;
 	}
 }
