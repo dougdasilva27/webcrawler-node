@@ -115,7 +115,7 @@ public class BrasilShopfatoCrawler extends Crawler {
 
 				// Marketplace map
 				Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
-
+				
 				// Availability
 				boolean available = crawlAvailability(marketplaceMap);
 
@@ -245,12 +245,10 @@ public class BrasilShopfatoCrawler extends Crawler {
 	private boolean crawlAvailability(Map<String, Float> marketplaceMap) {
 		for (String seller : marketplaceMap.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER_CASE)) {
-				if ( marketplaceMap.get(seller).equals(0.0f) ) {
-					return false;
-				}
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	private Float crawlPrice(Map<String, Float> marketplaceMap) {
@@ -330,8 +328,9 @@ public class BrasilShopfatoCrawler extends Crawler {
 					Double priceSellerDouble = seller.getDouble("Price");
 					Float sellerPrice = priceSellerDouble.floatValue();
 					
-	
-					marketplaceMap.put(sellerName, sellerPrice);
+					if(!sellerPrice.equals(0.0f)){
+						marketplaceMap.put(sellerName, sellerPrice);
+					}
 				}
 			}
 		}
