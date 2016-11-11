@@ -12,7 +12,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -47,7 +47,7 @@ public class BrasilLeroymerlinCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.leroymerlin.com.br/";
 
-	public BrasilLeroymerlinCrawler(CrawlerSession session) {
+	public BrasilLeroymerlinCrawler(Session session) {
 		super(session);
 	}
 

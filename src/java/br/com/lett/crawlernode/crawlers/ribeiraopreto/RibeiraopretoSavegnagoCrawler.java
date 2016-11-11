@@ -16,7 +16,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class RibeiraopretoSavegnagoCrawler extends Crawler {
@@ -38,7 +38,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.savegnagoonline.com.br/";
 	private final String HOME_PAGE_SPECIAL = "http://www.savegnago.com.br/";
 	
-	public RibeiraopretoSavegnagoCrawler(CrawlerSession session) {
+	public RibeiraopretoSavegnagoCrawler(Session session) {
 		super(session);
 	}
 

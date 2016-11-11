@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -26,7 +26,7 @@ public class BrasilBemolCrawler extends Crawler {
 	private final String HOME_PAGE_HTTP = "http://www.bemol.com.br/loja/";
 	private final String HOME_PAGE_HTTPS = "https://www.bemol.com.br/loja/";
 
-	public BrasilBemolCrawler(CrawlerSession session) {
+	public BrasilBemolCrawler(Session session) {
 		super(session);
 	}
 

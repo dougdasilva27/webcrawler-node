@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -68,7 +68,7 @@ public class BrasilMultiarCrawler extends Crawler {
 	private final String DESCRIPTION_SELECTOR 								= "#descricao";
 	private final String SPECS_SELECTOR										= "#especificacoes";
 
-	public BrasilMultiarCrawler(CrawlerSession session) {
+	public BrasilMultiarCrawler(Session session) {
 		super(session);
 	}
 

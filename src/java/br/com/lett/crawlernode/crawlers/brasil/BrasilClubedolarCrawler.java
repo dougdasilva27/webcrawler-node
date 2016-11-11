@@ -16,7 +16,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -55,7 +55,7 @@ public class BrasilClubedolarCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.clubedolar.com.br/";
 
-	public BrasilClubedolarCrawler(CrawlerSession session) {
+	public BrasilClubedolarCrawler(Session session) {
 		super(session);
 	}
 

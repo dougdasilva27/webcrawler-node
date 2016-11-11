@@ -12,14 +12,14 @@ import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class CampograndeComperCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.comperdelivery.com.br/";
 
-	public CampograndeComperCrawler(CrawlerSession session) {
+	public CampograndeComperCrawler(Session session) {
 		super(session);
 	}	
 

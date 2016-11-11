@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.PageContent;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -32,9 +32,9 @@ public class Parser {
 
 	private final HtmlParser htmlParser;
 	private final ParseContext parseContext;
-	private CrawlerSession session;
+	private Session session;
 
-	public Parser(CrawlerSession session) {
+	public Parser(Session session) {
 		htmlParser = new HtmlParser();
 		parseContext = new ParseContext();
 		this.session = session;

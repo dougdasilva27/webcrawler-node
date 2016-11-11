@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -26,7 +26,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.megamamute.com.br/";
 	private final String MAIN_SELLER_LOWER_CASE = "megamamute";
 
-	public BrasilMegamamuteCrawler(CrawlerSession session) {
+	public BrasilMegamamuteCrawler(Session session) {
 		super(session);
 	}
 

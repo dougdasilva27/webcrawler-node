@@ -10,14 +10,14 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class RiodejaneiroExtraplusCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.extraplus.com.br/";
 
-	public RiodejaneiroExtraplusCrawler(CrawlerSession session) {
+	public RiodejaneiroExtraplusCrawler(Session session) {
 		super(session);
 	}
 

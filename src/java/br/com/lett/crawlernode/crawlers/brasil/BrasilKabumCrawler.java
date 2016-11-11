@@ -14,14 +14,14 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilKabumCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.kabum.com.br";
 
-	public BrasilKabumCrawler(CrawlerSession session) {
+	public BrasilKabumCrawler(Session session) {
 		super(session);
 	}
 

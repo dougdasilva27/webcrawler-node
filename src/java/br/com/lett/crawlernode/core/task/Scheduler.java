@@ -14,13 +14,15 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.server.Queue;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
+
 
 public class Scheduler {
 
@@ -28,7 +30,7 @@ public class Scheduler {
 
 
 	public static void scheduleImages(
-			CrawlerSession session,
+			Session session,
 			QueueHandler queueHandler,
 			ProcessedModel processed,
 			Long processedId) {
@@ -79,9 +81,9 @@ public class Scheduler {
 				// send the batch
 				SendMessageBatchResult result = null;
 				if (session instanceof TestCrawlerSession) {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
+					result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.DEVELOPMENT), Queue.DEVELOPMENT, entries);
 				} else {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
+					result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.IMAGES), Queue.IMAGES, entries);
 				}
 
 				// get send request results
@@ -137,9 +139,9 @@ public class Scheduler {
 
 			SendMessageBatchResult result = null;
 			if (session instanceof TestCrawlerSession) {
-				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, entries);
+				result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.DEVELOPMENT), Queue.DEVELOPMENT, entries);
 			} else {
-				result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, entries);
+				result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.IMAGES), Queue.IMAGES, entries);
 			}
 
 			List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();

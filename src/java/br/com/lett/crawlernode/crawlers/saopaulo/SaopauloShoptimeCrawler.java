@@ -17,12 +17,12 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloShoptimeCrawler extends Crawler {
 
-	public SaopauloShoptimeCrawler(CrawlerSession session) {
+	public SaopauloShoptimeCrawler(Session session) {
 		super(session);
 	}
 

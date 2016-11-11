@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -57,7 +57,7 @@ public class BrasilCasashowCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.casashow.com.br/";
 	private final String SELLER_NAME_LOWER = "casashow";
 	
-	public BrasilCasashowCrawler(CrawlerSession session) {
+	public BrasilCasashowCrawler(Session session) {
 		super(session);
 	}
 

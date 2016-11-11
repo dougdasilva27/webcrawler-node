@@ -24,7 +24,7 @@ import com.mongodb.client.MongoDatabase;
 import br.com.lett.crawlernode.core.imgprocessing.ImageComparationResult;
 import br.com.lett.crawlernode.core.imgprocessing.ImageComparator;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
@@ -270,7 +270,7 @@ public class DigitalContentAnalyser {
 	}
 
 	public static JSONObject similaritySIFT(
-			CrawlerSession session,
+			Session session,
 			MongoDatabase mongo, 
 			DatabaseManager db, 
 			String currentMd5, 
@@ -293,7 +293,7 @@ public class DigitalContentAnalyser {
 	}
 
 	public static JSONObject compareReference(
-			CrawlerSession session,
+			Session session,
 			MongoDatabase mongo, 
 			String md5, 
 			String referenceMd5) {
@@ -325,7 +325,7 @@ public class DigitalContentAnalyser {
 	 * @return
 	 */
 	public static JSONObject compareSiblings(
-			CrawlerSession session,
+			Session session,
 			MongoDatabase mongo, 
 			DatabaseManager db, 
 			Long lettId, 
@@ -444,7 +444,7 @@ public class DigitalContentAnalyser {
 	 * @return Classe de resultado contendo dados de resultado da comparação
 	 */
 	public static ImageComparationResult compareSIFT(
-			CrawlerSession session,
+			Session session,
 			MongoDatabase mongo, 
 			String md5, 
 			String md5Desired) {

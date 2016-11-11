@@ -15,14 +15,14 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilDafitiCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.dafiti.com.br/";
 
-	public BrasilDafitiCrawler(CrawlerSession session) {
+	public BrasilDafitiCrawler(Session session) {
 		super(session);
 	}	
 

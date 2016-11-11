@@ -26,7 +26,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
@@ -302,7 +302,7 @@ public class ResultManager {
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
-	public ProcessedModel processProduct(ProcessedModel pm, CrawlerSession session) {	
+	public ProcessedModel processProduct(ProcessedModel pm, Session session) {	
 		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
 		// preventing extra field to be null
@@ -338,7 +338,7 @@ public class ResultManager {
 	 * @param pm
 	 * @param session
 	 */
-	private void updateDigitalContent(ProcessedModel pm, CrawlerSession session) {  
+	private void updateDigitalContent(ProcessedModel pm, Session session) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
 
 		// if the processed model doesn't have a digital content
@@ -502,7 +502,7 @@ public class ResultManager {
 	 * @param session
 	 * @return the json object containing the reference digital content or an empty json object
 	 */
-	private JSONObject fetchReferenceDigitalContent(Long lettId, CrawlerSession session) {
+	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
 		try {
 			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
 			while(rs.next()) {

@@ -23,8 +23,8 @@ import org.bson.Document;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -49,7 +49,7 @@ public class Persistence {
 	 * @param product
 	 * @param session
 	 */
-	public static void persistProduct(Product product, CrawlerSession session) {
+	public static void persistProduct(Product product, Session session) {
 		Logging.printLogDebug(logger, session, "Persisting crawled product...");
 
 		// get crawled information
@@ -189,7 +189,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -199,7 +199,7 @@ public class Persistence {
 	 * @param session
 	 * @return
 	 */
-	public static PersistenceResult persistProcessedProduct(ProcessedModel newProcessedProduct, CrawlerSession session) {
+	public static PersistenceResult persistProcessedProduct(ProcessedModel newProcessedProduct, Session session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
 		
 		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
@@ -318,7 +318,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, "Error updating processed product.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 			
 			return null;
 		}
@@ -332,7 +332,7 @@ public class Persistence {
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
 	 */
-	public static void setProcessedVoidTrue(ProcessedModel processed, CrawlerSession session) {
+	public static void setProcessedVoidTrue(ProcessedModel processed, Session session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed SET void=true, ");
@@ -352,7 +352,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, "Error updating processed product void.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -362,7 +362,7 @@ public class Persistence {
 	 * @param nowISO
 	 * @param session
 	 */
-	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, Session session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed set lrt=" + "'" + nowISO + "'" + " ");
@@ -378,7 +378,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, "Error updating processed product LRT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
 
@@ -388,7 +388,7 @@ public class Persistence {
 	 * @param nowISO
 	 * @param session
 	 */
-	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, CrawlerSession session) {
+	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, Session session) {
 		StringBuilder query = new StringBuilder();
 
 		query.append("UPDATE processed set lmt=" + "'" + nowISO + "'" + " ");
@@ -404,7 +404,7 @@ public class Persistence {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 
 	}
@@ -416,7 +416,7 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void setTaskStatusOnMongo(String status, CrawlerSession session, MongoDatabase mongoDatabase) {
+	public static void setTaskStatusOnMongo(String status, Session session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
@@ -443,7 +443,7 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void appendProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
+	public static void appendProcessedIdOnMongo(Long processedId, Session session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
@@ -469,7 +469,7 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void appendCreatedProcessedIdOnMongo(Long processedId, CrawlerSession session, MongoDatabase mongoDatabase) {
+	public static void appendCreatedProcessedIdOnMongo(Long processedId, Session session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
@@ -494,7 +494,7 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void insertProcessedIdOnMongo(CrawlerSession session, MongoDatabase mongoDatabase) {
+	public static void insertProcessedIdOnMongo(Session session, MongoDatabase mongoDatabase) {
 		try {
 			if (mongoDatabase != null) {
 				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);

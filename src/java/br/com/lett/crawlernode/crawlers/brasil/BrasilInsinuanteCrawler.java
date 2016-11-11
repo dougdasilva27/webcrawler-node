@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -23,7 +23,7 @@ public class BrasilInsinuanteCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.insinuante.com.br";
 
-	public BrasilInsinuanteCrawler(CrawlerSession session) {
+	public BrasilInsinuanteCrawler(Session session) {
 		super(session);
 	}
 

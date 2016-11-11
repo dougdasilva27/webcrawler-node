@@ -10,14 +10,12 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
@@ -75,41 +73,41 @@ public class QueueService {
 		List<Message> messages = null;
 
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			Logging.printLogDebug(logger, "Requesting messages from " + QueueHandler.DEVELOPMENT + "...");
-			messages = requestMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT), QueueHandler.DEVELOPMENT, maxNumberOfMessages);
+			Logging.printLogDebug(logger, "Requesting messages from " + Queue.DEVELOPMENT + "...");
+			messages = requestMessages(queueHandler.getQueue(Queue.DEVELOPMENT), Queue.DEVELOPMENT, maxNumberOfMessages);
 			result.setMessages(messages);
-			result.setQueueName(QueueHandler.DEVELOPMENT);
+			result.setQueueName(Queue.DEVELOPMENT);
 			return result;
 		}
 		
 		if (Main.executionParameters.isImageTaskActivated()) { // if image task is activated, we want to solve only those types of tasks.
-			messages = requestMessages(queueHandler.getQueue(QueueHandler.IMAGES), QueueHandler.IMAGES, maxNumberOfMessages);
+			messages = requestMessages(queueHandler.getQueue(Queue.IMAGES), Queue.IMAGES, maxNumberOfMessages);
 			if (!messages.isEmpty()) {
 				result.setMessages(messages);
-				result.setQueueName(QueueHandler.IMAGES);
+				result.setQueueName(Queue.IMAGES);
 				return result;
 			}
 			return result;
 		}
 
-		messages = requestMessages(queueHandler.getQueue(QueueHandler.SEED), QueueHandler.SEED, maxNumberOfMessages);
+		messages = requestMessages(queueHandler.getQueue(Queue.SEED), Queue.SEED, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
-			result.setQueueName(QueueHandler.SEED);
+			result.setQueueName(Queue.SEED);
 			return result;
 		}
 
-		messages = requestMessages(queueHandler.getQueue(QueueHandler.INSIGHTS), QueueHandler.INSIGHTS, maxNumberOfMessages);
+		messages = requestMessages(queueHandler.getQueue(Queue.INSIGHTS), Queue.INSIGHTS, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
-			result.setQueueName(QueueHandler.INSIGHTS);
+			result.setQueueName(Queue.INSIGHTS);
 			return result;
 		}
 
-		messages = requestMessages(queueHandler.getQueue(QueueHandler.DISCOVER), QueueHandler.DISCOVER, maxNumberOfMessages);
+		messages = requestMessages(queueHandler.getQueue(Queue.DISCOVER), Queue.DISCOVER, maxNumberOfMessages);
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
-			result.setQueueName(QueueHandler.DISCOVER);
+			result.setQueueName(Queue.DISCOVER);
 			return result;
 		}
 
@@ -187,7 +185,7 @@ public class QueueService {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
 		// message from the images queue must have the secondary field in it's attributes
-		if (queueName.equals(QueueHandler.IMAGES)) {
+		if (queueName.equals(Queue.IMAGES)) {
 			return checkImageCrawlingMessageIntegrity(message);
 		}
 
@@ -201,7 +199,7 @@ public class QueueService {
 		}
 
 		// specific fields according with queue type
-		if (queueName.equals(QueueHandler.INSIGHTS)) {
+		if (queueName.equals(Queue.INSIGHTS)) {
 			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 				if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
 					Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
@@ -272,19 +270,19 @@ public class QueueService {
 	 * @return The appropriate queue URL
 	 */
 	private static String selectQueueURL(String queueName) {
-		if (queueName.equals(QueueHandler.SEED)) return SEED_QUEUE_URL;
-		if (queueName.equals(QueueHandler.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(Queue.SEED)) return SEED_QUEUE_URL;
+		if (queueName.equals(Queue.SEED_DEAD)) return SEED_DEAD_LETTER_QUEUE_URL;
 
-		if (queueName.equals(QueueHandler.INSIGHTS)) return INSIGHTS_QUEUE_URL;
-		if (queueName.equals(QueueHandler.INSIGHTS_DEAD)) return INSIGHTS_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(Queue.INSIGHTS)) return INSIGHTS_QUEUE_URL;
+		if (queueName.equals(Queue.INSIGHTS_DEAD)) return INSIGHTS_DEAD_LETTER_QUEUE_URL;
 
-		if (queueName.equals(QueueHandler.IMAGES)) return IMAGES_QUEUE_URL;
-		if (queueName.equals(QueueHandler.IMAGES_DEAD)) return IMAGES_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(Queue.IMAGES)) return IMAGES_QUEUE_URL;
+		if (queueName.equals(Queue.IMAGES_DEAD)) return IMAGES_DEAD_LETTER_QUEUE_URL;
 
-		if (queueName.equals(QueueHandler.DISCOVER)) return DISCOVERY_QUEUE_URL;
-		if (queueName.equals(QueueHandler.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
+		if (queueName.equals(Queue.DISCOVER)) return DISCOVERY_QUEUE_URL;
+		if (queueName.equals(Queue.DISCOVER_DEAD)) return DISCOVERY_DEAD_LETTER_QUEUE_URL;
 
-		if (queueName.equals(QueueHandler.DEVELOPMENT)) return DEVELOMENT_QUEUE_URL;
+		if (queueName.equals(Queue.DEVELOPMENT)) return DEVELOMENT_QUEUE_URL;
 
 		Logging.printLogError(logger, "Unrecognized queue.");
 

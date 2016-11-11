@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -64,7 +64,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 	private final String DESCRIPTION_SELECTOR 								= "#product-description";
 	private final String SPECS_SELECTOR										= "#product-specification";
 
-	public BrasilFrigelarCrawler(CrawlerSession session) {
+	public BrasilFrigelarCrawler(Session session) {
 		super(session);
 	}
 

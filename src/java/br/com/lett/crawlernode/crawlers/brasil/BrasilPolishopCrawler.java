@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -68,7 +68,7 @@ public class BrasilPolishopCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.polishop.com.br/";
 
-	public BrasilPolishopCrawler(CrawlerSession session) {
+	public BrasilPolishopCrawler(Session session) {
 		super(session);
 	}
 

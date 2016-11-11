@@ -10,7 +10,7 @@ import org.apache.commons.cli.ParseException;
 import br.com.lett.crawlernode.core.fetcher.Proxies;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
 import br.com.lett.crawlernode.core.task.TaskFactory;
@@ -92,7 +92,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			CrawlerSession session = SessionFactory.createSession("http://www.schumann.com.br/mini-system-lg-cm8360-2-usb-bluetooth-auto-dj-2200w-bivolt/p", market);
+			Session session = SessionFactory.createSession("http://www.schumann.com.br/mini-system-lg-cm8360-2-usb-bluetooth-auto-dj-2200w-bivolt/p", market);
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
 

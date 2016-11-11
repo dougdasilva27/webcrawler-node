@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -70,7 +70,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 	private final String SKU_AJAX_METHOD 		= "DisponibilidadeSKU";
 	private final String VARIATION_NAME_PAYLOAD = "ColorCode";
 
-	public BrasilSipolattiCrawler(CrawlerSession session) {
+	public BrasilSipolattiCrawler(Session session) {
 		super(session);
 	}
 

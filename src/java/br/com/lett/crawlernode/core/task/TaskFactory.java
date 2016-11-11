@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.crawler.ImageCrawler;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
@@ -31,7 +31,7 @@ public class TaskFactory {
 	 * @param session
 	 * @return
 	 */
-	public static Runnable createTask(CrawlerSession session) {
+	public static Runnable createTask(Session session) {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
 		if (session instanceof InsightsCrawlerSession || 
@@ -56,7 +56,7 @@ public class TaskFactory {
 	 * @param controllerClassName The name of the controller class
 	 * @return Controller instance
 	 */
-	private static Runnable createCrawlerTask(CrawlerSession session) {
+	private static Runnable createCrawlerTask(Session session) {
 
 		// assemble the class name
 		String taskClassName = assembleClassName(session.getMarket());
@@ -64,7 +64,7 @@ public class TaskFactory {
 		try {
 
 			// instantiating a crawler task with the given session as it's constructor parameter
-			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(CrawlerSession.class);
+			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
 			Runnable task = (Runnable) constructor.newInstance(session);
 
 			return task;
@@ -81,7 +81,7 @@ public class TaskFactory {
 	 * @param session
 	 * @return
 	 */
-	private static Runnable createImageCrawlerTask(CrawlerSession session) {
+	private static Runnable createImageCrawlerTask(Session session) {
 		return new ImageCrawler(session);
 	}
 

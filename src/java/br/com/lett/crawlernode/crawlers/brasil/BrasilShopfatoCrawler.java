@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -62,7 +62,7 @@ public class BrasilShopfatoCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.shopfato.com.br/";
 	private final String MAIN_SELLER_NAME_LOWER_CASE = "shopfato";
 
-	public BrasilShopfatoCrawler(CrawlerSession session) {
+	public BrasilShopfatoCrawler(Session session) {
 		super(session);
 	}
 

@@ -15,7 +15,7 @@ import com.mongodb.client.MongoDatabase;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Prices;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -328,7 +328,7 @@ public class ProcessedModel {
 	/**
 	 * Método que avalia o truco b
 	 */
-	public boolean compareHugeChanges(ProcessedModel truco, CrawlerSession session) {
+	public boolean compareHugeChanges(ProcessedModel truco, Session session) {
 
 		// Verificando se foi criado agora
 		if(truco == null) {

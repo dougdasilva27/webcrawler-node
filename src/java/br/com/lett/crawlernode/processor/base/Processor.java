@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
@@ -39,7 +39,7 @@ public class Processor {
 	 */
 	public static ProcessedModel createProcessed(
 			Product product, 
-			CrawlerSession session, 
+			Session session, 
 			ProcessedModel previousProcessedProduct, 
 			ResultManager processorResultManager) {
 
@@ -216,7 +216,7 @@ public class Processor {
 			String internal_id,
 			String url,
 			String name,
-			CrawlerSession session) {
+			Session session) {
 		if((price == null || price.equals(0f)) && available) {
 			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
 			return false;
@@ -255,7 +255,7 @@ public class Processor {
 			boolean available,
 			Float price,
 			JSONArray marketplace,
-			CrawlerSession session) {
+			Session session) {
 		
 		DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 		
@@ -411,7 +411,7 @@ public class Processor {
 	 * @param session
 	 * @return the current ProcessedModel stored on database, or null if the product doesn't yet exists on processed table.
 	 */
-	public static ProcessedModel fetchPreviousProcessed(Product product, CrawlerSession session) {
+	public static ProcessedModel fetchPreviousProcessed(Product product, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
 
 		ProcessedModel actualProcessedProduct = null;

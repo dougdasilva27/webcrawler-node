@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -61,7 +61,7 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 
 	private final Float BANK_SLIP_DISCOUNT_RATE = 0.05f;
 
-	public BrasilEletronicasantanaCrawler(CrawlerSession session) {
+	public BrasilEletronicasantanaCrawler(Session session) {
 		super(session);
 	}
 

@@ -15,12 +15,12 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloExtraCrawler extends Crawler {
 
-	public SaopauloExtraCrawler(CrawlerSession session) {
+	public SaopauloExtraCrawler(Session session) {
 		super(session);
 	}
 	

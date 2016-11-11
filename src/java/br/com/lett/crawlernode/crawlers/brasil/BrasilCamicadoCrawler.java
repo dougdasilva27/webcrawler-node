@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -54,7 +54,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.camicado.com.br/";
 
-	public BrasilCamicadoCrawler(CrawlerSession session) {
+	public BrasilCamicadoCrawler(Session session) {
 		super(session);
 	}
 

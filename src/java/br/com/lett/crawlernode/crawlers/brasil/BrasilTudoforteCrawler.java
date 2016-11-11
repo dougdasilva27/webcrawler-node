@@ -15,8 +15,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -25,7 +25,7 @@ public class BrasilTudoforteCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.tudoforte.com.br";
 
-	public BrasilTudoforteCrawler(CrawlerSession session) {
+	public BrasilTudoforteCrawler(Session session) {
 		super(session);
 	}
 
@@ -53,7 +53,7 @@ public class BrasilTudoforteCrawler extends Crawler {
 			try {
 				params = URLEncodedUtils.parse(new URI(actionFormComprar), "UTF-8");
 			} catch (URISyntaxException e) {
-				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+				SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
 				session.registerError(error);
 			}
 			

@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -34,7 +34,7 @@ public class BrasilFastshopCrawler extends Crawler {
 	private final String HOME_PAGE_HTTP = "http://www.fastshop.com.br/";
 	private final String HOME_PAGE_HTTPS = "https://www.fastshop.com.br";
 
-	public BrasilFastshopCrawler(CrawlerSession session) {
+	public BrasilFastshopCrawler(Session session) {
 		super(session);
 	}
 

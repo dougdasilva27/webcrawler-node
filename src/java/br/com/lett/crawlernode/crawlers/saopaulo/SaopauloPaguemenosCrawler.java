@@ -13,7 +13,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -50,7 +50,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class SaopauloPaguemenosCrawler extends Crawler {
 	private final String HOME_PAGE = "http://loja.paguemenos.com.br/";
 
-	public SaopauloPaguemenosCrawler(CrawlerSession session) {
+	public SaopauloPaguemenosCrawler(Session session) {
 		super(session);
 	}
 

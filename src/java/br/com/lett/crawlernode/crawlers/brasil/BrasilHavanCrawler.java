@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -61,7 +61,7 @@ public class BrasilHavanCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.havan.com.br/";
 
-	public BrasilHavanCrawler(CrawlerSession session) {
+	public BrasilHavanCrawler(Session session) {
 		super(session);
 	}
 

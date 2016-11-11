@@ -15,9 +15,9 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.server.QueueService;
 
-public class CrawlerSession {
+public class Session {
 
-	protected static final Logger logger = LoggerFactory.getLogger(CrawlerSession.class);
+	protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
 	public static final String DISCOVERY_TYPE 	= "discovery";
 	public static final String SEED_TYPE 		= "seed";
@@ -48,7 +48,7 @@ public class CrawlerSession {
 	protected Market market;
 
 	/** Errors occurred during crawling session */
-	protected ArrayList<CrawlerSessionError> crawlerSessionErrors;
+	protected ArrayList<SessionError> crawlerSessionErrors;
 	
 	/** The maximum number of connection attempts to be made when crawling normal information */
 	protected int maxConnectionAttemptsWebcrawler;
@@ -60,25 +60,25 @@ public class CrawlerSession {
 	/**
 	 * Default empty constructor
 	 */
-	public CrawlerSession() {
+	public Session() {
 		super();
 
 		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+		this.crawlerSessionErrors = new ArrayList<SessionError>();
 
 		// creating the map of redirections
 		this.redirectionMap = new HashMap<String, String>();
 		
 	}
 
-	public CrawlerSession(Message message, String queueName, Markets markets) {
+	public Session(Message message, String queueName, Markets markets) {
 		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
 
 		// setting queue name
 		this.queueName = queueName;
 
 		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+		this.crawlerSessionErrors = new ArrayList<SessionError>();
 
 		// creating the map of redirections
 		this.redirectionMap = new HashMap<String, String>();
@@ -214,11 +214,11 @@ public class CrawlerSession {
 		return sb.toString();
 	}
 
-	public ArrayList<CrawlerSessionError> getErrors() {
+	public ArrayList<SessionError> getErrors() {
 		return crawlerSessionErrors;
 	}
 
-	public void registerError(CrawlerSessionError error) {
+	public void registerError(SessionError error) {
 		crawlerSessionErrors.add(error);
 	}
 

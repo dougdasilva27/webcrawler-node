@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -58,7 +58,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
 	private final String HOME_PAGE = "https://www.econtinental.com.br/";
 
-	public BrasilEcontinentalCrawler(CrawlerSession session) {
+	public BrasilEcontinentalCrawler(Session session) {
 		super(session);
 	}
 

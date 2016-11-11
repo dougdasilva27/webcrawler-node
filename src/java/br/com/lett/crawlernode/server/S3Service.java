@@ -28,7 +28,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -67,7 +67,7 @@ public class S3Service {
 	 * @param name
 	 * @return
 	 */
-	public static ObjectMetadata fetchObjectMetadata(CrawlerSession session, String name) {
+	public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 		try {
@@ -87,7 +87,7 @@ public class S3Service {
 		}
 	}
 	
-	public static S3Object fetchS3Object(CrawlerSession session, String name) {
+	public static S3Object fetchS3Object(Session session, String name) {
 		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 		AmazonS3 s3client = new AmazonS3Client(credentials);
 		try {
@@ -107,7 +107,7 @@ public class S3Service {
 		}
 	}
 	
-	public static void uploadImageToAmazon(CrawlerSession session, String md5) {
+	public static void uploadImageToAmazon(Session session, String md5) {
 		int number = ((ImageCrawlerSession)session).getNumber();
 		
 		String md5Path = ((ImageCrawlerSession)session).getMd5AmazonPath();
@@ -186,7 +186,7 @@ public class S3Service {
 	 * @param session
 	 * @param file
 	 */
-	public static void uploadFileToAmazon(CrawlerSession session, File file) {
+	public static void uploadFileToAmazon(Session session, File file) {
 		
 		String amazonLocation = session.getSessionId() + "/" + session.getSessionId() + ".png";
 
@@ -221,7 +221,7 @@ public class S3Service {
 	 * @param session
 	 * @param file
 	 */
-	public static void uploadContentToAmazon(CrawlerSession session, String requestHash, String html) {		
+	public static void uploadContentToAmazon(Session session, String requestHash, String html) {		
 		String amazonLocation = session.getSessionId() + "/" + requestHash + ".html";
 		File htmlFile = null;
 	
@@ -261,11 +261,11 @@ public class S3Service {
 		}
 	}
 	
-	public static File fetchImageFromAmazon(CrawlerSession session, String key) {
+	public static File fetchImageFromAmazon(Session session, String key) {
 		return fetchImageFromAmazon(session, key, 1); 
 	}
 	
-	private static File fetchImageFromAmazon(CrawlerSession session, String key, int attempt) {
+	private static File fetchImageFromAmazon(Session session, String key, int attempt) {
 		
 		//if(attempt > 3) return null; 
 		
@@ -314,11 +314,11 @@ public class S3Service {
 		
 	}
 	
-	public static String fetchMd5FromAmazon(CrawlerSession session, String key) {
+	public static String fetchMd5FromAmazon(Session session, String key) {
 		return fetchMd5FromAmazon(session, key, 1);
 	}
 	
-	private static String fetchMd5FromAmazon(CrawlerSession session, String key, int attempt) {
+	private static String fetchMd5FromAmazon(Session session, String key, int attempt) {
 		
 		//if(attempt > 3) return null; 
 		

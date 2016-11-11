@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -76,7 +76,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 	private final String MAIN_SELLER_NAME_LOWER = "pontofrio";
 	private final String HOME_PAGE = "http://www.pontofrio.com.br/";
 
-	public SaopauloPontofrioCrawler(CrawlerSession session) {
+	public SaopauloPontofrioCrawler(Session session) {
 		super(session);
 	}
 

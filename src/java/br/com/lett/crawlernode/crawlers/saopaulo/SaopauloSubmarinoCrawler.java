@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -64,7 +64,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.submarino.com.br/";
 	private final String MAIN_SELLER_NAME_LOWER = "submarino";
 
-	public SaopauloSubmarinoCrawler(CrawlerSession session) {
+	public SaopauloSubmarinoCrawler(Session session) {
 		super(session);
 	}
 

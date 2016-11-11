@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -73,7 +73,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloExtramarketplaceCrawler extends Crawler {
 
-	public SaopauloExtramarketplaceCrawler(CrawlerSession session) {
+	public SaopauloExtramarketplaceCrawler(Session session) {
 		super(session);
 	}
 

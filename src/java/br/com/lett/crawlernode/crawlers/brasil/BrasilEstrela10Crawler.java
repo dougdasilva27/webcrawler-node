@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -60,7 +60,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.estrela10.com.br/";
 	
-	public BrasilEstrela10Crawler(CrawlerSession session) {
+	public BrasilEstrela10Crawler(Session session) {
 		super(session);
 	}
 

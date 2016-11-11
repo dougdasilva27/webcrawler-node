@@ -10,7 +10,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilSaraivaCrawler extends Crawler {
@@ -19,7 +19,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
 
 
-	public BrasilSaraivaCrawler(CrawlerSession session) {
+	public BrasilSaraivaCrawler(Session session) {
 		super(session);
 	}
 

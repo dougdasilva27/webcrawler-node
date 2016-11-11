@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -66,7 +66,7 @@ public class BrasilPoloarCrawler extends Crawler {
 	private final String DESCRIPTION_SELECTOR 								= "#description";
 	private final String SPECS_SELECTOR										= "#specification";
 
-	public BrasilPoloarCrawler(CrawlerSession session) {
+	public BrasilPoloarCrawler(Session session) {
 		super(session);
 	}
 

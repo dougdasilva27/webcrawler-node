@@ -4,7 +4,7 @@ import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.core.models.Markets;
 
-public class SeedCrawlerSession extends CrawlerSession {
+public class SeedCrawlerSession extends Session {
 	
 	public SeedCrawlerSession(Message message, String queueName, Markets markets) {
 		super(message, queueName, markets);

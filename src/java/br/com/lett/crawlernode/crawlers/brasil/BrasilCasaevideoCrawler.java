@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -60,7 +60,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.casaevideo.com.br/";
 
-	public BrasilCasaevideoCrawler(CrawlerSession session) {
+	public BrasilCasaevideoCrawler(Session session) {
 		super(session);
 	}
 

@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilKalungaCrawler extends Crawler {
@@ -33,7 +33,7 @@ public class BrasilKalungaCrawler extends Crawler {
 	private final String REGEX_ORIGINAL = "/\\d+(?!_)\\."; // identificar quando temos algo do tipo /4534534.
 
 
-	public BrasilKalungaCrawler(CrawlerSession session) {
+	public BrasilKalungaCrawler(Session session) {
 		super(session);
 	}
 

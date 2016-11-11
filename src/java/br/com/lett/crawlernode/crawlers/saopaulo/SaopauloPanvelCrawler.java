@@ -10,7 +10,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloPanvelCrawler extends Crawler {
@@ -18,7 +18,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 	private final String HOME_PAGE_HTTP = "http://www.panvel.com/";
 	private final String HOME_PAGE_HTTPS = "https://www.panvel.com/";
 
-	public SaopauloPanvelCrawler(CrawlerSession session) {
+	public SaopauloPanvelCrawler(Session session) {
 		super(session);
 	}
 

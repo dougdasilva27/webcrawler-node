@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -53,7 +53,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.centralar.com.br/";
 	
-	public BrasilCentralarCrawler(CrawlerSession session) {
+	public BrasilCentralarCrawler(Session session) {
 		super(session);
 	}
 

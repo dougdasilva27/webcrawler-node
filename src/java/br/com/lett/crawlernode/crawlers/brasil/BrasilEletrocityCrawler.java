@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -27,7 +27,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 	private final String HOME_PAGE = "http://www.eletrocity.com.br/";
 	private final String ELETROCITY_SELLER_NAME_LOWER_CASE = "eletrocity";
 
-	public BrasilEletrocityCrawler(CrawlerSession session) {
+	public BrasilEletrocityCrawler(Session session) {
 		super(session);
 	}
 

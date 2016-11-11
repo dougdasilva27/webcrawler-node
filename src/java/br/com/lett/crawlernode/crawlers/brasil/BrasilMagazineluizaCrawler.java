@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.BrasilMagazineluizaCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -43,7 +43,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.magazineluiza.com.br/";
 
-	public BrasilMagazineluizaCrawler(CrawlerSession session) {
+	public BrasilMagazineluizaCrawler(Session session) {
 		super(session);
 	}
 

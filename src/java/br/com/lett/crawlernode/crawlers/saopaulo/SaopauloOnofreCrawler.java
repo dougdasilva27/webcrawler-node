@@ -11,7 +11,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -49,7 +49,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.onofre.com.br/";
 
-	public SaopauloOnofreCrawler(CrawlerSession session) {
+	public SaopauloOnofreCrawler(Session session) {
 		super(session);
 	}
 

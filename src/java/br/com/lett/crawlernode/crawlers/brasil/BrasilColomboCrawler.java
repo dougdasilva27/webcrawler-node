@@ -14,12 +14,12 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilColomboCrawler extends Crawler {
 
-	public BrasilColomboCrawler(CrawlerSession session) {
+	public BrasilColomboCrawler(Session session) {
 		super(session);
 	}
 

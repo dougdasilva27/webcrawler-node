@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -143,7 +143,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A string containing the page html content
 	 */
-	public static String fetchString(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+	public static String fetchString(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return fetchPage(reqType, session, url, urlParameters, cookies, 1);	
 	}
 
@@ -154,7 +154,7 @@ public class DataFetcher {
 	 * @return
 	 * @throws IOException
 	 */
-	public static File fetchImage(CrawlerSession session) throws IOException {
+	public static File fetchImage(Session session) throws IOException {
 		return downloadImageFromMarket(1, session);
 	}
 
@@ -168,7 +168,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A Document with the data from the url passed, or null if something went wrong.
 	 */
-	public static Document fetchDocument(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+	public static Document fetchDocument(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));	
 	}
 
@@ -182,7 +182,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONObject fetchJSONObject(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+	public static JSONObject fetchJSONObject(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
 		return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
@@ -196,7 +196,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONArray fetchJSONArray(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+	public static JSONArray fetchJSONArray(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
 		return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
@@ -207,11 +207,11 @@ public class DataFetcher {
 	 * @param session
 	 * @return The integer code. Null if we have an exception.
 	 */
-	public static Integer getUrlResponseCode(String url, CrawlerSession session) {
+	public static Integer getUrlResponseCode(String url, Session session) {
 		return getUrlResponseCode(url, session, 1);
 	}
 
-	public static Integer getUrlResponseCode(String url, CrawlerSession session, int attempt) {
+	public static Integer getUrlResponseCode(String url, Session session, int attempt) {
 		try {
 			URL urlObject = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, session, new ArrayList<String>()));
@@ -243,7 +243,7 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return a json object string, even if it is an empty json object
 	 */
-	private static String fetchJson(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) {
+	private static String fetchJson(String reqType, Session session, String url, String payload, List<Cookie> cookies, int attempt) {
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
@@ -275,7 +275,7 @@ public class DataFetcher {
 
 	}
 
-	private static String fetchJsonPOST(CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
+	private static String fetchJsonPOST(Session session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
@@ -427,7 +427,7 @@ public class DataFetcher {
 	 */
 	private static String fetchPage(
 			String reqType, 
-			CrawlerSession session, 
+			Session session, 
 			String url, 
 			String urlParameters, 
 			List<Cookie> cookies, 
@@ -476,7 +476,7 @@ public class DataFetcher {
 	 * @return
 	 */
 	private static String fetchPageGET(
-			CrawlerSession session, 
+			Session session, 
 			String url, 
 			List<Cookie> cookies, 
 			int attempt) {
@@ -681,7 +681,7 @@ public class DataFetcher {
 	 * @return the header value. Will return an empty string if the cookie wasn't found.
 	 */
 	public static Map<String,String> fetchCookies(
-			CrawlerSession session, 
+			Session session, 
 			String url,
 			List<Cookie> cookies, 
 			int attempt) {
@@ -862,7 +862,7 @@ public class DataFetcher {
 	 * @return the header value. Will return an empty string if the cookie wasn't found.
 	 */
 	public static String fetchCookie(
-			CrawlerSession session, 
+			Session session, 
 			String url,
 			String cookieName,
 			List<Cookie> cookies, 
@@ -1039,7 +1039,7 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return
 	 */
-	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
+	private static String fetchPagePOST(Session session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 
@@ -1209,7 +1209,7 @@ public class DataFetcher {
 
 	public static String fetchPagePOSTWithHeaders(
 			String url, 
-			CrawlerSession session, 
+			Session session, 
 			String urlParameters, 
 			List<Cookie> cookies, 
 			int attempt, 
@@ -1389,7 +1389,7 @@ public class DataFetcher {
 			String requestType, 
 			LettProxy proxy,
 			String userAgent,
-			CrawlerSession session, 
+			Session session, 
 			CloseableHttpResponse response,
 			String requestHash) {
 
@@ -1417,7 +1417,7 @@ public class DataFetcher {
 	 * @param session
 	 * @return String with the request response, either in html or plain text format
 	 */
-	private static String processContent(PageContent pageContent, CrawlerSession session) {		
+	private static String processContent(PageContent pageContent, Session session) {		
 		Parser parser = new Parser(session);
 		parser.parse(pageContent);
 
@@ -1436,7 +1436,7 @@ public class DataFetcher {
 	 */
 	private static File downloadImageFromMarket(
 			int attempt,
-			CrawlerSession session) {
+			Session session) {
 
 		File localFile = null;
 		LettProxy randProxy = null;
@@ -1591,7 +1591,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static LettProxy randLettProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
+	private static LettProxy randLettProxy(int attempt, Session session, ArrayList<String> proxyServices) {
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
@@ -1614,7 +1614,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static Proxy randProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {		
+	private static Proxy randProxy(int attempt, Session session, ArrayList<String> proxyServices) {		
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
@@ -1651,7 +1651,7 @@ public class DataFetcher {
 	 * @param session
 	 * @return
 	 */
-	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
+	private static LettProxy getNextProxy(String serviceName, Session session) {
 		LettProxy nextProxy = null;
 
 		if (session instanceof TestCrawlerSession) { // testing
@@ -1692,7 +1692,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static String getProxyService(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
+	private static String getProxyService(int attempt, Session session, ArrayList<String> proxyServices) {
 		String service = null;
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
@@ -1728,7 +1728,7 @@ public class DataFetcher {
 		return headerValue.substring(beginIndex, headerValue.length()).trim();
 	}
 
-	private static String generateRequestHash(CrawlerSession session) {
+	private static String generateRequestHash(Session session) {
 		String s = session.getSessionId() + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		return DigestUtils.md5Hex(s);
 	}

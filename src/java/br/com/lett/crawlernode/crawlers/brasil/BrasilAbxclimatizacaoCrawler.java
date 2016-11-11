@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -49,7 +49,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 	private final String HOME_PAGE = "https://www.abxclimatizacao.com.br/";
 
-	public BrasilAbxclimatizacaoCrawler(CrawlerSession session) {
+	public BrasilAbxclimatizacaoCrawler(Session session) {
 		super(session);
 	}
 

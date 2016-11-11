@@ -10,14 +10,14 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloEmporiodacervejaCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "http://www.emporiodacerveja.com.br/";
 
-	public SaopauloEmporiodacervejaCrawler(CrawlerSession session) {
+	public SaopauloEmporiodacervejaCrawler(Session session) {
 		super(session);
 	}
 
