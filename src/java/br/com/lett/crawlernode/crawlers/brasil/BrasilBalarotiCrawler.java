@@ -80,7 +80,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 
 			// Pid
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid(session.getOriginalURL());
 
 			// Name
 			String name = crawlName(doc);
@@ -176,9 +176,16 @@ public class BrasilBalarotiCrawler extends Crawler {
 		return internalId;
 	}
 
-	private String crawlInternalPid(Document document) {
+	private String crawlInternalPid(String url) {
 		String internalPid = null;
 
+		if(url.contains("?")){
+			url = url.split("?")[0];
+		}
+		
+		String[] tokens = url.split("/");
+		internalPid = tokens[tokens.length-1];
+		
 		return internalPid;
 	}
 	
