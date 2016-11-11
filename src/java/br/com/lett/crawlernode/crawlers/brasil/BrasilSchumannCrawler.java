@@ -517,7 +517,6 @@ public class BrasilSchumannCrawler extends Crawler {
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
 							(
 							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
@@ -527,12 +526,11 @@ public class BrasilSchumannCrawler extends Crawler {
 				}
 			}        
 		}
-		
-		try {
+		if (skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+		} else {
+			skuJsonArray = new JSONArray();
+		}		
 		
 		return skuJsonArray;
 	}
