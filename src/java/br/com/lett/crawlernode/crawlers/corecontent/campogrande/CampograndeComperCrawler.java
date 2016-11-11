@@ -1,5 +1,5 @@
 
-package br.com.lett.crawlernode.crawlers.campogrande;
+package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
 
 import java.util.ArrayList;
 import java.util.List;

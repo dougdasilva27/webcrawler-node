@@ -362,6 +362,7 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Performs any desired transformation on the URL before the actual fetching.
+	 * 
 	 * @param url the URL we want to modify
 	 * @return the modified URL, that will be used in the fetching
 	 */
@@ -407,7 +408,7 @@ public class Crawler implements Runnable {
 	/**
 	 * Contains all the logic to sku information extraction.
 	 * Must be implemented on subclasses.
-	 * By default, returns an empty product.
+	 * 
 	 * @param document
 	 * @return A product with all it's crawled informations
 	 */
