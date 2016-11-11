@@ -3,8 +3,6 @@ package br.com.lett.crawlernode.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 
 import com.amazonaws.AmazonClientException;

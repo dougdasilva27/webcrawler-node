@@ -120,34 +120,6 @@ public class CommonMethods {
 	}
 	
 	/**
-	 * Given a list of ordered disjoint intervals, select the interval where
-	 * the number n fits, using a binary search algorithm.
-	 * 
-	 * @param n
-	 * @param intervals
-	 * @return
-	 */
-	public static Interval<Integer> findInterval(List<Interval<Integer>> intervals, Integer n) {
-		if (intervals == null) return null;
-		
-		int beg = 0;
-		int end = intervals.size() - 1;
-		
-		while(beg <= end) {
-			int mid = (beg + end)/2;
-			if (intervals.get(mid).getStart() <= n && intervals.get(mid).getEnd() >= n) {
-				return intervals.get(mid);
-			} else if (intervals.get(mid).getStart() <= n) {
-				beg = mid + 1;
-			} else {
-				end = mid - 1;
-			}
-		}
-		
-		return null;
-	}
-	
-	/**
 	 * Print the stack trace of an exception on a String
 	 * @param e the exception we want the stack trace from
 	 * @return the string containing the stack trace

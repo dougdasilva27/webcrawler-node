@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 public class Proxies {
@@ -271,7 +272,7 @@ public class Proxies {
 		} else {
 			intervals = this.intervalsMarketsMapImages.get(market.getNumber());
 		}
-		Interval<Integer> interval = CommonMethods.findInterval(intervals, attempt);
+		Interval<Integer> interval = MathCommonsMethods.findInterval(intervals, attempt);
 		if (interval != null) return interval.getName();
 		return null;
 	}

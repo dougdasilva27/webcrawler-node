@@ -27,11 +27,11 @@ public class ExecutionParameters {
 	 */
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 
-	private static final String ENV_IMAGE_TASK 	= "IMAGE_TASK";
-	private static final String IMAGE_TASK_ON 	= "ON";
-	private static final String IMAGE_TASK_OFF 	= "OFF";
+	private static final String ENV_IMAGE_TASK 			= "IMAGE_TASK";
+	private static final String ENV_RATING_REVIEW_TASK 	= "RATING_REVIEW";
+	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
 
-	private static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
+	private static final String ON 						= "ON";
 
 	private Options options;
 	private String environment;
@@ -47,6 +47,7 @@ public class ExecutionParameters {
 
 	private String tmpImageFolder;
 	private boolean imageTaskActivated;
+	private boolean ratingAndReviewsTaskActivated;
 	private String[] args;
 
 	/**
@@ -76,6 +77,9 @@ public class ExecutionParameters {
 		// get the flag for image tasks on environment variable
 		this.imageTaskActivated = getEnvImageTaskActivated();
 
+		// get the flag for rating and review tasks on environment variable
+		this.imageTaskActivated = getEnvRateAndReviewTaskActivated();
+
 		Logging.printLogDebug(logger, this.toString());
 	}
 
@@ -96,6 +100,7 @@ public class ExecutionParameters {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
+		options.addOption("rating_reviews", false, "Running rating and reviews crawler");
 		options.addOption("environment", true, "Environment [development, production]");
 		options.addOption("version", true, "Crawler node version");
 		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
@@ -158,6 +163,8 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Image task activated: " + this.imageTaskActivated);
 		sb.append("\n");
+		sb.append("Rating and reviews: " + this.ratingAndReviewsTaskActivated);
+		sb.append("\n");
 		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
@@ -186,10 +193,17 @@ public class ExecutionParameters {
 	private boolean getEnvImageTaskActivated() {
 		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
 		if (imageTaskActivated == null) return false;
-		if (imageTaskActivated.equals(IMAGE_TASK_ON)) return true;
+		if (imageTaskActivated.equals(ON)) return true;
 		return false;
 	}
-	
+
+	private boolean getEnvRateAndReviewTaskActivated() {
+		String ratingAndReviewTaskActivated = System.getenv(ENV_RATING_REVIEW_TASK);
+		if (ratingAndReviewTaskActivated == null) return false;
+		if (ratingAndReviewTaskActivated.equals(ON)) return true;
+		return false;
+	}
+
 	public boolean mustForceImageUpdate() {
 		return forceImageUpdate;
 	}
@@ -220,6 +234,10 @@ public class ExecutionParameters {
 
 	public void setTmpImageFolder(String tmpImageFolder) {
 		this.tmpImageFolder = tmpImageFolder;
+	}
+
+	public boolean isRatingAndReviewActivated() {
+		return ratingAndReviewsTaskActivated;
 	}
 
 }

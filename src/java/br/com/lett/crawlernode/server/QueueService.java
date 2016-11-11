@@ -93,10 +93,20 @@ public class QueueService {
 	}
 
 	/**
+	 * Request for messages on the appropriate queue, according to the
+	 * priority rule.
+	 * The priority is:
+	 * 1) Rating and reviews, if the rating and reviews is activated
+	 * 2) Images, if images is activated
+	 * 
+	 * If none of the above is activated, we follow this priority:
+	 * 3) Seed
+	 * 4) Insights
+	 * 5) Discover
 	 * 
 	 * @param queueHandler
 	 * @param maxNumberOfMessages
-	 * @return
+	 * @return the selection result, containing all the fetched messages and the queue name.
 	 */
 	public static SQSRequestResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
 		SQSRequestResult result = new SQSRequestResult();
@@ -106,6 +116,13 @@ public class QueueService {
 			messages = requestMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, maxNumberOfMessages);
 			result.setMessages(messages);
 			result.setQueueName(QueueName.DEVELOPMENT);
+			return result;
+		}
+		
+		if (Main.executionParameters.isRatingAndReviewActivated()) {
+			messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS, maxNumberOfMessages);
+			result.setMessages(messages);
+			result.setQueueName(QueueName.RATING_REVIEWS);
 			return result;
 		}
 		
@@ -174,6 +191,7 @@ public class QueueService {
 	 */
 	private static List<Message> requestMessages(AmazonSQS sqs, String queueName, int maxNumberOfMessages) {
 		String queueURL = getQueueURL(queueName);
+		System.err.println("Request from " + queueURL);
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
@@ -301,7 +319,6 @@ public class QueueService {
 		if (queueURLMap.containsKey(queueName)) return queueURLMap.get(queueName);
 		
 		Logging.printLogError(logger, "Unrecognized queue.");
-		
 		return null;
 	}
 
