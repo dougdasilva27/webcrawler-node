@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.server.Queue;
+import br.com.lett.crawlernode.server.QueueName;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.Logging;
@@ -81,9 +81,9 @@ public class Scheduler {
 				// send the batch
 				SendMessageBatchResult result = null;
 				if (session instanceof TestCrawlerSession) {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.DEVELOPMENT), Queue.DEVELOPMENT, entries);
+					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
 				} else {
-					result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.IMAGES), Queue.IMAGES, entries);
+					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 				}
 
 				// get send request results
@@ -139,9 +139,9 @@ public class Scheduler {
 
 			SendMessageBatchResult result = null;
 			if (session instanceof TestCrawlerSession) {
-				result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.DEVELOPMENT), Queue.DEVELOPMENT, entries);
+				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
 			} else {
-				result = QueueService.sendBatchMessages(queueHandler.getQueue(Queue.IMAGES), Queue.IMAGES, entries);
+				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 			}
 
 			List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
