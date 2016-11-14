@@ -93,6 +93,7 @@ public class Test {
 			taskExecutor = new TaskExecutor(1, 1);
 
 			Session session = SessionFactory.createSession("http://www.schumann.com.br/mini-system-lg-cm8360-2-usb-bluetooth-auto-dj-2200w-bivolt/p", market);
+
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
 
