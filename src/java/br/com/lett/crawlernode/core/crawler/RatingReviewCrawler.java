@@ -1,10 +1,11 @@
 package br.com.lett.crawlernode.core.crawler;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -26,14 +27,15 @@ public class RatingReviewCrawler implements Runnable {
 	public void extract() {
 		Document document = fetch();
 		try {
-			extractRatingAndReviews(document);
+			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 	
-	protected void extractRatingAndReviews(Document document) throws Exception {
+	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
 		/* subclasses must implement */
+		return new RatingReviewsCollection();
 	}
 	
 	/**
@@ -42,7 +44,7 @@ public class RatingReviewCrawler implements Runnable {
 	 * @return Parsed HTML in form of a Document
 	 */
 	private Document fetch() {
-		return Jsoup.parse("");		
+		return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, null);	
 	}
 
 }
