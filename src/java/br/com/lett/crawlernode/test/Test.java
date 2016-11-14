@@ -92,7 +92,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			CrawlerSession session = SessionFactory.createSession("http://www.fastshop.com.br/loja/celular-e-telefone/smartphone/lg-smartphone/smartphone-lg-g5-dourado-32gb-h840-fast?cm_re=FASTSHOP%3ASub-departamento%3ALG-_-Vitrine%2B03-_-LGH840DRD", market);
+			CrawlerSession session = SessionFactory.createSession("http://www.fastshop.com.br/loja/moto-g4-plus-motorola-preto-32gb-xt1640-fast?feature=similaritems&source=product&cm_sp=product-_-Chaordic_similaritems-_-MRXT1640PTO_PRD&cm_re=product-_-Chaordic_similaritems-_-MRXT1640PTO_PRD", market);
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
 

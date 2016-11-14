@@ -115,7 +115,8 @@ public class BrasilFastshopCrawler extends Crawler {
 				// availability
 				boolean available = true;
 				Element unavailableElement = doc.select("#buy_holder_unavailable_button").first();
-				if (unavailableElement != null) {
+				Element soldBy = doc.select("div.mktPartnerProductPageAlign span[class^=mktPartner]").first();
+				if (unavailableElement != null || soldBy != null) {
 					available = false;
 				}
 
@@ -125,12 +126,32 @@ public class BrasilFastshopCrawler extends Crawler {
 					price = crawlPriceFromApi(internalId, internalPid);
 				}
 
-				// Marketplace
-				JSONArray marketplace = new JSONArray();
-
 				// Prices
 				Document docPrices = fetchPrices(internalId, price);
-				Prices prices = crawlPrices(docPrices);
+				Prices prices = null;
+				if (available) {
+					prices = crawlPrices(docPrices);
+				} else {
+					prices = new Prices();
+				}
+				
+				// Marketplace
+				JSONArray marketplace = new JSONArray();
+				Element mktElement = doc.select("div.mktPartnerProductPageAlign span[class^=mktPartner]").first();
+				if (mktElement != null) {
+					JSONObject seller = new JSONObject();
+					
+					Float mktPrice = crawlPriceFromApi(internalId, internalPid);
+					Prices mktPrices = crawlPrices(docPrices);
+					
+					seller.put("name", mktElement.text().toLowerCase().trim());
+					seller.put("price", mktPrice);
+					seller.put("prices", mktPrices.getPricesJson());
+					
+					if (mktPrice != null || mktPrices.getBankTicketPrice() != null) {
+						marketplace.put(seller);
+					}
+				}
 
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
@@ -178,13 +199,13 @@ public class BrasilFastshopCrawler extends Crawler {
 						variationAvailability = productInfo.getString("ShippingAvailability").equals("1");
 					}
 
-					// Preço					
+					// price					
 					Float price = null;
 					if (variationAvailability) {
 						price = crawlPriceFromApi(internalId, internalPid);
 					}
 
-					// Prices
+					// prices
 					Document docPrices = fetchPrices(internalId, price);
 					Prices prices = crawlPrices(docPrices);
 
@@ -308,7 +329,10 @@ public class BrasilFastshopCrawler extends Crawler {
 			if(jsonCatalog.has("formattedTotalAVista")){
 				price = Float.parseFloat(jsonCatalog.getString("formattedTotalAVista").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			} else if(jsonCatalog.has("installmentRow3")){
-				price = Float.parseFloat(jsonCatalog.getString("installmentRow3").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				String text = jsonCatalog.getString("installmentRow3");
+				if (!text.isEmpty()) {
+					price = MathCommonsMethods.parseFloat(text);
+				}
 			}
 		}
 
@@ -329,7 +353,7 @@ public class BrasilFastshopCrawler extends Crawler {
 		return doc;
 	}
 
-	private Prices crawlPrices(Document docPrices){
+	private Prices crawlPrices(Document docPrices) {
 		Prices prices = new Prices();
 
 		// bank slip
