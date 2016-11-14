@@ -16,7 +16,6 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 
 	@Override
 	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		Logging.printLogDebug(logger, session, "Running extractRatingAndReviews() implementation from " + this.getClass().getSimpleName());
 		
 		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 

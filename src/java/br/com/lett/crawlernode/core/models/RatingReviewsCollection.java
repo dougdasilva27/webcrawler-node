@@ -15,6 +15,10 @@ public class RatingReviewsCollection {
 		this.ratingReviewsList.add(ratingReviews);
 	}
 	
+	public List<RatingsReviews> getRatingReviewsList() {
+		return this.ratingReviewsList;
+	}
+	
 	public int getRatingReviewsCount() {
 		return this.ratingReviewsList.size();
 	}
