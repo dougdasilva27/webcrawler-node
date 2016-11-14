@@ -120,7 +120,10 @@ public class BrasilFastshopCrawler extends Crawler {
 				}
 
 				// Price
-				Float price = crawlMainPagePrice(doc);
+				Float price = null;
+				if (available) {
+					price = crawlPriceFromApi(internalId, internalPid);
+				}
 
 				// Marketplace
 				JSONArray marketplace = new JSONArray();
@@ -277,15 +280,6 @@ public class BrasilFastshopCrawler extends Crawler {
 			description = productTabContainer.text().trim();
 		}
 		return description;
-	}
-
-	private Float crawlMainPagePrice(Document document) {
-		Float price = null;
-		Element priceElement = document.select("p.prod_price span.total_price").first();
-		if (priceElement != null) {
-			price = MathCommonsMethods.parseFloat(priceElement.text());
-		}
-		return price;
 	}
 
 	private Float crawlPriceFromApi(String internalId, String internalPid) {
