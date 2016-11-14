@@ -78,7 +78,7 @@ public class ExecutionParameters {
 		this.imageTaskActivated = getEnvImageTaskActivated();
 
 		// get the flag for rating and review tasks on environment variable
-		this.imageTaskActivated = getEnvRateAndReviewTaskActivated();
+		this.ratingAndReviewsTaskActivated = getEnvRateAndReviewTaskActivated();
 
 		Logging.printLogDebug(logger, this.toString());
 	}

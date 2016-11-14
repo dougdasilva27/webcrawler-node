@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.crawler.ImageCrawler;
-import br.com.lett.crawlernode.core.crawler.RatingReviewCrawler;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
@@ -37,16 +36,16 @@ public class TaskFactory {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
 		if (session instanceof InsightsCrawlerSession 	|| 
-				session instanceof SeedCrawlerSession 		|| 
-				session instanceof TestCrawlerSession 		||
-				session instanceof DiscoveryCrawlerSession
-				) {
+			session instanceof SeedCrawlerSession 		|| 
+			session instanceof TestCrawlerSession 		||
+			session instanceof DiscoveryCrawlerSession
+			) {
 
 			return createCrawlerTask(session);
 		}
 
 		if (session instanceof RatingReviewsCrawlerSession) {
-			createRateReviewCrawlerTask(session);
+			return createRateReviewCrawlerTask(session);
 		}
 
 		if (session instanceof ImageCrawlerSession) {

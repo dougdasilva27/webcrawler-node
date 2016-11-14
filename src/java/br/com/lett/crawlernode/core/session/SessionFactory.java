@@ -29,7 +29,7 @@ public class SessionFactory {
 			//return new ImageCrawlerSession(message, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.RATING_REVIEWS) || queueName.equals(QueueName.RATING_REVIEWS_DEVELOPMENT)) {
-			return new RatingReviewsCrawlerSession();
+			return new RatingReviewsCrawlerSession(message, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.IMAGES) || queueName.equals(QueueName.IMAGES_DEAD)) {
 			return new ImageCrawlerSession(message, queueName, markets);

@@ -117,9 +117,15 @@ public class QueueService {
 		List<Message> messages = null;
 
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			messages = requestMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, maxNumberOfMessages);
-			result.setMessages(messages);
-			result.setQueueName(QueueName.DEVELOPMENT);
+			if (Main.executionParameters.isRatingAndReviewActivated()) { // fetch from rating and reviews development queue
+				messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS_DEVELOPMENT, maxNumberOfMessages);
+				result.setMessages(messages);
+				result.setQueueName(QueueName.RATING_REVIEWS_DEVELOPMENT);
+			} else {
+				messages = requestMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, maxNumberOfMessages);
+				result.setMessages(messages);
+				result.setQueueName(QueueName.DEVELOPMENT);
+			}
 			return result;
 		}
 		
@@ -195,7 +201,6 @@ public class QueueService {
 	 */
 	private static List<Message> requestMessages(AmazonSQS sqs, String queueName, int maxNumberOfMessages) {
 		String queueURL = getQueueURL(queueName);
-		System.err.println("Request from " + queueURL);
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
 		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
