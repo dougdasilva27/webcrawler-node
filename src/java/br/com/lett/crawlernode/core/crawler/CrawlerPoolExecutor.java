@@ -157,6 +157,40 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		else if (r instanceof ImageCrawler) {
 			finalizeImageTask(((ImageCrawler)r).session, t);
 		}
+		else if (r instanceof RatingReviewCrawler) {
+			finalizeRatingReviewsTask(((RatingReviewCrawler)r).session, t);
+		}
+	}
+
+	private void finalizeRatingReviewsTask(Session session, Throwable t) {
+		ArrayList<SessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+		// in case of the thread pool get a non checked exception
+		if (t != null) {
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(t));
+		} 
+
+		else {
+
+			// errors collected manually
+			// they can be exceptions or business logic errors
+			// and are all gathered inside the session
+			if (errors.size() > 0) {
+				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			}
+
+			// only remove the task from queue if it was flawless
+			// and if we are not testing, because when testing there is no message processing
+			Logging.printLogDebug(logger, session, "Task completed.");
+			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+
+			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+		}
+
+		Logging.printLogDebug(logger, session, "END");
 	}
 
 	/**
@@ -250,7 +284,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 		}
-		
+
 		// clear the session
 		session.clearSession();
 
