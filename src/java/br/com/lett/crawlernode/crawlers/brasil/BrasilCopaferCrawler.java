@@ -311,7 +311,12 @@ public class BrasilCopaferCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
-
+		Element pid = document.select(".info-side h2").first();
+		
+		if(pid != null){
+			internalPid = pid.text().replaceAll("[^0-9]", "").trim();
+		}
+		
 		return internalPid;
 	}
 
