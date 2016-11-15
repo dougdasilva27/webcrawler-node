@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.core.crawler;
 
-import java.util.List;
-
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +30,16 @@ public class RatingReviewCrawler implements Runnable {
 		Document document = fetch();
 		try {
 			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
-			List<RatingsReviews> ratingReviewsList = ratingReviewsCollection.getRatingReviewsList();
-			for (RatingsReviews ratingReviews : ratingReviewsList) {
+			
+			// get only the desired rating and review, according to the internal id
+			RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
+			
+			if (ratingReviews != null) {
 				printRatingsReviews(ratingReviews);
+			} else {
+				Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
 			}
+			
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));

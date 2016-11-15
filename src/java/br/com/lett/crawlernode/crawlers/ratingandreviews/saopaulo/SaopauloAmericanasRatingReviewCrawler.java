@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -30,9 +32,16 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			RatingsReviews ratingReviews = crawlRatingReviews(document);
-			ratingReviewsCollection.addRatingReviews(ratingReviews);
+			
+			JSONObject embeddedJSONObject = crawlEmbeddedJSONObject(document);
+			RatingsReviews ratingReviews = crawlRatingReviews(embeddedJSONObject);
+			
+			List<String> idList = crawlIdList(embeddedJSONObject);
+			for (String internalId : idList) {
+				RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
+				clonedRatingReviews.setInternalId(internalId);
+				ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -45,20 +54,42 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
 		return false;
 	}
+	
+	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
+		List<String> idList = new ArrayList<String>();
+		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
+		
+		if (embeddedJSONObject.has("skus")) {
+			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
+			
+			for (int i = 0; i < skus.length(); i++) {
+				JSONObject sku = skus.getJSONObject(i);
+				
+				if (sku.has("id")) {
+					String id = internalPid + "-" + sku.getString("id");
+					idList.add(id);
+				}
+			}
+		}
+		
+		return idList;
+	}
 
 	/**
 	 * Crawl rating and reviews stats using the bazaar voice endpoint.
 	 * To get only the stats summary we need at first, we only have to do
 	 * one request. If we want to get detailed information about each review, we must
 	 * perform pagination.
+	 * 
+	 * The RatingReviews crawled in this method, is the same across all skus variations
+	 * in a page.
 	 *
 	 * @param document
 	 * @return
 	 */
-	private RatingsReviews crawlRatingReviews(Document document) {
+	private RatingsReviews crawlRatingReviews(JSONObject embeddedJSONObject) {
 		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
 
-		JSONObject embeddedJSONObject = crawlEmbeddedJSONObject(document);
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
 		String skuInternalPid = crawlSkuInternalPid(embeddedJSONObject);
 

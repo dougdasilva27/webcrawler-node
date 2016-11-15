@@ -4,7 +4,7 @@ package br.com.lett.crawlernode.core.models;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 
-public class RatingsReviews {
+public class RatingsReviews implements Cloneable {
 	
 	public static final String DATE_JSON_FIELD = "date";
 	public static final String TOTAL_REVIEWS_JSON_FIELD = "total_reviews";
@@ -13,11 +13,18 @@ public class RatingsReviews {
 	private DateTime date;
 	private Integer totalReviews;
 	private Double averageOverallRating;
+	private String internalId;
 	
 	public RatingsReviews(DateTime date) {
 		this.date = date;
 		this.totalReviews = null;
 		this.averageOverallRating = null;
+		this.internalId = null;
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 	
 	public RatingsReviews(JSONObject ratingReviewsJSON) {
@@ -75,5 +82,13 @@ public class RatingsReviews {
 
 	public void setAverageOverallRating(Double averageOverallRating) {
 		this.averageOverallRating = averageOverallRating;
+	}
+
+	public String getInternalId() {
+		return internalId;
+	}
+
+	public void setInternalId(String internalId) {
+		this.internalId = internalId;
 	}
 }

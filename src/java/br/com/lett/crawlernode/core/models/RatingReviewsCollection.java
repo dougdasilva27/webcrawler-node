@@ -15,6 +15,15 @@ public class RatingReviewsCollection {
 		this.ratingReviewsList.add(ratingReviews);
 	}
 	
+	public RatingsReviews getRatingReviews(String internalId) {
+		for (RatingsReviews ratingReviews : this.ratingReviewsList) {
+			if (ratingReviews.getInternalId() != null && internalId.equals(ratingReviews.getInternalId())) {
+				return ratingReviews;
+			}
+		}
+		return null;
+	}
+	
 	public List<RatingsReviews> getRatingReviewsList() {
 		return this.ratingReviewsList;
 	}
