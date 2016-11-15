@@ -88,6 +88,9 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		else if (r instanceof ImageCrawler) {
 			Logging.printLogDebug(logger, ((ImageCrawler)r).session, "START");
 		}
+		else if (r instanceof RatingReviewCrawler) {
+			Logging.printLogDebug(logger, ((RatingReviewCrawler)r).session, "START");
+		}
 
 		synchronized(lock) {
 			activeTaskCount++;
@@ -182,12 +185,15 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 			}
 
-			// only remove the task from queue if it was flawless
-			// and if we are not testing, because when testing there is no message processing
-			Logging.printLogDebug(logger, session, "Task completed.");
-			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+			else {
+				
+				// only remove the task from queue if it was flawless
+				// and if we are not testing, because when testing there is no message processing
+				Logging.printLogDebug(logger, session, "Task completed.");
+				Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
 
-			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+				QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+			}
 		}
 
 		Logging.printLogDebug(logger, session, "END");

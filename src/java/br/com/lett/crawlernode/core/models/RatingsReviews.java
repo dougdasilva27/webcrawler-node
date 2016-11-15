@@ -25,6 +25,14 @@ public class RatingsReviews {
 		}
 	}
 	
+	public void setRatingDistribution(Map<String, Integer> ratingDistribution) {
+		for (String ratingValue : ratingDistribution.keySet()) {
+			if (ratingDistribution.get(ratingValue) > 0) {
+				this.rating.put(ratingValue, ratingDistribution.get(ratingValue));
+			}
+		}
+	}
+	
 	public JSONObject assembleJson() {
 		JSONObject ratingReviewsJson = new JSONObject();
 		

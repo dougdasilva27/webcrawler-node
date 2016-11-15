@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
@@ -24,25 +27,25 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	@Override
 	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
 		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-		
+
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			RatingsReviews ratingReviews = crawlRatingReviews(document);
 			ratingReviewsCollection.addRatingReviews(ratingReviews);
-			
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return ratingReviewsCollection;
 	}
-	
+
 	private boolean isProductPage(String url) {
 		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
 		return false;
 	}
-	
+
 	/**
 	 * Crawl rating and reviews stats using the bazaar voice endpoint.
 	 * To get only the stats summary we need at first, we only have to do
@@ -54,17 +57,42 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 */
 	private RatingsReviews crawlRatingReviews(Document document) {
 		RatingsReviews ratingReviews = new RatingsReviews();
-		
-		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(document);
-		String skuInternalPid = crawlSkuInternalPid(document);
-		
+
+		JSONObject embeddedJSONObject = crawlEmbeddedJSONObject(document);
+		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
+		String skuInternalPid = crawlSkuInternalPid(embeddedJSONObject);
+
 		String endpointRequest = assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
-		
-		DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
-		
+
+		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+
+		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
+
+		// get the rating distribution
+		Map<String, Integer> ratingDistributionMap = getRatingDistribution(reviewStatistics);
+		ratingReviews.setRatingDistribution(ratingDistributionMap);
+
 		return ratingReviews;
 	}
 	
+	private Map<String, Integer> getRatingDistribution(JSONObject reviewStatistics) {
+		Map<String, Integer> ratingDistributionMap = new HashMap<String, Integer>();
+		
+		if (reviewStatistics.has("RatingDistribution")) {
+			JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
+			
+			for (int i = 0; i < ratingDistribution.length(); i++) {
+				JSONObject rating = ratingDistribution.getJSONObject(i);
+				
+				if (rating.has("Count") && rating.has("RatingValue")) {
+					ratingDistributionMap.put(String.valueOf(rating.getInt("RatingValue")), rating.getInt("Count"));
+				}
+			}
+		}
+		
+		return ratingDistributionMap;
+	}
+
 	/**
 	 * e.g: 
 	 * http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
@@ -99,9 +127,9 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 			String bazaarVoiceEnpointPassKey,
 			Integer offset,
 			Integer limit) {
-		
+
 		StringBuilder request = new StringBuilder();
-		
+
 		request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4");
 		request.append("&passkey=" + bazaarVoiceEnpointPassKey);
 		request.append("&Offset=" + offset);
@@ -110,14 +138,56 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 		request.append("&Filter=ProductId:" + skuInternalPid);
 		request.append("&Include=Products");
 		request.append("&Stats=Reviews");
-		
+
 		return request.toString();
 	}
-	
+
 	/**
 	 * Crawl the bazaar voice endpoint passKey on the sku page.
 	 * The passKey is located inside a script tag, which contains
 	 * a json object is several metadata, including the passKey.
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private String crawlBazaarVoiceEndpointPassKey(JSONObject embeddedJSONObject) {
+		String passKey = null;		
+		if (embeddedJSONObject != null) {
+			if (embeddedJSONObject.has("configuration")) {
+				JSONObject configuration = embeddedJSONObject.getJSONObject("configuration");
+
+				if (configuration.has("bazaarvoicePasskey")) {
+					passKey = configuration.getString("bazaarvoicePasskey");
+				}
+			}
+		}		
+		return passKey;
+	}
+
+	private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
+		if (ratingReviewsEndpointResponse.has("Includes")) {
+			JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
+
+			if (includes.has("Products")) {
+				JSONObject products = includes.getJSONObject("Products");
+
+				if (products.has(skuInternalPid)) {
+					JSONObject product = products.getJSONObject(skuInternalPid);
+
+					if (product.has("ReviewStatistics")) {
+						return product.getJSONObject("ReviewStatistics");
+					}
+				}
+			}
+		}
+
+		return new JSONObject();
+	}
+
+	/**
+	 * Crawl an embedded JSONObject, inside a script html tag
+	 * which contains several metadata, including the passKey
+	 * and product id to perform requests on bazaar voice API.
 	 * 
 	 * e.g:
 	 * 
@@ -135,35 +205,52 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlBazaarVoiceEndpointPassKey(Document document) {
-		String passKey = null;
-		
+	private JSONObject crawlEmbeddedJSONObject(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
-		JSONObject windowInitialStateJson = null;
+		JSONObject embeddedJSONObject = null;
 
 		for (Element tag : scriptTags) {                
 			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("window.__INITIAL_STATE__= ")) {
-					windowInitialStateJson = new JSONObject
-							(node.getWholeData().split(Pattern.quote("window.__INITIAL_STATE__= "))[1] +
-							 node.getWholeData().split(Pattern.quote("window.__INITIAL_STATE__= "))[1].split(Pattern.quote("};"))[0]
-							);
+				if(tag.html().trim().startsWith("window.__INITIAL_STATE__ = ")) {
+					embeddedJSONObject = new JSONObject
+							(node.getWholeData().split(Pattern.quote("window.__INITIAL_STATE__ = "))[1] +
+									node.getWholeData().split(Pattern.quote("window.__INITIAL_STATE__ = "))[1].split(Pattern.quote("};"))[0]
+									);
 				}
 			}        
 		}
-		
-		if (windowInitialStateJson != null) {
-			if (windowInitialStateJson.has("bazaarvoicePasskey")) {
-				passKey = windowInitialStateJson.getString("bazaarvoicePasskey");
+
+		return embeddedJSONObject;
+	}
+
+	/**
+	 * 
+	 * @param embeddedJSONObject
+	 * @return
+	 */
+	private String crawlSkuInternalPid(JSONObject embeddedJSONObject) {
+		String skuInternalPid = null;
+
+		if (embeddedJSONObject.has("skus")) {
+			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
+
+			if (skus.length() > 0) {
+				JSONObject sku = skus.getJSONObject(0);
+
+				if (sku.has("_embedded")) {
+					JSONObject embedded = sku.getJSONObject("_embedded");
+
+					if (embedded.has("product")) {
+						JSONObject product = embedded.getJSONObject("product");
+
+						if (product.has("id")) {
+							skuInternalPid = product.getString("id");
+						}
+					}
+				}
 			}
 		}
-		
-		return passKey;
-	}
-	
-	private String crawlSkuInternalPid(Document document) {
-		String skuInternalPid = null;
-		
+
 		return skuInternalPid;
 	}
 
