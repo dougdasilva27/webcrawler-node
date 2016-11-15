@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,8 @@ public class Session {
 	public static final String SEED_TYPE 		= "seed";
 	public static final String INSIGHTS_TYPE 	= "insights";
 	public static final String TEST_TYPE 		= "test";
+	
+	protected DateTime date = new DateTime(DateTimeZone.forID("America/Sao_Paulo"));
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	protected String sessionId;
@@ -110,6 +114,10 @@ public class Session {
 
 		// setting URL and originalURL
 		this.originalURL = message.getBody();
+	}
+	
+	public DateTime getDate() {
+		return this.date;
 	}
 	
 	public int getMaxConnectionAttemptsCrawler() {

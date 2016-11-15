@@ -56,7 +56,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private RatingsReviews crawlRatingReviews(Document document) {
-		RatingsReviews ratingReviews = new RatingsReviews();
+		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
 
 		JSONObject embeddedJSONObject = crawlEmbeddedJSONObject(document);
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
@@ -68,14 +68,34 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
 
-		// get the rating distribution
-		Map<String, Integer> ratingDistributionMap = getRatingDistribution(reviewStatistics);
-		ratingReviews.setRatingDistribution(ratingDistributionMap);
+		ratingReviews.setTotalReviews(getTotalReviewCount(reviewStatistics));
+		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
 		return ratingReviews;
 	}
 	
-	private Map<String, Integer> getRatingDistribution(JSONObject reviewStatistics) {
+	private Integer getTotalReviewCount(JSONObject reviewStatistics) {
+		Integer totalReviewCount = null;
+		if (reviewStatistics.has("TotalReviewCount")) {
+			totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
+		}
+		return totalReviewCount;
+	}
+	
+	private Double getAverageOverallRating(JSONObject reviewStatistics) {
+		Double avgOverallRating = null;
+		if (reviewStatistics.has("AverageOverallRating")) {
+			avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
+		}
+		return avgOverallRating;
+	}
+	
+	/**
+	 * 
+	 * @param reviewStatistics
+	 * @return
+	 */
+	private Map<String, Integer> crawlRatingDistribution(JSONObject reviewStatistics) {
 		Map<String, Integer> ratingDistributionMap = new HashMap<String, Integer>();
 		
 		if (reviewStatistics.has("RatingDistribution")) {

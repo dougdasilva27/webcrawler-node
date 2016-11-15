@@ -1,48 +1,51 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.HashMap;
-import java.util.Map;
 
+import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 public class RatingsReviews {
 	
-	private Map<String, Integer> rating;
+	public static final String DATE_JSON_FIELD = "date";
+	public static final String TOTAL_REVIEWS_JSON_FIELD = "total_reviews";
+	public static final String AVERAGE_OVERALL_RATING_JSON_FIELD = "average_overall_rating";
 	
-	public RatingsReviews() {
-		this.rating = new HashMap<String, Integer>();
-		
-		this.rating.put("1", null);
-		this.rating.put("2", null);
-		this.rating.put("3", null);
-		this.rating.put("4", null);
-		this.rating.put("5", null);
+	private DateTime date;
+	private Integer totalReviews;
+	private Double averageOverallRating;
+	
+	public RatingsReviews(DateTime date) {
+		this.date = date;
+		this.totalReviews = null;
+		this.averageOverallRating = null;
 	}
 	
-	public void addRating(String ratingValue, Integer count) {
-		if (count > 0) {
-			this.rating.put(ratingValue, count);
-		}
+	public RatingsReviews(JSONObject ratingReviewsJSON) {
+		this.date = new DateTime(ratingReviewsJSON.getString(DATE_JSON_FIELD));
+		this.totalReviews = ratingReviewsJSON.getInt(TOTAL_REVIEWS_JSON_FIELD);
+		this.averageOverallRating = ratingReviewsJSON.getDouble(AVERAGE_OVERALL_RATING_JSON_FIELD);
 	}
 	
-	public void setRatingDistribution(Map<String, Integer> ratingDistribution) {
-		for (String ratingValue : ratingDistribution.keySet()) {
-			if (ratingDistribution.get(ratingValue) > 0) {
-				this.rating.put(ratingValue, ratingDistribution.get(ratingValue));
-			}
-		}
-	}
-	
-	public JSONObject assembleJson() {
+	public JSONObject getJSON() {
 		JSONObject ratingReviewsJson = new JSONObject();
 		
-		for (String key : this.rating.keySet()) {
-			if (this.rating.get(key) == null) {
-				ratingReviewsJson.put(String.valueOf(1), JSONObject.NULL);
-			} else {
-				ratingReviewsJson.put(String.valueOf(1), this.rating.get(1));
-			}
+		if (date == null) {
+			ratingReviewsJson.put(DATE_JSON_FIELD, JSONObject.NULL);
+		} else {
+			ratingReviewsJson.put(DATE_JSON_FIELD, this.date.toString());
 		}
+		
+		if (this.totalReviews == null) {
+			ratingReviewsJson.put(TOTAL_REVIEWS_JSON_FIELD, JSONObject.NULL);
+		} else {
+			ratingReviewsJson.put(TOTAL_REVIEWS_JSON_FIELD, this.totalReviews);
+		}
+		
+		if (this.averageOverallRating == null) {
+			ratingReviewsJson.put(AVERAGE_OVERALL_RATING_JSON_FIELD, JSONObject.NULL);
+		} else {
+			ratingReviewsJson.put(AVERAGE_OVERALL_RATING_JSON_FIELD, this.averageOverallRating);
+		}		
 		
 		return ratingReviewsJson;
 	}
@@ -51,12 +54,26 @@ public class RatingsReviews {
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder();
 		
-		stringBuilder.append("1: " + this.rating.get("1") + ", ");
-		stringBuilder.append("2: " + this.rating.get("2") + ", ");
-		stringBuilder.append("3: " + this.rating.get("3") + ", ");
-		stringBuilder.append("4: " + this.rating.get("4") + ", ");
-		stringBuilder.append("5: " + this.rating.get("5"));
+		stringBuilder.append("Date: " + this.date.toString() + ", ");
+		stringBuilder.append("TotalReviews: " + this.totalReviews + ", ");
+		stringBuilder.append("AverageOverallRating: " + this.averageOverallRating + ", ");
 		
 		return stringBuilder.toString();
+	}
+
+	public Integer getTotalReviews() {
+		return totalReviews;
+	}
+
+	public void setTotalReviews(Integer totalReviews) {
+		this.totalReviews = totalReviews;
+	}
+
+	public Double getAverageOverallRating() {
+		return averageOverallRating;
+	}
+
+	public void setAverageOverallRating(Double averageOverallRating) {
+		this.averageOverallRating = averageOverallRating;
 	}
 }

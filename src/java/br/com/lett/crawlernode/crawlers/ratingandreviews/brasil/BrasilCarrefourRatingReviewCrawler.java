@@ -1,7 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -42,8 +46,48 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private RatingsReviews crawlRatingReviews(Document document) {
-		RatingsReviews ratingReviews = new RatingsReviews();
-
+		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
+		
+		Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
+		
+		ratingReviews.setTotalReviews(computeTotalReviewsCount(ratingDistribution));
+		ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
+		
+		return ratingReviews;
+	}
+	
+	private Integer computeTotalReviewsCount(Map<String, Integer> ratingDistribution) {
+		Integer totalReviewsCount = 0;
+		
+		for (String rating : ratingDistribution.keySet()) {
+			if (ratingDistribution.get(rating) != null) totalReviewsCount += ratingDistribution.get(rating);
+		}
+		
+		return totalReviewsCount;
+	}
+	
+	private Double crawlAverageOverallRating(Document document) {
+		Double avgOverallRating = null;
+		
+		Element avgOverallRatingElement = document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc ").first();
+		if (avgOverallRatingElement != null) {
+			String dataRatingText = avgOverallRatingElement.attr("data-rating").trim();
+			try {
+				JSONObject dataRating = new JSONObject(dataRatingText);
+				if (dataRating.has("rating")) {
+					avgOverallRating = dataRating.getDouble("rating");
+				}
+			} catch (JSONException e) {
+				Logging.printLogError(logger, session, "Error converting String to JSONObject");
+			}
+		}
+		
+		return avgOverallRating;
+	}
+	
+	private Map<String, Integer> crawlRatingDistribution(Document document) {
+		Map<String, Integer> ratingDistributionMap = new HashMap<String, Integer>();
+		
 		Elements ratingLineElements = document.select("div.tab-review ul.block-list-starbar li");
 		for (Element ratingLine : ratingLineElements) {
 			Element ratingStarElement = ratingLine.select("div").first();
@@ -55,12 +99,12 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 
 				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(ratingStarText);
 				if (parsedNumbers.size() > 0 && !ratingCountText.isEmpty()) {
-					ratingReviews.addRating(parsedNumbers.get(0), Integer.parseInt(ratingCountText));
+					ratingDistributionMap.put(parsedNumbers.get(0), Integer.parseInt(ratingCountText));
 				}
 			}
 		}
 		
-		return ratingReviews;
+		return ratingDistributionMap;
 	}
 
 
