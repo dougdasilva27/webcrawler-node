@@ -79,7 +79,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 
 			// Pid
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid(session.getOriginalURL());
 
 			// Name
 			String name = crawlName(doc);
@@ -174,9 +174,19 @@ public class BrasilDufrioCrawler extends Crawler {
 		return internalId;
 	}
 
-	private String crawlInternalPid(Document document) {
+	private String crawlInternalPid(String url) {
 		String internalPid = null;
-
+		
+		String urlForPid = null;
+		if(url.contains("?")){
+			urlForPid = url.split("?")[0];
+		} else {
+			urlForPid = url;
+		}
+		
+		String[] tokens = urlForPid.split("-p");
+		internalPid = tokens[tokens.length-1];
+		
 		return internalPid;
 	}
 
