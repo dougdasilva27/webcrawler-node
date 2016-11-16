@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler;
+package br.com.lett.crawlernode.core.crawler.config;
 
 import java.util.List;
 

@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.core.crawler;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -8,7 +7,6 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -24,7 +22,6 @@ import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -71,12 +68,6 @@ public class Crawler implements Runnable {
 	 * this attribute is set by the handleCookiesBeforeFetch method.
 	 */
 	protected List<Cookie> cookies;
-
-	/**
-	 * Remote webdriver to be used in case of screenshot in truco mode
-	 * or any other need. By default it's not instantiated.
-	 */
-	protected CrawlerWebdriver webdriver;
 
 
 	public Crawler(Session session) {
@@ -177,9 +168,6 @@ public class Crawler implements Runnable {
 				}
 			}
 		}
-
-		// terminate the process
-		terminate();
 	}
 
 	/**
@@ -581,38 +569,6 @@ public class Crawler implements Runnable {
 			}
 
 		}
-	}
-
-	/**
-	 * Performs all finalization routines freeing
-	 * any necessary elements
-	 */
-	private void terminate() {
-
-		// if the crawler used the webdriver at some point, it must be closed
-		if (webdriver != null) {
-			Logging.printLogDebug(logger, session, "Closing webdriver...");
-			webdriver.closeDriver();
-		}
-	}
-
-	/**
-	 * Save page screenshot on Amazon, using webdriver
-	 */
-	private void saveScreenshot() {
-
-		// create webdriver
-		if (webdriver == null) {
-			Logging.printLogDebug(logger, session, "Initializing webdriver");
-			webdriver = new CrawlerWebdriver();
-		}
-
-		// get a screenshot from the page
-		File screenshot = webdriver.takeScreenshot(session.getOriginalURL());
-
-		// upload screenshot to Amazon
-		S3Service.uploadFileToAmazon(session, screenshot);
-
 	}
 
 }

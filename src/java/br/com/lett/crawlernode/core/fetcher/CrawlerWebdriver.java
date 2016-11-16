@@ -22,12 +22,11 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * <p>
- * This class encapsulates an instace of a Remote Webdriver
- * that uses a Firefox implementation of Selenium Webdriver.
+ * This class encapsulates an instance of a Remote WebDriver
+ * that uses a PhantomJS as backend for Selenium WebDriver.
  * This class also provide methods to manipulate web elements
- * and take webpages screenshots using Selenium.
- * </p>
+ * and take web pages screenshots.
+ *
  * @author Samir Leao
  * 
  */
@@ -36,18 +35,16 @@ public class CrawlerWebdriver {
 	private static Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 	
 	/**
-	 * The URL of the hub that connects to the remote webdriver instances
+	 * The URL of the hub that connects to the remote WebDriver instances
 	 */
-	private final String HUB_URL = "http://104.154.24.237:4444/wd/hub";
+	private final String HUB_URL = "http://52.183.27.200:4444/";
 	
-	/**
-	 * Selenium Webdriver instance
-	 */
+	
 	private WebDriver driver;
 
 
 	public CrawlerWebdriver() {
-		initFirefoxRemoteDriver();
+		initPhantomJSDriver();
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -60,6 +57,7 @@ public class CrawlerWebdriver {
 
 	/**
 	 * Get the html source of the current page loaded in the webdriver.
+	 * 
 	 * @return
 	 */
 	public String getCurrentPageSource() {
@@ -68,6 +66,7 @@ public class CrawlerWebdriver {
 	
 	/**
 	 * Loads a webpage without any explicit wait.
+	 * 
 	 * @param url
 	 * @return
 	 */
@@ -78,6 +77,7 @@ public class CrawlerWebdriver {
 
 	/**
 	 * Loads a webpage and wait for some time.
+	 * 
 	 * @param url
 	 * @param waitTime
 	 * @return A String containing the page html
@@ -98,13 +98,17 @@ public class CrawlerWebdriver {
 	}
 	
 	/**
-	 * Get the current loaded page on the webdriver instance
+	 * Get the current loaded page on the webdriver instance.
+	 * 
 	 * @return
 	 */
 	public String getCurURL() {
 		return this.driver.getCurrentUrl();
 	}
 
+	/**
+	 * Terminate the web driver.
+	 */
 	public void closeDriver() {
 		Logging.printLogDebug(logger, "Terminating webdriver...");
 
@@ -116,6 +120,7 @@ public class CrawlerWebdriver {
 	
 	/**
 	 * Get a screenshot from a webpage.
+	 * 
 	 * @param url
 	 * @return
 	 */
@@ -127,7 +132,8 @@ public class CrawlerWebdriver {
 	}
 	
 	/**
-	 * Get a screenshot from a webpage and save the file
+	 * Get a screenshot from a webpage and save the file.
+	 * 
 	 * @param url
 	 * @param path the path where the screenshot will be saved
 	 */
@@ -141,14 +147,11 @@ public class CrawlerWebdriver {
 		}
 	}
 
-	private void initFirefoxRemoteDriver() {
-
+	private void initPhantomJSDriver() {
 		try {
 			URL url = new URL(HUB_URL);
 
-			// creating capabilities
-			DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-			capabilities.setPlatform(org.openqa.selenium.Platform.ANY);
+			DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
 			
 			driver = new RemoteWebDriver(url, capabilities);
 			
