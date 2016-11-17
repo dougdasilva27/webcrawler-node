@@ -345,7 +345,7 @@ public class DataFetcher {
 		httpPost.setConfig(requestConfig);
 
 		// if we are using charity engine, we must set header for authentication
-		if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 			httpPost.addHeader("Proxy-Authorization", headerValue);
@@ -355,7 +355,7 @@ public class DataFetcher {
 		}
 
 		// if we are using azure, we must set header for authentication
-		if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 			httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 		}
 
@@ -585,7 +585,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -595,7 +595,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
@@ -761,7 +761,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -771,7 +771,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
@@ -943,7 +943,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -953,7 +953,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
@@ -1115,7 +1115,7 @@ public class DataFetcher {
 			httpPost.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
@@ -1125,7 +1125,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
@@ -1291,7 +1291,7 @@ public class DataFetcher {
 			httpPost.setEntity(input);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpPost.addHeader("Proxy-Authorization", headerValue);
@@ -1301,7 +1301,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
@@ -1396,7 +1396,7 @@ public class DataFetcher {
 		JSONObject requestMetadata = new JSONObject();
 
 		requestMetadata.put("req_hash", requestHash);
-		requestMetadata.put("proxy_name", 	(proxy == null ? Proxies.NO_PROXY 		: proxy.getSource()));
+		requestMetadata.put("proxy_name", 	(proxy == null ? ProxyCollection.NO_PROXY 		: proxy.getSource()));
 		requestMetadata.put("proxy_ip", 	(proxy == null ? MDC.get("HOST_NAME") 	: proxy.getAddress()));
 		requestMetadata.put("user_agent", 	userAgent);
 		requestMetadata.put("req_method", requestType);
@@ -1512,7 +1512,7 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
 				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
 				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
 				httpGet.addHeader("Proxy-Authorization", headerValue);
@@ -1522,7 +1522,7 @@ public class DataFetcher {
 			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
 				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 

@@ -7,7 +7,10 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import br.com.lett.crawlernode.core.crawler.config.CrawlerConfig;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -62,6 +65,8 @@ public class Crawler implements Runnable {
 
 	/** The current crawling session. */
 	protected Session session;
+	
+	protected CrawlerConfig config;
 
 	/**
 	 * Cookies that must be used to fetch the sku page
@@ -73,8 +78,19 @@ public class Crawler implements Runnable {
 	public Crawler(Session session) {
 		this.session = session;
 		this.cookies = new ArrayList<Cookie>();
+		
+		createDefaultConfig();
 	}
-
+	
+	/**
+	 * Create the config with default values
+	 */
+	private void createDefaultConfig() {
+		this.config = new CrawlerConfig();
+		this.config.setFetcher(Fetcher.STATIC);
+		this.config.setProxyList(new ArrayList<String>());
+		this.config.setConnectionAttempts(0);
+	}
 
 	/**
 	 * Overrides the run method that will perform a task within a thread.
@@ -89,12 +105,8 @@ public class Crawler implements Runnable {
 		else {
 			productionRun();
 		}
-
 	}
 
-	/**
-	 * 
-	 */
 	private void productionRun() {
 		// crawl informations and create a list of products
 		List<Product> products = null;
@@ -380,16 +392,12 @@ public class Crawler implements Runnable {
 		String url = handleURLBeforeFetch(session.getOriginalURL());
 		session.setOriginalURL(url);
 
-		//if ( shouldVisit() ) {
 		Document document = fetch();
 		List<Product> products = null;
 		products = extractInformation(document);
 		if (products == null) products = new ArrayList<Product>();
 
 		return products;
-		//}
-
-		//return new ArrayList<Product>();
 	}
 
 
@@ -405,11 +413,21 @@ public class Crawler implements Runnable {
 	}
 
 	/**
-	 * Request the sku URL and parse to a DOM format
-	 * @return Parsed HTML in form of a Document
+	 * Request the sku URL and parse to a DOM format.
+	 * This method uses the preferred fetcher according to the crawler configuration.
+	 * If the fetcher is static, then we use de StaticDataFetcher, otherwise we use the
+	 * DynamicDataFetcher.
+	 * 
+	 * @return Parsed HTML in form of a Document.
 	 */
 	private Document fetch() {
-		String html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+		String html = null;
+		if (this.config.getFetcher() == Fetcher.STATIC) {
+			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+		} else {
+			html = DynamicDataFetcher.fetchPage(this.config.getFetcher(), session.getOriginalURL(), session);
+		}
+		
 		return Jsoup.parse(html);		
 	}
 
@@ -434,6 +452,7 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Get only the product with the desired internalId.
+	 * 
 	 * @param products
 	 * @param internalId
 	 * @return The product with the desired internal id, or an empty product if it was not found.
@@ -452,7 +471,8 @@ public class Crawler implements Runnable {
 	}
 
 	/**
-	 * This method performs an active analysis of the void status. 
+	 * This method performs an active analysis of the void status.
+	 *  
 	 * @param product the crawled product
 	 * @return The resultant product from the analysis
 	 */
@@ -567,7 +587,6 @@ public class Crawler implements Runnable {
 
 				break;
 			}
-
 		}
 	}
 

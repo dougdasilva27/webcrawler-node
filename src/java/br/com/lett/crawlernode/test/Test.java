@@ -7,7 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import br.com.lett.crawlernode.core.fetcher.Proxies;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.Session;
@@ -30,7 +30,7 @@ public class Test {
 
 	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
-	public static 	Proxies 			proxies;
+	public static 	ProxyCollection 			proxies;
 	public static 	ResultManager 		processorResultManager;
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
@@ -82,7 +82,7 @@ public class Test {
 		if (market != null) {
 
 			// fetching proxies
-			proxies = new Proxies(markets);
+			proxies = new ProxyCollection(markets);
 			proxies.setCharityProxy();
 			proxies.setBonanzaProxies();
 			proxies.setBuyProxies();

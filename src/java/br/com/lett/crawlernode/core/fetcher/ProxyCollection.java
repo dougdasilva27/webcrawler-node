@@ -23,9 +23,9 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
-public class Proxies {
+public class ProxyCollection {
 
-	private static final Logger logger = LoggerFactory.getLogger(Proxies.class);
+	private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
 
 	public static final String BUY 		= "buy";
 	public static final String BONANZA 	= "bonanza";
@@ -51,7 +51,7 @@ public class Proxies {
 	public Map<String, List<LettProxy>> proxyMap; // global information
 
 
-	public Proxies(Markets markets) {
+	public ProxyCollection(Markets markets) {
 		this.proxyMap = new HashMap<String, List<LettProxy>>();
 
 		this.proxyMaxAttempts = new HashMap<String, Integer>();

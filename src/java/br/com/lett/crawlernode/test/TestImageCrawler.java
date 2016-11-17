@@ -8,7 +8,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import br.com.lett.crawlernode.core.crawler.ImageCrawler;
-import br.com.lett.crawlernode.core.fetcher.Proxies;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
@@ -22,7 +22,7 @@ public class TestImageCrawler {
 	
 	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
-	public static 	Proxies 			proxies;
+	public static 	ProxyCollection 			proxies;
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
 	

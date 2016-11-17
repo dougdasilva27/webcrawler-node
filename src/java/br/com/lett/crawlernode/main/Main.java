@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.main;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.fetcher.Proxies;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.task.MessageFetcher;
 import br.com.lett.crawlernode.core.task.TaskExecutor;
@@ -54,7 +54,7 @@ public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static ExecutionParameters 	executionParameters;
-	public static Proxies 				proxies;
+	public static ProxyCollection 				proxies;
 	public static DBCredentials 		dbCredentials;
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
@@ -93,7 +93,7 @@ public class Main {
 		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
 
 		// fetching proxies
-		proxies = new Proxies(markets);
+		proxies = new ProxyCollection(markets);
 		proxies.setBonanzaProxies();
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
