@@ -92,7 +92,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("https://www.roge.com.br/Produtos/ProdutosDetalhe?id=189819", market);
+			Session session = SessionFactory.createSession("https://www.supernossoemcasa.com.br/e-commerce/p/172585/oysco-vit-gold-carbonato-de-calcio-vitamina-d3-pote-60-capsulas", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);

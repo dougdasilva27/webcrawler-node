@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -17,6 +18,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -24,6 +26,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import org.slf4j.Logger;
@@ -33,6 +36,7 @@ import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
@@ -120,7 +124,7 @@ public class DynamicDataFetcher {
 	 * @return the HTML code of the fetched page, after javascript code execution
 	 */
 	private static String fetchPageSmart(String url, Session session, int attempt) {
-		LettProxy lettProxy = Main.proxies.getProxy(ProxyCollection.CHARITY).get(0);
+		LettProxy lettProxy = Test.proxies.getProxy(ProxyCollection.CHARITY).get(0);
 		String randUserAgent = randUserAgent();
 		CloseableHttpResponse closeableHttpResponse = null;
 
@@ -138,7 +142,7 @@ public class DynamicDataFetcher {
 
 			List<Header> headers = new ArrayList<Header>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
-
+						
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
@@ -161,7 +165,7 @@ public class DynamicDataFetcher {
 			httpGet.addHeader("X-proxy-phantomjs-script-md5", SMART_PROXY_SCRIPT_MD5);
 			httpGet.addHeader("X-Proxy-Timeout-Soft", "30");
 			httpGet.addHeader("X-Proxy-Timeout-Hard", "30");
-
+			
 			// perform request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -169,8 +173,8 @@ public class DynamicDataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-					Integer.toString(responseCode).charAt(0) != '3' && 
-					responseCode != 404 ) {
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) {
 				throw new ResponseCodeException(responseCode);
 			}
 
