@@ -13,13 +13,9 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import br.com.lett.crawlernode.util.Logging;
 
 /**
  * This class encapsulates an instance of a Remote WebDriver
@@ -32,19 +28,17 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class CrawlerWebdriver {
 
-	private static Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
-	
 	/**
 	 * The URL of the hub that connects to the remote WebDriver instances
 	 */
-	private final String HUB_URL = "http://52.183.27.200:4444/";
-	
-	
+	private final String HUB_URL = "http://52.183.27.200:4444/wd/hub";
+
+
 	private WebDriver driver;
 
 
-	public CrawlerWebdriver() {
-		initPhantomJSDriver();
+	public CrawlerWebdriver(DesiredCapabilities capabilities) {
+		initPhantomJSDriver(capabilities);
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -63,7 +57,7 @@ public class CrawlerWebdriver {
 	public String getCurrentPageSource() {
 		return this.driver.getPageSource();
 	}
-	
+
 	/**
 	 * Loads a webpage without any explicit wait.
 	 * 
@@ -96,7 +90,7 @@ public class CrawlerWebdriver {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Get the current loaded page on the webdriver instance.
 	 * 
@@ -109,15 +103,11 @@ public class CrawlerWebdriver {
 	/**
 	 * Terminate the web driver.
 	 */
-	public void closeDriver() {
-		Logging.printLogDebug(logger, "Terminating webdriver...");
-
+	public void terminate() {
 		this.driver.close();
 		this.driver.quit();
-
-		Logging.printLogDebug(logger, "Webdriver terminated.");
 	}
-	
+
 	/**
 	 * Get a screenshot from a webpage.
 	 * 
@@ -127,10 +117,9 @@ public class CrawlerWebdriver {
 	public File takeScreenshot(String url) {
 		driver.get(url);
 		File screenshot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-		
 		return screenshot;
 	}
-	
+
 	/**
 	 * Get a screenshot from a webpage and save the file.
 	 * 
@@ -143,21 +132,17 @@ public class CrawlerWebdriver {
 		try {
 			FileUtils.copyFile(screenshot, new File(path));
 		} catch (Exception ex) {
-			Logging.printLogError(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
+			System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
 		}
 	}
 
-	private void initPhantomJSDriver() {
+	private void initPhantomJSDriver(DesiredCapabilities capabilities) {
 		try {
-			URL url = new URL(HUB_URL);
+			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
 
-			DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
-			
-			driver = new RemoteWebDriver(url, capabilities);
-			
 		} catch (MalformedURLException ex) {
-			Logging.printLogError(logger, "Hub URL error! " + ex.getMessage());
+			System.err.println("Hub URL error! " + ex.getMessage());
 		}
-	}
+	}	
 
 }
