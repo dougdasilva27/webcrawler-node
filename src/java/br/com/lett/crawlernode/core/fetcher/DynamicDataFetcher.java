@@ -124,7 +124,7 @@ public class DynamicDataFetcher {
 	 * @return the HTML code of the fetched page, after javascript code execution
 	 */
 	private static String fetchPageSmart(String url, Session session, int attempt) {
-		LettProxy lettProxy = Test.proxies.getProxy(ProxyCollection.CHARITY).get(0);
+		LettProxy lettProxy = Main.proxies.getProxy(ProxyCollection.CHARITY).get(0);
 		String randUserAgent = randUserAgent();
 		CloseableHttpResponse closeableHttpResponse = null;
 
