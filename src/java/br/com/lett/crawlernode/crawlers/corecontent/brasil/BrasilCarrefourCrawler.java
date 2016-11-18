@@ -196,7 +196,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select("#avisemeForm").first();
+		Element notifyMeElement = document.select(".text-not-product-avisme").first();
 
 		if (notifyMeElement != null) {
 			return false;
