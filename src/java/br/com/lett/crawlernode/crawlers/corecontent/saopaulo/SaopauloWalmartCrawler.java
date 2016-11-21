@@ -159,17 +159,18 @@ public class SaopauloWalmartCrawler extends Crawler {
 					productCustomName = jsonProducts.getString("name");
 				}
 
-				// Estoque
-				Integer stock = null;
-
 				// Price
 				Float price = null;
 
 				// Availability
 				boolean available = false;
 
+				// Document Marketplace
+				// Fazendo request da página com informações de lojistas
+				Document infoDoc = fetchMarketplaceInfoDocMainPage(productId);
+				
 				// availability, price and marketplace
-				Map<String, Prices> marketplaceMap = this.extractMarketplace(productId, internalPid);
+				Map<String, Prices> marketplaceMap = this.extractMarketplace(productId, internalPid, infoDoc);
 				JSONArray marketplace = new JSONArray();
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
@@ -185,6 +186,9 @@ public class SaopauloWalmartCrawler extends Crawler {
 						marketplace.put(partner);
 					}
 				}
+				
+				// Estoque
+				Integer stock = crawlStock(infoDoc);
 				
 				//Prices
 				Prices prices = crawlPrices(internalPid, price);
@@ -217,11 +221,9 @@ public class SaopauloWalmartCrawler extends Crawler {
 		return products;
 	}
 
-	private Map<String, Prices> extractMarketplace(String productId, String internalPid) {
+	private Map<String, Prices> extractMarketplace(String productId, String internalPid, Document infoDoc) {
 		Map<String, Prices> marketplace = new HashMap<>();
 
-		// Fazendo request da página com informações de lojistas
-		Document infoDoc = fetchMarketplaceInfoDocMainPage(productId);
 		Elements sellers = infoDoc.select(".content-wrapper");
 		
 		for(Element e : sellers){
@@ -369,5 +371,18 @@ public class SaopauloWalmartCrawler extends Crawler {
 		}
 		
 		return p;
+	}
+	
+	private Integer crawlStock(Document infoDoc){
+		Integer stock = null;
+		Element stockWalmart = infoDoc.select("#buybox-Walmart").first();
+		
+		if(stockWalmart != null){
+			if(stockWalmart.hasAttr("data-quantity")){
+				stock = Integer.parseInt(stockWalmart.attr("data-quantity"));
+			}
+		}
+		
+		return stock;
 	}
 }
