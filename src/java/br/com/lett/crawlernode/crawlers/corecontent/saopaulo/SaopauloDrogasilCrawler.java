@@ -41,7 +41,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 			}
 
 			// Pid
-			String internalPid = internalID;
+			String internalPid = crawlInternalPid(doc);
 
 			// Disponibilidade
 			boolean available = true;
@@ -170,6 +170,17 @@ public class SaopauloDrogasilCrawler extends Crawler {
 		Elements elementProductShop = document.select(".product-shop");
 		Elements elementShippingQuote = document.select(".shipping-quote");
 		return (elementProductShop.size() > 0 || elementShippingQuote.size() > 0);
+	}
+	
+	private String crawlInternalPid(Document doc){
+		String internalPid = null;
+		Element pid = doc.select("input[name=product][value]").first();
+		
+		if(pid != null){
+			internalPid = pid.attr("value");
+		}
+		
+		return internalPid;
 	}
 	
 	private String crawlName(Document document) {
