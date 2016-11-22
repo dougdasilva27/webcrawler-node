@@ -263,14 +263,17 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		String url = "http://www.submarino.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
 
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-		Elements lines = doc.select(".card-seller-offer");
+		Elements lines = doc.select(".more-offers-table-row");
+		
+		if(lines.size() < 1){
+			lines = doc.select(".card-seller-offer");
+		}
 
 		for(Element linePartner: lines) {
 			Prices prices = new Prices();
 			Map<Integer,Float> installmentMapPrice = new HashMap<>();
 
-			String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
+			String partnerName = linePartner.select("img").first().attr("title").trim().toLowerCase();
 			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
 			installmentMapPrice.put(1, partnerPrice);

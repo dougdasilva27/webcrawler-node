@@ -112,10 +112,10 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 			// Api onde se consegue todos os preços
 			JSONObject initialJson = getDataLayer(doc);
-
+			
 			// Pega só o que interessa do json da api
 			JSONObject infoProductJson = assembleJsonProduct(initialJson);
-
+			
 			// Pid
 			String internalPid = this.crawlInternalPid(infoProductJson);
 
@@ -148,6 +148,8 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				// Marketplace map
 				Map<String, Prices> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
 
+				System.err.println(marketplaceMap);
+				
 				// Assemble marketplace from marketplace map
 				JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
@@ -267,14 +269,17 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		String url = "http://www.americanas.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
 
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-		Elements lines = doc.select(".card-seller-offer");
+		Elements lines = doc.select(".more-offers-table-row");
+		
+		if(lines.size() < 1){
+			lines = doc.select(".card-seller-offer");
+		}
 
 		for(Element linePartner: lines) {
 			Prices prices = new Prices();
 			Map<Integer,Float> installmentMapPrice = new HashMap<>();
 			
-			String partnerName = linePartner.select(".seller-picture img").first().attr("title").trim().toLowerCase();
+			String partnerName = linePartner.select("img").first().attr("title").trim().toLowerCase();
 			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
 			installmentMapPrice.put(1, partnerPrice);

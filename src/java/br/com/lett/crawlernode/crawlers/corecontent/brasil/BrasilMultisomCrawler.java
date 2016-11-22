@@ -12,7 +12,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -54,7 +53,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilMultisomCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.multisom.com.br/";
+	private final String HOME_PAGE = "https://www.multisom.com.br/";
 
 	public BrasilMultisomCrawler(Session session) {
 		super(session);
@@ -216,32 +215,32 @@ public class BrasilMultisomCrawler extends Crawler {
 	 * Multiple Product *
 	 ********************/
 	
-	private ArrayList<String> crawlUrlForMutipleVariations(Document doc, String internalIDFirstProduct){
-		ArrayList<String> productsUrls = new ArrayList<String>();
-		Elements variations = doc.select(".variation li input");
-		
-		for(Element e : variations){
-			String idVariation 	= e.attr("value");
-			String url			= e.attr("data-urlproduct");
-			
-			if(!idVariation.equals(internalIDFirstProduct)){
-				productsUrls.add(url);
-			}
-		}
-		
-		
-		return productsUrls;
-	}
+//	private ArrayList<String> crawlUrlForMutipleVariations(Document doc, String internalIDFirstProduct){
+//		ArrayList<String> productsUrls = new ArrayList<String>();
+//		Elements variations = doc.select(".variation li input");
+//		
+//		for(Element e : variations){
+//			String idVariation 	= e.attr("value");
+//			String url			= e.attr("data-urlproduct");
+//			
+//			if(!idVariation.equals(internalIDFirstProduct)){
+//				productsUrls.add(url);
+//			}
+//		}
+//		
+//		
+//		return productsUrls;
+//	}
 	
-	private Document fetchPageVariation(String url){
-		Document doc = new Document("");
-		
-		if(url != null){
-			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
-		}
-		
-		return doc;
-	}
+//	private Document fetchPageVariation(String url){
+//		Document doc = new Document("");
+//		
+//		if(url != null){
+//			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
+//		}
+//		
+//		return doc;
+//	}
 	
 	/*******************
 	 * General methods *

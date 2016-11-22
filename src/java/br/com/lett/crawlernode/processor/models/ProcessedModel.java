@@ -688,7 +688,7 @@ public class ProcessedModel {
 	
 	@Override
 	public String toString() {
-		StringBuilder stringBuilder =new StringBuilder();
+		StringBuilder stringBuilder = new StringBuilder();
 		
 		stringBuilder.append("Processed id: " + this.id + "\n");
 		stringBuilder.append("InternalId: " + this.internalId + "\n");
@@ -701,7 +701,7 @@ public class ProcessedModel {
 		stringBuilder.append("Unit: " + this.unit + "\n");
 		stringBuilder.append("Extra: " + this.extra + "\n");
 		stringBuilder.append("Picture: " + this.pic + "\n");
-		stringBuilder.append("Secondary pics: " + this.secondary_pics + "\n");
+		stringBuilder.append("Secondary pics: " + (this.secondary_pics != null ? this.secondary_pics.length() : null) + "\n");
 		stringBuilder.append("URL: " + this.url + "\n");
 		stringBuilder.append("LettId: " + this.lettId + "\n");
 		stringBuilder.append("ECT: " + this.ect + "\n");
@@ -713,7 +713,7 @@ public class ProcessedModel {
 		stringBuilder.append("Available: " + this.available + "\n");
 		stringBuilder.append("Void: " + this.void_product + "\n");
 		stringBuilder.append("Stock: " + this.stock + "\n");
-		stringBuilder.append("Marketplace: " + this.marketplace + "\n");
+		stringBuilder.append("Marketplace: " +  (this.marketplace != null ? this.marketplace.length() : null) + "\n");
 		
 		return stringBuilder.toString();
 	}
