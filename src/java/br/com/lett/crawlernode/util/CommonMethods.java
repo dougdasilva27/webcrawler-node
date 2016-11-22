@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -138,6 +139,16 @@ public class CommonMethods {
 		t.printStackTrace(printWriter);
 		
 		return stringWriter.toString();
+	}
+	
+	public static void printStringToFile(String data, String path) {
+		try {
+			PrintWriter out = new PrintWriter(path);
+			out.println(data);
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**

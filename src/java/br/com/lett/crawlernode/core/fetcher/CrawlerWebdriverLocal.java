@@ -1,46 +1,24 @@
 package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.File;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.Augmenter;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-/**
- * This class encapsulates an instance of a Remote WebDriver
- * that uses a PhantomJS as backend for Selenium WebDriver.
- * This class also provide methods to manipulate web elements
- * and take web pages screenshots.
- *
- * @author Samir Leao
- * 
- */
-public class CrawlerWebdriver {
+public class CrawlerWebdriverLocal {
 
-	/**
-	 * The URL of the hub that connects to the remote WebDriver instances
-	 */
-	private final String HUB_URL = "http://52.183.27.200:4444/wd/hub";
+	private WebDriver driver;
 
-
-	public WebDriver driver;
-
-
-	public CrawlerWebdriver(DesiredCapabilities capabilities) {
-		initPhantomJSDriver(capabilities);
+	public CrawlerWebdriverLocal(DesiredCapabilities capabilities) {
+		driver = new PhantomJSDriver(capabilities);
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -93,15 +71,6 @@ public class CrawlerWebdriver {
 		}
 	}
 
-	public Actions getActionsBuilder() {
-		return new Actions(driver);
-	}
-	
-	public String executeJavascript(String javascript) {
-		 JavascriptExecutor jse = (JavascriptExecutor) driver;
-		 return (String)jse.executeScript(javascript);
-	}
-
 	/**
 	 * Get the current loaded page on the webdriver instance.
 	 * 
@@ -144,32 +113,6 @@ public class CrawlerWebdriver {
 			FileUtils.copyFile(screenshot, new File(path));
 		} catch (Exception ex) {
 			System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
-		}
-	}
-
-	/**
-	 * Get a screenshot from the current loaded webpage and save the file.
-	 * 
-	 * @param url
-	 * @param path the path where the screenshot will be saved
-	 */
-	public void takeScreenshotFromCurrentLoadedPage(String path) {
-		Augmenter augmenter = new Augmenter();
-		File screenshot = ((TakesScreenshot)augmenter.augment(driver)).getScreenshotAs(OutputType.FILE);
-		//File screenshot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-		try {
-			FileUtils.copyFile(screenshot, new File(path));
-		} catch (Exception ex) {
-			System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
-		}
-	}
-
-	private void initPhantomJSDriver(DesiredCapabilities capabilities) {
-		try {
-			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
-
-		} catch (MalformedURLException ex) {
-			System.err.println("Hub URL error! " + ex.getMessage());
 		}
 	}
 

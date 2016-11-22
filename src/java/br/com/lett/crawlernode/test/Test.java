@@ -30,7 +30,7 @@ public class Test {
 
 	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
-	public static 	ProxyCollection 			proxies;
+	public static 	ProxyCollection 	proxies;
 	public static 	ResultManager 		processorResultManager;
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
@@ -92,7 +92,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("https://www.supernossoemcasa.com.br/e-commerce/p/172585/oysco-vit-gold-carbonato-de-calcio-vitamina-d3-pote-60-capsulas", market);
+			Session session = SessionFactory.createSession("http://www.cdiscount.com.br/Eletroportateis/Cafeteiras/CafeteirasEletricas/Cafeteira-Eletrica-Philips-Walita-RI7546-c-Jarra-em-Inox-24084.html", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
