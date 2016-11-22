@@ -147,8 +147,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 				// Marketplace map
 				Map<String, Prices> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
-
-				System.err.println(marketplaceMap);
 				
 				// Assemble marketplace from marketplace map
 				JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);

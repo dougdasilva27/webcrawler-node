@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,6 +21,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DesiredCapabilitiesBuilder;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -62,26 +64,26 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 				// getting all the sku options
 				List<WebElement> webElements = webdriver.findElementsByCssSelector("select.listaSku.selSku option");
-				
+
 				// iterate through each sku selector
 				for (WebElement skuOption : webElements) {
-					
+
 					// eliminate the sku already crawled
 					if (isValidOption(skuOption) && !containsId(product.getInternalId(), skuOption)) {
 						String skuOptionText = skuOption.getText();
-						
+
 						// clicking on the option
 						Logging.printLogDebug(logger, session, "Clicking on option " + skuOptionText);
 						skuOption.click();
-						
+
 						// give some time for the webdriver
 						Logging.printLogDebug(logger, session, "Waiting WebDriver for 5 seconds...");
 						webdriver.waitLoad(5000);
-						
+
 						// get html via code using css selector
 						String html = webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
 						Document variationDocument = Jsoup.parse(html);
-												
+
 						// crawl the selected sku
 						Product variation = crawlSKU(variationDocument);
 						products.add(variation);
@@ -140,7 +142,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 	private Product crawlSKU(Document document) {
 		JSONObject skuInformationJSON = crawlSiteMetadataJSONObject(document);
-		
+
 		String internalId = crawlInternalId(document);
 		String internalPid = crawlInternalPid(skuInformationJSON);
 		String name = crawlName(document);
@@ -150,8 +152,31 @@ public class BrasilCdiscountCrawler extends Crawler {
 		String primaryImage = crawlPrimaryImage(document);
 		String secondaryImages = crawlSecondaryImages(document);
 		String description = crawlDescription(document);
-		Integer stock = null;
+
+		Map<String, Prices> marketplaceMap = crawlMarketplace(document);
 		
+		JSONArray marketplace = new JSONArray();
+		
+		if (marketplaceMap.size() > 0) {
+			for(String sellerName : marketplaceMap.keySet()) {
+				JSONObject seller = new JSONObject();
+				Float sellerPrice = price;
+				
+				seller.put("name", sellerName);
+				seller.put("price", sellerPrice);
+				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
+
+				marketplace.put(seller);
+			}
+			
+			// if we have a marketplace than the product is unavailable on main market
+			available = false;
+			price = null;
+			prices = new Prices();
+		}
+
+		Integer stock = null;
+
 		ArrayList<String> categories = crawlCategories(document);
 		String category1 = getCategory(categories, 0);
 		String category2 = getCategory(categories, 1);
@@ -172,7 +197,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 		product.setSecondaryImages(secondaryImages);
 		product.setDescription(description);
 		product.setStock(stock);
-		//		product.setMarketplace(marketplace);
+		product.setMarketplace(marketplace);
 
 		return product;
 	}
@@ -182,7 +207,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 
 		Elements imagesElements = document.select("div.boxImg div.carouselBox ul li a");
-		
+
 		for (int i = 1; i < imagesElements.size(); i++) { // starting from index 1, because the first is the primary image
 			String secondaryImage = imagesElements.get(i).attr("rev").trim();
 			if (!secondaryImage.isEmpty()) {
@@ -200,19 +225,35 @@ public class BrasilCdiscountCrawler extends Crawler {
 		}
 
 		return secondaryImages;
-	} 
-	
+	}
+
+	private Map<String, Prices> crawlMarketplace(Document document) {
+		Map<String,Prices> marketplaces = new HashMap<>();
+
+		Element sellerElement = document.select("div.buying a").first();
+		if (sellerElement != null) {
+			String sellerName = sellerElement.attr("title").trim().toLowerCase();
+
+			if (!sellerName.equals("cdiscount") && !sellerName.isEmpty()) {
+				Prices sellerPrices = crawlPrices(document);
+				marketplaces.put(sellerName, sellerPrices);
+			}
+		}
+
+		return marketplaces;
+	}
+
 	private String parseImageURLFromRelAttribute(String relAttribute) {
 		String imageURL = null;
-		
+
 		imageURL = parseImageURL("largeimage", relAttribute);
 		if (imageURL == null) {
 			imageURL = parseImageURL("smallimage", relAttribute);
 		}
-		
+
 		return imageURL;
 	}
-	
+
 	/**
 	 * rel=
 	 * {
@@ -228,14 +269,14 @@ public class BrasilCdiscountCrawler extends Crawler {
 		String imageURL = null;
 		int beginIndex = relAttribute.indexOf(imageSize + ": \'");
 		String largeImageSubstring = relAttribute.substring(beginIndex, relAttribute.length());
-		
+
 		int srcIndex = largeImageSubstring.indexOf("\'");
 		int endIndex = largeImageSubstring.indexOf(".jpg"); // must append the extension on the final url
-		
+
 		if (endIndex > srcIndex) {
 			imageURL = largeImageSubstring.substring(srcIndex, endIndex).replaceAll("'", "") + ".jpg";
 		}
-		
+
 		return imageURL;
 	}
 
@@ -247,11 +288,11 @@ public class BrasilCdiscountCrawler extends Crawler {
 	 */
 	private Prices crawlPrices(Document document) {
 		Prices prices = new Prices();
-		
+
 		// bank slip
 		Float bankSlipPrice = crawlPrice(document);
 		prices.insertBankTicket(bankSlipPrice);
-		
+
 		// card payment options
 		Map<Integer, Float> installments = crawlCardInstallments(document);
 		prices.insertCardInstallment(Card.VISA.toString(), installments);
@@ -260,10 +301,10 @@ public class BrasilCdiscountCrawler extends Crawler {
 		prices.insertCardInstallment(Card.DINERS.toString(), installments);
 		prices.insertCardInstallment(Card.ELO.toString(), installments);
 		prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-		
+
 		return prices;
 	}
-	
+
 	private ArrayList<String> crawlCategories(Document document) {
 		ArrayList<String> categories = new ArrayList<String>();
 		return categories;
@@ -275,37 +316,37 @@ public class BrasilCdiscountCrawler extends Crawler {
 		}
 		return "";
 	}
-	
+
 	private Map<Integer, Float> crawlCardInstallments(Document document) {
 		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
 		Elements trElements = document.select("div.parcelamento ul.tabsCont .tabCont.selected .parcelCartao table tbody tr");
 		for (Element trElement : trElements) {
 			Element installmentNumberElement = trElement.select("th").first();
 			Element installmentPriceElement = trElement.select("td").first();
-			
+
 			if (installmentNumberElement != null && installmentPriceElement != null) {
 				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
-				
+
 				if (parsedNumbers.size() > 0) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
 					Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
-					
+
 					installments.put(installmentNumber, installmentPrice);
 				}
 			}
 		}
-		
+
 		return installments;
 	}
 
 	private boolean crawlAvailability(Document document) {
 		boolean available = true;
-		
+
 		Element unavailableElement = document.select(".alertaIndisponivel.box3").first();
 		if (unavailableElement != null) {
 			available = false;
 		}
-		
+
 		return available;
 	}
 
@@ -333,7 +374,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		return internalId;
 	}
-	
+
 	private String crawlInternalPid(JSONObject skuInformationJSON) {
 		String internalPid = null;
 
@@ -423,8 +464,8 @@ public class BrasilCdiscountCrawler extends Crawler {
 				if (tag.html().trim().startsWith("var siteMetadata = ")) {
 					skuJson = new JSONObject
 							(node.getWholeData().split(Pattern.quote("var siteMetadata = "))[1] +
-							 node.getWholeData().split(Pattern.quote("var siteMetadata = "))[1].split(Pattern.quote("}};"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("var siteMetadata = "))[1].split(Pattern.quote("}};"))[0]
+									);
 				}
 			}
 		}
