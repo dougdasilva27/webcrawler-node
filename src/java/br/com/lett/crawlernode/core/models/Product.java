@@ -170,9 +170,9 @@ public class Product {
 		sb.append("internalPid: " + this.internalPid + "\n");
 		sb.append("name: " + this.name + "\n");
 		sb.append("price: " + this.price + "\n");
-		if (this.prices != null) sb.append("prices: " + this.prices.toString() + "\n");
+		sb.append("prices: " + (this.prices != null ? this.prices.toString() : null) + "\n");
 		sb.append("available: " + this.available + "\n");
-		sb.append("marketplace: " + this.marketplace + "\n");
+		sb.append("marketplace: " +  (this.marketplace != null ? this.marketplace.length() : null) + "\n");
 		sb.append("category1: " + this.category1 + "\n");
 		sb.append("category2: " + this.category2 + "\n");
 		sb.append("category3: " + this.category3 + "\n");
