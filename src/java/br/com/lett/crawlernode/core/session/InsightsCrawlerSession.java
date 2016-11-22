@@ -8,7 +8,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.server.QueueService;
 
-public class InsightsCrawlerSession extends CrawlerSession {
+public class InsightsCrawlerSession extends Session {
 
 	/** Processed id associated with the sku being crawled */
 	private Long processedId;

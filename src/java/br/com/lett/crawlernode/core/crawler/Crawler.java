@@ -11,8 +11,8 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
@@ -64,7 +64,7 @@ public class Crawler implements Runnable {
 
 
 	/** The current crawling session. */
-	protected CrawlerSession session;
+	protected Session session;
 
 	/**
 	 * Cookies that must be used to fetch the sku page
@@ -79,7 +79,7 @@ public class Crawler implements Runnable {
 	protected CrawlerWebdriver webdriver;
 
 
-	public Crawler(CrawlerSession session) {
+	public Crawler(Session session) {
 		this.session = session;
 		this.cookies = new ArrayList<Cookie>();
 	}
@@ -140,7 +140,7 @@ public class Crawler implements Runnable {
 					Logging.printLogError(logger, session, "Error in active void method.");
 
 					if (activeVoidResultProduct == null) activeVoidResultProduct = new Product();
-					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
 				}
 			}
@@ -154,7 +154,7 @@ public class Crawler implements Runnable {
 				} catch (Exception e) {
 					Logging.printLogError(logger, session, "Error in process product method.");
 
-					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
 				}
 			}
@@ -172,7 +172,7 @@ public class Crawler implements Runnable {
 				try {
 					processProduct(product);
 				} catch (Exception e) {
-					CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
 				}
 			}
@@ -362,6 +362,7 @@ public class Crawler implements Runnable {
 
 	/**
 	 * Performs any desired transformation on the URL before the actual fetching.
+	 * 
 	 * @param url the URL we want to modify
 	 * @return the modified URL, that will be used in the fetching
 	 */
@@ -407,7 +408,7 @@ public class Crawler implements Runnable {
 	/**
 	 * Contains all the logic to sku information extraction.
 	 * Must be implemented on subclasses.
-	 * By default, returns an empty product.
+	 * 
 	 * @param document
 	 * @return A product with all it's crawled informations
 	 */
@@ -565,7 +566,7 @@ public class Crawler implements Runnable {
 				Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
 
 				// register business logic error on session
-				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
+				SessionError error = new SessionError(SessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
 				session.registerError(error);
 
 				// if we end up with a void at end of truco, we must change the status of the processed to void

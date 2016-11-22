@@ -7,10 +7,11 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.crawler.ImageCrawler;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -31,24 +32,29 @@ public class TaskFactory {
 	 * @param session
 	 * @return
 	 */
-	public static Runnable createTask(CrawlerSession session) {
+	public static Runnable createTask(Session session) {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
-		if (session instanceof InsightsCrawlerSession || 
-			session instanceof SeedCrawlerSession || 
-			session instanceof TestCrawlerSession ||
-			session instanceof DiscoveryCrawlerSession) {
-			
+		if (session instanceof InsightsCrawlerSession 	|| 
+			session instanceof SeedCrawlerSession 		|| 
+			session instanceof TestCrawlerSession 		||
+			session instanceof DiscoveryCrawlerSession
+			) {
+
 			return createCrawlerTask(session);
 		}
-		
+
+		if (session instanceof RatingReviewsCrawlerSession) {
+			return createRateReviewCrawlerTask(session);
+		}
+
 		if (session instanceof ImageCrawlerSession) {
 			return createImageCrawlerTask(session);
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Create an instance of a crawler task for the market in the session.
 	 * http://stackoverflow.com/questions/5658182/initializing-a-class-with-class-forname-and-which-have-a-constructor-which-tak
@@ -56,15 +62,15 @@ public class TaskFactory {
 	 * @param controllerClassName The name of the controller class
 	 * @return Controller instance
 	 */
-	private static Runnable createCrawlerTask(CrawlerSession session) {
+	private static Runnable createCrawlerTask(Session session) {
 
 		// assemble the class name
-		String taskClassName = assembleClassName(session.getMarket());
+		String taskClassName = assembleCrawlerClassName(session.getMarket());
 
 		try {
 
 			// instantiating a crawler task with the given session as it's constructor parameter
-			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(CrawlerSession.class);
+			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
 			Runnable task = (Runnable) constructor.newInstance(session);
 
 			return task;
@@ -75,16 +81,30 @@ public class TaskFactory {
 
 		return null;
 	}
-	
-	/**
-	 * 
-	 * @param session
-	 * @return
-	 */
-	private static Runnable createImageCrawlerTask(CrawlerSession session) {
-		return new ImageCrawler(session);
+
+	private static Runnable createRateReviewCrawlerTask(Session session) {
+
+		// assemble the class name
+		String taskClassName = assembleRateReviewCrawlerClassName(session.getMarket());
+
+		try {
+
+			// instantiating a crawler task with the given session as it's constructor parameter
+			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
+			Runnable task = (Runnable) constructor.newInstance(session);
+
+			return task;
+		} catch (Exception ex) {
+			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+		}
+
+		return null;
 	}
 
+	private static Runnable createImageCrawlerTask(Session session) {
+		return new ImageCrawler(session);
+	}
 
 	/**
 	 * Assemble the name of a task class.
@@ -93,17 +113,39 @@ public class TaskFactory {
 	 * @param name The name of the market
 	 * @return The name of the task class
 	 */
-	private static String assembleClassName(Market market) {
+	private static String assembleCrawlerClassName(Market market) {
 		String city = market.getCity();
 		String name = market.getName();
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("br.com.lett.crawlernode.crawlers." + city + ".");
+		sb.append("br.com.lett.crawlernode.crawlers.corecontent." + city + ".");
 		sb.append(city.substring(0, 1).toUpperCase());
 		sb.append(city.substring(1).toLowerCase());
 		sb.append(name.substring(0, 1).toUpperCase());
 		sb.append(name.substring(1).toLowerCase());
 		sb.append("Crawler");
+
+		return sb.toString();
+	}
+
+	/**
+	 * Assemble the name of a task class.
+	 * 
+	 * @param the market for which we will run the task
+	 * @param name The name of the market
+	 * @return The name of the task class
+	 */
+	private static String assembleRateReviewCrawlerClassName(Market market) {
+		String city = market.getCity();
+		String name = market.getName();
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("br.com.lett.crawlernode.crawlers.ratingandreviews." + city + ".");
+		sb.append(city.substring(0, 1).toUpperCase());
+		sb.append(city.substring(1).toLowerCase());
+		sb.append(name.substring(0, 1).toUpperCase());
+		sb.append(name.substring(1).toLowerCase());
+		sb.append("RatingReviewCrawler");
 
 		return sb.toString();
 	}

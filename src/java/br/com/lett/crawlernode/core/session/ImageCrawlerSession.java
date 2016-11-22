@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.server.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class ImageCrawlerSession extends CrawlerSession {
+public class ImageCrawlerSession extends Session {
 	
 	public static final String PRIMARY_IMG_TYPE = "primary";
 	public static final String SECONDARY_IMG_TYPE = "secondary";

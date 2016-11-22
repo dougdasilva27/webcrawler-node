@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.server.QueueHandler;
 import br.com.lett.crawlernode.server.QueueService;
@@ -57,7 +57,7 @@ public class MessageFetcher implements Runnable {
 					
 					// create a crawler session from the message
 					Logging.printLogDebug(logger, "Creating session...");
-					CrawlerSession session = SessionFactory.createSession(message, result.getQueueName(), markets);
+					Session session = SessionFactory.createSession(message, result.getQueueName(), markets);
 					
 					Logging.printLogDebug(logger, session, "Created a session of type: [" + session.getClass().getSimpleName() + "]");
 					Logging.printLogDebug(logger, session, session.toString());

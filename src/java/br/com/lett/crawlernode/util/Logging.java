@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 
@@ -27,11 +27,11 @@ public class Logging {
 		printLogInfo(logger, null, msg);
 	}
 	
-	public static void printLogInfo(Logger logger, CrawlerSession session, String msg) {
+	public static void printLogInfo(Logger logger, Session session, String msg) {
 		printLogInfo(logger, session, null, msg);
 	}
 	
-	public static void printLogInfo(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+	public static void printLogInfo(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.info("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
@@ -40,11 +40,11 @@ public class Logging {
 		printLogError(logger, null, msg);
 	}
 	
-	public static void printLogError(Logger logger, CrawlerSession session, String msg) {
+	public static void printLogError(Logger logger, Session session, String msg) {
 		printLogError(logger, session, null, msg);
 	}
 	
-	public static void printLogError(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+	public static void printLogError(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.error("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
@@ -54,11 +54,11 @@ public class Logging {
 		printLogDebug(logger, null, msg);
 	}
 	
-	public static void printLogDebug(Logger logger, CrawlerSession session, String msg) {
+	public static void printLogDebug(Logger logger, Session session, String msg) {
 		printLogDebug(logger, session, null, msg);
 	}
 	
-	public static void printLogDebug(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+	public static void printLogDebug(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.debug("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
@@ -68,11 +68,11 @@ public class Logging {
 		printLogWarn(logger, null, msg);
 	}
 	
-	public static void printLogWarn(Logger logger, CrawlerSession session, String msg) {
+	public static void printLogWarn(Logger logger, Session session, String msg) {
 		printLogWarn(logger, session, null, msg);
 	}
 	
-	public static void printLogWarn(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+	public static void printLogWarn(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
@@ -82,16 +82,16 @@ public class Logging {
 		printLogTrace(logger, null, msg);
 	}
 	
-	public static void printLogTrace(Logger logger, CrawlerSession session, String msg) {
+	public static void printLogTrace(Logger logger, Session session, String msg) {
 		printLogTrace(logger, session, null, msg);
 	}
 	
-	public static void printLogTrace(Logger logger, CrawlerSession session, JSONObject metadata, String msg) {
+	public static void printLogTrace(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
 	
 	
-	private static JSONObject createMetadata(JSONObject metadata, CrawlerSession session) {
+	private static JSONObject createMetadata(JSONObject metadata, Session session) {
 		
 		if(metadata == null || !(metadata instanceof JSONObject) ) metadata = new JSONObject();
 		metadata.put("version",  CommonMethods.getVersion());

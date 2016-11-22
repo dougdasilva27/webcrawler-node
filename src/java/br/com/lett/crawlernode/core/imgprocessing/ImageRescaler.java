@@ -18,7 +18,7 @@ import javax.imageio.stream.FileImageOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -41,7 +41,7 @@ public class ImageRescaler {
 	private static final float ORIGINAL_IMAGE_COMPRESSION_QUALITY = 1.0f;
 
 	public static void rescale(
-			CrawlerSession session,
+			Session session,
 			BufferedImage image, 
 			File localFile) throws FileNotFoundException, IOException {
 

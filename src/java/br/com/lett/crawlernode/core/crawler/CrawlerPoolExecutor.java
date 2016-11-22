@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
@@ -88,6 +88,9 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		else if (r instanceof ImageCrawler) {
 			Logging.printLogDebug(logger, ((ImageCrawler)r).session, "START");
 		}
+		else if (r instanceof RatingReviewCrawler) {
+			Logging.printLogDebug(logger, ((RatingReviewCrawler)r).session, "START");
+		}
 
 		synchronized(lock) {
 			activeTaskCount++;
@@ -100,7 +103,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		super.afterExecute(r, t);
 
 		// get the array of errors
-		ArrayList<CrawlerSessionError> errors = retrieveTaskErrors(r);
+		ArrayList<SessionError> errors = retrieveTaskErrors(r);
 
 		synchronized(lock) {
 			activeTaskCount--;
@@ -139,7 +142,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	 * @param r
 	 * @return
 	 */
-	private ArrayList<CrawlerSessionError> retrieveTaskErrors(Runnable r) {
+	private ArrayList<SessionError> retrieveTaskErrors(Runnable r) {
 		if (r instanceof Crawler) {
 			return ((Crawler)r).session.getErrors();
 		}
@@ -147,7 +150,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			return ((ImageCrawler)r).session.getErrors();
 		}
 
-		return new ArrayList<CrawlerSessionError>();
+		return new ArrayList<SessionError>();
 	}
 
 	private void finalizeTask(Runnable r, Throwable t) {
@@ -157,6 +160,43 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		else if (r instanceof ImageCrawler) {
 			finalizeImageTask(((ImageCrawler)r).session, t);
 		}
+		else if (r instanceof RatingReviewCrawler) {
+			finalizeRatingReviewsTask(((RatingReviewCrawler)r).session, t);
+		}
+	}
+
+	private void finalizeRatingReviewsTask(Session session, Throwable t) {
+		ArrayList<SessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+		// in case of the thread pool get a non checked exception
+		if (t != null) {
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(t));
+		} 
+
+		else {
+
+			// errors collected manually
+			// they can be exceptions or business logic errors
+			// and are all gathered inside the session
+			if (errors.size() > 0) {
+				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			}
+
+			else {
+				
+				// only remove the task from queue if it was flawless
+				// and if we are not testing, because when testing there is no message processing
+				Logging.printLogDebug(logger, session, "Task completed.");
+				Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+
+				QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+			}
+		}
+
+		Logging.printLogDebug(logger, session, "END");
 	}
 
 	/**
@@ -165,8 +205,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	 * @param session
 	 * @param t
 	 */
-	private void finalizeCrawlerTask(CrawlerSession session, Throwable t) {
-		ArrayList<CrawlerSessionError> errors = session.getErrors();
+	private void finalizeCrawlerTask(Session session, Throwable t) {
+		ArrayList<SessionError> errors = session.getErrors();
 
 		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
@@ -187,8 +227,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
 				// print all errors of type exceptions
-				for (CrawlerSessionError error : errors) {
-					if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
+				for (SessionError error : errors) {
+					if (error.getType().equals(SessionError.EXCEPTION)) {
 						Logging.printLogError(logger, session, error.getErrorContent());
 					}
 				}
@@ -222,8 +262,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	 * @param session
 	 * @param t
 	 */
-	private void finalizeImageTask(CrawlerSession session, Throwable t) {
-		ArrayList<CrawlerSessionError> errors = session.getErrors();
+	private void finalizeImageTask(Session session, Throwable t) {
+		ArrayList<SessionError> errors = session.getErrors();
 
 		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
@@ -237,8 +277,8 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 				Logging.printLogError(logger, session, "Task failed!");
 
 				// print all errors of type exceptions
-				for (CrawlerSessionError error : errors) {
-					if (error.getType().equals(CrawlerSessionError.EXCEPTION)) {
+				for (SessionError error : errors) {
+					if (error.getType().equals(SessionError.EXCEPTION)) {
 						Logging.printLogError(logger, session, error.getErrorContent());
 					}
 				}
@@ -250,7 +290,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 
 			QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
 		}
-		
+
 		// clear the session
 		session.clearSession();
 

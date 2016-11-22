@@ -28,8 +28,8 @@ import br.com.lett.crawlernode.core.imgprocessing.FeatureExtractor;
 import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.imgprocessing.ImageRescaler;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
-import br.com.lett.crawlernode.core.session.CrawlerSessionError;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 
 import br.com.lett.crawlernode.main.Main;
@@ -43,11 +43,11 @@ public class ImageCrawler implements Runnable {
 
 	private final int IMAGE_CHECKING_TRY = 5;
 
-	protected CrawlerSession session;
+	protected Session session;
 
 	private FeatureExtractor imageFeatureExtractor;
 
-	public ImageCrawler(CrawlerSession session) {
+	public ImageCrawler(Session session) {
 		this.session = session;
 		this.imageFeatureExtractor = new FeatureExtractor();
 	}
@@ -116,7 +116,7 @@ public class ImageCrawler implements Runnable {
 			}
 
 		} catch (Exception e) {
-			session.registerError( new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}		
 
@@ -301,7 +301,7 @@ public class ImageCrawler implements Runnable {
 				
 			} catch (Exception e) {
 				Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
-				CrawlerSessionError error = new CrawlerSessionError(CrawlerSessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+				SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
 				session.registerError(error);
 			}
 			Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");

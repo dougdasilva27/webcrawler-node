@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import br.com.lett.crawlernode.core.models.Market;
 
-public class TestCrawlerSession extends CrawlerSession {
+public class TestCrawlerSession extends Session {
 	
 	/** Number of truco checks */
 	private int trucoAttemptsCounter;
@@ -20,7 +20,7 @@ public class TestCrawlerSession extends CrawlerSession {
 		this.voidAttemptsCounter = 0;
 
 		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<CrawlerSessionError>();
+		this.crawlerSessionErrors = new ArrayList<SessionError>();
 
 		// setting session id
 		this.sessionId = "test";

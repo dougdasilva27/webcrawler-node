@@ -17,6 +17,7 @@ import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.session.CrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -71,6 +72,7 @@ import br.com.lett.crawlernode.server.S3Service;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 
 /**
@@ -144,7 +146,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A string containing the page html content
 	 */
-	public static String fetchString(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+	public static String fetchString(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return fetchPage(reqType, session, url, urlParameters, cookies, 1);	
 	}
 
@@ -155,7 +157,7 @@ public class DataFetcher {
 	 * @return
 	 * @throws IOException
 	 */
-	public static File fetchImage(CrawlerSession session) throws IOException {
+	public static File fetchImage(Session session) throws IOException {
 		return downloadImageFromMarket(1, session);
 	}
 
@@ -169,7 +171,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A Document with the data from the url passed, or null if something went wrong.
 	 */
-	public static Document fetchDocument(String reqType, CrawlerSession session, String url, String urlParameters, List<Cookie> cookies) {
+	public static Document fetchDocument(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));	
 	}
 
@@ -183,7 +185,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONObject fetchJSONObject(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+	public static JSONObject fetchJSONObject(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
 		return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
@@ -197,7 +199,7 @@ public class DataFetcher {
 	 * @param cookies
 	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
 	 */
-	public static JSONArray fetchJSONArray(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies) {
+	public static JSONArray fetchJSONArray(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
 		return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
 	}
 
@@ -208,11 +210,11 @@ public class DataFetcher {
 	 * @param session
 	 * @return The integer code. Null if we have an exception.
 	 */
-	public static Integer getUrlResponseCode(String url, CrawlerSession session) {
+	public static Integer getUrlResponseCode(String url, Session session) {
 		return getUrlResponseCode(url, session, 1);
 	}
 
-	public static Integer getUrlResponseCode(String url, CrawlerSession session, int attempt) {
+	public static Integer getUrlResponseCode(String url, Session session, int attempt) {
 		try {
 			URL urlObject = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, session, new ArrayList<String>()));
@@ -244,7 +246,7 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return a json object string, even if it is an empty json object
 	 */
-	private static String fetchJson(String reqType, CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) {
+	private static String fetchJson(String reqType, Session session, String url, String payload, List<Cookie> cookies, int attempt) {
 		try {
 
 			if (reqType.equals(GET_REQUEST)) {
@@ -276,7 +278,7 @@ public class DataFetcher {
 
 	}
 
-	private static String fetchJsonPOST(CrawlerSession session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
+	private static String fetchJsonPOST(Session session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 
 		String randUserAgent = randUserAgent();
@@ -374,6 +376,7 @@ public class DataFetcher {
 
 			if(payloadJson != null && payloadJson.length() > 0) {
 				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
+				@SuppressWarnings("rawtypes")
 				Iterator iterator = payloadJson.keySet().iterator();
 
 				while(iterator.hasNext()) {
@@ -427,7 +430,7 @@ public class DataFetcher {
 	 */
 	private static String fetchPage(
 			String reqType, 
-			CrawlerSession session, 
+			Session session, 
 			String url, 
 			String urlParameters, 
 			List<Cookie> cookies, 
@@ -476,7 +479,7 @@ public class DataFetcher {
 	 * @return
 	 */
 	private static String fetchPageGET(
-			CrawlerSession session, 
+			Session session, 
 			String url, 
 			List<Cookie> cookies, 
 			int attempt) {
@@ -668,6 +671,188 @@ public class DataFetcher {
 		}
 	}
 
+
+	/**
+	 * Fetch a page
+	 * By default the redirects are enabled in the RequestConfig
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookieName
+	 * @param cookies
+	 * @param attempt
+	 * @return the header value. Will return an empty string if the cookie wasn't found.
+	 */
+	public static Map<String,String> fetchCookies(
+			Session session, 
+			String url,
+			List<Cookie> cookies, 
+			int attempt) {
+
+		LettProxy randProxy = null;
+		String randUserAgent = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
+
+		try {
+			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
+
+			randUserAgent = randUserAgent();
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+
+			CookieStore cookieStore = new BasicCookieStore();
+			if (cookies != null) {
+				if (cookies.size() > 0) {
+					for (Cookie cookie : cookies) {
+						cookieStore.addCookie(cookie);
+					}
+				}
+			}
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.setProxy(proxy)
+						.build();
+			} else {
+				requestConfig = RequestConfig.custom()
+						.setCookieSpec(CookieSpecs.STANDARD)
+						.setRedirectsEnabled(true) // set redirect to true
+						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+						.build();
+			}
+			
+
+			List<Header> reqHeaders = new ArrayList<Header>();
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(reqHeaders)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(Proxies.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
+			// do request
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
+			// assembling request information log message
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
+			}
+			S3Service.uploadContentToAmazon(session, requestHash, content);
+
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
+			
+			Map<String,String> cookiesMap = new HashMap<>();
+			
+			// get all cookie headers
+			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
+
+			for (Header header : headers) {
+				String cookieHeader = header.getValue();
+				String cookieName = cookieHeader.split("=")[0].trim();
+				
+				int x = cookieHeader.indexOf(cookieName+"=") + cookieName.length()+1;
+				int y = cookieHeader.indexOf(";", x);
+				
+				String cookieValue = cookieHeader.substring(x, y).trim();
+				
+				cookiesMap.put(cookieName, cookieValue);
+			}
+			
+			return cookiesMap;
+
+
+		} catch (Exception e) {
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+				return null;
+			} else {
+				return fetchCookies(session, url, cookies, attempt+1);	
+			}
+
+		}
+	}
+	
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
@@ -680,7 +865,7 @@ public class DataFetcher {
 	 * @return the header value. Will return an empty string if the cookie wasn't found.
 	 */
 	public static String fetchCookie(
-			CrawlerSession session, 
+			Session session, 
 			String url,
 			String cookieName,
 			List<Cookie> cookies, 
@@ -857,7 +1042,7 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return
 	 */
-	private static String fetchPagePOST(CrawlerSession session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
+	private static String fetchPagePOST(Session session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 
@@ -1027,7 +1212,7 @@ public class DataFetcher {
 
 	public static String fetchPagePOSTWithHeaders(
 			String url, 
-			CrawlerSession session, 
+			Session session, 
 			String urlParameters, 
 			List<Cookie> cookies, 
 			int attempt, 
@@ -1207,7 +1392,7 @@ public class DataFetcher {
 			String requestType, 
 			LettProxy proxy,
 			String userAgent,
-			CrawlerSession session, 
+			Session session, 
 			CloseableHttpResponse response,
 			String requestHash) {
 
@@ -1235,7 +1420,7 @@ public class DataFetcher {
 	 * @param session
 	 * @return String with the request response, either in html or plain text format
 	 */
-	private static String processContent(PageContent pageContent, CrawlerSession session) {		
+	private static String processContent(PageContent pageContent, Session session) {		
 		Parser parser = new Parser(session);
 		parser.parse(pageContent);
 
@@ -1254,7 +1439,7 @@ public class DataFetcher {
 	 */
 	private static File downloadImageFromMarket(
 			int attempt,
-			CrawlerSession session) {
+			Session session) {
 
 		File localFile = null;
 		LettProxy randProxy = null;
@@ -1409,7 +1594,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static LettProxy randLettProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
+	private static LettProxy randLettProxy(int attempt, Session session, ArrayList<String> proxyServices) {
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
@@ -1432,7 +1617,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static Proxy randProxy(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {		
+	private static Proxy randProxy(int attempt, Session session, ArrayList<String> proxyServices) {		
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
@@ -1469,13 +1654,13 @@ public class DataFetcher {
 	 * @param session
 	 * @return
 	 */
-	private static LettProxy getNextProxy(String serviceName, CrawlerSession session) {
+	private static LettProxy getNextProxy(String serviceName, Session session) {
 		LettProxy nextProxy = null;
 
 		if (session instanceof TestCrawlerSession) { // testing
 			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
 			if (proxies.size() > 0) {
-				nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+				nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 			} else {
 				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 			}
@@ -1484,7 +1669,7 @@ public class DataFetcher {
 			if (Main.proxies != null) { // production
 				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
 				if (proxies.size() > 0) {
-					nextProxy = proxies.get( CommonMethods.randInt(0, proxies.size()-1) );
+					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 				}
@@ -1499,7 +1684,7 @@ public class DataFetcher {
 	 * @return
 	 */
 	public static String randUserAgent() {
-		return userAgents.get(CommonMethods.randInt(0, userAgents.size() - 1));
+		return userAgents.get(MathCommonsMethods.randInt(0, userAgents.size() - 1));
 	}
 
 	/**
@@ -1510,7 +1695,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	private static String getProxyService(int attempt, CrawlerSession session, ArrayList<String> proxyServices) {
+	private static String getProxyService(int attempt, Session session, ArrayList<String> proxyServices) {
 		String service = null;
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
@@ -1546,7 +1731,7 @@ public class DataFetcher {
 		return headerValue.substring(beginIndex, headerValue.length()).trim();
 	}
 
-	private static String generateRequestHash(CrawlerSession session) {
+	private static String generateRequestHash(Session session) {
 		String s = session.getSessionId() + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		return DigestUtils.md5Hex(s);
 	}
