@@ -11,12 +11,16 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilSaraivaCrawler extends Crawler {
 
 	private final String HOME_PAGE_HTTP = "http://www.saraiva.com.br";
 	private final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
+	
+	private final int LARGER_IMAGE_DIMENSION = 550;
 
 
 	public BrasilSaraivaCrawler(Session session) {
@@ -38,47 +42,20 @@ public class BrasilSaraivaCrawler extends Crawler {
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// ID interno
-			String internalId = null;
-			Element elementInternalId = doc.select(".contentGeral .content .referenc").first();
-			if(elementInternalId != null) {
-				internalId = elementInternalId.text().substring(elementInternalId.text().indexOf(':') + 1).replace(")", "").trim();
-			}
+			// internalId
+			String internalId = crawlInternalId(doc);
 
 			// Pid
 			String internalPid = internalId;
 
-			// Nome
-			String name = null;
-			Element elementName = doc.select(".contentGeral .content h1").first();
-			if(elementName != null) {
-				name = elementName.text();
-			}
+			// name
+			String name = crawlName(doc);
 
-			// Disponibilidade
-			boolean available = true;
-			Element elementAlertMe = doc.select(".alert_me").first();
-			if(elementAlertMe != null) {
-				if( !elementAlertMe.attr("style").equals("") ) {
-					if( elementAlertMe.attr("style").equals("display: block;") ) {
-						available = false;
-					}
-				} else {
-					String style = elementAlertMe.select("#alertme_container").first().attr("style");
-					if(style.equals("display: block;")) {
-						available = false;
-					}
-				}
-			}
+			// availability
+			boolean available = crawlAvailability(doc);
 
-			// Preço
-			Float price = null;
-			if(available) {
-				Element elementPrice = doc.select(".price_complete_info .old_info div .finalPrice b").first();
-				if(elementPrice != null) {
-					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				}
-			}
+			// price
+			Float price = crawlPrice(doc);
 
 			// Categoria
 			String category1 = "";
@@ -101,27 +78,11 @@ public class BrasilSaraivaCrawler extends Crawler {
 				}
 			}
 
-			// Imagem primária
-			String primaryImage = null;
-			Element elementPrimaryImage = doc.select(".product-img-box .product-image img").first();
-			if(elementPrimaryImage != null) {
-				primaryImage = elementPrimaryImage.attr("src");
-			}
+			// primaryImage
+			String primaryImage = crawlPrimaryImage(doc);
 
-			// Imagens secundárias
-			Element elementProduct = doc.select(".mainProduct").first();
-			Elements elementImages = elementProduct.select(".jcarousel-skin-pika li a img");
-			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
-
-			for(Element image : elementImages) {
-				if( !image.attr("src").equals(primaryImage) ) {
-					secondaryImagesArray.put(image.attr("src"));
-				}
-			}			
-			if (secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+			// secondaryImages
+			String secondaryImages = crawlSecondaryImages(doc);
 
 			// Descrição
 			String description = "";
@@ -167,7 +128,120 @@ public class BrasilSaraivaCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		Element elementProduct = document.select(".mainProduct").first();
+		Element elementProduct = document.select("section.product-allinfo").first();
 		return elementProduct != null;
+	}
+	
+	private String crawlInternalId(Document document) {
+		String internalId = null;
+		
+		Element elementInternalId = document.select(".contentGeral .content .referenc").first();
+		if(elementInternalId != null) {
+			internalId = elementInternalId.text().substring(elementInternalId.text().indexOf(':') + 1).replace(")", "").trim();
+		}
+		
+		return internalId;
+	}
+	
+	private String crawlName(Document document) {
+		String name = null;
+		
+		Element elementName = document.select("section.product-info h1").first();
+		if(elementName != null) {
+			name = elementName.ownText().trim();
+		}
+		
+		return name;
+	}
+	
+	private Float crawlPrice(Document document) {
+		Float price = null;
+		
+		boolean skuIsAvailable = crawlAvailability(document);
+		
+		if(skuIsAvailable) {
+			Element elementPrice = document.select(".price_complete_info .old_info div .finalPrice b").first();
+			if(elementPrice != null) {
+				price = MathCommonsMethods.parseFloat(elementPrice.text());
+			}
+		}
+		
+		return price;
+	}
+	
+	private boolean crawlAvailability(Document document) {
+		boolean available = true;
+		Element elementAlertMe = document.select(".alert_me").first();
+		if(elementAlertMe != null) {
+			if( !elementAlertMe.attr("style").equals("") ) {
+				if( elementAlertMe.attr("style").equals("display: block;") ) {
+					available = false;
+				}
+			} else {
+				String style = elementAlertMe.select("#alertme_container").first().attr("style");
+				if(style.equals("display: block;")) {
+					available = false;
+				}
+			}
+		}
+		
+		return available;
+	}
+	
+	/**
+	 * Crawl an image with a default dimension of 430.
+	 * There is a larger image with dimension of 550, but with javascript off
+	 * this link disappear. So we modify the image URL and set the dimension parameter
+	 * to the desired larger size.
+	 * 
+	 * Parameter to mody: &l
+	 * 
+	 * e.g:
+	 * original: http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=430&a=-1
+	 * larger: http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=550&a=-1
+	 * 
+	 * @param document
+	 * @return
+	 */
+	private String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		
+		// get original image URL
+		Element elementPrimaryImage = document.select("div.product-image-center a img").first();
+		if(elementPrimaryImage != null) {
+			primaryImage = elementPrimaryImage.attr("src");
+		}
+		
+		// modify the dimension parameter
+		String biggerPrimaryImage = CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+		
+		return biggerPrimaryImage;
+	}
+	
+	/**
+	 * Get all the secondary images URL from thumbs container.
+	 * Analogous treatment to that performed on primary image URL must be applied,
+	 * so we can get the largest images URL.
+	 *  
+	 * @param document
+	 * @return
+	 */
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+		
+		Elements elementImages = document.select("section.product-image div.thumbs-container-swiper div#thumbs-images a img");
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		for(int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the primary image
+			String imageURL = elementImages.attr("src").trim();
+			String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+			
+			secondaryImagesArray.put(biggerImageURL);
+		}			
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
 	}
 }

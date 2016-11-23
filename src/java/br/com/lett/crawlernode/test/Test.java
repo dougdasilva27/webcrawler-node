@@ -92,7 +92,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.angeloni.com.br/eletro/p/fritadeira-eletrica-cadence-air-fry-branco-ref-frt520-3749166", market);
+			Session session = SessionFactory.createSession("http://www.saraiva.com.br/smartphone-lg-k10-indigo-tela-53-android-60-marshmallow-camera-13mp-dualchip-tv-digital-16gb-9260980.html", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);

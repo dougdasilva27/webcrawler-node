@@ -170,11 +170,9 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				product.setStock(stock);
 				product.setMarketplace(variationMarketplace);
 				product.setAvailable(available);
-
+				
 				products.add(product);
-
 			}
-
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -261,7 +259,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		Map<String,Prices> marketplaces = new HashMap<>();
 
 		String url = "http://www.submarino.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
-
+		
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 		Elements lines = doc.select(".more-offers-table-row");
 		
@@ -279,12 +277,12 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			installmentMapPrice.put(1, partnerPrice);
 			prices.insertBankTicket(partnerPrice);
 
-			Element installmentElement = linePartner.select(".installment-price").first();
+			Element installmentElement = linePartner.select("span.payment-option").first();
 			if(installmentElement != null){
 				String text = installmentElement.text().toLowerCase().trim();
 
-				// When text is empty has no installment for this marketplace.
-				if(!text.isEmpty()){
+				// when text is empty there is no installment for this marketplace
+				if(!text.isEmpty()) {
 					int x = text.indexOf("x");
 
 					Integer installment = Integer.parseInt(text.substring(0, x).trim());

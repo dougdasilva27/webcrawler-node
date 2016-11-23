@@ -71,9 +71,10 @@ public class CommonMethods {
 	}
 	
 	/**
-	 * Modify an URL parameter with a new value
+	 * Modify an URL parameter with a new value.
+	 * 
 	 * @param url the URL to be modified
-	 * @param parameter the name of the paramter to have it's value modified
+	 * @param parameter the name of the parameter to have it's value modified
 	 * @param value the new value of the parameter
 	 * @return an URL with the new value in the specified parameter
 	 */
@@ -90,7 +91,7 @@ public class CommonMethods {
 				List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
 
 				for (NameValuePair param : paramsOriginal) {
-					if ( param.getName().contains(parameter) ) {
+					if ( param.getName().equals(parameter) ) {
 						NameValuePair newParameter = new BasicNameValuePair(parameter, value);
 						paramsNew.add(newParameter);
 					}
