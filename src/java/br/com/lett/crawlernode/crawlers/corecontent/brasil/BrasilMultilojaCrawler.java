@@ -9,11 +9,15 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -83,7 +87,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 			boolean hasVariations = hasProductVariations(doc);
 
 			// Pid
-			String internalPid = this.crawlInternalPid(doc);
+			String internalPid = this.crawlInternalPid(session.getOriginalURL());
 
 			// Name
 			String name = this.crawlMainPageName(doc, hasVariations);
@@ -118,7 +122,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 				Logging.printLogDebug(logger, session, "Crawling information of more than one product...");
 
-				Elements productVariationElements = this.crawlSkuOptions(doc);
+				Elements productVariationElements = crawlSkuOptions(doc);
 
 
 				for(int i = 0; i < productVariationElements.size(); i++) {
@@ -126,23 +130,30 @@ public class BrasilMultilojaCrawler extends Crawler {
 					Element sku = productVariationElements.get(i);
 
 					// InternalId
-					String variationInternalID = sku.attr("value");
+					String internalId = sku.attr("value");
 
 					// Getting name variation
 					String variationName = name + " - " + sku.attr("title");				
 
 					// Available
-					boolean available = this.crawlAvailabilityVoltage(sku);
+					boolean available = crawlAvailabilityVoltage(sku);
+
+					// Prices Json
+					JSONObject jsonPrices = crawlJSONPrices(internalId, available);
 
 					// Price
-					Float variationPrice = this.crawlPrice(doc, available);
+					Float price = crawlPriceVariation(jsonPrices);
+
+					// Prices
+					Prices prices = crawlPrices(jsonPrices, price);
 
 					Product product = new Product();
 					product.setUrl(session.getOriginalURL());
-					product.setInternalId(variationInternalID);
+					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(variationName);
-					product.setPrice(variationPrice);
+					product.setPrice(price);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -165,13 +176,13 @@ public class BrasilMultilojaCrawler extends Crawler {
 			else {
 
 				// idvariation
-				String internalID = this.crawlInternalIDSingleProduct(doc);
+				String internalID = crawlInternalIDSingleProduct(doc);
 
 				// Available
-				boolean available = this.crawlAvailability(doc);
+				boolean available = crawlAvailability(doc);
 
 				// Price
-				Float price = this.crawlPrice(doc, available);
+				Float price = crawlPrice(doc, available);
 
 				Product product = new Product();
 				product.setUrl(session.getOriginalURL());
@@ -311,10 +322,17 @@ public class BrasilMultilojaCrawler extends Crawler {
 	 * General methods *
 	 *******************/
 
-	private String crawlInternalPid(Document document) {
-		String internalId = null;
+	private String crawlInternalPid(String url) {
+		String internalPid = null;
 
-		return internalId;
+		if(url.contains("?")){
+			String text = url.split("\\?")[0];
+
+			String[] tokens = text.split("/");
+			internalPid = tokens[tokens.length-1];
+		}
+
+		return internalPid;
 	}
 
 	private Float crawlPrice(Document doc, boolean available) {
@@ -327,6 +345,18 @@ public class BrasilMultilojaCrawler extends Crawler {
 				price = Float.parseFloat(e.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 			}
 		}
+		return price;
+	}
+
+	private Float crawlPriceVariation(JSONObject jsonPrices) {
+		Float price = null;
+
+		if(jsonPrices.has("price")){
+			price = Float.parseFloat(jsonPrices.getString("price"));
+		} else if(jsonPrices.has("priceVista")){
+			price = Float.parseFloat(jsonPrices.getString("priceVista"));
+		}
+
 		return price;
 	}
 
@@ -449,5 +479,89 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 
 		return description;
+	}
+
+	private JSONObject crawlJSONPrices(String internalId, boolean available){
+		JSONObject prices = new JSONObject();
+
+		if(available){
+			String url = session.getOriginalURL();
+			String payload = "xajax=atualizaCompraCasada&xajaxr=1479918276420&xajaxargs[]=" + internalId;
+
+			Map<String,String> headers = new HashMap<>();
+			headers.put("Content-Type", "application/x-www-form-urlencoded");
+
+			String docString = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+			Document doc = Jsoup.parse(docString);
+
+			Element principalPrice = doc.select(".preco span:not([class])").first();
+
+			if(principalPrice != null){
+				prices.put("price", principalPrice.text().replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim());
+			}
+
+			Element vistaPrice = doc.select(".compraPrazo span").last();
+
+			if(vistaPrice != null){
+				prices.put("priceVista", vistaPrice.text().replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim());
+			}
+
+			Element parcelas = doc.select(".parcela").first();
+
+			if(parcelas != null){
+				String text = parcelas.ownText().toLowerCase();
+
+				if(text.contains("x") && text.contains("$")){
+					int x = text.indexOf("x");
+
+					String installment = text.substring(0, x).replaceAll("[^0-9]", "");
+					String value = text.substring(x).replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim();
+
+					JSONObject parcels = new JSONObject();
+					parcels.put("installment", installment);
+					parcels.put("installmentValue", value);
+
+					prices.put("parcels", parcels);
+				}
+			}
+		}
+
+		return prices;
+	}
+
+	private Prices crawlPrices(JSONObject jsonPrices, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			if(jsonPrices.has("priceVista")){
+				Float vistaPrice = Float.parseFloat(jsonPrices.getString("priceVista"));
+
+				// 1x no cartão e boleto são o mesmo preço
+				installmentPriceMap.put(1, vistaPrice);
+				prices.insertBankTicket(vistaPrice);
+			}
+
+			if(jsonPrices.has("parcels")){
+				JSONObject parcels = jsonPrices.getJSONObject("parcels");
+
+				if(parcels.has("installment") && parcels.has("installmentValue")){
+					Integer installment = Integer.parseInt(parcels.getString("installment"));
+					Float value = Float.parseFloat(parcels.getString("installmentValue"));
+
+					installmentPriceMap.put(installment, value);
+				}
+			}
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.SENFF.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }

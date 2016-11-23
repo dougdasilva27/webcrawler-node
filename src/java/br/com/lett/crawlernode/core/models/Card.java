@@ -16,6 +16,7 @@ public enum Card {
 	DISCOVER,
 	HSCARD,
 	CABAL,
+	SENFF,
 	
 	SHOP_CARD,
 	UNKNOWN_CARD;
@@ -38,6 +39,7 @@ public enum Card {
 			case SHOP_CARD: return "shop_card";
 			case HSCARD: return "hscard";
 			case CABAL: return "cabal";
+			case SENFF: return "senff";
 			default: return "unkown_card";
 		}
 	}
