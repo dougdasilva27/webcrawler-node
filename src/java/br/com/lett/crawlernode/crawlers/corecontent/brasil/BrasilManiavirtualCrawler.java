@@ -12,9 +12,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (25/08/2016):
@@ -79,6 +82,9 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(doc);
 			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -113,6 +119,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -186,10 +193,10 @@ public class BrasilManiavirtualCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element specialPrice = document.select(".skuBestPrice").first();		
+		Element specialPrice = document.select(".descricao-preco > em").last();		
 		
 		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			price = Float.parseFloat( specialPrice.ownText().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		} 
 
 		return price;
@@ -289,4 +296,43 @@ public class BrasilManiavirtualCrawler extends Crawler {
 		return description;
 	}
 
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Element vistaPrice = doc.select(".skuBestPrice").first();
+			
+			if(vistaPrice != null){
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(vistaPrice.ownText());
+				prices.insertBankTicket(bankTicketPrice);
+			}
+			
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			Elements installments = doc.select(".produto-container-parcelamento > ul li");
+			
+			for(Element e : installments){
+				Element installmentElement = e.select("span").first();
+				
+				if(installmentElement != null){
+					Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", ""));
+					
+					Element installmentValue = e.select("strong").first();
+					
+					if(installmentValue != null){
+						Float value = MathCommonsMethods.parseFloat(installmentValue.text());
+						
+						installmentPriceMap.put(installment, value);
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
 }
