@@ -156,6 +156,9 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 	private void finalizeTask(Runnable r, Throwable t) {
 		if (r instanceof Crawler) {
 			finalizeCrawlerTask(((Crawler)r).session, t);
+			if ( ((Crawler)r).webdriver != null ) {
+				((Crawler)r).webdriver.terminate();
+			}
 		}
 		else if (r instanceof ImageCrawler) {
 			finalizeImageTask(((ImageCrawler)r).session, t);

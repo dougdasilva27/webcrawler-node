@@ -5,6 +5,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
@@ -18,6 +19,8 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * This class encapsulates an instance of a Remote WebDriver
@@ -97,9 +100,14 @@ public class CrawlerWebdriver {
 		return new Actions(driver);
 	}
 	
-	public String executeJavascript(String javascript) {
+	public WebElement executeJavascript(String javascript) {
 		 JavascriptExecutor jse = (JavascriptExecutor) driver;
-		 return (String)jse.executeScript(javascript);
+		 return (WebElement)jse.executeScript(javascript);
+	}
+	
+	public void clickOnElementViaJavascript(WebElement element) {
+		JavascriptExecutor jse = (JavascriptExecutor) driver;
+		 jse.executeScript("arguments[0].click();", element);
 	}
 
 	/**

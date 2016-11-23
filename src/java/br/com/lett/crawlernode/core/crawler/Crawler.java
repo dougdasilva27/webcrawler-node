@@ -8,6 +8,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import br.com.lett.crawlernode.core.crawler.config.CrawlerConfig;
+import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
@@ -67,6 +68,8 @@ public class Crawler implements Runnable {
 	protected Session session;
 	
 	protected CrawlerConfig config;
+	
+	protected CrawlerWebdriver webdriver;
 
 	/**
 	 * Cookies that must be used to fetch the sku page
@@ -424,8 +427,11 @@ public class Crawler implements Runnable {
 		String html = null;
 		if (this.config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+		} else if (this.config.getFetcher() == Fetcher.SMART) {
+			html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
 		} else {
-			html = DynamicDataFetcher.fetchPage(this.config.getFetcher(), session.getOriginalURL(), session);
+			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+			html = this.webdriver.getCurrentPageSource();
 		}
 		
 		return Jsoup.parse(html);		
