@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +16,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (25/08/2016):
@@ -100,6 +105,12 @@ public class BrasilLojasmelCrawler extends Crawler {
 			// Secondary images
 			String secondaryImages = crawlSecondaryImages(doc);
 			
+			// Minímo valor pra desconto no boleto
+			Float minValueDiscount = crawlMinValueDiscount(doc);
+			
+			// Desconto boleto
+			Integer discount = crawlDiscount(doc);
+			
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
 			
@@ -118,6 +129,8 @@ public class BrasilLojasmelCrawler extends Crawler {
 				// Name
 				String name = crawlName(doc, jsonSku);
 				
+				// Prices
+				Prices prices = crawlPrices(internalId, price, discount, minValueDiscount);
 				
 				// Creating the product
 				Product product = new Product();
@@ -126,6 +139,7 @@ public class BrasilLojasmelCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -297,6 +311,126 @@ public class BrasilLojasmelCrawler extends Crawler {
 		if (descriptionElement != null) description = description + descriptionElement.html();
 
 		return description;
+	}
+	
+	private Float crawlMinValueDiscount(Document doc){
+		Float value = null;
+		Element valueElement = doc.select("#menorum p a").first();
+		
+		if(valueElement != null){
+			value = MathCommonsMethods.parseFloat(valueElement.ownText());
+		}
+		
+		return value;
+	}
+	
+	private Integer crawlDiscount(Document doc){
+		Integer discount = null;
+		Element discountElement = doc.select("#menorum p a strong").first();
+		
+		if(discountElement != null){
+			discount = Integer.parseInt(discountElement.text().replaceAll("[^0-9]", ""));
+		}
+		
+		return discount;
+	}
+	
+	private Prices crawlPrices(String internalId, Float price, Integer discountBoleto, Float minValueDiscount){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.lojasmel.com/productotherpaymentsystems/" + internalId;
+
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bank = doc.select("#ltlPrecoWrapper em").first();
+			if(bank != null){
+				Float bankTicketPrice = Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				
+				if(bankTicketPrice > minValueDiscount && discountBoleto != null){
+					Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)));
+					bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+				}
+				
+				prices.insertBankTicket(bankTicketPrice);
+			}
+
+			Elements cardsElements = doc.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if (text.contains("visa")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("mastercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("diners")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+					
+				} else if (text.contains("american") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("hipercard") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("credicard") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("elo") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
+	private String removeAccents(String str) {
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
 	}
 	
 	/**
