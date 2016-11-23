@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -18,7 +17,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -26,7 +24,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.ssl.SSLContextBuilder;
+import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import org.slf4j.Logger;
@@ -36,7 +34,6 @@ import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
@@ -82,35 +79,31 @@ public class DynamicDataFetcher {
 				);
 	}
 
-	public static String fetchPage(Fetcher fetcherType, String url, Session session) {
-		return fetchPage(fetcherType, url, session, 1);
-	}
-	
-	private static String fetchPage(Fetcher fetcherType, String url, Session session, int attempt) {
-		if (fetcherType == Fetcher.WEBDRIVER) return fetchPageWebdriver(url, session);
-		else return fetchPageSmart(url, session, attempt);
-	}
-
 	/**
-	 * Use the webdriver to fetch a page and get the html code.
+	 * Use the webdriver to fetch a page.
 	 * 
 	 * @param url
-	 * @return the html code of the fetched page
+	 * @param session
+	 * @return a webdriver instance with the page already loaded
 	 */
-	private static String fetchPageWebdriver(String url, Session session) {
+	public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
 
 		DesiredCapabilities capabilities = DesiredCapabilitiesBuilder
 				.create()
 				.setUserAgent(randUserAgent())
+				.setBrowserType(BrowserType.PHANTOMJS)
 				.build();
 
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities);
 
 		String html = webdriver.loadUrl(url);
-		webdriver.terminate();
 
-		return html;
+		return webdriver;
+	}
+	
+	public static String fetchPageSmart(String url, Session session) {
+		return fetchPageSmart(url, session, 1);
 	}
 
 	/**

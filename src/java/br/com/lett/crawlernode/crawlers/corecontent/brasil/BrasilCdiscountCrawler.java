@@ -21,7 +21,6 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DesiredCapabilitiesBuilder;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -32,8 +31,6 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilCdiscountCrawler extends Crawler {
-
-	private CrawlerWebdriver webdriver = null;
 
 	public BrasilCdiscountCrawler(Session session) {
 		super(session);
@@ -60,10 +57,10 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 				// load main page
 				Logging.printLogDebug(logger, session, "Loading main page via WebDriver...");
-				webdriver.loadUrl(session.getOriginalURL());
+				this.webdriver.loadUrl(session.getOriginalURL());
 
 				// getting all the sku options
-				List<WebElement> webElements = webdriver.findElementsByCssSelector("select.listaSku.selSku option");
+				List<WebElement> webElements = this.webdriver.findElementsByCssSelector("select.listaSku.selSku option");
 
 				// iterate through each sku selector
 				for (WebElement skuOption : webElements) {
@@ -78,10 +75,10 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 						// give some time for the webdriver
 						Logging.printLogDebug(logger, session, "Waiting WebDriver for 5 seconds...");
-						webdriver.waitLoad(5000);
+						this.webdriver.waitLoad(5000);
 
 						// get html via code using css selector
-						String html = webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
+						String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
 						Document variationDocument = Jsoup.parse(html);
 
 						// crawl the selected sku
@@ -94,10 +91,6 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-		}
-
-		if (webdriver != null) {
-			webdriver.terminate();
 		}
 
 		return products;
@@ -425,7 +418,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 				.setUserAgent(DynamicDataFetcher.randUserAgent())
 				.build();
 
-		webdriver = new CrawlerWebdriver(capabilities);
+		this.webdriver = new CrawlerWebdriver(capabilities);
 	}
 
 	private String crawlDescription(Document document) {
