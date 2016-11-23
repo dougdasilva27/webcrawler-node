@@ -15,6 +15,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -83,9 +86,6 @@ public class BrasilSpicyCrawler extends Crawler {
 			// Description
 			String description = crawlDescription(doc);
 
-			// Stock
-			Integer stock = null;
-
 			// Marketplace map
 			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 
@@ -110,12 +110,20 @@ public class BrasilSpicyCrawler extends Crawler {
 				// InternalId 
 				String internalId = crawlInternalId(jsonSku);
 				
+				// Json Produc
+				JSONObject jsonProduct = crawlJsonProduct(internalId);
+				
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
 				
 				// Name
 				String name = crawlName(doc, jsonSku);
 				
+				// Prices
+				Prices prices = crawlPrices(jsonProduct, price);
+				
+				// Stock
+				Integer stock = crawlStock(jsonProduct);
 				
 				// Creating the product
 				Product product = new Product();
@@ -124,6 +132,7 @@ public class BrasilSpicyCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -294,6 +303,75 @@ public class BrasilSpicyCrawler extends Crawler {
 		if (descriptionElement != null) description = description + descriptionElement.html();
 	
 		return description;
+	}
+	
+	private JSONObject crawlJsonProduct(String internalId){
+		JSONObject json = new JSONObject();
+		
+		String url = "http://www.spicy.com.br/produto/sku/" + internalId;
+		JSONArray jsonProduct = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(jsonProduct.length() > 0){
+			json = jsonProduct.getJSONObject(0);
+		}
+		
+		return json;
+	}
+	
+	private Integer crawlStock(JSONObject jsonProduct){
+		Integer stock = null;
+		
+		if(jsonProduct.has("SkuSellersInformation")){
+			JSONArray sellers = jsonProduct.getJSONArray("SkuSellersInformation");
+			
+			for(int i = 0; i < sellers.length(); i++){
+				JSONObject seller = sellers.getJSONObject(i);
+				
+				if(seller.has("Name")){
+					String name = seller.getString("Name").toLowerCase().trim();
+					
+					if(name.equals("spicy")){
+						if(seller.has("AvailableQuantity")){
+							stock = seller.getInt("AvailableQuantity");
+						}
+						break;
+					}
+				}
+			}
+		}
+		
+		return stock;
+	}
+	
+	private Prices crawlPrices(JSONObject jsonProduct, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			// Preço vitrine é uma vez no cartão
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			installmentPriceMap.put(1, price);
+			
+			if(jsonProduct.has("BestInstallmentNumber")){
+				Integer installment = jsonProduct.getInt("BestInstallmentNumber");
+				
+				if(jsonProduct.has("BestInstallmentValue")){
+					Double valueDouble = jsonProduct.getDouble("BestInstallmentValue");
+					Float value = valueDouble.floatValue();
+					
+					if(installment > 0 && value > 0F){
+						installmentPriceMap.put(installment, value);
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 	
 	/**

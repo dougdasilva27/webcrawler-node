@@ -11,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (23/08/2016):
@@ -81,6 +84,9 @@ public class BrasilAmoedoCrawler extends Crawler {
 			// Price
 			Float price = crawlMainPagePrice(doc);
 			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -115,6 +121,7 @@ public class BrasilAmoedoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -197,6 +204,11 @@ public class BrasilAmoedoCrawler extends Crawler {
 			Element regularPrice = document.select(".regular-price span.price").first();
 			if (regularPrice != null) {
 				price = Float.parseFloat( regularPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			} else {
+				regularPrice = document.select(".price-box .price:not(.oldPrice)").first();
+				if (regularPrice != null) {
+					price = Float.parseFloat( regularPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+				}
 			}
 		}
 
@@ -279,6 +291,39 @@ public class BrasilAmoedoCrawler extends Crawler {
 		if (itemsElement != null) description = description + itemsElement.html();
 
 		return description;
+	}
+	
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			// Preço de vtrine é preço uma vez no cartão
+			// O preço no boleto tem desconto mas não aparece na página do produto
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			installmentPriceMap.put(1, price);
+			
+			Element installments = doc.select(".precoParcela strong").first();
+			
+			if(installments != null){
+				Integer installment = Integer.parseInt(installments.ownText().replaceAll("[^0-9]", "").trim());
+				
+				Element installmentValue = installments.select("> span").first();
+				
+				if(installmentValue != null){
+					Float value = MathCommonsMethods.parseFloat(installmentValue.text());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 
 }
