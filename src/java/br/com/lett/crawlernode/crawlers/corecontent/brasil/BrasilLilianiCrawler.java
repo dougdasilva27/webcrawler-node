@@ -12,9 +12,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (29/08/2016):
@@ -27,7 +30,8 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 4) The sku page identification is done simply looking for an specific html element.
  * 
- * 5) Even if a product is unavailable, its price is not displayed.
+ * 5) If a product is unavailable, its price is not displayed when it has no variations,
+ * because when sku have, if one of variations is available, price is displayed because price is the same for the variations.
  * 
  * 6) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
  * the variations of a given sku.
@@ -79,7 +83,10 @@ public class BrasilLilianiCrawler extends Crawler {
 			boolean available = crawlAvailability(doc);
 					
 			// Price
-			Float price = crawlMainPagePrice(doc, available);
+			Float price = crawlMainPagePrice(doc);
+			
+			// Prices
+			Prices prices = crawlPricesMain(doc, price);
 			
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
@@ -105,7 +112,6 @@ public class BrasilLilianiCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 			
-			
 			Elements variations = doc.select(".sku table");
 
 			if(variations.size() > 0){
@@ -127,9 +133,6 @@ public class BrasilLilianiCrawler extends Crawler {
 
 					// Avaiability
 					boolean availableVariation = this.crawlAvailabilityVariation(e);
-					
-					// Price
-					Float priceVariation = crawlMainPagePrice(doc, availableVariation);
 
 					// Creating the product
 					Product product = new Product();
@@ -137,7 +140,8 @@ public class BrasilLilianiCrawler extends Crawler {
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
-					product.setPrice(priceVariation);
+					product.setPrice(price);
+					product.setPrices(prices);
 					product.setAvailable(availableVariation);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
@@ -168,6 +172,7 @@ public class BrasilLilianiCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(nameMainPage);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
@@ -255,11 +260,11 @@ public class BrasilLilianiCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document, boolean available) {
+	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
 		Element specialPrice = document.select("#ctl00_ContentSite_dvAvailable span strong").first();		
 		
-		if (specialPrice != null && available) {
+		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 		} 
 
@@ -267,9 +272,9 @@ public class BrasilLilianiCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select("#ctl00_ContentSite_dvAvailable span strong").first();
+		Element price = document.select("#ctl00_ContentSite_dvAvailable span strong").first();
 		
-		if (notifyMeElement != null) {
+		if (price != null) {
 			return true;
 		}
 		
@@ -344,6 +349,37 @@ public class BrasilLilianiCrawler extends Crawler {
 		if (descriptionElement != null) description = description + descriptionElement.html();
 
 		return description;
+	}
+	
+	private Prices crawlPricesMain(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			Elements installments = doc.select("#ctl00_ContentSite_dltParcels td");
+			
+			for(Element e : installments){
+				String text = e.text().toLowerCase();
+				
+				if(text.contains("x")){
+					int x = text.indexOf("x");
+					
+					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+					Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.CREDISHOP.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 
 }
