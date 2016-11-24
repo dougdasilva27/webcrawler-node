@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (29/08/2016):
@@ -352,9 +353,9 @@ public class BrasilMultilojaCrawler extends Crawler {
 		Float price = null;
 
 		if(jsonPrices.has("price")){
-			price = Float.parseFloat(jsonPrices.getString("price"));
+			price = MathCommonsMethods.parseFloat(jsonPrices.getString("price"));
 		} else if(jsonPrices.has("priceVista")){
-			price = Float.parseFloat(jsonPrices.getString("priceVista"));
+			price = MathCommonsMethods.parseFloat(jsonPrices.getString("priceVista"));
 		}
 
 		return price;
@@ -491,19 +492,19 @@ public class BrasilMultilojaCrawler extends Crawler {
 			Map<String,String> headers = new HashMap<>();
 			headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-			String docString = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
-			Document doc = Jsoup.parse(docString);
-
+			Document docXml = DataFetcher.fetchDocumentXml(DataFetcher.POST_REQUEST, session, url, payload, cookies);
+			
+			Document doc = parseXmlToHtml(docXml);			
 			Element principalPrice = doc.select(".preco span:not([class])").first();
-
+			
 			if(principalPrice != null){
-				prices.put("price", principalPrice.text().replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim());
+				prices.put("price", principalPrice.text());
 			}
 
 			Element vistaPrice = doc.select(".compraPrazo span").last();
 
 			if(vistaPrice != null){
-				prices.put("priceVista", vistaPrice.text().replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim());
+				prices.put("priceVista", vistaPrice.text());
 			}
 
 			Element parcelas = doc.select(".parcela").first();
@@ -515,7 +516,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 					int x = text.indexOf("x");
 
 					String installment = text.substring(0, x).replaceAll("[^0-9]", "");
-					String value = text.substring(x).replaceAll("[^0-9,]+", "").replaceAll(".", "").replaceAll(",", ".").trim();
+					String value = text.substring(x);
 
 					JSONObject parcels = new JSONObject();
 					parcels.put("installment", installment);
@@ -536,7 +537,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			if(jsonPrices.has("priceVista")){
-				Float vistaPrice = Float.parseFloat(jsonPrices.getString("priceVista"));
+				Float vistaPrice = MathCommonsMethods.parseFloat(jsonPrices.getString("priceVista"));
 
 				// 1x no cartão e boleto são o mesmo preço
 				installmentPriceMap.put(1, vistaPrice);
@@ -548,7 +549,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 				if(parcels.has("installment") && parcels.has("installmentValue")){
 					Integer installment = Integer.parseInt(parcels.getString("installment"));
-					Float value = Float.parseFloat(parcels.getString("installmentValue"));
+					Float value = MathCommonsMethods.parseFloat(parcels.getString("installmentValue"));
 
 					installmentPriceMap.put(installment, value);
 				}
@@ -563,5 +564,14 @@ public class BrasilMultilojaCrawler extends Crawler {
 		}
 
 		return prices;
+	}
+	
+	private Document parseXmlToHtml(Document docXml){
+		Document doc = new Document("");			
+		
+		String document = docXml.getElementsByTag("cmd").text();
+		doc = Jsoup.parse(document);
+		
+		return doc;
 	}
 }

@@ -174,6 +174,20 @@ public class DataFetcher {
 	public static Document fetchDocument(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));	
 	}
+	
+	/**
+	 * Fetch a XML Document from a URL, either by a GET ou POST http request.
+	 * 
+	 * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
+	 * @param session
+	 * @param url The url from which we will fetch the data.
+	 * @param urlParameters The urlParameters, or parameter field of the request, in case of a POST request. null if we have a GET request.
+	 * @param cookies
+	 * @return A Document with the data from the url passed, or null if something went wrong.
+	 */
+	public static Document fetchDocumentXml(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
+		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1), "", org.jsoup.parser.Parser.xmlParser());	
+	}
 
 	/**
 	 * Fetch a json object from the API, either by a GET ou POST http request.
