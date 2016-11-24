@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
 
 public class MathCommonsMethods {
 	
+	public static final String PRICE_REGEX = "[^\\d.]+"; // get anything that is not either a digit or a period 
+	
 	/**
 	 * Parses a Float from an input String. It will parse
 	 * only the first match. If there is more than one float in the string,
