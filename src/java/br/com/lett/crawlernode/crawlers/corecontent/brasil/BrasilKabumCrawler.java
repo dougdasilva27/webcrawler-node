@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -39,6 +40,24 @@ public class BrasilKabumCrawler extends Crawler {
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+			/**
+			 * Caso fixo do blackfriday
+			 * onde aparentemente a página do produto dá um refresh para a página do produto na blackfriday.
+			 */
+			Element blackFriday = doc.select("meta[http-equiv=refresh]").first();
+			
+			if(blackFriday != null) {
+				String url = blackFriday.attr("content");
+				
+				if(url.contains("url=")){
+					int x = url.indexOf("url=")+4;
+					
+					url = url.substring(x);
+				}
+				
+				doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			}
+			
 			// internalId
 			String internalID = null;
 			Element elementInternalID = doc.select(".boxs .links_det").first();
@@ -216,6 +235,6 @@ public class BrasilKabumCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return (url.startsWith("https://www.kabum.com.br/produto/") || url.startsWith("http://www.kabum.com.br/produto/"));
+		return (url.startsWith("https://www.kabum.com.br/produto/") || url.startsWith("http://www.kabum.com.br/produto/") || url.contains("blackfriday"));
 	}
 }
