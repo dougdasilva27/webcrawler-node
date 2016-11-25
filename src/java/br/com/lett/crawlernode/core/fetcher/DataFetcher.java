@@ -92,9 +92,9 @@ public class DataFetcher {
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 
-	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
-	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
-	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
+	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 30000; // ms
+	private static final int DEFAULT_CONNECT_TIMEOUT = 30000; // ms
+	private static final int DEFAULT_SOCKET_TIMEOUT = 30000; // ms
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 20000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms

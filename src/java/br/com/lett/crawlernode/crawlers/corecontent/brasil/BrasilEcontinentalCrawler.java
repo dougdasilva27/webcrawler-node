@@ -78,6 +78,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Elements variations = doc.select("#ctrEscolheTamanho li a");
+			if (variations.size() == 0) variations = doc.select("#ctrEscolheTamanho option[valormoeda]");
 
 			if(variations.size() > 0){
 
@@ -86,9 +87,12 @@ public class BrasilEcontinentalCrawler extends Crawler {
 				 *************************************/
 
 				for (Element e : variations) {
-
+					
 					// InternalID
-					String internalId = e.attr("idgrade");
+					String internalId = e.attr("idgrade").trim();
+					if (internalId.isEmpty()) {
+						internalId = e.attr("value");
+					}
 
 					// Name Variation
 					String nameVariation = e.text();
@@ -162,7 +166,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 				/* ***********************************
 				 * crawling data of only one product *
 				 *************************************/
-
+				
 				// InternalId
 				String internalId = crawlInternalId(doc);
 
