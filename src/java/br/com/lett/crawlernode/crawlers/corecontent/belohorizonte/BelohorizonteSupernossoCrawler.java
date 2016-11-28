@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,7 +13,9 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -48,16 +52,30 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		String internalId = crawlInternalId(document);
 		String internalPid = null;
 		String name = crawlName(document);
+		boolean available = crawlAvailability(document);
 		Float price = crawlPrice(document);
+		Prices prices = crawlPrices(document);
 		String primaryImage = crawlPrimaryImage(document);
+		String secondaryImages = crawlSecondaryImages(document);
+		CategoryCollection categories = crawlCategories(document);
 		String description = crawlDescription(document);
+		Integer stock = null;
+		JSONArray marketplace = crawlMarketplace(document);
 		
 		product.setUrl(session.getOriginalURL());
 		product.setInternalId(internalId);
 		product.setInternalPid(internalPid);
 		product.setName(name);
+		product.setAvailable(available);
 		product.setPrice(price);
+		product.setPrices(prices);
+		product.setCategory1(categories.getCategory(0));
+		product.setCategory2(categories.getCategory(1));
+		product.setCategory3(categories.getCategory(2));
 		product.setPrimaryImage(primaryImage);
+		product.setSecondaryImages(secondaryImages);
+		product.setMarketplace(marketplace);
+		product.setStock(stock);
 		product.setDescription(description);
 		
 		return product;
@@ -126,10 +144,13 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 				stock = endpointResponse.getInt("stockQuantity");
 			}
 			
+			JSONArray marketplace = new JSONArray();
 			
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
+			product.setInternalPid(internalPid);
 			product.setName(name);
+			product.setAvailable(available);
 			product.setPrice(price);
 			product.setCategory1(categories.getCategory(0));
 			product.setCategory2(categories.getCategory(1));
@@ -138,9 +159,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 			product.setSecondaryImages(secondaryImages);
 			product.setDescription(description);
 			product.setStock(stock);
-//			product.setMarketplace(marketplace);
-			product.setAvailable(available);
-			
+			product.setMarketplace(marketplace);
 			
 			
 		} else {
@@ -168,7 +187,16 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		return name;
 	}
 	
-	private static Float crawlPrice(Document document) {
+	private boolean crawlAvailability(Document document) {
+		boolean available = true;
+		Element buyButtonElement = document.select("div.snc-product-actions-btn.ng-scope").first();
+		if (buyButtonElement == null) {
+			available = false;
+		}
+		return available;
+	}
+	
+	private Float crawlPrice(Document document) {
 		Float price = null;
 		
 		Element priceElement = document.select("meta[itemprop=price]").first();
@@ -179,13 +207,70 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		return price;
 	}
 	
-	private static String crawlPrimaryImage(Document document) {
+	/**
+	 * There is no bankSlip price.
+	 * 
+	 * For installments, we will have only one installment for each
+	 * card brand, and it will be equals to the price crawled on the sku
+	 * main page.
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document document) {
+		Prices prices = new Prices();
+		
+		Float price = crawlPrice(document);
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
+	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
 		Element primaryImageElement = document.select("div.snc-product-image.zoom-img-block img").first();
 		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("data-zoom-image").trim();
 		}
 		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		Elements imagesElement = document.select("#zoom-gallery li a");
+
+		for (int i = 1; i < imagesElement.size(); i++) { // the first is the primary image
+			String image = imagesElement.get(i).attr("data-zoom-image").trim();
+			secondaryImagesArray.put( image );
+		}
+
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
+	}
+	
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+
+		Elements elementCategories = document.select("ol.snc-breadcrumb.breadcrumb li a span");
+		for (int i = 0; i < elementCategories.size(); i++) { 
+			categories.add( elementCategories.get(i).text().trim() );
+		}
+
+		return categories;
 	}
 	
 	private String crawlDescription(Document document) {
@@ -197,6 +282,10 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		}
 		
 		return description.toString();
+	}
+	
+	private JSONArray crawlMarketplace(Document document) {
+		return new JSONArray();
 	}
 	
 	
