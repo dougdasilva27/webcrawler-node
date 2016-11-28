@@ -34,8 +34,8 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 			
-			//Product product = crawlUsingEndpoint();
-			Product product = crawlUsingWebDriver(doc);
+			Product product = crawlUsingEndpoint();
+			//Product product = crawlUsingWebDriver(doc);
 			
 			products.add(product);
 
