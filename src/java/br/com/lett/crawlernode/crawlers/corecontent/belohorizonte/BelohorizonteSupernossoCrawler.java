@@ -122,6 +122,8 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 				price = new Float(endpointResponse.getDouble("price"));
 			}
 			
+			Prices prices = crawlPricesUsingAPI(price);
+			
 			CategoryCollection categories = crawlCategoriesUsingAPI(endpointResponse);
 			
 			String primaryImage = null;
@@ -152,6 +154,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 			product.setName(name);
 			product.setAvailable(available);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(categories.getCategory(0));
 			product.setCategory2(categories.getCategory(1));
 			product.setCategory3(categories.getCategory(2));
@@ -222,6 +225,21 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		Float price = crawlPrice(document);
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
+	
+	private Prices crawlPricesUsingAPI(Float price) {
+		Prices prices = new Prices();
 		
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
