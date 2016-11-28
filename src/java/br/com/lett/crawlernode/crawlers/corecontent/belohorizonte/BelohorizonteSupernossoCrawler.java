@@ -48,12 +48,16 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		String internalId = crawlInternalId(document);
 		String internalPid = null;
 		String name = crawlName(document);
+		Float price = crawlPrice(document);
+		String primaryImage = crawlPrimaryImage(document);
 		String description = crawlDescription(document);
 		
 		product.setUrl(session.getOriginalURL());
 		product.setInternalId(internalId);
 		product.setInternalPid(internalPid);
 		product.setName(name);
+		product.setPrice(price);
+		product.setPrimaryImage(primaryImage);
 		product.setDescription(description);
 		
 		return product;
@@ -162,6 +166,26 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 			name = nameElement.text().trim();
 		}
 		return name;
+	}
+	
+	private static Float crawlPrice(Document document) {
+		Float price = null;
+		
+		Element priceElement = document.select("meta[itemprop=price]").first();
+		if (priceElement != null) {
+			price = Float.parseFloat(priceElement.attr("content").trim());
+		}
+		
+		return price;
+	}
+	
+	private static String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		Element primaryImageElement = document.select("div.snc-product-image.zoom-img-block img").first();
+		if (primaryImageElement != null) {
+			primaryImage = primaryImageElement.attr("data-zoom-image").trim();
+		}
+		return primaryImage;
 	}
 	
 	private String crawlDescription(Document document) {

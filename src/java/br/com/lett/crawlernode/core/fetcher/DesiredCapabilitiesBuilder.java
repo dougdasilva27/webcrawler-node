@@ -77,7 +77,8 @@ public class DesiredCapabilitiesBuilder {
 
 		clientArgs.add("--web-security=false");
 		clientArgs.add("--ignore-ssl-errors=true");
-		clientArgs.add("--load-images=false");
+		clientArgs.add("--ssl-protocol=any");		// necessary to fetch https urls
+		clientArgs.add("--load-images=false");		// don't download images when fetching pages
 
 		return clientArgs;
 	}
