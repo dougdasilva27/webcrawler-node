@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +24,13 @@ import br.com.lett.crawlernode.util.Logging;
  * 1) Only one sku per page.
  * 
  * Price crawling notes:
- * 1) Even with the product unavailable, it's price is displayed.
+ * 1) In time crawler was made, there no product unnavailable.
  * 2) There is no bank slip (boleto bancario) payment option.
  * 3) There is no installments for card payment. So we only have 
  * 1x payment, and to this value we use the cash price crawled from
  * the sku page. (nao existe divisao no cartao de credito).
  * 
- * @author Samir Leao
+ * @author Gabriel Dornelas
  *
  */
 public class MexicoWalmartsuperCrawler extends Crawler {
@@ -53,16 +51,6 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
-
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/mxWalmart.html"));
-			
-			out.write(doc.toString());
-			out.close();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -72,7 +60,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
 			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(doc);
+			Prices prices = crawlPrices(price);
 			boolean available = crawlAvailability(doc);
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
@@ -167,11 +155,11 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(Document document) {
-		boolean available = true;
+		boolean available = false;
 
-		Element outOfStockElement = document.select("button.outOfStock").first();
+		Element outOfStockElement = document.select(".slider-button input.enable").first();
 		if (outOfStockElement != null) {
-			available = false;
+			available = true;
 		}
 
 		return available;
@@ -208,10 +196,19 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("div.productImageGallery ul li img");
+		Elements imagesElement = document.select(".slider-img-display img");
 
-		for (int i = 1; i < imagesElement.size(); i++) { 
-			String image = "https://www.soriana.com" + imagesElement.get(i).attr("data-zoomurl").trim();
+		for (int i = 1; i < imagesElement.size(); i++) { // first is the primary image
+			String image = HOME_PAGE + imagesElement.get(i).attr("data-extralarge").trim();
+			
+			if(image.isEmpty()){
+				image = imagesElement.get(i).attr("url").trim();
+			}
+			
+			if(image.isEmpty()){
+				image = imagesElement.get(i).attr("src").trim();
+			}
+			
 			secondaryImagesArray.put( image );	
 		}
 
@@ -255,16 +252,15 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document document) {
+	private Prices crawlPrices(Float price) {
 		Prices prices = new Prices();
 
-		Float cashPrice = crawlPrice(document);
-
-		Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
-
-		installmentPriceMap.put(1, cashPrice);
-
-		prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
 
 		return prices;
 	}
