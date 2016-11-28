@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
@@ -29,6 +31,7 @@ import br.com.lett.crawlernode.util.Logging;
  * 3) InternalId of product is in url and a json, but to fetch api is required internalId, so it is crawl in url
  * 4) Has no bank ticket in this market
  * 5) Has no internalPid in this market
+ * 6) IN api when have a json, sometimes has duplicates keys, so is used GSON from google.
  * 
  * @author Gabriel Dornelas
  *
@@ -59,10 +62,10 @@ public class MexicoWalmartCrawler extends Crawler {
 			String internalId = crawlInternalId(session.getOriginalURL());
 			
 			// Api de detalhes do produto
-			JSONObject jsonProduct = crawlJsonOfProduct(internalId);
+			JsonObject jsonProduct = crawlJsonOfProduct(internalId);
 
 			// Json of product only important informations
-			JSONObject productInformations = assembleJsonOfProduc(jsonProduct, internalId);
+			JsonObject productInformations = assembleJsonOfProduc(jsonProduct, internalId);
 			
 			// InternalPid
 			String internalPid = crawlInternalPid(doc);
@@ -87,8 +90,6 @@ public class MexicoWalmartCrawler extends Crawler {
 			
 			// SecondaryImages
 			String secondaryImages = crawlSecondaryImages(productInformations, internalId);
-			
-			System.out.println(secondaryImages);
 			
 			// Description
 			String description = crawlDescription(productInformations);
@@ -118,6 +119,8 @@ public class MexicoWalmartCrawler extends Crawler {
 					.setMarketplace(marketplace)
 					.build();
 
+			System.out.println("secondary images: " + secondaryImages);
+			
 			products.add(product);
 
 		} else {
@@ -172,31 +175,31 @@ public class MexicoWalmartCrawler extends Crawler {
 		return internalPid;
 	}
 
-	private String crawlName(JSONObject product) {
+	private String crawlName(JsonObject product) {
 		String name = null;
 		
 		if(product.has("name")){
-			name = product.getString("name");
+			name = product.get("name").getAsString();
 		}
 	
 		return name;
 	}
 
-	private Float crawlPrice(JSONObject product) {
+	private Float crawlPrice(JsonObject product) {
 		Float price = null;
 
 		if(product.has("price")){
-			price = Float.parseFloat(product.getString("price"));
+			price = Float.parseFloat(product.get("price").getAsString());
 		}
 		
 		return price;
 	}
 
-	private boolean crawlAvailability(JSONObject product) {
+	private boolean crawlAvailability(JsonObject product) {
 		boolean available = false;
 		
 		if(product.has("avaiability")){
-			available = product.getBoolean("avaiability");
+			available = product.get("avaiability").getAsBoolean();
 		}
 
 		return available;
@@ -227,24 +230,24 @@ public class MexicoWalmartCrawler extends Crawler {
 	 * 
 	 * Is make like this
 	 * 
-	 * 2 image - https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-2l.jpg
-	 * 3 image - https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-3l.jpg
+	 * 2 image - https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-1l.jpg
+	 * 3 image - https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-2l.jpg
 	 * ...
 	 * 
 	 * @param product
 	 * @param internalId
 	 * @return
 	 */
-	private String crawlSecondaryImages(JSONObject product, String internalId) {
+	private String crawlSecondaryImages(JsonObject product, String internalId) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
 		if(product.has("numberOfImages")){
-			int ni = product.getInt("numberOfImages");
+			int ni = product.get("numberOfImages").getAsInt();
 			
 			if(ni > 1){
 				for(int i = 2; i <= ni; i++){
-					secondaryImagesArray.put("https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-"+ i +"l.jpg");
+					secondaryImagesArray.put("https://www.walmart.com.mx/images/products/img_large/"+ internalId +"-"+ (i-1) +"l.jpg");
 				}
 			}
 		}
@@ -270,12 +273,12 @@ public class MexicoWalmartCrawler extends Crawler {
 		return categories;
 	}
 
-	private String crawlDescription(JSONObject product) {
+	private String crawlDescription(JsonObject product) {
 		StringBuilder description = new StringBuilder();
 
 		if(product.has("description")){
 			String descriptionHtml = "<p class=\"description\" itemprop=\"description\" data-reactid=\".8.5.$descriptionParagraph0\">" +
-					product.getString("description") + "</p>";
+					product.get("description").getAsString() + "</p>";
 			
 			description.append(descriptionHtml);
 		}		
@@ -295,7 +298,7 @@ public class MexicoWalmartCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(JSONObject product, Float price) {
+	private Prices crawlPrices(JsonObject product, Float price) {
 		Prices prices = new Prices();
 
 		if(price != null){
@@ -304,11 +307,11 @@ public class MexicoWalmartCrawler extends Crawler {
 			installmentPriceMap.put(1, price);
 
 			if(product.has("prices")){
-				JSONObject jsonPrices = product.getJSONObject("prices");
+				JsonObject jsonPrices = product.get("prices").getAsJsonObject();
 				
 				for(int i = 1; i < 13; i++){
 					if(jsonPrices.has(i+"")){
-						installmentPriceMap.put(i, Float.parseFloat(jsonPrices.getString(i+"").replaceAll("\\$", "").replaceAll(",", "")));
+						installmentPriceMap.put(i, Float.parseFloat(jsonPrices.get(i+"").getAsString().replaceAll("\\$", "").replaceAll(",", "")));
 					}
 				}
 				
@@ -346,56 +349,56 @@ public class MexicoWalmartCrawler extends Crawler {
 	 * @param internalId
 	 * @return
 	 */
-	private JSONObject assembleJsonOfProduc(JSONObject jsonProduct, String internalId){
-		JSONObject product = new JSONObject();
+	private JsonObject assembleJsonOfProduc(JsonObject jsonProduct, String internalId){
+		JsonObject product = new JsonObject();
 		
 		
 		if(jsonProduct.has("c")){
-			JSONObject jsonC = jsonProduct.getJSONObject("c");
+			JsonObject jsonC = jsonProduct.get("c").getAsJsonObject();
 			
 			if(jsonC.has("facets")){
-				JSONObject jsonFacets = jsonC.getJSONObject("facets");
+				JsonObject jsonFacets = jsonC.get("facets").getAsJsonObject();
 				
 				if(jsonFacets.has("_" + internalId)){
-					JSONObject jsonOfProduct = jsonFacets.getJSONObject("_" + internalId);
+					JsonObject jsonOfProduct = jsonFacets.get("_" + internalId).getAsJsonObject();
 					
 					// Name
 					if(jsonOfProduct.has("n")){
-						product.put("name", jsonOfProduct.getString("n"));
+						product.addProperty("name", jsonOfProduct.get("n").getAsString());
 					}
 					
 					// Number of Images
 					if(jsonOfProduct.has("ni")){
-						product.put("numberOfImages", jsonOfProduct.getInt("ni"));
+						product.addProperty("numberOfImages", jsonOfProduct.get("ni").getAsInt());
 					}
 					
 					// Description
 					if(jsonOfProduct.has("d")){
-						product.put("description", jsonOfProduct.getString("d"));
+						product.addProperty("description", jsonOfProduct.get("d").getAsString());
 					}
 					
 					// Price
 					if(jsonOfProduct.has("p")){
-						product.put("price", jsonOfProduct.getString("p"));
+						product.addProperty("price", jsonOfProduct.get("p").getAsString());
 					}
 					
 					// Avaiability
 					if(jsonOfProduct.has("av")){
-						String av = jsonOfProduct.getString("av");
+						String av = jsonOfProduct.get("av").getAsString();
 						
 						if(av.equals("1")){
-							product.put("avaiability", true);
+							product.addProperty("avaiability", true);
 						} else {
-							product.put("avaiability", false);
+							product.addProperty("avaiability", false);
 						}
 					}
 					
 					// Prices
 					if(jsonOfProduct.has("pro")){
-						JSONObject jsonPro = jsonOfProduct.getJSONObject("pro");
+						JsonObject jsonPro = jsonOfProduct.get("pro").getAsJsonObject();
 						
 						if(jsonPro.has("msi")){
-							product.put("prices", jsonPro.getJSONObject("msi"));
+							product.add("prices",jsonPro.get("msi").getAsJsonObject());
 						}
 					}
 					
@@ -417,8 +420,18 @@ public class MexicoWalmartCrawler extends Crawler {
 	 * @param internalId
 	 * @return
 	 */
-	private JSONObject crawlJsonOfProduct(String internalId){
-		JSONObject product = new JSONObject();
+	/**
+	 * This json had informations of Product
+	 * Requisição GET
+	 * 
+	 * Example: https://www.walmart.com.mx/WebControls/hlGetProductDetail.ashx?upc=00880608419985
+	 * Parser: http://json.parser.online.fr/
+	 * 
+	 * @param internalId
+	 * @return
+	 */
+	private JsonObject crawlJsonOfProduct(String internalId){
+		JsonObject product = new JsonObject();
 		String url = "https://www.walmart.com.mx/WebControls/hlGetProductDetail.ashx?upc=" + internalId;
 		
 		String detail = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
@@ -427,7 +440,7 @@ public class MexicoWalmartCrawler extends Crawler {
 			int x = detail.indexOf("Info =")+6;
 			int y = detail.indexOf("};", x)+1;
 			
-			product = new JSONObject(detail.substring(x, y));
+			product = new Gson().fromJson(detail.substring(x, y), JsonObject.class);
 		}
 		
 		return product;
