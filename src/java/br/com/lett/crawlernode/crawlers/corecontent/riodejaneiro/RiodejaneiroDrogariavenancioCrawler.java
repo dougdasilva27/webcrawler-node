@@ -213,8 +213,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					// Imagens
 
 					// Requisição POST para conseguir dados da imagem
-					String response = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp", assembleUrlParameters(session.getOriginalURL().split("/")[4], posInternalId), null);
+					String requestURL = "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp";
+					String requestParameters = assembleUrlParameters(session.getOriginalURL().split("/")[4], posInternalId);
 					
+					String response = DataFetcher.fetchString(
+							DataFetcher.POST_REQUEST, 
+							session, 
+							requestURL, 
+							requestParameters, 
+							null);
+										
 					String imageId = parseImageId(response);
 					Element elementPrimaryImage = doc.select(".produtoPrincipal .imagem .holder .cloud-zoom .foto").first();
 					String primaryImage = null;
@@ -226,7 +234,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					JSONArray secondaryImagesArray = new JSONArray();
 					Elements elementsSecondaryImage = doc.select(".produtoPrincipal .imagem .multifotos ul li a .foto");
 
-					if(elementsSecondaryImage.size() > 0) {
+					if(elementsSecondaryImage.size() > 1) {
 						for(Element secondaryImage : elementsSecondaryImage) {
 							String tmp = secondaryImage.attr("src").replaceAll("/produto/", "/Produto/");
 							if( !tmp.equals(primaryImage) && !tmp.contains("imagemindisponivel") ) {
@@ -268,12 +276,13 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 	}
 
 	private String assembleUrlParameters(String idProduto, String variacaoCombinacao) {
-		String urlParameters = "IdProduto=" + idProduto + 
+		String urlParameters = 
+				"IdProduto=" + idProduto + 
 				"&VariacaoCombinacao=" + variacaoCombinacao +
 				"&paginaOrigem=Grade" +
 				"&pIdEmpresa=" + 40 +
 				"&pNomePasta=drogariavenancio" +
-				"&pCaminhoDesignLoja=http%3A%2F%2Fstatic";
+				"&pCaminhoDesignLoja=http://static-webv8.jet.com.br/drogariavenancio/";
 
 		return urlParameters;
 
