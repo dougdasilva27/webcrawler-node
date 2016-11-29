@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -139,6 +143,9 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
+			//Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			Product product = new Product();
 			
 			product.setUrl(session.getOriginalURL());
@@ -146,6 +153,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -171,5 +179,37 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.ultrafarma.com.br/produto/detalhes");
+	}
+	
+	/**
+	 * There is no bankSlip price.
+	 * 
+	 * There is no card payment options, other than cash price.
+	 * So for installments, we will have only one installment for each
+	 * card brand, and it will be equals to the price crawled on the sku
+	 * main page.
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, Float price) {
+		Prices prices = new Prices();
+
+		if(price != null) {
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+	
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }
