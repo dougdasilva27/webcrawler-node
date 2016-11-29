@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilFarmadeliveryCrawler extends Crawler {
 
@@ -127,6 +132,9 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			// Estoque
 			Integer stock = null;
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// Marketplace
 			JSONArray marketplace = null;
 
@@ -136,6 +144,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -164,5 +173,35 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 	private boolean isProductPage(String url, Document doc) {
 		Element elementProduct = doc.select("div.product-view").first();
 		return (elementProduct != null && elementProduct != null && !url.contains("/review/"));
+	}
+	
+	/**
+	 * In product page only has bank slip price and showcase price 
+	 * @param document
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, Float price) {
+		Prices prices = new Prices();
+
+		if(price != null){
+			Element bankSlip = document.select("#parc_boleto em").first();
+			
+			if(bankSlip != null) {
+				Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlip.text());
+				prices.insertBankTicket(bankSlipPrice);
+			}
+			
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+	
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }
