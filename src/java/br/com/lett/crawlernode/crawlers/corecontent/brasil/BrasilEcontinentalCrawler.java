@@ -78,7 +78,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Elements variations = doc.select("#ctrEscolheTamanho li a");
-			if (variations.size() == 0) variations = doc.select("#ctrEscolheTamanho option[valormoeda]");
+			if (variations.size() == 0) variations = doc.select("#ctrEscolheTamanho option[valormoeda]"); 
 
 			if(variations.size() > 0){
 
