@@ -245,7 +245,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".content-product").first() != null ) return true;
+		if ( document.select(".content-product").first() != null  || document.select(".promotion-product-container").first() != null) return true;
 		return false;
 	}
 
