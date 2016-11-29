@@ -131,7 +131,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 					String description = crawlDescription(doc);
 
 					// Stock
-					Integer stock = null;
+					Integer stock = crawlStock(e);
 
 					// Marketplace map
 					Map<String, Float> marketplaceMap = crawlMarketplace(doc);
@@ -330,14 +330,38 @@ public class BrasilEcontinentalCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailabilityVariation(Element e) {
-		if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
-			int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+		if (e.hasAttr("maxqtdcompratam") && !e.attr("maxqtdcompratam").isEmpty()) {
+			int stock = Integer.parseInt(e.attr("maxqtdcompratam").replaceAll("[^0-9]", "").trim());
 			if(stock > 0) {
 				return true;
 			}
+		} else if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
+			int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+			if(stock > 0) {
+				return true;
+			}	
 		}
 
 		return false;
+	}
+	
+	/**
+	 * In cases with attribute maxqtdcompra, stock is not trusted
+	 * @param e
+	 * @return
+	 */
+	private Integer crawlStock(Element e) {
+		Integer stock = null;
+		
+		if (e.hasAttr("maxqtdcompratam") && !e.attr("maxqtdcompratam").isEmpty()) {
+			stock = Integer.parseInt(e.attr("maxqtdcompratam").replaceAll("[^0-9]", "").trim());
+		} 
+		
+//		else if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
+//			stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+//		}
+		
+		return stock;
 	}
 
 	/*******************
