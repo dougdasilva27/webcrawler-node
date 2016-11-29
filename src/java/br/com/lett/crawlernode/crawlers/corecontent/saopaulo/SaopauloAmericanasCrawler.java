@@ -179,7 +179,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				product.setStock(stock);
 				product.setMarketplace(variationMarketplace);
 				product.setAvailable(available);
-
+				
 				products.add(product);
 
 			}
@@ -283,7 +283,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			installmentMapPrice.put(1, partnerPrice);
 			prices.insertBankTicket(partnerPrice);
 			
-			Element installmentElement = linePartner.select(".installment-price").first();
+			Element installmentElement = linePartner.select("span.payment-option").first();
 			if(installmentElement != null){ 
 				String text = installmentElement.text().toLowerCase().trim();
 				
