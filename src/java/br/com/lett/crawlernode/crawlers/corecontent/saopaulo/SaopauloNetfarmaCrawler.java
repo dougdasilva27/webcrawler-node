@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (27/10/2016):
@@ -116,7 +117,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			JSONArray marketplace = null;
 			
 			// Prices
-			Prices prices = crawlPrices(price);
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 			
@@ -269,12 +270,50 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return description;
 	}
 	
-	private Prices crawlPrices(Float price){
+	/**
+	 * In product page has this:
+	 * Ex: 2x de R$32,45
+	 * Ex: 8x de R$ 16,12
+	 * 
+	 * Cards
+	 * 3X Mastercard Diners Visa Elo
+	 * 7x Amex
+	 * 
+	 * So for installments > 3, only amex have this installment
+	 * But all card has 1x
+	 *
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
 		Prices prices = new Prices();
 		
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			Map<Integer,Float> installmentPriceMapAmex = new HashMap<>();
 			
+			Element parcels = doc.select(".parcels b").first();
+			
+			if(parcels != null){
+				String text = parcels.text().toLowerCase().trim();
+				
+				if(text.contains("x")){
+					int x = text.indexOf("x")+1;
+					
+					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+					Float value = MathCommonsMethods.parseFloat(text.substring(x));
+					
+					if(installment > 3){
+						installmentPriceMapAmex.put(installment, value);
+					} else {
+						installmentPriceMap.put(installment, value);
+						installmentPriceMapAmex.put(installment, value);
+					}
+				}
+			}
+			
+			installmentPriceMapAmex.put(1, price);
 			installmentPriceMap.put(1, price);
 			prices.insertBankTicket(price);
 			
@@ -282,7 +321,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMapAmex);
 		}
 				
 		
