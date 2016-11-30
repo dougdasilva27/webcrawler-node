@@ -3,13 +3,15 @@ package br.com.lett.crawlernode.core.fetcher;
 import java.io.File;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -19,8 +21,11 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.Logging;
 
 /**
  * This class encapsulates an instance of a Remote WebDriver
@@ -32,18 +37,28 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * 
  */
 public class CrawlerWebdriver {
+	
+	protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
 	/**
 	 * The URL of the hub that connects to the remote WebDriver instances
 	 */
-	private final String HUB_URL = "http://52.183.27.200:4444/wd/hub";
+	private final String HUB_URL = "http://52.175.217.27:4444/wd/hub";
 
 
 	public WebDriver driver;
+	
+	private Session session;
 
 
-	public CrawlerWebdriver(DesiredCapabilities capabilities) {
-		initPhantomJSDriver(capabilities);
+	public CrawlerWebdriver(DesiredCapabilities capabilities, Session session) {
+		try {
+			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
+			this.session = session;
+			
+		} catch (MalformedURLException ex) {
+			Logging.printLogError(logger, "Hub URL error! " + ex.getMessage());
+		}
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -71,7 +86,98 @@ public class CrawlerWebdriver {
 	 */
 	public String loadUrl(String url) {
 		driver.get(url);
+		
+		try {
+			URI uri = new URI(url);
+			
+			Cookie authCookie = createAuthCookie(uri);
+			
+			driver.manage().addCookie(authCookie);
+			
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		
+		driver.get(url);
+		
 		return driver.getPageSource();
+	}
+	
+	public String loadUrl(
+			String url, 
+			String proxyType) {
+		
+		driver.get(url);
+		
+		try {
+			URI uri = new URI(url);
+			
+			Cookie authCookie = createAuthCookie(uri);
+			Cookie proxyTypeCookie = createProxyTypeCookie(uri, proxyType);
+			
+			driver.manage().addCookie(authCookie);
+			driver.manage().addCookie(proxyTypeCookie);
+			
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		
+		driver.get(url);
+		
+		return driver.getPageSource();
+	}
+	
+	public String loadUrl(
+			String url,
+			String proxyType, 
+			String proxySession) {
+		
+		driver.get(url);
+		
+		try {
+			URI uri = new URI(url);
+			
+			Cookie authCookie = createAuthCookie(uri);
+			Cookie proxyTypeCookie = createProxyTypeCookie(uri, proxyType);
+			Cookie proxySessionCookie = createProxySessionCookie(uri, proxySession);
+			
+			driver.manage().addCookie(authCookie);
+			driver.manage().addCookie(proxyTypeCookie);
+			driver.manage().addCookie(proxySessionCookie);
+			
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		
+		driver.get(url);
+		
+		return driver.getPageSource();
+	}
+	
+	private Cookie createAuthCookie(URI uri) {
+		return new Cookie("x-a", 
+				"5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD", 
+				uri.getHost(), 
+				"/", 
+				null);
+	}
+	
+	private Cookie createProxyTypeCookie(URI uri, String proxyType) {
+		return new Cookie(
+				"x-type", 
+				proxyType, 
+				uri.getHost(), 
+				"/", 
+				null);
+	}
+	
+	private Cookie createProxySessionCookie(URI uri, String proxySession) {
+		return new Cookie(
+				"x-session", 
+				proxySession,
+				uri.getHost(), 
+				"/", 
+				null);
 	}
 
 	/**
@@ -151,7 +257,7 @@ public class CrawlerWebdriver {
 		try {
 			FileUtils.copyFile(screenshot, new File(path));
 		} catch (Exception ex) {
-			System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
+			Logging.printLogError(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
 		}
 	}
 
@@ -169,15 +275,6 @@ public class CrawlerWebdriver {
 			FileUtils.copyFile(screenshot, new File(path));
 		} catch (Exception ex) {
 			System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
-		}
-	}
-
-	private void initPhantomJSDriver(DesiredCapabilities capabilities) {
-		try {
-			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
-
-		} catch (MalformedURLException ex) {
-			System.err.println("Hub URL error! " + ex.getMessage());
 		}
 	}
 

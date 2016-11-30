@@ -418,7 +418,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 				.setUserAgent(DynamicDataFetcher.randUserAgent())
 				.build();
 
-		this.webdriver = new CrawlerWebdriver(capabilities);
+		this.webdriver = new CrawlerWebdriver(capabilities, session);
 	}
 
 	private String crawlDescription(Document document) {

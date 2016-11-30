@@ -24,6 +24,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.openqa.selenium.Proxy;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
@@ -88,16 +89,21 @@ public class DynamicDataFetcher {
 	 */
 	public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
+		
+		Proxy proxy = new Proxy();
+		proxy.setHttpProxy("191.235.90.114:3333");
+		proxy.setSslProxy("191.235.90.114:3333");
 
 		DesiredCapabilities capabilities = DesiredCapabilitiesBuilder
 				.create()
 				.setUserAgent(randUserAgent())
-				.setBrowserType(BrowserType.PHANTOMJS)
+				.setProxy(proxy)
+				.setBrowserType(BrowserType.CHROME)
 				.build();
 
-		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities);
+		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities, session);
 
-		String html = webdriver.loadUrl(url);
+		webdriver.loadUrl(url, ProxyCollection.BONANZA);
 
 		return webdriver;
 	}
