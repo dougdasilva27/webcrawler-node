@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class FlorianopolisAngeloniCrawler extends Crawler {
 	
@@ -125,6 +130,9 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 			if(elementTabComposition != null) 		description = description + elementTabComposition.html();
 			if(elementTabIncludedItens != null) 	description = description + elementTabIncludedItens.html();
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			Product product = new Product();
 			
 			product.setUrl(session.getOriginalURL());
@@ -132,6 +140,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -157,5 +166,52 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.contains("idProduto=");
+	}
+	
+	/**
+	 * Each card has your owns installments
+	 * Showcase price is price sight
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null) {
+			prices.insertBankTicket(price);
+			
+			prices.insertCardInstallment(Card.SHOP_CARD.toString(), crawlInstallments(price, doc, "01"));
+			prices.insertCardInstallment(Card.VISA.toString(), crawlInstallments(price, doc, "02"));
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), crawlInstallments(price, doc, "03"));
+			prices.insertCardInstallment(Card.AMEX.toString(), crawlInstallments(price, doc, "04"));
+			prices.insertCardInstallment(Card.DINERS.toString(), crawlInstallments(price, doc, "05"));
+		}
+		
+		return prices;
+	}
+	
+	private Map<Integer,Float> crawlInstallments(Float price, Document doc, String idCard){
+		Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+		
+		installmentsPriceMap.put(1, price);
+		
+		Elements installments = doc.select("#valCard"+ idCard +" table tr");
+		
+		for(Element e : installments) {
+			Elements installmentElements = e.select("td");
+			
+			if(installmentElements.size() > 1){
+				String textVezes = installmentElements.first().text().replaceAll("[^0-9]", "").trim();
+				if(!textVezes.isEmpty()){
+					Integer installment = Integer.parseInt(textVezes);
+					Float value = MathCommonsMethods.parseFloat(installmentElements.get(1).text());
+					
+					installmentsPriceMap.put(installment, value);
+				}
+			}
+		}
+		
+		return installmentsPriceMap;
 	}
 }
