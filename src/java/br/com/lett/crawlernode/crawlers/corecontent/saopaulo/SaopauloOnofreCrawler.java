@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -10,6 +12,8 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -90,6 +94,9 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 						// Price
 						Float price = crawlMainPagePrice(skuDoc);
+						
+						// Prices
+						Prices prices = crawlPrices(price);
 
 						// Availability
 						boolean available = crawlAvailability(skuDoc);
@@ -122,6 +129,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 						product.setInternalPid(internalPid);
 						product.setName(name);
 						product.setPrice(price);
+						product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);
@@ -152,6 +160,10 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 			if (name != null) {
 				Float price = crawlMainPagePrice(doc);
+				
+				// Prices
+				Prices prices = crawlPrices(price);
+				
 				boolean available = crawlAvailability(doc);
 
 				ArrayList<String> categories = crawlCategories(doc); 
@@ -172,6 +184,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -345,5 +358,34 @@ public class SaopauloOnofreCrawler extends Crawler {
 		}
 
 		return skuDoc;
+	}
+	
+	/**
+	 * In product page has only one price,
+	 * but in footer has informations of payment methods
+	 *
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+			
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+				
+		
+		return prices;
 	}
 } 
