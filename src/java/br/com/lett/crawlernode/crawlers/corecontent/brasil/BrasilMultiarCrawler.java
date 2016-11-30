@@ -287,7 +287,16 @@ public class BrasilMultiarCrawler extends Crawler {
 		return description;
 	}
 
-
+	
+	/**
+	 * To crawl this prices is accessed a api
+	 * Is removed all accents for crawl price 1x like this:
+	 * Visa à vista	R$ 1.790,00
+	 * 
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
 	private Prices crawlPrices(Float price, Document doc, JSONObject skuJson){
 		Prices prices = new Prices();
 

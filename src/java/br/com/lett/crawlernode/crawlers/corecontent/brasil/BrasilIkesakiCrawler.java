@@ -304,6 +304,15 @@ public class BrasilIkesakiCrawler extends Crawler {
 		return description;
 	}
 
+	/**
+	 * To crawl this prices is accessed a api
+	 * Is removed all accents for crawl price 1x like this:
+	 * Visa à vista	R$ 1.790,00
+	 * 
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
 	private Prices crawlPrices(String internalId, Float price){
 		Prices prices = new Prices();
 
