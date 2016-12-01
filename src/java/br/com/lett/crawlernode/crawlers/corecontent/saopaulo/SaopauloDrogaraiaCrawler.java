@@ -1,23 +1,25 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
-
+import java.util.Map;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloDrogaraiaCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "http://www.drogaraia.com.br/";
-	
+
 	public SaopauloDrogaraiaCrawler(Session session) {
 		super(session);
 	}
@@ -94,19 +96,19 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			}
 
 			// Categorias
-			Elements elementsCategories = doc.select(".main .breadcrumbs ul li:not(.home):not(.product) a");
+			Elements elementsCategories = doc.select(".breadcrumbs ul li:not(.home):not(.product) a");
 			String category1 = ""; 
 			String category2 = ""; 
 			String category3 = "";
 			for(Element category : elementsCategories) {
 				if(category1.isEmpty()) {
-					category1 = category.attr("title");
+					category1 = category.text();
 				} 
 				else if(category2.isEmpty()) {
-					category2 = category.attr("title");
+					category2 = category.text();
 				} 
 				else if(category3.isEmpty()) {
-					category3 = category.attr("title");
+					category3 = category.text();
 				}
 			}
 
@@ -144,14 +146,18 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
-			
+
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -167,18 +173,44 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
-	
-	
+
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
 
 	private boolean isProductPage(String url, Document document) {
 		Element elementInternalID = document.select("#details .col-2 .data-table tr .data").first();
-		Pattern pattern = Pattern.compile("https?://www\\.drogaraia\\.com\\.br/[^/#]+$");
-		return (pattern.matcher(url).matches() && (elementInternalID != null));
+		return ((elementInternalID != null));
+	}
+
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }
