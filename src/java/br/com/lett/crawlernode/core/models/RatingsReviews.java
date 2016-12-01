@@ -61,9 +61,10 @@ public class RatingsReviews implements Cloneable {
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder();
 		
-		stringBuilder.append("Date: " + this.date.toString() + ", ");
-		stringBuilder.append("TotalReviews: " + this.totalReviews + ", ");
-		stringBuilder.append("AverageOverallRating: " + this.averageOverallRating + ", ");
+		stringBuilder.append("Date: " + date.toString() + "\n");
+		stringBuilder.append("TotalReviews: " + totalReviews + "\n");
+		stringBuilder.append("AverageOverallRating: " + averageOverallRating + "\n");
+		stringBuilder.append("InternalId: " + internalId + "\n");
 		
 		return stringBuilder.toString();
 	}
