@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -227,7 +226,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 			Element installmentElement = i.select("td.parcelas").first();
 
 			if(installmentElement != null){
-				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
+				String textInstallment = installmentElement.text().toLowerCase();
 				Integer installment = null;
 
 				if(textInstallment.contains("vista")){
@@ -247,12 +246,6 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		}
 
 		return mapInstallments;
-	}
-
-	private String removeAccents(String str) {
-		str = Normalizer.normalize(str, Normalizer.Form.NFD);
-		str = str.replaceAll("[^\\p{ASCII}]", "");
-		return str;
 	}
 
 }
