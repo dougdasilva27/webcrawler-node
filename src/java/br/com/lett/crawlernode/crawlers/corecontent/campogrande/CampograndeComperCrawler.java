@@ -2,7 +2,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -11,6 +13,8 @@ import org.jsoup.nodes.Element;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -127,14 +131,18 @@ public class CampograndeComperCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
 			
+			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -161,6 +169,29 @@ public class CampograndeComperCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return (url.startsWith("http://www.comperdelivery.com.br/") && url.endsWith("/p"));
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 
 }
