@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -152,11 +157,15 @@ public class BrasilBifarmaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -191,5 +200,51 @@ public class BrasilBifarmaCrawler extends Crawler {
 
 		return true;
 
+	}
+	
+	/**
+	 * Example when has installments:
+	 * ou 4X de R$ 21,48 (total cartão a prazo R$ 85,92)
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			prices.insertBankTicket(price);
+			installmentPriceMap.put(1, price);
+			
+			Elements installments = doc.select(".boxes .left > p");
+			
+			for(Element e : installments){
+				String text = e.ownText().trim().toLowerCase();
+				
+				if(text.startsWith("ou")){
+					int x = text.indexOf("x");
+					int y = text.indexOf("(", x+1);
+					
+					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+					Float value = MathCommonsMethods.parseFloat(text.substring(x+1, y));
+					
+					installmentPriceMap.put(installment, value);
+					
+					break;
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 }
