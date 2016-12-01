@@ -59,10 +59,11 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private RatingsReviews crawlRatingReviews(Document document) {
-		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
+		RatingsReviews ratingReviews = new RatingsReviews();
 		
 		Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
 		
+		ratingReviews.setDate(session.getDate());
 		ratingReviews.setTotalReviews(computeTotalReviewsCount(ratingDistribution));
 		ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
 		

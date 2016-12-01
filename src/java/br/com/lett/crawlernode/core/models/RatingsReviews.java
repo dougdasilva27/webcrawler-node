@@ -17,8 +17,8 @@ public class RatingsReviews implements Cloneable {
 	private Double averageOverallRating;
 	private String internalId;
 
-	public RatingsReviews(DateTime date) {
-		this.date = date;
+	public RatingsReviews() {
+		this.date = null;
 		this.totalReviews = null;
 		this.averageOverallRating = null;
 		this.internalId = null;
@@ -77,6 +77,14 @@ public class RatingsReviews implements Cloneable {
 		stringBuilder.append("InternalId: " + internalId + "\n");
 
 		return stringBuilder.toString();
+	}
+	
+	public DateTime getDate() {
+		return date;
+	}
+	
+	public void setDate(DateTime date) {
+		this.date = date;
 	}
 
 	public Integer getTotalReviews() {

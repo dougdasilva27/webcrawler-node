@@ -35,8 +35,9 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 			
-			RatingsReviews ratingsReviews = new RatingsReviews(session.getDate());
+			RatingsReviews ratingsReviews = new RatingsReviews();
 			
+			ratingsReviews.setDate(session.getDate());
 			ratingsReviews.setInternalId( crawlInternalId(document) );
 			
 			Integer totalOfEvaluations = 0;

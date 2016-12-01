@@ -88,7 +88,9 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private RatingsReviews crawlRatingReviews(JSONObject embeddedJSONObject) {
-		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
+		RatingsReviews ratingReviews = new RatingsReviews();
+		
+		ratingReviews.setDate(session.getDate());
 
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
 		String skuInternalPid = crawlSkuInternalPid(embeddedJSONObject);
