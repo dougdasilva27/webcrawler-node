@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class SaopauloSondaCrawler extends Crawler {
 
@@ -85,12 +90,16 @@ public class SaopauloSondaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 			
+			Product product = new Product();
+			
+			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -141,5 +150,50 @@ public class SaopauloSondaCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * Has two prices in product Page, normal cards and Shopcard
+	 * Ex: 
+	 * 
+	 * R$ 9,99
+	 * No Cartão Sonda: R$ 9,49
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			
+			// shop card
+			Element shopPriceElement = doc.select(".noBorder span[style]").first();
+			
+			if(shopPriceElement != null){
+				Float priceShop = MathCommonsMethods.parseFloat(shopPriceElement.text());
+				
+				Map<Integer,Float> installmentPriceMapShop = new HashMap<>();
+				installmentPriceMapShop.put(1, priceShop);
+				
+				prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+			} else {
+				prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+			}
+		}
+
+		return prices;
 	}
 }
