@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -97,12 +102,16 @@ public class SaopauloMamboCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
+			// prices
+			Prices prices = crawlPrices(internalId, price);
+			
 			Product product = new Product();
 			
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -214,4 +223,105 @@ public class SaopauloMamboCrawler extends Crawler {
 
 		return secondaryImages;
 	}
+	
+	/**
+	 * To crawl this prices is required access a api
+	 * Api return this:
+	 * 
+	 *	Mastercard à vista	R$ 7.443,90
+	 *	Mastercard 2 vezes sem juros	R$ 3.721,95
+	 *	Mastercard 3 vezes sem juros	R$ 2.481,30
+	 *	Mastercard 4 vezes sem juros	R$ 1.860,97
+	 *	Mastercard 5 vezes sem juros	R$ 1.488,78
+	 * 
+	 * In this market has no bank slip payment method
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(String internalId, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			String url = "http://www.mambo.com.br/productotherpaymentsystems/" + internalId;
+
+			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+			Element bank = doc.select("#ltlPrecoWrapper em").first();
+			if(bank != null){
+				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+			}
+
+			Elements cardsElements = doc.select("#ddlCartao option");
+
+			for(Element e : cardsElements){
+				String text = e.text().toLowerCase();
+
+				if (text.contains("visa")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+					
+				} else if (text.contains("mastercard")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("diners")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+					
+				} else if (text.contains("american") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("hipercard") || text.contains("amex")) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+					
+				} else if (text.contains("credicard") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+					
+				} else if (text.contains("elo") ) {
+					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+					
+				}
+			} 
+
+
+		}
+
+		return prices;
+	}
+
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+		Map<Integer,Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for(Element i : installmentsCard){
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if(installmentElement != null){
+				String textInstallment = installmentElement.text().toLowerCase();
+				Integer installment = null;
+
+				if(textInstallment.contains("vista")){
+					installment = 1;					
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if(valueElement != null){
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
+
 }
