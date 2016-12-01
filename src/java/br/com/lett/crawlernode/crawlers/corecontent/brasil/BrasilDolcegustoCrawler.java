@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,6 +11,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -113,12 +117,16 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
 			// marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -166,6 +174,30 @@ public class BrasilDolcegustoCrawler extends Crawler {
 		}
 		
 		return price;
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 
 }
