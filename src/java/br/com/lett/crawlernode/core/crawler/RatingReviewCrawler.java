@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -58,6 +59,8 @@ public class RatingReviewCrawler implements Runnable {
 			
 			if (ratingReviews != null) {
 				printRatingsReviews(ratingReviews);
+				Persistence.updateRating(ratingReviews, session);
+				
 			} else {
 				Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
 			}

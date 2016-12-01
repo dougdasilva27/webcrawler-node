@@ -23,6 +23,8 @@ import org.bson.Document;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.RatingsReviews;
+import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
@@ -188,6 +190,23 @@ public class Persistence {
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+		}
+	}
+	
+	public static void updateRating(RatingsReviews ratingReviews, Session session) {
+		String query = "UPDATE processed SET "
+				+ "rating=" + (ratingReviews == null ? "NULL" : "'" + ratingReviews.getJSON().toString() + "'" + "::json") + " "
+				+ "WHERE id = " + ((RatingReviewsCrawlerSession)session).getProcessedId();
+		
+		try {
+			br.com.lett.crawlernode.test.Test.dbManager.runSqlExecute(query);
+			Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
+
+		} catch(SQLException e) {
+			Logging.printLogError(logger, session, "Error updating processed product rating.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
 			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
