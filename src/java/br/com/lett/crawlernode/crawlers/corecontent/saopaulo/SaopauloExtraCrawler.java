@@ -2,7 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -14,6 +16,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
@@ -99,6 +103,9 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			// marketplace
 			JSONArray marketplace = null;
+			
+			// Prices 
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 			
@@ -107,6 +114,7 @@ public class SaopauloExtraCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -207,6 +215,31 @@ public class SaopauloExtraCrawler extends Crawler {
 		if (primaryImage != null) primaryImage = "http://www.deliveryextra.com.br" + primaryImage;
 		
 		return primaryImage;
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 	
 	/**
