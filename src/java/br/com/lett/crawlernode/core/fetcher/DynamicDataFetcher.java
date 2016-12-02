@@ -104,7 +104,7 @@ public class DynamicDataFetcher {
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities, session);
 
 		webdriver.loadUrl(url, ProxyCollection.BONANZA);
-
+		
 		return webdriver;
 	}
 	

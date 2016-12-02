@@ -27,12 +27,14 @@ public class ProxyCollection {
 
 	private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
 
-	public static final String BUY 		= "buy";
-	public static final String BONANZA 	= "bonanza";
-	public static final String STORM 	= "storm";
-	public static final String NO_PROXY = "no_proxy";
-	public static final String CHARITY 	= "charity";
-	public static final String AZURE 	= "azure";
+	public static final String BUY 			= "buy";
+	public static final String BONANZA 		= "bonanza";
+	public static final String STORM 		= "storm";
+	public static final String NO_PROXY 	= "no_proxy";
+	public static final String CHARITY 		= "charity";
+	public static final String CHARITY_BR 	= "charity_br";
+	public static final String CHARITY_MX 	= "charity_mx";
+	public static final String AZURE 		= "azure";
 
 	public static final int MAX_ATTEMPTS_BUY 		= 2;
 	public static final int MAX_ATTEMPTS_BONANZA 	= 3;

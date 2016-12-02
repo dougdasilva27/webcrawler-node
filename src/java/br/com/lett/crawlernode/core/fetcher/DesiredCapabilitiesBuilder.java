@@ -5,11 +5,14 @@ import java.util.List;
 
 import org.openqa.selenium.Platform;
 import org.openqa.selenium.Proxy;
-import org.openqa.selenium.remote.BrowserType;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 public class DesiredCapabilitiesBuilder {
+	
+	private static final String DEFAULT_BROWSER = "chrome";
+	private static final String DEFAULT_PROXY = "191.235.90.114:3333";
 
 	private String userAgent;
 	private String executablePath;
@@ -56,9 +59,39 @@ public class DesiredCapabilitiesBuilder {
 
 		desiredCapabilities.setPlatform(Platform.ANY);
 		desiredCapabilities.setVersion("ANY");
-		desiredCapabilities.setBrowserName(browserName);
 		
-		if (proxy != null) desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
+		if (browserName != null) {
+			desiredCapabilities.setBrowserName(browserName);
+		} else {
+			desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
+		}
+		
+		if (proxy != null) {
+			desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
+		} else {
+			Proxy defaultProxy = new Proxy();
+			defaultProxy.setHttpProxy(DEFAULT_PROXY);
+			defaultProxy.setSslProxy(DEFAULT_PROXY);
+			desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
+		}
+		
+		ChromeOptions chromeOptions = new ChromeOptions();
+		
+		if (userAgent != null) {
+			List<String> chromeArgs = new ArrayList<String>();
+			chromeArgs.add("--user-agent=" + userAgent);
+//			chromeArgs.add("--allow-insecure-localhost");
+//			chromeArgs.add("--ssl-version-max=tls1.3");
+//			chromeArgs.add("--ssl-version-min=tls1");
+//			chromeArgs.add("--ignore-certificate-errors=true");
+//			chromeArgs.add("--ignore-urlfetcher-cert-requests=true");
+			
+			chromeOptions.addArguments(chromeArgs);
+			
+			desiredCapabilities.setCapability("chromeOptions", chromeOptions);
+		}
+		
+		desiredCapabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
 
 		return desiredCapabilities;
 	}
