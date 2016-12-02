@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -9,9 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class RiodejaneiroExtraplusCrawler extends Crawler {
 	
@@ -38,39 +43,33 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 
 			// Id interno
 			String id = this.session.getOriginalURL().split("/")[4];
-			String internalID = Integer.toString(Integer.parseInt(id.split("-")[0]));
+			String internalID = null;
+			if (id != null) {
+				internalID = Integer.toString(Integer.parseInt(id.split("-")[0]));
+			}
 
 			// Nome
-			Elements elementName = doc.select("p.prodNome");
-			String name = elementName.text().replace("'", "").trim();
+			Elements elementName = doc.select("h1.title-page-product");
+			String name = null;
+			if (elementName != null) {
+				name = elementName.text().replace("'", "").trim();
+			}
 
 			// Preço
-			Elements elementPrice = doc.select("div.preco p");
-			Float price = Float.parseFloat(elementPrice.first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-
+			Elements elementPrice = doc.select("div.price span");
+			Float price = null;
+			if(elementPrice != null){
+				price = Float.parseFloat(elementPrice.first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			}
 			// Disponibilidade
 			boolean available = true;
 
-			// Categorias
-			String category1; 
-			String category2; 
-			String category3;
-			Elements element_categories = doc.select("div.migalha ul li"); 
-			String[] cat = new String[4];
-			cat[0] = "";
-			cat[1] = "";
-			cat[2] = "";
-			cat[3] = "";
-			int j=0;
-			for(int i=0; i < element_categories.size(); i++) {
-				Element e = element_categories.get(i);
-				cat[j] = e.text().toString();
-				cat[j] = cat[j].replace(">", "");
-				j++;
-			}
-			category1 = cat[2];
-			category2 = cat[3];
-			category3 = null;
+			// Categories
+			ArrayList<String> categories = this.crawlCategories(doc);
+			String category1 = getCategory(categories, 0);
+			String category2 = getCategory(categories, 1);
+			String category3 = getCategory(categories, 2);
+			
 
 			// Imagens
 			String primaryImage = "";
@@ -86,7 +85,11 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 			String secondaryImages = null;
 
 			// Descrição
+			Element descriptionElement = doc.select(".description").first();
 			String description = "";
+			if (descriptionElement != null) {
+				description += descriptionElement.html();
+			}
 
 			// Estoque
 			Integer stock = null;
@@ -94,12 +97,16 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
+			// create a product
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
-			
 			product.setInternalId(internalID);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -126,5 +133,69 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.contains("produto");
+	}
+	
+	private ArrayList<String> crawlCategories(Document document) {
+		Elements elementCategories = document.select(".breadcrumb a span");
+		ArrayList<String> categories = new ArrayList<String>();
+
+		for(int i = 1; i < elementCategories.size(); i++) { // starts with index 1 because the first item is the home page
+			Element e = elementCategories.get(i);
+			String tmp = e.text().toString();
+
+			categories.add(tmp);
+		}
+
+		return categories;
+	}
+
+	private String getCategory(ArrayList<String> categories, int n) {
+		if (n < categories.size()) {
+			return categories.get(n);
+		}
+
+		return "";
+	}
+
+	
+	/**
+	 * In this market has no bank slip payment method
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			installmentPriceMap.put(1, price);
+			
+			Element installments = doc.select(".parcel").first();
+			
+			if(installments != null){
+				Element installmentElement = installments.select("span").first();
+				
+				if(installmentElement != null) {
+					Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", ""));
+					
+					Element valueElement = installments.select("span").last();
+					
+					if(valueElement != null) {
+						Float value = MathCommonsMethods.parseFloat(valueElement.text());
+						
+						installmentPriceMap.put(installment, value);
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 }
