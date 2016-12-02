@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -34,15 +35,16 @@ import br.com.lett.crawlernode.util.Logging;
  * the sku page. (nao existe divisao no cartao de credito).
  * 
  * 4) In this crawler is requires use webdriver
+ * 5) Bogota was city choose
  * 
  * @author Gabriel Dornelas
  *
  */
-public class MexicoExitoCrawler extends Crawler {
+public class MexicoCarullaCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.exito.com/";
+	private final String HOME_PAGE = "http://www.carulla.com/";
 
-	public MexicoExitoCrawler(Session session) {
+	public MexicoCarullaCrawler(Session session) {
 		super(session);
 		this.config.setFetcher(Fetcher.WEBDRIVER);
 	}
@@ -54,7 +56,17 @@ public class MexicoExitoCrawler extends Crawler {
 	}
 
 
-	private final static String MAIN_SELLER_NAME_LOWER = "exito";
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		BasicClientCookie cookie = new BasicClientCookie("selectedCity", "BG");
+		cookie.setDomain("www.carulla.com");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
+	private final static String MAIN_SELLER_NAME_LOWER = "carulla";
 	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
@@ -119,9 +131,9 @@ public class MexicoExitoCrawler extends Crawler {
 	private String crawlInternalId(Document document) {
 		String internalId = null;
 
-		Element internalIdElement = document.select("meta[itemprop=sku]").first();
+		Element internalIdElement = document.select(".btn.btn-warning").first();
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("content");
+			internalId = internalIdElement.attr("sku");
 		}
 
 		return internalId;
@@ -136,6 +148,11 @@ public class MexicoExitoCrawler extends Crawler {
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
 
+		Element internalIdElement = document.select(".btn.btn-warning").first();
+		if (internalIdElement != null) {
+			internalPid = internalIdElement.attr("prd");
+		}
+		
 		return internalPid;
 	}
 
@@ -180,11 +197,11 @@ public class MexicoExitoCrawler extends Crawler {
 
 	private Map<String,Prices> crawlMarketplace(Document doc) {
 		Map<String,Prices> marketplaces = new HashMap<>();
-		Element lojista = doc.select(".productSoldBy strong").first();
+		Element lojista = doc.select(".product-seller").first();
 		
 		if(lojista != null) {
 			Prices prices = new Prices();
-			String partnerName = lojista.text().trim().toLowerCase();
+			String partnerName = lojista.text().split(":")[1].trim().toLowerCase();
 			
 			Float price = null;
 			Element salePriceElement = doc.select(".otherMedia > span ").first();
@@ -196,32 +213,36 @@ public class MexicoExitoCrawler extends Crawler {
 			if(salePriceElement == null){
 				salePriceElement = doc.select("h4.price").first();
 			} 
-
+			
 			if (salePriceElement != null) {
-				price = Float.parseFloat(salePriceElement.ownText().replaceAll("\\$", "").replaceAll(",", ""));
+				String textPrice = salePriceElement.text().replaceAll("\\$", "").replaceAll(",", "").trim();
 				
-				Map<Integer,Float> installmentMapPrice = new HashMap<>();
-				installmentMapPrice.put(1, price);
-				
-				prices.insertCardInstallment(Card.AMEX.toString(), installmentMapPrice);
-				prices.insertCardInstallment(Card.DINERS.toString(), installmentMapPrice);
-				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMapPrice);
-				prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
-				
-				//Shop card
-				Element priceShopElement = doc.select(".priceOffer").first();
-				if(priceShopElement != null){
-					Float priceShop = Float.parseFloat(priceShopElement.ownText().replaceAll("\\$", "").replaceAll(",", ""));
+				if(!textPrice.isEmpty()){
+					price = Float.parseFloat(textPrice);
 					
-					Map<Integer,Float> installmentMapPriceShop = new HashMap<>();
-					installmentMapPriceShop.put(1, priceShop);
+					Map<Integer,Float> installmentMapPrice = new HashMap<>();
+					installmentMapPrice.put(1, price);
 					
-					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentMapPriceShop);
-				} else {
-					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentMapPrice);
+					prices.insertCardInstallment(Card.AMEX.toString(), installmentMapPrice);
+					prices.insertCardInstallment(Card.DINERS.toString(), installmentMapPrice);
+					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMapPrice);
+					prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
+					
+					//Shop card
+					Element priceShopElement = doc.select(".priceOffer").first();
+					if(priceShopElement != null){
+						Float priceShop = Float.parseFloat(priceShopElement.ownText().replaceAll("\\$", "").replaceAll(",", ""));
+						
+						Map<Integer,Float> installmentMapPriceShop = new HashMap<>();
+						installmentMapPriceShop.put(1, priceShop);
+						
+						prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentMapPriceShop);
+					} else {
+						prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentMapPrice);
+					}
+					
+					marketplaces.put(partnerName, prices);
 				}
-				
-				marketplaces.put(partnerName, prices);
 			}
 		}	
 
@@ -258,7 +279,7 @@ public class MexicoExitoCrawler extends Crawler {
 		Element primaryImageElement = document.select("#largeImageCanvas").first();
 
 		if (primaryImageElement != null) {			
-			primaryImage = "http://www.exito.com/" + primaryImageElement.attr("src").trim();
+			primaryImage = "http://www.carulla.com/" + primaryImageElement.attr("src").trim();
 		}
 
 		return primaryImage;
@@ -271,7 +292,7 @@ public class MexicoExitoCrawler extends Crawler {
 		Elements imagesElement = document.select(".pdpThumbailsItem:not(.video) img");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-			String image = "http://www.exito.com" + imagesElement.get(i).attr("src").trim().replace("xs", "lrg");
+			String image = "http://www.carulla.com" + imagesElement.get(i).attr("src").trim().replace("xs", "lrg");
 			
 			if(!image.equals(primaryImage)){
 				secondaryImagesArray.put( image );	
