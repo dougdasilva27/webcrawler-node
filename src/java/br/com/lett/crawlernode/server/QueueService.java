@@ -34,7 +34,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class QueueService {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
-	
+
 	private static final Map<String, String> queueURLMap;
 
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
@@ -50,7 +50,7 @@ public class QueueService {
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images";
 	private static final String IMAGES_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-development";
 	private static final String IMAGES_DEAD_QUEUE_URL					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-dead";
-	
+
 	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
 	private static final String RATING_REVIEWS_DEAD_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-dead";
 	private static final String RATING_REVIEWS_DEVELOPMENT_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
@@ -66,32 +66,32 @@ public class QueueService {
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
-	
+
 	public static final String IMAGE_TYPE 						= "type";
 	public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR 	= "primary";
 	public static final String SECONDARY_IMAGES_MESSAGE_ATTR 	= "secondary";
 	public static final String NUMBER_MESSAGE_ATTR				= "number";
-	
+
 	static {
 		queueURLMap = new HashMap<String, String>();
-		
+
 		queueURLMap.put(QueueName.DEVELOPMENT, DEVELOMENT_QUEUE_URL);
-		
+
 		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
 		queueURLMap.put(QueueName.DISCOVER_DEAD, DISCOVERY_DEAD_QUEUE_URL);
-		
+
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
 		queueURLMap.put(QueueName.IMAGES_DEVELOPMENT, IMAGES_DEVELOPMENT_QUEUE_URL);
 		queueURLMap.put(QueueName.IMAGES_DEAD, IMAGES_DEAD_QUEUE_URL);
-		
+
 		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
 		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
 		queueURLMap.put(QueueName.INSIGHTS_DEAD, INSIGHTS_DEAD_QUEUE_URL);
-		
+
 		queueURLMap.put(QueueName.RATING_REVIEWS_DEVELOPMENT, RATING_REVIEWS_DEVELOPMENT_QUEUE_URL);
 		queueURLMap.put(QueueName.RATING_REVIEWS, RATING_REVIEWS_QUEUE_URL);
 		queueURLMap.put(QueueName.RATING_REVIEWS_DEAD, RATING_REVIEWS_DEAD_QUEUE_URL);
-		
+
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
 		queueURLMap.put(QueueName.SEED_DEAD, SEED_DEAD_QUEUE_URL);
 	}
@@ -117,25 +117,32 @@ public class QueueService {
 		List<Message> messages = null;
 
 		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			if (Main.executionParameters.isRatingAndReviewActivated()) { // fetch from rating and reviews development queue
+			if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.INSIGHTS)) {
+				messages = requestMessages(queueHandler.getSqs(), QueueName.INSIGHTS_DEVELOPMENT, maxNumberOfMessages);
+				result.setMessages(messages);
+				result.setQueueName(QueueName.INSIGHTS_DEVELOPMENT);
+			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.IMAGES)) {
+				messages = requestMessages(queueHandler.getSqs(), QueueName.IMAGES_DEVELOPMENT, maxNumberOfMessages);
+				result.setMessages(messages);
+				result.setQueueName(QueueName.IMAGES_DEVELOPMENT);
+			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.RATING)) {
 				messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS_DEVELOPMENT, maxNumberOfMessages);
 				result.setMessages(messages);
 				result.setQueueName(QueueName.RATING_REVIEWS_DEVELOPMENT);
-			} else {
+			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.DISCOVER)) {
+				messages = requestMessages(queueHandler.getSqs(), QueueName.DISCOVER_DEVELOPMENT, maxNumberOfMessages);
+				result.setMessages(messages);
+				result.setQueueName(QueueName.DISCOVER_DEVELOPMENT);
+			}
+			else {
 				messages = requestMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, maxNumberOfMessages);
 				result.setMessages(messages);
 				result.setQueueName(QueueName.DEVELOPMENT);
 			}
+
 			return result;
 		}
-		
-		if (Main.executionParameters.isRatingAndReviewActivated()) {
-			messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS, maxNumberOfMessages);
-			result.setMessages(messages);
-			result.setQueueName(QueueName.RATING_REVIEWS);
-			return result;
-		}
-		
+
 		if (Main.executionParameters.isImageTaskActivated()) { // if image task is activated, we want to solve only those types of tasks.
 			messages = requestMessages(queueHandler.getSqs(), QueueName.IMAGES, maxNumberOfMessages);
 			if (!messages.isEmpty()) {
@@ -157,6 +164,13 @@ public class QueueService {
 		if (!messages.isEmpty()) {
 			result.setMessages(messages);
 			result.setQueueName(QueueName.INSIGHTS);
+			return result;
+		}
+
+		messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS, maxNumberOfMessages);
+		if (!messages.isEmpty()) {
+			result.setMessages(messages);
+			result.setQueueName(QueueName.RATING_REVIEWS);
 			return result;
 		}
 
@@ -301,7 +315,7 @@ public class QueueService {
 
 		return true;
 	}
-	
+
 	/**
 	 * Send a message batch to SQS.
 	 * 
@@ -314,7 +328,7 @@ public class QueueService {
 		String queueURL = getQueueURL(queueName);
 		batchMessageBatchRequest.setQueueUrl(queueURL);
 		batchMessageBatchRequest.setEntries(entries);
-		
+
 		return sqs.sendMessageBatch(batchMessageBatchRequest);
 	}
 
@@ -326,7 +340,7 @@ public class QueueService {
 	 */
 	private static String getQueueURL(String queueName) {
 		if (queueURLMap.containsKey(queueName)) return queueURLMap.get(queueName);
-		
+
 		Logging.printLogError(logger, "Unrecognized queue.");
 		return null;
 	}

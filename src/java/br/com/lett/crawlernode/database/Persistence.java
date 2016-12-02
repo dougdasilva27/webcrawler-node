@@ -201,7 +201,7 @@ public class Persistence {
 				+ "WHERE id = " + ((RatingReviewsCrawlerSession)session).getProcessedId();
 		
 		try {
-			br.com.lett.crawlernode.test.Test.dbManager.runSqlExecute(query);
+			Main.dbManager.runSqlExecute(query);
 			Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
 
 		} catch(SQLException e) {

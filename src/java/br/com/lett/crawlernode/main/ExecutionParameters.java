@@ -21,6 +21,13 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
+	
+	public static final String SEED = "seed";
+	public static final String INSIGHTS = "insights";
+	public static final String DISCOVER = "discover";
+	public static final String IMAGES = "images";
+	public static final String RATING = "rating";
+	
 
 	/**
 	 * The maximum number of threads that can be used by the crawler
@@ -28,7 +35,6 @@ public class ExecutionParameters {
 	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
 
 	private static final String ENV_IMAGE_TASK 			= "IMAGE_TASK";
-	private static final String ENV_RATING_REVIEW_TASK 	= "RATING_REVIEW";
 	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
 
 	private static final String ON 						= "ON";
@@ -37,6 +43,7 @@ public class ExecutionParameters {
 	private String environment;
 	private String version;
 	private Boolean debug;
+	private String developmentQueue;
 
 	/** 
 	 * In case we want to force image update on Amazon bucket, when downloading images
@@ -47,7 +54,6 @@ public class ExecutionParameters {
 
 	private String tmpImageFolder;
 	private boolean imageTaskActivated;
-	private boolean ratingAndReviewsTaskActivated;
 	private String[] args;
 
 	/**
@@ -77,9 +83,6 @@ public class ExecutionParameters {
 		// get the flag for image tasks on environment variable
 		this.imageTaskActivated = getEnvImageTaskActivated();
 
-		// get the flag for rating and review tasks on environment variable
-		this.ratingAndReviewsTaskActivated = getEnvRateAndReviewTaskActivated();
-
 		Logging.printLogDebug(logger, this.toString());
 	}
 
@@ -100,8 +103,8 @@ public class ExecutionParameters {
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
-		options.addOption("rating_reviews", false, "Running rating and reviews crawler");
 		options.addOption("environment", true, "Environment [development, production]");
+		options.addOption("development_queue", true, "Development queue to fetch message from [seed, insights, discover, images, rating]");
 		options.addOption("version", true, "Crawler node version");
 		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
 
@@ -129,6 +132,19 @@ public class ExecutionParameters {
 				}
 			} else {
 				help();
+			}
+			
+			// development queue
+			if (cmd.hasOption("development_queue")) {
+				developmentQueue = cmd.getOptionValue("development_queue");
+				if ( !developmentQueue.equals(SEED) &&
+					 !developmentQueue.equals(INSIGHTS) &&
+					 !developmentQueue.equals(RATING) &&
+					 !developmentQueue.equals(DISCOVER) &&
+					 !developmentQueue.equals(IMAGES) ) {
+					Logging.printLogError(logger, "Unrecognized development queue.");
+					help();
+				}
 			}
 
 			// temporary images folder
@@ -163,8 +179,6 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Image task activated: " + this.imageTaskActivated);
 		sb.append("\n");
-		sb.append("Rating and reviews: " + this.ratingAndReviewsTaskActivated);
-		sb.append("\n");
 		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
@@ -194,13 +208,6 @@ public class ExecutionParameters {
 		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
 		if (imageTaskActivated == null) return false;
 		if (imageTaskActivated.equals(ON)) return true;
-		return false;
-	}
-
-	private boolean getEnvRateAndReviewTaskActivated() {
-		String ratingAndReviewTaskActivated = System.getenv(ENV_RATING_REVIEW_TASK);
-		if (ratingAndReviewTaskActivated == null) return false;
-		if (ratingAndReviewTaskActivated.equals(ON)) return true;
 		return false;
 	}
 
@@ -235,9 +242,12 @@ public class ExecutionParameters {
 	public void setTmpImageFolder(String tmpImageFolder) {
 		this.tmpImageFolder = tmpImageFolder;
 	}
-
-	public boolean isRatingAndReviewActivated() {
-		return ratingAndReviewsTaskActivated;
+	
+	public String getDevelopmentQueue() {
+		return developmentQueue;
 	}
 
+	public void setDevelopmentQueue(String developmentQueue) {
+		this.developmentQueue = developmentQueue;
+	}
 }

@@ -49,5 +49,16 @@ public class RatingReviewsCrawlerSession extends Session {
 	public void setInternalId(String internalId) {
 		this.internalId = internalId;
 	}
+	
+	@Override
+	public String toString() {		
+		StringBuilder stringBuilder = new StringBuilder();
+		
+		stringBuilder.append(super.toString());
+		stringBuilder.append("internal id: " + internalId + "\n");
+		stringBuilder.append("processed id: " + processedId + "\n");
+		
+		return stringBuilder.toString();
+	}
 
 }

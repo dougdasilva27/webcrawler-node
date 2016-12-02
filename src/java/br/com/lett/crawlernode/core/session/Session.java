@@ -212,12 +212,12 @@ public class Session {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("session id: " + this.sessionId + "\n");
-		sb.append("queue name: " + this.getQueueName() + "\n");
-		sb.append("url: " + this.originalURL + "\n");
-		sb.append("market id: " + this.market.getNumber() + "\n");
-		sb.append("market name: " + this.market.getName() + "\n");
-		sb.append("market city: " + this.market.getCity() + "\n");
+		sb.append("session id: " + sessionId + "\n");
+		sb.append("queue name: " + getQueueName() + "\n");
+		sb.append("url: " + originalURL + "\n");
+		sb.append("market id: " + market.getNumber() + "\n");
+		sb.append("market name: " + market.getName() + "\n");
+		sb.append("market city: " + market.getCity() + "\n");
 
 		return sb.toString();
 	}

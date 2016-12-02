@@ -54,7 +54,7 @@ public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static ExecutionParameters 	executionParameters;
-	public static ProxyCollection 				proxies;
+	public static ProxyCollection 		proxies;
 	public static DBCredentials 		dbCredentials;
 	public static DatabaseManager 		dbManager;
 	public static ResultManager 		processorResultManager;
