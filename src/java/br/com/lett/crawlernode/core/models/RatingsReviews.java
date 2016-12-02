@@ -27,13 +27,22 @@ public class RatingsReviews implements Cloneable {
 	public void setJSONRepresentation(JSONObject ratingReviewsJSON) {
 		if (ratingReviewsJSON != null) {
 			if (ratingReviewsJSON.has(DATE_JSON_FIELD)) {
-				date = new DateTime(ratingReviewsJSON.getString(DATE_JSON_FIELD));
+				Object obj = ratingReviewsJSON.get(DATE_JSON_FIELD); 
+				if (!obj.equals(JSONObject.NULL)) {
+					date = new DateTime(ratingReviewsJSON.getString(DATE_JSON_FIELD));
+				}
 			}
 			if (ratingReviewsJSON.has(TOTAL_REVIEWS_JSON_FIELD)) {
-				totalReviews = ratingReviewsJSON.getInt(TOTAL_REVIEWS_JSON_FIELD);
+				Object obj = ratingReviewsJSON.get(TOTAL_REVIEWS_JSON_FIELD); 
+				if (!obj.equals(JSONObject.NULL)) {
+					totalReviews = ratingReviewsJSON.getInt(TOTAL_REVIEWS_JSON_FIELD);
+				}
 			}
 			if (ratingReviewsJSON.has(AVERAGE_OVERALL_RATING_JSON_FIELD)) {
-				averageOverallRating = MathCommonsMethods.normalizeTwoDecimalPlaces(ratingReviewsJSON.getDouble(AVERAGE_OVERALL_RATING_JSON_FIELD));
+				Object obj = ratingReviewsJSON.get(TOTAL_REVIEWS_JSON_FIELD);
+				if (!obj.equals(JSONObject.NULL)) {
+					averageOverallRating = MathCommonsMethods.normalizeTwoDecimalPlaces(ratingReviewsJSON.getDouble(AVERAGE_OVERALL_RATING_JSON_FIELD));
+				}
 			}
 		}
 	}
