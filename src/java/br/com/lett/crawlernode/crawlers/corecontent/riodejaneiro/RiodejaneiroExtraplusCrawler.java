@@ -80,7 +80,9 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 			else{
 				primaryImage = element_foto.first().attr("src").trim();	
 			}
-			if(primaryImage.contains("produto_sem_foto")) primaryImage = "";
+			if(primaryImage.contains("produto_sem_foto")) {
+				primaryImage = "";
+			}
 
 			String secondaryImages = null;
 
@@ -137,7 +139,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 	
 	private ArrayList<String> crawlCategories(Document document) {
 		Elements elementCategories = document.select(".breadcrumb a span");
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 
 		for(int i = 1; i < elementCategories.size(); i++) { // starts with index 1 because the first item is the home page
 			Element e = elementCategories.get(i);
@@ -159,21 +161,22 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 
 	
 	/**
-	 * In this market has no bank slip payment method
+	 * No bank slip payment method in this ecommerce.
+	 * 
 	 * @param doc
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
 		
-		if(price != null){
+		if (price != null) {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 			installmentPriceMap.put(1, price);
 			
 			Element installments = doc.select(".parcel").first();
 			
-			if(installments != null){
+			if (installments != null) {
 				Element installmentElement = installments.select("span").first();
 				
 				if(installmentElement != null) {
@@ -181,7 +184,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 					
 					Element valueElement = installments.select("span").last();
 					
-					if(valueElement != null) {
+					if (valueElement != null) {
 						Float value = MathCommonsMethods.parseFloat(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);

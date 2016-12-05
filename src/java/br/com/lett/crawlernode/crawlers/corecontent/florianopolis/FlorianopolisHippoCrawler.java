@@ -35,7 +35,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -81,7 +81,9 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			Elements element_foto = doc.select("div.img a");
 			String primaryImage = (element_foto.size() > 0) ? element_foto.get(0).attr("href") : "";
 			primaryImage = primaryImage.replace("/./", "http://www.hippo.com.br/");
-			if(primaryImage.contains("produto_default_grande.jpg")) primaryImage = "";
+			if(primaryImage.contains("produto_default_grande.jpg")) {
+				primaryImage = "";
+			}
 
 			String secondaryImages = null;
 
@@ -99,7 +101,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			JSONArray marketplace = null;
 			
 			// Prices
-			Prices prices = crawlPrices(doc, price);
+			Prices prices = crawlPrices(price);
 			
 			//create product
 			Product product = new Product();
@@ -146,7 +148,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Float price){
 		Prices prices = new Prices();
 
 		if(price != null){

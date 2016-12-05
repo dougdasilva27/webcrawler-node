@@ -37,7 +37,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -95,7 +95,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			// Prices
-			Prices prices = crawlPrices(doc, price);
+			Prices prices = crawlPrices(price);
 			
 			// Create a product
 			Product product = new Product();
@@ -133,7 +133,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 	
 	private ArrayList<String> crawlCategories(Document document) {
 		Elements elementCategories = document.select(".bread-crumb a");
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 
 		for(int i = 1; i < elementCategories.size(); i++) { // starts with index 1 because the first item is the home page
 			Element e = elementCategories.get(i);
@@ -159,9 +159,15 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 		Element elementProductCarac = document.select("#caracteristicas").first();
 		Element elementProductTabela = document.select(".tabela-nutricional").first();
 		
-		if(elementProductDetails != null) 	description = description + elementProductDetails.html();
-		if(elementProductCarac != null) 	description = description + elementProductCarac.html();
-		if(elementProductTabela != null) 	description = description + elementProductTabela.html();
+		if(elementProductDetails != null) {
+			description = description + elementProductDetails.html();
+		}
+		if(elementProductCarac != null) {
+			description = description + elementProductCarac.html();
+		}
+		if(elementProductTabela != null) {
+			description = description + elementProductTabela.html();
+		}
 
 		return description;
 	}	
@@ -174,7 +180,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Float price){
 		Prices prices = new Prices();
 
 		if(price != null){

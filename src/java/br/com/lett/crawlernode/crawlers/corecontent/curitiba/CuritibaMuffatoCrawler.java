@@ -304,12 +304,13 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	}
 
 	/**
-	 * In this market has no bank slip payment method
+	 * No bank slip payment method in this ecommerce.
+	 * 
 	 * @param doc
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
 		
 		if(price != null){
@@ -343,37 +344,6 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		
 		return prices;
 	}
-	
-//	private JSONObject fetchSkuEndpoint(String internalId) {
-//		JSONObject skuInfo = null;
-//		String endpointURL = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
-//		
-//		JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, endpointURL, null, this, null);
-//		
-//		if (jsonArray.length() > 0) {
-//			skuInfo = jsonArray.getJSONObject(0);
-//		}
-//		
-//		return skuInfo;
-//	}
-	
-//	private Integer crawlStock(JSONObject skuEndpoint) {
-//		Integer stock = null;
-//
-//		if (skuEndpoint != null && skuEndpoint.has("SkuSellersInformation")) {
-//			JSONArray skuSellersArray = skuEndpoint.getJSONArray("SkuSellersInformation");
-//			for(int i = 0; i < skuSellersArray.length(); i++) {
-//				JSONObject seller = skuSellersArray.getJSONObject(i);
-//				if (seller.has("Name") && seller.has("AvailableQuantity")) {
-//					if(seller.getString("Name").equals("Muffato Supermercados")) {
-//						stock = seller.getInt("AvailableQuantity");
-//					}
-//				}
-//			}
-//		}
-//		
-//		return stock;
-//	}
 	
 	/**
 	 * Get the script having a json variable with the image in it

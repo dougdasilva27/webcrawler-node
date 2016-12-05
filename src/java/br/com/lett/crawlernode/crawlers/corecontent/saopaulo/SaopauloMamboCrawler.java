@@ -206,7 +206,7 @@ public class SaopauloMamboCrawler extends Crawler {
 
 		for (int i = 1; i < images.size(); i++) {//starts with index 1, because the first image is the primary image
 
-			String urlImage = null;
+			String urlImage;
 			urlImage = images.get(i).attr("zoom").trim();
 			if (urlImage == null || urlImage.isEmpty()) {
 				urlImage = images.get(i).attr("rel");
@@ -234,12 +234,12 @@ public class SaopauloMamboCrawler extends Crawler {
 	 *	Mastercard 4 vezes sem juros	R$ 1.860,97
 	 *	Mastercard 5 vezes sem juros	R$ 1.488,78
 	 * 
-	 * In this market has no bank slip payment method
+	 * No bank slip payment method in this market
 	 * @param internalId
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(String internalId, Float price){
+	private Prices crawlPrices(String internalId, Float price) {
 		Prices prices = new Prices();
 
 		if(price != null){
@@ -248,13 +248,13 @@ public class SaopauloMamboCrawler extends Crawler {
 			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
 			Element bank = doc.select("#ltlPrecoWrapper em").first();
-			if(bank != null){
+			if (bank != null) {
 				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
 			}
 
 			Elements cardsElements = doc.select("#ddlCartao option");
 
-			for(Element e : cardsElements){
+			for (Element e : cardsElements) {
 				String text = e.text().toLowerCase();
 
 				if (text.contains("visa")) {

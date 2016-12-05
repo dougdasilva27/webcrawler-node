@@ -119,7 +119,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			JSONArray marketplace = null;
 			
 			// Prices
-			Prices prices = crawlPrices(doc, price);
+			Prices prices = crawlPrices(price);
 
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
@@ -160,7 +160,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document document) {
 		String[] tokens = url.split("/");
-		return (!document.select(".product-essential").isEmpty() && tokens.length == 4 && !url.endsWith("/"));
+		return !document.select(".product-essential").isEmpty() && tokens.length == 4 && !url.endsWith("/");
 	}
 	
 	private Float crawlPrice(Document doc) {
@@ -183,7 +183,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Float price) {
 		Prices prices = new Prices();
 
 		if(price != null){

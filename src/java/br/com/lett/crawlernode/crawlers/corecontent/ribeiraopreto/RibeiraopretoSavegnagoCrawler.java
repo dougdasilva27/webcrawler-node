@@ -173,7 +173,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			JSONArray marketplace = null;
 
 			// Prices
-			Prices prices = crawlPrices(doc, price);
+			Prices prices = crawlPrices(price);
 			
 			Product product = new Product();
 			
@@ -218,7 +218,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Float price){
 		Prices prices = new Prices();
 
 		if(price != null){
