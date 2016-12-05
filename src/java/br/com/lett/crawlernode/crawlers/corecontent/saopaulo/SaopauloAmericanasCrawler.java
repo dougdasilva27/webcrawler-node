@@ -129,7 +129,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			String category3 = getCategory(categories, 2);
 
 			// Primary image
-			String primaryImage = this.crawlPrimaryImage(doc);
+			String primaryImage = this.crawlPrimaryImage(infoProductJson);
 
 			// Secondary images
 			String secondaryImages = this.crawlSecondaryImages(infoProductJson);
@@ -338,21 +338,21 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return available;
 	}
 
-	private String crawlPrimaryImage(Document document) {
+	private String crawlPrimaryImage(JSONObject infoProductJson) {
 		String primaryImage = null;
 
-//		if(infoProductJson.has("images")){
-//			JSONObject images = infoProductJson.getJSONObject("images");
-//
-//			if(images.has("primaryImage")){
-//				primaryImage = images.getString("primaryImage");
-//			}
-//		}
-		
-		Element primaryImageElement = document.select("#image-gallery-product").first();
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.select("a").attr("href");
+		if(infoProductJson.has("images")){
+			JSONObject images = infoProductJson.getJSONObject("images");
+
+			if(images.has("primaryImage")){
+				primaryImage = images.getString("primaryImage");
+			}
 		}
+		
+//		Element primaryImageElement = document.select("#image-gallery-product").first();
+//		if (primaryImageElement != null) {
+//			primaryImage = primaryImageElement.select("a").attr("href");
+//		}
 
 		return primaryImage;
 	}
