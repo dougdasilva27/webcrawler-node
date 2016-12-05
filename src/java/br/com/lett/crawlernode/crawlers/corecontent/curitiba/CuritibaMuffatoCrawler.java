@@ -72,7 +72,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			try {
 				String url = curURL;
 				List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
-				List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
+				List<NameValuePair> paramsNew = new ArrayList<>();
 
 				for (NameValuePair param : paramsOriginal) {
 					if (!param.getName().equals("sc")) {
@@ -81,7 +81,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 				}
 
 				paramsNew.add(new BasicNameValuePair("sc", "10"));
-				URIBuilder builder = new URIBuilder(curURL.toString().split("\\?")[0]);
+				URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
 
 				builder.clearParameters();
 				builder.setParameters(paramsNew);
