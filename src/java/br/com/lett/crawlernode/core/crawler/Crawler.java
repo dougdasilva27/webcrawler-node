@@ -45,7 +45,7 @@ public class Crawler implements Runnable {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
-	protected final static Pattern FILTERS = Pattern.compile
+	protected static final Pattern FILTERS = Pattern.compile
 			(
 					".*(\\.(css|js|bmp|gif|jpe?g"
 							+ "|png|ico|tiff?|mid|mp2|mp3|mp4"
@@ -80,7 +80,7 @@ public class Crawler implements Runnable {
 
 	public Crawler(Session session) {
 		this.session = session;
-		this.cookies = new ArrayList<Cookie>();
+		this.cookies = new ArrayList<>();
 		
 		createDefaultConfig();
 	}
@@ -117,7 +117,7 @@ public class Crawler implements Runnable {
 			products = extract();
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-			if (products == null) products = new ArrayList<Product>();
+			products = new ArrayList<>();
 		}
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
@@ -144,8 +144,6 @@ public class Crawler implements Runnable {
 					activeVoidResultProduct = activeVoid(crawledProduct);
 				} catch (Exception e) {
 					Logging.printLogError(logger, session, "Error in active void method.");
-
-					if (activeVoidResultProduct == null) activeVoidResultProduct = new Product();
 					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
 				}
@@ -196,7 +194,7 @@ public class Crawler implements Runnable {
 			products = extract();
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-			if (products == null) products = new ArrayList<Product>();
+			products = new ArrayList<>();
 		}
 
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
@@ -355,12 +353,10 @@ public class Crawler implements Runnable {
 	}
 
 	/**
-	 * By default this method does nothing.
-	 * If the crawler needs to set some cookie to fetch the sku page,
-	 * then it must implement this method.
+	 * Set cookies before page fetching
 	 */
 	public void handleCookiesBeforeFetch() {
-
+		/* subclasses must implement */
 	}
 
 	/**
@@ -396,9 +392,11 @@ public class Crawler implements Runnable {
 		session.setOriginalURL(url);
 
 		Document document = fetch();
-		List<Product> products = null;
+		List<Product> products;
 		products = extractInformation(document);
-		if (products == null) products = new ArrayList<Product>();
+		if (products == null) {
+			products = new ArrayList<>();
+		}
 
 		return products;
 	}
@@ -412,7 +410,7 @@ public class Crawler implements Runnable {
 	 * @return A product with all it's crawled informations
 	 */
 	public List<Product> extractInformation(Document document) throws Exception {
-		return new ArrayList<Product>();
+		return new ArrayList<>();
 	}
 
 	/**
@@ -424,7 +422,7 @@ public class Crawler implements Runnable {
 	 * @return Parsed HTML in form of a Document.
 	 */
 	private Document fetch() {
-		String html = null;
+		String html;
 		if (this.config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
 		} else if (this.config.getFetcher() == Fetcher.SMART) {
@@ -488,10 +486,8 @@ public class Crawler implements Runnable {
 		// if a processed already exists and is void, then
 		// we won't perform new attempts to extract the current product
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-		if (previousProcessedProduct != null) {
-			if (previousProcessedProduct.getVoid()) {
-				return product;
-			}
+		if (previousProcessedProduct != null && previousProcessedProduct.getVoid()) {
+			return product;
 		}
 
 		Logging.printLogDebug(logger, session, "Starting active void attempts...");
@@ -511,7 +507,9 @@ public class Crawler implements Runnable {
 			Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 			currentProduct = filter(products, ((InsightsCrawlerSession)session).getInternalId());
 
-			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) break;
+			if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) {
+				break;
+			}
 		}
 
 		// if we ended with a void product after all the attempts
