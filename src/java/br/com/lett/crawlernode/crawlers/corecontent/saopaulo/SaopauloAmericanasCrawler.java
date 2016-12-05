@@ -100,7 +100,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -129,7 +129,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			String category3 = getCategory(categories, 2);
 
 			// Primary image
-			String primaryImage = this.crawlPrimaryImage(infoProductJson);
+			String primaryImage = this.crawlPrimaryImage(doc);
 
 			// Secondary images
 			String secondaryImages = this.crawlSecondaryImages(infoProductJson);
@@ -140,7 +140,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			// sku data in json
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
-			for(String internalId : skuOptions.keySet()){	
+			for (String internalId : skuOptions.keySet()) {	
 
 				//variation name
 				String variationName = (name + " " + skuOptions.get(internalId)).trim();
@@ -200,7 +200,9 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 
-		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
+		if (url.startsWith("http://www.americanas.com.br/produto/")) {
+			return true;
+		}
 		return false;
 	}
 
@@ -227,7 +229,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 					String internalId = sku.getString("internalId");
 					String name = "";
 
-					if(sku.has("variationName")){
+					if (sku.has("variationName")) {
 						name = sku.getString("variationName");
 					}
 
@@ -336,15 +338,20 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		return available;
 	}
 
-	private String crawlPrimaryImage(JSONObject infoProductJson) {
+	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
 
-		if(infoProductJson.has("images")){
-			JSONObject images = infoProductJson.getJSONObject("images");
-
-			if(images.has("primaryImage")){
-				primaryImage = images.getString("primaryImage");
-			}
+//		if(infoProductJson.has("images")){
+//			JSONObject images = infoProductJson.getJSONObject("images");
+//
+//			if(images.has("primaryImage")){
+//				primaryImage = images.getString("primaryImage");
+//			}
+//		}
+		
+		Element primaryImageElement = document.select("#image-gallery-product").first();
+		if (primaryImageElement != null) {
+			primaryImage = primaryImageElement.select("a").attr("href");
 		}
 
 		return primaryImage;
@@ -387,7 +394,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(JSONObject infoProductJson) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		if(infoProductJson.has("categories")){
 			JSONArray categoriesJson = infoProductJson.getJSONArray("categories");
 			for(int i = 0; i < categoriesJson.length(); i++) {
