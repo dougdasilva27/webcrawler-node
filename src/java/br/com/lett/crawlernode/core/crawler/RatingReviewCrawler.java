@@ -33,9 +33,10 @@ public class RatingReviewCrawler implements Runnable {
 	
 	public RatingReviewCrawler(Session session) {
 		this.session = session;
-		cookies = new ArrayList<Cookie>();
+		cookies = new ArrayList<>();
 	}
 	
+	@Override
 	public void run() {
 		if (session instanceof RatingReviewsCrawlerSession) {
 			runProduction();

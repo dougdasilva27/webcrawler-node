@@ -108,7 +108,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		synchronized(lock) {
 			activeTaskCount--;
 
-			if (t != null || errors.size() > 0) {
+			if (t != null || !errors.isEmpty()) {
 				failedTaskCount++;
 			} else {
 				succeededTaskCount++;
@@ -150,7 +150,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			return ((ImageCrawler)r).session.getErrors();
 		}
 
-		return new ArrayList<SessionError>();
+		return new ArrayList<>();
 	}
 
 	private void finalizeTask(Runnable r, Throwable t) {
@@ -184,7 +184,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			// errors collected manually
 			// they can be exceptions or business logic errors
 			// and are all gathered inside the session
-			if (errors.size() > 0) {
+			if (!errors.isEmpty()) {
 				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 			}
 
@@ -226,7 +226,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			// errors collected manually
 			// they can be exceptions or business logic errors
 			// and are all gathered inside the session
-			if (errors.size() > 0) {
+			if (!errors.isEmpty()) {
 				Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
 				// print all errors of type exceptions
@@ -276,7 +276,7 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(t));
 		}
 		else {
-			if (errors.size() > 0) {
+			if (!errors.isEmpty()) {
 				Logging.printLogError(logger, session, "Task failed!");
 
 				// print all errors of type exceptions

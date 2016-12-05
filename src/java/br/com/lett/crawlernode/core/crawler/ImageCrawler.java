@@ -202,7 +202,7 @@ public class ImageCrawler implements Runnable {
 				iteration++;
 
 			} catch (Exception e) {
-				e.printStackTrace();
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 		}
 
@@ -214,11 +214,9 @@ public class ImageCrawler implements Runnable {
 	/**
 	 * 
 	 * @return
-	 * @throws NullPointerException
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private File downloadImage() throws NullPointerException, FileNotFoundException, IOException {
+	private File downloadImage() throws IOException {
 		Logging.printLogDebug(logger, session, "Downloading image from market...");
 		return DataFetcher.fetchImage(session);
 	}
