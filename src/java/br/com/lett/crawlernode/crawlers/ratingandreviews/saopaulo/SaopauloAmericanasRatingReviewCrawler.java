@@ -272,6 +272,10 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 				}
 			}        
 		}
+		
+		if (embeddedJSONObject == null) {
+			embeddedJSONObject = new JSONObject();
+		}
 
 		return embeddedJSONObject;
 	}

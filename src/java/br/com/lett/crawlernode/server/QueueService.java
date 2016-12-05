@@ -51,7 +51,7 @@ public class QueueService {
 	private static final String IMAGES_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-development";
 	private static final String IMAGES_DEAD_QUEUE_URL					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-dead";
 
-	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
+	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews";
 	private static final String RATING_REVIEWS_DEAD_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-dead";
 	private static final String RATING_REVIEWS_DEVELOPMENT_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
 
