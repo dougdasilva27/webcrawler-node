@@ -185,6 +185,8 @@ public class DigitalContentAnalyser {
 		//sanitizedContent = sanitizedContent.replace(".", " ");
 		sanitizedContent = sanitizedContent.replace("!", " ");
 		sanitizedContent = sanitizedContent.replace("?", " ");
+		sanitizedContent = sanitizedContent.replace("(", " ");
+		sanitizedContent = sanitizedContent.replace(")", " ");
 
 		sanitizedContent = sanitizedContent.replaceAll("\\u00a0", " ");
 		sanitizedContent = sanitizedContent.replaceAll("\\u2007", " ");
