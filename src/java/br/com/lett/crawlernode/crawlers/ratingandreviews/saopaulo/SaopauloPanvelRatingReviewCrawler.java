@@ -1,12 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
+import java.util.List;
+
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.crawler.RatingReviewCrawler;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 
@@ -22,8 +26,25 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 			RatingsReviews ratingReviews = new RatingsReviews();
 			
 			ratingReviews.setDate(session.getDate());
+			ratingReviews.setInternalId(crawlInternalId(document));
 			
-			
+			Element numRatingsElement = document.select("div.avaliacao.box_rounded span.num_votantes strong").first();
+			if (numRatingsElement != null) {
+				String text = numRatingsElement.text();
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(text);
+				
+				if (!parsedNumbers.isEmpty()) {
+					Integer numRatings = Integer.parseInt(parsedNumbers.get(0));
+					
+					if (numRatings != null) {
+						Double totalRating = crawlTotalRating(document);
+						Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating);
+						
+						ratingReviews.setTotalReviews(numRatings);
+						ratingReviews.setAverageOverallRating(avgRating);
+					}
+				}
+			}
 			
 			ratingReviewsCollection.addRatingReviews(ratingReviews);
 			
@@ -33,6 +54,51 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 		return ratingReviewsCollection;
 	}
 	
+	private Double crawlTotalRating(Document document) {
+		Double totalRating = 0.0;
+		Elements ratingElements = document.select("div.avaliacao.box_rounded span.aval-atual table.table-ranking tr");
+		
+		for (Element ratingElement : ratingElements) {
+			Element starElement = ratingElement.select("td").first();
+			Element starRatingElement = ratingElement.select("td").last();
+			
+			if (starElement != null && starRatingElement != null) {
+				Integer starNumber = crawlStarNumber(starElement);
+				
+				
+				if (starNumber != null) {
+					Double starRating = crawlStarRating(starRatingElement);					
+					totalRating = totalRating + (starNumber * starRating);
+				}
+			}
+		}
+		
+		return totalRating;
+	}	
+	
+	private Integer crawlStarNumber(Element tdElement) {
+		Integer starNumber = null;
+		String starText = tdElement.select("img").first().attr("alt");
+		if (!starText.isEmpty()) {
+			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(starText);
+			if (!parsedNumbers.isEmpty()) {
+				starNumber = Integer.parseInt(parsedNumbers.get(0));
+			}
+		}
+		return starNumber;
+	}
+	
+	private Double crawlStarRating(Element tdElement) {
+		Double starRating = 0.0;
+		
+		String text = tdElement.text().trim();
+		List<String> parsedNumbers = MathCommonsMethods.parseNumbers(text);
+		if (!parsedNumbers.isEmpty()) {
+			starRating = Integer.parseInt(parsedNumbers.get(0))/100.0;
+		}
+		
+		return starRating;
+	}
 	
 	private String crawlInternalId(Document document) {
 		String internalId = null;
