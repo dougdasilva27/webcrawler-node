@@ -94,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/113048617?condition=NEW&voltagem=110+volts", market);
+			Session session = SessionFactory.createSession("https://www.netfarma.com.br/kit-sabonete-vichy-normaderm-80g-ganhe-50-de-desconto-sabonete-facial-vichy-normaderm-esfoliante", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
