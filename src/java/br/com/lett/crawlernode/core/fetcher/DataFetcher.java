@@ -40,6 +40,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -1227,7 +1228,7 @@ public class DataFetcher {
 	public static String fetchPagePOSTWithHeaders(
 			String url, 
 			Session session, 
-			String urlParameters, 
+			String payload, 
 			List<Cookie> cookies, 
 			int attempt, 
 			Map<String,String> headers) {
@@ -1289,6 +1290,9 @@ public class DataFetcher {
 
 			List<Header> reqHeaders = new ArrayList<Header>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+			if(headers.containsKey("Content-Type")){
+				reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, headers.get("Content-Type")));
+			}
 			
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -1301,7 +1305,7 @@ public class DataFetcher {
 			HttpContext localContext = new BasicHttpContext();
 			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-			StringEntity input = new StringEntity(urlParameters);
+			StringEntity input = new StringEntity(payload);
 			input.setContentType(headers.get("Content-Type"));
 
 			HttpPost httpPost = new HttpPost(url);
@@ -1322,6 +1326,12 @@ public class DataFetcher {
 				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
 			}
 
+			if(headers.containsKey("Content-Type")){
+				if(payload != null) {
+					httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get("Content-Type"))));
+				}
+			}
+			
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
 			}
@@ -1374,11 +1384,11 @@ public class DataFetcher {
 			sendRequestInfoLog(url, POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
 				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 			}
 			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + session.getOriginalURL());
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
@@ -1386,7 +1396,7 @@ public class DataFetcher {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
-				return fetchPagePOSTWithHeaders(url, session, urlParameters, cookies, attempt+1, headers);	
+				return fetchPagePOSTWithHeaders(url, session, payload, cookies, attempt+1, headers);	
 			}
 
 		}

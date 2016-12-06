@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.mexico;
+package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,11 +38,11 @@ import br.com.lett.crawlernode.util.Logging;
  * @author Gabriel Dornelas
  *
  */
-public class MexicoExitoCrawler extends Crawler {
+public class ColombiaExitoCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.exito.com/";
 
-	public MexicoExitoCrawler(Session session) {
+	public ColombiaExitoCrawler(Session session) {
 		super(session);
 		this.config.setFetcher(Fetcher.WEBDRIVER);
 	}

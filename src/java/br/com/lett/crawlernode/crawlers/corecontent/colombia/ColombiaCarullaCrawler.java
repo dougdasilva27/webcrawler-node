@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.mexico;
+package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,11 +40,11 @@ import br.com.lett.crawlernode.util.Logging;
  * @author Gabriel Dornelas
  *
  */
-public class MexicoCarullaCrawler extends Crawler {
+public class ColombiaCarullaCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.carulla.com/";
 
-	public MexicoCarullaCrawler(Session session) {
+	public ColombiaCarullaCrawler(Session session) {
 		super(session);
 		this.config.setFetcher(Fetcher.WEBDRIVER);
 	}
