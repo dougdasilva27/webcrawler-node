@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -175,7 +176,7 @@ public class DataFetcher {
 	public static Document fetchDocument(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
 		return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));	
 	}
-	
+
 	/**
 	 * Fetch a XML Document from a URL, either by a GET ou POST http request.
 	 * 
@@ -288,7 +289,7 @@ public class DataFetcher {
 			}
 
 		}
-		
+
 		return new JSONObject().toString();
 
 	}
@@ -412,8 +413,8 @@ public class DataFetcher {
 		// if there was some response code that indicates forbidden access or server error we want to try again
 		int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 		if( Integer.toString(responseCode).charAt(0) != '2' && 
-			Integer.toString(responseCode).charAt(0) != '3' && 
-			responseCode != 404 ) { // errors
+				Integer.toString(responseCode).charAt(0) != '3' && 
+				responseCode != 404 ) { // errors
 			throw new ResponseCodeException(responseCode);
 		}
 
@@ -509,7 +510,7 @@ public class DataFetcher {
 
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
-					
+
 			CookieStore cookieStore = new BasicCookieStore();
 			if (cookies != null) {
 				if (cookies.size() > 0) {
@@ -578,12 +579,12 @@ public class DataFetcher {
 							.build();
 				}
 			}
-			
+
 			// creating the redirect strategy
 			// so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-			
-			
+
+
 			List<Header> headers = new ArrayList<Header>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
@@ -624,8 +625,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -655,7 +656,7 @@ public class DataFetcher {
 					throw new ResponseCodeException(Integer.parseInt(errorCode));
 				}
 			}
-						
+
 			// record the redirected URL on the session
 			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
 				session.addRedirection(url, redirectStrategy.getFinalURL());
@@ -759,7 +760,7 @@ public class DataFetcher {
 						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
-			
+
 
 			List<Header> reqHeaders = new ArrayList<Header>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
@@ -800,8 +801,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -831,24 +832,24 @@ public class DataFetcher {
 					throw new ResponseCodeException(Integer.parseInt(errorCode));
 				}
 			}
-			
+
 			Map<String,String> cookiesMap = new HashMap<>();
-			
+
 			// get all cookie headers
 			Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
 
 			for (Header header : headers) {
 				String cookieHeader = header.getValue();
 				String cookieName = cookieHeader.split("=")[0].trim();
-				
+
 				int x = cookieHeader.indexOf(cookieName+"=") + cookieName.length()+1;
 				int y = cookieHeader.indexOf(";", x);
-				
+
 				String cookieValue = cookieHeader.substring(x, y).trim();
-				
+
 				cookiesMap.put(cookieName, cookieValue);
 			}
-			
+
 			return cookiesMap;
 
 
@@ -867,7 +868,7 @@ public class DataFetcher {
 
 		}
 	}
-	
+
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
@@ -941,7 +942,7 @@ public class DataFetcher {
 						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 						.build();
 			}
-			
+
 
 			List<Header> reqHeaders = new ArrayList<Header>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
@@ -982,8 +983,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1168,8 +1169,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1224,6 +1225,204 @@ public class DataFetcher {
 
 		}
 	}
+
+	public static String fetchPageGETWithHeaders(
+			Session session, 
+			String url, 
+			List<Cookie> cookies,
+			Map<String, String> headers,
+			int attempt) {
+
+		LettProxy randProxy = null;
+		String randUserAgent = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		String requestHash = generateRequestHash(session);
+
+		try {
+			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
+
+			randUserAgent = randUserAgent();
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+
+			CookieStore cookieStore = new BasicCookieStore();
+			if (cookies != null && !cookies.isEmpty()) {
+				for (Cookie cookie : cookies) {
+					cookieStore.addCookie(cookie);
+				}
+			}
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = null;
+			if (proxy != null) {
+
+				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(30000)
+							.setConnectTimeout(30000)
+							.setSocketTimeout(30000)
+							.setProxy(proxy)
+							.build();
+				} else {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+							.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+							.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+							.setProxy(proxy)
+							.build();
+				}
+
+			} else {
+
+				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(30000)
+							.setConnectTimeout(30000)
+							.setSocketTimeout(30000)
+							.build();
+				} else {
+					requestConfig = RequestConfig.custom()
+							.setCookieSpec(CookieSpecs.STANDARD)
+							.setRedirectsEnabled(true) // set redirect to true
+							.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+							.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+							.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+							.build();
+				}
+			}
+
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+
+			List<Header> headerList = new ArrayList<>();
+			headerList.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+
+			for (Entry<String, String> mapEntry : headers.entrySet()) {
+				if ("Accept".equals(mapEntry.getKey())) {
+					headerList.add(new BasicHeader(HttpHeaders.ACCEPT, mapEntry.getValue()));
+				}
+			}
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(headerList)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// if we are using charity engine, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+				httpGet.addHeader("Proxy-Authorization", headerValue);
+
+				// setting header for proxy country
+				httpGet.addHeader("X-Proxy-Country", "BR");
+			}
+
+			// if we are using azure, we must set header for authentication
+			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			}
+
+			// do request
+			closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
+			// assembling request information log message
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			// saving request content result on Amazon
+			String content = "";
+			if (pageContent.getContentCharset() == null) {
+				content = new String(pageContent.getContentData());
+			} else {
+				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
+			}
+			S3Service.uploadContentToAmazon(session, requestHash, content);
+
+			// see if some code error occured
+			// sometimes the remote server doesn't send the http error code on the headers
+			// but rater on the page bytes
+			content = content.trim();
+			for (String errorCode : errorCodes) {
+				if (content.equals(errorCode)) {
+					throw new ResponseCodeException(Integer.parseInt(errorCode));
+				}
+			}
+
+			// record the redirected URL on the session
+			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+				session.addRedirection(url, redirectStrategy.getFinalURL());
+			}
+
+			// process response and parse
+			return processContent(pageContent, session);
+
+		} catch (Exception e) {
+			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
+
+			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+				return "";
+			} else {
+				return fetchPageGET(session, url, cookies, attempt+1);	
+			}
+
+		}
+	}
+
 
 	public static String fetchPagePOSTWithHeaders(
 			String url, 
@@ -1288,12 +1487,12 @@ public class DataFetcher {
 						.build();
 			}
 
-			List<Header> reqHeaders = new ArrayList<Header>();
+			List<Header> reqHeaders = new ArrayList<>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 			if(headers.containsKey("Content-Type")){
 				reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, headers.get("Content-Type")));
 			}
-			
+
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
@@ -1331,7 +1530,7 @@ public class DataFetcher {
 					httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get("Content-Type"))));
 				}
 			}
-			
+
 			for(String key : headers.keySet()){
 				httpPost.addHeader(key, headers.get(key));
 			}
@@ -1345,8 +1544,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1518,11 +1717,11 @@ public class DataFetcher {
 						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
 						.build();
 			}
-			
+
 
 			List<Header> headers = new ArrayList<Header>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
-			
+
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -1560,8 +1759,8 @@ public class DataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) { // errors
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -1723,7 +1922,7 @@ public class DataFetcher {
 		String service = null;
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
-		
+
 		if (session instanceof TestCrawlerSession) {
 			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
 		} else {
@@ -1732,9 +1931,9 @@ public class DataFetcher {
 			} else {
 				service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
 			}
-			
+
 		}
-		
+
 		Logging.printLogDebug(logger, session, "Selected proxy: " + service);
 
 		return service;
