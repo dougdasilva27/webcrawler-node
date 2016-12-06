@@ -77,9 +77,6 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 		return ratingReviewsCollection;
 	}
 	
-	
-	
-	
 	private boolean isProductPage(Document doc) {
 		return doc.select(".product-details__code").first() != null;
 	}

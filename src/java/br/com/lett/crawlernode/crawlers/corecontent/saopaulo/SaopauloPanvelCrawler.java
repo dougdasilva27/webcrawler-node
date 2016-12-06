@@ -88,9 +88,9 @@ public class SaopauloPanvelCrawler extends Crawler {
 
 			// Categorias
 			Elements elementCategories = doc.select(".breadcrumb a"); 
-			String category1 = null; 
-			String category2 = null; 
-			String category3 = null;
+			String category1; 
+			String category2; 
+			String category3;
 
 			String[] cat = new String[5];
 			cat[0] = "";
@@ -137,7 +137,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 					else if (elementSecondaryImage.attr("src").contains("produtos/default.jpg") || elementSecondaryImage.attr("src").contains("/video")) { // caso esteja sem imagem
 						image = "";
 					}
-					if (!image.equals("")) {
+					if (image != null && !image.isEmpty()) {
 						secondaryImagesArray.put(image);
 					}
 				}
@@ -220,10 +220,10 @@ public class SaopauloPanvelCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return (url.startsWith("http://www.panvel.com/panvel/visualizarProduto") 
+		return 	url.startsWith("http://www.panvel.com/panvel/visualizarProduto") 
 				|| url.startsWith("http://www.panvel.com/panvel/produto") 
 				|| url.startsWith("https://www.panvel.com/panvel/visualizarProduto") 
-				|| url.startsWith("https://www.panvel.com/panvel/produto"));
+				|| url.startsWith("https://www.panvel.com/panvel/produto");
 	}
 	
 	/**
