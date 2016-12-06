@@ -29,10 +29,11 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 		if (isProductPage(document)) {
 			RatingsReviews ratingReviews = new RatingsReviews();
 			
-			ratingReviews.setDate(session.getDate());
-			
 			JSONObject chaordicMeta = crawlChaordicMeta(document);
-			String internalId = crawlInternalId(chaordicMeta);
+			
+			ratingReviews.setDate(session.getDate());
+			ratingReviews.setInternalId(crawlInternalId(chaordicMeta));
+			
 			String sku = crawlSkuId(chaordicMeta);
 			
 			JSONObject reviewPage = requestReviewPage(sku, 1);
@@ -64,7 +65,6 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 					avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating/numRatings);
 				}
 				
-				ratingReviews.setInternalId(internalId);
 				ratingReviews.setTotalReviews(numRatings);
 				ratingReviews.setAverageOverallRating(avgRating);				
 			}

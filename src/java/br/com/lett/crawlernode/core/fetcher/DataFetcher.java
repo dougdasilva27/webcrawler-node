@@ -91,6 +91,9 @@ public class DataFetcher {
 
 	public static final String GET_REQUEST = "GET";
 	public static final String POST_REQUEST = "POST";
+	
+	public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
+	public static final String HTTP_HEADER_ACCEPT = "Accept";
 
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 
@@ -1319,8 +1322,8 @@ public class DataFetcher {
 			headerList.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			for (Entry<String, String> mapEntry : headers.entrySet()) {
-				if ("Accept".equals(mapEntry.getKey())) {
-					headerList.add(new BasicHeader(HttpHeaders.ACCEPT, mapEntry.getValue()));
+				if ("Accept".equals(mapEntry.getKey()) || "Content-Type".equals(mapEntry.getKey())) {
+					headerList.add(new BasicHeader(mapEntry.getKey(), mapEntry.getValue()));
 				}
 			}
 

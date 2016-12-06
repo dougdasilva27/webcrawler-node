@@ -94,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.mambo.com.br/kit-espumante-prosecco-nacional-salton-750ml-com-6-garrafas/p", market);
+			Session session = SessionFactory.createSession("http://www.mambo.com.br/salgadinho-doritos-queijo-nacho-pacote-96g/p", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);
