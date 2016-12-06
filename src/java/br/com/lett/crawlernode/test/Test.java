@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.server.QueueHandler;
 
 /**
  * 
@@ -27,6 +26,10 @@ import br.com.lett.crawlernode.server.QueueHandler;
  *
  */
 public class Test {
+	
+	public static final String INSIGHTS_TEST = "insights";
+	public static final String RATING_TEST = "rating";
+	public static final String IMAGES_TEST = "images";
 
 	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
@@ -34,11 +37,11 @@ public class Test {
 	public static 	ResultManager 		processorResultManager;
 	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
-	public static 	QueueHandler		queueHandler;
 	public static 	Markets				markets;
 
 	private static String market;
 	private static String city;
+	public static String testType;
 
 	public static void main(String args[]) {
 
@@ -46,6 +49,7 @@ public class Test {
 		options = new Options();
 		options.addOption("market", true, "Market name");
 		options.addOption("city", true, "City name");
+		options.addOption("testType", true, "Test type [insights, rating, images]");
 
 		// parsing command line options
 		CommandLineParser parser = new DefaultParser();
@@ -59,6 +63,7 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
+		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
 		// setting database credentials
 		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");
@@ -70,9 +75,6 @@ public class Test {
 
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
-
-		// create a queue handler that will contain an Amazon SQS instance
-		//queueHandler = new QueueHandler();
 
 		// fetch market information
 		Market market = fetchMarket();
@@ -92,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/5418375/mucilon-arroz-400g-nestle", market);
+			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/113048617?condition=NEW&voltagem=110+volts", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			taskExecutor.executeTask(task);

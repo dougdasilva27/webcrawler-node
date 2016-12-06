@@ -36,10 +36,9 @@ public class TaskFactory {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
 		if (session instanceof InsightsCrawlerSession 	|| 
-			session instanceof SeedCrawlerSession 		|| 
-			session instanceof TestCrawlerSession 		||
-			session instanceof DiscoveryCrawlerSession
-			) {
+				session instanceof SeedCrawlerSession 		||
+				session instanceof DiscoveryCrawlerSession
+				) {
 
 			return createCrawlerTask(session);
 		}
@@ -50,6 +49,15 @@ public class TaskFactory {
 
 		if (session instanceof ImageCrawlerSession) {
 			return createImageCrawlerTask(session);
+		}
+
+		if (session instanceof TestCrawlerSession) {
+			if (br.com.lett.crawlernode.test.Test.testType.equals(br.com.lett.crawlernode.test.Test.INSIGHTS_TEST)) {
+				return createCrawlerTask(session);
+			}
+			else if (br.com.lett.crawlernode.test.Test.testType.equals(br.com.lett.crawlernode.test.Test.RATING_TEST)) {
+				return createRateReviewCrawlerTask(session);
+			}
 		}
 
 		return null;

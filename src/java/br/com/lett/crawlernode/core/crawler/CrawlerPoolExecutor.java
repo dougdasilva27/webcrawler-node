@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
@@ -193,9 +194,12 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 				// only remove the task from queue if it was flawless
 				// and if we are not testing, because when testing there is no message processing
 				Logging.printLogDebug(logger, session, "Task completed.");
-				Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+				
+				if (session instanceof RatingReviewsCrawlerSession) {
+					Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
 
-				QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+					QueueService.deleteMessage(Main.queueHandler, session.getQueueName(), session.getMessageReceiptHandle());
+				}
 			}
 		}
 
