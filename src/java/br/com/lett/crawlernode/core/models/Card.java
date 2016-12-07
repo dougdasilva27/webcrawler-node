@@ -18,6 +18,8 @@ public enum Card {
 	CABAL,
 	SENFF,
 	CREDISHOP,
+	NARANJA,
+	NATIVA,
 	
 	SHOP_CARD,
 	UNKNOWN_CARD;
@@ -42,6 +44,8 @@ public enum Card {
 			case CABAL: return "cabal";
 			case SENFF: return "senff";
 			case CREDISHOP: return "credishop";
+			case NARANJA: return "naranja";
+			case NATIVA: return "nativa";
 			default: return "unkown_card";
 		}
 	}
