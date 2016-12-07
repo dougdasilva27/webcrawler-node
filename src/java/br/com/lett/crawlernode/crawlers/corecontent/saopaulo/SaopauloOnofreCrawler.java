@@ -76,7 +76,8 @@ public class SaopauloOnofreCrawler extends Crawler {
 			for (Element element : skuList) {
 
 				// fetch current sku URL
-				Document skuDoc = this.fetchSkuURL(element);
+				String currentURL = fetchSkuURL(element);
+				Document skuDoc = fetchSkuDocument(currentURL);
 
 				if (skuDoc != null) {
 					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -124,7 +125,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 						Product product = new Product();
 						
-						product.setUrl(session.getOriginalURL());
+						product.setUrl(currentURL);
 						product.setInternalId(internalID);
 						product.setInternalPid(internalPid);
 						product.setName(name);
@@ -342,21 +343,20 @@ public class SaopauloOnofreCrawler extends Crawler {
 		return document.select(".sku-radio .sku-list li");
 	}
 
-	private Document fetchSkuURL(Element sku) {
+	private String fetchSkuURL(Element sku) {
 		Element elementSkuURL = sku.select("a").first();
 		String skuUrl = null;
-		Document skuDoc = null;
-
-		// get sku URL
 		if (elementSkuURL != null) {
 			skuUrl = "http://www.onofre.com.br" + elementSkuURL.attr("href").trim();
 		}
-
-		// load sku URL
-		if (skuUrl != null) {
-			skuDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, skuUrl, null, null);
+		return skuUrl;
+	}
+	
+	private Document fetchSkuDocument(String skuURL) {
+		Document skuDoc = null;
+		if (skuURL != null) {
+			skuDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, skuURL, null, null);
 		}
-
 		return skuDoc;
 	}
 	

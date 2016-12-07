@@ -166,6 +166,9 @@ public class CrawlerPoolExecutor extends ThreadPoolExecutor {
 		}
 		else if (r instanceof RatingReviewCrawler) {
 			finalizeRatingReviewsTask(((RatingReviewCrawler)r).session, t);
+			if ( ((RatingReviewCrawler)r).webdriver != null ) {
+				((RatingReviewCrawler)r).webdriver.terminate();
+			}
 		}
 	}
 
