@@ -305,12 +305,7 @@ public class DataFetcher {
 
 		String requestHash = generateRequestHash(session);
 
-		CookieStore cookieStore = new BasicCookieStore();
-		if (cookies != null) {
-			for (Cookie cookie : cookies) {
-				cookieStore.addCookie(cookie);
-			}
-		}
+		CookieStore cookieStore = createCookieStore(cookies);
 
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -330,7 +325,7 @@ public class DataFetcher {
 
 		RequestConfig requestConfig = createRequestConfig(proxy);
 
-		List<Header> headers = new ArrayList<Header>();
+		List<Header> headers = new ArrayList<>();
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
@@ -376,7 +371,7 @@ public class DataFetcher {
 			}
 
 			if(payloadJson != null && payloadJson.length() > 0) {
-				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
+				ArrayList<NameValuePair> postParameters = new ArrayList<>();
 				@SuppressWarnings("rawtypes")
 				Iterator iterator = payloadJson.keySet().iterator();
 
@@ -417,6 +412,16 @@ public class DataFetcher {
 
 		return response.toString();
 
+	}
+	
+	private static CookieStore createCookieStore(List<Cookie> cookies) {
+		CookieStore cookieStore = new BasicCookieStore();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				cookieStore.addCookie(cookie);
+			}
+		}
+		return cookieStore;
 	}
 	
 	private static RequestConfig createRequestConfig(HttpHost proxy) {
@@ -520,14 +525,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null) {
-				if (cookies.size() > 0) {
-					for (Cookie cookie : cookies) {
-						cookieStore.addCookie(cookie);
-					}
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -594,7 +592,7 @@ public class DataFetcher {
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
 
 
-			List<Header> headers = new ArrayList<Header>();
+			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
@@ -725,14 +723,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null) {
-				if (cookies.size() > 0) {
-					for (Cookie cookie : cookies) {
-						cookieStore.addCookie(cookie);
-					}
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -888,14 +879,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null) {
-				if (cookies.size() > 0) {
-					for (Cookie cookie : cookies) {
-						cookieStore.addCookie(cookie);
-					}
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -1061,14 +1045,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null) {
-				if (cookies.size() > 0) {
-					for (Cookie cookie : cookies) {
-						cookieStore.addCookie(cookie);
-					}
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -1234,12 +1211,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null && !cookies.isEmpty()) {
-				for (Cookie cookie : cookies) {
-					cookieStore.addCookie(cookie);
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -1434,12 +1406,7 @@ public class DataFetcher {
 			randUserAgent = randUserAgent();
 			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
 
-			CookieStore cookieStore = new BasicCookieStore();
-			if (cookies != null) {
-				for (Cookie cookie : cookies) {
-					cookieStore.addCookie(cookie);
-				}
-			}
+			CookieStore cookieStore = createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
