@@ -328,25 +328,7 @@ public class DataFetcher {
 			proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 		}
 
-		RequestConfig requestConfig = null;
-		if (proxy != null) {
-			requestConfig = RequestConfig.custom()
-					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(true)
-					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-					.setProxy(proxy)
-					.build();
-		} else {
-			requestConfig = RequestConfig.custom()
-					.setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(true)
-					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-					.build();
-		}
+		RequestConfig requestConfig = createRequestConfig(proxy);
 
 		List<Header> headers = new ArrayList<Header>();
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
@@ -435,6 +417,30 @@ public class DataFetcher {
 
 		return response.toString();
 
+	}
+	
+	private static RequestConfig createRequestConfig(HttpHost proxy) {
+		RequestConfig requestConfig;
+		if (proxy != null) {
+			requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(true)
+					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+					.setProxy(proxy)
+					.build();
+		} else {
+			requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(true)
+					.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+					.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+					.build();
+		}
+		
+		return requestConfig;
 	}
 
 	/**
@@ -744,28 +750,9 @@ public class DataFetcher {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
 
-			RequestConfig requestConfig = null;
-			if (proxy != null) {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-						.setProxy(proxy)
-						.build();
-			} else {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-						.build();
-			}
+			RequestConfig requestConfig = createRequestConfig(proxy);
 
-
-			List<Header> reqHeaders = new ArrayList<Header>();
+			List<Header> reqHeaders = new ArrayList<>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
@@ -1650,8 +1637,12 @@ public class DataFetcher {
 		Parser parser = new Parser(session);
 		parser.parse(pageContent);
 
-		if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
-		if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
+		if (pageContent.getHtmlParseData() != null) {
+			return pageContent.getHtmlParseData().getHtml();
+		}
+		if (pageContent.getTextParseData() != null) {
+			return pageContent.getTextParseData().getTextContent();
+		}
 
 		return "";
 	}
@@ -1701,30 +1692,10 @@ public class DataFetcher {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
 
-			RequestConfig requestConfig = null;
-			if (proxy != null) {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT_IMG)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
-						.setProxy(proxy)
-						.build();
-			} else {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true) // set redirect to true
-						.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG)
-						.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT_IMG)
-						.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT_IMG)
-						.build();
-			}
+			RequestConfig requestConfig = createRequestConfig(proxy);
 
-
-			List<Header> headers = new ArrayList<Header>();
+			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
-
 
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
@@ -1863,6 +1834,8 @@ public class DataFetcher {
 
 		if (nextProxyUser != null) {
 			Authenticator a = new Authenticator() {
+				
+				@Override
 				public PasswordAuthentication getPasswordAuthentication() {
 					return new PasswordAuthentication(nextProxyUser, nextProxyPass.toCharArray());
 				}
@@ -1885,7 +1858,7 @@ public class DataFetcher {
 
 		if (session instanceof TestCrawlerSession) { // testing
 			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-			if (proxies.size() > 0) {
+			if (!proxies.isEmpty()) {
 				nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 			} else {
 				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
@@ -1894,7 +1867,7 @@ public class DataFetcher {
 		else {
 			if (Main.proxies != null) { // production
 				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
-				if (proxies.size() > 0) {
+				if (!proxies.isEmpty()) {
 					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
