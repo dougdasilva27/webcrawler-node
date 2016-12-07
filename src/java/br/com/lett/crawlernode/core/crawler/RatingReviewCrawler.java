@@ -4,11 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.crawler.config.CrawlerConfig;
+import br.com.lett.crawlernode.core.crawler.config.RatingCrawlerConfig;
+import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
@@ -30,10 +36,23 @@ public class RatingReviewCrawler implements Runnable {
 	 */
 	protected List<Cookie> cookies;
 	
+	protected RatingCrawlerConfig config;
+	
+	protected CrawlerWebdriver webdriver;
+	
 	
 	public RatingReviewCrawler(Session session) {
 		this.session = session;
 		cookies = new ArrayList<>();
+		
+		createDefaultConfig();
+	}
+	
+	private void createDefaultConfig() {
+		this.config = new RatingCrawlerConfig();
+		this.config.setFetcher(Fetcher.STATIC);
+		this.config.setProxyList(new ArrayList<String>());
+		this.config.setConnectionAttempts(0);
 	}
 	
 	@Override
@@ -110,7 +129,17 @@ public class RatingReviewCrawler implements Runnable {
 	 * @return Parsed HTML in form of a Document
 	 */
 	private Document fetch() {
-		return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);	
+		String html;
+		if (this.config.getFetcher() == Fetcher.STATIC) {
+			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+		} else if (this.config.getFetcher() == Fetcher.SMART) {
+			html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
+		} else {
+			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+			html = this.webdriver.getCurrentPageSource();
+		}
+		
+		return Jsoup.parse(html);
 	}
 
 }

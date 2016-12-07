@@ -94,10 +94,14 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.mambo.com.br/salgadinho-doritos-queijo-nacho-pacote-96g/p", market);
+			Session session = SessionFactory.createSession("http://www.onofre.com.br/leite-aptamil-3-800g-formula-infantil-para-lactentes/25673/05", market);
 
 			Runnable task = TaskFactory.createTask(session);
-			taskExecutor.executeTask(task);
+			if (task != null) {
+				taskExecutor.executeTask(task);
+			} else {
+				System.err.println("There is no task to submit");
+			}
 
 			taskExecutor.shutDown();
 		}
