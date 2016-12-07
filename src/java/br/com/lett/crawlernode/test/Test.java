@@ -94,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.onofre.com.br/leite-aptamil-3-800g-formula-infantil-para-lactentes/25673/05", market);
+			Session session = SessionFactory.createSession("http://www.onofre.com.br/leite-aptamil-3-400g-formula-infantil-para-lactentes/25672/05", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			if (task != null) {
