@@ -90,6 +90,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		return curURL;
 
 	}
+	
 	@Override
 	public List<Product>  extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
