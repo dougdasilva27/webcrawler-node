@@ -9,7 +9,6 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.crawler.config.CrawlerConfig;
 import br.com.lett.crawlernode.core.crawler.config.RatingCrawlerConfig;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
@@ -99,6 +98,10 @@ public class RatingReviewCrawler implements Runnable {
 		if (cookies.isEmpty()) {
 			handleCookiesBeforeFetch();
 		}
+
+		// apply URL modifications
+		String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
+		session.setOriginalURL(modifiedURL);
 
 		Document document = fetch();
 		try {
