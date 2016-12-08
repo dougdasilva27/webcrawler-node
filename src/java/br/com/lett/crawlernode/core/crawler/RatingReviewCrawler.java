@@ -25,36 +25,36 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class RatingReviewCrawler implements Runnable {
-	
+
 	protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
-	
+
 	protected Session session;
-	
+
 	/**
 	 * Cookies that must be used to fetch the sku page
 	 * this attribute is set by the handleCookiesBeforeFetch method.
 	 */
 	protected List<Cookie> cookies;
-	
+
 	protected RatingCrawlerConfig config;
-	
+
 	protected CrawlerWebdriver webdriver;
-	
-	
+
+
 	public RatingReviewCrawler(Session session) {
 		this.session = session;
 		cookies = new ArrayList<>();
-		
+
 		createDefaultConfig();
 	}
-	
+
 	private void createDefaultConfig() {
 		this.config = new RatingCrawlerConfig();
 		this.config.setFetcher(Fetcher.STATIC);
 		this.config.setProxyList(new ArrayList<String>());
 		this.config.setConnectionAttempts(0);
 	}
-	
+
 	@Override
 	public void run() {
 		if (session instanceof RatingReviewsCrawlerSession) {
@@ -64,65 +64,74 @@ public class RatingReviewCrawler implements Runnable {
 			runTest();
 		}
 	}
-	
+
 	public void runProduction() {
-		if (cookies.isEmpty()) {
+		if (!cookies.isEmpty()) {
 			handleCookiesBeforeFetch();
 		}
-		
+
+		// apply URL modifications
+		String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
+		session.setOriginalURL(modifiedURL);
+
 		Document document = fetch();
 		try {
 			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
-			
+
 			// get only the desired rating and review, according to the internal id
 			RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
-			
+
 			if (ratingReviews != null) {
 				printRatingsReviews(ratingReviews);
 				Persistence.updateRating(ratingReviews, session);
-				
+
 			} else {
 				Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
 			}
-			
+
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
 		}
 	}
-	
+
 	public void runTest() {
 		if (cookies.isEmpty()) {
 			handleCookiesBeforeFetch();
 		}
-		
+
 		Document document = fetch();
 		try {
 			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
-			
+
 			for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
 				printRatingsReviews(rating);
 			}
-			
+
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
 		}
 	}
-	
+
 	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
 		/* subclasses must implement */
 		return new RatingReviewsCollection();
 	}
-	
+
 	protected void handleCookiesBeforeFetch() {
 		/* subclasses must implement */
 	}
-	
+
+	protected String handleURLBeforeFetch(String url) {
+		/* subclasses must implement */
+		return url;
+	}
+
 	private void printRatingsReviews(RatingsReviews ratingReviews) {
 		Logging.printLogDebug(logger, session, ratingReviews.toString());
 	}
-	
+
 	/**
 	 * Request the sku URL and parse to a DOM format.
 	 * 
@@ -138,7 +147,7 @@ public class RatingReviewCrawler implements Runnable {
 			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 			html = this.webdriver.getCurrentPageSource();
 		}
-		
+
 		return Jsoup.parse(html);
 	}
 
