@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -11,9 +12,12 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.support.ui.Select;
 
 import br.com.lett.crawlernode.core.crawler.Crawler;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
@@ -23,11 +27,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * Date: 02/12/2016
+ * Date: 08/12/2016
  * 
- * 1) Only one sku per page.
- * 
- * Price crawling notes:
  * 1) In time crawler was made, there no product unnavailable.
  * 2) There is no bank slip (boleto bancario) payment option.
  * 3) There is no installments for card payment. So we only have 
@@ -36,6 +37,7 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  * 4) In this crawler is requires use webdriver
  * 5) Bogota was city choose
+ * 6) Is required some cookies that are only getted via webdriver
  * 
  * @author Gabriel Dornelas
  *
@@ -46,7 +48,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 
 	public ColombiaCarullaCrawler(Session session) {
 		super(session);
-		this.config.setFetcher(Fetcher.WEBDRIVER);
+		//this.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
@@ -55,15 +57,24 @@ public class ColombiaCarullaCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
-
 	@Override
 	public void handleCookiesBeforeFetch() {
-		Logging.printLogDebug(logger, session, "Adding cookie...");
+		this.webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, session);
 		
-		BasicClientCookie cookie = new BasicClientCookie("selectedCity", "BG");
-		cookie.setDomain("www.carulla.com");
-		cookie.setPath("/");
-		this.cookies.add(cookie);
+		new Select( this.webdriver.driver.findElement(By.id("ddlSelectCity"))).selectByVisibleText("Bogotá");
+	    this.webdriver.driver.findElement(By.cssSelector("option[value=\"BG\"]")).click();
+	    this.webdriver.driver.findElement(By.linkText("Continuar")).click();
+	    
+	    Set<Cookie> cookiesSelenium = this.webdriver.driver.manage().getCookies();
+	    
+	    for(Cookie c : cookiesSelenium){
+	    	if(!c.getName().startsWith("x-")){
+		    	BasicClientCookie cookie = new BasicClientCookie(c.getName(), c.getValue());
+				cookie.setDomain(c.getDomain());
+				cookie.setPath(c.getPath());
+				this.cookies.add(cookie);
+	    	}
+	    }
 	}
 	
 	private final static String MAIN_SELLER_NAME_LOWER = "carulla";
@@ -75,7 +86,21 @@ public class ColombiaCarullaCrawler extends Crawler {
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+			
+//			try {
+//				this.webdriver.takeScreenshotFromCurrentLoadedPage("/home/gabriel/Desktop/teste.png");
+//				new Select( this.webdriver.driver.findElement(By.id("ddlSelectCity"))).selectByVisibleText("Bogotá");
+//			    this.webdriver.driver.findElement(By.cssSelector("option[value=\"BG\"]")).click();
+//			    this.webdriver.driver.findElement(By.linkText("Continuar")).click();
+//			    
+//			    
+//			    this.webdriver.takeScreenshotFromCurrentLoadedPage("/home/gabriel/Desktop/teste.png");
+//			    // get the new html and parse
+//				String html = this.webdriver.getCurrentPageSource();
+//				doc = Jsoup.parse(html);
+//			} catch(Exception e){
+//			}
+			
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
@@ -201,7 +226,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 		
 		if(lojista != null) {
 			Prices prices = new Prices();
-			String partnerName = lojista.text().split(":")[1].trim().toLowerCase();
+			String partnerName = (lojista.text().split(":")[1].toLowerCase().replaceAll("[^A-Za-z]+", "")).trim(); // has tab in partnerName
 			
 			Float price = null;
 			Element salePriceElement = doc.select(".otherMedia > span ").first();
@@ -215,7 +240,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 			} 
 			
 			if (salePriceElement != null) {
-				String textPrice = salePriceElement.text().replaceAll("\\$", "").replaceAll(",", "").trim();
+				String textPrice = salePriceElement.ownText().replaceAll("\\$", "").replaceAll(",", "").trim();
 				
 				if(!textPrice.isEmpty()){
 					price = Float.parseFloat(textPrice);
@@ -264,6 +289,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 					
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
+				
 				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
 
 				marketplace.put(seller);
