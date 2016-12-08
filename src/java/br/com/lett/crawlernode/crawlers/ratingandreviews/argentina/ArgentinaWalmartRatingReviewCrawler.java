@@ -39,7 +39,7 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	/**
 	 * To acess product page is required put ?sc=15 in url
 	 */
-	//@Override
+	@Override
 	public String handleURLBeforeFetch(String curURL) {
 
 		if(curURL.endsWith("/p")) {
