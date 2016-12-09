@@ -664,6 +664,10 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 					}
 
+					// Entro na url do produto com ?loja=01 para pegar todas as parcelas do produto
+					// pois no json quando o shoptime não é o lojista principal, aparece só 1x no cartão e preço no boleto
+					// Houve um caso que quando fiz isso redirecionou pra página de outro produto
+					// pra isso verifico se o pid dessa página é o mesmo do produto acessado.
 					if(jsonPrices.has("moreQuantityOfInstallments")){
 						if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
 							String url = session.getOriginalURL();
