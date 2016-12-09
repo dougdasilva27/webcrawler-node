@@ -47,7 +47,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			boolean allVariationsUnnavailable = this.allVariationsAreUnnavailable(doc);
 
 			// internalPid
-			String internalPid = crawlInternalIdFirstPiece(doc);;
+			String internalPid = crawlInternalPid(doc);;
 
 			// Variations
 			boolean hasMoreProducts = this.hasMoreProducts(doc);
@@ -79,7 +79,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			JSONObject apiJson = fetchAPIPrices(internalPid);
 
 			// Pega só o que interessa do json da api
-			JSONObject infoProductJson = assembleJsonPrices(apiJson);
+			JSONObject infoProductJson = assembleJsonPrices(apiJson, internalPid);
 
 			if(elementsProductOptions.size() > 0){
 
@@ -219,7 +219,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 	 * General methods *
 	 *******************/
 
-	private String crawlInternalIdFirstPiece(Document doc){
+	private String crawlInternalPid(Document doc){
 		String internalID = null;
 
 		Element elementInternalID = doc.select(".p-name#main-product-name .p-code").first();
@@ -408,19 +408,19 @@ public class SaopauloShoptimeCrawler extends Crawler {
 		for (String partnerName : marketplaceMap.keySet()) {
 			if (!partnerName.equals("shoptime")) { 
 				Float price =  marketplaceMap.get(partnerName);
-				
+
 				JSONObject partner = new JSONObject();
 				partner.put("name", partnerName);
 				partner.put("price", price);
-				
+
 				Prices prices = new Prices();
-				
+
 				Map<Integer,Float> installmentPriceMap = new HashMap<>();
-			
+
 				prices.insertBankTicket(price);
 				installmentPriceMap.put(1, price);
 				prices.insertCardInstallment("visa", installmentPriceMap);
-				
+
 				partner.put("prices", prices.getPricesJson());
 
 				marketplace.put(partner);
@@ -575,7 +575,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 	 *}
 	 */
 
-	private JSONObject assembleJsonPrices(JSONObject api){
+	private JSONObject assembleJsonPrices(JSONObject api, String internalPid){
 		JSONObject jsonPrices = new JSONObject();
 
 		if(api.has("products")){
@@ -669,40 +669,43 @@ public class SaopauloShoptimeCrawler extends Crawler {
 							String url = session.getOriginalURL();
 
 							if(url.contains("?")){
-								int x = url.indexOf("?");
-
-								url = url.substring(0, x);
+								url = url.split("\\?")[0];
 							}
 
 							url = url + "?loja=01";
 
 							Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-							Element parcels = doc.select(".picard-tabs-cont").first();
+							String pageInternalPid = crawlInternalPid(doc);
 
-							if(parcels != null){
-								Elements installmentsElements = parcels.select("li#tab-cont1 tr");
-								JSONArray installmentsJsonArray = new JSONArray();
+							if(pageInternalPid.equals(internalPid)){
 
-								for(Element e : installmentsElements){
-									JSONObject jsonTemp = new JSONObject();
-									Element parcel = e.select(".qtd-parcel").first();
+								Element parcels = doc.select(".picard-tabs-cont").first();
 
-									if(parcel != null){
-										Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
+								if(parcels != null){
+									Elements installmentsElements = parcels.select("li#tab-cont1 tr");
+									JSONArray installmentsJsonArray = new JSONArray();
 
-										Element values = e.select(".price-highlight").first();
+									for(Element e : installmentsElements){
+										JSONObject jsonTemp = new JSONObject();
+										Element parcel = e.select(".qtd-parcel").first();
 
-										if(values != null){
-											Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+										if(parcel != null){
+											Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
 
-											jsonTemp.put("quantity", installment);
-											jsonTemp.put("value", priceInstallment);
-											installmentsJsonArray.put(jsonTemp);
+											Element values = e.select(".price-highlight").first();
+
+											if(values != null){
+												Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+												jsonTemp.put("quantity", installment);
+												jsonTemp.put("value", priceInstallment);
+												installmentsJsonArray.put(jsonTemp);
+											}
 										}
 									}
-								}
 
-								jsonPrices.put("installmentsMainPage", installmentsJsonArray);
+									jsonPrices.put("installmentsMainPage", installmentsJsonArray);
+								}
 							}
 						}
 					}
