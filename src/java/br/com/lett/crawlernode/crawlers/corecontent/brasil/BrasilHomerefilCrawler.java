@@ -21,7 +21,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * Date: 06/12/2016
+ * Date: 12/12/2016
  * 
  * 1 - In time this crawler was made, there was no products unnavailable; 
  * 2 - Thre is only one sku per page;
