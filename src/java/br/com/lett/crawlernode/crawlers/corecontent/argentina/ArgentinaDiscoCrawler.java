@@ -54,7 +54,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "https://www.disco.com.ar/Comprar/Home.aspx", cookies, 1);
 
 		for (String cookieName : cookiesMap.keySet()) {
-			if(cookieName.equals("ASP.NET_SessionId")) {
+			if ("ASP.NET_SessionId".equals(cookieName)) {
 				BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
 				cookie.setDomain("www.disco.com.ar");
 				cookie.setPath("/");
