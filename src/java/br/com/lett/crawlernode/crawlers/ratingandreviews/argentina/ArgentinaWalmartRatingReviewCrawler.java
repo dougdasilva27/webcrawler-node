@@ -50,7 +50,7 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 				List<NameValuePair> paramsNew = new ArrayList<>();
 
 				for (NameValuePair param : paramsOriginal) {
-					if (!param.getName().equals("sc")) {
+					if (!"sc".equals(param.getName())) {
 						paramsNew.add(param);
 					}
 				}
@@ -151,17 +151,17 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 		Double avgRating = 0.0;
 		Elements rating = docRating.select("ul.rating li");
 		
-		if(totalRating != null){
+		if (totalRating != null) {
 			Double total = 0.0;
 			
-			for(Element e : rating){
+			for (Element e : rating) {
 				Element star = e.select("strong.rating-demonstrativo").first();
 				Element totalStar = e.select("> span:not([class])").first();
 				
-				if(totalStar != null){
+				if (totalStar != null) {
 					String votes = totalStar.text().replaceAll("[^0-9]", "").trim();
 					
-					if(!votes.isEmpty()){
+					if (!votes.isEmpty()) {
 						Integer totalVotes = Integer.parseInt(votes);
 						if(star != null){
 							if(star.hasClass("avaliacao50")){
@@ -180,7 +180,7 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 				}
 			}
 			
-			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces((total / totalRating));
+			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(total / totalRating);
 		}
 		
 		return avgRating;
@@ -204,15 +204,15 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	 
 
 	private List<String> crawlIdList(JSONObject skuJson) {
-		List<String> idList = new ArrayList<String>();
+		List<String> idList = new ArrayList<>();
 		
-		if(skuJson.has("skus")){
+		if (skuJson.has("skus")) {
 			JSONArray skus = skuJson.getJSONArray("skus");
 			
-			for(int i = 0; i < skus.length(); i++){
+			for (int i = 0; i < skus.length(); i++) {
 				JSONObject sku = skus.getJSONObject(i);
 				
-				if(sku.has("sku")){
+				if (sku.has("sku")) {
 					idList.add(Integer.toString(sku.getInt("sku")));
 				}
 			}
@@ -222,7 +222,9 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	}
 	
 	private boolean isProductPage(Document document) {
-		if ( document.select(".productName").first() != null ) return true;
+		if ( document.select(".productName").first() != null ) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -245,6 +247,7 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 		
 		try {
 			skuJson = new JSONObject(skuJsonString);
+			
 		} catch (JSONException e) {
 			Logging.printLogError(logger, session, "Error creating JSONObject from var skuJson_0");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
