@@ -25,7 +25,7 @@ import br.com.lett.crawlernode.util.Logging;
  * 1) Only one sku per page.
  * 
  * Price crawling notes:
- * 1) In time crawler was made, there no product unnavailable.
+ * 1) In the time this crawler was made, we doesn't found any unnavailable product.
  * 2) There is no bank slip (boleto bancario) payment option.
  * 3) There is installments for card payment, but was found only shopCard payment method.
  * 
@@ -49,7 +49,7 @@ public class ArgentinaCotoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -65,7 +65,7 @@ public class ArgentinaCotoCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = crawlMarketplace(doc);
+			JSONArray marketplace = crawlMarketplace();
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -97,7 +97,9 @@ public class ArgentinaCotoCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select("#atg_store_content").first() != null) return true;
+		if (doc.select("#atg_store_content").first() != null) {
+			return true;
+		}
 		return false;
 	}
 
@@ -167,7 +169,7 @@ public class ArgentinaCotoCrawler extends Crawler {
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
+	private JSONArray crawlMarketplace() {
 		return new JSONArray();
 	}
 
@@ -220,7 +222,9 @@ public class ArgentinaCotoCrawler extends Crawler {
 		StringBuilder description = new StringBuilder();
 		Element descriptionElement = document.select("#content-tabs").first();
 
-		if(descriptionElement != null) description.append(descriptionElement.html());
+		if(descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
 		
 		return description.toString();
 	}
@@ -240,8 +244,8 @@ public class ArgentinaCotoCrawler extends Crawler {
 	private Prices crawlPrices(Float price, Document doc) {
 		Prices prices = new Prices();
 		
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+		if (price != null) {
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 	
 			Element installments = doc.select(".discount_cuotas_container").first();

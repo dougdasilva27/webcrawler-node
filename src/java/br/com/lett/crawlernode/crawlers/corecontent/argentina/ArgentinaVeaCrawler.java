@@ -53,8 +53,8 @@ public class ArgentinaVeaCrawler extends Crawler {
 
 		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "https://www.veadigital.com.ar/Login/PreHome.aspx", cookies, 1);
 
-		for(String cookieName : cookiesMap.keySet()){
-			if(cookieName.equals("ASP.NET_SessionId")){
+		for (String cookieName : cookiesMap.keySet()) {
+			if ("ASP.NET_SessionId".equals(cookieName)) {
 				BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
 				cookie.setDomain("www.veadigital.com.ar");
 				cookie.setPath("/");
@@ -72,7 +72,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -82,7 +82,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 			JSONObject productJson = crawlImportantInformations(searchJson);
 
 			String internalId = crawlInternalId(productJson);
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 			String name = crawlName(productJson);
 			Float price = crawlPrice(productJson);
 			Integer stock = crawlStock(productJson);
@@ -90,9 +90,9 @@ public class ArgentinaVeaCrawler extends Crawler {
 			boolean available = crawlAvailability(stock);
 			CategoryCollection categories = crawlCategories(productJson);
 			String primaryImage = crawlPrimaryImage(productJson);
-			String secondaryImages = crawlSecondaryImages(doc);
+			String secondaryImages = crawlSecondaryImages();
 			String description = crawlDescription(internalId);
-			JSONArray marketplace = crawlMarketplace(doc);
+			JSONArray marketplace = crawlMarketplace();
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -124,7 +124,9 @@ public class ArgentinaVeaCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.contains("_query")) return true;
+		if (url.contains("_query")) {
+			return true;
+		}
 		return false;
 	}
 
@@ -144,16 +146,14 @@ public class ArgentinaVeaCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+	private String crawlInternalPid() {
+		return null;
 	}
 
 	private String crawlName(JSONObject json) {
 		String name = null;
 
-		if(json.has("DescripcionArticulo")){
+		if (json.has("DescripcionArticulo")) {
 			name = json.getString("DescripcionArticulo");
 		}
 
@@ -177,7 +177,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 	private Integer crawlStock(JSONObject json){
 		Integer stock = null;
 
-		if(json.has("Stock")){
+		if (json.has("Stock")) {
 			stock = Integer.parseInt(json.getString("Stock"));
 		}
 
@@ -187,16 +187,14 @@ public class ArgentinaVeaCrawler extends Crawler {
 	private boolean crawlAvailability(Integer stock) {
 		boolean available = false;
 
-		if(stock != null){
-			if(stock > 0){
-				available = true;
-			}
+		if(stock != null && stock > 0){
+			available = true;
 		}
 
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
+	private JSONArray crawlMarketplace() {
 		return new JSONArray();
 	}
 
@@ -226,10 +224,8 @@ public class ArgentinaVeaCrawler extends Crawler {
 			}
 		}
 
-		if(primaryImage != null){
-			if(primaryImage.isEmpty()){
-				primaryImage = null;
-			}
+		if(primaryImage != null && primaryImage.isEmpty()){
+			primaryImage = null;
 		}
 
 		return primaryImage;
@@ -240,7 +236,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages() {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
@@ -275,16 +271,13 @@ public class ArgentinaVeaCrawler extends Crawler {
 
 		String response = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 
-		if(response != null){
-			if(response.contains("descr")){
-				JSONObject jsonD = parseJsonLevex(new JSONObject(response));
-				
-				if(jsonD.has("descr")){
-					description.append(jsonD.getString("descr"));
-				}
+		if(response != null && response.contains("descr")){
+			JSONObject jsonD = parseJsonLevex(new JSONObject(response));
+			if (jsonD.has("descr")) {
+				description.append(jsonD.getString("descr"));
 			}
 		}
-		
+
 		return description.toString();
 	}
 
@@ -304,7 +297,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -322,7 +315,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 	 * @param url
 	 * @return
 	 */
-	private JSONObject crawlProductApi(String url){
+	private JSONObject crawlProductApi(String url) {
 		JSONObject json = new JSONObject();
 
 		Map<String,String> headers = new HashMap<>();
@@ -337,10 +330,8 @@ public class ArgentinaVeaCrawler extends Crawler {
 
 		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
 
-		if(jsonString != null){
-			if(jsonString.startsWith("{")){
-				json = new JSONObject(jsonString);
-			}
+		if (jsonString != null && jsonString.startsWith("{")) {
+			json = new JSONObject(jsonString);
 		}
 
 		return json;
@@ -349,13 +340,13 @@ public class ArgentinaVeaCrawler extends Crawler {
 	private JSONObject crawlImportantInformations(JSONObject json){
 		JSONObject jsonProduct = new JSONObject();
 
-		if(json != null){
+		if (json != null) {
 			JSONObject jsonD = parseJsonLevex(json);
 
-			if(jsonD.has("ResultadosBusquedaLevex")){
+			if (jsonD.has("ResultadosBusquedaLevex")) {
 				JSONArray products = jsonD.getJSONArray("ResultadosBusquedaLevex");
 
-				if(products.length() > 0){
+				if (products.length() > 0) {
 					jsonProduct = products.getJSONObject(0);
 				}
 			}
@@ -368,7 +359,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 	private JSONObject parseJsonLevex(JSONObject json){
 		JSONObject jsonD = new JSONObject();
 
-		if(json.has("d")){
+		if (json.has("d")) {
 			String dParser = JSON.parse(json.getString("d")).toString();
 			jsonD = new JSONObject(dParser);
 		}

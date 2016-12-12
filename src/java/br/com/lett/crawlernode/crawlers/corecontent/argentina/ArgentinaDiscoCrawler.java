@@ -53,8 +53,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
 		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "https://www.disco.com.ar/Comprar/Home.aspx", cookies, 1);
 
-		for(String cookieName : cookiesMap.keySet()){
-			if(cookieName.equals("ASP.NET_SessionId")){
+		for (String cookieName : cookiesMap.keySet()) {
+			if ("ASP.NET_SessionId".equals(cookieName)) {
 				BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
 				cookie.setDomain("www.disco.com.ar");
 				cookie.setPath("/");
@@ -72,7 +72,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -82,7 +82,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 			JSONObject productJson = crawlImportantInformations(searchJson);
 
 			String internalId = crawlInternalId(productJson);
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 			String name = crawlName(productJson);
 			Float price = crawlPrice(productJson);
 			Integer stock = crawlStock(productJson);
@@ -90,7 +90,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 			boolean available = crawlAvailability(stock);
 			CategoryCollection categories = crawlCategories(productJson);
 			String primaryImage = crawlPrimaryImage(productJson);
-			String secondaryImages = crawlSecondaryImages(doc);
+			String secondaryImages = crawlSecondaryImages();
 			String description = crawlDescription(internalId);
 			JSONArray marketplace = crawlMarketplace(doc);
 
@@ -124,14 +124,16 @@ public class ArgentinaDiscoCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.contains("_query")) return true;
+		if (url.contains("_query")) {
+			return true;
+		}
 		return false;
 	}
 
 	private String crawlInternalId(JSONObject json) {
 		String internalId = null;
 
-		if(json.has("IdArticulo")){
+		if (json.has("IdArticulo")) {
 			internalId = json.getString("IdArticulo");
 		}
 
@@ -144,10 +146,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+	private String crawlInternalPid() {
+		return null;
 	}
 
 	private String crawlName(JSONObject json) {
@@ -187,10 +187,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
 	private boolean crawlAvailability(Integer stock) {
 		boolean available = false;
 
-		if(stock != null){
-			if(stock > 0){
-				available = true;
-			}
+		if(stock != null && stock > 0){
+			available = true;
 		}
 
 		return available;
@@ -226,21 +224,20 @@ public class ArgentinaDiscoCrawler extends Crawler {
 			}
 		}
 
-		if(primaryImage != null){
-			if(primaryImage.isEmpty()){
-				primaryImage = null;
-			}
+		if(primaryImage != null && primaryImage.isEmpty()){
+			primaryImage = null;
 		}
 
 		return primaryImage;
 	}
 
 	/**
-	 * Has no secondary Images in this market
+	 * There is no secondary Images in this market.
+	 * 
 	 * @param document
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages() {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
@@ -278,13 +275,13 @@ public class ArgentinaDiscoCrawler extends Crawler {
 		if(response != null){
 			if(response.contains("descr")){
 				JSONObject jsonD = parseJsonLevex(new JSONObject(response));
-				
+
 				if(jsonD.has("descr")){
 					description.append(jsonD.getString("descr"));
 				}
 			}
 		}
-		
+
 		return description.toString();
 	}
 
@@ -304,7 +301,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -337,10 +334,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
 		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
 
-		if(jsonString != null){
-			if(jsonString.startsWith("{")){
-				json = new JSONObject(jsonString);
-			}
+		if(jsonString != null && jsonString.startsWith("{")){
+			json = new JSONObject(jsonString);
 		}
 
 		return json;
