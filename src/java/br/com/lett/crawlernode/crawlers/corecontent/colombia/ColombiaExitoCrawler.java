@@ -40,7 +40,9 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class ColombiaExitoCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.exito.com/";
+	private static final String HOME_PAGE = "http://www.exito.com/";
+	
+	private static final String MAIN_SELLER_NAME_LOWER = "exito";
 
 	public ColombiaExitoCrawler(Session session) {
 		super(session);
@@ -51,21 +53,18 @@ public class ColombiaExitoCrawler extends Crawler {
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
-
-
-	private final static String MAIN_SELLER_NAME_LOWER = "exito";
+	}	
 	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			String internalId = crawlInternalId(doc);
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 			String name = crawlName(doc);
 			
 			Map<String,Prices> marketplaceMap  = crawlMarketplace(doc);
@@ -112,7 +111,9 @@ public class ColombiaExitoCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith(HOME_PAGE+"product")) return true;
+		if (url.startsWith(HOME_PAGE+"product")) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -133,10 +134,8 @@ public class ColombiaExitoCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+	private String crawlInternalPid() {
+		return null;
 	}
 
 	private String crawlName(Document document) {
@@ -155,7 +154,7 @@ public class ColombiaExitoCrawler extends Crawler {
 
 		for (String seller : marketplaces.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-				if(marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.AMEX.toString()).has("1")){
+				if (marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.AMEX.toString()).has("1")) {
 					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.AMEX.toString()).getDouble("1");
 					price = priceDouble.floatValue(); 
 				}
@@ -186,7 +185,7 @@ public class ColombiaExitoCrawler extends Crawler {
 			Prices prices = new Prices();
 			String partnerName = lojista.text().trim().toLowerCase();
 			
-			Float price = null;
+			Float price;
 			Element salePriceElement = doc.select(".otherMedia > span ").first();
 			
 			if(salePriceElement == null){
@@ -231,12 +230,12 @@ public class ColombiaExitoCrawler extends Crawler {
 	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
 		JSONArray marketplace = new JSONArray();
 
-		for(String sellerName : marketplaceMap.keySet()) {
+		for (String sellerName : marketplaceMap.keySet()) {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				
-				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).has("1")){
+				if (marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).has("1")) {
 					// Pegando o preço de uma vez no cartão
 					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).getDouble("1");
 					Float priceFloat = price.floatValue();				
@@ -302,8 +301,12 @@ public class ColombiaExitoCrawler extends Crawler {
 		Element descriptionElement = document.select("#pdpCaracteristicas").first();
 		Element ingredientElement = document.select("#pdpEspecificaciones").first();
 	
-		if(descriptionElement != null) description.append(descriptionElement.html());
-		if(ingredientElement != null) description.append(ingredientElement.html());
+		if(descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
+		if(ingredientElement != null) {
+			description.append(ingredientElement.html());
+		}
 		
 		return description.toString();
 	}
@@ -319,7 +322,6 @@ public class ColombiaExitoCrawler extends Crawler {
 	private Prices crawlPrices(Map<String,Prices> marketplaces) {
 		Prices prices = new Prices();
 		
-
 		for (String seller : marketplaces.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
 				prices = marketplaces.get(seller);
