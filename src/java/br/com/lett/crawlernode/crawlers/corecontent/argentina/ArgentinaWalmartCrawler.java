@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -67,7 +68,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
 				List<NameValuePair> paramsNew = new ArrayList<>();
 
 				for (NameValuePair param : paramsOriginal) {
-					if (!param.getName().equals("sc")) {
+					if (!"sc".equals(param.getName())) {
 						paramsNew.add(param);
 					}
 				}
@@ -90,11 +91,11 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		return curURL;
 
 	}
-	
+
 	@Override
 	public List<Product>  extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -112,7 +113,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
+			Map<String, Float> marketplaceMap = crawlMarketplace();
 
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
@@ -142,8 +143,8 @@ public class ArgentinaWalmartCrawler extends Crawler {
 				String secondaryImages = crawlSecondaryImages(doc);
 
 				// Prices
-				Prices prices = crawlPrices(doc, price);
-				
+				Prices prices = crawlPrices(price);
+
 				// Creating the product
 				Product product = ProductBuilder.create()
 						.setUrl(session.getOriginalURL())
@@ -178,7 +179,9 @@ public class ArgentinaWalmartCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".productName").first() != null ) return true;
+		if ( document.select(".productName").first() != null ) {
+			return true;
+		}
 		return false;
 	}
 
@@ -190,7 +193,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		String internalId = null;
 
 		if (json.has("sku")) {
-			internalId = Integer.toString((json.getInt("sku"))).trim();			
+			internalId = Integer.toString(json.getInt("sku")).trim();			
 		}
 
 		return internalId;
@@ -238,13 +241,14 @@ public class ArgentinaWalmartCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
-		if(json.has("available")) return json.getBoolean("available");
-
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 		return false;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+	private Map<String, Float> crawlMarketplace() {
+		return new HashMap<>();
 	}
 
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -258,10 +262,10 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
 		if (image != null) {
 			primaryImage = image.attr("zoom").trim();
-		}
-		
-		if (primaryImage == null || primaryImage.isEmpty()) {
-			primaryImage = image.attr("rel").trim();
+
+			if ( primaryImage == null || primaryImage.isEmpty() ) {
+				primaryImage = image.attr("rel").trim();
+			}
 		}
 
 		return primaryImage;
@@ -272,15 +276,17 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 
 		Elements imageThumbs = doc.select("#botaoZoom");
-	
+
 		for (int i = 1; i < imageThumbs.size(); i++) { //starts with index 1, because the first image is the primary image
 			String url = imageThumbs.get(i).attr("zoom");
-			
+
 			if(url == null || url.isEmpty()) {
 				url =  imageThumbs.get(i).attr("rel");
 			}
-			
-			if (url != null && !url.isEmpty()) secondaryImagesArray.put(url);
+
+			if (url != null && !url.isEmpty()) {
+				secondaryImagesArray.put(url);
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -304,12 +310,16 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		
+
 		Element descElement = document.select(".prod-desc").first();
 		Element specElement = document.select(".prod-specs").first();
 
-		if (specElement != null) description = description + specElement.html();
-		if (descElement != null) description = description + descElement.html();
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
+		if (descElement != null) {
+			description = description + descElement.html();
+		}
 
 		return description;
 	}
@@ -322,13 +332,13 @@ public class ArgentinaWalmartCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Float price) {
 		Prices prices = new Prices();
 
 		if(price != null){
 			Map<Integer,Float> mapInstallments = new HashMap<>();
 			mapInstallments.put(1, price);
-			
+
 			prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
 			prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
@@ -336,12 +346,12 @@ public class ArgentinaWalmartCrawler extends Crawler {
 			prices.insertCardInstallment(Card.NARANJA.toString(), mapInstallments);
 			prices.insertCardInstallment(Card.NATIVA.toString(), mapInstallments);
 			prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-			
+
 		}
 
 		return prices;
 	}
-	
+
 	/**
 	 * Get the script having a json with the availability information
 	 * @return
@@ -351,23 +361,24 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		JSONObject skuJson = null;
 		JSONArray skuJsonArray = null;
 
-		for (Element tag : scriptTags){                
+		for (Element tag : scriptTags) {                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
 							(
-								node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-								node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+									);
 				}
 			}        
 		}
 
-		try {
+		if (skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		}
+
+		if (skuJsonArray == null) {
+			skuJsonArray = new JSONArray();
 		}
 
 		return skuJsonArray;
