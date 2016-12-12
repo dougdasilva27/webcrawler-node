@@ -72,7 +72,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -82,7 +82,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 			JSONObject productJson = crawlImportantInformations(searchJson);
 
 			String internalId = crawlInternalId(productJson);
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 			String name = crawlName(productJson);
 			Float price = crawlPrice(productJson);
 			Integer stock = crawlStock(productJson);
@@ -90,9 +90,9 @@ public class ArgentinaJumboCrawler extends Crawler {
 			boolean available = crawlAvailability(stock);
 			CategoryCollection categories = crawlCategories(productJson);
 			String primaryImage = crawlPrimaryImage(productJson);
-			String secondaryImages = crawlSecondaryImages(doc);
+			String secondaryImages = crawlSecondaryImages();
 			String description = crawlDescription(internalId);
-			JSONArray marketplace = crawlMarketplace(doc);
+			JSONArray marketplace = crawlMarketplace();
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -124,7 +124,9 @@ public class ArgentinaJumboCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.contains("_query")) return true;
+		if (url.contains("_query")) {
+			return true;
+		}
 		return false;
 	}
 
@@ -144,9 +146,8 @@ public class ArgentinaJumboCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlInternalPid(Document document) {
+	private String crawlInternalPid() {
 		String internalPid = null;
-
 		return internalPid;
 	}
 
@@ -187,25 +188,22 @@ public class ArgentinaJumboCrawler extends Crawler {
 	private boolean crawlAvailability(Integer stock) {
 		boolean available = false;
 
-		if(stock != null){
-			if(stock > 0){
-				available = true;
-			}
+		if(stock != null && stock > 0){
+			available = true;
 		}
 
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
+	private JSONArray crawlMarketplace() {
 		return new JSONArray();
 	}
-
 
 	private String crawlPrimaryImage(JSONObject json) {
 		String primaryImage = null;
 
 
-		if(json.has("IdArchivoBig")){
+		if(json.has("IdArchivoBig")) {
 			String image = json.getString("IdArchivoBig").trim();
 
 			if(!image.isEmpty()){
@@ -218,7 +216,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 				}
 			}
 
-		} else if(json.has("IdArchivoSmall")){
+		} else if(json.has("IdArchivoSmall")) {
 			String image = json.getString("IdArchivoSmall").trim();
 
 			if(!image.isEmpty()){
@@ -226,21 +224,19 @@ public class ArgentinaJumboCrawler extends Crawler {
 			}
 		}
 
-		if(primaryImage != null){
-			if(primaryImage.isEmpty()){
-				primaryImage = null;
-			}
+		if(primaryImage != null && primaryImage.isEmpty()) {
+			primaryImage = null;
 		}
 
 		return primaryImage;
 	}
 
 	/**
-	 * Has no secondary Images in this market
+	 * There is no secondary Images in this market
 	 * @param document
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages() {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
@@ -275,16 +271,14 @@ public class ArgentinaJumboCrawler extends Crawler {
 
 		String response = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 
-		if(response != null){
-			if(response.contains("descr")){
-				JSONObject jsonD = parseJsonLevex(new JSONObject(response));
-				
-				if(jsonD.has("descr")){
-					description.append(jsonD.getString("descr"));
-				}
+		if (response != null && response.contains("descr")) {
+			JSONObject jsonD = parseJsonLevex(new JSONObject(response));
+
+			if (jsonD.has("descr")) {
+				description.append(jsonD.getString("descr"));
 			}
 		}
-		
+
 		return description.toString();
 	}
 
@@ -304,7 +298,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -337,10 +331,8 @@ public class ArgentinaJumboCrawler extends Crawler {
 
 		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
 
-		if(jsonString != null){
-			if(jsonString.startsWith("{")){
-				json = new JSONObject(jsonString);
-			}
+		if (jsonString != null && jsonString.startsWith("{")) {
+			json = new JSONObject(jsonString);
 		}
 
 		return json;
