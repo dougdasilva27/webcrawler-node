@@ -20,6 +20,7 @@ public enum Card {
 	CREDISHOP,
 	NARANJA,
 	NATIVA,
+	JCB,
 	
 	SHOP_CARD,
 	UNKNOWN_CARD;
@@ -46,6 +47,7 @@ public enum Card {
 			case CREDISHOP: return "credishop";
 			case NARANJA: return "naranja";
 			case NATIVA: return "nativa";
+			case JCB: return "jcb";
 			default: return "unkown_card";
 		}
 	}
