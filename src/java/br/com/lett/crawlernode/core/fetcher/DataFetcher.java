@@ -115,6 +115,11 @@ public class DataFetcher {
 
 	/**
 	 * Static initialization block
+	 * I commented these two user, because in the site homerefil was considering them outdated:
+	 *  
+	 *  Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
+	 *	Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2
+	 * 
 	 */
 	static {		
 		userAgents = Arrays.asList(
