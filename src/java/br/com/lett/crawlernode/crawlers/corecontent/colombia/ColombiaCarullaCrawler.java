@@ -45,10 +45,11 @@ import br.com.lett.crawlernode.util.Logging;
 public class ColombiaCarullaCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.carulla.com/";
+	
+	private static final String MAIN_SELLER_NAME_LOWER = "carulla";
 
 	public ColombiaCarullaCrawler(Session session) {
 		super(session);
-		//this.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
@@ -67,8 +68,8 @@ public class ColombiaCarullaCrawler extends Crawler {
 	    
 	    Set<Cookie> cookiesSelenium = this.webdriver.driver.manage().getCookies();
 	    
-	    for(Cookie c : cookiesSelenium){
-	    	if(!c.getName().startsWith("x-")){
+	    for (Cookie c : cookiesSelenium) {
+	    	if (!c.getName().startsWith("x-")) {
 		    	BasicClientCookie cookie = new BasicClientCookie(c.getName(), c.getValue());
 				cookie.setDomain(c.getDomain());
 				cookie.setPath(c.getPath());
@@ -77,29 +78,13 @@ public class ColombiaCarullaCrawler extends Crawler {
 	    }
 	}
 	
-	private final static String MAIN_SELLER_NAME_LOWER = "carulla";
-	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
-//			try {
-//				this.webdriver.takeScreenshotFromCurrentLoadedPage("/home/gabriel/Desktop/teste.png");
-//				new Select( this.webdriver.driver.findElement(By.id("ddlSelectCity"))).selectByVisibleText("Bogotá");
-//			    this.webdriver.driver.findElement(By.cssSelector("option[value=\"BG\"]")).click();
-//			    this.webdriver.driver.findElement(By.linkText("Continuar")).click();
-//			    
-//			    
-//			    this.webdriver.takeScreenshotFromCurrentLoadedPage("/home/gabriel/Desktop/teste.png");
-//			    // get the new html and parse
-//				String html = this.webdriver.getCurrentPageSource();
-//				doc = Jsoup.parse(html);
-//			} catch(Exception e){
-//			}
 			
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(doc);
@@ -111,7 +96,6 @@ public class ColombiaCarullaCrawler extends Crawler {
 			Float price = crawlPrice(marketplaceMap);
 			Prices prices = crawlPrices(marketplaceMap);
 			boolean available = crawlAvailability(marketplaceMap);
-			
 			
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
@@ -149,7 +133,9 @@ public class ColombiaCarullaCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith(HOME_PAGE+"product")) return true;
+		if (url.startsWith(HOME_PAGE+"product")) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -228,7 +214,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 			Prices prices = new Prices();
 			String partnerName = (lojista.text().split(":")[1].toLowerCase().replaceAll("[^A-Za-z]+", "")).trim(); // has tab in partnerName
 			
-			Float price = null;
+			Float price;
 			Element salePriceElement = doc.select(".otherMedia > span ").first();
 			
 			if(salePriceElement == null){
@@ -277,7 +263,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
 		JSONArray marketplace = new JSONArray();
 
-		for(String sellerName : marketplaceMap.keySet()) {
+		for (String sellerName : marketplaceMap.keySet()) {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
@@ -349,8 +335,12 @@ public class ColombiaCarullaCrawler extends Crawler {
 		Element descriptionElement = document.select("#pdpCaracteristicas").first();
 		Element ingredientElement = document.select("#pdpEspecificaciones").first();
 	
-		if(descriptionElement != null) description.append(descriptionElement.html());
-		if(ingredientElement != null) description.append(ingredientElement.html());
+		if(descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
+		if(ingredientElement != null) {
+			description.append(ingredientElement.html());
+		}
 		
 		return description.toString();
 	}
