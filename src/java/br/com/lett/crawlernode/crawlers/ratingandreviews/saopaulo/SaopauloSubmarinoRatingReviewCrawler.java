@@ -18,9 +18,9 @@ import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 
-public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
+public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 
-	public SaopauloAmericanasRatingReviewCrawler(Session session) {
+	public SaopauloSubmarinoRatingReviewCrawler(Session session) {
 		super(session);
 	}
 
@@ -30,10 +30,10 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			JSONObject embeddedJSONObject = crawlEmbeddedJSONObject(document);
 			RatingsReviews ratingReviews = crawlRatingReviews(embeddedJSONObject);
-			
+
 			List<String> idList = crawlIdList(embeddedJSONObject);
 			for (String internalId : idList) {
 				RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
@@ -49,27 +49,30 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
+		if (url.startsWith("http://www.submarino.com.br/produto/")){
+			return true;
+		}
+
 		return false;
 	}
-	
+
 	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
 		List<String> idList = new ArrayList<String>();
 		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
-		
+
 		if (embeddedJSONObject.has("skus")) {
 			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
-			
+
 			for (int i = 0; i < skus.length(); i++) {
 				JSONObject sku = skus.getJSONObject(i);
-				
+
 				if (sku.has("id")) {
 					String id = internalPid + "-" + sku.getString("id");
 					idList.add(id);
 				}
 			}
 		}
-		
+
 		return idList;
 	}
 
@@ -87,7 +90,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 */
 	private RatingsReviews crawlRatingReviews(JSONObject embeddedJSONObject) {
 		RatingsReviews ratingReviews = new RatingsReviews();
-		
+
 		ratingReviews.setDate(session.getDate());
 
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
@@ -104,7 +107,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
 		return ratingReviews;
 	}
-	
+
 	private Integer getTotalReviewCount(JSONObject reviewStatistics) {
 		Integer totalReviewCount = null;
 		if (reviewStatistics.has("TotalReviewCount")) {
@@ -112,7 +115,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 		}
 		return totalReviewCount;
 	}
-	
+
 	private Double getAverageOverallRating(JSONObject reviewStatistics) {
 		Double avgOverallRating = null;
 		if (reviewStatistics.has("AverageOverallRating")) {
@@ -120,7 +123,6 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 		}
 		return avgOverallRating;
 	}
-
 
 	/**
 	 * e.g: 
@@ -181,13 +183,11 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 */
 	private String crawlBazaarVoiceEndpointPassKey(JSONObject embeddedJSONObject) {
 		String passKey = null;		
-		if (embeddedJSONObject != null) {
-			if (embeddedJSONObject.has("configuration")) {
-				JSONObject configuration = embeddedJSONObject.getJSONObject("configuration");
+		if (embeddedJSONObject != null && embeddedJSONObject.has("configuration")) {
+			JSONObject configuration = embeddedJSONObject.getJSONObject("configuration");
 
-				if (configuration.has("bazaarvoicePasskey")) {
-					passKey = configuration.getString("bazaarvoicePasskey");
-				}
+			if (configuration.has("bazaarvoicePasskey")) {
+				passKey = configuration.getString("bazaarvoicePasskey");
 			}
 		}		
 		return passKey;
@@ -248,7 +248,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 				}
 			}        
 		}
-		
+
 		if (embeddedJSONObject == null) {
 			embeddedJSONObject = new JSONObject();
 		}
