@@ -1,17 +1,11 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.argentina;
+package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,49 +24,12 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
-public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
+public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
-	public ArgentinaWalmartRatingReviewCrawler(Session session) {
+	public SaopauloAraujoRatingReviewCrawler(Session session) {
 		super(session);
 	}
 
-	/**
-	 * To acess product page is required put ?sc=15 in url
-	 */
-	@Override
-	public String handleURLBeforeFetch(String curURL) {
-
-		if(curURL.endsWith("/p")) {
-
-			try {
-				String url = curURL;
-				List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
-				List<NameValuePair> paramsNew = new ArrayList<>();
-
-				for (NameValuePair param : paramsOriginal) {
-					if (!"sc".equals(param.getName())) {
-						paramsNew.add(param);
-					}
-				}
-
-				paramsNew.add(new BasicNameValuePair("sc", "15"));
-				URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
-
-				builder.clearParameters();
-				builder.setParameters(paramsNew);
-
-				curURL = builder.build().toString();
-
-				return curURL;
-
-			} catch (URISyntaxException e) {
-				return curURL;
-			}
-		}
-
-		return curURL;
-
-	}
 	
 	@Override
 	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
@@ -112,8 +69,8 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	
 	/**
 	 * Api Ratings
-	 * Url: http://www.walmart.com.ar/userreview
-	 * Ex payload: productId=8213&productLinkId=home-theater-5-1-microlab-m-710u51
+	 * Url: http://www.araujo.com.br/userreview
+	 * Ex payload: productId=290971&productLinkId=ninho-fases-1-composto-lacteo
 	 * Required headers to crawl this api
 	 * 
 	 * @param url
@@ -133,7 +90,7 @@ public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 		headers.put("Content-Type", "application/x-www-form-urlencoded");
 		headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
 		
-		String response = DataFetcher.fetchPagePOSTWithHeaders("http://www.walmart.com.ar/userreview", session, payload, cookies, 1, headers);
+		String response = DataFetcher.fetchPagePOSTWithHeaders("http://www.araujo.com.br/userreview", session, payload, cookies, 1, headers);
 		
 		if(response != null){
 			doc = Jsoup.parse(response);
