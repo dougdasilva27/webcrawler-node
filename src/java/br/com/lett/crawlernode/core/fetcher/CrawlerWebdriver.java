@@ -3,15 +3,14 @@ package br.com.lett.crawlernode.core.fetcher;
 import java.io.File;
 
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -37,17 +36,16 @@ import br.com.lett.crawlernode.util.Logging;
  * 
  */
 public class CrawlerWebdriver {
-	
+
 	protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
 	/**
 	 * The URL of the hub that connects to the remote WebDriver instances
 	 */
-	private final String HUB_URL = "http://52.175.217.27:4444/wd/hub";
-
+	private static final String HUB_URL = "http://52.175.217.27:4444/wd/hub";
 
 	public WebDriver driver;
-	
+
 	private Session session;
 
 
@@ -55,10 +53,34 @@ public class CrawlerWebdriver {
 		try {
 			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
 			this.session = session;
-			
+
 		} catch (MalformedURLException ex) {
 			Logging.printLogError(logger, "Hub URL error! " + ex.getMessage());
 		}
+
+		//driver = new ChromeDriver(capabilities);
+
+		this.session = session;
+	}
+
+	public void addHeaders(Map<String, String> headers) {
+		driver.get("chrome-extension://idgpnmonknjnojddfkpgkljpfnnfcklj/icon.png");
+		
+		StringBuilder headersOptions = new StringBuilder();
+		for (Entry<String, String> entry : headers.entrySet()) {
+			headersOptions.append("    {enabled: true, name: '" + entry.getKey() + "', value: '" + entry.getValue() + "', comment: ''}, ");
+		}
+		
+		((JavascriptExecutor)driver).executeScript(
+				"localStorage.setItem('profiles', JSON.stringify([{                " +
+						"  title: 'Selenium', hideComment: true, appendMode: '',           " +
+						"  headers: [                                                      " +
+						headersOptions.toString()											 +
+						"  ],                                                              " +
+						"  respHeaders: [],                                                " +
+						"  filters: []                                                     " +
+				"}]));");
+		
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -86,98 +108,8 @@ public class CrawlerWebdriver {
 	 */
 	public String loadUrl(String url) {
 		driver.get(url);
-		
-		try {
-			URI uri = new URI(url);
-			
-			Cookie authCookie = createAuthCookie(uri);
-			
-			driver.manage().addCookie(authCookie);
-			
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		
-		driver.get(url);
-		
+
 		return driver.getPageSource();
-	}
-	
-	public String loadUrl(
-			String url, 
-			String proxyType) {
-		
-		driver.get(url);
-		
-		try {
-			URI uri = new URI(url);
-			
-			Cookie authCookie = createAuthCookie(uri);
-			Cookie proxyTypeCookie = createProxyTypeCookie(uri, proxyType);
-			
-			driver.manage().addCookie(authCookie);
-			driver.manage().addCookie(proxyTypeCookie);
-			
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		
-		driver.get(url);
-		
-		return driver.getPageSource();
-	}
-	
-	public String loadUrl(
-			String url,
-			String proxyType, 
-			String proxySession) {
-		
-		driver.get(url);
-		
-		try {
-			URI uri = new URI(url);
-			
-			Cookie authCookie = createAuthCookie(uri);
-			Cookie proxyTypeCookie = createProxyTypeCookie(uri, proxyType);
-			Cookie proxySessionCookie = createProxySessionCookie(uri, proxySession);
-			
-			driver.manage().addCookie(authCookie);
-			driver.manage().addCookie(proxyTypeCookie);
-			driver.manage().addCookie(proxySessionCookie);
-			
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		
-		driver.get(url);
-		
-		return driver.getPageSource();
-	}
-	
-	private Cookie createAuthCookie(URI uri) {
-		return new Cookie("x-a", 
-				"5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD", 
-				uri.getHost(), 
-				"/", 
-				null);
-	}
-	
-	private Cookie createProxyTypeCookie(URI uri, String proxyType) {
-		return new Cookie(
-				"x-type", 
-				proxyType, 
-				uri.getHost(), 
-				"/", 
-				null);
-	}
-	
-	private Cookie createProxySessionCookie(URI uri, String proxySession) {
-		return new Cookie(
-				"x-session", 
-				proxySession,
-				uri.getHost(), 
-				"/", 
-				null);
 	}
 
 	/**
@@ -205,15 +137,15 @@ public class CrawlerWebdriver {
 	public Actions getActionsBuilder() {
 		return new Actions(driver);
 	}
-	
+
 	public WebElement executeJavascript(String javascript) {
-		 JavascriptExecutor jse = (JavascriptExecutor) driver;
-		 return (WebElement)jse.executeScript(javascript);
+		JavascriptExecutor jse = (JavascriptExecutor) driver;
+		return (WebElement)jse.executeScript(javascript);
 	}
-	
+
 	public void clickOnElementViaJavascript(WebElement element) {
 		JavascriptExecutor jse = (JavascriptExecutor) driver;
-		 jse.executeScript("arguments[0].click();", element);
+		jse.executeScript("arguments[0].click();", element);
 	}
 
 	/**

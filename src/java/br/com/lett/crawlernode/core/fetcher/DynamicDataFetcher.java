@@ -2,7 +2,9 @@ package br.com.lett.crawlernode.core.fetcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
@@ -91,19 +93,34 @@ public class DynamicDataFetcher {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
 		
 		Proxy proxy = new Proxy();
-		proxy.setHttpProxy("191.235.90.114:3333");
-		proxy.setSslProxy("191.235.90.114:3333");
+		proxy.setHttpProxy(ProxyCollection.HA_PROXY_HTTP);
+		proxy.setSslProxy(ProxyCollection.HA_PROXY_HTTPS);
+		proxy.setSocksProxy(ProxyCollection.HA_PROXY_HTTP);
 
 		DesiredCapabilities capabilities = DesiredCapabilitiesBuilder
 				.create()
 				.setUserAgent(randUserAgent())
 				.setProxy(proxy)
 				.setBrowserType(BrowserType.CHROME)
+				//.setExecutablePathProperty("/home/samirleao/Downloads/chromedriver")
 				.build();
 
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities, session);
+		
+		// add authentication header on map
+		Map<String, String> headers = new HashMap<>();
+		headers.put("x-a", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+		
+		// add proxy service header on map
+		String proxyServiceName = session.getMarket().getProxies().get(0);
+		if (proxyServiceName != null) {
+			headers.put("x-type", proxyServiceName);
+		}
+		
+		// add all headers on webdriver
+		webdriver.addHeaders(headers);
 
-		webdriver.loadUrl(url, ProxyCollection.BONANZA);
+		webdriver.loadUrl(url);
 		
 		return webdriver;
 	}

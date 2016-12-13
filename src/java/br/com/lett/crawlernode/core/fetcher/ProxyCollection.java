@@ -26,6 +26,9 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 public class ProxyCollection {
 
 	private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
+	
+	public static final String HA_PROXY_HTTP = "191.235.90.114:3333";
+	public static final String HA_PROXY_HTTPS = "191.235.90.114:3333";
 
 	public static final String BUY 			= "buy";
 	public static final String BONANZA 		= "bonanza";
@@ -54,9 +57,9 @@ public class ProxyCollection {
 
 
 	public ProxyCollection(Markets markets) {
-		this.proxyMap = new HashMap<String, List<LettProxy>>();
+		this.proxyMap = new HashMap<>();
 
-		this.proxyMaxAttempts = new HashMap<String, Integer>();
+		this.proxyMaxAttempts = new HashMap<>();
 		this.proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
 		this.proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
@@ -66,27 +69,27 @@ public class ProxyCollection {
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		
-		this.intervalsMarketsMapWebcrawler = new HashMap<Integer, List<Interval<Integer>>>();
-		this.intervalsMarketsMapImages = new HashMap<Integer, List<Interval<Integer>>>();
+		this.intervalsMarketsMapWebcrawler = new HashMap<>();
+		this.intervalsMarketsMapImages = new HashMap<>();
 		
 		this.assembleIntervalsWebcrawler(markets);
 		this.assembleIntervalsImages(markets);
 	}
 
 	public void setCharityProxy() {
-		List<LettProxy> charity = new ArrayList<LettProxy>();
+		List<LettProxy> charity = new ArrayList<>();
 		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
 		this.proxyMap.put(CHARITY, charity);
 	}
 
 	public void setAzureProxy() {
-		List<LettProxy> azure = new ArrayList<LettProxy>();
+		List<LettProxy> azure = new ArrayList<>();
 		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
 		this.proxyMap.put(AZURE, azure);
 	}
 
 	public void setStormProxies() {
-		List<LettProxy> storm = new ArrayList<LettProxy>();
+		List<LettProxy> storm = new ArrayList<>();
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
 		this.proxyMap.put(STORM, storm);
 	}
@@ -95,7 +98,7 @@ public class ProxyCollection {
 		try {
 			Logging.printLogDebug(logger, "Fetching buyProxies proxies...");
 
-			List<LettProxy> buy = new ArrayList<LettProxy>();
+			List<LettProxy> buy = new ArrayList<>();
 
 			String url = "http://api.buyproxies.org/?a=showProxies&pid=40833&key=80069a39926fb5a7cbc4a684092572b0";
 
@@ -139,7 +142,7 @@ public class ProxyCollection {
 
 			Logging.printLogDebug(logger, "Fetching bonanza proxies...");
 
-			List<LettProxy> bonanza = new ArrayList<LettProxy>();
+			List<LettProxy> bonanza = new ArrayList<>();
 
 			String url = "https://api.proxybonanza.com/v1/userpackages/41202.json";
 
@@ -198,7 +201,7 @@ public class ProxyCollection {
 
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
 
-		return new ArrayList<LettProxy>();		
+		return new ArrayList<>();		
 	}
 	
 	/**
@@ -218,7 +221,7 @@ public class ProxyCollection {
 	private void assembleIntervalsWebcrawler(Markets markets) {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
-			List<Interval<Integer>> intervals = new ArrayList<Interval<Integer>>();
+			List<Interval<Integer>> intervals = new ArrayList<>();
 			ArrayList<String> proxies = m.getProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
@@ -234,7 +237,7 @@ public class ProxyCollection {
 	private void assembleIntervalsImages(Markets markets) {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
-			List<Interval<Integer>> intervals = new ArrayList<Interval<Integer>>();
+			List<Interval<Integer>> intervals = new ArrayList<>();
 			ArrayList<String> proxies = m.getImageProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
@@ -275,7 +278,9 @@ public class ProxyCollection {
 			intervals = this.intervalsMarketsMapImages.get(market.getNumber());
 		}
 		Interval<Integer> interval = MathCommonsMethods.findInterval(intervals, attempt);
-		if (interval != null) return interval.getName();
+		if (interval != null) {
+			return interval.getName();
+		}
 		return null;
 	}
 

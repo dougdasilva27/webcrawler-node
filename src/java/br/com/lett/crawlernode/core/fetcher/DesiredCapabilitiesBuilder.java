@@ -1,5 +1,10 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,16 +80,22 @@ public class DesiredCapabilitiesBuilder {
 			desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
 		}
 		
+		if (executablePath != null) {
+			System.setProperty("webdriver.chrome.driver", executablePath);
+		}
+		
 		ChromeOptions chromeOptions = new ChromeOptions();
 		
+		chromeOptions.addExtensions(new File("src/resources/modheader_2_1_1.crx"));
+		
 		if (userAgent != null) {
-			List<String> chromeArgs = new ArrayList<String>();
+			List<String> chromeArgs = new ArrayList<>();
 			chromeArgs.add("--user-agent=" + userAgent);
-//			chromeArgs.add("--allow-insecure-localhost");
-//			chromeArgs.add("--ssl-version-max=tls1.3");
-//			chromeArgs.add("--ssl-version-min=tls1");
-//			chromeArgs.add("--ignore-certificate-errors=true");
-//			chromeArgs.add("--ignore-urlfetcher-cert-requests=true");
+			chromeArgs.add("--allow-insecure-localhost");
+			chromeArgs.add("--ssl-version-max=tls1.3");
+			chromeArgs.add("--ssl-version-min=tls1");
+			chromeArgs.add("--ignore-certificate-errors");
+			chromeArgs.add("--ignore-urlfetcher-cert-requests");
 			
 			chromeOptions.addArguments(chromeArgs);
 			
@@ -95,16 +106,5 @@ public class DesiredCapabilitiesBuilder {
 
 		return desiredCapabilities;
 	}
-
-//	private List<String> createClientArgs() {
-//		List<String> clientArgs = new ArrayList<String>();
-//
-//		clientArgs.add("--web-security=false");
-//		clientArgs.add("--ignore-ssl-errors=true");
-//		clientArgs.add("--ssl-protocol=any");		// necessary to fetch https urls
-//		clientArgs.add("--load-images=false");		// don't download images when fetching pages
-//
-//		return clientArgs;
-//	}
 
 }
