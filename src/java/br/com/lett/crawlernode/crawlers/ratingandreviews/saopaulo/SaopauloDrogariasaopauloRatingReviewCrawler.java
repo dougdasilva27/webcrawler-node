@@ -25,13 +25,15 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /**
- * Date: 13/12/16
+ * Date: 14/12/16
  * @author gabriel
  *
+ * In time crawler was made, there was no rating on any product in this market
+ *
  */
-public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
+public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCrawler {
 
-	public SaopauloAraujoRatingReviewCrawler(Session session) {
+	public SaopauloDrogariasaopauloRatingReviewCrawler(Session session) {
 		super(session);
 	}
 
@@ -74,8 +76,8 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 	
 	/**
 	 * Api Ratings
-	 * Url: http://www.araujo.com.br/userreview
-	 * Ex payload: productId=290971&productLinkId=ninho-fases-1-composto-lacteo
+	 * Url: http://www.drogariasaopaulo.com.br/userreview
+	 * Ex payload: productId=542865&productLinkId=fralda-descartavel-pampers-premium-care-xxg-32-unidades
 	 * Required headers to crawl this api
 	 * 
 	 * @param url
@@ -95,7 +97,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 		headers.put("Content-Type", "application/x-www-form-urlencoded");
 		headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
 		
-		String response = DataFetcher.fetchPagePOSTWithHeaders("http://www.araujo.com.br/userreview", session, payload, cookies, 1, headers);
+		String response = DataFetcher.fetchPagePOSTWithHeaders("http://www.drogariasaopaulo.com.br/userreview", session, payload, cookies, 1, headers);
 		
 		if(response != null){
 			doc = Jsoup.parse(response);
@@ -188,10 +190,10 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 	}
 	
 	private boolean isProductPage(Document document) {
-		if ( document.select(".productName").first() != null ) {
-			return true;
-		}
-		return false;
+		Element body = document.select("body").first();
+		Element elementId = document.select("div.productReference").first();
+		
+		return body.hasClass("produto") && elementId != null;
 	}
 	
 	private JSONObject crawlSkuJson(Document document) {

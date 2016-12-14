@@ -70,7 +70,7 @@ public class BrasilFarmadeliveryRatingReviewCrawler extends RatingReviewCrawler 
 	 * @return
 	 */
 	private Double getTotalAvgRating(Document doc) {
-		Double avgRating = 0.0;
+		Double avgRating = null;
 		Element avg = doc.select("#aggregateRatingAV span").last();
 		
 		if(avg != null && !avg.ownText().isEmpty()) {

@@ -77,7 +77,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-		Double avgRating = 0.0;
+		Double avgRating = null;
 		Elements rating = docRating.select(".avaliacao_estrelas_holder .linha");
 
 		if (totalRating != null && totalRating > 0) {

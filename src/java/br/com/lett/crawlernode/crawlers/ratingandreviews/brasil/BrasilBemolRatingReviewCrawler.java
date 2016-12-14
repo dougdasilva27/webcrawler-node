@@ -72,7 +72,7 @@ public class BrasilBemolRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-		Double avgRating = 0.0;
+		Double avgRating = null;
 		Elements rating = docRating.select("#RatingReviewDiv .rating_bars .bar-value");
 
 		if (totalRating != null && totalRating > 0) {
