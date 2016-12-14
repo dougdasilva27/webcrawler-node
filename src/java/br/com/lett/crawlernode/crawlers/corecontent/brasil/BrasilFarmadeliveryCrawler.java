@@ -172,7 +172,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 		Element elementProduct = doc.select("div.product-view").first();
-		return (elementProduct != null && elementProduct != null && !url.contains("/review/"));
+		return elementProduct != null && !url.contains("/review/");
 	}
 	
 	/**

@@ -30,6 +30,12 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
+
+/**
+ * Date: 11/12/16
+ * @author gabriel
+ *
+ */
 public class ArgentinaWalmartRatingReviewCrawler extends RatingReviewCrawler {
 
 	public ArgentinaWalmartRatingReviewCrawler(Session session) {

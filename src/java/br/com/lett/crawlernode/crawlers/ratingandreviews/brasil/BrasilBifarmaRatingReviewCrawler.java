@@ -11,6 +11,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
+/**
+ * Date: 13/12/16
+ * @author gabriel
+ *
+ */
 public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 
 	public BrasilBifarmaRatingReviewCrawler(Session session) {

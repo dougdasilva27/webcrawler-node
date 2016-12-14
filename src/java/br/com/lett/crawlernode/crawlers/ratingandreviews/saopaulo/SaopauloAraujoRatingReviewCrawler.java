@@ -24,6 +24,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
+/**
+ * Date: 13/12/16
+ * @author gabriel
+ *
+ */
 public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
 	public SaopauloAraujoRatingReviewCrawler(Session session) {

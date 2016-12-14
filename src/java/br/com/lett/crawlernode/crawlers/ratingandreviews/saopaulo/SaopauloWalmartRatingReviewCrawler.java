@@ -14,6 +14,11 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 
+/**
+ * Date: 13/12/16
+ * @author gabriel
+ *
+ */
 public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 
 	public SaopauloWalmartRatingReviewCrawler(Session session) {
