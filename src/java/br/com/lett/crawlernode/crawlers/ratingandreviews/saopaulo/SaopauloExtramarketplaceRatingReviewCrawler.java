@@ -19,9 +19,9 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  * @author gabriel
  *
  */
-public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
+public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCrawler {
 
-	public SaopauloPontofrioRatingReviewCrawler(Session session) {
+	public SaopauloExtramarketplaceRatingReviewCrawler(Session session) {
 		super(session);
 	}
 
@@ -79,6 +79,8 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
 				if (totalStar != null) {
 					Integer totalVotes = Integer.parseInt(totalStar.text().replaceAll("[^0-9]", "").trim());
 
+					System.err.println(totalVotes);
+					
 					if(e.hasClass("pr-histogram-5Stars")){
 						total += totalVotes * 5;
 					} else if(e.hasClass("pr-histogram-4Stars")){

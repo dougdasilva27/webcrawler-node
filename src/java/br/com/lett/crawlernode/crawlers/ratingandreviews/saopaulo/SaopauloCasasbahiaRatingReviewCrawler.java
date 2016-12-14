@@ -68,7 +68,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
 	 */
 	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
 		Double avgRating = null;
-		Elements rating = docRating.select(".pr-ratings-histogram-content > li");
+		Elements rating = docRating.select("#pr-snapshot-histogram .pr-ratings-histogram-content > li");
 
 		if (totalRating != null && totalRating > 0) {
 			Double total = 0.0;
