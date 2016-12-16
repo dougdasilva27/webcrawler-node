@@ -50,7 +50,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 	public FlorianopolisAngelonieletroCrawler(Session session) {
 		super(session);
-		//super.config.setFetcher(Fetcher.WEBDRIVER);
+		super.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
@@ -276,7 +276,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	 * @return
 	 */
 	private Map<Integer, Float> crawlInstallmentsFromPaymentRequestResponse(Document document) {
-		Map<Integer, Float> installments = new HashMap<Integer, Float>();
+		Map<Integer, Float> installments = new HashMap<>();
 
 		Elements installmentNumberTextElements = document.select("div.numero-parcelas ul li");
 		Elements installmentPriceTextElements = document.select("div.valor-parcelas ul li");
