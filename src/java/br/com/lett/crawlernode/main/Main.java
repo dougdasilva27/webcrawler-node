@@ -1,5 +1,14 @@
 package br.com.lett.crawlernode.main;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +23,7 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.server.QueueHandler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
  
@@ -99,6 +109,16 @@ public class Main {
 		proxies.setStormProxies();
 		proxies.setCharityProxy();
 		proxies.setAzureProxy();
+		
+		try {
+			downloadResources();
+		} catch (MalformedURLException e) {
+			Logging.printLogError(logger, "Error in resource URL.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		} catch (IOException e) {
+			Logging.printLogError(logger, "Error during resource download.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
@@ -113,6 +133,28 @@ public class Main {
 		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
 		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler, markets), 1 );
 		
+	}
+	
+	private static void downloadResources() throws IOException {
+		BufferedInputStream in = null;
+	    FileOutputStream fout = null;
+	    try {
+	        in = new BufferedInputStream(new URL("https://s3.amazonaws.com/code-deploy-lett/crawler-node-util/modheader_2_1_1.crx").openStream());
+	        fout = new FileOutputStream("modheader_2_1_1.crx");
+
+	        final byte data[] = new byte[1024];
+	        int count;
+	        while ((count = in.read(data, 0, 1024)) != -1) {
+	            fout.write(data, 0, count);
+	        }
+	    } finally {
+	        if (in != null) {
+	            in.close();
+	        }
+	        if (fout != null) {
+	            fout.close();
+	        }
+	    }
 	}
 
 }

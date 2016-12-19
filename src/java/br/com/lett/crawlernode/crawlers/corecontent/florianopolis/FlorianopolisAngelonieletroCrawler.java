@@ -22,7 +22,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -52,7 +51,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 	public FlorianopolisAngelonieletroCrawler(Session session) {
 		super(session);
-		//super.config.setFetcher(Fetcher.WEBDRIVER);
+		super.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
@@ -69,24 +68,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-		
-		Logging.printLogDebug(logger, session, "Testing file creation...");
-		
-//		try {
-//			File extensionFile = new File("modheader_2_1_1.crx");
-//			Logging.printLogDebug(logger, session, extensionFile.getAbsolutePath());
-//		} catch (Exception e) {
-//			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx] sem getResource()");
-//			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-//		}
-		try {
-			File extensionFile2 = new File(getClass().getResource("src/resources/modheader_2_1_1.crx").getFile());
-			Logging.printLogDebug(logger, session, extensionFile2.getAbsolutePath());
-		} catch(Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx] via getResource()");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-
+				
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 

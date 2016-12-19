@@ -17,11 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class DesiredCapabilitiesBuilder {
 	protected static final Logger logger = LoggerFactory.getLogger(DesiredCapabilitiesBuilder.class);
-	
+
 	private static final String DEFAULT_BROWSER = "chrome";
 	private static final String DEFAULT_PROXY = "191.235.90.114:3333";
 
@@ -55,12 +57,12 @@ public class DesiredCapabilitiesBuilder {
 		this.lettProxy = lettProxy;
 		return this;
 	}
-	
+
 	public DesiredCapabilitiesBuilder setSession(Session session) {
 		this.session = session;
 		return this;
 	}
-	
+
 	public DesiredCapabilitiesBuilder setProxy(Proxy proxy) {
 		this.proxy = proxy;
 		return this;
@@ -76,13 +78,13 @@ public class DesiredCapabilitiesBuilder {
 
 		desiredCapabilities.setPlatform(Platform.ANY);
 		desiredCapabilities.setVersion("ANY");
-		
+
 		if (browserName != null) {
 			desiredCapabilities.setBrowserName(browserName);
 		} else {
 			desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
 		}
-		
+
 		if (proxy != null) {
 			desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
 		} else {
@@ -91,23 +93,27 @@ public class DesiredCapabilitiesBuilder {
 			defaultProxy.setSslProxy(DEFAULT_PROXY);
 			desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
 		}
-		
+
 		if (executablePath != null) {
 			System.setProperty("webdriver.chrome.driver", executablePath);
 		}
-		
+
 		ChromeOptions chromeOptions = new ChromeOptions();
-		
-		File extensionFile = new File("modheader_2_1_1.crx");
-		File extensionFile2 = new File(getClass().getResource("./resources/modheader_2_1_1.crx").getFile());
-		File extensionFile3 = new File(getClass().getResource("resources/modheader_2_1_1.crx").getFile());
-		
-		Logging.printLogDebug(logger, session, extensionFile.getAbsolutePath());
-		Logging.printLogDebug(logger, session, extensionFile2.getAbsolutePath());
-		Logging.printLogDebug(logger, session, extensionFile3.getAbsolutePath());
-		
-		chromeOptions.addExtensions(extensionFile);
-		
+
+		try {
+			File extensionFile;
+			if (session instanceof TestCrawlerSession) {
+				extensionFile = new File(getClass().getClassLoader().getResource("modheader_2_1_1.crx").getFile());
+			} else {
+				extensionFile = new File("modheader_2_1_1.crx");
+			}
+
+			chromeOptions.addExtensions(extensionFile);
+			
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+
 		if (userAgent != null) {
 			List<String> chromeArgs = new ArrayList<>();
 			chromeArgs.add("--user-agent=" + userAgent);
@@ -116,12 +122,12 @@ public class DesiredCapabilitiesBuilder {
 			chromeArgs.add("--ssl-version-min=tls1");
 			chromeArgs.add("--ignore-certificate-errors");
 			chromeArgs.add("--ignore-urlfetcher-cert-requests");
-			
+
 			chromeOptions.addArguments(chromeArgs);
-			
+
 			desiredCapabilities.setCapability("chromeOptions", chromeOptions);
 		}
-		
+
 		desiredCapabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
 
 		return desiredCapabilities;
