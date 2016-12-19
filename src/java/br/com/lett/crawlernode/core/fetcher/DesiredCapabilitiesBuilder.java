@@ -108,7 +108,8 @@ public class DesiredCapabilitiesBuilder {
 			} else {
 				extensionFile = Main.globalResources.getWebdriverExtension();
 			}
-
+			
+			Logging.printLogDebug(logger, session, "Seting webdriver extension from file: " + extensionFile.getAbsolutePath());
 			chromeOptions.addExtensions(extensionFile);
 			
 		} catch (Exception e) {
