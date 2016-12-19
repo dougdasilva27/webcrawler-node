@@ -18,6 +18,12 @@
 					<exclude>logback.xml</exclude>
 				</excludes>
 			</resource>
+			<resource>
+				<directory>src/resources</directory>
+				<excludes>
+					<exclude>modheader_2_1_1.crx</exclude>
+				</excludes>
+			</resource>
 			<!-- resource processsing with a different output directory for logback.xml -->
 			<resource>
 				<directory>src/resources</directory>

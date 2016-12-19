@@ -98,8 +98,7 @@ public class DesiredCapabilitiesBuilder {
 		
 		ChromeOptions chromeOptions = new ChromeOptions();
 		
-		File extensionFile = new File(getClass().getResource("/modheader_2_1_1.crx").getFile());
-		Logging.printLogDebug(logger, session, "Extension file path: " + extensionFile.getAbsolutePath());
+		File extensionFile = new File("modheader_2_1_1.crx");
 		chromeOptions.addExtensions(extensionFile);
 		
 		if (userAgent != null) {
