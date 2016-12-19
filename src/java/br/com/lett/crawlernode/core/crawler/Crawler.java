@@ -381,6 +381,11 @@ public class Crawler implements Runnable {
 	 * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an empty array list if no product was found.
 	 */
 	public List<Product> extract() throws Exception {
+		
+		// in cases we are running a truco iteration
+		if (webdriver != null) {
+			webdriver.terminate();
+		}
 
 		// handle cookie
 		if (cookies.isEmpty()) {
@@ -423,13 +428,13 @@ public class Crawler implements Runnable {
 	 */
 	private Document fetch() {
 		String html;
-		if (this.config.getFetcher() == Fetcher.STATIC) {
+		if (config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-		} else if (this.config.getFetcher() == Fetcher.SMART) {
+		} else if (config.getFetcher() == Fetcher.SMART) {
 			html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
 		} else {
-			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-			html = this.webdriver.getCurrentPageSource();
+			webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+			html = webdriver.getCurrentPageSource();
 		}
 		
 		return Jsoup.parse(html);		
