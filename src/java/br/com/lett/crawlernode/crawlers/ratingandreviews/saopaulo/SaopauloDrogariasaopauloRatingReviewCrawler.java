@@ -78,7 +78,7 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
 	 * Page Ratings
 	 * Url: http://www.drogariasaopaulo.com.br/userreview
 	 * Ex payload: productId=542865&productLinkId=fralda-descartavel-pampers-premium-care-xxg-32-unidades
-	  * Ex:
+	 * Ex:
 	 * Média de avaliações: 5 votos
 	 *
 	 *	3 Votos
