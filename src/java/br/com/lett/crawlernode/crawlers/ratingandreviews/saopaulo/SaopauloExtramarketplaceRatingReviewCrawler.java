@@ -78,8 +78,6 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 
 				if (totalStar != null) {
 					Integer totalVotes = Integer.parseInt(totalStar.text().replaceAll("[^0-9]", "").trim());
-
-					System.err.println(totalVotes);
 					
 					if(e.hasClass("pr-histogram-5Stars")){
 						total += totalVotes * 5;
