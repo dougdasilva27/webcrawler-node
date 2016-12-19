@@ -72,42 +72,20 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		
 		Logging.printLogDebug(logger, session, "Testing file creation...");
 		
+//		try {
+//			File extensionFile = new File("modheader_2_1_1.crx");
+//			Logging.printLogDebug(logger, session, extensionFile.getAbsolutePath());
+//		} catch (Exception e) {
+//			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx] sem getResource()");
+//			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+//		}
 		try {
-			File extensionFile = new File("modheader_2_1_1.crx");
-			Logging.printLogDebug(logger, session, extensionFile.getAbsolutePath());
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx]");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-		try {
-			File extensionFile2 = new File(getClass().getResource("./resources/modheader_2_1_1.crx").getFile());
+			File extensionFile2 = new File(getClass().getResource("src/resources/modheader_2_1_1.crx").getFile());
 			Logging.printLogDebug(logger, session, extensionFile2.getAbsolutePath());
 		} catch(Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [./resources/modheader_2_1_1.crx]");
+			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx] via getResource()");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
-		try {
-			File extensionFile2 = new File(getClass().getResource("modheader_2_1_1.crx").getFile());
-			Logging.printLogDebug(logger, session, extensionFile2.getAbsolutePath());
-		} catch(Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [modheader_2_1_1.crx]");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-		try {
-			File extensionFile3 = new File(getClass().getResource("resources/modheader_2_1_1.crx").getFile());
-			Logging.printLogDebug(logger, session, extensionFile3.getAbsolutePath());
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [resources/modheader_2_1_1.crx]");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-		try {
-			File extensionFile3 = new File(getClass().getResource("./modheader_2_1_1.crx").getFile());
-			Logging.printLogDebug(logger, session, extensionFile3.getAbsolutePath());
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Erro criando arquivo de extensao: [./modheader_2_1_1.crx]");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-		
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
