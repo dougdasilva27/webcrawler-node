@@ -68,7 +68,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-				
+						
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -99,10 +100,10 @@ public class DesiredCapabilitiesBuilder {
 		}
 
 		ChromeOptions chromeOptions = new ChromeOptions();
-
+				
 		try {
 			File extensionFile;
-			if (session instanceof TestCrawlerSession) {
+			if (Main.executionParameters == null) { // testando
 				extensionFile = new File(getClass().getClassLoader().getResource("modheader_2_1_1.crx").getFile());
 			} else {
 				extensionFile = new File("modheader_2_1_1.crx");
