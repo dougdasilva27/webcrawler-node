@@ -33,11 +33,11 @@ import br.com.lett.crawlernode.util.Logging;
  *
  */
 
-public class BrasilHomerefilCrawler extends Crawler {
+public class BrasilHomerefillCrawler extends Crawler {
 
 	private final String HOME_PAGE = "https://www.homerefill.com.br/";
 
-	public BrasilHomerefilCrawler(Session session) {
+	public BrasilHomerefillCrawler(Session session) {
 		super(session);
 	}
 
