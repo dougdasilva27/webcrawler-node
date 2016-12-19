@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.crawler.RatingReviewCrawler;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -28,7 +29,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 
 		if (isProductPage(document)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			RatingsReviews ratingReviews = new RatingsReviews();			
 			ratingReviews.setDate(session.getDate());
 
@@ -37,7 +38,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 			if(internalId != null) {
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(document);			
 				Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
-				
+
 				ratingReviews.setInternalId(internalId);
 				ratingReviews.setTotalReviews(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
@@ -66,7 +67,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	/**
-	 * Average is calculate 
+	 * Average is calculated 
 	 * Example: 
 	 *  img src = ".../star5.png" [percentage bar] 0(number of evaluations of this star)/0,00%(percentage of votes)
 	 *  img src = ".../star4.png" [percentage bar] 1(number of evaluations of this star)/100,00%(percentage of votes)
@@ -82,33 +83,34 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 
 		if (totalRating != null && totalRating > 0) {
 			Double total = 0.0;
+			try {
+				for (Element e : rating) {
+					Element starImg = e.select("> img").first();
+					Element totalStar = e.select("> p > span").first();
 
-			for (Element e : rating) {
-				Element starImg = e.select("> img").first();
-				Element totalStar = e.select("> p > span").first();
-
-				if (totalStar != null && starImg != null) {
-					try {
+					if (totalStar != null && starImg != null) {
 						String votes = totalStar.text().split("/")[0].trim();
 						String star = starImg.attr("src");
-						
+
 						Integer totalVotes = Integer.parseInt(votes);
 
-						if(star.contains("star5")){
+						if(star.contains("star5")) {
 							total += totalVotes * 5;
-						} else if(star.contains("star4")){
+						} else if(star.contains("star4")) {
 							total += totalVotes * 4;
-						} else if(star.contains("star3")){
+						} else if(star.contains("star3")) {
 							total += totalVotes * 3;
-						} else if(star.contains("star2")){
+						} else if(star.contains("star2")) {
 							total += totalVotes * 2;
-						} else if(star.contains("star1")){
+						} else if(star.contains("star1")) {
 							total += totalVotes * 1;
-						}
-					} catch (Exception e1) {
+						}					
 					}
 				}
+			} catch (NumberFormatException e1) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
 			}
+
 
 			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(total / totalRating);
 		}
@@ -140,7 +142,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 
 		for(int i = 0; i < size; i++) {
 			selectedElements = document.select( productUrlFeatures[i] );
-			if(selectedElements == null || selectedElements.size() == 0) {
+			if(selectedElements == null || selectedElements.isEmpty()) {
 				return false;
 			}
 		}

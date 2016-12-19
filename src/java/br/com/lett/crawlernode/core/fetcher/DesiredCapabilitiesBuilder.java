@@ -86,7 +86,8 @@ public class DesiredCapabilitiesBuilder {
 		
 		ChromeOptions chromeOptions = new ChromeOptions();
 		
-		chromeOptions.addExtensions(new File("src/resources/modheader_2_1_1.crx"));
+		ClassLoader classLoader = getClass().getClassLoader();
+		chromeOptions.addExtensions(new File(classLoader.getResource("modheader_2_1_1.crx").getFile()));
 		
 		if (userAgent != null) {
 			List<String> chromeArgs = new ArrayList<>();
