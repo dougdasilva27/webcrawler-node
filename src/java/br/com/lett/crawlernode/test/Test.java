@@ -94,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.angeloni.com.br/eletro/p/cafeteira-arno-cafp-preto-3785681", market);
+			Session session = SessionFactory.createSession("http://www.angeloni.com.br/eletro/p/lavadora-de-roupas-panasonic-16kg-na-f160b-branco-3700773", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			if (task != null) {

@@ -13,12 +13,19 @@ import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.Logging;
 
 public class DesiredCapabilitiesBuilder {
+	protected static final Logger logger = LoggerFactory.getLogger(DesiredCapabilitiesBuilder.class);
 	
 	private static final String DEFAULT_BROWSER = "chrome";
 	private static final String DEFAULT_PROXY = "191.235.90.114:3333";
 
+	private Session session;
 	private String userAgent;
 	private String executablePath;
 	private LettProxy lettProxy;
@@ -46,6 +53,11 @@ public class DesiredCapabilitiesBuilder {
 
 	public DesiredCapabilitiesBuilder setLettProxy(LettProxy lettProxy) {
 		this.lettProxy = lettProxy;
+		return this;
+	}
+	
+	public DesiredCapabilitiesBuilder setSession(Session session) {
+		this.session = session;
 		return this;
 	}
 	
@@ -86,8 +98,9 @@ public class DesiredCapabilitiesBuilder {
 		
 		ChromeOptions chromeOptions = new ChromeOptions();
 		
-		ClassLoader classLoader = getClass().getClassLoader();
-		chromeOptions.addExtensions(new File(classLoader.getResource("modheader_2_1_1.crx").getFile()));
+		File extensionFile = new File(getClass().getResource("/modheader_2_1_1.crx").getFile());
+		Logging.printLogDebug(logger, session, "Extension file path: " + extensionFile.getAbsolutePath());
+		chromeOptions.addExtensions(extensionFile);
 		
 		if (userAgent != null) {
 			List<String> chromeArgs = new ArrayList<>();
