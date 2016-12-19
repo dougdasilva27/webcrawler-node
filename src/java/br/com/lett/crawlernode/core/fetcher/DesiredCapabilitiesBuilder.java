@@ -103,10 +103,10 @@ public class DesiredCapabilitiesBuilder {
 				
 		try {
 			File extensionFile;
-			if (Main.executionParameters == null) { // testando
+			if (Main.globalResources == null) { // testando
 				extensionFile = new File(getClass().getClassLoader().getResource("modheader_2_1_1.crx").getFile());
 			} else {
-				extensionFile = new File("modheader_2_1_1.crx");
+				extensionFile = Main.globalResources.getWebdriverExtension();
 			}
 
 			chromeOptions.addExtensions(extensionFile);

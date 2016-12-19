@@ -6,12 +6,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.crawler.Resources;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.task.MessageFetcher;
@@ -74,6 +73,8 @@ public class Main {
 
 	private static TaskExecutor 		taskExecutor;
 	private static TaskExecutorAgent 	taskExecutorAgent;
+	
+	public static Resources				globalResources;
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -110,8 +111,10 @@ public class Main {
 		proxies.setCharityProxy();
 		proxies.setAzureProxy();
 		
+		// set global resources
+		globalResources = new Resources();
 		try {
-			downloadResources();
+			globalResources.setWebdriverExtension(downloadWebdriverExtension());
 		} catch (MalformedURLException e) {
 			Logging.printLogError(logger, "Error in resource URL.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
@@ -135,18 +138,25 @@ public class Main {
 		
 	}
 	
-	private static void downloadResources() throws IOException {
+	private static File downloadWebdriverExtension() throws IOException {
 		BufferedInputStream in = null;
 	    FileOutputStream fout = null;
 	    try {
 	        in = new BufferedInputStream(new URL("https://s3.amazonaws.com/code-deploy-lett/crawler-node-util/modheader_2_1_1.crx").openStream());
-	        fout = new FileOutputStream("modheader_2_1_1.crx");
+	        File f = new File("modheader_2_1_1.crx");
+	        if (!f.exists()) {
+	        	f.createNewFile();
+	        }
+	        fout = new FileOutputStream(f);
 
-	        final byte data[] = new byte[1024];
+	        final byte[] data = new byte[1024];
 	        int count;
 	        while ((count = in.read(data, 0, 1024)) != -1) {
 	            fout.write(data, 0, count);
 	        }
+	        
+	        return f;
+	        
 	    } finally {
 	        if (in != null) {
 	            in.close();
