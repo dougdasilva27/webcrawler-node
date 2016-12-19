@@ -50,7 +50,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 	public FlorianopolisAngelonieletroCrawler(Session session) {
 		super(session);
-		//super.config.setFetcher(Fetcher.WEBDRIVER);
+		super.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
