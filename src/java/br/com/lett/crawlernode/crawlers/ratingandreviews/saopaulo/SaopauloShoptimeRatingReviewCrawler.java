@@ -59,7 +59,7 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 		return false;
 	}
 
-	private String crawlInternalPid(Document doc){
+	private String crawlInternalPid(Document doc) {
 		String internalID = null;
 
 		Element elementInternalID = doc.select(".p-name#main-product-name .p-code").first();

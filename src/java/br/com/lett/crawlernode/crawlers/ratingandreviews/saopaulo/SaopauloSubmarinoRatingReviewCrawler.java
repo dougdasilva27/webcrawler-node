@@ -62,7 +62,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
-		List<String> idList = new ArrayList<String>();
+		List<String> idList = new ArrayList<>();
 		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
 
 		if (embeddedJSONObject.has("skus")) {
