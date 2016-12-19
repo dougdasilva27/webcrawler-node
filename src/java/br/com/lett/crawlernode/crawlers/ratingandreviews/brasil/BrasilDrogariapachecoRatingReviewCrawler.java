@@ -51,7 +51,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 			if (skuJson.has("productId")) {
 				String internalPid = Integer.toString(skuJson.getInt("productId"));
 				
-				Document docRating = crawlApiRatings(session.getOriginalURL(), internalPid);
+				Document docRating = crawlPageRatings(session.getOriginalURL(), internalPid);
 			
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);			
 				Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
@@ -79,12 +79,21 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 	 * Url: http://www.drogariaspacheco.com.br/userreview
 	 * Ex payload: productId=542865&productLinkId=fralda-descartavel-pampers-premium-care-xxg-32-unidades
 	 * Required headers to crawl this api
+	 * Ex:
+	 * Média de avaliações: 5 votos
+	 *
+	 *	3 Votos
+	 *	nenhum voto
+	 *	1 Voto
+	 *	1 Voto
+	 *	nenhum voto
+	 * 
 	 * 
 	 * @param url
 	 * @param internalPid
 	 * @return document 
 	 */
-	private Document crawlApiRatings(String url, String internalPid){
+	private Document crawlPageRatings(String url, String internalPid){
 		Document doc = new Document(url);
 		
 		// Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL "http://www.walmart.com.ar/led-32-ilo-hd-smart-d300032-/p"
@@ -151,7 +160,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 	}
 	
 	/**
-	 * Number of ratings appear in api 
+	 * Number of ratings appear in rating page 
 	 * @param docRating
 	 * @return
 	 */
