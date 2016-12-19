@@ -26,6 +26,13 @@
 				</includes>
 				<!-- relative to target/classes i.e. ${project.build.outputDirectory} -->
 			</resource>
+			<resource>
+				<directory>src/modheader_2_1_1.crx</directory>
+				<includes>
+					<include>modheader_2_1_1.crx</include>
+				</includes>
+				<!-- relative to target/classes i.e. ${project.build.outputDirectory} -->
+			</resource>
 		</resources>
 
 		<plugins>
