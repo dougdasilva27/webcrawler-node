@@ -35,6 +35,14 @@ public class RatingsReviews implements Cloneable {
 			if (ratingReviewsJSON.has(AVERAGE_OVERALL_RATING_JSON_FIELD) && !ratingReviewsJSON.isNull(AVERAGE_OVERALL_RATING_JSON_FIELD)) {
 				averageOverallRating = MathCommonsMethods.normalizeTwoDecimalPlaces(ratingReviewsJSON.getDouble(AVERAGE_OVERALL_RATING_JSON_FIELD));
 			}
+			
+			sanitize();
+		}
+	}
+	
+	private void sanitize() {
+		if (date != null && totalReviews == null) {
+			totalReviews = 0;
 		}
 	}
 
@@ -44,13 +52,16 @@ public class RatingsReviews implements Cloneable {
 	}
 
 	public JSONObject getJSON() {
-		JSONObject ratingReviewsJson = new JSONObject();
 
 		if (date == null) {
-			ratingReviewsJson.put(DATE_JSON_FIELD, JSONObject.NULL);
-		} else {
-			ratingReviewsJson.put(DATE_JSON_FIELD, this.date.toString());
+			return null;
 		}
+
+		JSONObject ratingReviewsJson = new JSONObject();
+		
+		sanitize();
+
+		ratingReviewsJson.put(DATE_JSON_FIELD, this.date.toString());
 
 		if (this.totalReviews == null) {
 			ratingReviewsJson.put(TOTAL_REVIEWS_JSON_FIELD, JSONObject.NULL);
@@ -78,11 +89,11 @@ public class RatingsReviews implements Cloneable {
 
 		return stringBuilder.toString();
 	}
-	
+
 	public DateTime getDate() {
 		return date;
 	}
-	
+
 	public void setDate(DateTime date) {
 		this.date = date;
 	}
