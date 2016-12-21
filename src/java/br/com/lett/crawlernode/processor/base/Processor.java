@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -435,6 +434,21 @@ public class Processor {
 		if (internal_id != null) {
 
 			try {
+				
+//				Result<ProcessedRecord> result = DSL.using(Main.dbManager.conn, SQLDialect.POSTGRES_9_5)
+//				.selectFrom(Processed.PROCESSED)
+//				.where( Processed.PROCESSED.MARKET.equal(session.getMarket().getNumber()), 
+//						Processed.PROCESSED.INTERNAL_ID.equal(internal_id))
+//				.fetch();
+//				
+//				for (ProcessedRecord processed : result) {
+//					JSONObject digitalContent;
+//					try {
+//						digitalContent = new JSONObject(processed.get(Processed.PROCESSED.DIGITAL_CONTENT));
+//					} catch (Exception e) {	
+//						digitalContent = null; 
+//					}
+//				}
 
 				// reading current information of processed product
 				StringBuilder query = new StringBuilder();

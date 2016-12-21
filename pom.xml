@@ -30,9 +30,6 @@
 
 		<plugins>
 
-
-
-
 			<!-- <plugin> <artifactId>maven-assembly-plugin</artifactId> <executions> 
 				<execution> <phase>package</phase> <goals> <goal>single</goal> </goals> </execution> 
 				</executions> <configuration> <source>1.7</source> <target>1.7</target> <descriptorRefs> 
@@ -47,7 +44,6 @@
 				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> </archive> 
 				<outputDirectory>target/deployment</outputDirectory> </configuration> </plugin> -->
 
-
 			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
 				<configuration> <source>1.7</source> <target>1.7</target> <archive> <manifest> 
 				<addClasspath>true</addClasspath> <classpathPrefix>lib/</classpathPrefix> 
@@ -59,8 +55,6 @@
 				<overWriteReleases>false</overWriteReleases> <overWriteSnapshots>false</overWriteSnapshots> 
 				<overWriteIfNewer>true</overWriteIfNewer> </configuration> </execution> </executions> 
 				</plugin> -->
-
-
 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -103,9 +97,6 @@
 				</executions>
 			</plugin>
 
-
-
-
 			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
 				<configuration> <source>1.7</source> <target>1.7</target> </configuration> 
 				</plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
@@ -113,10 +104,6 @@
 				</goals> <configuration> <archive> <manifest> <mainClass>br.com.lett.crawlernode.main.Main</mainClass> 
 				</manifest> </archive> <descriptorRefs> <descriptorRef>jar-with-dependencies</descriptorRef> 
 				</descriptorRefs> </configuration> </execution> </executions> </plugin> -->
-
-
-
-
 
 			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> 
 				<version>3.0.2</version> <configuration> <archive> <index>true</index> <manifest> 
@@ -131,11 +118,8 @@
 				<includeScope>runtime</includeScope> </configuration> </execution> </executions> 
 				</plugin> -->
 
-
-
-
-
 		</plugins>
+
 	</build>
 
 	<dependencies>
@@ -160,17 +144,26 @@
 			<version>4.5.2</version>
 		</dependency>
 
+		<!-- WebDriver -->
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>selenium-java</artifactId>
 			<version>2.47.0</version>
 		</dependency>
 
-		<!-- <dependency>
-			<groupId>com.github.detro.ghostdriver</groupId>
-			<artifactId>phantomjsdriver</artifactId>
-			<version>1.1.0</version>
-		</dependency> -->
+		<!-- Lett database models -->
+		<dependency>
+			<groupId>br.com.lett</groupId>
+			<artifactId>db</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		
+		<!-- Assemble and perform queries -->
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>3.8.6</version>
+		</dependency>
 
 		<!-- JSON for Java -->
 		<dependency>
@@ -207,13 +200,11 @@
 			<version>1.7.10</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.1.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
@@ -226,20 +217,16 @@
 			<artifactId>aws-java-sdk-s3</artifactId>
 			<version>1.10.69</version>
 		</dependency>
-
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-sqs-java-extended-client-lib</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-core</artifactId>
 			<version>1.10.77</version>
 		</dependency>
-
 
 		<!-- Joda time required for Amazon -->
 		<dependency>
@@ -248,16 +235,13 @@
 			<version>2.9.4</version>
 		</dependency>
 
-
 		<!-- Image processing -->
-
 		<dependency>
 			<groupId>org.openimaj</groupId>
 			<artifactId>core-image</artifactId>
 			<version>1.3.1</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.openimaj</groupId>
 			<artifactId>image-local-features</artifactId>
@@ -272,10 +256,6 @@
 			<version>2.6.1</version>
 		</dependency>
 
-		<!-- csv format file -->
-		<!-- <dependency> <groupId>net.sf.opencsv</groupId> <artifactId>opencsv</artifactId> 
-			<version>2.3</version> </dependency> -->
-
 	</dependencies>
 
 	<repositories>
@@ -288,6 +268,11 @@
 		<repository>
 			<id>OpenIMAJ maven snapshots repository</id>
 			<url>http://snapshots.openimaj.org</url>
+		</repository>
+
+		<repository>
+			<id>maven.lett.com.br</id>
+			<url>s3://maven.lett.com.br</url>
 		</repository>
 
 	</repositories>
