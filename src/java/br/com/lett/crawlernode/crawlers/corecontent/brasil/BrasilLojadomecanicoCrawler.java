@@ -208,11 +208,13 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("data-zoom-image").trim();
-			if (image.endsWith(".JPG")) image = image.replace(".JPG", ".jpg");
-			primaryImage = image;
+			if (image.endsWith(".JPG")) {
+				image = image.replace(".JPG", ".jpg");
+			}
+			primaryImage = image.toLowerCase();
 		}
 
-		return primaryImage.toLowerCase();
+		return primaryImage;
 	}
 
 	private String crawlSecondaryImages(Document document) {
