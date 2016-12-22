@@ -140,10 +140,21 @@ public class BrasilEfacilCrawler extends Crawler {
 
 				// Price
 				Float price = null;
-
+		
 				if (available) {
 					// Price BankTicket 1x
-					Float priceBank = Float.parseFloat(info.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					Float priceBank = null;
+					
+					if(info.has("offerPrice")){
+						priceBank = Float.parseFloat(info.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					} else {
+						Element priceElement = doc.select("input[id^=offerPrice_hd_]").first();
+						
+						if(priceElement != null) {
+							priceBank = Float.parseFloat(priceElement.val());
+						}
+					}
+					
 
 					// Prices Json
 					JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank);
