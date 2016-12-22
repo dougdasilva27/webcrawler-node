@@ -421,26 +421,22 @@ public class BrasilKoerichCrawler extends Crawler {
 	private JSONArray crawlSkuJsonArray(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		JSONArray skuJsonArray = null;
-		
+		JSONArray skuJsonArray = new JSONArray();
+
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
-							(
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+							(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+							 node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
 							);
 
 				}
 			}        
 		}
-		
-		try {
+
+		if(skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
 		}
 		
 		return skuJsonArray;

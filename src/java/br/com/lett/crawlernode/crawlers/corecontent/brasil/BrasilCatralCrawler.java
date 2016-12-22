@@ -462,7 +462,6 @@ public class BrasilCatralCrawler extends Crawler {
 		if(skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
 		}
-	
 
 		return skuJsonArray;
 	}
