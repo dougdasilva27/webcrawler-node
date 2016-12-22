@@ -445,7 +445,7 @@ public class BrasilCatralCrawler extends Crawler {
 	private JSONArray crawlSkuJsonArray(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		JSONArray skuJsonArray = null;
+		JSONArray skuJsonArray = new JSONArray();
 
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
@@ -459,11 +459,10 @@ public class BrasilCatralCrawler extends Crawler {
 			}        
 		}
 
-		try {
+		if(skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
 		}
+	
 
 		return skuJsonArray;
 	}
