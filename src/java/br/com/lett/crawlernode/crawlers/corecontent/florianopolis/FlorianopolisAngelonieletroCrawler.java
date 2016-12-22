@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,9 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  * 3) The cash price (preço a vista) can change between sku variations, and it's crawled from the main page.
  * 4) To get card payments, first we perform a POST request to get the list of all card brands, then we perform
  * one POST request for each card brand.
+ * 
+ *  org.openqa.selenium.StaleElementReferenceException: http://www.angeloni.com.br/eletro/p/lavadora-de-roupas-brastemp-11kg-ative-bwl11a-branco-2344440
+ *  normal: http://www.angeloni.com.br/eletro/p/lava-e-seca-lg-85kg-wd1485at-aco-escovado-3868980
  * 
  * @author Samir Leao
  *
@@ -79,16 +83,43 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 				// get all sku options through the webdriver
 				List<WebElement> options = this.webdriver.findElementsByCssSelector("div.col-sm-9 input[name=voltagem]");
-
-				for (WebElement option : options) {
-					String variation = option.getAttribute("id"); // 220 or 110
-
+				
+				if (options.size() == 2) {
+					WebElement first = options.get(0);
+					String firstVariation = first.getAttribute("id");
+					
 					// if the element is loaded we crawl it and append variation on the name
-					if (!isLoaded(variationDocument, option)) {
+					if (!isLoaded(variationDocument, first)) {
 
 						// click
 						Logging.printLogDebug(logger, session, "Clicking on option...");
-						this.webdriver.clickOnElementViaJavascript(option);
+						this.webdriver.clickOnElementViaJavascript(first);
+
+						// give some time for safety
+						Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
+						this.webdriver.waitLoad(2000);
+
+						// get the new html and parse
+						String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
+						variationDocument = Jsoup.parse(html);						
+					}
+					
+					// crawl sku
+					Product firstProduct = crawlProduct(variationDocument);
+					String firstProductCompleteName = firstProduct.getName() + " " + firstVariation + "v";
+					firstProduct.setName(firstProductCompleteName);
+					products.add(firstProduct);
+					
+					List<WebElement> options2 = this.webdriver.findElementsByCssSelector("div.col-sm-9 input[name=voltagem]");
+					WebElement second = options2.get(1);
+					String secondVariation = second.getAttribute("id");
+					
+					// if the element is loaded we crawl it and append variation on the name
+					if (!isLoaded(variationDocument, second)) {
+
+						// click
+						Logging.printLogDebug(logger, session, "Clicking on option...");
+						this.webdriver.clickOnElementViaJavascript(second);
 
 						// give some time for safety
 						Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
@@ -98,25 +129,51 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 						String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
 						variationDocument = Jsoup.parse(html);
 					}
-
-					// crawl sku
-					Product product = crawlProduct(variationDocument);
-
-					// append variation on sku name
-					String completeName = product.getName() + " " + variation + "v";
 					
-					product.setName(completeName);
-
-					products.add(product);
+					// crawl sku
+					Product secondProduct = crawlProduct(variationDocument);
+					String secondProductCompleteName = secondProduct.getName() + " " + secondVariation + "v";
+					secondProduct.setName(secondProductCompleteName);
+					products.add(secondProduct);
 				}
+				
+//				Iterator<WebElement> it = options.iterator();
+//				while (it.hasNext()) {
+//					WebElement option = it.next();
+//					String variation = option.getAttribute("id"); // 220 or 110
+//
+//					// if the element is loaded we crawl it and append variation on the name
+//					if (!isLoaded(variationDocument, option)) {
+//
+//						// click
+//						Logging.printLogDebug(logger, session, "Clicking on option...");
+//						this.webdriver.clickOnElementViaJavascript(option);
+//
+//						// give some time for safety
+//						Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
+//						this.webdriver.waitLoad(2000);
+//
+//						// get the new html and parse
+//						String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
+//						variationDocument = Jsoup.parse(html);
+//					}
+//
+//					// crawl sku
+//					Product product = crawlProduct(variationDocument);
+//
+//					// append variation on sku name
+//					String completeName = product.getName() + " " + variation + "v";
+//					
+//					product.setName(completeName);
+//
+//					products.add(product);
+//				}
 
 
 			} else {
 				Product product = crawlProduct(doc);
 				products.add(product);
 			}
-
-
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());

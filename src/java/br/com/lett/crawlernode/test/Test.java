@@ -103,7 +103,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("https://httpbin.org/headers", market);
+			Session session = SessionFactory.createSession("http://www.angeloni.com.br/eletro/p/radio-relogio-digital-philco-amfm-ph75-3101491", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			if (task != null) {
