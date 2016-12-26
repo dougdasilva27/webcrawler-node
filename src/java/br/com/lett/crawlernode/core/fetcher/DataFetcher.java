@@ -7,14 +7,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,22 +49,19 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
@@ -413,7 +408,7 @@ public class DataFetcher {
 		in.close();
 
 		// saving request content result on Amazon
-		S3Service.uploadContentToAmazon(session, requestHash, response.toString());
+		S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, response.toString());
 
 		return response.toString();
 
@@ -657,7 +652,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
@@ -807,7 +802,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
@@ -982,7 +977,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
@@ -1161,7 +1156,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
@@ -1348,7 +1343,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
@@ -1526,7 +1521,7 @@ public class DataFetcher {
 			} else {
 				content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 			}
-			S3Service.uploadContentToAmazon(session, requestHash, content);
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 			// see if some code error occured
 			// sometimes the remote server doesn't send the http error code on the headers
