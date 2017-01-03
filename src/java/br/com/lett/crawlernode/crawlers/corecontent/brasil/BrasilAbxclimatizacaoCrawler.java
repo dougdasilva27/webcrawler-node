@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,7 +20,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
- * Crawling notes (25/08/2016):
+ * Crawling notes (03/01/2017):
  * 
  * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
  *  
@@ -47,7 +46,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  ************************************************************************************************************************************************************************************/
 public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
-	private final String HOME_PAGE = "https://www.abxclimatizacao.com.br/";
+	private static final String HOME_PAGE = "https://abxclimatizacao.com.br/";
 
 	public BrasilAbxclimatizacaoCrawler(Session session) {
 		super(session);
@@ -63,7 +62,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -76,7 +75,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 
 			// Pid
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 
 			// Name
 			String name = crawlName(doc);
@@ -91,7 +90,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			boolean available = crawlAvailability(doc);
 
 			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
+			ArrayList<String> categories = crawlCategories();
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
@@ -108,11 +107,8 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			// Stock
 			Integer stock = null;
 
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+			JSONArray marketplace = assembleMarketplaceFromMap();
 
 			// Creating the product
 			Product product = new Product();
@@ -149,7 +145,10 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-name") != null ) return true;
+		if (doc.select(".product-name") != null ){
+			return true;
+		}
+		
 		return false;
 	}
 
@@ -160,25 +159,17 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Elements internalIdElements = document.select(".data-table tr");
+		Element internalIdElements = document.select(".product-shop .sku").first();
 
-		for(Element e : internalIdElements){
-			String ref = e.text().trim();
-
-			if(ref.toLowerCase().startsWith("ref")){
-				int x = ref.indexOf(":") + 1;
-
-				internalId = ref.substring(x).trim();
-			}
+		if(internalIdElements != null) {
+			internalId = internalIdElements.ownText().trim();
 		}
 
 		return internalId;
 	}
 
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+	private String crawlInternalPid() {
+		return null;
 	}
 
 	private String crawlName(Document document) {
@@ -194,11 +185,17 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element specialPrice = document.select(".precos .new").first();		
+		Element specialPrice = document.select(".special-price .price").first();		
 
 		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-		} 
+		} else {
+			Element priceElement = document.select(".price").first();
+			
+			if(priceElement != null) {
+				price = Float.parseFloat( priceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			}
+		}
 
 		return price;
 	}
@@ -213,11 +210,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return true;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
-	}
-
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap() {
 		return new JSONArray();
 	}
 
@@ -254,10 +247,8 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-
-		return categories;
+	private ArrayList<String> crawlCategories() {
+		return new ArrayList<>();
 	}
 
 	private String getCategory(ArrayList<String> categories, int n) {
@@ -273,8 +264,13 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		Element descriptionElement = document.select(".short-description").first();
 		Element princElement = document.select(".product-collateral").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (princElement != null) description = description + princElement.html();
+		if (descriptionElement != null){
+			description = description + descriptionElement.html();
+		}
+		
+		if (princElement != null){
+			description = description + princElement.html();
+		}
 
 		return description;
 	}
@@ -283,20 +279,19 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 
 			// bank ticket
-			Element boleto = doc.select(".boleto_bancario_view").first();
-			if(boleto != null){
-				Float bankTicket = MathCommonsMethods.parseFloat(boleto.ownText());
-				prices.insertBankTicket(bankTicket);
-			}
-
+			prices.insertBankTicket(price);
+			
+			// 1x card
+			installmentPriceMap.put(1, price);
+			
 			// card payment conditions
-			Elements installments = doc.select(".tabela1 td");
+			Elements installments = doc.select(".price-box > p[style]");
 			for(Element e : installments){
-				String text = e.text();
-				int x = text.indexOf("x");
+				String text = e.text().toLowerCase();
+				int x = text.indexOf('x');
 
 				Integer installment = Integer.parseInt(text.substring(0, x).trim());
 				Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
