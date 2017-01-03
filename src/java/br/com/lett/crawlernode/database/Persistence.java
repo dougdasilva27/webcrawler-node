@@ -3,12 +3,17 @@ package br.com.lett.crawlernode.database;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.bson.Document;
+import org.jooq.Condition;
+import org.jooq.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +22,6 @@ import com.mongodb.MongoWriteConcernException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
-import org.bson.Document;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
@@ -31,6 +34,8 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import dbmodels.Tables;
+import dbmodels.tables.Processed;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
@@ -57,8 +62,8 @@ public class Persistence {
 		// get crawled information
 		boolean available = product.getAvailable();
 		String url = product.getUrl();
-		String internal_id = product.getInternalId();
-		String internal_pid = product.getInternalPid();
+		String internalId = product.getInternalId();
+		String internalPid = product.getInternalPid();
 		String name = product.getName();
 		Float price = product.getPrice();
 		JSONObject prices = (product.getPrices() == null ? null : product.getPrices().getPricesJson());
@@ -66,7 +71,7 @@ public class Persistence {
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
 		String foto = product.getPrimaryImage();
-		String secondary_pics = product.getSecondaryImages();
+		String secondaryPics = product.getSecondaryImages();
 		String description = product.getDescription();
 		JSONArray marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
@@ -78,15 +83,15 @@ public class Persistence {
 		cat2 = sanitizeBeforePersist(cat2);
 		cat3 = sanitizeBeforePersist(cat3);
 		foto = sanitizeBeforePersist(foto);
-		secondary_pics = sanitizeBeforePersist(secondary_pics);
+		secondaryPics = sanitizeBeforePersist(secondaryPics);
 		description = sanitizeBeforePersist(description);
-		internal_id = sanitizeBeforePersist(internal_id);
-		internal_pid = sanitizeBeforePersist(internal_pid);
+		internalId = sanitizeBeforePersist(internalId);
+		internalPid = sanitizeBeforePersist(internalPid);
 
-		String marketplace_string = null;
+		String marketplaceString = null;
 
 		if(marketplace != null && marketplace.length() > 0) {
-			marketplace_string = sanitizeBeforePersist(marketplace.toString());
+			marketplaceString = sanitizeBeforePersist(marketplace.toString());
 		}
 
 
@@ -94,7 +99,7 @@ public class Persistence {
 		if((price == null || price.equals(0f)) && available) {
 			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
 			return;
-		} else if(internal_id == null || internal_id.isEmpty()) {
+		} else if(internalId == null || internalId.isEmpty()) {
 			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
 			return;
 		} else if(session.getMarket().getNumber() == 0) {
@@ -137,15 +142,15 @@ public class Persistence {
 
 			values += available;
 			values += ", " + session.getMarket().getNumber();
-			values += ", '" + internal_id + "'"; 
-			values += (internal_pid == null ? ", NULL" : ", '" + internal_pid + "'");
+			values += ", '" + internalId + "'"; 
+			values += (internalPid == null ? ", NULL" : ", '" + internalPid + "'");
 			values += ", '" + url + "'";			
 			values += ", " + price;
 			values += (prices == null ? ", NULL" : ", " + "'" + prices.toString() + "'" + "::json");
 			values += (stock == null ? ", NULL" : ", " + stock);
 			values += ", '" + name + "'";
 			values += (foto == null ? ", NULL" : ", '" + foto + "'");
-			values += (secondary_pics == null ? ", NULL" : ", '" + secondary_pics + "'");
+			values += (secondaryPics == null ? ", NULL" : ", '" + secondaryPics + "'");
 			values += (cat1 == null ? ", NULL" : ", '" + cat1 + "'");
 			values += (cat2 == null ? ", NULL" : ", '" + cat2 + "'");
 			values += (cat3 == null ? ", NULL" : ", '" + cat3 + "'");
@@ -155,9 +160,9 @@ public class Persistence {
 				values = values + ", '" + description + "'";
 			}
 
-			if(marketplace_string != null) {
+			if(marketplaceString != null) {
 				fields.append(", marketplace");
-				values = values + ", '" + marketplace_string + "'";
+				values = values + ", '" + marketplaceString + "'";
 			}
 
 			// store data on crawler and crawler_old tables
@@ -186,6 +191,71 @@ public class Persistence {
 			Main.dbManager.runSqlExecute(sqlExecuteCrawler.toString());
 
 			Logging.printLogDebug(logger, session, "Crawled product persisted with success.");
+			
+//			Crawler crawler = Tables.CRAWLER;
+//
+//			List<Field<?>> fields = new ArrayList<>();
+//			List<Object> values = new ArrayList<>();
+//			
+//			fields.add(crawler.AVAILABLE);
+//			values.add(available);
+//			
+//			fields.add(crawler.MARKET);
+//			values.add(session.getMarket().getNumber());
+//			
+//			fields.add(crawler.INTERNAL_ID);
+//			values.add(internalId);
+//			
+//			fields.add(crawler.INTERNAL_PID);
+//			values.add(internalPid);
+//			
+//			fields.add(crawler.URL);
+//			values.add(url);
+//			
+//			fields.add(crawler.STOCK);
+//			values.add(stock);
+//			
+//			fields.add(crawler.NAME);
+//			values.add(name);
+//			
+//			fields.add(crawler.PIC);
+//			values.add(foto);
+//			
+//			fields.add(crawler.SECONDARY_PICS);
+//			values.add(secondaryPics);
+//			
+//			fields.add(crawler.CAT1);
+//			values.add(cat1);
+//			
+//			fields.add(crawler.CAT2);
+//			values.add(cat2);
+//			
+//			fields.add(crawler.CAT3);
+//			values.add(cat3);
+//
+//			if(price != null) {
+//				fields.add(crawler.PRICE);
+//				values.add(MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
+//			}
+//			
+//			//TODO
+//			// Prices must be json 
+////			if(prices != null) {
+////				fields.add(crawler.PRICES);
+////				values.add(prices.toString());
+////			}
+//			
+//			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
+//				fields.add(crawler.DESCRIPTION);
+//				values.add(description);
+//			}
+//
+//			if(marketplaceString != null) {
+//				fields.add(crawler.MARKETPLACE);
+//				values.add(marketplaceString);
+//			}
+//			
+//			Main.dbManager.runInsertJooq(crawler, fields, values);
 
 		} catch (SQLException e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
@@ -194,6 +264,7 @@ public class Persistence {
 			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
 	}
+	
 	
 	public static void updateRating(RatingsReviews ratingReviews, Session session) {
 		String query = "UPDATE processed SET "
@@ -352,22 +423,37 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void setProcessedVoidTrue(ProcessedModel processed, Session session) {
-		StringBuilder query = new StringBuilder();
+//		StringBuilder query = new StringBuilder();
+//
+//		query.append("UPDATE processed SET void=true, ");
+//		query.append("available=false, ");
+//		query.append("status=" + "'void', ");
+//		query.append("marketplace=NULL, ");
+//		query.append("price=NULL ");
+//		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
+//		query.append("AND ");
+//		query.append("market=" + session.getMarket().getNumber());
 
-		query.append("UPDATE processed SET void=true, ");
-		query.append("available=false, ");
-		query.append("status=" + "'void', ");
-		query.append("marketplace=NULL, ");
-		query.append("price=NULL ");
-		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
-		query.append("AND ");
-		query.append("market=" + session.getMarket().getNumber());
-
+		Processed processedTable = Tables.PROCESSED;
+		
+		Map<Field<?>, Object> updateSets = new HashMap<>();
+		
+		updateSets.put(processedTable.AVAILABLE, false);
+		updateSets.put(processedTable.STATUS, "void");
+		updateSets.put(processedTable.MARKETPLACE, java.sql.Types.NULL);
+		updateSets.put(processedTable.PRICE, java.sql.Types.NULL);
+		
+		List<Condition> conditions = new ArrayList<>();
+		
+		conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+		
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
+			//Main.dbManager.runSqlExecute(query.toString());
+			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
-		} catch(SQLException e) {
+		} catch(Exception e) {
 			Logging.printLogError(logger, session, "Error updating processed product void.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
@@ -382,18 +468,28 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, Session session) {
-		StringBuilder query = new StringBuilder();
+//		StringBuilder query = new StringBuilder();
+//
+//		query.append("UPDATE processed set lrt=" + "'" + nowISO + "'" + " ");
+//		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
+//		query.append("AND ");
+//		query.append("market=" + session.getMarket());
 
-		query.append("UPDATE processed set lrt=" + "'" + nowISO + "'" + " ");
-		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
-		query.append("AND ");
-		query.append("market=" + session.getMarket());
-
+		Processed processedTable = Tables.PROCESSED;
+		
+		Map<Field<?>, Object> updateSets = new HashMap<>();
+		updateSets.put(processedTable.LRT, nowISO);
+		
+		List<Condition> conditions = new ArrayList<>();
+		conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+		
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
+			//Main.dbManager.runSqlExecute(query.toString());
+			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
-		} catch(SQLException e) {
+		} catch(Exception e) {
 			Logging.printLogError(logger, session, "Error updating processed product LRT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			
@@ -408,18 +504,28 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, Session session) {
-		StringBuilder query = new StringBuilder();
-
-		query.append("UPDATE processed set lmt=" + "'" + nowISO + "'" + " ");
-		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
-		query.append("AND ");
-		query.append("market=" + session.getMarket());
-
+//		StringBuilder query = new StringBuilder();
+//
+//		query.append("UPDATE processed set lmt=" + "'" + nowISO + "'" + " ");
+//		query.append("WHERE internal_id=" + "'" + session.getInternalId() + "'" + " ");
+//		query.append("AND ");
+//		query.append("market=" + session.getMarket());
+		
+		Processed processedTable = Tables.PROCESSED;
+		
+		Map<Field<?>, Object> updateSets = new HashMap<>();
+		updateSets.put(processedTable.LMT, nowISO);
+		
+		List<Condition> conditions = new ArrayList<>();
+		conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+		
 		try {
-			Main.dbManager.runSqlExecute(query.toString());
-			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
+			//Main.dbManager.runSqlExecute(query.toString());
+			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
+			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
-		} catch(SQLException e) {
+		} catch(Exception e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			

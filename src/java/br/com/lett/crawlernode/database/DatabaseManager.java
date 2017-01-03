@@ -5,8 +5,17 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.SQLDialect;
+import org.jooq.Table;
+import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +41,9 @@ public class DatabaseManager {
 	 * Postgresql connection
 	 */
 	public Connection conn = null;
+	
+	public DSLContext create;
+	
 
 	//public MongoClient mongoClientDataCrawler = null;
 	public MongoClient mongoClientBackendPanel = null;
@@ -70,6 +82,7 @@ public class DatabaseManager {
 	        if (pass != null) connectionProperties.put("password", pass);
 	        
 			conn = DriverManager.getConnection(url, connectionProperties);
+			create = DSL.using(conn, SQLDialect.POSTGRES_9_4);
 			
 			Logging.printLogDebug(logger, "Successfully connected to Postgres!");
 		} catch (SQLException e) {
@@ -152,6 +165,32 @@ public class DatabaseManager {
 	public void runSqlExecute(String sql) throws SQLException {
 		Statement sta = conn.createStatement();
 		sta.executeUpdate(sql);
+	}
+	
+	public void runInsertJooq(Table<?> table, List<Field<?>> fields, List<Object> values){
+		try {
+			create.insertInto(table)
+			.columns(fields)
+			.values(values)  
+			.execute();
+		} catch (DataAccessException e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+	}
+	
+	public void runUpdateJooq(Table<?> table, Map<Field<?>, Object> updateSets, List<Condition> conditions){
+		try {
+			create.update(table)
+			.set(updateSets)
+			.where(conditions)
+			.execute();
+		} catch (DataAccessException e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+	}
+	
+	public ResultSet runSelectJooq(Table<?> table, List<Field<?>> fields, List<Condition> conditions){
+		return create.select(fields).from(table).where(conditions).fetchResultSet();
 	}
 
 }
