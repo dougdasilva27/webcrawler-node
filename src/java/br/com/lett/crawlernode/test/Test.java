@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.test;
 
-import java.io.BufferedInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -27,7 +19,6 @@ import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.util.Logging;
 
 /**
  * 
@@ -103,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.angeloni.com.br/eletro/p/radio-relogio-digital-philco-amfm-ph75-3101491", market);
+			Session session = SessionFactory.createSession("http://www.shoptime.com.br/produto/125194030/ar-condicionado-split-samsung-12.000-btus-frio-220v", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			if (task != null) {
