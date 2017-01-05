@@ -2,17 +2,20 @@ package br.com.lett.crawlernode.processor.base;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.jooq.Condition;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +27,8 @@ import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import dbmodels.Tables;
+import dbmodels.tables.Processed;
 
 public class Processor {
 
@@ -51,8 +56,8 @@ public class Processor {
 		// get crawled information
 		boolean available = product.getAvailable();
 		String url = product.getUrl();
-		String internal_id = product.getInternalId();
-		String internal_pid = product.getInternalPid();
+		String internalId = product.getInternalId();
+		String internalPid = product.getInternalPid();
 		String name = product.getName();
 		Float price = product.getPrice();
 		Prices prices = product.getPrices();
@@ -60,7 +65,7 @@ public class Processor {
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
 		String foto = product.getPrimaryImage();
-		String secondary_pics = product.getSecondaryImages();
+		String secondaryPics = product.getSecondaryImages();
 		String description = product.getDescription();
 		JSONArray marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
@@ -72,21 +77,17 @@ public class Processor {
 		cat2 = sanitizeBeforePersist(cat2);
 		cat3 = sanitizeBeforePersist(cat3);
 		foto = sanitizeBeforePersist(foto);
-		secondary_pics = sanitizeBeforePersist(secondary_pics);
+		secondaryPics = sanitizeBeforePersist(secondaryPics);
 		description = sanitizeBeforePersist(description);
-		internal_id = sanitizeBeforePersist(internal_id);
-		internal_pid = sanitizeBeforePersist(internal_pid);
-
-		String marketplace_string = null;
-
-		if(marketplace != null && marketplace.length() > 0) {
-			marketplace_string = sanitizeBeforePersist(marketplace.toString());
-		}
+		internalId = sanitizeBeforePersist(internalId);
+		internalPid = sanitizeBeforePersist(internalPid);
 
 
 		// checking fields
-		boolean checkResult = checkFields(price, available, internal_id, url, name, session);
-		if (checkResult == false) return null;
+		boolean checkResult = checkFields(price, available, internalId, url, name, session);
+		if (!checkResult) {
+			return null;
+		}
 
 		if(price != null && price == 0.0) {
 			price = null;
@@ -116,10 +117,10 @@ public class Processor {
 				newProcessedProduct.setPic(foto);
 				newProcessedProduct.setPrice(price);
 				newProcessedProduct.setPrices(prices);
-				newProcessedProduct.setSecondary_pics(secondary_pics);
+				newProcessedProduct.setSecondary_pics(secondaryPics);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
-				newProcessedProduct.setInternalPid(internal_pid);
+				newProcessedProduct.setInternalPid(internalPid);
 
 			}
 
@@ -127,8 +128,8 @@ public class Processor {
 			if(newProcessedProduct == null) {
 				newProcessedProduct = new ProcessedModel(
 						null, 
-						internal_id, 
-						internal_pid, 
+						internalId, 
+						internalPid, 
 						name, 
 						null, 
 						null, 
@@ -138,7 +139,7 @@ public class Processor {
 						null, 
 						null, 
 						foto, 
-						secondary_pics, 
+						secondaryPics, 
 						cat1, 
 						cat2, 
 						cat3, 
@@ -161,7 +162,7 @@ public class Processor {
 						false, 
 						stock, 
 						null, 
-						null);
+						marketplace);
 			}
 
 			// run the processor for the new model
@@ -177,7 +178,9 @@ public class Processor {
 			newProcessedProduct.setVoid(false);
 
 			// update LAT
-			if(available) newProcessedProduct.setLat(nowISO);
+			if(available){
+				newProcessedProduct.setLat(nowISO);
+			}
 
 			// update status
 			updateStatus(newProcessedProduct);
@@ -212,14 +215,14 @@ public class Processor {
 	private static boolean checkFields(
 			Float price,
 			boolean available,
-			String internal_id,
+			String internalId,
 			String url,
 			String name,
 			Session session) {
 		if((price == null || price.equals(0f)) && available) {
 			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
 			return false;
-		} else if(internal_id == null || internal_id.isEmpty()) {
+		} else if(internalId == null || internalId.isEmpty()) {
 			Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
 			return false;
 		} else if(session.getMarket().getNumber() == 0) {
@@ -310,7 +313,10 @@ public class Processor {
 			
 			JSONObject behaviourStart = lastBehaviorBeforeToday;
 			behaviourStart.put("date", startOfDayISO);
-			if(!behaviourStart.has("status")) behaviourStart.put("status", "void");
+			
+			if(!behaviourStart.has("status")) {
+				behaviourStart.put("status", "void");
+			}
 
 			if(behaviourStart.has("price") && behaviourStart.getDouble("price") == 0.0) {
 				behaviourStart.remove("price");
@@ -326,9 +332,18 @@ public class Processor {
 		behaviour.put("stock", stock);
 		behaviour.put("available", available);
 		behaviour.put("status", newProcessedProduct.getStatus());
-		if(price != null) behaviour.put("price", price);
-		if (newProcessedProduct.getPrices() != null) behaviour.put("prices", newProcessedProduct.getPrices().getPricesJson());
-		if(marketplace != null && marketplace.length() > 0) behaviour.put("marketplace", marketplace);
+		
+		if(price != null) {
+			behaviour.put("price", price);
+		}
+		
+		if (newProcessedProduct.getPrices() != null) {
+			behaviour.put("prices", newProcessedProduct.getPrices().getPricesJson());
+		}
+		
+		if(marketplace != null && marketplace.length() > 0) {
+			behaviour.put("marketplace", marketplace);
+		}
 		
 		newBehaviorTreeMap.put(nowISO, behaviour);
 
@@ -338,9 +353,11 @@ public class Processor {
 		// mantendo apenas os que tem os campos obrigatórios
 		for(Entry<String, JSONObject> e: newBehaviorTreeMap.entrySet()) {
 			String dateString = e.getKey();
-			DateTime dateTime = null;
+			DateTime dateTime;
 
-			if(!dateString.contains(".")) dateString = dateString + ".000";
+			if(!dateString.contains(".")){
+				dateString = dateString + ".000";
+			}
 
 			try {
 				dateTime = f.parseDateTime(dateString);
@@ -423,101 +440,104 @@ public class Processor {
 		 * But there are some cases where we don't have the internalId in the session, but the product
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
-		String internal_id = product.getInternalId();
-		if (internal_id == null) {
-			internal_id = session.getInternalId();
+		String internalId = product.getInternalId();
+		if (internalId == null) {
+			internalId = session.getInternalId();
 		}
 
 		// sanitize
-		internal_id = sanitizeBeforePersist(internal_id);
+		internalId = sanitizeBeforePersist(internalId);
 
-		if (internal_id != null) {
+		if (internalId != null) {
 
 			try {
+				Processed processedTable = Tables.PROCESSED;
 				
-//				Result<ProcessedRecord> result = DSL.using(Main.dbManager.conn, SQLDialect.POSTGRES_9_5)
-//				.selectFrom(Processed.PROCESSED)
-//				.where( Processed.PROCESSED.MARKET.equal(session.getMarket().getNumber()), 
-//						Processed.PROCESSED.INTERNAL_ID.equal(internal_id))
-//				.fetch();
-//				
-//				for (ProcessedRecord processed : result) {
-//					JSONObject digitalContent;
-//					try {
-//						digitalContent = new JSONObject(processed.get(Processed.PROCESSED.DIGITAL_CONTENT));
-//					} catch (Exception e) {	
-//						digitalContent = null; 
-//					}
-//				}
-
-				// reading current information of processed product
-				StringBuilder query = new StringBuilder();
-				query.append("SELECT * FROM processed WHERE market = ");
-				query.append(session.getMarket().getNumber());
-				query.append(" AND internal_id = '");
-				query.append(internal_id);
-				query.append("'");
-
-				ResultSet rs = null;
-
-				rs = Main.dbManager.runSqlConsult(query.toString());
+				List<Condition> conditions = new ArrayList<>();
+				conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
+						.and(processedTable.INTERNAL_ID.equal(internalId)));
+				
+				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
 
 				while(rs.next()) {
-
+					
 					JSONObject digitalContent;
-					try {
-						digitalContent = new JSONObject(rs.getString("digital_content"));
-					} catch (Exception e) {	
-						digitalContent = null; 
+					if(rs.getString("digital_content") != null) {
+						try {
+							digitalContent = new JSONObject(rs.getString("digital_content"));
+						} catch (JSONException e) {
+							digitalContent = null;
+						}
+					} else {
+						digitalContent = null;
 					}
-
+					
 					JSONObject changes;
-					try { 	
-						changes = new JSONObject(rs.getString("changes"));
-					} catch (Exception e) {	
-						changes = null; 
+					if(rs.getString("changes") != null) {
+						try {
+							changes = new JSONObject(rs.getString("changes"));
+						} catch (JSONException e) {
+							changes = null;
+						}
+					} else {
+						changes = null;
 					}
+					
 
 					JSONArray similars;
-					try { 	
-						similars = new JSONArray(rs.getString("similars"));
-					} catch (Exception e) {	
-						similars = null; 
+					if(rs.getString("similars") != null) {
+						try {
+							similars = new JSONArray(rs.getString("similars"));
+						} catch (JSONException e) {
+							similars = null;
+						}
+					} else {
+						similars = null;
 					}
 
 					JSONArray behaviour;
-					try { 	
-						behaviour = new JSONArray(rs.getString("behaviour"));
-					} catch (Exception e) {	
-						behaviour = null; 
+					if(rs.getString("behaviour") != null) {
+						try {
+							behaviour = new JSONArray(rs.getString("behaviour"));
+						} catch (JSONException e) {
+							behaviour = null;
+						}
+					} else {
+						behaviour = null;
 					}
 
-					JSONArray actual_marketplace;
-					try { 	actual_marketplace = new JSONArray(rs.getString("marketplace"));
-					} catch (Exception e) {	
-						actual_marketplace = null; 
+					JSONArray actualMarketplace;
+					if(rs.getString("marketplace") != null) {
+						try {
+							actualMarketplace = new JSONArray(rs.getString("marketplace"));
+						} catch (JSONException e) {
+							actualMarketplace = null;
+						}
+					} else {
+						actualMarketplace = null;
 					}
-
-					Integer actual_stock;
-					try { 	
-						actual_stock = rs.getInt("stock"); if(actual_stock == 0) actual_stock = null;
-					} catch (Exception e) {	
-						actual_stock = null; 
-					}
-
-					Float actual_price;
-					try { 	
-						actual_price = rs.getFloat("price"); if(actual_price == 0) actual_price = null;
-					} catch (Exception e) {	
-						actual_price = null; 
-					}
-
+				
 					JSONObject actualPricesJson;
-					try {
-						actualPricesJson = new JSONObject(rs.getString("prices"));
-					} catch (Exception e) {
+					if(rs.getString("prices") != null) {
+						try {
+							actualPricesJson = new JSONObject(rs.getString("prices"));
+						} catch (JSONException e) {
+							actualPricesJson = null;
+						}
+					} else {
 						actualPricesJson = null;
 					}
+			
+					Integer actualStock = rs.getInt("stock");
+					if(actualStock == 0) {
+						actualStock = null;
+					}
+					
+					Float actualPrice = rs.getFloat("price"); 
+					if(actualPrice == 0) {
+						actualPrice = null;
+					}
+					
 					Prices actualPrices = new Prices();
 					actualPrices.setPricesJson(actualPricesJson);
 
@@ -548,17 +568,16 @@ public class Processor {
 							rs.getString("status"), 
 							changes,
 							rs.getString("original_description"), 
-							actual_price,
+							actualPrice,
 							actualPrices,
 							digitalContent, 
 							rs.getLong("lett_id"), 
 							similars, 
 							rs.getBoolean("available"), 
 							rs.getBoolean("void"), 
-							actual_stock, 
+							actualStock, 
 							behaviour, 
-							actual_marketplace);
-
+							actualMarketplace);
 
 					return actualProcessedProduct;
 

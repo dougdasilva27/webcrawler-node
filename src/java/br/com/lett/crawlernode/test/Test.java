@@ -94,7 +94,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.shoptime.com.br/produto/125194030/ar-condicionado-split-samsung-12.000-btus-frio-220v", market);
+			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/123683569", market);
 
 			Runnable task = TaskFactory.createTask(session);
 			if (task != null) {

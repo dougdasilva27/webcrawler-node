@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -12,6 +13,7 @@ import java.util.Properties;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Query;
 import org.jooq.SQLDialect;
 import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
@@ -77,9 +79,15 @@ public class DatabaseManager {
 			// setting connection properties
 			Properties connectionProperties = new Properties();
 			
-			connectionProperties.put("tcpKeepAlive", "true");			
-			if (userName != null) connectionProperties.put("user", userName);
-	        if (pass != null) connectionProperties.put("password", pass);
+			connectionProperties.put("tcpKeepAlive", "true");	
+			
+			if (userName != null) {
+				connectionProperties.put("user", userName);
+			}
+			
+	        if (pass != null) {
+	        	connectionProperties.put("password", pass);
+	        }
 	        
 			conn = DriverManager.getConnection(url, connectionProperties);
 			create = DSL.using(conn, SQLDialect.POSTGRES_9_4);
@@ -167,6 +175,12 @@ public class DatabaseManager {
 		sta.executeUpdate(sql);
 	}
 	
+	/**
+	 * Simple insert
+	 * @param table
+	 * @param fields
+	 * @param values
+	 */
 	public void runInsertJooq(Table<?> table, List<Field<?>> fields, List<Object> values){
 		try {
 			create.insertInto(table)
@@ -178,10 +192,71 @@ public class DatabaseManager {
 		}
 	}
 	
-	public void runUpdateJooq(Table<?> table, Map<Field<?>, Object> updateSets, List<Condition> conditions){
+	/**
+	 * Create a batch for insert
+	 * 
+	 * First pass the list of tables that will be inserted
+	 * Second pass a map of the tables with their fields
+	 * Third to pass a map of the tables with their values
+	 * 
+	 * Then is created a lits of Queries and batch is created and executed
+	 * 
+	 * @param tables
+	 * @param fieldsMap
+	 * @param valuesMap
+	 */
+	public void runBatchInsertJooq(List<Table<?>> tables, Map<Table<?>,List<Field<?>>> fieldsMap, Map<Table<?>,List<Object>> valuesMap){
+		try {
+			List<Query> queries = new ArrayList<>();
+			
+			for(Table<?> table : tables){
+				List<Field<?>> fields = fieldsMap.get(table);
+				List<Object> values = valuesMap.get(table);
+				
+				queries.add(create.insertInto(table)
+				.columns(fields)
+				.values(values)); 
+			}
+			
+			create.batch(queries).execute();
+			
+		} catch (DataAccessException e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+	}
+	
+	/**
+	 * Pass the id field to return its value 
+	 * @param table
+	 * @param fields
+	 * @param values
+	 * @param fieldReturning
+	 * @return
+	 */
+	public long runInsertJooqReturningID(Table<?> table, List<Field<?>> fields, List<Object> values, Field<?> fieldReturning){
+		try {
+			return create.insertInto(table)
+			.columns(fields)
+			.values(values)
+			.returning(fieldReturning)
+			.execute();
+		} catch (DataAccessException e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+		
+		return 0;
+	}
+	
+	/**
+	 * Simple update
+	 * @param table
+	 * @param updateMap (Map<Field(column), Object(value)>)
+	 * @param conditions
+	 */
+	public void runUpdateJooq(Table<?> table, Map<Field<?>, Object> updateMap, List<Condition> conditions){
 		try {
 			create.update(table)
-			.set(updateSets)
+			.set(updateMap)
 			.where(conditions)
 			.execute();
 		} catch (DataAccessException e) {
@@ -189,8 +264,21 @@ public class DatabaseManager {
 		}
 	}
 	
+	/**
+	 * Simple select
+	 * 
+	 * if fields == null, will return all fileds of table
+	 * @param table
+	 * @param fields
+	 * @param conditions
+	 * @return
+	 */
 	public ResultSet runSelectJooq(Table<?> table, List<Field<?>> fields, List<Condition> conditions){
-		return create.select(fields).from(table).where(conditions).fetchResultSet();
+		if(fields != null){
+			return create.select(fields).from(table).where(conditions).fetchResultSet();
+		}
+		
+		return create.select().from(table).where(conditions).fetchResultSet();
 	}
 
 }
