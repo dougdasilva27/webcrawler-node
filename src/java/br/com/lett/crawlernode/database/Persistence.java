@@ -9,6 +9,7 @@ import java.util.Map;
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Record;
 import org.jooq.Table;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -429,7 +430,14 @@ public class Persistence {
 				}
 				
 				// get processeed id of new processed product
-				id = Main.dbManager.runInsertJooqReturningID(processedTable, fields, values, processedTable.ID);
+				Record recordId = Main.dbManager.runInsertJooqReturningID(processedTable, fields, values, processedTable.ID);
+				
+				if(recordId != null) {
+					id = recordId.get(processedTable.ID);
+				} else {
+					id = (long) 0;
+				}
+				
 				if (persistenceResult instanceof ProcessedModelPersistenceResult && id != 0) {
 					((ProcessedModelPersistenceResult)persistenceResult).addCreatedId(id);
 				}

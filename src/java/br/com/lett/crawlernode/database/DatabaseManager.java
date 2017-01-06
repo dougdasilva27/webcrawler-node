@@ -14,6 +14,7 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.Record;
 import org.jooq.SQLDialect;
 import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
@@ -233,18 +234,18 @@ public class DatabaseManager {
 	 * @param fieldReturning
 	 * @return
 	 */
-	public long runInsertJooqReturningID(Table<?> table, List<Field<?>> fields, List<Object> values, Field<?> fieldReturning){
+	public Record runInsertJooqReturningID(Table<?> table, List<Field<?>> fields, List<Object> values, Field<?> fieldReturning){
 		try {
 			return create.insertInto(table)
 			.columns(fields)
 			.values(values)
 			.returning(fieldReturning)
-			.execute();
+			.fetchOne();
 		} catch (DataAccessException e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 		
-		return 0;
+		return null;
 	}
 	
 	/**
