@@ -104,7 +104,7 @@ public class Persistence {
 
 		// checking fields
 		if((price == null || price.equals(0f)) && available) {
-			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponÃ­vel mas com campo vazio: price");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
 			return;
 		} else if(internalId == null || internalId.isEmpty()) {
 			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
@@ -508,12 +508,15 @@ public class Persistence {
 				
 				// get the id of the processed product that already exists
 				id = newProcessedProduct.getId();
+				
+				List<Condition> conditions = new ArrayList<>();
+				conditions.add(processedTable.ID.equal(id));
 
 				if (persistenceResult instanceof ProcessedModelPersistenceResult) {
 					((ProcessedModelPersistenceResult)persistenceResult).addModifiedId(id);
 				}
 
-				Main.dbManager.runSqlExecute(query);
+				Main.dbManager.runUpdateJooq(processedTable, updateMap, conditions);
 			}
 
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
