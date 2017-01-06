@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.database;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -104,7 +103,7 @@ public class Persistence {
 
 		// checking fields
 		if((price == null || price.equals(0f)) && available) {
-			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
+			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponï¿½vel mas com campo vazio: price");
 			return;
 		} else if(internalId == null || internalId.isEmpty()) {
 			Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
@@ -318,8 +317,6 @@ public class Persistence {
 		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
 		Long id;
 
-		String query = "";
-
 		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().getPricesJson();
 
 		Processed processedTable = Tables.PROCESSED;
@@ -521,7 +518,7 @@ public class Persistence {
 
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error updating processed product.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
