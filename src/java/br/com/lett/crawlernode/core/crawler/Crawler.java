@@ -525,7 +525,7 @@ public class Crawler implements Runnable {
 			// set previous processed as void
 			if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
 				Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
-				Persistence.setProcessedVoidTrue(previousProcessedProduct, session);
+				Persistence.setProcessedVoidTrue(session);
 			}
 		}
 

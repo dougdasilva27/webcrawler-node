@@ -182,11 +182,10 @@ public class DatabaseManager {
 	 * @param fields
 	 * @param values
 	 */
-	public void runInsertJooq(Table<?> table, List<Field<?>> fields, List<Object> values){
+	public void runInsertJooq(Table<?> table, Map<Field<?>, Object> insertMap){
 		try {
 			create.insertInto(table)
-			.columns(fields)
-			.values(values)  
+			.values(insertMap)  
 			.execute();
 		} catch (DataAccessException e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
@@ -206,17 +205,15 @@ public class DatabaseManager {
 	 * @param fieldsMap
 	 * @param valuesMap
 	 */
-	public void runBatchInsertJooq(List<Table<?>> tables, Map<Table<?>,List<Field<?>>> fieldsMap, Map<Table<?>,List<Object>> valuesMap){
+	public void runBatchInsertJooq(List<Table<?>> tables, Map<Table<?>,Map<Field<?>, Object>> tableMap){
 		try {
 			List<Query> queries = new ArrayList<>();
 			
 			for(Table<?> table : tables){
-				List<Field<?>> fields = fieldsMap.get(table);
-				List<Object> values = valuesMap.get(table);
+				Map<Field<?>, Object> insertMap = tableMap.get(table);
 				
 				queries.add(create.insertInto(table)
-				.columns(fields)
-				.values(values)); 
+				.values(insertMap)); 
 			}
 			
 			create.batch(queries).execute();
@@ -234,11 +231,10 @@ public class DatabaseManager {
 	 * @param fieldReturning
 	 * @return
 	 */
-	public Record runInsertJooqReturningID(Table<?> table, List<Field<?>> fields, List<Object> values, Field<?> fieldReturning){
+	public Record runInsertJooqReturningID(Table<?> table,  Map<Field<?>, Object> insertMap, Field<?> fieldReturning){
 		try {
 			return create.insertInto(table)
-			.columns(fields)
-			.values(values)
+			.values(insertMap)
 			.returning(fieldReturning)
 			.fetchOne();
 		} catch (DataAccessException e) {
@@ -255,7 +251,7 @@ public class DatabaseManager {
 	 * @param conditions
 	 */
 	public void runUpdateJooq(Table<?> table, Map<Field<?>, Object> updateMap, List<Condition> conditions){
-		try {
+		try {			
 			create.update(table)
 			.set(updateMap)
 			.where(conditions)

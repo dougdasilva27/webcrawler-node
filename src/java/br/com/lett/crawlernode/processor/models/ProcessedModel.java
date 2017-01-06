@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoDatabase;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;

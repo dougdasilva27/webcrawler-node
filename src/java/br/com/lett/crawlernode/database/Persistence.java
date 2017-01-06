@@ -77,7 +77,7 @@ public class Persistence {
 		String cat1 = product.getCategory1();
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
-		String foto = product.getPrimaryImage();
+		String primaryPic = product.getPrimaryImage();
 		String secondaryPics = product.getSecondaryImages();
 		String description = product.getDescription();
 		JSONArray marketplace = product.getMarketplace();
@@ -89,7 +89,7 @@ public class Persistence {
 		cat1 = sanitizeBeforePersist(cat1);
 		cat2 = sanitizeBeforePersist(cat2);
 		cat3 = sanitizeBeforePersist(cat3);
-		foto = sanitizeBeforePersist(foto);
+		primaryPic = sanitizeBeforePersist(primaryPic);
 		secondaryPics = sanitizeBeforePersist(secondaryPics);
 		description = sanitizeBeforePersist(description);
 		internalId = sanitizeBeforePersist(internalId);
@@ -132,125 +132,69 @@ public class Persistence {
 			// Create a fields and values of crawler
 			Crawler crawler = Tables.CRAWLER;
 
-			List<Field<?>> fieldsCrawler = new ArrayList<>();
-			List<Object> valuesCrawler = new ArrayList<>();
-
-			fieldsCrawler.add(crawler.AVAILABLE);
-			valuesCrawler.add(available);
-
-			fieldsCrawler.add(crawler.MARKET);
-			valuesCrawler.add(session.getMarket().getNumber());
-
-			fieldsCrawler.add(crawler.INTERNAL_ID);
-			valuesCrawler.add(internalId);
-
-			fieldsCrawler.add(crawler.INTERNAL_PID);
-			valuesCrawler.add(internalPid);
-
-			fieldsCrawler.add(crawler.URL);
-			valuesCrawler.add(url);
-
-			fieldsCrawler.add(crawler.STOCK);
-			valuesCrawler.add(stock);
-
-			fieldsCrawler.add(crawler.NAME);
-			valuesCrawler.add(name);
-
-			fieldsCrawler.add(crawler.PIC);
-			valuesCrawler.add(foto);
-
-			fieldsCrawler.add(crawler.SECONDARY_PICS);
-			valuesCrawler.add(secondaryPics);
-
-			fieldsCrawler.add(crawler.CAT1);
-			valuesCrawler.add(cat1);
-
-			fieldsCrawler.add(crawler.CAT2);
-			valuesCrawler.add(cat2);
-
-			fieldsCrawler.add(crawler.CAT3);
-			valuesCrawler.add(cat3);
-
+			Map<Field<?>, Object> insertMapCrawler= new HashMap<>();
+			
+			insertMapCrawler.put(crawler.AVAILABLE, available);
+			insertMapCrawler.put(crawler.MARKET, session.getMarket().getNumber());
+			insertMapCrawler.put(crawler.INTERNAL_ID, internalId);
+			insertMapCrawler.put(crawler.INTERNAL_PID, internalPid);
+			insertMapCrawler.put(crawler.URL, url);
+			insertMapCrawler.put(crawler.STOCK, stock);
+			insertMapCrawler.put(crawler.NAME, name);
+			insertMapCrawler.put(crawler.PIC, secondaryPics);
+			insertMapCrawler.put(crawler.CAT1, cat1);
+			insertMapCrawler.put(crawler.CAT2, cat2);
+			insertMapCrawler.put(crawler.CAT3, cat3);
+			insertMapCrawler.put(crawler.PIC, primaryPic);
+			
 			if(price != null) {
-				fieldsCrawler.add(crawler.PRICE);
-				valuesCrawler.add(MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
+				insertMapCrawler.put(crawler.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
 			}
 
 			if(prices != null) {
-				fieldsCrawler.add(crawler.PRICES);
-				valuesCrawler.add(CONVERT_STRING_GSON.converter().from(prices.toString()));
+				insertMapCrawler.put(crawler.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 			}
 
 			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
-				fieldsCrawler.add(crawler.DESCRIPTION);
-				valuesCrawler.add(description);
+				insertMapCrawler.put(crawler.DESCRIPTION, description);
 			}
 
 			if(marketplaceString != null) {
-				fieldsCrawler.add(crawler.MARKETPLACE);
-				valuesCrawler.add(marketplaceString);
+				insertMapCrawler.put(crawler.MARKETPLACE, marketplaceString);
 			}
 			
 			// Create a fields and values of crawler_old
 			CrawlerOld crawlerOld = Tables.CRAWLER_OLD;
 
-			List<Field<?>> fieldsCrawlerOld = new ArrayList<>();
-			List<Object> valuesCrawlerOld = new ArrayList<>();
-
-			fieldsCrawlerOld.add(crawlerOld.AVAILABLE);
-			valuesCrawlerOld.add(available);
-
-			fieldsCrawlerOld.add(crawlerOld.MARKET);
-			valuesCrawlerOld.add(session.getMarket().getNumber());
-
-			fieldsCrawlerOld.add(crawlerOld.INTERNAL_ID);
-			valuesCrawlerOld.add(internalId);
-
-			fieldsCrawlerOld.add(crawlerOld.INTERNAL_PID);
-			valuesCrawlerOld.add(internalPid);
-
-			fieldsCrawlerOld.add(crawlerOld.URL);
-			valuesCrawlerOld.add(url);
-
-			fieldsCrawlerOld.add(crawlerOld.STOCK);
-			valuesCrawlerOld.add(stock);
-
-			fieldsCrawlerOld.add(crawlerOld.NAME);
-			valuesCrawlerOld.add(name);
-
-			fieldsCrawlerOld.add(crawlerOld.PIC);
-			valuesCrawlerOld.add(foto);
-
-			fieldsCrawlerOld.add(crawlerOld.SECONDARY_PICS);
-			valuesCrawlerOld.add(secondaryPics);
-
-			fieldsCrawlerOld.add(crawlerOld.CAT1);
-			valuesCrawlerOld.add(cat1);
-
-			fieldsCrawlerOld.add(crawlerOld.CAT2);
-			valuesCrawlerOld.add(cat2);
-
-			fieldsCrawlerOld.add(crawlerOld.CAT3);
-			valuesCrawlerOld.add(cat3);
-
+			Map<Field<?>, Object> insertMapCrawlerOld = new HashMap<>();
+			
+			insertMapCrawlerOld.put(crawlerOld.AVAILABLE, available);
+			insertMapCrawlerOld.put(crawlerOld.MARKET, session.getMarket().getNumber());
+			insertMapCrawlerOld.put(crawlerOld.INTERNAL_ID, internalId);
+			insertMapCrawlerOld.put(crawlerOld.INTERNAL_PID, internalPid);
+			insertMapCrawlerOld.put(crawlerOld.URL, url);
+			insertMapCrawlerOld.put(crawlerOld.STOCK, stock);
+			insertMapCrawlerOld.put(crawlerOld.NAME, name);
+			insertMapCrawlerOld.put(crawlerOld.PIC, secondaryPics);
+			insertMapCrawlerOld.put(crawlerOld.CAT1, cat1);
+			insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
+			insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
+			insertMapCrawlerOld.put(crawlerOld.PIC, primaryPic);
+			
 			if(price != null) {
-				fieldsCrawlerOld.add(crawlerOld.PRICE);
-				valuesCrawlerOld.add(MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
+				insertMapCrawlerOld.put(crawlerOld.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
 			}
 
 			if(prices != null) {
-				fieldsCrawlerOld.add(crawlerOld.PRICES);
-				valuesCrawlerOld.add(CONVERT_STRING_GSON.converter().from(prices.toString()));
+				insertMapCrawlerOld.put(crawlerOld.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 			}
 
 			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
-				fieldsCrawlerOld.add(crawlerOld.DESCRIPTION);
-				valuesCrawlerOld.add(description);
+				insertMapCrawlerOld.put(crawlerOld.DESCRIPTION, description);
 			}
 
 			if(marketplaceString != null) {
-				fieldsCrawlerOld.add(crawlerOld.MARKETPLACE);
-				valuesCrawlerOld.add(marketplaceString);
+				insertMapCrawlerOld.put(crawlerOld.MARKETPLACE, marketplaceString);
 			}
 			
 			// List of tables for batch insert
@@ -259,16 +203,11 @@ public class Persistence {
 			tables.add(crawlerOld);
 			
 			// Map of Table - FieldsOfTable
-			Map<Table<?>,List<Field<?>>> fieldsMap = new HashMap<>();
-			fieldsMap.put(crawler, fieldsCrawler);
-			fieldsMap.put(crawlerOld, fieldsCrawlerOld);
-			
-			// Map of Table - ValuesOfTable
-			Map<Table<?>,List<Object>> valuesMap = new HashMap<>();
-			valuesMap.put(crawler, valuesCrawler);
-			valuesMap.put(crawlerOld, valuesCrawlerOld);
+			Map<Table<?>,Map<Field<?>, Object>> tablesMap = new HashMap<>();
+			tablesMap.put(crawler, insertMapCrawler);
+			tablesMap.put(crawlerOld, insertMapCrawlerOld);
 
-			Main.dbManager.runBatchInsertJooq(tables, fieldsMap, valuesMap);
+			Main.dbManager.runBatchInsertJooq(tables, tablesMap);
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
@@ -321,116 +260,65 @@ public class Persistence {
 		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().getPricesJson();
 
 		Processed processedTable = Tables.PROCESSED;
-
+		
 		try {
 			if(newProcessedProduct.getId() == null) {
-				List<Field<?>> fields = new ArrayList<>();
-
-				fields.add(processedTable.INTERNAL_ID);
-				fields.add(processedTable.INTERNAL_PID);
-				fields.add(processedTable.ORIGINAL_NAME);
-				fields.add(processedTable.CLASS);
-				fields.add(processedTable.BRAND);
-				fields.add(processedTable.RECIPIENT);
-				fields.add(processedTable.QUANTITY);
-				fields.add(processedTable.UNIT);
-				fields.add(processedTable.EXTRA);
-				fields.add(processedTable.PIC);
-				fields.add(processedTable.URL);
-				fields.add(processedTable.MARKET);
-				fields.add(processedTable.ECT);
-				fields.add(processedTable.LMT);
-				fields.add(processedTable.LAT);
-				fields.add(processedTable.LRT);
-				fields.add(processedTable.LMS);
-				fields.add(processedTable.STATUS);
-				fields.add(processedTable.AVAILABLE);
-				fields.add(processedTable.VOID);
-				fields.add(processedTable.CAT1);
-				fields.add(processedTable.CAT2);
-				fields.add(processedTable.CAT3);
-				fields.add(processedTable.MULTIPLIER);
-				fields.add(processedTable.ORIGINAL_DESCRIPTION);
-				fields.add(processedTable.PRICE);
-				fields.add(processedTable.PRICES);
-				fields.add(processedTable.STOCK);
-				fields.add(processedTable.SECONDARY_PICS);
-				fields.add(processedTable.CHANGES);
-				fields.add(processedTable.DIGITAL_CONTENT);
-				fields.add(processedTable.MARKETPLACE);
-				fields.add(processedTable.BEHAVIOUR);
-				fields.add(processedTable.SIMILARS);
 				
-				List<Object> values = new ArrayList<>();
-
-				values.add(newProcessedProduct.getInternalId());
-				values.add(newProcessedProduct.getInternalPid());
-				values.add(newProcessedProduct.getOriginalName());
-				values.add(newProcessedProduct.get_class());
-				values.add(newProcessedProduct.getBrand());
-				values.add(newProcessedProduct.getRecipient());
-				values.add(newProcessedProduct.getQuantity());
-				values.add(newProcessedProduct.getUnit());
-				values.add(newProcessedProduct.getExtra());
-				values.add(newProcessedProduct.getPic());
-				values.add(newProcessedProduct.getUrl());
-				values.add(newProcessedProduct.getMarket());
-				values.add(newProcessedProduct.getEct());
-				values.add(newProcessedProduct.getLmt());
-				values.add(newProcessedProduct.getLat());
-				values.add(newProcessedProduct.getLrt());
-				values.add(newProcessedProduct.getLms());
-				values.add(newProcessedProduct.getStatus());
-				values.add(newProcessedProduct.getAvailable());
-				values.add(newProcessedProduct.getVoid());
-				values.add(newProcessedProduct.getCat1());
-				values.add(newProcessedProduct.getCat2());
-				values.add(newProcessedProduct.getCat3());
-				values.add(newProcessedProduct.getMultiplier());
-				values.add(newProcessedProduct.getOriginalDescription());
-				values.add(newProcessedProduct.getPrice());
+				Map<Field<?>, Object> insertMap = new HashMap<>();
+				
+				insertMap.put(processedTable.LAT, newProcessedProduct.getLat());
+				insertMap.put(processedTable.LRT, newProcessedProduct.getLrt());
+				insertMap.put(processedTable.LMS, newProcessedProduct.getLms());
+				insertMap.put(processedTable.STATUS, newProcessedProduct.getStatus());
+				insertMap.put(processedTable.AVAILABLE, newProcessedProduct.getAvailable());
+				insertMap.put(processedTable.VOID, newProcessedProduct.getVoid());
+				insertMap.put(processedTable.CAT1, newProcessedProduct.getCat1());
+				insertMap.put(processedTable.CAT2, newProcessedProduct.getCat2());
+				insertMap.put(processedTable.CAT3, newProcessedProduct.getCat3());
+				insertMap.put(processedTable.MULTIPLIER, newProcessedProduct.getMultiplier());
+				insertMap.put(processedTable.ORIGINAL_DESCRIPTION, newProcessedProduct.getOriginalDescription());
+				insertMap.put(processedTable.PRICE, newProcessedProduct.getPrice());
+				insertMap.put(processedTable.STOCK, newProcessedProduct.getStock());
+				insertMap.put(processedTable.SECONDARY_PICS, newProcessedProduct.getSecondary_pics());
 				
 				if(prices != null) {
-					values.add(CONVERT_STRING_GSON.converter().from(prices.toString()));
+					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.PRICES, null);
 				}
 				
-				values.add(newProcessedProduct.getStock());
-				values.add(newProcessedProduct.getSecondary_pics());
-				
 				if(newProcessedProduct.getChanges() != null){
-					values.add(newProcessedProduct.getChanges().toString().replace("'","''"));
+					insertMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString().replace("'","''"));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.CHANGES, null);
 				}
 	
 				if(newProcessedProduct.getDigitalContent() != null){
-					values.add(newProcessedProduct.getDigitalContent().toString().replace("'","''"));
+					insertMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString().replace("'","''"));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
 				
 				if(newProcessedProduct.getMarketplace() != null){
-					values.add(newProcessedProduct.getMarketplace().toString().replace("'","''"));
+					insertMap.put(processedTable.MARKETPLACE, newProcessedProduct.getMarketplace().toString().replace("'","''"));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.MARKETPLACE, null);
 				}
 				
 				if(newProcessedProduct.getBehaviour() != null){
-					values.add(newProcessedProduct.getBehaviour().toString().replace("'","''"));
+					insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString().replace("'","''"));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.BEHAVIOUR, null);
 				}
 				
 				if(newProcessedProduct.getSimilars() != null){
-					values.add(newProcessedProduct.getSimilars().toString().replace("'","''"));
+					insertMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString().replace("'","''"));
 				} else {
-					values.add(null);
+					insertMap.put(processedTable.SIMILARS, null);
 				}
 				
 				// get processeed id of new processed product
-				Record recordId = Main.dbManager.runInsertJooqReturningID(processedTable, fields, values, processedTable.ID);
+				Record recordId = Main.dbManager.runInsertJooqReturningID(processedTable, insertMap, processedTable.ID);
 				
 				if(recordId != null) {
 					id = recordId.get(processedTable.ID);
@@ -544,7 +432,7 @@ public class Persistence {
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
 	 */
-	public static void setProcessedVoidTrue(ProcessedModel processed, Session session) {
+	public static void setProcessedVoidTrue(Session session) {
 		Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
