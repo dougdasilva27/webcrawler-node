@@ -213,7 +213,7 @@ public class DatabaseManager {
 				Map<Field<?>, Object> insertMap = tableMap.get(table);
 				
 				queries.add(create.insertInto(table)
-				.values(insertMap)); 
+				.set(insertMap)); 
 			}
 			
 			create.batch(queries).execute();
@@ -234,7 +234,7 @@ public class DatabaseManager {
 	public Record runInsertJooqReturningID(Table<?> table,  Map<Field<?>, Object> insertMap, Field<?> fieldReturning){
 		try {
 			return create.insertInto(table)
-			.values(insertMap)
+			.set(insertMap)
 			.returning(fieldReturning)
 			.fetchOne();
 		} catch (DataAccessException e) {
