@@ -266,34 +266,35 @@ public class Persistence {
 				
 				Map<Field<?>, Object> insertMap = new HashMap<>();
 				
-				insertMap.put(processedTable.INTERNAL_ID, newProcessedProduct.getInternalId());
-				insertMap.put(processedTable.INTERNAL_PID, newProcessedProduct.getInternalPid());
-				insertMap.put(processedTable.ORIGINAL_NAME, newProcessedProduct.getOriginalName());
-				insertMap.put(processedTable.CLASS, newProcessedProduct.get_class());
-				insertMap.put(processedTable.BRAND, newProcessedProduct.getBrand());
-				insertMap.put(processedTable.RECIPIENT, newProcessedProduct.getRecipient());
-				insertMap.put(processedTable.QUANTITY, newProcessedProduct.getQuantity());
-				insertMap.put(processedTable.UNIT, newProcessedProduct.getUnit());
-				insertMap.put(processedTable.EXTRA, newProcessedProduct.getExtra());
-				insertMap.put(processedTable.PIC, newProcessedProduct.getPic());
-				insertMap.put(processedTable.URL, newProcessedProduct.getUrl());
-				insertMap.put(processedTable.MARKET, newProcessedProduct.getMarket());
-				insertMap.put(processedTable.ECT, newProcessedProduct.getEct());
-				insertMap.put(processedTable.LMT, newProcessedProduct.getLmt());
-				insertMap.put(processedTable.LAT, newProcessedProduct.getLat());
-				insertMap.put(processedTable.LRT, newProcessedProduct.getLrt());
-				insertMap.put(processedTable.LMS, newProcessedProduct.getLms());
-				insertMap.put(processedTable.STATUS, newProcessedProduct.getStatus());
-				insertMap.put(processedTable.AVAILABLE, newProcessedProduct.getAvailable());
-				insertMap.put(processedTable.VOID, newProcessedProduct.getVoid());
-				insertMap.put(processedTable.CAT1, newProcessedProduct.getCat1());
-				insertMap.put(processedTable.CAT2, newProcessedProduct.getCat2());
-				insertMap.put(processedTable.CAT3, newProcessedProduct.getCat3());
-				insertMap.put(processedTable.MULTIPLIER, newProcessedProduct.getMultiplier());
-				insertMap.put(processedTable.ORIGINAL_DESCRIPTION, newProcessedProduct.getOriginalDescription());
-				insertMap.put(processedTable.PRICE, newProcessedProduct.getPrice());
-				insertMap.put(processedTable.STOCK, newProcessedProduct.getStock());
-				insertMap.put(processedTable.SECONDARY_PICS, newProcessedProduct.getSecondary_pics());
+				// 				 			 Column					Value
+				insertMap.put(processedTable.INTERNAL_ID, 			newProcessedProduct.getInternalId());
+				insertMap.put(processedTable.INTERNAL_PID, 			newProcessedProduct.getInternalPid());
+				insertMap.put(processedTable.ORIGINAL_NAME, 		newProcessedProduct.getOriginalName());
+				insertMap.put(processedTable.CLASS, 				newProcessedProduct.get_class());
+				insertMap.put(processedTable.BRAND, 				newProcessedProduct.getBrand());
+				insertMap.put(processedTable.RECIPIENT, 			newProcessedProduct.getRecipient());
+				insertMap.put(processedTable.QUANTITY, 				newProcessedProduct.getQuantity());
+				insertMap.put(processedTable.UNIT, 					newProcessedProduct.getUnit());
+				insertMap.put(processedTable.EXTRA, 				newProcessedProduct.getExtra());
+				insertMap.put(processedTable.PIC, 					newProcessedProduct.getPic());
+				insertMap.put(processedTable.URL, 					newProcessedProduct.getUrl());
+				insertMap.put(processedTable.MARKET, 				newProcessedProduct.getMarket());
+				insertMap.put(processedTable.ECT, 					newProcessedProduct.getEct());
+				insertMap.put(processedTable.LMT, 					newProcessedProduct.getLmt());
+				insertMap.put(processedTable.LAT, 					newProcessedProduct.getLat());
+				insertMap.put(processedTable.LRT, 					newProcessedProduct.getLrt());
+				insertMap.put(processedTable.LMS, 					newProcessedProduct.getLms());
+				insertMap.put(processedTable.STATUS, 				newProcessedProduct.getStatus());
+				insertMap.put(processedTable.AVAILABLE, 			newProcessedProduct.getAvailable());
+				insertMap.put(processedTable.VOID, 					newProcessedProduct.getVoid());
+				insertMap.put(processedTable.CAT1, 					newProcessedProduct.getCat1());
+				insertMap.put(processedTable.CAT2, 					newProcessedProduct.getCat2());
+				insertMap.put(processedTable.CAT3, 					newProcessedProduct.getCat3());
+				insertMap.put(processedTable.MULTIPLIER, 			newProcessedProduct.getMultiplier());
+				insertMap.put(processedTable.ORIGINAL_DESCRIPTION, 	newProcessedProduct.getOriginalDescription());
+				insertMap.put(processedTable.PRICE, 				newProcessedProduct.getPrice());
+				insertMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
+				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondary_pics());
 				
 				if(prices != null) {
 					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
