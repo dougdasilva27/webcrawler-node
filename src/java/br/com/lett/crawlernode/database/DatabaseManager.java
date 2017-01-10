@@ -185,7 +185,7 @@ public class DatabaseManager {
 	public void runInsertJooq(Table<?> table, Map<Field<?>, Object> insertMap){
 		try {
 			create.insertInto(table)
-			.values(insertMap)  
+			.set(insertMap)  
 			.execute();
 		} catch (DataAccessException e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
