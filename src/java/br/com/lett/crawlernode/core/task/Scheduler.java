@@ -18,9 +18,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.server.QueueName;
-import br.com.lett.crawlernode.server.QueueHandler;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.queue.QueueHandler;
+import br.com.lett.crawlernode.queue.QueueName;
+import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 

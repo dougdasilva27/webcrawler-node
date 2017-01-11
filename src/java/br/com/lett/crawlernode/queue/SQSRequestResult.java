@@ -1,15 +1,15 @@
-package br.com.lett.crawlernode.server;
+package br.com.lett.crawlernode.queue;
 
 import java.util.List;
 
 import com.amazonaws.services.sqs.model.Message;
 
-public class RequestMessageResult {
+public class SQSRequestResult {
 	
-	List<Message> messages;
-	String queueName;
+	private List<Message> messages;
+	private String queueName;
 	
-	public RequestMessageResult() {
+	public SQSRequestResult() {
 		super();
 	}
 	

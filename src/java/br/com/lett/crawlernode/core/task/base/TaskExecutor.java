@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.task.base;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.crawler.CrawlerPoolExecutor;
+import br.com.lett.crawlernode.core.crawler.PoolExecutor;
 import br.com.lett.crawlernode.main.Main;
 
 public class TaskExecutor {
@@ -19,10 +19,10 @@ public class TaskExecutor {
 	
 	public int maxTasks;
 
-	private CrawlerPoolExecutor crawlerPoolExecutor;
+	private PoolExecutor crawlerPoolExecutor;
 	
 	public TaskExecutor() {
-		crawlerPoolExecutor = new CrawlerPoolExecutor(
+		crawlerPoolExecutor = new PoolExecutor(
 				DEFAULT_CORE_NTHREADS,
 				DEFAULT_MAX_NTHREADS,
 				0L,
@@ -41,7 +41,7 @@ public class TaskExecutor {
 	 * @param maxThreads the maximum and core pool size for the thread pool
 	 */
 	public TaskExecutor(int maxThreads) {
-		crawlerPoolExecutor = new CrawlerPoolExecutor(
+		crawlerPoolExecutor = new PoolExecutor(
 				maxThreads,
 				maxThreads,
 				0L,
@@ -62,7 +62,7 @@ public class TaskExecutor {
 	 * @param maxThreads
 	 */
 	public TaskExecutor(int coreThreads, int maxThreads) {
-		crawlerPoolExecutor = new CrawlerPoolExecutor(
+		crawlerPoolExecutor = new PoolExecutor(
 				coreThreads,
 				maxThreads,
 				0L,
@@ -76,7 +76,7 @@ public class TaskExecutor {
 	}
 	
 	public TaskExecutor(int coreThreads, int maxThreads, int bloquingQueueSize) {
-		crawlerPoolExecutor = new CrawlerPoolExecutor(
+		crawlerPoolExecutor = new PoolExecutor(
 				maxThreads,
 				maxThreads,
 				0L,
@@ -125,7 +125,7 @@ public class TaskExecutor {
 		crawlerPoolExecutor.execute(task);
 	}
 
-	public CrawlerPoolExecutor getExecutor() {
+	public PoolExecutor getExecutor() {
 		return crawlerPoolExecutor;
 	}
 	

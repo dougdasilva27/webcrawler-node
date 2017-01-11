@@ -1,11 +1,10 @@
-package br.com.lett.crawlernode.core.task;
+package br.com.lett.crawlernode.core.task.base;
 
 import java.lang.reflect.Constructor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.crawler.ImageCrawler;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
@@ -14,6 +13,7 @@ import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -32,7 +32,7 @@ public class TaskFactory {
 	 * @param session
 	 * @return
 	 */
-	public static Runnable createTask(Session session) {
+	public static Task createTask(Session session) {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
 		if (session instanceof InsightsCrawlerSession 	|| 
@@ -70,7 +70,7 @@ public class TaskFactory {
 	 * @param controllerClassName The name of the controller class
 	 * @return Controller instance
 	 */
-	private static Runnable createCrawlerTask(Session session) {
+	private static Task createCrawlerTask(Session session) {
 
 		// assemble the class name
 		String taskClassName = assembleCrawlerClassName(session.getMarket());
@@ -79,7 +79,7 @@ public class TaskFactory {
 
 			// instantiating a crawler task with the given session as it's constructor parameter
 			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
-			Runnable task = (Runnable) constructor.newInstance(session);
+			Task task = (Task) constructor.newInstance(session);
 
 			return task;
 		} catch (Exception ex) {
@@ -90,7 +90,7 @@ public class TaskFactory {
 		return null;
 	}
 
-	private static Runnable createRateReviewCrawlerTask(Session session) {
+	private static Task createRateReviewCrawlerTask(Session session) {
 
 		// assemble the class name
 		String taskClassName = assembleRateReviewCrawlerClassName(session.getMarket());
@@ -99,7 +99,7 @@ public class TaskFactory {
 
 			// instantiating a crawler task with the given session as it's constructor parameter
 			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
-			Runnable task = (Runnable) constructor.newInstance(session);
+			Task task = (Task) constructor.newInstance(session);
 
 			return task;
 		} catch (Exception ex) {
@@ -110,7 +110,7 @@ public class TaskFactory {
 		return null;
 	}
 
-	private static Runnable createImageCrawlerTask(Session session) {
+	private static Task createImageCrawlerTask(Session session) {
 		return new ImageCrawler(session);
 	}
 

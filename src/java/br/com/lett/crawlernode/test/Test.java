@@ -12,8 +12,8 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
-import br.com.lett.crawlernode.core.task.TaskExecutor;
-import br.com.lett.crawlernode.core.task.TaskFactory;
+import br.com.lett.crawlernode.core.task.base.TaskExecutor;
+import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
@@ -96,12 +96,12 @@ public class Test {
 
 			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/123683569", market);
 
-			Runnable task = TaskFactory.createTask(session);
-			if (task != null) {
-				taskExecutor.executeTask(task);
-			} else {
-				System.err.println("There is no task to submit");
-			}
+//			Runnable task = TaskFactory.createTask(session);
+//			if (task != null) {
+//				taskExecutor.executeTask(task);
+//			} else {
+//				System.err.println("There is no task to submit");
+//			}
 
 			taskExecutor.shutDown();
 		}

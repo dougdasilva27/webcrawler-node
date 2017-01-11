@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler;
+package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.Scheduler;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
@@ -41,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 
-public class Crawler implements Runnable {
+public class Crawler implements Task {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
@@ -101,7 +102,7 @@ public class Crawler implements Runnable {
 	 * Java's Executors Framework.
 	 */
 	@Override 
-	public void run() {
+	public void process() {
 		if (session instanceof TestCrawlerSession) {
 			testRun();
 		}

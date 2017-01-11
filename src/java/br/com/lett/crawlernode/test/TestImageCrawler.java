@@ -7,12 +7,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import br.com.lett.crawlernode.core.crawler.ImageCrawler;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.TaskExecutor;
-import br.com.lett.crawlernode.core.task.TaskFactory;
+import br.com.lett.crawlernode.core.task.base.TaskExecutor;
+import br.com.lett.crawlernode.core.task.base.TaskFactory;
+import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;

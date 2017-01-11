@@ -38,9 +38,7 @@ import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngelo
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-
-import br.com.lett.crawlernode.server.S3Service;
-
+import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

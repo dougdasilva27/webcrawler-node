@@ -13,15 +13,13 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.crawler.Resources;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.task.MessageFetcher;
-import br.com.lett.crawlernode.core.task.TaskExecutor;
-import br.com.lett.crawlernode.core.task.TaskExecutorAgent;
+import br.com.lett.crawlernode.core.task.base.TaskExecutor;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.server.QueueHandler;
+import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -72,7 +70,6 @@ public class Main {
 	public static Markets				markets;
 
 	private static TaskExecutor 		taskExecutor;
-	private static TaskExecutorAgent 	taskExecutorAgent;
 	
 	public static Resources				globalResources;
 
@@ -130,11 +127,6 @@ public class Main {
 		Logging.printLogDebug(logger, "Creating task executor...");
 		taskExecutor = new TaskExecutor(executionParameters.getCoreThreads(), executionParameters.getNthreads());
 		Logging.printLogDebug(logger, taskExecutor.toString());
-		
-		// schedule threads to keep fetching messages
-		Logging.printLogDebug(logger, "Creating the TaskExecutorAgent...");
-		taskExecutorAgent = new TaskExecutorAgent(1); // only 1 thread fetching message
-		taskExecutorAgent.executeScheduled( new MessageFetcher(taskExecutor, queueHandler, markets), 1 );
 		
 	}
 	

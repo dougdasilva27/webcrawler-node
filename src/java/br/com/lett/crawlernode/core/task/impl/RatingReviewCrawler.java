@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler;
+package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +19,12 @@ import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class RatingReviewCrawler implements Runnable {
+public class RatingReviewCrawler implements Task {
 
 	protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
 
@@ -55,7 +56,7 @@ public class RatingReviewCrawler implements Runnable {
 	}
 
 	@Override
-	public void run() {
+	public void process() {
 		if (session instanceof RatingReviewsCrawlerSession) {
 			runProduction();
 		}

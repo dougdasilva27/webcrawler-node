@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler;
+package br.com.lett.crawlernode.core.task.impl;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -30,14 +30,15 @@ import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.imgprocessing.ImageRescaler;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.server.S3Service;
+import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class ImageCrawler implements Runnable {
+public class ImageCrawler implements Task {
 
 	private static final Logger logger = LoggerFactory.getLogger(ImageCrawler.class);
 
@@ -53,7 +54,7 @@ public class ImageCrawler implements Runnable {
 	}
 
 	@Override
-	public void run() {
+	public void process() {
 
 		try {
 

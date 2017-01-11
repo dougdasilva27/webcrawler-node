@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.server;
+package br.com.lett.crawlernode.queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

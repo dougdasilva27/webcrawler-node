@@ -7,7 +7,7 @@ import com.amazonaws.services.sqs.model.Message;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.server.QueueName;
+import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SessionFactory {

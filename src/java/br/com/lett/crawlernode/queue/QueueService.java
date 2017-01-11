@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.server;
+package br.com.lett.crawlernode.queue;
 
 import java.util.ArrayList;
 import java.util.HashMap;

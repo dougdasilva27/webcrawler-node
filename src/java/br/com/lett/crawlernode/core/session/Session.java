@@ -15,7 +15,7 @@ import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.queue.QueueService;
 
 public class Session {
 
