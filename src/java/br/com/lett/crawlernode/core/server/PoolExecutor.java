@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler;
+package br.com.lett.crawlernode.core.server;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -16,12 +16,18 @@ import org.slf4j.LoggerFactory;
  * are used mainly to do an intelligent fetching of tasks from the remote
  * queue, and prevent to flood the pool executor with tasks, and prevent the
  * use of the bloquing queue.
+ * 
  * @author Samir Leao
  *
  */
 public class PoolExecutor extends ThreadPoolExecutor {
 
 	protected static final Logger logger = LoggerFactory.getLogger(PoolExecutor.class);
+	
+	public static final int DEFAULT_NTHREADS = 200;
+	public static final int DEFAULT_CORE_NTHREADS = 200;
+	public static final int DEFAULT_MAX_NTHREADS = 210;
+	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
 
 	/** Object to be used as a mutex to access the task counters*/
 	private final Object lock = new Object();
@@ -64,6 +70,7 @@ public class PoolExecutor extends ThreadPoolExecutor {
 			RejectedExecutionHandler handler) {
 
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
+		super.prestartAllCoreThreads();
 	}
 
 	@Override
@@ -100,6 +107,30 @@ public class PoolExecutor extends ThreadPoolExecutor {
 		synchronized(lock) {
 			return succeededTaskCount;
 		}
+	}
+	
+	public int getMaxThreadsCount() {
+		return getMaximumPoolSize();
+	}
+	
+	public int getCoreThreadsCount() {
+		return getCorePoolSize();
+	}
+	
+	public int getBloquingQueueSize() {
+		return getQueue().size();
+	}
+	
+	public int getBloquingQueueRemainingCapacity() {
+		return getQueue().remainingCapacity();
+	}
+	
+	public int getActiveThreadsCount() {
+		return getActiveCount();
+	}
+
+	public void executeTask(Runnable task) {
+		execute(task);
 	}
 
 }

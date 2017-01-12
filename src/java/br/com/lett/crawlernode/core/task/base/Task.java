@@ -1,7 +1,20 @@
 package br.com.lett.crawlernode.core.task.base;
 
-public interface Task {
+public abstract class Task {
+
+	protected final void process() {
+		onStart();
+		processTask();
+		onFinish();
+	}
 	
-	void process();
+	protected abstract void processTask();
 	
+	protected void onStart() {
+		// subclasses will override if they need to
+	}
+	
+	protected void onFinish() {
+		// subclasses will override if they need to
+	}
 }

@@ -4,16 +4,26 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URL;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.crawler.Resources;
+import com.sun.net.httpserver.HttpServer;
+
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.task.base.TaskExecutor;
+import br.com.lett.crawlernode.core.server.PoolExecutor;
+import br.com.lett.crawlernode.core.server.WebcrawlerServer;
+import br.com.lett.crawlernode.core.task.Resources;
+import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
@@ -59,6 +69,10 @@ import br.com.lett.crawlernode.util.Logging;
 public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	
+	private static final String TASK_PATH = "/test";
+	private static final int TASK_PORT = 5000;
+	private static final String HOST = "localhost";
 
 	public static ExecutionParameters 	executionParameters;
 	public static ProxyCollection 		proxies;
@@ -68,8 +82,6 @@ public class Main {
 	public static QueueHandler			queueHandler;
 	
 	public static Markets				markets;
-
-	private static TaskExecutor 		taskExecutor;
 	
 	public static Resources				globalResources;
 
@@ -123,10 +135,26 @@ public class Main {
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
 
-		// create a task executor
-		Logging.printLogDebug(logger, "Creating task executor...");
-		taskExecutor = new TaskExecutor(executionParameters.getCoreThreads(), executionParameters.getNthreads());
-		Logging.printLogDebug(logger, taskExecutor.toString());
+		// create a pool executor to be used as the http server executor
+		Logging.printLogDebug(logger, "Creating executor...");
+		PoolExecutor executor = new PoolExecutor(
+				executionParameters.getCoreThreads(), 
+				executionParameters.getNthreads(),
+				0L,
+				TimeUnit.SECONDS,
+				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
+				new RejectedTaskHandler());
+		
+		// create the server
+		try {
+			HttpServer server = HttpServer.create(new InetSocketAddress(HOST, TASK_PORT), 1);
+			server.createContext(TASK_PATH, new WebcrawlerServer());
+			server.setExecutor(executor);
+			server.start();
+		} catch (IOException ex) {
+			Logging.printLogError(logger, "Erro ao criar servidor.");
+			CommonMethods.getStackTraceString(ex);
+		}
 		
 	}
 	

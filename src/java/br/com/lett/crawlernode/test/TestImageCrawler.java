@@ -10,7 +10,6 @@ import org.apache.commons.cli.ParseException;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.base.TaskExecutor;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.database.DBCredentials;
@@ -23,7 +22,6 @@ public class TestImageCrawler {
 	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
 	public static 	ProxyCollection 			proxies;
-	private static 	TaskExecutor 		taskExecutor;
 	private static 	Options 			options;
 	
 	private static String marketName;
@@ -67,7 +65,7 @@ public class TestImageCrawler {
 
 		// create a task executor
 		// for testing we use 1 thread, there is no need for more
-		taskExecutor = new TaskExecutor(1, 1);
+		//taskExecutor = new TaskExecutor(1, 1);
 		
 		// fetch market information
 		Market market = fetchMarket();
@@ -75,7 +73,7 @@ public class TestImageCrawler {
 		//Runnable task = new ImageCrawler(marketName, cityName);
 		//taskExecutor.executeTask(task);
 		
-		taskExecutor.shutDown();
+		//taskExecutor.shutDown();
 	}
 	
 	private static Market fetchMarket() {

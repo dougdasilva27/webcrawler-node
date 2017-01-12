@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.crawler.config;
+package br.com.lett.crawlernode.core.task.config;
 
 public class RatingReviewCrawlerConfig extends Config {
 	

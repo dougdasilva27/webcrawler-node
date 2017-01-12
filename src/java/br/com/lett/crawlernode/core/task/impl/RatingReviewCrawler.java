@@ -9,7 +9,6 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.crawler.config.RatingCrawlerConfig;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -20,11 +19,12 @@ import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.config.RatingCrawlerConfig;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class RatingReviewCrawler implements Task {
+public class RatingReviewCrawler extends Task {
 
 	protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
 
@@ -56,7 +56,7 @@ public class RatingReviewCrawler implements Task {
 	}
 
 	@Override
-	public void process() {
+	public void processTask() {
 		if (session instanceof RatingReviewsCrawlerSession) {
 			runProduction();
 		}

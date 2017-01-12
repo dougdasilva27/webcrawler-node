@@ -38,7 +38,7 @@ import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class ImageCrawler implements Task {
+public class ImageCrawler extends Task {
 
 	private static final Logger logger = LoggerFactory.getLogger(ImageCrawler.class);
 
@@ -54,7 +54,7 @@ public class ImageCrawler implements Task {
 	}
 
 	@Override
-	public void process() {
+	public void processTask() {
 
 		try {
 

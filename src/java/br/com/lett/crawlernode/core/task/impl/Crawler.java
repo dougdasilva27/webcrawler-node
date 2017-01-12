@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import br.com.lett.crawlernode.core.crawler.config.CrawlerConfig;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -21,6 +20,7 @@ import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 
-public class Crawler implements Task {
+public class Crawler extends Task {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
@@ -102,7 +102,7 @@ public class Crawler implements Task {
 	 * Java's Executors Framework.
 	 */
 	@Override 
-	public void process() {
+	public void processTask() {
 		if (session instanceof TestCrawlerSession) {
 			testRun();
 		}

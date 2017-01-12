@@ -10,7 +10,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.task.base.TaskExecutor;
+import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -194,20 +194,28 @@ public class ExecutionParameters {
 
 	private int getEnvNumOfThreads() {
 		String nThreads = System.getenv(ENV_NTHREADS);
-		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
+		if (nThreads == null) {
+			return PoolExecutor.DEFAULT_NTHREADS;
+		}
 		return Integer.parseInt(nThreads);
 	}
 
 	private int getEnvCoreThreads() {
 		String coreThreads = System.getenv(ENV_CORE_THREADS);
-		if (coreThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
+		if (coreThreads == null) {
+			return PoolExecutor.DEFAULT_NTHREADS;
+		}
 		return Integer.parseInt(coreThreads);
 	}
 
 	private boolean getEnvImageTaskActivated() {
 		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
-		if (imageTaskActivated == null) return false;
-		if (imageTaskActivated.equals(ON)) return true;
+		if (imageTaskActivated == null) {
+			return false;
+		}
+		if (imageTaskActivated.equals(ON)) {
+			return true;
+		}
 		return false;
 	}
 
