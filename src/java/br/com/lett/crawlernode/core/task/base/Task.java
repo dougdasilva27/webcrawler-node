@@ -1,6 +1,13 @@
 package br.com.lett.crawlernode.core.task.base;
 
+import br.com.lett.crawlernode.core.session.Session;
+
 public abstract class Task {
+	
+	public static final String STATUS_COMPLETED = "completed";
+	public static final String STATUS_FAILED = "failed";
+	
+	protected Session session;
 
 	public final void process() {
 		onStart();

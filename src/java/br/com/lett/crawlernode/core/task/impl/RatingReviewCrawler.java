@@ -28,8 +28,6 @@ public class RatingReviewCrawler extends Task {
 
 	protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
 
-	protected Session session;
-
 	/**
 	 * Cookies that must be used to fetch the sku page
 	 * this attribute is set by the handleCookiesBeforeFetch method.
@@ -81,6 +79,7 @@ public class RatingReviewCrawler extends Task {
 		// and are all gathered inside the session
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			session.setTaskStatus(Task.STATUS_FAILED);
 		}
 
 		else {
@@ -89,7 +88,7 @@ public class RatingReviewCrawler extends Task {
 			// and if we are not testing, because when testing there is no message processing
 			Logging.printLogDebug(logger, session, "Task completed.");
 
-			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
 		
 		Logging.printLogDebug(logger, session, "END");

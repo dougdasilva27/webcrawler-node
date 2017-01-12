@@ -97,99 +97,6 @@ public class QueueService {
 	}
 
 	/**
-	 * Request for messages on the appropriate queue, according to the
-	 * priority rule.
-	 * The priority is:
-	 * 1) Rating and reviews, if the rating and reviews is activated
-	 * 2) Images, if images is activated
-	 * 
-	 * If none of the above is activated, we follow this priority:
-	 * 3) Seed
-	 * 4) Insights
-	 * 5) Discover
-	 * 
-	 * @param queueHandler
-	 * @param maxNumberOfMessages
-	 * @return the selection result, containing all the fetched messages and the queue name.
-	 */
-	public static SQSRequestResult requestMessages(QueueHandler queueHandler, int maxNumberOfMessages) {
-		SQSRequestResult result = new SQSRequestResult();
-		List<Message> messages = null;
-
-		if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-			if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.INSIGHTS)) {
-				messages = requestMessages(queueHandler.getSqs(), QueueName.INSIGHTS_DEVELOPMENT, maxNumberOfMessages);
-				result.setMessages(messages);
-				result.setQueueName(QueueName.INSIGHTS_DEVELOPMENT);
-			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.IMAGES)) {
-				messages = requestMessages(queueHandler.getSqs(), QueueName.IMAGES_DEVELOPMENT, maxNumberOfMessages);
-				result.setMessages(messages);
-				result.setQueueName(QueueName.IMAGES_DEVELOPMENT);
-			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.RATING)) {
-				messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS_DEVELOPMENT, maxNumberOfMessages);
-				result.setMessages(messages);
-				result.setQueueName(QueueName.RATING_REVIEWS_DEVELOPMENT);
-			} else if (Main.executionParameters.getDevelopmentQueue().equals(Main.executionParameters.DISCOVER)) {
-				messages = requestMessages(queueHandler.getSqs(), QueueName.DISCOVER_DEVELOPMENT, maxNumberOfMessages);
-				result.setMessages(messages);
-				result.setQueueName(QueueName.DISCOVER_DEVELOPMENT);
-			}
-			else {
-				messages = requestMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, maxNumberOfMessages);
-				result.setMessages(messages);
-				result.setQueueName(QueueName.DEVELOPMENT);
-			}
-
-			return result;
-		}
-
-		if (Main.executionParameters.isImageTaskActivated()) { // if image task is activated, we want to solve only those types of tasks.
-			messages = requestMessages(queueHandler.getSqs(), QueueName.IMAGES, maxNumberOfMessages);
-			if (!messages.isEmpty()) {
-				result.setMessages(messages);
-				result.setQueueName(QueueName.IMAGES);
-				return result;
-			}
-			return result;
-		}
-
-		messages = requestMessages(queueHandler.getSqs(), QueueName.SEED, maxNumberOfMessages);
-		if (!messages.isEmpty()) {
-			result.setMessages(messages);
-			result.setQueueName(QueueName.SEED);
-			return result;
-		}
-
-		messages = requestMessages(queueHandler.getSqs(), QueueName.INSIGHTS, maxNumberOfMessages);
-		if (!messages.isEmpty()) {
-			result.setMessages(messages);
-			result.setQueueName(QueueName.INSIGHTS);
-			return result;
-		}
-
-		messages = requestMessages(queueHandler.getSqs(), QueueName.RATING_REVIEWS, maxNumberOfMessages);
-		if (!messages.isEmpty()) {
-			result.setMessages(messages);
-			result.setQueueName(QueueName.RATING_REVIEWS);
-			return result;
-		}
-
-		messages = requestMessages(queueHandler.getSqs(), QueueName.DISCOVER, maxNumberOfMessages);
-		if (!messages.isEmpty()) {
-			result.setMessages(messages);
-			result.setQueueName(QueueName.DISCOVER);
-			return result;
-		}
-
-		// if all the queues are empty, will return an empty list of messages
-		if (result.getMessages() == null) {
-			result.setMessages(new ArrayList<Message>());
-		}
-
-		return result;
-	}
-
-	/**
 	 * 
 	 * @param queueHandler
 	 * @param queueName
@@ -339,7 +246,9 @@ public class QueueService {
 	 * @return The appropriate queue URL
 	 */
 	private static String getQueueURL(String queueName) {
-		if (queueURLMap.containsKey(queueName)) return queueURLMap.get(queueName);
+		if (queueURLMap.containsKey(queueName)) {
+			return queueURLMap.get(queueName);
+		}
 
 		Logging.printLogError(logger, "Unrecognized queue.");
 		return null;

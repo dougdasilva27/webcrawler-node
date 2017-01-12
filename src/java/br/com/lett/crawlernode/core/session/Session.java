@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.Main;
 
 public class Session {
@@ -25,6 +26,8 @@ public class Session {
 	public static final String TEST_TYPE 		= "test";
 
 	protected DateTime date = new DateTime(DateTimeZone.forID("America/Sao_Paulo"));
+	
+	protected String taskStaus;
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	protected String sessionId;
@@ -66,9 +69,11 @@ public class Session {
 	}
 
 	public Session(Request request, String queueName, Markets markets) {
+		
+		taskStaus = Task.STATUS_COMPLETED;
 
 		// setting queue name
-		this.queueName = request.getQueueName();
+		this.queueName = queueName;
 
 		// creating the errors list
 		crawlerSessionErrors = new ArrayList<>();
@@ -162,6 +167,14 @@ public class Session {
 
 	public void setMarket(Market market) {
 		this.market = market;
+	}
+	
+	public String getTaskStatus() {
+		return taskStaus;
+	}
+	
+	public void setTaskStatus(String taskStatus) {
+		this.taskStaus = taskStatus;
 	}
 
 	public int getVoidAttempts() {

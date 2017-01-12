@@ -45,8 +45,6 @@ public class ImageCrawler extends Task {
 
 	private final int IMAGE_CHECKING_TRY = 5;
 
-	protected Session session;
-
 	private FeatureExtractor imageFeatureExtractor;
 
 	public ImageCrawler(Session session) {
@@ -139,19 +137,14 @@ public class ImageCrawler extends Task {
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed!");
 
-			// print all errors of type exceptions
-			for (SessionError error : errors) {
-				if (error.getType().equals(SessionError.EXCEPTION)) {
-					Logging.printLogError(logger, session, error.getErrorContent());
-				}
-			}
+			session.setTaskStatus(Task.STATUS_FAILED);
 		}
 		else {
 
 			// only remove the task from queue if it was flawless
 			Logging.printLogDebug(logger, session, "Task completed.");
-			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
-
+			
+			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
 
 		// clear the session

@@ -36,7 +36,7 @@ public class Scheduler {
 			Long processedId) {
 		Logging.printLogDebug(logger, session, "Scheduling images to be downloaded...");
 
-		List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>(); // send messages batch to Amazon SQS
+		List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
 		//List<TaskDocumentModel> tasksDocuments = new ArrayList<TaskDocumentModel>();
 		Integer counter = 0;
 		Integer insideBatchId = 0;

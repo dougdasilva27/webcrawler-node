@@ -62,11 +62,7 @@ public class Crawler extends Task {
 	protected static final int MAX_VOID_ATTEMPTS = 3;
 
 
-	protected static final int MAX_TRUCO_ATTEMPTS = 3;
-
-
-	/** The current crawling session. */
-	protected Session session;
+	protected static final int MAX_TRUCO_ATTEMPTS = 3;	
 
 	protected CrawlerConfig config;
 
@@ -135,6 +131,8 @@ public class Crawler extends Task {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
+			
+			session.setTaskStatus(Task.STATUS_FAILED);
 		}
 
 		// only remove the task from queue if it was flawless
@@ -145,6 +143,8 @@ public class Crawler extends Task {
 			//TODO enviar reposta OK para o daemon
 			
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
+			
+			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
 
 		// only print statistics of void and truco if we are running an Insights session crawling

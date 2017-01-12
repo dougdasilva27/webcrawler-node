@@ -6,10 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.SocketException;
 import java.net.URL;
-import java.util.Date;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +18,7 @@ import com.sun.net.httpserver.HttpServer;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.PoolExecutor;
-import br.com.lett.crawlernode.core.server.WebcrawlerServer;
+import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
 import br.com.lett.crawlernode.database.DBCredentials;
@@ -70,8 +67,8 @@ public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 	
-	private static final String TASK_PATH = "/test";
-	private static final int TASK_PORT = 5000;
+	private static final String TASK_ENDPOINT_PATH = "/crawler-task";
+	private static final int PORT = 5000;
 	private static final String HOST = "localhost";
 
 	public static ExecutionParameters 	executionParameters;
@@ -147,10 +144,13 @@ public class Main {
 		
 		// create the server
 		try {
-			HttpServer server = HttpServer.create(new InetSocketAddress(HOST, TASK_PORT), 1);
-			server.createContext(TASK_PATH, new WebcrawlerServer());
+			HttpServer server = HttpServer.create(new InetSocketAddress(HOST, PORT), 1);
+			ServerHandler serverHandler = new ServerHandler();
+			
+			server.createContext(TASK_ENDPOINT_PATH, serverHandler);
 			server.setExecutor(executor);
 			server.start();
+			
 		} catch (IOException ex) {
 			Logging.printLogError(logger, "Erro ao criar servidor.");
 			CommonMethods.getStackTraceString(ex);

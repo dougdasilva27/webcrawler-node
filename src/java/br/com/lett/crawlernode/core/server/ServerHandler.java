@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.main.Main;
 
-public class WebcrawlerServer implements HttpHandler {
+public class ServerHandler implements HttpHandler {
 
 	private static final String POST = "POST";
 
@@ -43,7 +43,7 @@ public class WebcrawlerServer implements HttpHandler {
 			Markets markets = Main.markets;
 			
 			// discover the type of task
-			// done internaly on the following method
+			// done internally on the following method
 			Session session = SessionFactory.createSession(request, request.getQueueName(), markets);
 			
 			// create the task
@@ -52,9 +52,9 @@ public class WebcrawlerServer implements HttpHandler {
 			// perform the task
 			task.process();
 			
+			// check final task status
 			
 			
-
 			//			String taskType = null;
 			//			
 			//			// Passo 1 - Descobrir tipo da tarefa
