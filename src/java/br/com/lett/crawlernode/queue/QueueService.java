@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.queue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class QueueService {
 
 	public static final String CITY_MESSAGE_ATTR 				= "city";
 	public static final String MARKET_MESSAGE_ATTR 				= "market";
-	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
+	//public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
 	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
@@ -97,26 +96,6 @@ public class QueueService {
 	}
 
 	/**
-	 * 
-	 * @param queueHandler
-	 * @param queueName
-	 * @param message
-	 */
-	public static void deleteMessage(QueueHandler queueHandler, String queueName, Message message) {
-		deleteMessage(queueHandler.getSqs(), queueName, message);
-	}
-
-	/**
-	 * 
-	 * @param queueHandler
-	 * @param queueName
-	 * @param messageReceiptHandle
-	 */
-	public static void deleteMessage(QueueHandler queueHandler, String queueName, String messageReceiptHandle) {
-		deleteMessage(queueHandler.getSqs(), queueName, messageReceiptHandle);
-	}
-
-	/**
 	 * Request for messages (tasks) on the Amazon queue up to a maximum of 10 messages
 	 * @return List containing all the messages retrieved
 	 */
@@ -127,100 +106,6 @@ public class QueueService {
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 
 		return messages;
-	}
-
-	/**
-	 * Delete a message from the sqs
-	 * @param sqs
-	 * @param message
-	 */
-	private static void deleteMessage(AmazonSQS sqs, String queueName, Message message) {		
-		String queueURL = getQueueURL(queueName);
-		String messageReceiptHandle = message.getReceiptHandle();
-		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
-	}
-
-	/**
-	 * Delete a message from the sqs
-	 * @param sqs
-	 * @param messageId
-	 * @param messageReceiptHandle
-	 */
-	private static void deleteMessage(AmazonSQS sqs, String queueName, String messageReceiptHandle) {
-		String queueURL = getQueueURL(queueName);
-		sqs.deleteMessage(new DeleteMessageRequest(queueURL, messageReceiptHandle));
-	}
-
-	/**
-	 * Check a message for the mandatory fields.
-	 * @param message
-	 * @return true if all fields are ok or false if there is at least one field missing
-	 */
-	public static boolean checkMessageIntegrity(Message message, String queueName) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
-		// message from the images queue must have the secondary field in it's attributes
-		if (queueName.equals(QueueName.IMAGES)) {
-			return checkImageCrawlingMessageIntegrity(message);
-		}
-
-		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
-			return false;
-		}
-		if (!attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + CITY_MESSAGE_ATTR + "]");
-			return false;
-		}
-
-		// specific fields according with queue type
-		if (queueName.equals(QueueName.INSIGHTS)) {
-			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-				if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-					Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
-					return false;
-				}
-				if (!attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-					Logging.printLogError(logger, "Message is missing field [" + INTERNAL_ID_MESSAGE_ATTR + "]");
-					return false;
-				}
-			}
-		}
-
-
-
-		return true;
-	}
-
-	private static boolean checkImageCrawlingMessageIntegrity(Message message) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
-		if (!attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + MARKET_MESSAGE_ATTR + "]");
-			return false;
-		}
-		if (!attrMap.containsKey("type")) {
-			Logging.printLogError(logger, "Message is missing field [" + "type" + "]");
-			return false;
-		}
-		if (!attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + CITY_MESSAGE_ATTR + "]");
-			return false;
-		}
-		if (!attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + PROCESSED_ID_MESSAGE_ATTR + "]");
-			return false;
-		}
-		if (!attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + INTERNAL_ID_MESSAGE_ATTR + "]");
-			return false;
-		}
-		if (!attrMap.containsKey(QueueService.NUMBER_MESSAGE_ATTR)) {
-			Logging.printLogError(logger, "Message is missing field [" + NUMBER_MESSAGE_ATTR + "]");
-			return false;
-		}
-
-		return true;
 	}
 
 	/**

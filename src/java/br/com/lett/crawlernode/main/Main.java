@@ -67,9 +67,8 @@ public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 	
-	private static final String TASK_ENDPOINT_PATH = "/crawler-task";
-	private static final int PORT = 5000;
-	private static final String HOST = "localhost";
+	private static final int SERVER_PORT = 5000;
+	private static final String SERVER_HOST = "localhost";
 
 	public static ExecutionParameters 	executionParameters;
 	public static ProxyCollection 		proxies;
@@ -144,10 +143,12 @@ public class Main {
 		
 		// create the server
 		try {
-			HttpServer server = HttpServer.create(new InetSocketAddress(HOST, PORT), 1);
+			HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 1);
 			ServerHandler serverHandler = new ServerHandler();
 			
-			server.createContext(TASK_ENDPOINT_PATH, serverHandler);
+			server.createContext(ServerHandler.TASK_ENDPOINT, serverHandler);
+			server.createContext(ServerHandler.HEALTH_CHECK_ENDPOINT, serverHandler);
+			
 			server.setExecutor(executor);
 			server.start();
 			

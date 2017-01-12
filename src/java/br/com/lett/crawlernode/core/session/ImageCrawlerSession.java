@@ -155,11 +155,11 @@ public class ImageCrawlerSession extends Session {
 		this.localRegularFileDir = localRegularFileDir;
 	}
 
-	public int getNumber() {
+	public int getImageNumber() {
 		return imageNumber;
 	}
 
-	public void setNumber(int number) {
+	public void setImageNumber(int number) {
 		this.imageNumber = number;
 	}
 

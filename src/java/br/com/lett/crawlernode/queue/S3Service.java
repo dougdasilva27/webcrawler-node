@@ -120,7 +120,7 @@ public class S3Service {
 	}
 
 	public static void uploadImageToAmazon(Session session, String md5) {
-		int number = ((ImageCrawlerSession)session).getNumber();
+		int number = ((ImageCrawlerSession)session).getImageNumber();
 
 		String md5Path = ((ImageCrawlerSession)session).getMd5AmazonPath();
 		String localMd5Path = ((ImageCrawlerSession)session).getLocalMd5Path();

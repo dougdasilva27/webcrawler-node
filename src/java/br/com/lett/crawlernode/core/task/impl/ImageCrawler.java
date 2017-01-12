@@ -83,7 +83,7 @@ public class ImageCrawler extends Task {
 					amazonMd5 = S3Service.getAmazonImageFileMd5(s3Object);
 				}
 
-				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (first check)");
+				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getImageNumber() + "... (first check)");
 				if (amazonMd5 == null) {
 					Logging.printLogDebug(logger, session, "Amazon MD5 doesn't exists yet.");
 				} else {
