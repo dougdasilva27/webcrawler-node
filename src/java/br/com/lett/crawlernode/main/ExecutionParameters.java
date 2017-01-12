@@ -43,7 +43,6 @@ public class ExecutionParameters {
 	private String environment;
 	private String version;
 	private Boolean debug;
-	private String developmentQueue;
 
 	/** 
 	 * In case we want to force image update on Amazon bucket, when downloading images
@@ -104,7 +103,6 @@ public class ExecutionParameters {
 		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
 		options.addOption("environment", true, "Environment [development, production]");
-		options.addOption("development_queue", true, "Development queue to fetch message from [seed, insights, discover, images, rating]");
 		options.addOption("version", true, "Crawler node version");
 		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
 
@@ -132,19 +130,6 @@ public class ExecutionParameters {
 				}
 			} else {
 				help();
-			}
-			
-			// development queue
-			if (cmd.hasOption("development_queue")) {
-				developmentQueue = cmd.getOptionValue("development_queue");
-				if ( !developmentQueue.equals(SEED) &&
-					 !developmentQueue.equals(INSIGHTS) &&
-					 !developmentQueue.equals(RATING) &&
-					 !developmentQueue.equals(DISCOVER) &&
-					 !developmentQueue.equals(IMAGES) ) {
-					Logging.printLogError(logger, "Unrecognized development queue.");
-					help();
-				}
 			}
 
 			// temporary images folder
@@ -249,13 +234,5 @@ public class ExecutionParameters {
 
 	public void setTmpImageFolder(String tmpImageFolder) {
 		this.tmpImageFolder = tmpImageFolder;
-	}
-	
-	public String getDevelopmentQueue() {
-		return developmentQueue;
-	}
-
-	public void setDevelopmentQueue(String developmentQueue) {
-		this.developmentQueue = developmentQueue;
 	}
 }

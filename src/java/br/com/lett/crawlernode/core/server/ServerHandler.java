@@ -11,33 +11,17 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionFactory;
-import br.com.lett.crawlernode.core.task.base.Task;
-import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.queue.QueueName;
-import br.com.lett.crawlernode.queue.QueueService;
+import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ServerHandler implements HttpHandler {
-	
+
 	protected static final Logger logger = LoggerFactory.getLogger(ServerHandler.class);
 
-	private static final String POST = "POST";
-	private static final String GET = "GET";
-	
-	public static final String TASK_ENDPOINT = "/crawler-task";
-	public static final String HEALTH_CHECK_ENDPOINT = "/health-check";
-
-	private static final int HTTP_STATUS_CODE_OK = 200;
-	private static final int HTTP_STATUS_CODE_SERVER_ERROR = 500;
-	private static final int HTTP_STATUS_CODE_BAD_REQUEST = 400;
-	private static final int HTTP_STATUS_CODE_METHOD_NOT_ALLOWED = 402;
-	private static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
+	public static final String POST = "POST";
+	public static final String GET = "GET";
 
 	private static final String MSG_ATTR_HEADER_PREFIX = "X-aws-sqsd-attr-";
 
@@ -52,57 +36,35 @@ public class ServerHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange t) throws IOException {		
 		String endpoint = t.getHttpContext().getPath();
-		String requestMethod = t.getRequestMethod().toUpperCase();
 		String response;
-		
+
 		// handle request on the task endpoint
-		if (TASK_ENDPOINT.equals(endpoint)) {
+		if (ServerConstants.ENDPOINT_TASK.equals(endpoint)) {
 			Logging.printLogDebug(logger, "Received a request on TASK_ENDPOINT.");
-			
-			if (POST.equals(requestMethod)) {
-				Request request = parseRequest(t);
 
-				Markets markets = Main.markets;
+			Request request = parseRequest(t);
 
-				// discover the type of task
-				// done internally on the following method
-				Session session = SessionFactory.createSession(request, request.getQueueName(), markets);
-
-				// create the task
-				Task task = TaskFactory.createTask(session);
-
-				// perform the task
-				task.process();
-
-				// check final task status
-				
-				if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
-					response = "task completed";
-					t.sendResponseHeaders(HTTP_STATUS_CODE_OK, response.length());				
+			if (CrawlerTaskRequestChecker.checkRequestMethod(request)) {
+				if (CrawlerTaskRequestChecker.checkRequest(request)) {
+					response = CrawlerTaskEndpoint.perform(t, request);
 				} else {
-					response = "task failed";
-					t.sendResponseHeaders(HTTP_STATUS_CODE_SERVER_ERROR, response.length());
+					response = ServerConstants.MSG_BAD_REQUEST;
+					t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_BAD_REQUEST, response.length());
 				}
+			} else {
+				response = ServerConstants.MSG_METHOD_NOT_ALLOWED;
+				t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_METHOD_NOT_ALLOWED, response.length());
 			}
-			else {
-				response = "request method not allowed";
-				t.sendResponseHeaders(HTTP_STATUS_CODE_METHOD_NOT_ALLOWED, response.length());
-			}			
 		}
-		
+
 		// handle request on the health check endpoint
-		else if (HEALTH_CHECK_ENDPOINT.equals(endpoint)) {
-			Logging.printLogDebug(logger, "Received a request on HEALTH_CHECK_ENDPOINT.");
-			response = "the server is fine";
-			t.sendResponseHeaders(HTTP_STATUS_CODE_OK, response.length());
-		}
-		
-		// not found
 		else {
-			response = "endpoint not found";
-			t.sendResponseHeaders(HTTP_STATUS_CODE_NOT_FOUND, response.length());
+			Logging.printLogDebug(logger, "Received a request on HEALTH_CHECK_ENDPOINT.");
+			
+			response = ServerConstants.MSG_SERVER_HEALTH_OK;
+			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_OK, response.length());
 		}
-		
+
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
 		os.close();
@@ -111,6 +73,8 @@ public class ServerHandler implements HttpHandler {
 	private Request parseRequest(HttpExchange t) throws IOException {
 		Request request = new Request();
 		Headers headers = t.getRequestHeaders();
+
+		request.setRequestMethod(t.getRequestMethod().toUpperCase());
 
 		request.setMessageId(headers.getFirst(MSG_ID_HEADER));
 		request.setCityName(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_CITY));
@@ -126,70 +90,6 @@ public class ServerHandler implements HttpHandler {
 		request.setQueueName(headers.getFirst(SQS_NAME_HEADER));
 
 		return request;
-	}
-	
-	/**
-	 * 
-	 * @param request
-	 * @return
-	 */
-	private boolean checkRequest(Request request) {
-		if (QueueName.IMAGES.equals(request.getQueueName())) {
-			return checkImageTaskRequest(request);
-		}
-		
-		if (request.getMarketName() == null) {
-			Logging.printLogError(logger, "Request is missing field market name");
-			return false;
-		}
-		if (request.getCityName() == null) {
-			Logging.printLogError(logger, "Request is missing field city");
-			return false;
-		}
-		
-		if (QueueName.INSIGHTS.equals(request.getQueueName())) {
-			if (Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-				if (request.getProcessedId() == null) {
-					Logging.printLogError(logger, "Request is missing processed id");
-					return false;
-				}
-				if (request.getInternalId() == null) {
-					Logging.printLogError(logger, "Request is missing internal id");
-					return false;
-				}
-			}
-		}
-		
-		return true;
-	}
-	
-	private static boolean checkImageTaskRequest(Request request) {
-		if (request.getMarketName() == null) {
-			Logging.printLogError(logger, "Request is missing market name");
-			return false;
-		}
-		if (request.getType() == null) {
-			Logging.printLogError(logger, "Request is missing image type");
-			return false;
-		}
-		if (request.getCityName() == null) {
-			Logging.printLogError(logger, "Request is missing city");
-			return false;
-		}
-		if (request.getProcessedId() == null) {
-			Logging.printLogError(logger, "Request is missing processed id");
-			return false;
-		}
-		if (request.getInternalId() == null) {
-			Logging.printLogError(logger, "Request is missing internal id");
-			return false;
-		}
-		if (request.getNumber() == null) {
-			Logging.printLogError(logger, "Request is missing image number");
-			return false;
-		}
-
-		return true;
 	}
 
 	private String getRequestBody(HttpExchange t) throws IOException {

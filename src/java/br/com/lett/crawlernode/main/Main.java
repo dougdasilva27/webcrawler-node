@@ -18,6 +18,7 @@ import com.sun.net.httpserver.HttpServer;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.PoolExecutor;
+import br.com.lett.crawlernode.core.server.ServerConstants;
 import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
@@ -132,7 +133,7 @@ public class Main {
 		queueHandler = new QueueHandler();
 
 		// create a pool executor to be used as the http server executor
-		Logging.printLogDebug(logger, "Creating executor...");
+		Logging.printLogDebug(logger, "creating executor....");
 		PoolExecutor executor = new PoolExecutor(
 				executionParameters.getCoreThreads(), 
 				executionParameters.getNthreads(),
@@ -140,20 +141,23 @@ public class Main {
 				TimeUnit.SECONDS,
 				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
 				new RejectedTaskHandler());
+		Logging.printLogDebug(logger, "done.");
 		
 		// create the server
 		try {
+			Logging.printLogDebug(logger, "creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]....");
 			HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 1);
 			ServerHandler serverHandler = new ServerHandler();
 			
-			server.createContext(ServerHandler.TASK_ENDPOINT, serverHandler);
-			server.createContext(ServerHandler.HEALTH_CHECK_ENDPOINT, serverHandler);
+			server.createContext(ServerConstants.ENDPOINT_TASK, serverHandler);
+			server.createContext(ServerConstants.ENDPOINT_HEALTH_CHECK, serverHandler);
 			
 			server.setExecutor(executor);
 			server.start();
+			Logging.printLogDebug(logger, "done.");
 			
 		} catch (IOException ex) {
-			Logging.printLogError(logger, "Erro ao criar servidor.");
+			Logging.printLogError(logger, "error creating server.");
 			CommonMethods.getStackTraceString(ex);
 		}
 		

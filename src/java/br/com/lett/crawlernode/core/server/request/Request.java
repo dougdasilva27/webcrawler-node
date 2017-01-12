@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.core.server.request;
 
 public class Request {
+	
+	private String requestMethod;
 
 	// common to all tasks
 	private String messageId;
@@ -92,12 +94,21 @@ public class Request {
 		this.number = number;
 	}
 	
+	public String getRequestMethod() {
+		return requestMethod;
+	}
+
+	public void setRequestMethod(String requestMethod) {
+		this.requestMethod = requestMethod;
+	}
+	
 	@Override
 	public String toString() {
 		return "Request[messageId=" + messageId + 
 				", messageBody=" + messageBody + 
 				", queueName=" + queueName + 
 				", cityName=" + cityName +
-				", marketName=" + marketName + "]";
+				", marketName=" + marketName + 
+				", requestMethod=" + requestMethod + "]";
 	}
 }
