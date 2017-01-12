@@ -40,10 +40,12 @@ public class CrawlerTaskEndpoint {
 		// check final task status
 		if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
 			response = ServerConstants.MSG_TASK_COMPLETED;
-			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_OK, response.length());				
+			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_OK, response.length());
+			Main.server.incrementSucceededTasks();
 		} else {
 			response = ServerConstants.MSG_TASK_FAILED;
 			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_SERVER_ERROR, response.length());
+			Main.server.incrementFailedTasks();
 		}
 
 		return response;

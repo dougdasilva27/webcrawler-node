@@ -4,27 +4,18 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.httpserver.HttpServer;
-
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.server.PoolExecutor;
-import br.com.lett.crawlernode.core.server.ServerConstants;
-import br.com.lett.crawlernode.core.server.ServerHandler;
+import br.com.lett.crawlernode.core.server.Server;
+import br.com.lett.crawlernode.core.server.ServerExecutorStatusAgent;
+import br.com.lett.crawlernode.core.server.ServerExecutorStatusCollector;
 import br.com.lett.crawlernode.core.task.Resources;
-import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
@@ -70,20 +61,17 @@ import br.com.lett.crawlernode.util.Logging;
 public class Main {
 
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
-	
-	private static final int SERVER_PORT = 5000;
-	private static final String SERVER_HOST = "localhost";
 
-	public static ExecutionParameters 	executionParameters;
-	public static ProxyCollection 		proxies;
-	public static DBCredentials 		dbCredentials;
-	public static DatabaseManager 		dbManager;
-	public static ResultManager 		processorResultManager;
-	public static QueueHandler			queueHandler;
-	
-	public static Markets				markets;
-	
-	public static Resources				globalResources;
+	public static ExecutionParameters 		executionParameters;
+	public static ProxyCollection 			proxies;
+	public static DBCredentials 			dbCredentials;
+	public static DatabaseManager 			dbManager;
+	public static ResultManager 			processorResultManager;
+	public static QueueHandler				queueHandler;
+	public static Markets					markets;
+	public static Resources					globalResources;
+	public static ServerExecutorStatusAgent	serverExecutorStatusAgent;
+	public static Server					server;
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
@@ -141,45 +129,13 @@ public class Main {
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
-
-		// create a pool executor to be used as the http server executor
-		Logging.printLogDebug(logger, "creating executor....");
-		PoolExecutor executor = (PoolExecutor)createExecutor();
-		Logging.printLogDebug(logger, "done.");
-		Logging.printLogDebug(logger, executor.toString());
 		
 		// create the server
-		Logging.printLogDebug(logger, "creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]....");
-		initServer(executor);
-		Logging.printLogDebug(logger, "done.");
+		server = new Server();
 		
-	}
-	
-	private static Executor createExecutor() {
-		return new PoolExecutor(
-				executionParameters.getCoreThreads(), 
-				executionParameters.getCoreThreads(),
-				0L,
-				TimeUnit.SECONDS,
-				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
-				new RejectedTaskHandler());
-	}
-	
-	private static void initServer(Executor executor) {
-		try {
-			HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
-			ServerHandler serverHandler = new ServerHandler();
-			
-			server.createContext(ServerConstants.ENDPOINT_TASK, serverHandler);
-			server.createContext(ServerConstants.ENDPOINT_HEALTH_CHECK, serverHandler);
-			
-			server.setExecutor(executor);
-			server.start();
-			
-		} catch (IOException ex) {
-			Logging.printLogError(logger, "error creating server.");
-			CommonMethods.getStackTraceString(ex);
-		}
+		// create the scheduled task to check the executor status
+		serverExecutorStatusAgent = new ServerExecutorStatusAgent();
+		serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 5);
 	}
 	
 	private static File downloadWebdriverExtension() throws IOException {
