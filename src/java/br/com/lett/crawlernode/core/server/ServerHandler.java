@@ -25,6 +25,7 @@ public class ServerHandler implements HttpHandler {
 
 	private static final String MSG_ATTR_HEADER_PREFIX = "X-aws-sqsd-attr-";
 
+	private static final String MSG_ATTR_MARKET_ID = "marketId";
 	private static final String MSG_ATTR_MARKET = "market";
 	private static final String MSG_ATTR_CITY = "city";
 	private static final String MSG_ATTR_PROCESSED_ID = "processedId";
@@ -41,8 +42,10 @@ public class ServerHandler implements HttpHandler {
 		// handle request on the task endpoint
 		if (ServerConstants.ENDPOINT_TASK.equals(endpoint)) {
 			Logging.printLogDebug(logger, "Received a request on TASK_ENDPOINT.");
-
+			
+			Logging.printLogDebug(logger, "parsing request....");
 			Request request = parseRequest(t);
+			Logging.printLogDebug(logger, request.toString());
 
 			if (CrawlerTaskRequestChecker.checkRequestMethod(request)) {
 				if (CrawlerTaskRequestChecker.checkRequest(request)) {

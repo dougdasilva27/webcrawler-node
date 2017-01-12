@@ -10,13 +10,14 @@ public class Request {
 	private String queueName;
 	private String cityName;
 	private String marketName;
+	private int marketId;
 	
 	private String internalId;
 	private Long processedId;
 	
 	// images
-	private String type;
-	private Integer number;
+	private String imageType;
+	private Integer imageNumber;
 	
 	public Request() {
 		super();
@@ -35,7 +36,7 @@ public class Request {
 	}
 	
 	public void setMessageBody(String messageBody) {
-		this.messageBody = messageBody;
+		this.messageBody = messageBody.trim();
 	}
 	
 	public String getQueueName() {
@@ -79,19 +80,19 @@ public class Request {
 	}
 	
 	public String getType() {
-		return type;
+		return imageType;
 	}
 
 	public void setType(String type) {
-		this.type = type;
+		this.imageType = type;
 	}
 	
 	public Integer getNumber() {
-		return number;
+		return imageNumber;
 	}
 
 	public void setNumber(int number) {
-		this.number = number;
+		this.imageNumber = number;
 	}
 	
 	public String getRequestMethod() {
@@ -102,6 +103,14 @@ public class Request {
 		this.requestMethod = requestMethod;
 	}
 	
+	public int getMarketId() {
+		return marketId;
+	}
+
+	public void setMarketId(int marketId) {
+		this.marketId = marketId;
+	}
+	
 	@Override
 	public String toString() {
 		return "Request[messageId=" + messageId + 
@@ -109,6 +118,9 @@ public class Request {
 				", queueName=" + queueName + 
 				", cityName=" + cityName +
 				", marketName=" + marketName + 
-				", requestMethod=" + requestMethod + "]";
+				", requestMethod=" + requestMethod +
+				", internalId=" + internalId + 
+				", processedId=" + processedId + 
+				", marketId=" + marketId + "]";
 	}
 }

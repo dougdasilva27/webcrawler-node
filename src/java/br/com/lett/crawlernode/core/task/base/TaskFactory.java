@@ -34,8 +34,6 @@ public class TaskFactory {
 	 * @return
 	 */
 	public static Task createTask(Session session) {
-		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
-
 		if ( session instanceof InsightsCrawlerSession 	|| 
 			 session instanceof SeedCrawlerSession 		||
 			 session instanceof DiscoveryCrawlerSession

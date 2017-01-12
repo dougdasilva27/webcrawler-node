@@ -122,10 +122,10 @@ public class Main {
 		try {
 			globalResources.setWebdriverExtension(downloadWebdriverExtension());
 		} catch (MalformedURLException e) {
-			Logging.printLogError(logger, "Error in resource URL.");
+			Logging.printLogError(logger, "error in resource URL.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		} catch (IOException e) {
-			Logging.printLogError(logger, "Error during resource download.");
+			Logging.printLogError(logger, "error during resource download.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 

@@ -5,8 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -22,21 +20,20 @@ public class CrawlerTaskRequestChecker {
 			return checkImageTaskRequest(request);
 		}
 		if (request.getMarketName() == null) {
-			Logging.printLogError(logger, "Request is missing field market name");
+			Logging.printLogError(logger, "Request is missing field marketName");
 			return false;
 		}
 		if (request.getCityName() == null) {
 			Logging.printLogError(logger, "Request is missing field city");
 			return false;
 		}
-		if ( QueueName.INSIGHTS.equals(request.getQueueName()) &&
-			 Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) {
+		if (QueueName.INSIGHTS.equals(request.getQueueName())) {
 			if (request.getProcessedId() == null) {
-				Logging.printLogError(logger, "Request is missing processed id");
+				Logging.printLogError(logger, "Request is missing processedId");
 				return false;
 			}
 			if (request.getInternalId() == null) {
-				Logging.printLogError(logger, "Request is missing internal id");
+				Logging.printLogError(logger, "Request is missing internalId");
 				return false;
 			}
 		}
@@ -53,7 +50,7 @@ public class CrawlerTaskRequestChecker {
 
 	private static boolean checkImageTaskRequest(Request request) {
 		if (request.getMarketName() == null) {
-			Logging.printLogError(logger, "Request is missing market name");
+			Logging.printLogError(logger, "Request is missing marketName");
 			return false;
 		}
 		if (request.getType() == null) {
@@ -65,11 +62,11 @@ public class CrawlerTaskRequestChecker {
 			return false;
 		}
 		if (request.getProcessedId() == null) {
-			Logging.printLogError(logger, "Request is missing processed id");
+			Logging.printLogError(logger, "Request is missing processedId");
 			return false;
 		}
 		if (request.getInternalId() == null) {
-			Logging.printLogError(logger, "Request is missing internal id");
+			Logging.printLogError(logger, "Request is missing internalId");
 			return false;
 		}
 		if (request.getNumber() == null) {
