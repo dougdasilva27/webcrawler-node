@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
@@ -92,16 +93,11 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			//taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createSession("http://www.americanas.com.br/produto/123683569", market);
-
-//			Runnable task = TaskFactory.createTask(session);
-//			if (task != null) {
-//				taskExecutor.executeTask(task);
-//			} else {
-//				System.err.println("There is no task to submit");
-//			}
-
-			//taskExecutor.shutDown();
+			Session session = SessionFactory.createTestSession("http://www.americanas.com.br/produto/123683569", market);
+			
+			Task task = TaskFactory.createTask(session);
+			
+			task.process();
 		}
 		else {
 			System.err.println("Market não encontrado no banco!");

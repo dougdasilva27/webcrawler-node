@@ -39,7 +39,7 @@ public class SessionFactory {
 		}
 	}
 	
-	public static Session createSession(String url, Market market) {
+	public static Session createTestSession(String url, Market market) {
 		return new TestCrawlerSession(url, market);
 	}
 
