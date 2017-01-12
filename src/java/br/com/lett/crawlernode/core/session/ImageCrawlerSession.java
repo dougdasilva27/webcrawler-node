@@ -3,17 +3,14 @@ package br.com.lett.crawlernode.core.session;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -34,10 +31,10 @@ public class ImageCrawlerSession extends Session {
 	 * Primary image always have a number=1
 	 * First secondary image has number=2, and so on
 	 */
-	private int number;
+	private int imageNumber;
 	
 	/** The image type: primary | secondary */
-	private String type;
+	private String imageType;
 
 	private String localFileDir;  
 	private String localOriginalFileDir;  
@@ -51,54 +48,52 @@ public class ImageCrawlerSession extends Session {
 	private String md5AmazonPath;
 	private String localMd5AmazonPath;
 
-	public ImageCrawlerSession(Message message, String queueName, Markets markets) {
-		super(message, queueName, markets);
-
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+	public ImageCrawlerSession(Request request, String queueName, Markets markets) {
+		super(request, queueName, markets);
 		
 		// get the type
-		if (attrMap.containsKey("type")) {
-			this.type = attrMap.get("type").getStringValue();
+		if (request.getType() != null) {
+			this.imageType = request.getType();
 		} else {
 			Logging.printLogError(logger, "Error: 'type' field not found on message attributes.");
 		}
 		
 		// get the internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		if (request.getInternalId() != null) {
+			this.internalId = request.getInternalId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.INTERNAL_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
 		// get processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		if (request.getProcessedId() != null) {
+			this.processedId = request.getProcessedId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.PROCESSED_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 				
 		// get the number
-		if (attrMap.containsKey(QueueService.NUMBER_MESSAGE_ATTR)) {
-			this.number = Integer.parseInt(attrMap.get(QueueService.NUMBER_MESSAGE_ATTR).getStringValue());
+		if (request.getNumber() != null) {
+			imageNumber = request.getNumber();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.NUMBER_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
 		// set local directories 
-		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + createImageBaseName();  
+		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();  
 		
-		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
-		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
-		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
+		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-original.jpg";  
+		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-regular.jpg";  
+		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-small.jpg";
 
 		// set names
-		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-original.jpg";
-		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
-		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
+		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-original.jpg";
+		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-small.jpg";
+		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-regular.jpg";
 		
 		// set Amazon path name
-		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + number + "-md5.txt";
-		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + ".rev-" + number + "-md5.txt";
+		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + imageNumber + "-md5.txt";
+		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + ".rev-" + imageNumber + "-md5.txt";
 	}
 	
 	@Override
@@ -161,11 +156,11 @@ public class ImageCrawlerSession extends Session {
 	}
 
 	public int getNumber() {
-		return number;
+		return imageNumber;
 	}
 
 	public void setNumber(int number) {
-		this.number = number;
+		this.imageNumber = number;
 	}
 
 	public String getInternalId() {
@@ -209,11 +204,11 @@ public class ImageCrawlerSession extends Session {
 	}
 
 	public String getType() {
-		return type;
+		return imageType;
 	}
 
 	public void setType(String type) {
-		this.type = type;
+		this.imageType = type;
 	}
 
 	public String getMd5AmazonPath() {

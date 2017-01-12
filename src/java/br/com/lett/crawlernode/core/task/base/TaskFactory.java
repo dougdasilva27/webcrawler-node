@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 /**
  * This class is used to instantiate crawler tasks of an arbitrary type.
+ * 
  * @author Samir Leao
  *
  */
@@ -35,10 +36,10 @@ public class TaskFactory {
 	public static Task createTask(Session session) {
 		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 
-		if (session instanceof InsightsCrawlerSession 	|| 
-				session instanceof SeedCrawlerSession 		||
-				session instanceof DiscoveryCrawlerSession
-				) {
+		if ( session instanceof InsightsCrawlerSession 	|| 
+			 session instanceof SeedCrawlerSession 		||
+			 session instanceof DiscoveryCrawlerSession
+			) {
 
 			return createCrawlerTask(session);
 		}

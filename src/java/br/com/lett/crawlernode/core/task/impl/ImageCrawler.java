@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -76,14 +77,14 @@ public class ImageCrawler extends Task {
 
 			// the image is already on the Amazon
 			else {
-				
+
 				// get the md5 of the image on Amazon
 				S3Object s3Object = S3Service.fetchS3Object(session, ((ImageCrawlerSession)session).getMd5AmazonPath());
 				String amazonMd5 = null;
 				if (s3Object != null) {
 					amazonMd5 = S3Service.getAmazonImageFileMd5(s3Object);
 				}
-				
+
 				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getNumber() + "... (first check)");
 				if (amazonMd5 == null) {
 					Logging.printLogDebug(logger, session, "Amazon MD5 doesn't exists yet.");
@@ -97,18 +98,18 @@ public class ImageCrawler extends Task {
 					Logging.printLogDebug(logger, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
 					ImageDownloadResult finalDownloadResult;
-					
-					if(amazonMd5 != null) {
+
+					if (amazonMd5 != null) {
 						finalDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.getMd5());
 					} else {
 						finalDownloadResult = simpleDownloadResult;
 					}
-					
+
 					update(finalDownloadResult);
 				}
 				else if (Main.executionParameters.mustForceImageUpdate()) {
 					Logging.printLogDebug(logger, session, "The image md5 is already on Amazon, but i want to force the update.");
-					
+
 					update(simpleDownloadResult);
 				}
 				else {
@@ -122,7 +123,43 @@ public class ImageCrawler extends Task {
 		}		
 
 	}
-	
+
+	@Override
+	public void onStart() {
+		Logging.printLogDebug(logger, session, "START");
+	}
+
+	@Override
+	public void onFinish() {
+		List<SessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+
+		if (!errors.isEmpty()) {
+			Logging.printLogError(logger, session, "Task failed!");
+
+			// print all errors of type exceptions
+			for (SessionError error : errors) {
+				if (error.getType().equals(SessionError.EXCEPTION)) {
+					Logging.printLogError(logger, session, error.getErrorContent());
+				}
+			}
+		}
+		else {
+
+			// only remove the task from queue if it was flawless
+			Logging.printLogDebug(logger, session, "Task completed.");
+			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+
+		}
+
+		// clear the session
+		session.clearSession();
+
+		Logging.printLogDebug(logger, session, "END");
+	}
+
 	/**
 	 * This method takes the following steps:
 	 * 1) Create all rescaled versions of the image
@@ -133,7 +170,7 @@ public class ImageCrawler extends Task {
 	 * @throws IOException
 	 */
 	private void update(ImageDownloadResult imageDownloadResult) throws IOException {
-		
+
 		// create a buffered image from the downloaded image
 		Logging.printLogDebug(logger, session, "Creating a buffered image...");
 		BufferedImage bufferedImage = createImage(imageDownloadResult.getImageFile());
@@ -151,7 +188,7 @@ public class ImageCrawler extends Task {
 		// store image metadata, including descriptors and hash
 		// using the md5 of the local original file, to maintain as the original code
 		// for now is commented...looking for a better way to deal with image features TODO
-		
+
 		//storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 	}
 
@@ -170,7 +207,7 @@ public class ImageCrawler extends Task {
 		String pastIterationMd5 = currentMd5;
 		int iteration = 1;
 		ImageDownloadResult result = null;
-		
+
 		Logging.printLogDebug(logger, session, "Initiating truco download...");
 
 		while (iteration <= IMAGE_CHECKING_TRY) {
@@ -291,13 +328,11 @@ public class ImageCrawler extends Task {
 				Document doc = Document.parse(gson.toJson(imageFeatures));
 
 				// store on mongo
-				if(database != null) {
-					if(imageFeaturesCollection != null) {
-						Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
-						imageFeaturesCollection.insertOne(doc);	 
-					}
+				if (database != null && imageFeaturesCollection != null) {
+					Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
+					imageFeaturesCollection.insertOne(doc);	 
 				}
-				
+
 			} catch (Exception e) {
 				Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
 				SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));

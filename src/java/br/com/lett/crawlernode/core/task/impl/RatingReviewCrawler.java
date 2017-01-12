@@ -64,6 +64,36 @@ public class RatingReviewCrawler extends Task {
 			runTest();
 		}
 	}
+	
+	@Override
+	public void onStart() {
+		Logging.printLogDebug(logger, session, "START");
+	}
+
+	@Override
+	public void onFinish() {
+		List<SessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+		// errors collected manually
+		// they can be exceptions or business logic errors
+		// and are all gathered inside the session
+		if (!errors.isEmpty()) {
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+		}
+
+		else {
+
+			// only remove the task from queue if it was flawless
+			// and if we are not testing, because when testing there is no message processing
+			Logging.printLogDebug(logger, session, "Task completed.");
+
+			Logging.printLogDebug(logger, session, "Deleting task: " + session.getOriginalURL() + " ...");
+		}
+		
+		Logging.printLogDebug(logger, session, "END");
+	}
 
 	public void runProduction() {
 		if (!cookies.isEmpty()) {

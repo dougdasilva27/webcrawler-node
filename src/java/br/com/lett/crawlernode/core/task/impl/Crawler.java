@@ -67,9 +67,9 @@ public class Crawler extends Task {
 
 	/** The current crawling session. */
 	protected Session session;
-	
+
 	protected CrawlerConfig config;
-	
+
 	protected CrawlerWebdriver webdriver;
 
 	/**
@@ -82,10 +82,10 @@ public class Crawler extends Task {
 	public Crawler(Session session) {
 		this.session = session;
 		this.cookies = new ArrayList<>();
-		
+
 		createDefaultConfig();
 	}
-	
+
 	/**
 	 * Create the config with default values
 	 */
@@ -109,6 +109,51 @@ public class Crawler extends Task {
 		else {
 			productionRun();
 		}
+	}
+	
+	@Override
+	public void onStart() {
+		Logging.printLogDebug(logger, session, "START");
+	}
+
+	@Override
+	public void onFinish() {
+		
+		// close the webdriver
+		if (webdriver != null ) {
+			webdriver.terminate();
+		}
+		
+		List<SessionError> errors = session.getErrors();
+
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+		// errors collected manually
+		// they can be exceptions or business logic errors
+		// and are all gathered inside the session
+		if (!errors.isEmpty()) {
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
+		}
+
+		// only remove the task from queue if it was flawless
+		// and if we are not testing, because when testing there is no message processing
+		else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
+			Logging.printLogDebug(logger, session, "Task completed.");
+				
+			//TODO enviar reposta OK para o daemon
+			
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
+		}
+
+		// only print statistics of void and truco if we are running an Insights session crawling
+		if (session instanceof InsightsCrawlerSession) {
+			Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+			Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
+		}
+
+		Logging.printLogDebug(logger, session, "END");
 	}
 
 	private void productionRun() {
@@ -294,7 +339,7 @@ public class Crawler extends Task {
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
 						processPersistenceResult(persistenceResult);
 						scheduleImages(persistenceResult, newProcessedProduct);
-						
+
 						return;
 					}
 				}
@@ -308,7 +353,7 @@ public class Crawler extends Task {
 			}
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param persistenceResult
@@ -329,8 +374,8 @@ public class Crawler extends Task {
 			Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.mongoBackendPanel);
 		}
 	}
-	
-	
+
+
 	private void scheduleImages(PersistenceResult persistenceResult, ProcessedModel processed) {
 		Long createdId = null;
 		if (persistenceResult instanceof ProcessedModelPersistenceResult) {
@@ -341,7 +386,7 @@ public class Crawler extends Task {
 			Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
 			Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
 		}
-		
+
 	}
 
 
@@ -382,7 +427,7 @@ public class Crawler extends Task {
 	 * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an empty array list if no product was found.
 	 */
 	public List<Product> extract() throws Exception {
-		
+
 		// in cases we are running a truco iteration
 		if (webdriver != null) {
 			webdriver.terminate();
@@ -437,7 +482,7 @@ public class Crawler extends Task {
 			webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 			html = webdriver.getCurrentPageSource();
 		}
-		
+
 		return Jsoup.parse(html);		
 	}
 
@@ -570,11 +615,11 @@ public class Crawler extends Task {
 					// we found two consecutive equals processed products, persist and end 
 					else {
 						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
-						
+
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
 						processPersistenceResult(persistenceResult);
 						scheduleImages(persistenceResult, next);
-						
+
 						return;
 					}
 				}

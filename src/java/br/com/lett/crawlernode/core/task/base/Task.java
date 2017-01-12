@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.core.task.base;
 
 public abstract class Task {
 
-	protected final void process() {
+	public final void process() {
 		onStart();
 		processTask();
 		onFinish();
