@@ -10,6 +10,8 @@ import java.net.URL;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +86,14 @@ public class Main {
 
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
+		
+		try {
+			Document ipify = Jsoup.connect("http://api.ipify.org/").get();
+			Logging.printLogDebug(logger, "Machine IP: " + ipify.select("body").text());
+		} catch (IOException e1) {
+			Logging.printLogError(logger, "Error during connection with api.ipify.org");
+		}
+		
 
 		// setting execution parameters
 		executionParameters = new ExecutionParameters(args);

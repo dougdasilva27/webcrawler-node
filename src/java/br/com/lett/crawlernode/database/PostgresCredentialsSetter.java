@@ -20,7 +20,11 @@ public class PostgresCredentialsSetter {
 
 		boolean mustExit = false;
 
-		if(username == null || pass == null || host == null || port == null || database == null) {
+		if( username == null 	|| 
+			pass == null 		|| 
+			host == null 		|| 
+			port == null 		|| 
+			database == null ) {
 
 			if(username == null) {
 				username = System.getenv("LETT_POSTGRES_USERNAME_ENCRYPTED");

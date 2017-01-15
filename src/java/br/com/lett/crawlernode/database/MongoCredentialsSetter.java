@@ -25,7 +25,11 @@ public class MongoCredentialsSetter {
 
 		boolean mustExit = false;
 
-		if(insightsUser == null || insightsPass == null || insightsHost == null || insightsPort == null || insightsDatabase == null) {
+		if( insightsUser == null || 
+			insightsPass == null || 
+			insightsHost == null || 
+			insightsPort == null || 
+			insightsDatabase == null ) {
 
 			if(insightsUser == null) {
 				insightsUser = System.getenv(LETT_MONGO_PREFIX + tmpDatabase + "_" + tmpUser + "_USERNAME_ENCRYPTED");
