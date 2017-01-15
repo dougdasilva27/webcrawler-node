@@ -15,6 +15,7 @@ public class CrawlerTaskRequestChecker {
 
 	public static boolean checkRequest(Request request) {
 		if (request.getQueueName() == null) {
+			Logging.printLogError(logger, "Request is missing queue name");
 			return false;
 		}
 		if (request instanceof ImageCrawlerRequest) {

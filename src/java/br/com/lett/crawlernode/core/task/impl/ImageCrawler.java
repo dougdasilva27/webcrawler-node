@@ -58,6 +58,14 @@ public class ImageCrawler extends Task {
 		try {
 
 			ImageDownloadResult simpleDownloadResult = simpleDownload();
+			
+			if (simpleDownloadResult.getImageFile() == null) {
+				Logging.printLogError(logger, session, "Failed to download image....returning from image processTask()....");
+				
+				session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
+				
+				return;
+			}
 
 			// get metadata from the image on Amazon
 			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalName());

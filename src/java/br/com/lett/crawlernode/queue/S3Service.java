@@ -83,7 +83,6 @@ public class S3Service {
 	public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
 		//AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
 		//AmazonS3 s3client = new AmazonS3Client(credentials);
-		System.err.println(name);
 		try {
 			return s3clientImages.getObjectMetadata(imagesBucketName, name);
 		} catch (AmazonS3Exception s3Exception) {
@@ -150,15 +149,21 @@ public class S3Service {
 			Logging.printLogDebug(logger, session, "Upload md5 file OK!");
 
 			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, originalName, new File(localOriginalFileDir)));
-			if(number == 1) s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, ((ImageCrawlerSession)session).getOriginalName(), imagesBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
+			if(number == 1) {
+				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, ((ImageCrawlerSession)session).getOriginalName(), imagesBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
+			}
 			Logging.printLogDebug(logger, session, "Upload original OK!");
 
 			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, smallName, new File(localSmallFileDir)));
-			if(number == 1) s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, smallName, imagesBucketName, smallName.replace(".jpg", "." + md5 + ".jpg")));
+			if(number == 1) {
+				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, smallName, imagesBucketName, smallName.replace(".jpg", "." + md5 + ".jpg")));
+			}
 			Logging.printLogDebug(logger, session, "Upload small OK!");
 
 			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, regularName, new File(localRegularFileDir)));
-			if(number == 1) s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, regularName, imagesBucketName, regularName.replace(".jpg", "." + md5 + ".jpg")));
+			if(number == 1) {
+				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, regularName, imagesBucketName, regularName.replace(".jpg", "." + md5 + ".jpg")));
+			}
 			Logging.printLogDebug(logger, session, "Upload regular OK!");
 
 		} catch (AmazonServiceException ase) {

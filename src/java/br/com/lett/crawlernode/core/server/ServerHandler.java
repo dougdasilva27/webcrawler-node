@@ -32,8 +32,8 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_CITY = "city";
 	private static final String MSG_ATTR_PROCESSED_ID = "processedId";
 	private static final String MSG_ATTR_INTERNAL_ID = "internalId";
-	public static final String MSG_ATTR_IMG_NUMBER = "number";
-	public static final String MSG_ATTR_IMG_TYPE = "type";
+	private static final String MSG_ATTR_IMG_NUMBER = "number";
+	private static final String MSG_ATTR_IMG_TYPE = "type";
 
 	private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 	private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
@@ -109,7 +109,6 @@ public class ServerHandler implements HttpHandler {
 		request.setQueueName(queueName);
 		
 		if (request instanceof ImageCrawlerRequest) {
-			System.out.println(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER));
 			((ImageCrawlerRequest) request).setImageNumber(Integer.parseInt(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER)));
 			((ImageCrawlerRequest) request).setImageType(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_TYPE));
 		}

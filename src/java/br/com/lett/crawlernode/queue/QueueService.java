@@ -50,15 +50,12 @@ public class QueueService {
 
 	private static final String DEVELOMENT_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 
-	public static final int MAXIMUM_RECEIVE_TIME = 10; // 10 seconds for long pooling
-	public static final int MAX_MESSAGES_REQUEST = 10; // the maximum number of messages that Amazon can receive a request for
-
 	public static final String CITY_MESSAGE_ATTR 				= "city";
 	public static final String MARKET_MESSAGE_ATTR 				= "market";
 	//public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
-	public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
+	//public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
 
 	public static final String IMAGE_TYPE 						= "type";
 	public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR 	= "primary";
@@ -66,7 +63,7 @@ public class QueueService {
 	public static final String NUMBER_MESSAGE_ATTR				= "number";
 
 	static {
-		queueURLMap = new HashMap<String, String>();
+		queueURLMap = new HashMap<>();
 
 		queueURLMap.put(QueueName.DEVELOPMENT, DEVELOMENT_QUEUE_URL);
 

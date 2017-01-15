@@ -11,11 +11,11 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 
 public class Markets {
 	
-	private List<Market> markets;
+	private List<Market> marketsList;
 	private DatabaseManager dbManager;
 	
 	public Markets(DatabaseManager dbManager) {
-		this.markets = new ArrayList<Market>();
+		this.marketsList = new ArrayList<>();
 		this.dbManager = dbManager;
 		
 		init();
@@ -28,8 +28,8 @@ public class Markets {
 				int marketId = rs.getInt("id");
 				String city = rs.getString("city");
 				String name = rs.getString("name");
-				ArrayList<String> proxies = new ArrayList<String>();
-				ArrayList<String> imageProxies = new ArrayList<String>();
+				ArrayList<String> proxies = new ArrayList<>();
+				ArrayList<String> imageProxies = new ArrayList<>();
 				
 				// get the array of proxies from postgres, as a json array
 				JSONArray proxiesJSONArray = new JSONArray(rs.getString("proxies"));
@@ -52,7 +52,7 @@ public class Markets {
 						proxies,
 						imageProxies);
 
-				markets.add(market);				
+				marketsList.add(market);				
 			}
 
 		} catch (SQLException e) {
@@ -68,8 +68,18 @@ public class Markets {
 	 * @return the desired market. If none is found, the method returns null.
 	 */
 	public Market getMarket(String city, String name) {
-		for (Market m : markets) {
+		for (Market m : marketsList) {
 			if (m.getCity().equals(city) && m.getName().equals(name)) {
+				return m;
+			}
+		}
+		
+		return null;
+	}
+	
+	public Market getMarket(int marketId) {
+		for (Market m : marketsList) {
+			if (m.getNumber() == marketId) {
 				return m;
 			}
 		}
@@ -78,17 +88,17 @@ public class Markets {
 	}
 
 	public List<Market> getMarkets() {
-		return markets;
+		return marketsList;
 	}
 
 	public void setMarkets(List<Market> markets) {
-		this.markets = markets;
+		this.marketsList = markets;
 	}
 	
 	@Override
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder();
-		for (Market market : this.markets) {
+		for (Market market : this.marketsList) {
 			stringBuilder.append(market.toString());
 			stringBuilder.append("\n");
 		}
