@@ -21,41 +21,24 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
-	
-	public static final String SEED = "seed";
-	public static final String INSIGHTS = "insights";
-	public static final String DISCOVER = "discover";
-	public static final String IMAGES = "images";
-	public static final String RATING = "rating";
-
-	private static final String ENV_NTHREADS 			= "CRAWLER_THREADS";
-	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
-	private static final String ENV_DEBUG				= "DEBUG";
-	private static final String ENV_TMP_IMG_FOLDER		= "TMP_IMG_FOLDER";
-	private static final String ENV_ENVIRONMENT			= "ENVIRONMENT";
 
 	private Options options;
-	private String environment;
-	private String version;
-	private Boolean debug;
-
+	
+	private String[] args;
+	
 	/** 
 	 * In case we want to force image update on Amazon bucket, when downloading images
 	 * In some cases the crawler must update the redimensioned versions of images, and we must use
 	 * this option in case we want to force this, even if the image on market didn't changed. 
 	 */
 	private boolean forceImageUpdate;
-
+	
 	private String tmpImageFolder;
-	private String[] args;
-
-	/**
-	 * Number of threads used by the crawler
-	 * Value is passed by an environment variable
-	 */
 	private int nthreads;
-
 	private int coreThreads;
+	private String environment;
+	private String version;
+	private Boolean debug;
 
 	public ExecutionParameters(String[] args) {
 		this.args = args;
@@ -87,7 +70,6 @@ public class ExecutionParameters {
 	private void createOptions() {
 
 		options.addOption("h", "help", false, "Show help");
-		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
 		options.addOption("version", true, "Crawler node version");
 
 	}
@@ -100,7 +82,7 @@ public class ExecutionParameters {
 			cmd = parser.parse(options, args);
 
 			debug = getEnvDebug();
-			forceImageUpdate = cmd.hasOption("force_image_update");
+			forceImageUpdate = getEnvForceImgUpdate();
 			environment = getEnvEnvironment();
 			tmpImageFolder = getEnvTmpImagesFolder();
 
@@ -141,7 +123,7 @@ public class ExecutionParameters {
 	}
 	
 	private boolean getEnvDebug() {
-		String debugEnv = System.getenv(ENV_DEBUG);
+		String debugEnv = System.getenv(EnvironmentVariables.ENV_DEBUG);
 		if (debugEnv != null) {
 			return true;
 		}
@@ -149,27 +131,35 @@ public class ExecutionParameters {
 	}
 	
 	private String getEnvTmpImagesFolder() {
-		return System.getenv(ENV_TMP_IMG_FOLDER);
+		return System.getenv(EnvironmentVariables.ENV_TMP_IMG_FOLDER);
 	}
 	
 	private String getEnvEnvironment() {
-		return System.getenv(ENV_ENVIRONMENT);
+		return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
 	}
 
 	private int getEnvNumOfThreads() {
-		String nThreads = System.getenv(ENV_NTHREADS);
+		String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
 		if (nThreads == null) {
 			return PoolExecutor.DEFAULT_NTHREADS;
 		}
 		return Integer.parseInt(nThreads);
 	}
+	
+	private boolean getEnvForceImgUpdate() {
+		String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
+		if (forceImgUpdate != null) {
+			return true;
+		}
+		return false;
+	}
 
 	private int getEnvCoreThreads() {
-		String coreThreads = System.getenv(ENV_CORE_THREADS);
-		if (coreThreads == null) {
+		String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
+		if (coreThreadsString == null) {
 			return PoolExecutor.DEFAULT_NTHREADS;
 		}
-		return Integer.parseInt(coreThreads);
+		return Integer.parseInt(coreThreadsString);
 	}
 
 	public boolean mustForceImageUpdate() {
