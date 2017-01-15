@@ -9,16 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -93,19 +87,6 @@ public class QueueService {
 
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
 		queueURLMap.put(QueueName.SEED_DEAD, SEED_DEAD_QUEUE_URL);
-	}
-
-	/**
-	 * Request for messages (tasks) on the Amazon queue up to a maximum of 10 messages
-	 * @return List containing all the messages retrieved
-	 */
-	private static List<Message> requestMessages(AmazonSQS sqs, String queueName, int maxNumberOfMessages) {
-		String queueURL = getQueueURL(queueName);
-		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL).withMessageAttributeNames("All");
-		receiveMessageRequest.setMaxNumberOfMessages(maxNumberOfMessages);
-		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-
-		return messages;
 	}
 
 	/**

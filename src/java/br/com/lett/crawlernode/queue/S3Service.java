@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -52,8 +53,8 @@ public class S3Service {
 	private static AWSCredentials credentialsImages;
 	private static AmazonS3 s3clientImages;
 	private static String imagesBucketName     	= "cdn.insights.lett.com.br";
-	private static String accessKeyImages       = "AKIAJ73Z3NTUDN2IF7AA";
-	private static String secretKeyImages       = "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";
+	private static String accessKeyImages       = "AKIAJL6XD5GTE3IPK6HA";
+	private static String secretKeyImages       = "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";
 
 	static {
 		credentialsImages = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
@@ -80,16 +81,18 @@ public class S3Service {
 	 * @return
 	 */
 	public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
-		AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
-		AmazonS3 s3client = new AmazonS3Client(credentials);
+		//AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
+		//AmazonS3 s3client = new AmazonS3Client(credentials);
+		System.err.println(name);
 		try {
-			return s3client.getObjectMetadata(imagesBucketName, name);
+			return s3clientImages.getObjectMetadata(imagesBucketName, name);
 		} catch (AmazonS3Exception s3Exception) {
 			if (s3Exception.getStatusCode() == 404) {
 				Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
 				return null;
-			} else {
-				Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+			}
+			else {
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(s3Exception));
 				return null;
 			}
 		} 
@@ -100,10 +103,10 @@ public class S3Service {
 	}
 
 	public static S3Object fetchS3Object(Session session, String name) {
-		AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
-		AmazonS3 s3client = new AmazonS3Client(credentials);
+//		AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
+//		AmazonS3 s3client = new AmazonS3Client(credentials);
 		try {
-			return s3client.getObject(imagesBucketName, name);
+			return s3clientImages.getObject(imagesBucketName, name);
 		} catch (AmazonS3Exception s3Exception) {
 			if (s3Exception.getStatusCode() == 404) {
 				Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");

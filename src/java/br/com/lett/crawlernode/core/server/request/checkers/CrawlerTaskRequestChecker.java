@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.server.ServerHandler;
+import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
@@ -16,7 +17,7 @@ public class CrawlerTaskRequestChecker {
 		if (request.getQueueName() == null) {
 			return false;
 		}
-		if (QueueName.IMAGES.equals(request.getQueueName())) {
+		if (request instanceof ImageCrawlerRequest) {
 			return checkImageTaskRequest(request);
 		}
 		if (request.getMarketName() == null) {
@@ -49,27 +50,29 @@ public class CrawlerTaskRequestChecker {
 	}
 
 	private static boolean checkImageTaskRequest(Request request) {
-		if (request.getMarketName() == null) {
+		ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest) request;
+				
+		if (imageCrawlerRequest.getMarketName() == null) {
 			Logging.printLogError(logger, "Request is missing marketName");
 			return false;
 		}
-		if (request.getType() == null) {
+		if (imageCrawlerRequest.getImageType() == null) {
 			Logging.printLogError(logger, "Request is missing image type");
 			return false;
 		}
-		if (request.getCityName() == null) {
+		if (imageCrawlerRequest.getCityName() == null) {
 			Logging.printLogError(logger, "Request is missing city");
 			return false;
 		}
-		if (request.getProcessedId() == null) {
+		if (imageCrawlerRequest.getProcessedId() == null) {
 			Logging.printLogError(logger, "Request is missing processedId");
 			return false;
 		}
-		if (request.getInternalId() == null) {
+		if (imageCrawlerRequest.getInternalId() == null) {
 			Logging.printLogError(logger, "Request is missing internalId");
 			return false;
 		}
-		if (request.getNumber() == null) {
+		if (imageCrawlerRequest.getImageNumber() == null) {
 			Logging.printLogError(logger, "Request is missing image number");
 			return false;
 		}

@@ -12,8 +12,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
+import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
+import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ServerHandler implements HttpHandler {
@@ -30,6 +32,8 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_CITY = "city";
 	private static final String MSG_ATTR_PROCESSED_ID = "processedId";
 	private static final String MSG_ATTR_INTERNAL_ID = "internalId";
+	public static final String MSG_ATTR_IMG_NUMBER = "number";
+	public static final String MSG_ATTR_IMG_TYPE = "type";
 
 	private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 	private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
@@ -74,8 +78,15 @@ public class ServerHandler implements HttpHandler {
 	}
 
 	private Request parseRequest(HttpExchange t) throws IOException {
-		Request request = new Request();
 		Headers headers = t.getRequestHeaders();
+		String queueName = headers.getFirst(SQS_NAME_HEADER);
+		Request request;
+		
+		if (QueueName.IMAGES.equals(queueName)) {
+			request = new ImageCrawlerRequest();
+		} else {
+			request = new Request();
+		}
 
 		request.setRequestMethod(t.getRequestMethod().toUpperCase());
 
@@ -83,6 +94,11 @@ public class ServerHandler implements HttpHandler {
 		request.setCityName(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_CITY));
 		request.setMarketName(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET));
 		request.setInternalId(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
+		
+		String marketIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET_ID);
+		if (marketIdString != null) {
+			request.setMarketId(Integer.parseInt(marketIdString));
+		}
 
 		String processedIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_PROCESSED_ID);
 		if (processedIdString != null) {
@@ -90,7 +106,13 @@ public class ServerHandler implements HttpHandler {
 		}
 
 		request.setMessageBody(getRequestBody(t));			
-		request.setQueueName(headers.getFirst(SQS_NAME_HEADER));
+		request.setQueueName(queueName);
+		
+		if (request instanceof ImageCrawlerRequest) {
+			System.out.println(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER));
+			((ImageCrawlerRequest) request).setImageNumber(Integer.parseInt(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER)));
+			((ImageCrawlerRequest) request).setImageType(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_TYPE));
+		}
 
 		return request;
 	}

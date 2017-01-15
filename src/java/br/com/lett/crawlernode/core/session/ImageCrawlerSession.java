@@ -10,6 +10,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueService;
@@ -51,30 +52,32 @@ public class ImageCrawlerSession extends Session {
 	public ImageCrawlerSession(Request request, String queueName, Markets markets) {
 		super(request, queueName, markets);
 		
+		ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest)request;
+		
 		// get the type
-		if (request.getType() != null) {
-			this.imageType = request.getType();
+		if (imageCrawlerRequest.getImageType() != null) {
+			this.imageType = imageCrawlerRequest.getImageType();
 		} else {
 			Logging.printLogError(logger, "Error: 'type' field not found on message attributes.");
 		}
 		
 		// get the internal id
-		if (request.getInternalId() != null) {
+		if (imageCrawlerRequest.getInternalId() != null) {
 			this.internalId = request.getInternalId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.INTERNAL_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
 		// get processed id
-		if (request.getProcessedId() != null) {
+		if (imageCrawlerRequest.getProcessedId() != null) {
 			this.processedId = request.getProcessedId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.PROCESSED_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 				
 		// get the number
-		if (request.getNumber() != null) {
-			imageNumber = request.getNumber();
+		if (imageCrawlerRequest.getImageNumber() != null) {
+			imageNumber = imageCrawlerRequest.getImageNumber();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.NUMBER_MESSAGE_ATTR + " field not found on message attributes.");
 		}

@@ -13,11 +13,7 @@ public class Request {
 	private int marketId;
 	
 	private String internalId;
-	private Long processedId;
-	
-	// images
-	private String imageType;
-	private Integer imageNumber;
+	private Long processedId;	
 	
 	public Request() {
 		super();
@@ -77,22 +73,6 @@ public class Request {
 
 	public void setProcessedId(Long processedId) {
 		this.processedId = processedId;
-	}
-	
-	public String getType() {
-		return imageType;
-	}
-
-	public void setType(String type) {
-		this.imageType = type;
-	}
-	
-	public Integer getNumber() {
-		return imageNumber;
-	}
-
-	public void setNumber(int number) {
-		this.imageNumber = number;
 	}
 	
 	public String getRequestMethod() {
