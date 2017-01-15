@@ -28,18 +28,11 @@ public class ExecutionParameters {
 	public static final String IMAGES = "images";
 	public static final String RATING = "rating";
 
-	/**
-	 * The maximum number of threads that can be used by the crawler
-	 */
-	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
-
-	private static final String ENV_IMAGE_TASK 			= "IMAGE_TASK";
+	private static final String ENV_NTHREADS 			= "CRAWLER_THREADS";
 	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
 	private static final String ENV_DEBUG				= "DEBUG";
 	private static final String ENV_TMP_IMG_FOLDER		= "TMP_IMG_FOLDER";
 	private static final String ENV_ENVIRONMENT			= "ENVIRONMENT";
-
-	private static final String ON 						= "ON";
 
 	private Options options;
 	private String environment;
@@ -54,7 +47,6 @@ public class ExecutionParameters {
 	private boolean forceImageUpdate;
 
 	private String tmpImageFolder;
-	private boolean imageTaskActivated;
 	private String[] args;
 
 	/**
@@ -81,9 +73,6 @@ public class ExecutionParameters {
 		// get the number of core threads on environment variable
 		this.coreThreads = getEnvCoreThreads();
 
-		// get the flag for image tasks on environment variable
-		this.imageTaskActivated = getEnvImageTaskActivated();
-
 		Logging.printLogDebug(logger, this.toString());
 	}
 
@@ -95,16 +84,11 @@ public class ExecutionParameters {
 		return this.environment;
 	}
 
-	public boolean isImageTaskActivated() {
-		return this.imageTaskActivated;
-	}
-
 	private void createOptions() {
 
 		options.addOption("h", "help", false, "Show help");
 		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
 		options.addOption("version", true, "Crawler node version");
-		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
 
 	}
 
@@ -115,25 +99,10 @@ public class ExecutionParameters {
 		try {
 			cmd = parser.parse(options, args);
 
-			// debug mode
 			debug = getEnvDebug();
-
-			// force image update flag
 			forceImageUpdate = cmd.hasOption("force_image_update");
-
-			// environment
 			environment = getEnvEnvironment();
-//			else {
-//				help();
-//			}
-
-			// temporary images folder
-			if (cmd.hasOption("tmpImageFolder")) {
-				this.tmpImageFolder = cmd.getOptionValue("tmpImageFolder");
-			} 
-//			else {
-//				help();
-//			}
+			tmpImageFolder = getEnvTmpImagesFolder();
 
 			// version
 			if (cmd.hasOption("version")) {
@@ -158,8 +127,6 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Environment: " + this.environment);
 		sb.append("\n");
-		sb.append("Image task activated: " + this.imageTaskActivated);
-		sb.append("\n");
 		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
@@ -181,6 +148,10 @@ public class ExecutionParameters {
 		return false;
 	}
 	
+	private String getEnvTmpImagesFolder() {
+		return System.getenv(ENV_TMP_IMG_FOLDER);
+	}
+	
 	private String getEnvEnvironment() {
 		return System.getenv(ENV_ENVIRONMENT);
 	}
@@ -199,17 +170,6 @@ public class ExecutionParameters {
 			return PoolExecutor.DEFAULT_NTHREADS;
 		}
 		return Integer.parseInt(coreThreads);
-	}
-
-	private boolean getEnvImageTaskActivated() {
-		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
-		if (imageTaskActivated == null) {
-			return false;
-		}
-		if (imageTaskActivated.equals(ON)) {
-			return true;
-		}
-		return false;
 	}
 
 	public boolean mustForceImageUpdate() {
