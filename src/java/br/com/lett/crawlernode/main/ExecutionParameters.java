@@ -27,7 +27,6 @@ public class ExecutionParameters {
 	public static final String DISCOVER = "discover";
 	public static final String IMAGES = "images";
 	public static final String RATING = "rating";
-	
 
 	/**
 	 * The maximum number of threads that can be used by the crawler
@@ -36,6 +35,9 @@ public class ExecutionParameters {
 
 	private static final String ENV_IMAGE_TASK 			= "IMAGE_TASK";
 	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
+	private static final String ENV_DEBUG				= "DEBUG";
+	private static final String ENV_TMP_IMG_FOLDER		= "TMP_IMG_FOLDER";
+	private static final String ENV_ENVIRONMENT			= "ENVIRONMENT";
 
 	private static final String ON 						= "ON";
 
@@ -100,9 +102,7 @@ public class ExecutionParameters {
 	private void createOptions() {
 
 		options.addOption("h", "help", false, "Show help");
-		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
 		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
-		options.addOption("environment", true, "Environment [development, production]");
 		options.addOption("version", true, "Crawler node version");
 		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
 
@@ -116,28 +116,24 @@ public class ExecutionParameters {
 			cmd = parser.parse(options, args);
 
 			// debug mode
-			debug = cmd.hasOption("debug");
+			debug = getEnvDebug();
 
 			// force image update flag
 			forceImageUpdate = cmd.hasOption("force_image_update");
 
 			// environment
-			if (cmd.hasOption("environment")) {
-				environment = cmd.getOptionValue("environment");
-				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) && !environment.equals(ENVIRONMENT_PRODUCTION)) {
-					Logging.printLogError(logger, "Unrecognized environment.");
-					help();
-				}
-			} else {
-				help();
-			}
+			environment = getEnvEnvironment();
+//			else {
+//				help();
+//			}
 
 			// temporary images folder
 			if (cmd.hasOption("tmpImageFolder")) {
 				this.tmpImageFolder = cmd.getOptionValue("tmpImageFolder");
-			} else {
-				help();
-			}
+			} 
+//			else {
+//				help();
+//			}
 
 			// version
 			if (cmd.hasOption("version")) {
@@ -175,6 +171,18 @@ public class ExecutionParameters {
 	private void help() {
 		new HelpFormatter().printHelp("Main", this.options);
 		System.exit(0);
+	}
+	
+	private boolean getEnvDebug() {
+		String debugEnv = System.getenv(ENV_DEBUG);
+		if (debugEnv != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	private String getEnvEnvironment() {
+		return System.getenv(ENV_ENVIRONMENT);
 	}
 
 	private int getEnvNumOfThreads() {
