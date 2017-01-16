@@ -8,8 +8,6 @@ public class Request {
 	private String messageId;
 	private String messageBody;
 	private String queueName;
-	private String cityName;
-	private String marketName;
 	private int marketId;
 	
 	private String internalId;
@@ -41,22 +39,6 @@ public class Request {
 	
 	public void setQueueName(String queueName) {
 		this.queueName = queueName;
-	}
-	
-	public String getCityName() {
-		return cityName;
-	}
-
-	public void setCityName(String cityName) {
-		this.cityName = cityName;
-	}
-
-	public String getMarketName() {
-		return marketName;
-	}
-
-	public void setMarketName(String marketName) {
-		this.marketName = marketName;
 	}
 	
 	public String getInternalId() {
@@ -95,9 +77,7 @@ public class Request {
 	public String toString() {
 		return "Request[messageId=" + messageId + 
 				", messageBody=" + messageBody + 
-				", queueName=" + queueName + 
-				", cityName=" + cityName +
-				", marketName=" + marketName + 
+				", queueName=" + queueName +
 				", requestMethod=" + requestMethod +
 				", internalId=" + internalId + 
 				", processedId=" + processedId + 

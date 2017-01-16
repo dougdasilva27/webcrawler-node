@@ -49,8 +49,10 @@ public class ImageCrawlerSession extends Session {
 	private String md5AmazonPath;
 	private String localMd5AmazonPath;
 
-	public ImageCrawlerSession(Request request, String queueName, Markets markets) {
+	public ImageCrawlerSession(Request request, String queueName, Markets markets) {		
 		super(request, queueName, markets);
+		
+		//System.err.println("Criando image crawler session....");
 		
 		ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest)request;
 		

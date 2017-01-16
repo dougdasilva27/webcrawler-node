@@ -68,33 +68,15 @@ public class Session {
 
 	}
 
-	public Session(Request request, String queueName, Markets markets) {
-		
+	public Session(Request request, String queueName, Markets markets) {		
 		taskStaus = Task.STATUS_COMPLETED;
 
-		// setting queue name
 		this.queueName = queueName;
-
-		// creating the errors list
 		crawlerSessionErrors = new ArrayList<>();
-
-		// creating the map of redirections
 		redirectionMap = new HashMap<>();
-
-		// setting session id
 		sessionId = request.getMessageId();
-
-		// setting Market
-		String city = request.getCityName();
-
-		String name = request.getMarketName();
-
-		// setting URL and originalURL
-		this.originalURL = request.getMessageBody();
-
-		if (city != null && name != null) {
-			market = markets.getMarket(city, name);
-		}
+		market = markets.getMarket(request.getMarketId());
+		originalURL = request.getMessageBody();
 
 		maxConnectionAttemptsWebcrawler = 0;
 		for (String proxy : market.getProxies()) {
@@ -105,6 +87,7 @@ public class Session {
 		for (String proxy : market.getImageProxies()) {
 			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
 		}
+		
 	}
 
 	public DateTime getDate() {

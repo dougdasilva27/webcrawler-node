@@ -24,12 +24,10 @@ public class CrawlerTaskEndpoint {
 	public static String perform(HttpExchange t, Request request) throws IOException {
 		String response;
 
-		Markets markets = Main.markets;
-
 		// discover the type of task
 		// done internally on the following method
 		Logging.printLogDebug(logger, "creating session....");
-		Session session = SessionFactory.createSession(request, request.getQueueName(), markets);
+		Session session = SessionFactory.createSession(request, request.getQueueName(), Main.markets);
 
 		// create the task
 		Logging.printLogDebug(logger, session, "creating task for " + session.getOriginalURL());

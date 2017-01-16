@@ -28,8 +28,6 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_HEADER_PREFIX = "X-aws-sqsd-attr-";
 
 	private static final String MSG_ATTR_MARKET_ID = "marketId";
-	private static final String MSG_ATTR_MARKET = "market";
-	private static final String MSG_ATTR_CITY = "city";
 	private static final String MSG_ATTR_PROCESSED_ID = "processedId";
 	private static final String MSG_ATTR_INTERNAL_ID = "internalId";
 	private static final String MSG_ATTR_IMG_NUMBER = "number";
@@ -91,8 +89,6 @@ public class ServerHandler implements HttpHandler {
 		request.setRequestMethod(t.getRequestMethod().toUpperCase());
 
 		request.setMessageId(headers.getFirst(MSG_ID_HEADER));
-		request.setCityName(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_CITY));
-		request.setMarketName(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET));
 		request.setInternalId(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
 		
 		String marketIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET_ID);
