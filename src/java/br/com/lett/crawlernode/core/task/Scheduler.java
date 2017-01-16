@@ -41,8 +41,7 @@ public class Scheduler {
 		Integer counter = 0;
 		Integer insideBatchId = 0;
 
-		String marketName = session.getMarket().getName();
-		String marketCity = session.getMarket().getCity();
+		int marketId = session.getMarket().getNumber();
 		String primaryPic = processed.getPic();
 		String internalId = processed.getInternalId();
 		String secondaryImages = processed.getSecondary_pics();
@@ -58,8 +57,7 @@ public class Scheduler {
 		// assemble the primary image message
 		if (primaryPic != null && !primaryPic.isEmpty()) {
 			Map<String, MessageAttributeValue> attrPrimary = assembleImageMessageAttributes(
-					marketCity, 
-					marketName, 
+					marketId, 
 					QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR, 
 					internalId, 
 					processedId, 
@@ -79,7 +77,7 @@ public class Scheduler {
 				Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
 
 				// send the batch
-				SendMessageBatchResult result = null;
+				SendMessageBatchResult result;
 				if (session instanceof TestCrawlerSession) {
 					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
 				} else {
@@ -154,16 +152,14 @@ public class Scheduler {
 	}
 
 	private static Map<String, MessageAttributeValue> assembleImageMessageAttributes(
-			String city,
-			String market,
+			int marketId,
 			String type,
 			String internalId,
 			Long processedId,
 			int number) {
 
-		Map<String, MessageAttributeValue> attr = new HashMap<String, MessageAttributeValue>();
-		attr.put(QueueService.CITY_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(city));
-		attr.put(QueueService.MARKET_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(market));
+		Map<String, MessageAttributeValue> attr = new HashMap<>();
+		attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(marketId)));
 		attr.put(QueueService.IMAGE_TYPE, new MessageAttributeValue().withDataType("String").withStringValue(type));
 		attr.put(QueueService.INTERNAL_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(internalId));
 		attr.put(QueueService.PROCESSED_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(processedId)));

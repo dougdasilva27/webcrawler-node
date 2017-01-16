@@ -51,9 +51,7 @@ public class ImageCrawlerSession extends Session {
 
 	public ImageCrawlerSession(Request request, String queueName, Markets markets) {		
 		super(request, queueName, markets);
-		
-		//System.err.println("Criando image crawler session....");
-		
+				
 		ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest)request;
 		
 		// get the type

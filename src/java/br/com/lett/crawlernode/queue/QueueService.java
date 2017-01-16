@@ -50,9 +50,9 @@ public class QueueService {
 
 	private static final String DEVELOMENT_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 
-	public static final String CITY_MESSAGE_ATTR 				= "city";
-	public static final String MARKET_MESSAGE_ATTR 				= "market";
-	//public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
+	//public static final String CITY_MESSAGE_ATTR 				= "city";
+	//public static final String MARKET_MESSAGE_ATTR 				= "market";
+	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
 	//public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
