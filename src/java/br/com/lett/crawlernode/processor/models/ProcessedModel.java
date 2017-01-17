@@ -353,8 +353,8 @@ public class ProcessedModel {
 			}
 
 			// void change
-			if(this.getVoid() != truco.getVoid()) {
-				Logging.printLogDebug(logger, session, "Change detected. [void][" + this.getVoid() + " -> " + truco.getVoid() + "]");
+			if(this.isVoid() != truco.isVoid()) {
+				Logging.printLogDebug(logger, session, "Change detected. [void][" + this.isVoid() + " -> " + truco.isVoid() + "]");
 				return true;
 			}
 
@@ -678,7 +678,7 @@ public class ProcessedModel {
 		this.marketplace = marketplace;
 	}
 
-	public Boolean getVoid() {
+	public Boolean isVoid() {
 		return void_product;
 	}
 

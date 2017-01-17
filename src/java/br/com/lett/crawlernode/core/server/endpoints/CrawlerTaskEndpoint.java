@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
 
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.ServerConstants;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;

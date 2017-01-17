@@ -286,7 +286,7 @@ public class Persistence {
 				insertMap.put(processedTable.LMS, 					newProcessedProduct.getLms());
 				insertMap.put(processedTable.STATUS, 				newProcessedProduct.getStatus());
 				insertMap.put(processedTable.AVAILABLE, 			newProcessedProduct.getAvailable());
-				insertMap.put(processedTable.VOID, 					newProcessedProduct.getVoid());
+				insertMap.put(processedTable.VOID, 					newProcessedProduct.isVoid());
 				insertMap.put(processedTable.CAT1, 					newProcessedProduct.getCat1());
 				insertMap.put(processedTable.CAT2, 					newProcessedProduct.getCat2());
 				insertMap.put(processedTable.CAT3, 					newProcessedProduct.getCat3());
@@ -368,7 +368,7 @@ public class Persistence {
 				updateMap.put(processedTable.LMS, 					newProcessedProduct.getLms());
 				updateMap.put(processedTable.STATUS, 				newProcessedProduct.getStatus());
 				updateMap.put(processedTable.AVAILABLE, 			newProcessedProduct.getAvailable());
-				updateMap.put(processedTable.VOID, 					newProcessedProduct.getVoid());
+				updateMap.put(processedTable.VOID, 					newProcessedProduct.isVoid());
 				updateMap.put(processedTable.CAT1, 					newProcessedProduct.getCat1());
 				updateMap.put(processedTable.CAT2, 					newProcessedProduct.getCat2());
 				updateMap.put(processedTable.CAT3, 					newProcessedProduct.getCat3());

@@ -537,7 +537,9 @@ public class Crawler extends Task {
 		// if a processed already exists and is void, then
 		// we won't perform new attempts to extract the current product
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
-		if (previousProcessedProduct != null && previousProcessedProduct.getVoid()) {
+		if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
+			Logging.printLogDebug(logger, session, "The previous processed is void. Returning...");
+			
 			return product;
 		}
 
@@ -569,7 +571,7 @@ public class Crawler extends Task {
 			Logging.printLogDebug(logger, session, "Product is void.");
 
 			// set previous processed as void
-			if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
+			if (previousProcessedProduct != null && !previousProcessedProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
 				Persistence.setProcessedVoidTrue(session);
 			}
