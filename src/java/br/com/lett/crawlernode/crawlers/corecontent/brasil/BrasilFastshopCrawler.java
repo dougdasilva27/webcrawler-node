@@ -198,7 +198,7 @@ public class BrasilFastshopCrawler extends Crawler {
 					+ "&hotsite=fastshop&itemId=" + internalId;
 			
 			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
-			
+						
 			JSONObject jsonStock = new JSONObject();
 			try{
 				int x = json.indexOf("/*");
@@ -331,7 +331,7 @@ public class BrasilFastshopCrawler extends Crawler {
 					+ "catEntryIdentifier="+ internalId +"&hotsite=fastshop&fromWishList=false&"
 					+ "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
 	
-			String json = DataFetcher.fetchString(DataFetcher.POST_REQUEST, session, url, "", null);
+			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 	
 			try{
 				int x = json.indexOf("/*");

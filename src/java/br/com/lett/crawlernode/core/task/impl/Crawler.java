@@ -103,7 +103,16 @@ public class Crawler extends Task {
 			testRun();
 		}
 		else {
-			productionRun();
+			//productionRun();
+			testElasticBenstalk();
+		}
+	}
+	
+	private void testElasticBenstalk() {
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -139,9 +148,7 @@ public class Crawler extends Task {
 		// and if we are not testing, because when testing there is no message processing
 		else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
 			Logging.printLogDebug(logger, session, "Task completed.");
-				
-			//TODO enviar reposta OK para o daemon
-			
+							
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
 			
 			session.setTaskStatus(Task.STATUS_COMPLETED);

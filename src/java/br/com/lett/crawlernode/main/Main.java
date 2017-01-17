@@ -144,8 +144,8 @@ public class Main {
 		// create a pool executor to be used as the http server executor
 		Logging.printLogDebug(logger, "creating executor....");
 		PoolExecutor executor = new PoolExecutor(
-				executionParameters.getCoreThreads(), 
-				executionParameters.getNthreads(),
+				PoolExecutor.DEFAULT_CORE_NTHREADS, 
+				PoolExecutor.DEFAULT_MAX_NTHREADS,
 				0L,
 				TimeUnit.SECONDS,
 				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
