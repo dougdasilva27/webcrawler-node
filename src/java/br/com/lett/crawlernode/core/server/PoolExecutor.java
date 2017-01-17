@@ -28,7 +28,10 @@ public class PoolExecutor extends ThreadPoolExecutor {
 	public static final int DEFAULT_CORE_NTHREADS = 200;
 	public static final int DEFAULT_MAX_NTHREADS = 210;
 	public static final int DEFAULT_BLOQUING_QUEUE_MAX_SIZE = 100;
-
+	
+	private int corePoolSize;
+	private int maximumPoolSize;
+	
 	/** Object to be used as a mutex to access the task counters*/
 	private final Object lock = new Object();
 
@@ -71,6 +74,9 @@ public class PoolExecutor extends ThreadPoolExecutor {
 
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
 		super.prestartAllCoreThreads();
+		
+		this.corePoolSize = corePoolSize;
+		this.maximumPoolSize = maximumPoolSize;
 	}
 
 	@Override
@@ -131,6 +137,15 @@ public class PoolExecutor extends ThreadPoolExecutor {
 
 	public void executeTask(Runnable task) {
 		execute(task);
+	}
+	
+	@Override
+	public String toString() {
+		return 
+				"[" +
+				"corePoolSize=" + corePoolSize + ", " +
+				"maximumPoolSize=" + maximumPoolSize + 
+				"]";
 	}
 
 }

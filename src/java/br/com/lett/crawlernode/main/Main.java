@@ -87,13 +87,12 @@ public class Main {
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");
 		
-		try {
-			Document ipify = Jsoup.connect("http://api.ipify.org/").get();
-			Logging.printLogDebug(logger, "Machine IP: " + ipify.select("body").text());
-		} catch (IOException e1) {
-			Logging.printLogError(logger, "Error during connection with api.ipify.org");
-		}
-		
+//		try {
+//			Document ipify = Jsoup.connect("http://api.ipify.org/").get();
+//			Logging.printLogDebug(logger, "Machine IP: " + ipify.select("body").text());
+//		} catch (IOException e1) {
+//			Logging.printLogError(logger, "Error during connection with api.ipify.org");
+//		}		
 
 		// setting execution parameters
 		executionParameters = new ExecutionParameters(args);
@@ -152,6 +151,7 @@ public class Main {
 				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
 				new RejectedTaskHandler());
 		Logging.printLogDebug(logger, "done.");
+		Logging.printLogDebug(logger, executor.toString());
 		
 		// create the server
 		try {

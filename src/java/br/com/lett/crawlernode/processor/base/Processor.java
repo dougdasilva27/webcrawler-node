@@ -69,7 +69,7 @@ public class Processor {
 		String description = product.getDescription();
 		JSONArray marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
-
+		
 		// sanitize
 		url = sanitizeBeforePersist(url);
 		name = sanitizeBeforePersist(name);
@@ -118,6 +118,9 @@ public class Processor {
 				newProcessedProduct.setPrice(price);
 				newProcessedProduct.setPrices(prices);
 				newProcessedProduct.setSecondary_pics(secondaryPics);
+				newProcessedProduct.setCat1(cat1);
+				newProcessedProduct.setCat2(cat2);
+				newProcessedProduct.setCat3(cat3);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
 				newProcessedProduct.setInternalPid(internalPid);
