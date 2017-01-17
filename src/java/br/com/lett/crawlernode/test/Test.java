@@ -93,7 +93,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			//taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createTestSession("https://www.fastshop.com.br/loja/tv-e-video/smart-tv-lg-led-hd-32-widi-32lh570b-fast", market);
+			Session session = SessionFactory.createTestSession("https://www.fastshop.com.br/loja/portateis/eletroportateis-cozinha/cafeteira/cafeteira-nespresso-espresso-inisia-vermelha-a3nc40br-fast?cm_re=FASTSHOP%3aSub-departamento%3aCafeteiras+%7c+Chaleiras-_-Vitrine+01-_-NLA3NC40BRVRM", market);
 			
 			Task task = TaskFactory.createTask(session);
 			
