@@ -126,6 +126,7 @@ public class ProcessedModel {
 		this.secondary_pics = secondary_pics;
 		this.cat1 = cat1;
 		this.cat2 = cat2;
+		this.cat3 = cat3;
 		this.url = url;
 		this.market = market;
 		this.ect = ect;

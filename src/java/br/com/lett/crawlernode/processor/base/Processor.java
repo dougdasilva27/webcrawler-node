@@ -117,6 +117,11 @@ public class Processor {
 				newProcessedProduct.setPic(foto);
 				newProcessedProduct.setPrice(price);
 				newProcessedProduct.setPrices(prices);
+				
+				newProcessedProduct.setCat1(cat1);
+				newProcessedProduct.setCat2(cat2);
+				newProcessedProduct.setCat3(cat3);
+				
 				newProcessedProduct.setSecondary_pics(secondaryPics);
 				newProcessedProduct.setOriginalName(name);
 				newProcessedProduct.setOriginalDescription(description);
