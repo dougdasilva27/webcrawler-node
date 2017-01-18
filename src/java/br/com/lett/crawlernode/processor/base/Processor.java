@@ -466,15 +466,15 @@ public class Processor {
 				// estava falhando aqui
 				// voltei do jeito antigo pra apagar o fogo, estava dando problema na fastshop
 				// averiguar o motivo
-				StringBuilder query = new StringBuilder();
-								query.append("SELECT * FROM processed WHERE market = ");
-								query.append(session.getMarket().getNumber());
-								query.append(" AND internal_id = '");
-								query.append(internalId);
-								query.append("'");
-				
-				//ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-				ResultSet rs = Main.dbManager.runSqlConsult(query.toString());
+//				StringBuilder query = new StringBuilder();
+//								query.append("SELECT * FROM processed WHERE market = ");
+//								query.append(session.getMarket().getNumber());
+//								query.append(" AND internal_id = '");
+//								query.append(internalId);
+//								query.append("'");
+//				
+				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
+//				ResultSet rs = Main.dbManager.runSqlConsult(query.toString());
 
 				while(rs.next()) {
 					
