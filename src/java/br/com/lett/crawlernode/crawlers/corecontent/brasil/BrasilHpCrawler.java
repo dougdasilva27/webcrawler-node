@@ -25,7 +25,11 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 /**
  * Date: 15/12/16
  * 
- * @author gabriel and samirleao
+ * 1 - This market has only one sku per page
+ * 2 - Has marketplace information in this one
+ * 3 - Has installments informations
+ * 
+ * @author gabriel
  *
  */
 public class BrasilHpCrawler extends Crawler {
