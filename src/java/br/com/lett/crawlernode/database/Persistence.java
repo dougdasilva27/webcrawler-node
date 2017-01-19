@@ -454,6 +454,7 @@ public class Persistence {
 
 		updateSets.put(processedTable.AVAILABLE, false);
 		updateSets.put(processedTable.STATUS, "void");
+		updateSets.put(processedTable.VOID, true);
 		updateSets.put(processedTable.MARKETPLACE, null);
 		updateSets.put(processedTable.PRICE, null);
 
