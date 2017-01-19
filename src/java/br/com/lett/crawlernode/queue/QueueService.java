@@ -33,9 +33,9 @@ public class QueueService {
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed";
 	private static final String SEED_DEAD_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed-dead";
 
-	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights";
+	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-new";
 	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-development";
-	private static final String INSIGHTS_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-dead";
+	private static final String INSIGHTS_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-new-dead";
 
 	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover";
 	private static final String DISCOVERY_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover-dead";

@@ -9,8 +9,8 @@ public class QueueName {
 	public static final String RATING_REVIEWS_DEAD 			= "crawler-rating_reviews-dead";
 	
 	public static final String INSIGHTS_DEVELOPMENT 		= "crawler-insights-development";
-	public static final String INSIGHTS 					= "crawler-insights";
-	public static final String INSIGHTS_DEAD 				= "crawler-insights-dead";
+	public static final String INSIGHTS 					= "crawler-insights-new";
+	public static final String INSIGHTS_DEAD 				= "crawler-insights-new-dead";
 	
 	public static final String DISCOVER 					= "crawler-discover";
 	public static final String DISCOVER_DEVELOPMENT 		= "crawler-discover-development";
@@ -23,6 +23,4 @@ public class QueueName {
 	public static final String IMAGES_DEVELOPMENT			= "crawler-images-development";
 	public static final String IMAGES_DEAD 					= "crawler-images-dead";
 	
-	public static final String AUTO_GENERATED				= "awseb-e-vygnptzyb6-stack-AWSEBWorkerQueue-113BJMEYMRWRM";
-
 }
