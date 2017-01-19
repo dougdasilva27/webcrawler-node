@@ -141,7 +141,7 @@ public class Persistence {
 			insertMapCrawler.put(crawler.URL, url);
 			insertMapCrawler.put(crawler.STOCK, stock);
 			insertMapCrawler.put(crawler.NAME, name);
-			insertMapCrawler.put(crawler.PIC, secondaryPics);
+			insertMapCrawler.put(crawler.SECONDARY_PICS, secondaryPics);
 			insertMapCrawler.put(crawler.CAT1, cat1);
 			insertMapCrawler.put(crawler.CAT2, cat2);
 			insertMapCrawler.put(crawler.CAT3, cat3);
@@ -175,7 +175,7 @@ public class Persistence {
 			insertMapCrawlerOld.put(crawlerOld.URL, url);
 			insertMapCrawlerOld.put(crawlerOld.STOCK, stock);
 			insertMapCrawlerOld.put(crawlerOld.NAME, name);
-			insertMapCrawlerOld.put(crawlerOld.PIC, secondaryPics);
+			insertMapCrawlerOld.put(crawlerOld.SECONDARY_PICS, secondaryPics);
 			insertMapCrawlerOld.put(crawlerOld.CAT1, cat1);
 			insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
 			insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
@@ -456,6 +456,7 @@ public class Persistence {
 		updateSets.put(processedTable.STATUS, "void");
 		updateSets.put(processedTable.MARKETPLACE, null);
 		updateSets.put(processedTable.PRICE, null);
+		updateSets.put(processedTable.VOID, true);
 
 		List<Condition> conditions = new ArrayList<>();
 
