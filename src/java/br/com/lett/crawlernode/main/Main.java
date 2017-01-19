@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -143,20 +144,30 @@ public class Main {
 
 		// create a pool executor to be used as the http server executor
 		Logging.printLogDebug(logger, "creating executor....");
-		PoolExecutor executor = new PoolExecutor(
-				PoolExecutor.DEFAULT_CORE_NTHREADS, 
-				PoolExecutor.DEFAULT_MAX_NTHREADS,
-				0L,
-				TimeUnit.SECONDS,
-				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
-				new RejectedTaskHandler());
+		PoolExecutor executor = (PoolExecutor)createExecutor();
 		Logging.printLogDebug(logger, "done.");
 		Logging.printLogDebug(logger, executor.toString());
 		
 		// create the server
+		Logging.printLogDebug(logger, "creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]....");
+		initServer(executor);
+		Logging.printLogDebug(logger, "done.");
+		
+	}
+	
+	private static Executor createExecutor() {
+		return new PoolExecutor(
+				executionParameters.getCoreThreads(), 
+				executionParameters.getCoreThreads(),
+				0L,
+				TimeUnit.SECONDS,
+				new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE),
+				new RejectedTaskHandler());
+	}
+	
+	private static void initServer(Executor executor) {
 		try {
-			Logging.printLogDebug(logger, "creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]....");
-			HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 1);
+			HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
 			ServerHandler serverHandler = new ServerHandler();
 			
 			server.createContext(ServerConstants.ENDPOINT_TASK, serverHandler);
@@ -164,13 +175,11 @@ public class Main {
 			
 			server.setExecutor(executor);
 			server.start();
-			Logging.printLogDebug(logger, "done.");
 			
 		} catch (IOException ex) {
 			Logging.printLogError(logger, "error creating server.");
 			CommonMethods.getStackTraceString(ex);
 		}
-		
 	}
 	
 	private static File downloadWebdriverExtension() throws IOException {

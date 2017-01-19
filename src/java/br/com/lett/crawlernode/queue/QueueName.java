@@ -22,5 +22,7 @@ public class QueueName {
 	public static final String IMAGES 						= "crawler-images";
 	public static final String IMAGES_DEVELOPMENT			= "crawler-images-development";
 	public static final String IMAGES_DEAD 					= "crawler-images-dead";
+	
+	public static final String AUTO_GENERATED				= "awseb-e-vygnptzyb6-stack-AWSEBWorkerQueue-113BJMEYMRWRM";
 
 }

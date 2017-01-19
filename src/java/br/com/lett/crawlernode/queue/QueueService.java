@@ -30,24 +30,24 @@ public class QueueService {
 
 	private static final Map<String, String> queueURLMap;
 
-	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
-	private static final String SEED_DEAD_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed-dead";
-
-	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
-	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-development";
-	private static final String INSIGHTS_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
-
-	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
-	private static final String DISCOVERY_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
-
+//	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed";
+//	private static final String SEED_DEAD_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-seed-dead";
+//
+//	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights";
+//	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-development";
+//	private static final String INSIGHTS_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-insights-dead";
+//
+//	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover";
+//	private static final String DISCOVERY_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-discover-dead";
+//
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images";
 	private static final String IMAGES_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-development";
 	private static final String IMAGES_DEAD_QUEUE_URL					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-images-dead";
-
-	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews";
-	private static final String RATING_REVIEWS_DEAD_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-dead";
-	private static final String RATING_REVIEWS_DEVELOPMENT_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
-
+//
+//	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews";
+//	private static final String RATING_REVIEWS_DEAD_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-dead";
+//	private static final String RATING_REVIEWS_DEVELOPMENT_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-rating_reviews-development";
+//
 	private static final String DEVELOMENT_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/792472451317/crawler-development";
 
 	//public static final String CITY_MESSAGE_ATTR 				= "city";
@@ -67,23 +67,23 @@ public class QueueService {
 
 		queueURLMap.put(QueueName.DEVELOPMENT, DEVELOMENT_QUEUE_URL);
 
-		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
-		queueURLMap.put(QueueName.DISCOVER_DEAD, DISCOVERY_DEAD_QUEUE_URL);
+//		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
+//		queueURLMap.put(QueueName.DISCOVER_DEAD, DISCOVERY_DEAD_QUEUE_URL);
 
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
 		queueURLMap.put(QueueName.IMAGES_DEVELOPMENT, IMAGES_DEVELOPMENT_QUEUE_URL);
 		queueURLMap.put(QueueName.IMAGES_DEAD, IMAGES_DEAD_QUEUE_URL);
 
-		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
-		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
-		queueURLMap.put(QueueName.INSIGHTS_DEAD, INSIGHTS_DEAD_QUEUE_URL);
-
-		queueURLMap.put(QueueName.RATING_REVIEWS_DEVELOPMENT, RATING_REVIEWS_DEVELOPMENT_QUEUE_URL);
-		queueURLMap.put(QueueName.RATING_REVIEWS, RATING_REVIEWS_QUEUE_URL);
-		queueURLMap.put(QueueName.RATING_REVIEWS_DEAD, RATING_REVIEWS_DEAD_QUEUE_URL);
-
-		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
-		queueURLMap.put(QueueName.SEED_DEAD, SEED_DEAD_QUEUE_URL);
+//		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
+//		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
+//		queueURLMap.put(QueueName.INSIGHTS_DEAD, INSIGHTS_DEAD_QUEUE_URL);
+//
+//		queueURLMap.put(QueueName.RATING_REVIEWS_DEVELOPMENT, RATING_REVIEWS_DEVELOPMENT_QUEUE_URL);
+//		queueURLMap.put(QueueName.RATING_REVIEWS, RATING_REVIEWS_QUEUE_URL);
+//		queueURLMap.put(QueueName.RATING_REVIEWS_DEAD, RATING_REVIEWS_DEAD_QUEUE_URL);
+//
+//		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
+//		queueURLMap.put(QueueName.SEED_DEAD, SEED_DEAD_QUEUE_URL);
 	}
 
 	/**

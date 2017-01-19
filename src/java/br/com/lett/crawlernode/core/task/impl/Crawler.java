@@ -103,16 +103,7 @@ public class Crawler extends Task {
 			testRun();
 		}
 		else {
-			//productionRun();
-			testElasticBenstalk();
-		}
-	}
-	
-	private void testElasticBenstalk() {
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			productionRun();
 		}
 	}
 	
