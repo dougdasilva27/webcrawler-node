@@ -14,7 +14,7 @@ public class SessionFactory {
 	private static final Logger logger = LoggerFactory.getLogger(SessionFactory.class);
 	
 	public static Session createSession(Request request, String queueName, Markets markets) {
-		if (queueName.equals(QueueName.AUTO_GENERATED) || queueName.equals(QueueName.INSIGHTS_DEVELOPMENT)) {
+		if (queueName.equals(QueueName.INSIGHTS) || queueName.equals(QueueName.INSIGHTS_DEVELOPMENT)) {
 			return new InsightsCrawlerSession(request, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.SEED) || queueName.equals(QueueName.SEED_DEAD)) {
