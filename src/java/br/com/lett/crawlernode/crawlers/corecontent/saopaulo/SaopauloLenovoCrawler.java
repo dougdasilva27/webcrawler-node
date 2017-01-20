@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -49,7 +50,6 @@ public class SaopauloLenovoCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
-
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
@@ -57,8 +57,6 @@ public class SaopauloLenovoCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			System.out.println(this.webdriver.driver.manage().getCookies());
 			
 			boolean available = crawlAvailability(doc);
 			String name = crawlName(doc);
@@ -293,7 +291,6 @@ public class SaopauloLenovoCrawler extends Crawler {
 				String docJson = this.webdriver.loadUrl(url);
 
 				//JSONObject jsonImages = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
 
 				Document docApi = Jsoup.parse(docJson);
 
