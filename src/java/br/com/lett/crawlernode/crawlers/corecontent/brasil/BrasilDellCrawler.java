@@ -31,13 +31,16 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  *  2 - These two types has one product per page
  *  3 - In first type has no secondary images and has installments
  *  4 - In second type has secondary images but has no installments informations, only sight price.
+ *  5 - Two types of product page are:
+ *  	* http://accessories.la.dell.com/sna/productdetail.aspx?c=br&l=pt&s=dhs&cs=brdhs1&sku=325-BBWV
+ *  	* http://www.dell.com/br/p/inspiron-15-5567-laptop/pd?oc=cai5567u1752396br
  * 
  * @author Gabriel Dornelas
  *
  */
 public class BrasilDellCrawler extends Crawler {
 
-	private static final String HOME_PAGE = "http://www.dell.com/";
+	private static final String COMMON_DOMAIN = "dell.com"; 
 
 	public BrasilDellCrawler(Session session) {
 		super(session);
@@ -46,7 +49,7 @@ public class BrasilDellCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		return !FILTERS.matcher(href).matches() && (href.contains(COMMON_DOMAIN));
 	}
 
 
