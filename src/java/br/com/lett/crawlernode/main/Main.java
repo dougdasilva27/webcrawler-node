@@ -88,7 +88,7 @@ public class Main {
 		executionParameters.setUpExecutionParameters();
 
 		// setting MDC for logging messages
-		Logging.setLogMDC(executionParameters);
+		Logging.setLogMDC();
 
 		// setting database credentials
 		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");

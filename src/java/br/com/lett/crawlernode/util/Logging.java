@@ -1,15 +1,15 @@
 package br.com.lett.crawlernode.util;
 
 import java.text.Normalizer;
+import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.main.ExecutionParameters;
+
+import com.amazonaws.util.EC2MetadataUtils;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -20,8 +20,27 @@ import br.com.lett.crawlernode.main.ExecutionParameters;
  */
 
 public class Logging {
-	protected static final Logger logger = LoggerFactory.getLogger(Logging.class);
 	
+	/**
+	 * Set up MDC variables to be used in logback.xml log config file
+	 */
+	public static void setLogMDC() {
+
+		Pattern IPV4_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+		
+		String host = EC2MetadataUtils.getPrivateIpAddress();
+		
+		// Avoiding ip parse errors in Elasticsearch index
+		if(host == null || !IPV4_PATTERN.matcher(host).matches()) {
+			host = "0.0.0.0";
+		}
+		
+		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
+		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
+		MDC.put("HOST", host);
+
+	}
+		
 	/* INFO */
 	public static void printLogInfo(Logger logger, String msg) {
 		printLogInfo(logger, null, msg);
@@ -105,30 +124,6 @@ public class Logging {
 		
 		return metadata;
 		
-	}
-	
-	/**
-	 * Set up MDC variables to be used in logback.xml log config file
-	 * @param executionParameters
-	 */
-	public static void setLogMDC(ExecutionParameters executionParameters) {
-
-		MDC.put("PROCESS_NAME", "webcrawler_node");
-
-		if (executionParameters != null) {
-
-			MDC.put("ENVIRONMENT", executionParameters.getEnvironment());
-
-			if (executionParameters.getDebug()) {
-				MDC.put("DEBUG_MODE", "true");
-			} else {
-				MDC.put("DEBUG_MODE", "false");
-			}
-
-		} else {
-			Logging.printLogError(logger, "Fatal error during MDC setup: execution parameters are not ready. Please, initialize them first.");
-			System.exit(0);
-		}
 	}
 	
 	/**
