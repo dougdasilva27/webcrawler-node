@@ -203,24 +203,17 @@ public class BrasilHpCrawler extends Crawler {
 			Elements installmentsElements = doc.select(".parcelamento .tabCont.selected .parcelCartao table tr");
 			
 			for(Element e : installmentsElements) {
-				String text = e.text().toLowerCase();
-				int x = text.indexOf('x');
+				String text = e.text().toLowerCase().trim();
 				
-				Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+				String[] tokens = text.split(" ");
+				String parcel = tokens[0].replaceAll("[^0-9]", "").trim();
 				
-				String valueString = text.substring(x+1);
-				Float value;
-				
-				if(valueString.contains("com juros")) {
-					x = text.indexOf(')')+1;
-					int y = text.indexOf(':', x);
+				if(!parcel.isEmpty()) {
+					Integer installment = Integer.parseInt(parcel);
+					Float value = MathCommonsMethods.parseFloat(tokens[tokens.length-1]);
 					
-					value = MathCommonsMethods.parseFloat(text.substring(x, y));
-				} else {
-					value = MathCommonsMethods.parseFloat(text.substring(x+1));
+					installmentsMap.put(installment, value);
 				}
-				
-				installmentsMap.put(installment, value);
 			}
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentsMap);
