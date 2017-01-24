@@ -41,6 +41,7 @@ import br.com.lett.crawlernode.util.Logging;
  * the server. Running this way, all the process will run (data will be stored in database and all postprocessing will take place
  * after the main information is crawled.)</li> 
  * </ul>
+ * 
  * @author Samir Leão
  *
  */
