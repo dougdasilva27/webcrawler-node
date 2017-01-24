@@ -61,17 +61,10 @@ public class Main {
 	public static Server					server;
 
 	public static void main(String args[]) {
-		Logging.printLogDebug(logger, "Starting webcrawler-node...");
-		
-//		try {
-//			Document ipify = Jsoup.connect("http://api.ipify.org/").get();
-//			Logging.printLogDebug(logger, "Machine IP: " + ipify.select("body").text());
-//		} catch (IOException e1) {
-//			Logging.printLogError(logger, "Error during connection with api.ipify.org");
-//		}		
+		Logging.printLogDebug(logger, "Starting webcrawler-node...");	
 
 		// setting execution parameters
-		executionParameters = new ExecutionParameters(args);
+		executionParameters = new ExecutionParameters();
 		executionParameters.setUpExecutionParameters();
 
 		// setting MDC for logging messages
@@ -92,27 +85,13 @@ public class Main {
 		Persistence.initializeImagesDirectories(markets);
 		
 		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, Main.dbManager.mongoMongoImages, Main.dbManager);
+		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
 
 		// fetching proxies
-		proxies = new ProxyCollection(markets);
-		proxies.setBonanzaProxies();
-		proxies.setBuyProxies();
-		proxies.setStormProxies();
-		proxies.setCharityProxy();
-		proxies.setAzureProxy();
+		initProxies();
 		
-		// set global resources
-		globalResources = new Resources();
-		try {
-			globalResources.setWebdriverExtension(downloadWebdriverExtension());
-		} catch (MalformedURLException e) {
-			Logging.printLogError(logger, "error in resource URL.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		} catch (IOException e) {
-			Logging.printLogError(logger, "error during resource download.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
+		// initialize global resources
+		initGlobalResources();
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
@@ -123,6 +102,28 @@ public class Main {
 		// create the scheduled task to check the executor status
 		serverExecutorStatusAgent = new ServerExecutorStatusAgent();
 		serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 5);
+	}
+	
+	private static void initProxies() {
+		proxies = new ProxyCollection(markets);
+		proxies.setBonanzaProxies();
+		proxies.setBuyProxies();
+		proxies.setStormProxies();
+		proxies.setCharityProxy();
+		proxies.setAzureProxy();
+	}
+	
+	private static void initGlobalResources() {
+		globalResources = new Resources();
+		try {
+			globalResources.setWebdriverExtension(downloadWebdriverExtension());
+		} catch (MalformedURLException e) {
+			Logging.printLogError(logger, "error in resource URL.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		} catch (IOException e) {
+			Logging.printLogError(logger, "error during resource download.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	private static File downloadWebdriverExtension() throws IOException {

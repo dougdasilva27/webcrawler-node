@@ -11,6 +11,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
@@ -43,7 +44,7 @@ public class ServerHandler implements HttpHandler {
 
 		// handle request on the task endpoint
 		if (Server.ENDPOINT_TASK.equals(endpoint)) {
-			Logging.printLogDebug(logger, "Received a request on TASK_ENDPOINT.");
+			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TASK);
 			
 			Logging.printLogDebug(logger, "parsing request....");
 			Request request = parseRequest(t);
@@ -63,11 +64,17 @@ public class ServerHandler implements HttpHandler {
 		}
 
 		// handle request on the health check endpoint
-		else {
-			Logging.printLogDebug(logger, "Received a request on HEALTH_CHECK_ENDPOINT.");
+		else if (Server.ENDPOINT_HEALTH_CHECK.equals(endpoint)) {
+			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_HEALTH_CHECK);
 			
-			response = Server.MSG_SERVER_HEALTH_OK;
-			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_OK, response.length());
+			response = CrawlerHealthEndpoint.perform(t);
+		}
+		
+		// handle request on the test endpoint
+		else {
+			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TEST);
+			
+			response = "Testando crawler...";
 		}
 
 		OutputStream os = t.getResponseBody();

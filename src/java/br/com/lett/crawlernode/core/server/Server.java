@@ -33,6 +33,7 @@ public class Server {
 	public static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
 	
 	public static final String ENDPOINT_TASK = "/crawler-task";
+	public static final String ENDPOINT_TEST = "/crawler-test";
 	public static final String ENDPOINT_HEALTH_CHECK = "/health-check";
 
 	private static final int SERVER_PORT = 5000;
@@ -73,6 +74,7 @@ public class Server {
 			
 			httpServer.createContext(Server.ENDPOINT_TASK, serverHandler);
 			httpServer.createContext(Server.ENDPOINT_HEALTH_CHECK, serverHandler);
+			httpServer.createContext(Server.ENDPOINT_TEST, serverHandler);
 
 			httpServer.setExecutor(executor);
 			httpServer.start();

@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.models;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Product {
 	
@@ -146,9 +147,15 @@ public class Product {
 	 * @return true if product is void or false otherwise
 	 */
 	public boolean isVoid() {
-		if((price == null || price.equals(0f)) && available) return true;
-		if(internalId == null || internalId.isEmpty()) return true;
-		if(name == null || name.isEmpty()) return true;
+		if((price == null || price.equals(0f)) && available) {
+			return true;
+		}
+		if(internalId == null || internalId.isEmpty()) {
+			return true;
+		}
+		if(name == null || name.isEmpty()) {
+			return true;
+		}
 		
 		return false;
 	}
@@ -182,6 +189,26 @@ public class Product {
 		sb.append("stock: " + this.stock + "\n");
 
 		return sb.toString();
+	}
+	
+	public JSONObject toJSON() {
+		JSONObject obj = new JSONObject();
+		
+		obj.put("internalId", (internalId != null ? internalId : JSONObject.NULL));
+		obj.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL));
+		obj.put("name", (name != null ? name : JSONObject.NULL));
+		obj.put("price", (price != null ? price : JSONObject.NULL));
+		obj.put("prices", (prices != null ? prices.toString() : JSONObject.NULL));
+		obj.put("available", available);
+		obj.put("category1", (category1 != null ? category1 : JSONObject.NULL));
+		obj.put("category2", (category2 != null ? category2 : JSONObject.NULL));
+		obj.put("category3", (category3 != null ? category3 : JSONObject.NULL));
+		obj.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL));
+		obj.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL));
+		obj.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL));
+		obj.put("stock", (stock != null ? stock : JSONObject.NULL));
+		
+		return obj;
 	}
 
 }
