@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
 import com.amazonaws.AmazonClientException;
@@ -214,7 +215,7 @@ public class S3Service {
 		.append(session.getSessionId())
 		.append("/")
 		.append("screenshot-")
-		.append(new DateTime().millisOfDay())
+		.append(new DateTime(DateConstants.timeZone).millisOfDay())
 		.append(".png")
 		.toString();
 

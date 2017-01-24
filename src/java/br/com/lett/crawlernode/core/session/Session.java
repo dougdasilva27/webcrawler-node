@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,12 +14,13 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.util.DateConstants;
 
 public class Session {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-	protected DateTime date = new DateTime(DateTimeZone.forID("America/Sao_Paulo"));
+	protected DateTime date = new DateTime(DateConstants.timeZone);
 	
 	protected String taskStaus;
 

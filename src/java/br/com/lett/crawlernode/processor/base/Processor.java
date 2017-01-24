@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
 import dbmodels.tables.Processed;
@@ -49,7 +50,7 @@ public class Processor {
 
 		Logging.printLogDebug(logger, session, "Creating processed product...");
 
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		ProcessedModel newProcessedProduct = null;
 
@@ -267,7 +268,9 @@ public class Processor {
 			JSONArray marketplace,
 			Session session) {
 		
-		DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+		DateTimeFormatter f = DateTimeFormat
+				.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
+				.withZone(DateConstants.timeZone);
 		
 		// get the previous behavior object
 		JSONArray oldBehaviour = newProcessedProduct.getBehaviour();
@@ -276,12 +279,13 @@ public class Processor {
 		}
 
 		// using a TreeMap to automatically order by the keys
-		Map<String, JSONObject> newBehaviorTreeMap = new TreeMap<String, JSONObject>();
+		Map<String, JSONObject> newBehaviorTreeMap = new TreeMap<>();
 
 		JSONObject lastBehaviorBeforeToday = new JSONObject();
 
 		// Populando newBehaviour
-		DateTime dateTimeNow = new DateTime().withTimeAtStartOfDay();
+		DateTime dateTimeNow = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
+		
 		for (int i = 0; i < oldBehaviour.length(); i++) {
 
 			// Adicionando no mapa (para depois ser filtrado)
@@ -314,9 +318,9 @@ public class Processor {
 
 
 		// Criando behaviour do início de hoje (supostamente)
-		String startOfDayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		if( lastBehaviorBeforeToday != null && 
+		if ( lastBehaviorBeforeToday != null && 
 			(!newBehaviorTreeMap.containsKey(startOfDayISO) || !newBehaviorTreeMap.get(startOfDayISO).has("status")) ) {
 			
 			JSONObject behaviourStart = lastBehaviorBeforeToday;
@@ -369,10 +373,9 @@ public class Processor {
 
 			try {
 				dateTime = f.parseDateTime(dateString);
-
-				if( dateTime.isAfter(new DateTime().withTimeAtStartOfDay()) &&
-					e.getValue().has("status") ) {
-					
+				DateTime beginingOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
+				
+				if( dateTime.isAfter(beginingOfDay) && e.getValue().has("status") ) {
 					newBehaviour.put(e.getValue());
 				}
 
