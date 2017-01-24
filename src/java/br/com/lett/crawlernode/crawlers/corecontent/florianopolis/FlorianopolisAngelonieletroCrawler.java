@@ -1,10 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -211,12 +209,12 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		Integer stock = null;
 		String description = crawlDescription(document);
 		JSONArray marketplace = null;
-
+		
 		ArrayList<String> categories = crawlCategories(document);
 		String category1 = getCategory(categories, 0);
 		String category2 = getCategory(categories, 1);
-		String category3 = getCategory(categories, 2);		
-
+		String category3 = getCategory(categories, 2);
+		
 		product.setUrl(session.getOriginalURL());
 		product.setInternalId(internalId);
 		product.setInternalPid(internalPid);
@@ -275,7 +273,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	 * @param document
 	 */
 	private Map<String, Map<Integer, Float>> crawlCardInstallmentsMap(Document document) {
-		Map<String, Map<Integer, Float>> cardInstallmentsMap = new HashMap<String, Map<Integer, Float>>();
+		Map<String, Map<Integer, Float>> cardInstallmentsMap = new HashMap<>();
 
 		Set<Card> cards = crawlSetOfCards(document);
 
@@ -359,16 +357,22 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	private String createCompatibleName(Card card) {
 		String compatibleName = null;
 
-		if (card == Card.AMEX) compatibleName = "americanExpress";
-		else if (card == Card.MASTERCARD) compatibleName = "masterCard";
-		else if (card == Card.DINERS) compatibleName = "dinersClub";
+		if (card == Card.AMEX) {
+			compatibleName = "americanExpress";
+		}
+		else if (card == Card.MASTERCARD) {
+			compatibleName = "masterCard";
+		}
+		else if (card == Card.DINERS) {
+			compatibleName = "dinersClub";
+		}
 		else compatibleName = card.toString();
 
 		return compatibleName;
 	}
 
 	private Set<Card> crawlSetOfCards(Document document) {
-		Set<Card> cards = new HashSet<Card>();
+		Set<Card> cards = new HashSet<>();
 
 		// fetch list of cards through a POST request
 		String internalId = crawlInternalId(document);
@@ -383,11 +387,21 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 		for (Element card : cardsElements) {
 			String text = card.text().trim().toLowerCase();
-			if (text.contains(Card.DINERS.toString())) cards.add(Card.DINERS);
-			else if (text.contains(Card.MASTERCARD.toString())) cards.add(Card.MASTERCARD);
-			else if (text.contains(Card.VISA.toString())) cards.add(Card.VISA);
-			else if (text.contains("americanexpress")) cards.add(Card.AMEX);
-			else if (text.contains(Card.HIPERCARD.toString())) cards.add(Card.HIPERCARD);
+			if (text.contains(Card.DINERS.toString())) {
+				cards.add(Card.DINERS);
+			}
+			else if (text.contains(Card.MASTERCARD.toString())) {
+				cards.add(Card.MASTERCARD);
+			}
+			else if (text.contains(Card.VISA.toString())) {
+				cards.add(Card.VISA);
+			}
+			else if (text.contains("americanexpress")) {
+				cards.add(Card.AMEX);
+			}
+			else if (text.contains(Card.HIPERCARD.toString())) {
+				cards.add(Card.HIPERCARD);
+			}
 		}
 
 		return cards;
@@ -402,7 +416,9 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	 */
 	private boolean hasVariations(Document document) {
 		Elements skuOptions = document.select("#formGroupVoltage input[type=radio]");
-		if (skuOptions.size() > 1) return true;
+		if (skuOptions.size() > 1) {
+			return true;
+		}
 		return false;
 	}
 
@@ -488,7 +504,16 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 		Element elementPrimaryImage = document.select("div#imagem-grande a").first();
 		if(elementPrimaryImage != null) {
-			primaryImage = "http:" + elementPrimaryImage.attr("href").replace("//", "");
+			String baseURL = elementPrimaryImage.attr("href");
+			if (!baseURL.startsWith("http")) {
+				if (!baseURL.startsWith("//")) {
+					primaryImage = "http://" + elementPrimaryImage.attr("href");
+				}
+				else {
+					primaryImage = "http:" + elementPrimaryImage.attr("href");
+				}
+			}
+			
 		}
 
 		return primaryImage;
@@ -504,7 +529,17 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 		if (elementsSize > 0) {
 			for(int i = 0; i < elementsSize; i++) {
-				String secondaryImage = "http:" + elementsSecondaryImages.get(i).attr("href").replace("//", "");
+				String secondaryImage = null;
+				String baseURL = elementsSecondaryImages.get(i).attr("href");
+				if (!baseURL.startsWith("http")) {
+					if (!baseURL.startsWith("//")) {
+						secondaryImage = "http://" + baseURL;
+					}
+					else {
+						secondaryImage = "http:" + baseURL;
+					}
+				}
+				
 				if(secondaryImage != null) {
 					if( !secondaryImage.equals(primaryImage) ) {
 						secondaryImagesArray.put( secondaryImage );
