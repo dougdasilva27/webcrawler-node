@@ -32,7 +32,7 @@ public class QueueService {
 
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed";
 
-	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-new";
+	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights";
 	
 	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-development";
 
@@ -59,6 +59,7 @@ public class QueueService {
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
 
 		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
+		
 		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
 
 		queueURLMap.put(QueueName.RATING, RATING_QUEUE_URL);

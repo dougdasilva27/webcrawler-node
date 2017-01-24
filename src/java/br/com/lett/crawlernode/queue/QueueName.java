@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.queue;
 
 public class QueueName {
 		
-	public static final String RATING						= "crawler-ratings";
+	public static final String RATING						= "crawler-rating";
 	
 	public static final String INSIGHTS_DEVELOPMENT 		= "crawler-insights-development";
 	
