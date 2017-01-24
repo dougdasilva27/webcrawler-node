@@ -28,33 +28,20 @@ import br.com.lett.crawlernode.util.Logging;
  
 /**
  * 
- * Parameters:
- * -debug : to print debug log messages on console
- * -environment [development,  production]
- * -mode [insights, discovery, dead]
+ * Environment variables:
+ * DEBUG : to print debug log messages on console [ON/OFF]
+ * ENVIRONMENT [development,  production]
  * 
  * <p>Environments:</p>
  * <ul>
- * <li> development: in this mode we use a testing Amazon SQS queue, named crawler-development;
- * We stil use proxies when running in development mode, because we must test for website blocking and 
- * crawling informations the way it's going be running in the server. The classes in which this mode has some influence, are: 
- * <ul>
- * <li>DataFetcher</li>
- * <li>QueueHandler</li>
- * <li>QueueService</li>
- * <li>DatabaseManager</li>
+ * <li> development: in this mode we trigger the program by the Test class and it's main method. This is the fastest
+ * and basic mode for testing. It only tests the crawler information extraction logic.</li>
+ * <li> production: in this mode we run the Main class and starts the crawler server. It will keep listening on the crawler-task
+ * endpoint, under port 5000. To run any task, the user must assemble a POST request (you can use Postman) and send the POST for
+ * the server. Running this way, all the process will run (data will be stored in database and all postprocessing will take place
+ * after the main information is crawled.)</li> 
  * </ul>
- * </li>
- * <li> production: in this mode the Amazon SQS used is the crawler-insights, and the crawler-node can run
- * whatever ecommerce crawler it finds on the queue. Besides, the information inside the message in this mode
- * is expected to be complete, differing from the development, where the only vital information is url, market and city.</li> 
- * </ul>
- * <p>Modes:</p>
- * <ul>
- * <li>insights:</li>
- * <li>discovery:</li>
- * </ul>
- * @author Samir Leao
+ * @author Samir Leão
  *
  */
 

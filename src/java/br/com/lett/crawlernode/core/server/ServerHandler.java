@@ -42,7 +42,7 @@ public class ServerHandler implements HttpHandler {
 		String response;
 
 		// handle request on the task endpoint
-		if (ServerConstants.ENDPOINT_TASK.equals(endpoint)) {
+		if (Server.ENDPOINT_TASK.equals(endpoint)) {
 			Logging.printLogDebug(logger, "Received a request on TASK_ENDPOINT.");
 			
 			Logging.printLogDebug(logger, "parsing request....");
@@ -53,12 +53,12 @@ public class ServerHandler implements HttpHandler {
 				if (CrawlerTaskRequestChecker.checkRequest(request)) {
 					response = CrawlerTaskEndpoint.perform(t, request);
 				} else {
-					response = ServerConstants.MSG_BAD_REQUEST;
-					t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_BAD_REQUEST, response.length());
+					response = Server.MSG_BAD_REQUEST;
+					t.sendResponseHeaders(Server.HTTP_STATUS_CODE_BAD_REQUEST, response.length());
 				}
 			} else {
-				response = ServerConstants.MSG_METHOD_NOT_ALLOWED;
-				t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_METHOD_NOT_ALLOWED, response.length());
+				response = Server.MSG_METHOD_NOT_ALLOWED;
+				t.sendResponseHeaders(Server.HTTP_STATUS_CODE_METHOD_NOT_ALLOWED, response.length());
 			}
 		}
 
@@ -66,8 +66,8 @@ public class ServerHandler implements HttpHandler {
 		else {
 			Logging.printLogDebug(logger, "Received a request on HEALTH_CHECK_ENDPOINT.");
 			
-			response = ServerConstants.MSG_SERVER_HEALTH_OK;
-			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_OK, response.length());
+			response = Server.MSG_SERVER_HEALTH_OK;
+			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_OK, response.length());
 		}
 
 		OutputStream os = t.getResponseBody();

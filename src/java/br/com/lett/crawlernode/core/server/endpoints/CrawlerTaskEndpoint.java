@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
 
-import br.com.lett.crawlernode.core.server.ServerConstants;
+import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
@@ -39,12 +39,12 @@ public class CrawlerTaskEndpoint {
 
 		// check final task status
 		if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
-			response = ServerConstants.MSG_TASK_COMPLETED;
-			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_OK, response.length());
+			response = Server.MSG_TASK_COMPLETED;
+			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_OK, response.length());
 			Main.server.incrementSucceededTasks();
 		} else {
-			response = ServerConstants.MSG_TASK_FAILED;
-			t.sendResponseHeaders(ServerConstants.HTTP_STATUS_CODE_SERVER_ERROR, response.length());
+			response = Server.MSG_TASK_FAILED;
+			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_SERVER_ERROR, response.length());
 			Main.server.incrementFailedTasks();
 		}
 

@@ -19,11 +19,26 @@ import br.com.lett.crawlernode.util.Logging;
 public class Server {
 
 	private static final Logger logger = LoggerFactory.getLogger(Server.class);
+	
+	public static final String MSG_TASK_COMPLETED = "task completed";
+	public static final String MSG_TASK_FAILED = "task failed";
+	public static final String MSG_METHOD_NOT_ALLOWED = "request method not allowed";
+	public static final String MSG_SERVER_HEALTH_OK = "the server is fine";
+	public static final String MSG_BAD_REQUEST = "bad request";
+	
+	public static final int HTTP_STATUS_CODE_OK = 200;
+	public static final int HTTP_STATUS_CODE_SERVER_ERROR = 500;
+	public static final int HTTP_STATUS_CODE_BAD_REQUEST = 400;
+	public static final int HTTP_STATUS_CODE_METHOD_NOT_ALLOWED = 402;
+	public static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
+	
+	public static final String ENDPOINT_TASK = "/crawler-task";
+	public static final String ENDPOINT_HEALTH_CHECK = "/health-check";
 
 	private static final int SERVER_PORT = 5000;
 	private static final String SERVER_HOST = "localhost";
 
-	private HttpServer server;
+	private HttpServer httpServer;
 	private PoolExecutor executor;
 
 	private final Object lock = new Object();
@@ -53,14 +68,14 @@ public class Server {
 
 	private void createServer(Executor executor) {
 		try {
-			server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
+			httpServer = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
 			ServerHandler serverHandler = new ServerHandler();
 			
-			server.createContext(ServerConstants.ENDPOINT_TASK, serverHandler);
-			server.createContext(ServerConstants.ENDPOINT_HEALTH_CHECK, serverHandler);
+			httpServer.createContext(Server.ENDPOINT_TASK, serverHandler);
+			httpServer.createContext(Server.ENDPOINT_HEALTH_CHECK, serverHandler);
 
-			server.setExecutor(executor);
-			server.start();
+			httpServer.setExecutor(executor);
+			httpServer.start();
 
 		} catch (IOException ex) {
 			Logging.printLogError(logger, "error creating server.");
