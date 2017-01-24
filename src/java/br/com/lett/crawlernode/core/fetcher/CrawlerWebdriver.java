@@ -59,6 +59,7 @@ public class CrawlerWebdriver {
 		}
 
 		//driver = new ChromeDriver(capabilities);
+		
 
 		this.session = session;
 	}
