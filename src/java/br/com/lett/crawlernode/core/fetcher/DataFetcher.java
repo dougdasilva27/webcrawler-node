@@ -13,6 +13,8 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,6 +22,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -38,6 +43,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -590,8 +596,7 @@ public class DataFetcher {
 			// creating the redirect strategy
 			// so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-
-
+			
 			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
@@ -602,6 +607,7 @@ public class DataFetcher {
 					.setRedirectStrategy(redirectStrategy)
 					.setDefaultCredentialsProvider(credentialsProvider)
 					.setDefaultHeaders(headers)
+					.setSSLSocketFactory(createSSLConnectionSocketFactory())
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
@@ -692,6 +698,14 @@ public class DataFetcher {
 			}
 
 		}
+	}
+	
+	private static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
+		TrustManager trustManager = new TrustManager();
+		SSLContext sslContext = SSLContext.getInstance("TLS");
+		sslContext.init(null, new TrustManager[]{trustManager}, null);
+		
+		return new SSLConnectionSocketFactory(sslContext);
 	}
 
 
@@ -1083,7 +1097,7 @@ public class DataFetcher {
 						.build();
 			}
 
-			List<Header> headers = new ArrayList<Header>();
+			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
@@ -1116,7 +1130,7 @@ public class DataFetcher {
 			}
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
-				ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
+				ArrayList<NameValuePair> postParameters = new ArrayList<>();
 				String[] urlParametersSplitted = urlParameters.split("&");
 
 				for(String p: urlParametersSplitted) {
