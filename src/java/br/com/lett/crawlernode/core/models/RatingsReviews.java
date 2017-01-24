@@ -4,6 +4,7 @@ package br.com.lett.crawlernode.core.models;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class RatingsReviews implements Cloneable {
@@ -27,7 +28,7 @@ public class RatingsReviews implements Cloneable {
 	public void setJSONRepresentation(JSONObject ratingReviewsJSON) {
 		if (ratingReviewsJSON != null) {
 			if (ratingReviewsJSON.has(DATE_JSON_FIELD) && !ratingReviewsJSON.isNull(DATE_JSON_FIELD)) {
-				date = new DateTime(ratingReviewsJSON.getString(DATE_JSON_FIELD));
+				date = new DateTime(ratingReviewsJSON.getString(DATE_JSON_FIELD)).withZone(DateConstants.timeZone);
 			}
 			if (ratingReviewsJSON.has(TOTAL_REVIEWS_JSON_FIELD) && !ratingReviewsJSON.isNull(TOTAL_REVIEWS_JSON_FIELD)) {
 				totalReviews = ratingReviewsJSON.getInt(TOTAL_REVIEWS_JSON_FIELD);

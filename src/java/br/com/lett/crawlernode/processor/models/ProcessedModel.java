@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.processor.models;
 import org.bson.Document;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -15,6 +16,7 @@ import com.mongodb.client.MongoDatabase;
 
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -30,7 +32,9 @@ import br.com.lett.crawlernode.util.Logging;
 public class ProcessedModel {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(ProcessedModel.class);
-
+	
+	private static final DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS").withZone(DateConstants.timeZone);
+	
 	private Long 		id;
 	private String 		internalId;
 	private String 		internalPid;
@@ -175,12 +179,16 @@ public class ProcessedModel {
 			// Verificando se já foi registrado alguma mudança hoje, a fim de acumular as próximas
 
 			try {
-				DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-
-				DateTime lrt = f.parseDateTime(compareTo.getLrt());
+				DateTime localLRT = dateFormatter.parseDateTime(compareTo.getLrt());
 
 				// Se já tinha sido lido hoje, acumula
-				if(compareTo.getChanges() != null && lrt.isAfter(new DateTime().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0))) {
+				DateTime beginingOfDay = new DateTime(DateConstants.timeZone)
+						.withHourOfDay(0)
+						.withMinuteOfHour(0)
+						.withSecondOfMinute(0)
+						.withMillisOfSecond(0);
+				
+				if(compareTo.getChanges() != null && localLRT.isAfter(beginingOfDay)) {
 					newChanges = new JSONObject(compareTo.getChanges(), JSONObject.getNames(compareTo.getChanges())); //clone
 				} else {
 					newChanges = new JSONObject();
@@ -236,13 +244,20 @@ public class ProcessedModel {
 					) {
 
 				JSONArray pic_secondary;
-				try 					{ 	pic_secondary = new JSONArray(compareTo.getSecondary_pics());
-				} catch (Exception e) 	{	pic_secondary = null; }
+				try { 	
+					pic_secondary = new JSONArray(compareTo.getSecondary_pics());
+				} catch (Exception e) {	
+					pic_secondary = null; 
+				}
 
-				if(pic_secondary != null) pic.put("secondary", pic_secondary);
+				if(pic_secondary != null) {
+					pic.put("secondary", pic_secondary);
+				}
 			}
 
-			if(pic.length() > 0) newChanges.put("pic", pic);
+			if(pic.length() > 0) {
+				newChanges.put("pic", pic);
+			}
 
 			// Verificando os campos originais se alteraram
 			JSONObject originals = new JSONObject();
@@ -263,11 +278,13 @@ public class ProcessedModel {
 				originals.put("description", compareTo.getOriginalDescription());
 			}
 
-			if(originals.length() > 0) newChanges.put("originals", originals);
+			if(originals.length() > 0) {
+				newChanges.put("originals", originals);
+			}
 
 		}
 
-		if(newChanges.length() == 0) {
+		if (newChanges.length() == 0) {
 			this.setChanges(null);
 		} else {
 			this.setChanges(newChanges);

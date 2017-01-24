@@ -40,6 +40,7 @@ import br.com.lett.crawlernode.processor.models.ClassModel;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
 import br.com.lett.crawlernode.processor.base.Extractor;
@@ -395,7 +396,7 @@ public class ResultManager {
 		// fetch md5 for the supposed new image
 		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey.toString());
 
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		// if md 5 is null, clean and add set as no_image
 		if(primaryMd5 == null) {
