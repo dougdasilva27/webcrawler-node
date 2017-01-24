@@ -13,25 +13,23 @@ public class SessionFactory {
 	
 	private static final Logger logger = LoggerFactory.getLogger(SessionFactory.class);
 	
-	public static Session createSession(Request request, String queueName, Markets markets) {
+	public static Session createSession(Request request, Markets markets) {
+		String queueName = request.getQueueName();
+		
 		if (queueName.equals(QueueName.INSIGHTS) || queueName.equals(QueueName.INSIGHTS_DEVELOPMENT)) {
 			return new InsightsCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.SEED) || queueName.equals(QueueName.SEED_DEAD)) {
+		else if (queueName.equals(QueueName.SEED)) {
 			return new SeedCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.DISCOVER) || queueName.equals(QueueName.DISCOVER_DEVELOPMENT)) {
+		else if (queueName.equals(QueueName.DISCOVER)) {
 			return new DiscoveryCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.RATING_REVIEWS) || queueName.equals(QueueName.RATING_REVIEWS_DEVELOPMENT)) {
+		else if (queueName.equals(QueueName.RATING)) {
 			return new RatingReviewsCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.IMAGES) || queueName.equals(QueueName.IMAGES_DEAD)) {
+		else if (queueName.equals(QueueName.IMAGES)) {
 			return new ImageCrawlerSession(request, queueName, markets);
-		}
-		else if (queueName.equals(QueueName.DEVELOPMENT)) {
-			return new InsightsCrawlerSession(request, queueName, markets);
-			//return new ImageCrawlerSession(message, queueName, markets);
 		}
 		else {
 			Logging.printLogDebug(logger, "Queue name not recognized.");

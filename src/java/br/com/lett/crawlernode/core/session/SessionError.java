@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.core.session;
 
+import org.json.JSONObject;
+
 public class SessionError {
 	
 	public static final String EXCEPTION = "exception";
@@ -22,6 +24,15 @@ public class SessionError {
 
 	public String getType() {
 		return type;
+	}
+	
+	public JSONObject toJson() {
+		JSONObject obj = new JSONObject();
+		
+		obj.put("type", type);
+		obj.put("content", content);
+		
+		return obj;
 	}
 
 }

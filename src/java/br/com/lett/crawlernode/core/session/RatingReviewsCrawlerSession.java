@@ -41,8 +41,8 @@ public class RatingReviewsCrawlerSession extends Session {
 		StringBuilder stringBuilder = new StringBuilder();
 		
 		stringBuilder.append(super.toString());
-		stringBuilder.append("internal id: " + internalId + "\n");
-		stringBuilder.append("processed id: " + processedId + "\n");
+		stringBuilder.append("internalId: " + internalId + "\n");
+		stringBuilder.append("processedId: " + processedId + "\n");
 		
 		return stringBuilder.toString();
 	}

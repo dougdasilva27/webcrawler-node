@@ -20,11 +20,6 @@ public class Session {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-	public static final String DISCOVERY_TYPE 	= "discovery";
-	public static final String SEED_TYPE 		= "seed";
-	public static final String INSIGHTS_TYPE 	= "insights";
-	public static final String TEST_TYPE 		= "test";
-
 	protected DateTime date = new DateTime(DateTimeZone.forID("America/Sao_Paulo"));
 	
 	protected String taskStaus;
@@ -182,20 +177,6 @@ public class Session {
 		/* do nothing by default */
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("session id: " + sessionId + "\n");
-		sb.append("queue name: " + getQueueName() + "\n");
-		sb.append("url: " + originalURL + "\n");
-		sb.append("market id: " + market.getNumber() + "\n");
-		sb.append("market name: " + market.getName() + "\n");
-		sb.append("market city: " + market.getCity() + "\n");
-
-		return sb.toString();
-	}
-
 	public List<SessionError> getErrors() {
 		return crawlerSessionErrors;
 	}
@@ -210,6 +191,18 @@ public class Session {
 
 	public void setQueueName(String queueName) {
 		this.queueName = queueName;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("sessionId: " + sessionId + "\n");
+		sb.append("queueName: " + getQueueName() + "\n");
+		sb.append("url: " + originalURL + "\n");
+		sb.append("marketId: " + market.getNumber() + "\n");
+
+		return sb.toString();
 	}
 
 }

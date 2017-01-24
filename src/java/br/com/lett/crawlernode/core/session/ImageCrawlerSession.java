@@ -102,11 +102,11 @@ public class ImageCrawlerSession extends Session {
 	@Override
 	public void clearSession() {
 		try {
-			Files.deleteIfExists(Paths.get(this.localFileDir));
-			Files.deleteIfExists(Paths.get(this.localOriginalFileDir));
-			Files.deleteIfExists(Paths.get(this.localSmallFileDir));
-			Files.deleteIfExists(Paths.get(this.localRegularFileDir));
-			Files.deleteIfExists(Paths.get(this.localMd5AmazonPath));
+			Files.deleteIfExists(Paths.get(localFileDir));
+			Files.deleteIfExists(Paths.get(localOriginalFileDir));
+			Files.deleteIfExists(Paths.get(localSmallFileDir));
+			Files.deleteIfExists(Paths.get(localRegularFileDir));
+			Files.deleteIfExists(Paths.get(localMd5AmazonPath));
 		} catch (IOException e) {
 			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
 		}

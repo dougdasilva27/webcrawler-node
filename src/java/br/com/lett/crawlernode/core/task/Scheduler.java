@@ -78,11 +78,7 @@ public class Scheduler {
 
 				// send the batch
 				SendMessageBatchResult result;
-				if (session instanceof TestCrawlerSession) {
-					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
-				} else {
-					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
-				}
+				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 
 				// get send request results
 				List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
@@ -136,11 +132,7 @@ public class Scheduler {
 			Logging.printLogDebug(logger, session, "Sending remaining batch of " + entries.size() + " messages...");
 
 			SendMessageBatchResult result = null;
-			if (session instanceof TestCrawlerSession) {
-				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
-			} else {
-				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
-			}
+			result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 
 			List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
 

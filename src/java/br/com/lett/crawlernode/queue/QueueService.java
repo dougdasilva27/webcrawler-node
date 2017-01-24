@@ -31,31 +31,19 @@ public class QueueService {
 	private static final Map<String, String> queueURLMap;
 
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed";
-	private static final String SEED_DEAD_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed-dead";
 
 	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-new";
 	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-development";
-	private static final String INSIGHTS_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-new-dead";
 
 	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover";
-	private static final String DISCOVERY_DEAD_QUEUE_URL 				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover-dead";
 
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images";
-	private static final String IMAGES_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images-development";
-	private static final String IMAGES_DEAD_QUEUE_URL					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images-dead";
 
-	private static final String RATING_REVIEWS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating_reviews";
-	private static final String RATING_REVIEWS_DEAD_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating_reviews-dead";
-	private static final String RATING_REVIEWS_DEVELOPMENT_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating_reviews-development";
+	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating";
 
-	private static final String DEVELOMENT_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-development";
-
-	//public static final String CITY_MESSAGE_ATTR 				= "city";
-	//public static final String MARKET_MESSAGE_ATTR 				= "market";
 	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
 	public static final String INTERNAL_ID_MESSAGE_ATTR 		= "internalId";
-	//public static final String PROXY_SERVICE_MESSAGE_ATTR 		= "proxies";
 
 	public static final String IMAGE_TYPE 						= "type";
 	public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR 	= "primary";
@@ -65,25 +53,16 @@ public class QueueService {
 	static {
 		queueURLMap = new HashMap<>();
 
-		queueURLMap.put(QueueName.DEVELOPMENT, DEVELOMENT_QUEUE_URL);
-
 		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
-		queueURLMap.put(QueueName.DISCOVER_DEAD, DISCOVERY_DEAD_QUEUE_URL);
 
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
-		queueURLMap.put(QueueName.IMAGES_DEVELOPMENT, IMAGES_DEVELOPMENT_QUEUE_URL);
-		queueURLMap.put(QueueName.IMAGES_DEAD, IMAGES_DEAD_QUEUE_URL);
 
 		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
 		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
-		queueURLMap.put(QueueName.INSIGHTS_DEAD, INSIGHTS_DEAD_QUEUE_URL);
 
-		queueURLMap.put(QueueName.RATING_REVIEWS_DEVELOPMENT, RATING_REVIEWS_DEVELOPMENT_QUEUE_URL);
-		queueURLMap.put(QueueName.RATING_REVIEWS, RATING_REVIEWS_QUEUE_URL);
-		queueURLMap.put(QueueName.RATING_REVIEWS_DEAD, RATING_REVIEWS_DEAD_QUEUE_URL);
+		queueURLMap.put(QueueName.RATING, RATING_QUEUE_URL);
 
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
-		queueURLMap.put(QueueName.SEED_DEAD, SEED_DEAD_QUEUE_URL);
 	}
 
 	/**
