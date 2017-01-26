@@ -86,11 +86,13 @@ public class BrasilSipolattiCrawler extends Crawler {
 		
 		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "http://www.sipolatti.com.br/", cookies, 1);
 		
-		for(String cookieName : cookiesMap.keySet()){
-			BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
-			cookie.setDomain("www.sipolatti.com.br");
-			cookie.setPath("/");
-			this.cookies.add(cookie);
+		if(cookiesMap != null) {
+			for(String cookieName : cookiesMap.keySet()){
+				BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
+				cookie.setDomain("www.sipolatti.com.br");
+				cookie.setPath("/");
+				this.cookies.add(cookie);
+			}
 		}
 	
 	}
