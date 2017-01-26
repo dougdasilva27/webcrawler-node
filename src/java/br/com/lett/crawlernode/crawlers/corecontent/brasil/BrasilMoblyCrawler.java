@@ -439,6 +439,10 @@ public class BrasilMoblyCrawler extends Crawler {
 
 		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("src").trim();
+			
+			if(!primaryImage.startsWith("http")) {
+				primaryImage = "https:" + primaryImage;
+			}
 		}
 
 		return primaryImage;
@@ -452,17 +456,26 @@ public class BrasilMoblyCrawler extends Crawler {
 
 		for (int i = 1; i < imagesElement.size(); i++) { // start with indez 1 because the first image is the primary image
 			Element e = imagesElement.get(i);
+			String image = null;
 			
 			if(e.hasAttr("data-image-big") && !e.attr("data-image-big").isEmpty())	{
-				secondaryImagesArray.put( e.attr("data-image-big").trim() );
+				image = e.attr("data-image-big").trim();
 			} else if(e.hasAttr("data-image-product") && !e.attr("data-image-product").isEmpty()){
-				secondaryImagesArray.put( e.attr("data-image-product").trim() );
+				image = e.attr("data-image-product").trim();
 			} else {
 				Element img = e.select("img").first();
 				
 				if(img != null){
-					secondaryImagesArray.put( e.attr("src").trim() );
+					image = e.attr("src").trim();
 				}
+			}
+			
+			if(image != null) {
+				if(!image.startsWith("http")) {
+					image = "https:" + image;
+				}
+				
+				secondaryImagesArray.put(image);
 			}
 		}
 

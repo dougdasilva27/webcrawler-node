@@ -160,7 +160,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 					// InternalId and images
 					JSONObject skuInformation = this.crawlSkuInformations(idVariation, internalIDMainPage, this.session.getOriginalURL(), token);
-
+					
 					// Varitation name
 					String variationName = sku.select("img").attr("alt").trim();
 
@@ -216,7 +216,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 				// Secondary Images
 				String secondaryImages= this.crawlSecondaryImages(doc, primaryImage);
-
+				
 				// Price
 				Float price = this.crawlPrice(doc);
 
@@ -297,7 +297,9 @@ public class BrasilSipolattiCrawler extends Crawler {
 	private String crawlPrimaryImageVariation(JSONObject json) {
 		String primaryImage = null;
 
-		if(json.has("primaryImage")) primaryImage = json.getString("primaryImage");
+		if(json.has("primaryImage")){
+			primaryImage = json.getString("primaryImage");
+		}
 
 		return primaryImage;
 	}
@@ -393,8 +395,6 @@ public class BrasilSipolattiCrawler extends Crawler {
 				+ "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\"}";
 
 		JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD, token);
-
-		System.err.println(jsonSku);
 		
 		if(jsonSku.has("value")){
 			JSONArray valueArray = jsonSku.getJSONArray("value");
@@ -421,12 +421,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 			for(int i = 0; i < imagesArray.length(); i++){
 				String temp = imagesArray.getString(i).toLowerCase();
 
-				if(temp.startsWith("/imagens/produtos/")){
-					if(i < imagesArray.length()-1){
-						
-						imagesMap.put(imagesArray.getString(i+1), "http://www.sipolatti.com.br"+temp);
-					}
-				} else if(temp.startsWith("http://www.sipolatti.com.br/imagens/produtos/")){
+				if(temp.startsWith("http")){
 					if(i < imagesArray.length()-1){
 						imagesMap.put(imagesArray.getString(i+1), temp);
 					}
@@ -480,6 +475,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 
 				if(temp.startsWith("<em>por")){
 					price = temp.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
+					break;
 				}
 			}
 		}
@@ -622,7 +618,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 				} else {
 					Element x = e.select("img").first();
 
-					if(!x.attr("src").isEmpty()){
+					if(x != null && !x.attr("src").isEmpty() && !x.attr("src").contains("gif")){
 						secondaryImagesArray.put(x.attr("src").replaceAll("Detalhes", "Ampliada"));
 					}
 				}
