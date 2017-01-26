@@ -194,6 +194,7 @@ public class Product {
 	public JSONObject toJSON() {
 		JSONObject obj = new JSONObject();
 		
+		obj.put("url", (url != null ? url : JSONObject.NULL));
 		obj.put("internalId", (internalId != null ? internalId : JSONObject.NULL));
 		obj.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL));
 		obj.put("name", (name != null ? name : JSONObject.NULL));

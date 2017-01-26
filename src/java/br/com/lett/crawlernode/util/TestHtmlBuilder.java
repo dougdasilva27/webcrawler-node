@@ -4,8 +4,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +22,29 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
-import br.com.lett.crawlernode.database.DatabaseDataFetcher;
-
 public class TestHtmlBuilder {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestHtmlBuilder.class);
 	
-	public void buildProductHtml(JSONObject productJson, String path) {
+	private static final String PRODUCT_URL = "url";
+	private static final String INTERNAL_ID = "internalId";
+	private static final String INTERNAL_PID = "internalPid";
+	private static final String NAME = "name";
+	private static final String PRICE = "price";
+	private static final String STOCK = "stock";
+	private static final String AVAILABLE = "available";
+	private static final String CAT1 = "category1";
+	private static final String CAT2 = "category2";
+	private static final String CAT3 = "category3";
+	private static final String PRIMARY_IMAGE = "primaryImage";
+	private static final String SECONDARY_IMAGES = "secondaryImages";
+	private static final String MARKETPLACE = "marketplace";
+	private static final String PRICES = "prices";
+	private static final String BANK_TICKET = "bank_ticket";
+	
+	public static String buildProductHtml(JSONObject productJson, String pathRead, String pathWrite) {
 		MustacheFactory mustacheFactory = new DefaultMustacheFactory();
-		File file = new File("/home/gabriel/Desktop/htmls/crawler_frontend.html");
+		File file = new File(pathRead);
 		
 		Mustache mustache = null;
 		try {
@@ -32,13 +54,221 @@ public class TestHtmlBuilder {
 		}
 		
 		if(mustache != null) {
+			// Map to replace all var to product informations in html
+			Map<String,Object> scopes = new HashMap<>();
 			
+			// Put url in map
+			putProductUrl(productJson, scopes);
+			
+			// Put internalId in map
+			putInternalId(productJson, scopes);
+			
+			// Put internalPid in map
+			putInternalPid(productJson, scopes);
+			
+			// Put name in map
+			putName(productJson, scopes);
+			
+			// Put name in map
+			putPrice(productJson, scopes);
+			
+			// Put name in map
+			putAvailable(productJson, scopes);
+			
+			// Put name in map
+			putStock(productJson, scopes);
+			
+			// Put cat1 in map
+			putCat1(productJson, scopes);
+			
+			// Put cat2 in map
+			putCat2(productJson, scopes);
+			
+			// Put cat1 in map
+			putCat3(productJson, scopes);
+			
+			// Put primaryImage in map
+			putPrimaryImage(productJson, scopes);
+			
+			// Put secondaryImages in map
+			putSecondaryImages(productJson, scopes);
+			
+			// Put marketplace in map
+			putMarketplaces(productJson, scopes);
+			
+			// Put prices in map
+			putPrices(productJson, scopes);
+			
+			// Execute replace in html
+			StringWriter writer = new StringWriter();
+			mustache.execute(writer, scopes);
+			
+			try(  PrintWriter out = new PrintWriter(pathWrite)  ){
+			    out.println( writer.toString() );
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			
+			return writer.toString();
+		}
+		
+		return null;
+	}
+	
+	private static void putProductUrl(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(PRODUCT_URL) && !productJson.isNull(PRODUCT_URL)) {
+			scopes.put(PRODUCT_URL, productJson.getString(PRODUCT_URL));
 		}
 	}
 	
-	private String crawlInternalId(JSONObject productJson) {
-		String internalId = null;
+	private static void putInternalId(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(INTERNAL_ID) && !productJson.isNull(INTERNAL_ID)) {
+			scopes.put(INTERNAL_ID, productJson.getString(INTERNAL_ID));
+		}
+	}
+	
+	private static void putInternalPid(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(INTERNAL_PID) && !productJson.isNull(INTERNAL_PID)) {
+			scopes.put(INTERNAL_PID, productJson.getString(INTERNAL_PID));
+		}
+	}
+	
+	private static void putName(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(NAME) && !productJson.isNull(NAME)) {
+			scopes.put(NAME, productJson.getString(NAME));
+		}
+	}
+	
+	private static void putPrice(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(PRICE) && !productJson.isNull(PRICE)) {
+			scopes.put(PRICE, productJson.get(PRICE));
+		}
+	}
+	
+	private static void putAvailable(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(AVAILABLE) && !productJson.isNull(AVAILABLE)) {
+			scopes.put(AVAILABLE, productJson.get(AVAILABLE));
+		}
+	}
+	
+	private static void putStock(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(STOCK) && !productJson.isNull(STOCK)) {
+			scopes.put(STOCK, productJson.get(STOCK));
+		}
+	}
+	
+	private static void putCat1(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(CAT1) && !productJson.isNull(CAT1)) {
+			scopes.put(CAT1, productJson.getString(CAT1));
+		}
+	}
+	
+	private static void putCat2(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(CAT2) && !productJson.isNull(CAT2)) {
+			scopes.put(CAT2, productJson.getString(CAT2));
+		}
+	}
+	
+	private static void putCat3(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(CAT3) && !productJson.isNull(CAT3)) {
+			scopes.put(CAT3, productJson.getString(CAT3));
+		}
+	}
+	
+	private static void putPrimaryImage(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(PRIMARY_IMAGE) && !productJson.isNull(PRIMARY_IMAGE)) {
+			scopes.put(PRIMARY_IMAGE, productJson.getString(PRIMARY_IMAGE));
+		}
+	}
+
+	private static void putSecondaryImages(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(SECONDARY_IMAGES) && !productJson.isNull(SECONDARY_IMAGES)) {
+			List<String> secondaryImages = new ArrayList<>();
+			JSONArray imagesArray = new JSONArray(productJson.getString(SECONDARY_IMAGES));
+			
+			for(int i = 0; i < imagesArray.length(); i++) {
+				secondaryImages.add(imagesArray.getString(i));
+			}
+			
+			scopes.put(SECONDARY_IMAGES, secondaryImages);
+		}
+	}
+
+	private static void putMarketplaces(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(MARKETPLACE) && !productJson.isNull(MARKETPLACE)) {
+			Map<String,Object> marketPlaces = new HashMap<>();
+			JSONArray arrayMarketplaces = new JSONArray(productJson.getString(MARKETPLACE));
+			
+			for(int i = 0; i < arrayMarketplaces.length(); i++) {
+				JSONObject jsonMarketplace = arrayMarketplaces.getJSONObject(i);
+				
+				if(jsonMarketplace.has(NAME)){
+					String name = jsonMarketplace.getString(NAME);
+					Map<Object,Object> prices = new HashMap<>();
+					
+					if(jsonMarketplace.has(PRICES)) {
+						JSONObject pricesJson = jsonMarketplace.getJSONObject(PRICES);
+						
+						prices = getMapPricesFromJson(pricesJson);
+						
+						if(pricesJson.has(BANK_TICKET)) {
+							JSONObject bankTicket = pricesJson.getJSONObject(BANK_TICKET);
+							
+							if(bankTicket.has("1")) {
+								prices.put(BANK_TICKET, bankTicket.get("1"));
+							}
+						}
+					} else if(jsonMarketplace.has(PRICE)){
+						prices.put("1'", jsonMarketplace.get(PRICE));
+					}
+					
+					marketPlaces.put(name, prices.entrySet());
+				} 
+			}
+			
+			scopes.put(MARKETPLACE, marketPlaces.entrySet());
+		}
+	}
+	
+	private static void putPrices(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(PRICES) && !productJson.isNull(PRICES)) {
+			JSONObject pricesJson = new JSONObject(productJson.get(PRICES));
+			Map<Object,Object> pricesMap = getMapPricesFromJson(pricesJson);
+			
+			if(pricesJson.has(BANK_TICKET)) {
+				JSONObject bankTicket = pricesJson.getJSONObject(BANK_TICKET);
+				
+				if(bankTicket.has("1")) {
+					scopes.put(BANK_TICKET, bankTicket.get("1"));
+				}
+			}
+			
+			scopes.put(PRICES, pricesMap.entrySet());
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static Map<Object,Object> getMapPricesFromJson(JSONObject prices) {
+		Map<Object,Object> pricesMap = new HashMap<>();
 		
-		return internalId;
+		if(prices.has("card")) {
+			JSONObject cardJson = prices.getJSONObject("card");
+			Set<String> cards = cardJson.keySet();
+			
+			for(String card : cards) {
+				Map<Object,Object> cardPrices = new HashMap<>();
+				JSONObject installmentsCard = cardJson.getJSONObject(card);
+				
+				Set<String> installments = installmentsCard.keySet();
+				
+				for(String installment : installments) {
+					cardPrices.put(installment, installmentsCard.get(installment));
+				}
+				
+				pricesMap.put(card, cardPrices.entrySet());
+			}
+		}
+		
+		return pricesMap;
 	}
 }
