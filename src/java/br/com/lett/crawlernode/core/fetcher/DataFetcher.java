@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.codec.binary.Base64;
@@ -608,6 +610,7 @@ public class DataFetcher {
 					.setDefaultCredentialsProvider(credentialsProvider)
 					.setDefaultHeaders(headers)
 					.setSSLSocketFactory(createSSLConnectionSocketFactory())
+					.setSSLHostnameVerifier(new HostNameVerifier())
 					.build();
 
 			HttpContext localContext = new BasicHttpContext();
