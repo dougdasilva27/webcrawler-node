@@ -40,6 +40,7 @@ public class Test {
 
 	private static String market;
 	private static String city;
+	public static String pathWrite;
 	public static String testType;
 
 	public static void main(String args[]) {
@@ -48,6 +49,7 @@ public class Test {
 		options = new Options();
 		options.addOption("market", true, "Market name");
 		options.addOption("city", true, "City name");
+		options.addOption("pathwrite", true, "Path that product html goes");
 		options.addOption("testType", true, "Test type [insights, rating, images]");
 
 		// parsing command line options
@@ -62,6 +64,7 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
+		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
 		// setting database credentials
@@ -93,7 +96,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			//taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createTestSession("https://www.fastshop.com.br/loja/portateis/eletroportateis-cozinha/cafeteira/cafeteira-nespresso-espresso-inisia-vermelha-a3nc40br-fast?cm_re=FASTSHOP%3aSub-departamento%3aCafeteiras+%7c+Chaleiras-_-Vitrine+01-_-NLA3NC40BRVRM", market);
+			Session session = SessionFactory.createTestSession("http://www.havan.com.br/banqueta-giratoria-abs-com-regulagem-de-altura-e-encosto-alto-havan/p", market);
 			
 			Task task = TaskFactory.createTask(session);
 			

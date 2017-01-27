@@ -194,6 +194,7 @@ public class Product {
 	public JSONObject toJSON() {
 		JSONObject obj = new JSONObject();
 		
+		obj.put("url", (url != null ? url : JSONObject.NULL));
 		obj.put("internalId", (internalId != null ? internalId : JSONObject.NULL));
 		obj.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL));
 		obj.put("name", (name != null ? name : JSONObject.NULL));
@@ -207,6 +208,7 @@ public class Product {
 		obj.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL));
 		obj.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL));
 		obj.put("stock", (stock != null ? stock : JSONObject.NULL));
+		obj.put("description", (description != null ? description : JSONObject.NULL));
 		
 		return obj;
 	}
