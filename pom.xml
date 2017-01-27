@@ -5,6 +5,10 @@
 	<artifactId>webcrawler-node</artifactId>
 	<version>${maven.build.timestamp}</version>
 	<packaging>jar</packaging>
+	
+	<properties>
+		<maven.build.timestamp.format>yyyy-MM-dd_HH-mm</maven.build.timestamp.format>
+	</properties>
 
 	<build>
 
