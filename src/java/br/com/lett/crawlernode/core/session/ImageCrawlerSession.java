@@ -21,6 +21,7 @@ public class ImageCrawlerSession extends Session {
 	
 	public static final String PRIMARY_IMG_TYPE = "primary";
 	public static final String SECONDARY_IMG_TYPE = "secondary";
+	public static final String DEFAULT_EXTENSION = "jpg";
 
 	/** Internal id of the sku being processed */
 	private String internalId;
@@ -84,7 +85,7 @@ public class ImageCrawlerSession extends Session {
 		
 		// set local directories 
 		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();  
-		
+				
 		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-original.jpg";  
 		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-regular.jpg";  
 		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-small.jpg";
@@ -123,7 +124,11 @@ public class ImageCrawlerSession extends Session {
 	 */
 	private String createImageBaseName() {
 		String s = super.originalURL + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		return DigestUtils.md5Hex(s) + "." + FilenameUtils.getExtension(super.originalURL);
+		String extension = FilenameUtils.getExtension(super.originalURL);
+		if (extension == null || extension.isEmpty()) {
+			extension = DEFAULT_EXTENSION;
+		}
+		return DigestUtils.md5Hex(s) + "." + extension;
 	}
 
 	public String getLocalFileDir() {
