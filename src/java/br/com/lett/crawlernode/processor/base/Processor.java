@@ -477,6 +477,7 @@ public class Processor {
 								query.append("'");
 				
 //				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
+				Logging.printLogDebug(logger, session, "Running query: " + query.toString());
 				ResultSet rs = Main.dbManager.runSqlConsult(query.toString());
 
 				while(rs.next()) {
