@@ -208,6 +208,7 @@ public class Product {
 		obj.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL));
 		obj.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL));
 		obj.put("stock", (stock != null ? stock : JSONObject.NULL));
+		obj.put("description", (description != null ? description : JSONObject.NULL));
 		
 		return obj;
 	}

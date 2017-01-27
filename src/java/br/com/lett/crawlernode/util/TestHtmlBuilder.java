@@ -33,6 +33,7 @@ public class TestHtmlBuilder {
 	private static final String PRICE = "price";
 	private static final String STOCK = "stock";
 	private static final String AVAILABLE = "available";
+	private static final String DESCRIPTION = "description";
 	private static final String CAT1 = "category1";
 	private static final String CAT2 = "category2";
 	private static final String CAT3 = "category3";
@@ -77,6 +78,9 @@ public class TestHtmlBuilder {
 			
 			// Put name in map
 			putStock(productJson, scopes);
+			
+			// Put description in map
+			putDescription(productJson, scopes);
 			
 			// Put cat1 in map
 			putCat1(productJson, scopes);
@@ -157,6 +161,12 @@ public class TestHtmlBuilder {
 		}
 	}
 	
+	private static void putDescription(JSONObject productJson, Map<String,Object> scopes) {
+		if(productJson.has(DESCRIPTION) && !productJson.isNull(DESCRIPTION)) {
+			scopes.put(DESCRIPTION, productJson.getString(DESCRIPTION));
+		}
+	}
+	
 	private static void putCat1(JSONObject productJson, Map<String,Object> scopes) {
 		if(productJson.has(CAT1) && !productJson.isNull(CAT1)) {
 			scopes.put(CAT1, productJson.getString(CAT1));
@@ -215,7 +225,9 @@ public class TestHtmlBuilder {
 							JSONObject bankTicket = pricesJson.getJSONObject(BANK_TICKET);
 							
 							if(bankTicket.has("1")) {
-								prices.put(BANK_TICKET, bankTicket.get("1"));
+								Map<Object,Object> bankTicketPrices = new HashMap<>();
+								bankTicketPrices.put(1, bankTicket.get("1"));
+								prices.put("Boleto", bankTicketPrices.entrySet());
 							}
 						}
 					} else if(jsonMarketplace.has(PRICE)){
@@ -232,7 +244,7 @@ public class TestHtmlBuilder {
 	
 	private static void putPrices(JSONObject productJson, Map<String,Object> scopes) {
 		if(productJson.has(PRICES) && !productJson.isNull(PRICES)) {
-			JSONObject pricesJson = new JSONObject(productJson.get(PRICES));
+			JSONObject pricesJson = new JSONObject(productJson.getString(PRICES));
 			Map<Object,Object> pricesMap = getMapPricesFromJson(pricesJson);
 			
 			if(pricesJson.has(BANK_TICKET)) {
@@ -246,6 +258,7 @@ public class TestHtmlBuilder {
 			scopes.put(PRICES, pricesMap.entrySet());
 		}
 	}
+	
 	
 	@SuppressWarnings("unchecked")
 	private static Map<Object,Object> getMapPricesFromJson(JSONObject prices) {
