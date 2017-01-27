@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import com.google.common.io.Resources;
+
+import br.com.lett.crawlernode.core.session.Session;
 
 public class TestHtmlBuilder {
 	
@@ -43,9 +46,9 @@ public class TestHtmlBuilder {
 	private static final String PRICES = "prices";
 	private static final String BANK_TICKET = "bank_ticket";
 	
-	public static String buildProductHtml(JSONObject productJson, String pathRead, String pathWrite) {
-		MustacheFactory mustacheFactory = new DefaultMustacheFactory();
-		File file = new File(pathRead);
+	public static String buildProductHtml(JSONObject productJson, String pathWrite, Session session) {
+		MustacheFactory mustacheFactory = new DefaultMustacheFactory();		
+		File file = new File(Resources.getResource("productTemplate.html").getFile());
 		
 		Mustache mustache = null;
 		try {
@@ -107,10 +110,10 @@ public class TestHtmlBuilder {
 			StringWriter writer = new StringWriter();
 			mustache.execute(writer, scopes);
 			
-			try(  PrintWriter out = new PrintWriter(pathWrite)  ){
+			try(  PrintWriter out = new PrintWriter(pathWrite + session.getMarket().getName() + "-" + scopes.get(INTERNAL_ID) + ".html")  ){
 			    out.println( writer.toString() );
 			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+				Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 			}
 			
 			return writer.toString();

@@ -27,8 +27,10 @@ import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.TestHtmlBuilder;
 
 import org.apache.http.cookie.Cookie;
 import org.slf4j.Logger;
@@ -244,6 +246,10 @@ public class Crawler extends Task {
 		Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
 		for (Product p : products) {
+			if(Test.pathWrite != null) {
+				TestHtmlBuilder.buildProductHtml(p.toJSON(), Test.pathWrite, session);
+			}
+			
 			printCrawledInformation(p);
 		}
 	}
