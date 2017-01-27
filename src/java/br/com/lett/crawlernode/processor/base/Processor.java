@@ -474,7 +474,7 @@ public class Processor {
 								query.append(session.getMarket().getNumber());
 								query.append(" AND internal_id = '");
 								query.append(internalId);
-								query.append("'");
+								query.append("' LIMIT 1");
 				
 //				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
 				Logging.printLogDebug(logger, session, "Running query: " + query.toString());
