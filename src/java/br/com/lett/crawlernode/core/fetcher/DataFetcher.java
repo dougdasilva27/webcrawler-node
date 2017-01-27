@@ -702,7 +702,7 @@ public class DataFetcher {
 	
 	private static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
 		TrustManager trustManager = new TrustManager();
-		SSLContext sslContext = SSLContext.getInstance("TLSv1");
+		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, new TrustManager[]{trustManager}, null);
 		
 		return new SSLConnectionSocketFactory(sslContext);
