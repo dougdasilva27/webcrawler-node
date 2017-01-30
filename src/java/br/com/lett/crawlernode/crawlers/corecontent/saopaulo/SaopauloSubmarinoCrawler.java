@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -99,10 +100,10 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// Api onde se consegue todos os preços
-			JSONObject initialJson = getDataLayer(doc);
+			JSONObject initialJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
 
 			// Pega só o que interessa do json da api
-			JSONObject infoProductJson = assembleJsonProduct(initialJson);
+			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(initialJson);
 
 			// Pid
 			String internalPid = this.crawlInternalPid(infoProductJson);
@@ -128,6 +129,9 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			// sku data in json
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
+			// JSON with stock Information
+			JSONObject jsonWithStock = fetchJSONWithStockInformation(internalPid);
+			
 			for (String internalId : skuOptions.keySet()) {
 
 				// InternalId
@@ -152,7 +156,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				Prices prices = crawlPrices(infoProductJson, variationPrice, internalId);
 
 				// Stock
-				Integer stock = crawlStock(infoProductJson, internalId);
+				Integer stock = crawlStock(infoProductJson, internalId, jsonWithStock);
 
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
@@ -189,7 +193,9 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 
-		if (url.startsWith("http://www.submarino.com.br/produto/")) return true;
+		if (url.startsWith("http://www.submarino.com.br/produto/")) {
+			return true;
+		}
 		return false;
 	}
 
@@ -226,33 +232,6 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		}
 
 		return skuMap;
-	}
-
-	private JSONObject getDataLayer(Document doc){
-		JSONObject skus = new JSONObject();
-		Elements scripts = doc.select("script");
-		String json = null;
-
-		for (Element e : scripts) {
-			json = e.outerHtml();
-
-			if (json.contains("__INITIAL_STATE__")) {
-				int x = json.indexOf("_ =") + 3;
-				int y = json.indexOf("};", x);
-
-				json = json.substring(x, y+1);
-
-				break;
-			}
-		}
-
-		try {
-			skus = new JSONObject(json);
-		} catch (Exception e) {
-			skus = new JSONObject();
-		}
-
-		return skus;
 	}
 
 	private Map<String,Prices> crawlMarketplace(String internalId, String pid) {
@@ -437,263 +416,34 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return description;
 	}	
 
-	private Integer crawlStock(JSONObject jsonProduct, String id){
+	private Integer crawlStock(JSONObject jsonProduct, String internalId, JSONObject jsonWithStock){
 		Integer stock = null;
 		
 		if(jsonProduct.has("prices")){
-			if(jsonProduct.getJSONObject("prices").has(id)){
-				JSONObject product = jsonProduct.getJSONObject("prices").getJSONObject(id);
+			if(jsonProduct.getJSONObject("prices").has(internalId)){
+				JSONObject product = jsonProduct.getJSONObject("prices").getJSONObject(internalId);
 				
 				if(product.has("stock")){
 					stock = product.getInt("stock");
 				}
 			}
 		}
+		
+		if(stock == null && jsonWithStock.has(internalId)){
+			JSONObject product = jsonWithStock.getJSONObject(internalId);
 
+			if(product.has("stock")){
+				stock = product.getInt("stock");
+			}
+		}
+		
 		return stock;
 	}
 
-	/**
-	 * Nesse novo site da submarino todas as principais informações dos skus
-	 * estão em um json no html, esse json é muito grande, por isso pego somente
-	 * o que preciso e coloco em outro json para facilitar a captura de informações
-	 * 
-	 *{ 
-	 *	internalPid = '51612',
-	 *	skus:[
-	 *		{
-	 *			internal_id: '546',
-	 *			variationName: '110v'
-	 *		}
-	 *	],
-	 *	images:{
-	 *		primaryImage: '123.jpg'.
-	 *		secondaryImages: [
-	 *			'1.jpg',
-	 *			'2.jpg'
-	 *		]
-	 *	},
-	 *	categories:[
-	 *		{
-	 *			id: '123',
-	 *			name: 'cafeteira'
-	 *		}
-	 *	],
-	 *	prices:{
-	 *		546:{
-	 *			stock: 1706
-	 *			bankTicket: 59.86
-	 *			installments: [
-	 *				{
-	 *					quantity: 1,
-	 *					value: 54.20
-	 *				}
-	 *			]
-	 *		}
-	 *	}
-	 *	
-	 *}
-	 */
-
-	private JSONObject assembleJsonProduct(JSONObject initialJson){
-		JSONObject jsonProduct = new JSONObject();
-
-		if(initialJson.has("product")){
-			JSONObject productJson = initialJson.getJSONObject("product");
-
-			if(productJson.has("id")){
-				jsonProduct.put("internalPid", productJson.getString("id"));
-			}
-
-			JSONObject jsonPrices = getJsonPrices(initialJson);
-			jsonProduct.put("prices", jsonPrices);
-
-			JSONObject jsonImages = getJSONImages(productJson);
-			jsonProduct.put("images", jsonImages);
-
-			JSONArray jsonCategories = getJSONCategories(productJson);
-			jsonProduct.put("categories", jsonCategories);
-
-			JSONArray skus = getJSONSkus(initialJson);
-			jsonProduct.put("skus", skus);
-		}
-
-		return jsonProduct;
-
-	}
-
-	private JSONArray getJSONSkus(JSONObject initialJson){
-		JSONArray skus = new JSONArray();
-
-		if(initialJson.has("skus")){
-			JSONArray skusJson = initialJson.getJSONArray("skus");
-
-			for(int i = 0; i < skusJson.length(); i++){
-				JSONObject skuJson = skusJson.getJSONObject(i);
-				JSONObject sku = new JSONObject();
-
-				if(skuJson.has("id")){
-					sku.put("internalId", skuJson.getString("id"));
-
-					if(skuJson.has("name")){
-						String name = "";
-
-						if(skuJson.has("diffs")){
-							JSONArray diffs = skuJson.getJSONArray("diffs");
-
-							for(int j = 0; j < diffs.length(); j++){
-								JSONObject variation = diffs.getJSONObject(j);
-
-								if(variation.has("value")){
-									name += " " + variation.getString("value").trim();
-								}
-							}
-
-							sku.put("variationName", name);
-						}
-					}
-				}
-				skus.put(sku);
-			}
-		}
-
-		return skus;
-	}
-
-	private JSONArray getJSONCategories(JSONObject productJson){
-		JSONArray jsonCategories = new JSONArray();
-
-		if(productJson.has("category")){
-			JSONObject category = productJson.getJSONObject("category");
-
-			if(category.has("breadcrumb")){
-				jsonCategories = category.getJSONArray("breadcrumb");
-			}
-		}
-
-		return jsonCategories;
-	}
-
-	private JSONObject getJSONImages(JSONObject productJson){
-		JSONObject jsonImages = new JSONObject();
-
-		if(productJson.has("images")){
-			JSONArray imagesArray = productJson.getJSONArray("images");
-			JSONArray secondaryImages = new JSONArray();
-
-			for(int i = 0; i < imagesArray.length(); i++){
-				JSONObject images = imagesArray.getJSONObject(i);
-				String image = null;
-
-				if(images.has("extraLarge")){
-					image = images.getString("extraLarge");
-				} else if(images.has("large")){
-					image = images.getString("large");
-				} else if(images.has("big")){
-					image = images.getString("big");
-				} else if(images.has("medium")){
-					image = images.getString("medium");
-				}
-
-				if(i == 0){
-					jsonImages.put("primaryImage", image);
-				} else {
-					secondaryImages.put(image);
-				}
-			}
-
-			jsonImages.put("secondaryImages", secondaryImages);
-		}
-
-		return jsonImages;
-	}
-
-	private JSONObject getJsonPrices(JSONObject initialJson){
-		JSONObject jsonPrices = new JSONObject();
-
-		if(initialJson.has("offers")){
-			JSONArray offersJson = initialJson.getJSONArray("offers");
-			JSONObject correctSeller = new JSONObject();
-			JSONArray moreQuantityOfInstallments = new JSONArray();
-
-			for(int i = 0; i < offersJson.length(); i++){
-				JSONObject jsonOffer = offersJson.getJSONObject(i);
-				JSONObject jsonSeller = new JSONObject();
-				String idProduct = null;
-
-				if(jsonOffer.has("_embedded")){
-					JSONObject embedded = jsonOffer.getJSONObject("_embedded");
-
-					if(embedded.has("seller")){
-						JSONObject seller = embedded.getJSONObject("seller");
-
-						if(seller.has("name")){
-							if(seller.getString("name").toLowerCase().equals("b2w")){
-								correctSeller = jsonOffer;
-							}
-						}
-					}
-				}
-
-				if(correctSeller.has("_links")){
-					JSONObject links = correctSeller.getJSONObject("_links");
-
-					if(links.has("sku")){
-						JSONObject sku = links.getJSONObject("sku");
-
-						if(sku.has("id")){
-							idProduct = sku.getString("id");
-						}
-					}
-
-					if(correctSeller.has("paymentOptions")){
-						JSONObject payment = correctSeller.getJSONObject("paymentOptions");
-
-						if(payment.has("BOLETO")){
-							JSONObject boleto = payment.getJSONObject("BOLETO");
-
-							if(boleto.has("price")){
-								jsonSeller.put("bankTicket", boleto.getDouble("price"));
-							}
-						}
-
-						if(payment.has("CARTAO_VISA")){
-							JSONObject visa = payment.getJSONObject("CARTAO_VISA");
-
-							if(visa.has("installments")){
-								JSONArray installments = visa.getJSONArray("installments");
-								jsonSeller.put("installments", installments);
-
-								if(installments.length() > moreQuantityOfInstallments.length()){
-									moreQuantityOfInstallments = installments;
-								}
-							}
-						}
-
-						if(correctSeller.has("availability")){
-							JSONObject availability = correctSeller.getJSONObject("availability");
-
-							if(availability.has("_embedded")){
-								JSONObject embeddedStock = availability.getJSONObject("_embedded");
-
-								if(embeddedStock.has("stock")){
-									JSONObject jsonStock = embeddedStock.getJSONObject("stock");
-
-									if(jsonStock.has("quantity")){
-										jsonSeller.put("stock", jsonStock.getInt("quantity"));
-									}
-								}
-							}
-						}
-					}
-
-					jsonPrices.put(idProduct, jsonSeller);
-				}
-
-			}
-		}
-
-		return jsonPrices;
+	private JSONObject fetchJSONWithStockInformation(String internalPid) {
+		JSONObject apiWithStock = SaopauloB2WCrawlersUtils.fetchAPIInformationsWithOldWay(internalPid, session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
+		
+		return SaopauloB2WCrawlersUtils.assembleJsonProductWithOldWay(apiWithStock, internalPid, session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
 	}
 
 	private Prices crawlPrices(JSONObject infoProductJson, Float priceBase, String id){

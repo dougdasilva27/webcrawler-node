@@ -345,7 +345,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("href").trim();
 
-			if(!image.startsWith("https:")){
+			if(!image.startsWith("http")){
 				image = "https:" + image;
 			}
 
