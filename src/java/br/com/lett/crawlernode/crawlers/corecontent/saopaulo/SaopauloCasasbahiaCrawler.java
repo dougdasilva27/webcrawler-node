@@ -260,7 +260,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document doc, String url) {
-		Element productElement = doc.select(".produtoNome h1 span").first();
+		Element productElement = doc.select(".produtoNome").first();
 
 		if (productElement != null) return true;
 		return false;
