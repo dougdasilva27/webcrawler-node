@@ -123,8 +123,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					}
 				}
 			}
+			
 			if (secondaryImagesArray.length() > 0) {
 				secondaryImages = secondaryImagesArray.toString();
+			}
+			
+			if(primaryImage == null) {
+				Element primaryImageElement = doc.select(".img-product-out-of-stock img").first();
+				
+				if(primaryImageElement != null) {
+					primaryImage = primaryImageElement.attr("src");
+				}
 			}
 
 			// Estoque
