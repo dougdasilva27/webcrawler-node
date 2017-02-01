@@ -9,7 +9,9 @@ import java.util.Map;
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Query;
 import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.Table;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,9 +25,11 @@ import com.mongodb.MongoWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import br.com.lett.crawlernode.core.models.CategoriesRanking;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
@@ -37,7 +41,9 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
+import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerOld;
+import dbmodels.tables.CrawlerRanking;
 import dbmodels.tables.Processed;
 import generation.PostgresJSONGsonBinding;
 
@@ -133,7 +139,7 @@ public class Persistence {
 			Crawler crawler = Tables.CRAWLER;
 
 			Map<Field<?>, Object> insertMapCrawler= new HashMap<>();
-			
+
 			insertMapCrawler.put(crawler.AVAILABLE, available);
 			insertMapCrawler.put(crawler.MARKET, session.getMarket().getNumber());
 			insertMapCrawler.put(crawler.INTERNAL_ID, internalId);
@@ -146,7 +152,7 @@ public class Persistence {
 			insertMapCrawler.put(crawler.CAT2, cat2);
 			insertMapCrawler.put(crawler.CAT3, cat3);
 			insertMapCrawler.put(crawler.PIC, primaryPic);
-			
+
 			if(price != null) {
 				insertMapCrawler.put(crawler.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
 			}
@@ -162,12 +168,12 @@ public class Persistence {
 			if(marketplaceString != null) {
 				insertMapCrawler.put(crawler.MARKETPLACE, marketplaceString);
 			}
-			
+
 			// Create a fields and values of crawler_old
 			CrawlerOld crawlerOld = Tables.CRAWLER_OLD;
 
 			Map<Field<?>, Object> insertMapCrawlerOld = new HashMap<>();
-			
+
 			insertMapCrawlerOld.put(crawlerOld.AVAILABLE, available);
 			insertMapCrawlerOld.put(crawlerOld.MARKET, session.getMarket().getNumber());
 			insertMapCrawlerOld.put(crawlerOld.INTERNAL_ID, internalId);
@@ -180,7 +186,7 @@ public class Persistence {
 			insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
 			insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
 			insertMapCrawlerOld.put(crawlerOld.PIC, primaryPic);
-			
+
 			if(price != null) {
 				insertMapCrawlerOld.put(crawlerOld.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
 			}
@@ -196,12 +202,12 @@ public class Persistence {
 			if(marketplaceString != null) {
 				insertMapCrawlerOld.put(crawlerOld.MARKETPLACE, marketplaceString);
 			}
-			
+
 			// List of tables for batch insert
 			List<Table<?>> tables = new ArrayList<>();
 			tables.add(crawler);
 			tables.add(crawlerOld);
-			
+
 			// Map of Table - FieldsOfTable
 			Map<Table<?>,Map<Field<?>, Object>> tablesMap = new HashMap<>();
 			tablesMap.put(crawler, insertMapCrawler);
@@ -222,7 +228,7 @@ public class Persistence {
 		Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
-		
+
 		if(ratingReviews != null){
 			updateSets.put(processedTable.RATING, CONVERT_STRING_GSON.converter().from(ratingReviews.getJSON().toString()));
 		} else {
@@ -260,12 +266,12 @@ public class Persistence {
 		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().getPricesJson();
 
 		Processed processedTable = Tables.PROCESSED;
-		
+
 		try {
 			if(newProcessedProduct.getId() == null) {
-				
+
 				Map<Field<?>, Object> insertMap = new HashMap<>();
-				
+
 				// 				 			 Column					Value
 				insertMap.put(processedTable.INTERNAL_ID, 			newProcessedProduct.getInternalId());
 				insertMap.put(processedTable.INTERNAL_PID, 			newProcessedProduct.getInternalPid());
@@ -295,52 +301,52 @@ public class Persistence {
 				insertMap.put(processedTable.PRICE, 				newProcessedProduct.getPrice());
 				insertMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
 				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondary_pics());
-				
+
 				if(prices != null) {
 					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 				} else {
 					insertMap.put(processedTable.PRICES, null);
 				}
-				
+
 				if(newProcessedProduct.getChanges() != null){
 					insertMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString().replace("'","''"));
 				} else {
 					insertMap.put(processedTable.CHANGES, null);
 				}
-	
+
 				if(newProcessedProduct.getDigitalContent() != null){
 					insertMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString().replace("'","''"));
 				} else {
 					insertMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
-				
+
 				if(newProcessedProduct.getMarketplace() != null){
 					insertMap.put(processedTable.MARKETPLACE, newProcessedProduct.getMarketplace().toString().replace("'","''"));
 				} else {
 					insertMap.put(processedTable.MARKETPLACE, null);
 				}
-				
+
 				if(newProcessedProduct.getBehaviour() != null){
 					insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString().replace("'","''"));
 				} else {
 					insertMap.put(processedTable.BEHAVIOUR, null);
 				}
-				
+
 				if(newProcessedProduct.getSimilars() != null){
 					insertMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString().replace("'","''"));
 				} else {
 					insertMap.put(processedTable.SIMILARS, null);
 				}
-				
+
 				// get processeed id of new processed product
 				Record recordId = Main.dbManager.runInsertJooqReturningID(processedTable, insertMap, processedTable.ID);
-				
+
 				if(recordId != null) {
 					id = recordId.get(processedTable.ID);
 				} else {
 					id = (long) 0;
 				}
-				
+
 				if (persistenceResult instanceof ProcessedModelPersistenceResult && id != 0) {
 					((ProcessedModelPersistenceResult)persistenceResult).addCreatedId(id);
 				}
@@ -377,46 +383,46 @@ public class Persistence {
 				updateMap.put(processedTable.PRICE, 				newProcessedProduct.getPrice());
 				updateMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
 				updateMap.put(processedTable.SECONDARY_PICS, 		newProcessedProduct.getSecondary_pics());
-				
+
 				if(prices != null) {
 					updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 				} else {
 					updateMap.put(processedTable.PRICES, null);
 				}
-				
+
 				if(newProcessedProduct.getChanges() != null){
 					updateMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString().replace("'","''"));
 				} else {
 					updateMap.put(processedTable.CHANGES, null);
 				}
-	
+
 				if(newProcessedProduct.getDigitalContent() != null){
 					updateMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString().replace("'","''") );
 				} else {
 					updateMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
-				
+
 				if(newProcessedProduct.getMarketplace() != null){
 					updateMap.put(processedTable.MARKETPLACE,  newProcessedProduct.getMarketplace().toString().replace("'","''"));
 				} else {
 					updateMap.put(processedTable.MARKETPLACE,  null);
 				}
-				
+
 				if(newProcessedProduct.getBehaviour() != null){
 					updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString().replace("'","''"));
 				} else {
 					updateMap.put(processedTable.BEHAVIOUR, null);
 				}
-				
+
 				if(newProcessedProduct.getSimilars() != null){
 					updateMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString().replace("'","''"));
 				} else {
 					updateMap.put(processedTable.SIMILARS, null);
 				}
-				
+
 				// get the id of the processed product that already exists
 				id = newProcessedProduct.getId();
-				
+
 				List<Condition> conditions = new ArrayList<>();
 				conditions.add(processedTable.ID.equal(id));
 
@@ -685,7 +691,7 @@ public class Persistence {
 
 		}
 	}
-	
+
 	/**
 	 * Directory creation log
 	 * @param city
@@ -694,7 +700,7 @@ public class Persistence {
 	 */
 	static void printLogDirectory(String city, String name, String folder){
 		File file;
-		
+
 		if(name == null) {
 			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city);
 		} else if(folder == null) {
@@ -702,7 +708,7 @@ public class Persistence {
 		} else {
 			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city + "/" + name + "/" + folder);
 		}
-		
+
 		if (!file.exists()) {
 			if (file.mkdir()) {
 				Logging.printLogInfo(logger, createDefaultMessageInitializeImagesSuccess(file));
@@ -713,23 +719,84 @@ public class Persistence {
 			Logging.printLogDebug(logger, createDefaultMessageInitializeImagesAlreadyCreated(file));
 		}
 	}
-	
+
 	/**
 	 * Default messages to directoty creation
 	 * @param file
 	 * @return
 	 */
-	
+
 	private static String createDefaultMessageInitializeImagesSuccess(File file){
 		return "Directory " + file.getAbsolutePath() + " created!";
 	}
-	
+
 	private static String createDefaultMessageInitializeImagesFailed(File file){
 		return "Failed to create " + file.getAbsolutePath() + " directory!";
 	}
-	
+
 	private static String createDefaultMessageInitializeImagesAlreadyCreated(File file){
 		return  "Directory " + file.getAbsolutePath() + " was already created...";
 	}
 
+
+	//busca dados no postgres
+	public static List<Market> getMarketsFromPostgres(String type) {
+
+		ArrayList<Market> marketArrayList = new ArrayList<> ();
+
+		return marketArrayList;
+	}
+
+	//busca dados no postgres
+	public static List<Market> getMarketsFromPostgres(String type, String city) {
+
+		ArrayList<Market> marketArrayList = new ArrayList<> ();
+
+		return marketArrayList;
+	}
+
+	//busca dados no postgres
+	public static List<Market> getMarketsFromPostgres(String type, String city, String marketName) {
+
+		ArrayList<Market> marketArrayList = new ArrayList<> ();
+
+
+		return marketArrayList;
+	}
+
+
+	//busca dados no postgres
+	public static CategoriesRanking fecthCategories(int id) {		
+
+		return null;
+	}
+
+	//busca dados no postgres
+	public static List<Long> fetchProcessedIdsWithPid(String pid, int market) {
+
+		List<Long> processedIds = new ArrayList<> ();
+
+		return processedIds;
+	}
+
+
+
+	public static List<Long> fetchProcessedIdsWithUrl(String url, int market) {
+
+		List<Long> processedIds = new ArrayList<> ();
+
+		return processedIds;
+	}
+
+	//busca dados no postgres
+	public static List<Long> fetchProcessedIds(String id, int market) {
+
+		List<Long> processedIds = new ArrayList<>();
+
+		return processedIds;
+	}
+
+	public static void insertProductsRanking(Ranking ranking){
+
+	}
 }

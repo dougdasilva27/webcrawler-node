@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -195,4 +196,17 @@ public class CommonMethods {
     	
     	return finalUrl;
     }
+    
+    /**
+     * Remove all accents
+     * @param str
+     * @return
+     */
+  	public static String removeAcentos(String str) {
+
+  		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+  		str = str.replaceAll("[^\\p{ASCII}]", "");
+  		return str;
+
+  	}
 }

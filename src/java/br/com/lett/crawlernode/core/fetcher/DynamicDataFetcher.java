@@ -26,6 +26,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -129,6 +131,30 @@ public class DynamicDataFetcher {
 		return fetchPageSmart(url, session, 1);
 	}
 
+	/**
+	 * 
+	 * @param webdriver
+	 * @param url
+	 * @return
+	 */
+	public static Document fetchPage(CrawlerWebdriver webdriver, String url){
+		try{
+			Document doc = new Document(url);
+			webdriver.loadUrl(url);
+			
+			String docString = webdriver.getCurrentPageSource();
+			
+			if(docString != null){
+				doc = Jsoup.parse(docString);
+			}
+			
+			return doc;
+		} catch (Exception e) {
+			Logging.printLogError(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
+			return new Document(url);
+		}
+	}
+	
 	/**
 	 * Use the Charity smart proxy to fetch a page content. This proxy
 	 * requires special headers to use the smart functionality, that allows
