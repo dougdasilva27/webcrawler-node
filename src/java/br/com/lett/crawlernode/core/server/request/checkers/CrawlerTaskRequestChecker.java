@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.server.ServerHandler;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
@@ -19,13 +20,16 @@ public class CrawlerTaskRequestChecker {
 			Logging.printLogError(logger, "Request is missing queue name");
 			return false;
 		}
+		
 		if (Main.markets.getMarket(request.getMarketId()) == null) {
 			Logging.printLogError(logger, "Market " + request.getMarketId() + " doesn't exist.");
 			return false;
 		}
+		
 		if (request instanceof ImageCrawlerRequest) {
 			return checkImageTaskRequest(request);
 		}
+		
 		if (QueueName.INSIGHTS.equals(request.getQueueName())) {
 			if (request.getProcessedId() == null) {
 				Logging.printLogError(logger, "Request is missing processedId");
@@ -36,7 +40,12 @@ public class CrawlerTaskRequestChecker {
 				return false;
 			}
 		}
-
+		
+		if(QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingKeywordsRequest)request).getKeyword() == null) {
+			Logging.printLogError(logger, "Request is missing keyword");
+			return false;
+		}
+		
 		return true;
 	}
 	

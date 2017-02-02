@@ -3,15 +3,16 @@ package br.com.lett.crawlernode.database;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
-import org.jooq.Query;
 import org.jooq.Record;
-import org.jooq.Result;
 import org.jooq.Table;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,11 +26,13 @@ import com.mongodb.MongoWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import br.com.lett.crawlernode.core.models.Categories;
 import br.com.lett.crawlernode.core.models.CategoriesRanking;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.Ranking;
+import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
@@ -41,9 +44,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
-import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerOld;
-import dbmodels.tables.CrawlerRanking;
 import dbmodels.tables.Processed;
 import generation.PostgresJSONGsonBinding;
 
@@ -739,6 +740,8 @@ public class Persistence {
 	}
 
 
+	/*********************************Ranking*****************************************************/
+	
 	//busca dados no postgres
 	public static List<Market> getMarketsFromPostgres(String type) {
 
@@ -798,5 +801,36 @@ public class Persistence {
 
 	public static void insertProductsRanking(Ranking ranking){
 
+	}
+
+	
+	/**
+	 * Queries in database panel
+	 */
+	
+	//insere dados do ranking no mongo
+	public static void insertPanelRanking(Ranking r) {				
+	}
+	
+	public void insertPanelRankingDiscoverUrls(RankingDiscoverUrls r) {
+	}
+	
+	//insere dados do categories no mongo
+	public void insertPanelCategories(Categories cg) {
+	}
+	
+	//insere dados do categories no mongo		
+	public int updatePanelCategories(Categories cg)	{		
+		return 0;
+	}
+	
+	//insere as categorias no mongo
+	public Set<CategoriesRanking> extractCategories(String id) {
+		Set<CategoriesRanking> arrayCategories = new HashSet<> ();
+		return arrayCategories;
+	}
+	
+	//insere dados da task
+	public static void insertPanelTask(String sessionId, String schedullerName, int marketID, String url, String location) {
 	}
 }

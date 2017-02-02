@@ -20,7 +20,6 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
@@ -32,24 +31,25 @@ import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
-import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.queue.QueueHandler;
+import br.com.lett.crawlernode.main.ExecutionParameters;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
 
-public abstract class CrawlerRankingKeywords extends Task{
+public abstract class CrawlerRankingKeywords extends Task {
 
 	private static Logger logger = LoggerFactory.getLogger(CrawlerRankingKeywords.class);
 
@@ -60,23 +60,18 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 	protected int productsLimit;
 	protected int pageLimit;
-	
+
 	private static final String RANK_TYPE = "keywords";
 
 	public static final String SCHEDULER_NAME_DISCOVER_KEYWORDS = "discover_keywords";
-	
+
 	protected CrawlerWebdriver webdriver;
 
-	private static QueueHandler	queueHandler;
-	public static AmazonSQS queue;
-	
 	protected int pageSize 	 = 0;
 	protected int position	 = 0;
 	protected int totalBusca = 0;
 
 	protected int marketId;
-	private String marketName;
-	private String marketCity;
 	protected String proxies;
 
 	protected Document currentDoc;
@@ -89,6 +84,41 @@ public abstract class CrawlerRankingKeywords extends Task{
 	//variável que identifica se há resultados na página
 	protected boolean result;
 
+	public CrawlerRankingKeywords(Session session) {
+		this.session = session;
+
+		//market
+		this.marketId = session.getMarket().getNumber();
+
+		if(session instanceof RankingKeywordsSession) {
+			this.location = ((RankingKeywordsSession)session).getKeyword();
+		}  else if(session instanceof TestRankingKeywordsSession) {
+			this.location = ((TestRankingKeywordsSession)session).getKeyword();
+		}
+
+		if(!"mexico".equals(session.getMarket().getCity())){
+			this.location = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
+		}
+
+		try {
+			this.keywordEncoded = URLEncoder.encode(location, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+			session.registerError(error);
+		}
+
+		if(!(session instanceof RankingKeywordsSession)){
+			productsLimit = 2000;
+			pageLimit = 250;
+		} else {
+			productsLimit = 300;
+			pageLimit = 35;
+		}
+
+
+		this.result = true;
+	}
+
 	/**
 	 * Overrides the run method that will perform a task within a thread.
 	 * The actual thread performs it's computation controlled by an Executor, from
@@ -98,55 +128,86 @@ public abstract class CrawlerRankingKeywords extends Task{
 	public void processTask() {
 		extractProducts();
 	}
-	
+
 	@Override
 	protected void onStart() {
 		super.onStart();
-		
-		// create a queue handler that will contain an Amazon SQS instance
-		queueHandler = new QueueHandler();
-		queue = queueHandler.getSqs();
-	}
-	
-	//função para extrair produtos do market
-	public int extractProducts() {
-
-		// essa função simula o construtor dessa clase
-		this.simulateConstructor(location, session.getMarket());
-
 		this.log("Iniciando o crawler ranking ...");
+	}
 
-		// Processe implementado pelas classes filhas para executar antes de rodar a keyword
-		this.processBeforeFetch();
+	@Override
+	protected void onFinish() {
+		super.onFinish();
+		List<SessionError> errors = session.getErrors();
 
-		//É chamada a função que extrai os produtos da pagina atual enquanto os produtos não atingirem a 100 e houver próxima página
-		do {
-			this.currentPage = this.currentPage + 1;	
+		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
-			this.extractProductsFromCurrentPage();
+		// errors collected manually
+		// they can be exceptions or business logic errors
+		// and are all gathered inside the session
+		if (!errors.isEmpty()) {
+			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
-			// mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-			if(session instanceof RankingKeywordsSession){
-				sendMessagesToAmazonAndMongo();
-			}
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
 
-			// caso cehgue no limite de páginas pré estabelecido, é finalizada a keyword.
-			if(this.currentPage >= pageLimit) {
-				this.log("Atingi o limite de páginas.");
-				break;
-			}
-			
-		} while (checkIfHasNextPage());
-
-		if(this.arrayProducts.size() == productsLimit){
-			log(productsLimit + " produtos atingidos!");
-		} else if(this.result) {
-			log("Fim das páginas!");
+			session.setTaskStatus(Task.STATUS_FAILED);
 		}
 
-		// função para popular os dados no banco
-		populateData();
+		// only remove the task from queue if it was flawless
+		// and if we are not testing, because when testing there is no message processing
+		else if (session instanceof RankingKeywordsSession) {
+			Logging.printLogDebug(logger, session, "Task completed.");
 
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
+
+			session.setTaskStatus(Task.STATUS_COMPLETED);
+		}
+		
+		Logging.printLogDebug(logger, session, "END");
+	}
+
+
+	//função para extrair produtos do market
+	public int extractProducts() {
+		try {
+			// Processe implementado pelas classes filhas para executar antes de rodar a keyword
+			this.processBeforeFetch();
+	
+			//É chamada a função que extrai os produtos da pagina atual enquanto os produtos não atingirem a 100 e houver próxima página
+			do {
+				this.currentPage = this.currentPage + 1;	
+	
+				extractProductsFromCurrentPage();
+	
+				// mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
+				if(session instanceof RankingKeywordsSession && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)){
+					sendMessagesToAmazonAndMongo();
+				}
+	
+				// caso cehgue no limite de páginas pré estabelecido, é finalizada a keyword.
+				if(this.currentPage >= pageLimit) {
+					this.log("Atingi o limite de páginas.");
+					break;
+				}
+	
+				this.log("Fim de página");
+				
+			} while (checkIfHasNextPage());
+	
+			if(this.arrayProducts.size() == productsLimit){
+				log(productsLimit + " produtos atingidos!");
+			} else if(this.result) {
+				log("Fim das páginas!");
+			}
+	
+			// função para popular os dados no banco
+			populateData();
+
+		} catch (Exception e) {
+			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+			session.registerError(error);
+		}
+		
 		// Número de produtos crawleados
 		int numberOfProductsCrawled = this.arrayProducts.size();
 
@@ -174,47 +235,11 @@ public abstract class CrawlerRankingKeywords extends Task{
 			} else {
 				return false;
 			}
-			
+
 			return true;
 		}
-		
+
 		return false;
-	}
-	
-	/**
-	 * Construtor simulado
-	 * @param location
-	 * @param market
-	 * @param cacheUrls
-	 */
-	private void simulateConstructor(String location, Market market){
-		//market
-		this.marketId 	= market.getNumber();
-		this.marketName = market.getName();
-		this.marketCity = market.getCity();
-
-		if(!"mexico".equals(this.marketCity)){
-			this.location = CommonMethods.removeAcentos(location.replaceAll("/", " ").replaceAll("\\.", ""));
-		} else {
-			this.location = location;
-		}
-
-		try {
-			this.keywordEncoded = URLEncoder.encode(location, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			this.logError(CommonMethods.getStackTraceString(e));
-		}
-
-		if(!(session instanceof RankingKeywordsSession)){
-			productsLimit = 2000;
-			pageLimit = 250;
-		} else {
-			productsLimit = 300;
-			pageLimit = 35;
-		}
-
-
-		this.result = true;
 	}
 
 	// função para setar cookies
@@ -241,14 +266,14 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 	protected Document fetchDocument(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
-		
+
 		if(cookies != null){
 			this.log("Cookies sendo usados: ");
 			for(Cookie cookie : cookies){
 				this.log("Cookie: " + cookie.getName() + " Value: " + cookie.getValue());
 			}
 		}
-				
+
 		return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 	}
 
@@ -261,7 +286,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 	protected JSONObject fetchJSONObject(String url) {
 		this.currentDoc = new Document(url);	
-		
+
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -278,7 +303,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 	protected JsonObject fetchJsonObjectGoogle(String url) {
 		this.currentDoc = new Document(url);
-		
+
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -381,7 +406,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 			String dataType = "String";
 
 			attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType(dataType).withStringValue(String.valueOf(this.marketId)));
-			
+
 			this.messages.put(url.trim(), attr);
 		} 
 
@@ -394,12 +419,12 @@ public abstract class CrawlerRankingKeywords extends Task{
 			this.log("Vou persistir " + this.arrayProducts.size() + " posições de produtos...");
 
 			Ranking ranking = populateRanking(location);
-			
+
 			//insere os dados no mongo
-			//Main.monggodbManager.insertPanelRanking(ranking);
-			
+			Persistence.insertPanelRanking(ranking);
+
 			//insere dados no postgres
-			//Main.postgresManager.insertProductsRanking(ranking);
+			Persistence.insertProductsRanking(ranking);
 
 		} else {		
 			this.log("Não vou persistir nada pois não achei nada");
@@ -435,9 +460,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 
 	private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries, String url) {
-
-		// send the batch
-		SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(queue, QueueName.DISCOVER, entries);
+		SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.DISCOVER, entries);
 
 		// get send request results
 		List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
@@ -450,7 +473,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 				// the _id field in the document will be the message id, which is the session id in the crawler
 				String messageId = resultEntry.getMessageId();
 
-				//Main.monggodbManager.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, url, this.location);
+				Persistence.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, url, this.location);
 			}
 
 			this.log("Mensagens enviadas com sucesso.");
@@ -471,7 +494,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
 		Timestamp ts = Timestamp.valueOf(nowISO);
-		
+
 		ranking.setMarketId(this.marketId);
 		ranking.setDate(ts);
 		ranking.setLmt(nowISO);
@@ -507,7 +530,7 @@ public abstract class CrawlerRankingKeywords extends Task{
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);
 	}
-	
+
 	/**
 	 * 
 	 * @param requestType GET or POST

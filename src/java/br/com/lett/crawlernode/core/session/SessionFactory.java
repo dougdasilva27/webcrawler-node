@@ -31,6 +31,9 @@ public class SessionFactory {
 		else if (queueName.equals(QueueName.IMAGES)) {
 			return new ImageCrawlerSession(request, queueName, markets);
 		}
+		else if (queueName.equals(QueueName.RANKING_KEYWORDS)) {
+			return new RankingKeywordsSession(request, queueName, markets);
+		}
 		else {
 			Logging.printLogDebug(logger, "Queue name not recognized.");
 			return null;
@@ -40,5 +43,8 @@ public class SessionFactory {
 	public static Session createTestSession(String url, Market market) {
 		return new TestCrawlerSession(url, market);
 	}
-
+	
+	public static Session createTestRankingSession(Market market, String keyword) {
+		return new TestRankingKeywordsSession(market, keyword);
+	}
 }
