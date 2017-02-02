@@ -6,13 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -50,6 +52,10 @@ public class TaskFactory {
 			return createImageCrawlerTask(session);
 		}
 
+		if (session instanceof RankingKeywordsSession || session instanceof TestRankingKeywordsSession) {			
+			return createCrawlerRankingKeywordsTask(session);
+		}
+		
 		if (session instanceof TestCrawlerSession) {
 			if (br.com.lett.crawlernode.test.Test.testType.equals(br.com.lett.crawlernode.test.Test.INSIGHTS_TEST)) {
 				return createCrawlerTask(session);
@@ -112,6 +118,26 @@ public class TaskFactory {
 	private static Task createImageCrawlerTask(Session session) {
 		return new ImageCrawler(session);
 	}
+	
+	private static Task createCrawlerRankingKeywordsTask(Session session) {
+
+		// assemble the class name
+		String taskClassName = assembleRankingKeywordsClassName(session.getMarket());
+
+		try {
+
+			// instantiating a crawler task with the given session as it's constructor parameter
+			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
+			Task task = (Task) constructor.newInstance(session);
+
+			return task;
+		} catch (Exception ex) {
+			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+		}
+
+		return null;
+	}
 
 	/**
 	 * Assemble the name of a task class.
@@ -155,6 +181,22 @@ public class TaskFactory {
 		sb.append("RatingReviewCrawler");
 
 		return sb.toString();
+	}
+	
+	/**
+	 * Assemble the name of a CrawlerRanking class.
+	 * @param city The city corresponding to this controller
+	 * @param name The name of the market
+	 * @return The name of the crawler class
+	 */
+	private static String assembleRankingKeywordsClassName(Market market) {
+		String crawlerClassName = "br.com.lett.crawlernode.crawlers.ranking.keywords." + market.getCity() + ".";
+		crawlerClassName += market.getCity().substring(0, 1).toUpperCase();
+		crawlerClassName += market.getCity().substring(1, market.getCity().length());
+		crawlerClassName += market.getName().substring(0, 1).toUpperCase();
+		crawlerClassName += market.getName().substring(1, market.getName().length());
+		crawlerClassName += "Crawler";	
+		return crawlerClassName;
 	}
 
 }

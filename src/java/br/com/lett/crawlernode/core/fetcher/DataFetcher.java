@@ -68,6 +68,7 @@ import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
@@ -1838,7 +1839,7 @@ public class DataFetcher {
 	private static LettProxy getNextProxy(String serviceName, Session session) {
 		LettProxy nextProxy = null;
 
-		if (session instanceof TestCrawlerSession) { // testing
+		if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
 			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
 			if (!proxies.isEmpty()) {
 				nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
@@ -1881,7 +1882,7 @@ public class DataFetcher {
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 
-		if (session instanceof TestCrawlerSession) {
+		if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
 			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
 		} else {
 			if (session instanceof ImageCrawlerSession) {

@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 
+import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.Session;
 
 import com.amazonaws.util.EC2MetadataUtils;
@@ -120,6 +121,10 @@ public class Logging {
 			metadata.put("market", session.getMarket().getName());
 			metadata.put("session", session.getSessionId());
 			metadata.put("session_type", session.getClass().getSimpleName());
+			
+			if(session instanceof RankingKeywordsSession) {
+				metadata.put("location", ((RankingKeywordsSession)session).getKeyword());
+			}
 		}
 		
 		return metadata;

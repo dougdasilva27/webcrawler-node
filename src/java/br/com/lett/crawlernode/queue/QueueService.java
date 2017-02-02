@@ -41,6 +41,8 @@ public class QueueService {
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images";
 
 	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating";
+	
+	private static final String RAKING_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-raking-keywords";
 
 	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
@@ -65,6 +67,8 @@ public class QueueService {
 		queueURLMap.put(QueueName.RATING, RATING_QUEUE_URL);
 
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
+		
+		queueURLMap.put(QueueName.RANKING_KEYWORDS, RAKING_KEYWORDS_QUEUE_URL);
 	}
 
 	/**

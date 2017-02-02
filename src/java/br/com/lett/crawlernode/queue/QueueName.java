@@ -14,4 +14,6 @@ public class QueueName {
 	
 	public static final String IMAGES 						= "crawler-images";
 	
+	public static final String RANKING_KEYWORDS 			= "crawler-ranking-keywords";
+	
 }

@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
@@ -33,6 +34,7 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_INTERNAL_ID = "internalId";
 	private static final String MSG_ATTR_IMG_NUMBER = "number";
 	private static final String MSG_ATTR_IMG_TYPE = "type";
+	private static final String MSG_ATTR_KEYWORD = "keyword";
 
 	private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 	private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
@@ -89,6 +91,8 @@ public class ServerHandler implements HttpHandler {
 		
 		if (QueueName.IMAGES.equals(queueName)) {
 			request = new ImageCrawlerRequest();
+		} else if(QueueName.RANKING_KEYWORDS.equals(queueName)){
+			request = new CrawlerRankingKeywordsRequest();
 		} else {
 			request = new Request();
 		}
@@ -116,6 +120,10 @@ public class ServerHandler implements HttpHandler {
 			((ImageCrawlerRequest) request).setImageType(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_TYPE));
 		}
 
+		if(request instanceof CrawlerRankingKeywordsRequest) {
+			((CrawlerRankingKeywordsRequest) request).setKeyword(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_KEYWORD));
+		}
+		
 		return request;
 	}
 
