@@ -174,7 +174,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				Document infoDoc = fetchMarketplaceInfoDocMainPage(productId);
 				
 				// availability, price and marketplace
-				Map<String, Prices> marketplaceMap = this.extractMarketplace(productId, internalPid, infoDoc);
+				Map<String, Prices> marketplaceMap = extractMarketplace(productId, internalPid, infoDoc);
 				JSONArray marketplace = new JSONArray();
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
@@ -215,7 +215,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				product.setStock(stock);
 				product.setMarketplace(marketplace);
 				product.setAvailable(available);
-
+				
 				products.add(product);
 			}
 
@@ -269,9 +269,10 @@ public class SaopauloWalmartCrawler extends Crawler {
 				}
 				
 				Element installmentElement = e.select(".product-price-installment").first();
+				String priceInstallmentAmount = installmentElement.attr("data-price-installment-amount");
 				
-				if(installmentElement != null){
-					installment = Integer.parseInt(installmentElement.attr("data-price-installment-amount"));
+				if(installmentElement != null && !priceInstallmentAmount.isEmpty()){
+					installment = Integer.parseInt(priceInstallmentAmount);
 					
 					Element valueElement = installmentElement.select(".product-price-price").first();
 					
