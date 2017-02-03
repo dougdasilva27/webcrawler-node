@@ -18,7 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -46,7 +45,6 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.processor.base.Extractor;
 import br.com.lett.crawlernode.processor.base.IdentificationLists;
 
-import com.mongodb.client.MongoDatabase;
 
 /**
  * Classe responsável por processar produtos da tabela crawler a fim de transformá-los em
@@ -59,7 +57,6 @@ public class ResultManager {
 	private static final Logger logger = LoggerFactory.getLogger(ResultManager.class);
 
 	// reference to mongo, to be used on SIFT calculations
-	private MongoDatabase mongo;
 
 	private DatabaseManager db;
 
@@ -92,12 +89,10 @@ public class ResultManager {
 	 */
 	public ResultManager(
 			boolean activateLogging, 
-			MongoDatabase mongo, 
 			DatabaseManager db
 			) throws NullPointerException {
 
 		this.db = db;
-		this.mongo = mongo;
 
 		this.init(activateLogging);
 	}
@@ -118,18 +113,18 @@ public class ResultManager {
 		this.createMarketInfo();
 
 		// initialize substitution maps
-		this.unitsReplaceMap = new LinkedHashMap<String, String>();
-		this.recipientsReplaceMap = new LinkedHashMap<String, String>();
+		this.unitsReplaceMap = new LinkedHashMap<>();
+		this.recipientsReplaceMap = new LinkedHashMap<>();
 
 		// initialize identification maps
-		this.recipientsList = new ArrayList<String>();
-		this.unitsList = new ArrayList<String>();
-		this.classModelList = new ArrayList<ClassModel>();
-		this.brandModelList = new ArrayList<BrandModel>();
+		this.recipientsList = new ArrayList<>();
+		this.unitsList = new ArrayList<>();
+		this.classModelList = new ArrayList<>();
+		this.brandModelList = new ArrayList<>();
 
 		// create model for brand manipulation for identification and substitution
 		try {
-			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettBrandProducts);
+			ResultSet rs = db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettBrandProducts);
 			while(rs.next()) {
 
 				// verify if the brand should be ignored
@@ -219,7 +214,7 @@ public class ResultManager {
 
 		// create manipulation models for lett classes
 		try{
-			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettClassProducts);
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettClassProducts);
 			while (rs.next()) {
 
 				ClassModel aux = null;
@@ -262,8 +257,12 @@ public class ResultManager {
 			// automatically add with brandsReplaceMap and its combinations:
 			// jackdaniels (wrong) -> jack daniels (correct)
 			if (cm.getLettName().contains(" ")) {
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", ""))) 	cm.putOnMap(cm.getLettName().replace(" ", ""), "");
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", "-"))) 	cm.putOnMap(cm.getLettName().replace(" ", "-"), "");
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", ""))) {
+					cm.putOnMap(cm.getLettName().replace(" ", ""), "");
+				}
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", "-"))) {
+					cm.putOnMap(cm.getLettName().replace(" ", "-"), "");
+				}
 
 				Matcher matcherSpace = space.matcher(cm.getLettName());
 				while(matcherSpace.find()){
@@ -278,8 +277,12 @@ public class ResultManager {
 			// "arco íris" (wrong) -> "arco-íris" (correct)
 			// "arcoíris" (wrong)  -> "arco-íris" (correct)
 			if (cm.getLettName().contains("-")) {
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", ""))) 	cm.putOnMap(cm.getLettName().replace("-", ""), "");
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", " "))) 	cm.putOnMap(cm.getLettName().replace("-", " "), "");
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", ""))) {
+					cm.putOnMap(cm.getLettName().replace("-", ""), "");
+				}
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", " "))) {
+					cm.putOnMap(cm.getLettName().replace("-", " "), "");
+				}
 
 				Matcher matcherSpace = space.matcher(cm.getLettName());
 				while(matcherSpace.find()){
@@ -322,9 +325,13 @@ public class ResultManager {
 		// update digital content
 		this.updateDigitalContent(pm, session);
 
-		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
+		if (logActivated) {
+			Logging.printLogDebug(logger, "\n---> Final result:");
+		}
 
-		if (logActivated) Logging.printLogDebug(logger, pm.toString());
+		if (logActivated) {
+			Logging.printLogDebug(logger, pm.toString());
+		}
 
 		return pm;
 	}
@@ -466,13 +473,13 @@ public class ResultManager {
 	 * Fetch market informations.
 	 */
 	private void createMarketInfo() {
-		this.cityNameInfo = new HashMap<Integer, String>();
-		this.marketNameInfo = new HashMap<Integer, String>();
-		this.marketid = new ArrayList<Integer>();
+		this.cityNameInfo = new HashMap<>();
+		this.marketNameInfo = new HashMap<>();
+		this.marketid = new ArrayList<>();
 
 		try {
 
-			ResultSet rs = this.db.runSqlConsult("SELECT * FROM market");
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
 
 			while(rs.next()) {
 
@@ -501,7 +508,7 @@ public class ResultManager {
 	 */
 	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
 		try {
-			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
 			while(rs.next()) {
 				String referenceDigitalContent = rs.getString("digital_content");
 				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {

@@ -148,7 +148,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
-			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
 
 			session.setTaskStatus(Task.STATUS_FAILED);
 		}
@@ -158,7 +158,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 		else if (session instanceof RankingKeywordsSession) {
 			Logging.printLogDebug(logger, session, "Task completed.");
 
-			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
 
 			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}

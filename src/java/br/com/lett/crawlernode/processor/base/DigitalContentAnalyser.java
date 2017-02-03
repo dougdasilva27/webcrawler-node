@@ -343,7 +343,7 @@ public class DigitalContentAnalyser {
 		// será feita uma comparação de imagens com todos os irmãos dele
 		try {
 			String sqlConsult = "SELECT digital_content, id FROM processed WHERE digital_content IS NOT NULL AND lett_id IS NOT NULL AND lett_id = " + lettId;
-			ResultSet resultSet = db.runSqlConsult(sqlConsult);
+			ResultSet resultSet = db.connectionPostgreSQL.runSqlConsult(sqlConsult);
 
 			// para cada produto com o mesmo lett_id do processed atual (inclusive ele próprio)
 			while(resultSet.next()) {

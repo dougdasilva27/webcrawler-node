@@ -2,17 +2,13 @@ package br.com.lett.crawlernode.processor.base;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.jooq.Condition;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,8 +24,6 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-import dbmodels.Tables;
-import dbmodels.tables.Processed;
 
 public class Processor {
 
@@ -405,7 +399,7 @@ public class Processor {
 
 		// detect and register changes
 		// an instance of mongo panel must be passed, so we can schedule url to take screenshot
-		newProcessedProduct.registerChanges(previousProcessedProduct, Main.dbManager.mongoBackendPanel);
+		newProcessedProduct.registerChanges(previousProcessedProduct);
 	}
 
 	private static void updateLMS(
@@ -481,7 +475,7 @@ public class Processor {
 				
 //				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
 				Logging.printLogDebug(logger, session, "Running query: " + query.toString());
-				ResultSet rs = Main.dbManager.runSqlConsult(query.toString());
+				ResultSet rs = Main.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
 
 				while(rs.next()) {
 					

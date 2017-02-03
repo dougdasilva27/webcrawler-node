@@ -34,12 +34,7 @@ public class DatabaseDataFetcher {
 	 */
 	public Market fetchMarket(String marketCity, String marketName) {
 		try {
-//			StringBuilder stringBuilder = new StringBuilder();
-//
-//			stringBuilder.append("SELECT id, city, name, proxies, proxies_images FROM market WHERE ");
-//			stringBuilder.append("name=" + "'" + marketName + "'" + " AND ");
-//			stringBuilder.append("city=" + "'" + marketCity + "'");
-			
+
 			dbmodels.tables.Market marketTable = Tables.MARKET;
 			
 			List<Field<?>> fields = new ArrayList<>();
@@ -52,8 +47,8 @@ public class DatabaseDataFetcher {
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
 
-			//ResultSet rs = databaseManager.runSqlConsult(stringBuilder.toString());
-			ResultSet rs = databaseManager.runSelectJooq(marketTable, fields, conditions);
+			ResultSet rs = databaseManager.connectionPostgreSQL.runSelectReturningResultSet(marketTable, fields, conditions);
+			
 			if(rs.next()) {
 				
 				// get the proxies used in this market

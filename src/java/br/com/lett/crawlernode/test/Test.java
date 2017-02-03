@@ -14,11 +14,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
+import credentials.models.DBCredentials;
 
 /**
  * 
@@ -31,7 +31,6 @@ public class Test {
 	public static final String RATING_TEST = "rating";
 	public static final String IMAGES_TEST = "images";
 
-	public static 	DBCredentials 		dbCredentials;
 	public static 	DatabaseManager 	dbManager;
 	public static 	ProxyCollection 	proxies;
 	public static 	ResultManager 		processorResultManager;
@@ -68,15 +67,13 @@ public class Test {
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
 		// setting database credentials
-		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");
-		dbCredentials = dbCredentialsSetter.setDatabaseCredentials();
-
+		DBCredentials dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
-		dbManager.connect();
 
 		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
+		processorResultManager = new ResultManager(false, dbManager);
 
 		// fetch market information
 		Market market = fetchMarket();

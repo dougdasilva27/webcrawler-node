@@ -38,6 +38,7 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import comunication.MongoDB;
 
 public class ImageCrawler extends Task {
 
@@ -58,12 +59,12 @@ public class ImageCrawler extends Task {
 		try {
 
 			ImageDownloadResult simpleDownloadResult = simpleDownload();
-			
+
 			if (simpleDownloadResult.getImageFile() == null) {
 				Logging.printLogError(logger, session, "Failed to download image....returning from image processTask()....");
-				
+
 				session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
-				
+
 				return;
 			}
 
@@ -151,7 +152,7 @@ public class ImageCrawler extends Task {
 
 			// only remove the task from queue if it was flawless
 			Logging.printLogDebug(logger, session, "Task completed.");
-			
+
 			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
 
@@ -308,13 +309,13 @@ public class ImageCrawler extends Task {
 		Logging.printLogDebug(logger, session, "Loking for image features on Mongo...");
 
 		// Só extraio as features e insiro no mongo, se elas já não estiverem presentes
-		MongoDatabase database = Main.dbManager.mongoMongoImages;
-		MongoCollection imageFeaturesCollection = database.getCollection("ImageFeatures");
-		FindIterable<Document> iterable = imageFeaturesCollection.find(Filters.eq("md5", md5));
-		Document document = iterable.first();
+		MongoDB imagesDatabase = Main.dbManager.connectionImages;
+		try {
+			FindIterable<Document> iterable = imagesDatabase.runFind(Filters.eq("md5", md5), "ImageFeatures");
+			Document document = iterable.first();
 
-		if(document == null) {
-			try {
+			if(document == null) {
+
 				Logging.printLogDebug(logger, session, "Image features are not on Mongo yet.");
 				Logging.printLogDebug(logger, session, "Extraindo descritores da imagem...");
 
@@ -329,21 +330,23 @@ public class ImageCrawler extends Task {
 				Document doc = Document.parse(gson.toJson(imageFeatures));
 
 				// store on mongo
-				if (database != null && imageFeaturesCollection != null) {
+				if (imagesDatabase != null) {
 					Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
-					imageFeaturesCollection.insertOne(doc);	 
+					imagesDatabase.insertOne(doc, "ImageFeatures");
 				}
 
-			} catch (Exception e) {
-				Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
-				SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
-				session.registerError(error);
+			} else {
+				Logging.printLogDebug(logger, session, "md5 desta imagem já está no mongo");
 			}
-			Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
-		} else {
-			Logging.printLogDebug(logger, session, "md5 desta imagem já está no mongo");
+		} catch (Exception e) {
+			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
+			session.registerError(error);
 		}
-	}
+
+		Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
+	} 
+
 
 	/**
 	 * 

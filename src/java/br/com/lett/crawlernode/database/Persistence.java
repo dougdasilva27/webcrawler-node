@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.bson.Document;
@@ -42,6 +41,7 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import comunication.MongoDB;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerOld;
@@ -214,7 +214,7 @@ public class Persistence {
 			tablesMap.put(crawler, insertMapCrawler);
 			tablesMap.put(crawlerOld, insertMapCrawlerOld);
 
-			Main.dbManager.runBatchInsertJooq(tables, tablesMap);
+			Main.dbManager.connectionPostgreSQL.runBatchInsertWithNTables(tables, tablesMap);
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
@@ -240,7 +240,7 @@ public class Persistence {
 		conditions.add(processedTable.ID.equal(((RatingReviewsCrawlerSession)session).getProcessedId()));
 
 		try {
-			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
 
 		} catch(Exception e) {
@@ -340,7 +340,7 @@ public class Persistence {
 				}
 
 				// get processeed id of new processed product
-				Record recordId = Main.dbManager.runInsertJooqReturningID(processedTable, insertMap, processedTable.ID);
+				Record recordId = Main.dbManager.connectionPostgreSQL.runInsertReturningID(processedTable, insertMap, processedTable.ID);
 
 				if(recordId != null) {
 					id = recordId.get(processedTable.ID);
@@ -431,7 +431,7 @@ public class Persistence {
 					((ProcessedModelPersistenceResult)persistenceResult).addModifiedId(id);
 				}
 
-				Main.dbManager.runUpdateJooq(processedTable, updateMap, conditions);
+				Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateMap, conditions);
 			}
 
 			Logging.printLogDebug(logger, session, "Processed product persisted with success.");
@@ -471,7 +471,7 @@ public class Persistence {
 		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
 		try {
-			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
 		} catch(Exception e) {
@@ -499,7 +499,7 @@ public class Persistence {
 		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
 		try {
-			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
 		} catch(Exception e) {
@@ -527,7 +527,7 @@ public class Persistence {
 		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
 		try {
-			Main.dbManager.runUpdateJooq(processedTable, updateSets, conditions);
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
 			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
 		} catch(Exception e) {
@@ -546,24 +546,20 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void setTaskStatusOnMongo(String status, Session session, MongoDatabase mongoDatabase) {
+	public static void setTaskStatusOnMongo(String status, Session session, MongoDB panelDatabase) {
 		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+			if (panelDatabase != null) {
 				String documentId = String.valueOf(session.getSessionId());
-				taskCollection.updateOne(
+				panelDatabase.updateOne(
 						new Document("_id", documentId),
-						new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status))
+						new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status)),
+						MONGO_TASKS_COLLECTION
 						);
 			} else {
 				Logging.printLogError(logger, session, "Mongo database is null.");
 			}
-		} catch (MongoWriteException mongoWriteException) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteException));
-		} catch (MongoWriteConcernException mongoWriteConcernException) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoWriteConcernException));
-		} catch (MongoException mongoException) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 
@@ -573,22 +569,21 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void appendProcessedIdOnMongo(Long processedId, Session session, MongoDatabase mongoDatabase) {
+	public static void appendProcessedIdOnMongo(Long processedId, Session session, MongoDB panelDatabase) {
 		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+			if (panelDatabase != null) {
 				String documentId = String.valueOf(session.getSessionId());
 
 				Document search = new Document("_id", documentId);
 				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
-
-				taskCollection.updateOne(search, modification);
-
+				
+				panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
+				
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
-		} catch (MongoException mongoException) {
+		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoException));
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
 		}
 	}
@@ -599,23 +594,21 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void appendCreatedProcessedIdOnMongo(Long processedId, Session session, MongoDatabase mongoDatabase) {
+	public static void appendCreatedProcessedIdOnMongo(Long processedId, Session session, MongoDB panelDatabase) {
 		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+			if (panelDatabase != null) {
 				String documentId = String.valueOf(session.getSessionId());
 
 				Document search = new Document("_id", documentId);
 				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_NEW_SKUS_FIELD, processedId));
-
-				taskCollection.updateOne(search, modification);
+				
+				panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
 
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
-		} catch (MongoException mongoException) {
+		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTrace(mongoException));
-
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 		}
 	}
 
@@ -624,10 +617,9 @@ public class Persistence {
 	 * @param session
 	 * @param mongoDatabase
 	 */
-	public static void insertProcessedIdOnMongo(Session session, MongoDatabase mongoDatabase) {
+	public static void insertProcessedIdOnMongo(Session session, MongoDB panelDatabase) {
 		try {
-			if (mongoDatabase != null) {
-				MongoCollection<Document> taskCollection = mongoDatabase.getCollection(MONGO_TASKS_COLLECTION);
+			if (panelDatabase != null) {
 				String documentId = String.valueOf(session.getSessionId());
 
 				// if processedId inside the session is null, it means
@@ -636,25 +628,27 @@ public class Persistence {
 				// in these two cases, the field processedId on Mongo must be null, because it can
 				// get more than one product during extraction
 				if (session.getProcessedId() == null) {
-					taskCollection.updateOne(
+					panelDatabase.updateOne(
 							new Document("_id", documentId),
-							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null))
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null)),
+							MONGO_TASKS_COLLECTION
 							);
 				}
 
 				// in this case we are processing a task from insights queue
 				else {
-					taskCollection.updateOne(
+					panelDatabase.updateOne(
 							new Document("_id", documentId),
-							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, session.getProcessedId()))
+							new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, session.getProcessedId())),
+							MONGO_TASKS_COLLECTION
 							);
 				}
 			} else {
 				Logging.printLogError(logger, session, "MongoDatabase is null.");
 			}
-		} catch (MongoException mongoException) {
+		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(mongoException));
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
 

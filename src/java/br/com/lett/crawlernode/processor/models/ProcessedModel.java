@@ -164,7 +164,7 @@ public class ProcessedModel {
 	 * @category Comparação
 	 * @param compareTo - Recepção de ProcessedModel a ser comparado 
 	 */
-	public void registerChanges(ProcessedModel compareTo, MongoDatabase mongo) {
+	public void registerChanges(ProcessedModel compareTo) {
 		JSONObject newChanges = null;
 		boolean mustScheduleUrlToScreenshot = false;
 
@@ -298,7 +298,7 @@ public class ProcessedModel {
 			urlDocument.append("internalId", this.internalId);
 			urlDocument.append("screenshotProcessed", false);
 
-			mongo.getCollection("Screenshots").insertOne(urlDocument);
+			//mongo.getCollection("Screenshots").insertOne(urlDocument);
 		}
 	}
 

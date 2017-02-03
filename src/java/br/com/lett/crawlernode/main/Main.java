@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.server.ServerExecutorStatusAgent;
 import br.com.lett.crawlernode.core.server.ServerExecutorStatusCollector;
 import br.com.lett.crawlernode.core.task.Resources;
-import br.com.lett.crawlernode.database.DBCredentials;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.Persistence;
@@ -24,6 +23,7 @@ import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import credentials.models.DBCredentials;
 
  
 /**
@@ -72,12 +72,10 @@ public class Main {
 		Logging.setLogMDC();
 
 		// setting database credentials
-		DatabaseCredentialsSetter dbCredentialsSetter = new DatabaseCredentialsSetter("crawler");
-		dbCredentials = dbCredentialsSetter.setDatabaseCredentials();
+		DBCredentials dbCredentials = DatabaseCredentialsSetter.setCredentials();
 
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
-		dbManager.connect();
 		
 		// fetch all markets information from database
 		markets = new Markets(dbManager);
@@ -86,7 +84,7 @@ public class Main {
 		Persistence.initializeImagesDirectories(markets);
 		
 		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, dbManager.mongoMongoImages, dbManager);
+		processorResultManager = new ResultManager(false, dbManager);
 
 		// fetching proxies
 		initProxies();

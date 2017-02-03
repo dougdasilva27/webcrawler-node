@@ -23,7 +23,7 @@ public class Markets {
 	
 	public void init() {
 		try {
-			ResultSet rs = dbManager.runSqlConsult("SELECT id, city, name, proxies, proxies_images FROM market");
+			ResultSet rs = dbManager.connectionPostgreSQL.runSqlConsult("SELECT id, city, name, proxies, proxies_images FROM market");
 			while(rs.next()) {
 				int marketId = rs.getInt("id");
 				String city = rs.getString("city");

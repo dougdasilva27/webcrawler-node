@@ -132,7 +132,7 @@ public class Crawler extends Task {
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
-			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.mongoBackendPanel);
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
 			
 			session.setTaskStatus(Task.STATUS_FAILED);
 		}
@@ -142,7 +142,7 @@ public class Crawler extends Task {
 		else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
 			Logging.printLogDebug(logger, session, "Task completed.");
 							
-			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.mongoBackendPanel);
+			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
 			
 			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
@@ -371,11 +371,11 @@ public class Crawler extends Task {
 		}
 
 		if (createdId != null) {
-			Persistence.appendProcessedIdOnMongo(createdId, session, Main.dbManager.mongoBackendPanel);
-			Persistence.appendCreatedProcessedIdOnMongo(createdId, session, Main.dbManager.mongoBackendPanel);
+			Persistence.appendProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
+			Persistence.appendCreatedProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
 		}
 		else if (modifiedId != null) {
-			Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.mongoBackendPanel);
+			Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.connectionPanel);
 		}
 	}
 
@@ -620,7 +620,7 @@ public class Crawler extends Task {
 
 					// we found two consecutive equals processed products, persist and end 
 					else {
-						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.mongoBackendPanel);
+						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.connectionPanel);
 
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
 						processPersistenceResult(persistenceResult);
