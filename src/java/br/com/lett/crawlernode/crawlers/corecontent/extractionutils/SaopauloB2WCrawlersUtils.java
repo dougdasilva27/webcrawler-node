@@ -436,57 +436,6 @@ public class SaopauloB2WCrawlersUtils {
 						}
 
 					}
-
-					// Entro na url do produto com ?loja=01 para pegar todas as parcelas do produto
-					// pois no json quando o shoptime não é o lojista principal, aparece só 1x no cartão e preço no boleto
-					// Houve um caso que quando fiz isso redirecionou pra página de outro produto
-					// pra isso verifico se o pid dessa página é o mesmo do produto acessado.
-					if(jsonPrices.has("moreQuantityOfInstallments") && market.equals(SHOPTIME)){
-						if(jsonPrices.getJSONArray("moreQuantityOfInstallments").length() == 1){
-							String url = session.getOriginalURL();
-
-							if(url.contains("?")){
-								url = url.split("\\?")[0];
-							}
-
-							url = url + "?loja=01";
-
-							Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);	
-							String pageInternalPid = crawlInternalPidShoptime(doc);
-
-							if(pageInternalPid.equals(internalPid)){
-
-								Element parcels = doc.select(".picard-tabs-cont").first();
-
-								if(parcels != null){
-									Elements installmentsElements = parcels.select("li#tab-cont1 tr");
-									JSONArray installmentsJsonArray = new JSONArray();
-
-									for(Element e : installmentsElements){
-										JSONObject jsonTemp = new JSONObject();
-										Element parcel = e.select(".qtd-parcel").first();
-
-										if(parcel != null){
-											Integer installment = Integer.parseInt(parcel.text().replaceAll("[^0-9]", "").trim());
-
-											Element values = e.select(".price-highlight").first();
-
-											if(values != null){
-												Float priceInstallment = Float.parseFloat(values.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-
-												jsonTemp.put("quantity", installment);
-												jsonTemp.put("value", priceInstallment);
-												installmentsJsonArray.put(jsonTemp);
-											}
-										}
-									}
-
-									jsonPrices.put("installmentsMainPage", installmentsJsonArray);
-								}
-							}
-						}
-					}
-
 				}
 			}
 		}

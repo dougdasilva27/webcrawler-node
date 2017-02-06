@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.database;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,9 +11,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Query;
 import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.Table;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,11 +26,8 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.MongoException;
-import com.mongodb.MongoWriteConcernException;
-import com.mongodb.MongoWriteException;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.model.Filters;
 
 import br.com.lett.crawlernode.core.models.Categories;
 import br.com.lett.crawlernode.core.models.CategoriesRanking;
@@ -32,6 +36,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
+import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
@@ -44,7 +49,9 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 import comunication.MongoDB;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
+import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerOld;
+import dbmodels.tables.CrawlerRanking;
 import dbmodels.tables.Processed;
 import generation.PostgresJSONGsonBinding;
 
@@ -57,6 +64,11 @@ public class Persistence {
 	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD 	= "found_skus";
 	public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD		= "new_skus";
 	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD 		= "status";
+	
+	private static final String MONGO_COLLECTION_RANKING = "Ranking";
+	private static final String MONGO_COLLECTION_CATEGORIES = "Categories";
+	private static final String MONGO_COLLECTION_RANKING_DISCOVER_URLS = "RankingDiscoverUrls";
+	private static final String MONGO_COLLECTION_TASK = "Task";
 
 	public static final String MONGO_TASK_STATUS_DONE 	= "done";
 	public static final String MONGO_TASK_STATUS_FAILED = "failed";
@@ -736,65 +748,161 @@ public class Persistence {
 
 	/*********************************Ranking*****************************************************/
 	
-	//busca dados no postgres
-	public static List<Market> getMarketsFromPostgres(String type) {
-
-		ArrayList<Market> marketArrayList = new ArrayList<> ();
-
-		return marketArrayList;
-	}
-
-	//busca dados no postgres
-	public static List<Market> getMarketsFromPostgres(String type, String city) {
-
-		ArrayList<Market> marketArrayList = new ArrayList<> ();
-
-		return marketArrayList;
-	}
-
-	//busca dados no postgres
-	public static List<Market> getMarketsFromPostgres(String type, String city, String marketName) {
-
-		ArrayList<Market> marketArrayList = new ArrayList<> ();
-
-
-		return marketArrayList;
-	}
 
 
 	//busca dados no postgres
 	public static CategoriesRanking fecthCategories(int id) {		
+		try {
+			CrawlerCategories crawlerCategories = Tables.CRAWLER_CATEGORIES;
+			
+			List<Field<?>> fields = new ArrayList<>();
+			fields.add(crawlerCategories.CAT1);
+			fields.add(crawlerCategories.CAT2);
+			fields.add(crawlerCategories.CAT3);
+			fields.add(crawlerCategories.URL);
+			
+			List<Condition> conditions = new ArrayList<>();
+			conditions.add(crawlerCategories.ID.equal((long) id));
+
+			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(crawlerCategories, fields, conditions);
+
+			CategoriesRanking cat = new CategoriesRanking();
+
+			for(Record record : results) {
+				cat.setCat1(record.get(crawlerCategories.CAT1));
+				cat.setCat2(record.get(crawlerCategories.CAT2));
+				cat.setCat3(record.get(crawlerCategories.CAT3));
+				cat.setUrl(record.get(crawlerCategories.URL));
+			}
+
+			return cat;
+
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 
 		return null;
 	}
 
 	//busca dados no postgres
 	public static List<Long> fetchProcessedIdsWithPid(String pid, int market) {
-
 		List<Long> processedIds = new ArrayList<> ();
 
+		try {
+			Processed processed = Tables.PROCESSED;
+			
+			List<Field<?>> fields = new ArrayList<>();
+			fields.add(processed.ID);
+					
+			List<Condition> conditions = new ArrayList<>();
+			conditions.add(processed.MARKET.equal(market));
+			conditions.add(processed.INTERNAL_PID.equal(pid));
+
+			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+
+			for(Record record : results) {
+				processedIds.add(record.get(processed.ID));
+			}
+			
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+		
 		return processedIds;
 	}
 
 
 
 	public static List<Long> fetchProcessedIdsWithUrl(String url, int market) {
-
 		List<Long> processedIds = new ArrayList<> ();
 
+		try {
+			Processed processed = Tables.PROCESSED;
+
+			List<Field<?>> fields = new ArrayList<>();
+			fields.add(processed.ID);
+					
+			List<Condition> conditions = new ArrayList<>();
+			conditions.add(processed.MARKET.equal(market));
+			conditions.add(processed.URL.equal(url));
+
+			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+
+			for(Record record : results) {
+				processedIds.add(record.get(processed.ID));
+			}
+
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+		
 		return processedIds;
 	}
 
 	//busca dados no postgres
 	public static List<Long> fetchProcessedIds(String id, int market) {
-
 		List<Long> processedIds = new ArrayList<>();
+
+		try {
+			Processed processed = Tables.PROCESSED;
+
+			List<Field<?>> fields = new ArrayList<>();
+			fields.add(processed.ID);
+					
+			List<Condition> conditions = new ArrayList<>();
+			conditions.add(processed.MARKET.equal(market));
+			conditions.add(processed.INTERNAL_ID.equal(id));
+
+			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+
+			for(Record record : results) {
+				processedIds.add(record.get(processed.ID));
+			}
+
+
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 
 		return processedIds;
 	}
 
 	public static void insertProductsRanking(Ranking ranking){
+		try {
+			List<Query> queries = new ArrayList<>();
+			
+			CrawlerRanking crawlerRanking = Tables.CRAWLER_RANKING;
 
+			List<RankingProducts> products = ranking.getProducts();
+
+			for(RankingProducts rankingProducts : products){	
+				List<Long> processedIds = rankingProducts.getProcessedIds();
+
+				for(Long processedId : processedIds){
+
+					Map<Field<?>, Object> mapInsert = new HashMap<>();
+					
+					mapInsert.put(crawlerRanking.RANK_TYPE, 	ranking.getRankType());
+					mapInsert.put(crawlerRanking.DATE, 			ranking.getDate());
+					mapInsert.put(crawlerRanking.LOCATION, 		ranking.getLocation());
+					mapInsert.put(crawlerRanking.POSITION, 		rankingProducts.getPosition());
+					mapInsert.put(crawlerRanking.PAGE_SIZE, 	ranking.getStatistics().getPageSize());
+					mapInsert.put(crawlerRanking.PROCESSED_ID, 	processedId);
+					mapInsert.put(crawlerRanking.TOTAL_SEARCH, 	ranking.getStatistics().getTotalSearch());
+					mapInsert.put(crawlerRanking.TOTAL_FETCHED, ranking.getStatistics().getTotalFetched());
+					
+					
+					queries.add(Main.dbManager.connectionPostgreSQL.createQuery(crawlerRanking, mapInsert));
+				}
+			}
+			
+			Main.dbManager.connectionPostgreSQL.runBatchInsert(queries);
+
+			Logging.printLogDebug(logger, "Produtos cadastrados no postgres.");
+
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 
 	
@@ -803,28 +911,135 @@ public class Persistence {
 	 */
 	
 	//insere dados do ranking no mongo
-	public static void insertPanelRanking(Ranking r) {				
+	public static void insertPanelRanking(Ranking r) {
+		Date date = new Date( );
+		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
+		
+		//se não conseguir inserir tenta atualizar
+		try{
+			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
+					r.getRankType()).append("date", ft.format(date));
+			
+			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING) > 0) {
+				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
+				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING);
+				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
+			} else {
+				Main.dbManager.connectionPanel.insertOne(r.getDocument(),MONGO_COLLECTION_RANKING);
+				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
+			}
+			
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	public void insertPanelRankingDiscoverUrls(RankingDiscoverUrls r) {
+		try{
+			Document filter = new Document("market", r.getMarketId()).append("internal_id", r.getInternalId()).append("internal_pid", r.getInternalPid());
+			
+			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING_DISCOVER_URLS) > 0) {
+				Document update = new Document("$set", new Document("url", r.getUrl()).append("lmt", r.getLmt()));
+				
+				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING_DISCOVER_URLS);
+				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
+			} else {
+				Main.dbManager.connectionPanel.insertOne(r.getDocument(), MONGO_COLLECTION_RANKING_DISCOVER_URLS);
+				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
+			}
+			
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	//insere dados do categories no mongo
 	public void insertPanelCategories(Categories cg) {
+		Document categories = new Document();
+		categories.put("market", cg.getMarket());
+		categories.put("cat1", cg.getCat1());
+		categories.put("cat1_name", cg.getCat1Name());
+		
+		if(cg.getCat2() != null) {
+			categories.put("cat2", cg.getCat2());
+			categories.put("cat2_name", cg.getCat2Name());
+			
+			if(cg.getCat3() != null) {
+				categories.put("cat3", cg.getCat3());
+				categories.put("cat3_name", cg.getCat3Name());
+			}
+		}
+		
+		categories.put("url", cg.getUrl());
+		categories.put("ect", cg.getDataCreated());
+		categories.put("lmt", cg.getDataUpdated());
+		           	
+		try{
+			Main.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
+			Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	//insere dados do categories no mongo		
 	public int updatePanelCategories(Categories cg)	{		
+		Document filter = new Document("cat1", cg.getCat1()).append("cat2", cg.getCat2()).append("cat3", cg.getCat3()).append("market", cg.getMarket());
+		
+		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
+		Document update =  new Document("$set", new Document("lmt", nowISO).append("url", cg.getUrl()));
+
+		try {
+			return (int) Main.dbManager.connectionPanel.updateMany(filter, update, MONGO_COLLECTION_CATEGORIES).getModifiedCount();
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+		
 		return 0;
 	}
 	
 	//insere as categorias no mongo
 	public Set<CategoriesRanking> extractCategories(String id) {
 		Set<CategoriesRanking> arrayCategories = new HashSet<> ();
+		
+		try {
+			FindIterable<Document> iterable = Main.dbManager.connectionPanel.runFind(Filters.and(Filters.eq("_id", new ObjectId(id))), MONGO_COLLECTION_CATEGORIES);
+			
+			for(Document e: iterable){
+				CategoriesRanking categories = new CategoriesRanking();
+				
+				categories.setCat1(e.getString("cat1"));
+				categories.setCat2(e.getString("cat2"));
+				categories.setCat3(e.getString("cat3"));
+				categories.setUrl(e.getString("url"));
+				
+				arrayCategories.add(categories);
+			}
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 		return arrayCategories;
 	}
 	
 	//insere dados da task
 	public static void insertPanelTask(String sessionId, String schedullerName, int marketID, String url, String location) {
+		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		
+		Document taskDocument = new Document()
+				.append("_id", sessionId)
+				.append("scheduler", schedullerName)
+				.append("date", nowISO)
+				.append("status", "queued")
+				.append("url", url)
+				.append("market", marketID)
+				.append("location", location)
+				//.append("processed_id", null)
+				.append("found_skus", new ArrayList<String>());
+		           	
+		try{
+			Main.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 }

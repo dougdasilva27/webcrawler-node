@@ -211,9 +211,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 		// Número de produtos crawleados
 		int numberOfProductsCrawled = this.arrayProducts.size();
 
-		//aqui se limpa as variáveis
-		this.clearVar();
-
 		return numberOfProductsCrawled;
 	}
 
@@ -421,7 +418,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			Ranking ranking = populateRanking(location);
 
 			//insere os dados no mongo
-			Persistence.insertPanelRanking(ranking);
+			//Persistence.insertPanelRanking(ranking);
 
 			//insere dados no postgres
 			Persistence.insertProductsRanking(ranking);
@@ -517,15 +514,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 		return statistics;
 	}
 
-	private void clearVar() {
-		this.arrayProducts.clear();
-		this.currentPage = 0;
-		this.position    = 0;
-		this.totalBusca  = 0;
-		this.pageSize = 0;
-		this.arrayRankingUrls.clear();
-		this.messages.clear();
-	}
 
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);

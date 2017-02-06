@@ -173,7 +173,7 @@
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>db</artifactId>
-			<version>1.3.6</version>
+			<version>1.3.7</version>
 		</dependency>
 
 		<!-- Assemble and perform queries -->

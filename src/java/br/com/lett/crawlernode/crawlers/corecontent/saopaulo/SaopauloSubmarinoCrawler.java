@@ -124,7 +124,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			String secondaryImages = this.crawlSecondaryImages(infoProductJson);
 
 			// Description
-			String description = this.crawlDescription(doc);
+			String description = this.crawlDescription(doc, internalPid);
 
 			// sku data in json
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
@@ -408,13 +408,22 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return marketplace;
 	}
 
-	private String crawlDescription(Document document) {
+	private String crawlDescription(Document document, String internalPid) {
 		String description = "";
-		Element elementProductDetails = document.select(".card-info").first();
-		if(elementProductDetails != null) 	description = description + elementProductDetails.html();
-
+		
+		String url = HOME_PAGE + "product-description/shop/" + internalPid;
+		Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		if(docDescription != null){
+			description = description + docDescription.html();
+		}
+		
+		Element elementProductDetails = document.select(".info-section").last();
+		if(elementProductDetails != null){
+			description = description + elementProductDetails.html();
+		}
+		
 		return description;
-	}	
+	}		
 
 	private Integer crawlStock(JSONObject jsonProduct, String internalId, JSONObject jsonWithStock){
 		Integer stock = null;

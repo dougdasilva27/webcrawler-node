@@ -20,10 +20,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
+
 
 /**
  * This class contains common methods that can be used in any class within
@@ -151,12 +154,15 @@ public class CommonMethods {
 	
 	public static void printStringToFile(String data, String path) {
 		try {
-			PrintWriter out = new PrintWriter(path);
-			out.println(data);
+			extracted(path).println(data);
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static PrintWriter extracted(String path) throws FileNotFoundException {
+		return new PrintWriter(path);
 	}
 	
 	/**
@@ -360,5 +366,43 @@ public class CommonMethods {
 		} catch (IOException e) {
 			Logging.printLogError(logger, getStackTrace(e));
 		}
+	}
+	
+	/**
+	 * Convert jsonarray ro ArrayList<String>
+	 * @param json
+	 * @return
+	 */
+	public static ArrayList<String> convertJSONArrayToArrayListString(JSONArray json, Logger logger) {
+		ArrayList<String> list = new ArrayList<>();
+		
+		for(int i = 0; i < json.length(); i++) {
+			try {
+				list.add(json.getString(i));
+			} catch (JSONException e) {
+				Logging.printLogError(logger, getStackTrace(e));
+			}
+		}
+		
+		return list;
+	}
+	
+	/**
+	 * Convert jsonarray to List<String>
+	 * @param json
+	 * @return
+	 */
+	public static List<String> convertJSONArrayToListString(JSONArray json, Logger logger) {
+		List<String> list = new ArrayList<>();
+		
+		for(int i = 0; i < json.length(); i++) {
+			try {
+				list.add(json.getString(i));
+			} catch (JSONException e) {
+				Logging.printLogError(logger, getStackTrace(e));
+			}
+		}
+		
+		return list;
 	}
 }
