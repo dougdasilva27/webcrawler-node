@@ -82,7 +82,7 @@ public class BrasilPolishopCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 
@@ -127,7 +127,12 @@ public class BrasilPolishopCrawler extends Crawler {
 			boolean hasColors = this.hasColor(jsonSkus);
 			
 			// sku data in jsonArray
-			JSONArray arraySkus = jsonSkus.getJSONArray("skus");			
+			JSONArray arraySkus;
+			if (jsonSkus.has("skus")) {
+				arraySkus = jsonSkus.getJSONArray("skus");
+			} else {
+				arraySkus = new JSONArray();
+			}
 			
 			for(int i = 0; i < arraySkus.length(); i++){
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -196,7 +201,9 @@ public class BrasilPolishopCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") || url.contains("/p?attempt=")) return true;
+		if ( url.endsWith("/p") || url.contains("/p?attempt=")) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -229,7 +236,7 @@ public class BrasilPolishopCrawler extends Crawler {
 	private String crawlNameMainPage(JSONObject jsonSkus) {
 		String name = null;
 
-		if(jsonSkus.has("name")){
+		if (jsonSkus.has("name")) {
 			name = jsonSkus.getString("name").trim();
 		}
 		
@@ -258,13 +265,15 @@ public class BrasilPolishopCrawler extends Crawler {
 	
 	private boolean crawlAvailability(JSONObject json) {
 
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 		
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -344,7 +353,9 @@ public class BrasilPolishopCrawler extends Crawler {
 					Element e = productSpecial.get(i);
 					String urlImage = "http:" + e.attr("src");
 					
-					if(!primaryImage.equals(urlImage)) secondaryImagesArray.put(urlImage);
+					if(!primaryImage.equals(urlImage)) {
+						secondaryImagesArray.put(urlImage);
+					}
 				}
 			}
 			
@@ -386,13 +397,12 @@ public class BrasilPolishopCrawler extends Crawler {
 		String dimensionImage = tokens[tokens.length-2]; //to get dimension image and the image id
 		
 		String[] tokens2 = dimensionImage.split("-"); //to get the image-id
-		String idImage = tokens2[0];
 		
-		return idImage;
+		return tokens2[0];		
 	}
 	
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(".bread-crumb li a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
@@ -415,24 +425,32 @@ public class BrasilPolishopCrawler extends Crawler {
 		Element descriptionElement = document.select(".productDescription").first();
 		Element specElement = document.select(".product-specs").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specElement != null) description = description + specElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
 
-		if(description.equals("")){			
+		if ("".equals(description)) {			
 			Elements productSpecial = document.select(".centered-content[layout]");
 			
 			for(Element e : productSpecial){
-				if(e != null) description = description + e.html();
+				if(e != null) {
+					description = description + e.html();
+				}
 			}
 			
 			Element specSpecial = document.select("tech-specs").first();
-			if (specSpecial != null) description = description + specSpecial.html();
+			if (specSpecial != null) {
+				description = description + specSpecial.html();
+			}
 		}
 		
 		return description;
 	}
 	
-	private JSONObject crawlApi(String internalId){
+	private JSONObject crawlApi(String internalId) {
 		String url = "http://www.polishop.com.br/produto/sku/" + internalId;
 		
 		JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
@@ -452,20 +470,21 @@ public class BrasilPolishopCrawler extends Crawler {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
 		
-		for (Element tag : scriptTags){                
+		for (Element tag : scriptTags) {                
 			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
+				if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 					skuJson = new JSONObject
 							(
 							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
 							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
 							);
-
 				}
 			}        
 		}
 		
+		if (skuJson == null) {
+			skuJson = new JSONObject();
+		}
 		
 		return skuJson;
 	}
@@ -491,8 +510,8 @@ public class BrasilPolishopCrawler extends Crawler {
 	private String crawlSecondaryImagesForColors(JSONObject jsonImages, boolean hasColor, String secondaryImagesMainPage) {
 		String secondaryImages = null;	
 		
-		if(hasColor){
-			if(jsonImages.has("secondaryImages")){
+		if (hasColor) {
+			if (jsonImages.has("secondaryImages")){
 				secondaryImages = jsonImages.getJSONArray("secondaryImages").toString();
 			}
 		} else {
@@ -502,7 +521,7 @@ public class BrasilPolishopCrawler extends Crawler {
 		return secondaryImages;
 	}
 	
-	private JSONObject fetchImagesFromApi(JSONObject jsonProduct, boolean hasColor){
+	private JSONObject fetchImagesFromApi(JSONObject jsonProduct, boolean hasColor) {
 		JSONObject jsonImages = new JSONObject();
 		JSONArray secondaryImagesArray = new JSONArray();
 		String primaryImage = null;
@@ -536,8 +555,12 @@ public class BrasilPolishopCrawler extends Crawler {
 				}
 			}
 			
-			if(primaryImage != null) jsonImages.put("primaryImage", primaryImage);
-			if(secondaryImagesArray.length() > 0) jsonImages.put("secondaryImages", secondaryImagesArray);
+			if (primaryImage != null) {
+				jsonImages.put("primaryImage", primaryImage);
+			}
+			if (secondaryImagesArray.length() > 0) {
+				jsonImages.put("secondaryImages", secondaryImagesArray);
+			}
 		}
 		
 		return jsonImages;
