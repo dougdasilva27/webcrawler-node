@@ -27,23 +27,23 @@ public class SaopauloExtraCrawler extends Crawler {
 	public SaopauloExtraCrawler(Session session) {
 		super(session);
 	}
-	
+
 	@Override
 	public void handleCookiesBeforeFetch() {
-	    
+
 		// Criando cookie da loja 21 = São Paulo capital
-	    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
-	    cookie.setDomain(".deliveryextra.com.br");
-	    cookie.setPath("/");
-	    cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-	    this.cookies.add(cookie);
-	    
+		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
+		cookie.setDomain(".deliveryextra.com.br");
+		cookie.setPath("/");
+		cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		this.cookies.add(cookie);
+
 		// Criando cookie simulando um usuário logado
-	    BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
-	    cookie2.setDomain(".deliveryextra.com.br");
-	    cookie2.setPath("/");
-	    cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-	    this.cookies.add(cookie2);
+		BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
+		cookie2.setDomain(".deliveryextra.com.br");
+		cookie2.setPath("/");
+		cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		this.cookies.add(cookie2);
 	}
 
 
@@ -57,11 +57,11 @@ public class SaopauloExtraCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if(session.getOriginalURL().contains("/produto/")) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			JSONObject chaordicSKUJson = crawlChaordicSKUJson(doc);
 
 			// internal id
@@ -89,7 +89,7 @@ public class SaopauloExtraCrawler extends Crawler {
 			String primaryImage = crawlPrimaryImage(doc);
 
 			// secondary images
-			String secondaryImages = null;			
+			String secondaryImages = crawlSecondaryImages(doc);			
 
 			// description
 			String description = "";   
@@ -103,12 +103,12 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			// marketplace
 			JSONArray marketplace = null;
-			
+
 			// Prices 
 			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
-			
+
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -149,7 +149,7 @@ public class SaopauloExtraCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-		
+
 		// treating two cases: preco de / preco por
 		Element elementPrice = document.select("#productForm .product-control__price.product-control__container.price_per .value.inline--middle").first();
 		if (elementPrice == null) {
@@ -177,7 +177,7 @@ public class SaopauloExtraCrawler extends Crawler {
 		ArrayList<String> categories = new ArrayList<String>();
 
 		Elements elementsCategories = document.select("#breadCrumbArea .breadcrumbs.group ul li a");
-		
+
 		for (int i = 1; i < elementsCategories.size(); i++) {
 			categories.add(elementsCategories.get(i).text().trim());
 		}
@@ -195,28 +195,52 @@ public class SaopauloExtraCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element primaryImageElement = doc.select("#product-image .zoomImage.product-image__zoom-trigger img").first();
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("src").trim();
-		}
-//		if (chaordicSKUJson.has("images")) {
-//			JSONObject images = chaordicSKUJson.getJSONObject("images");
-//			if (images.has("1200x1200")) {
-//				primaryImage = images.getString("1200x1200").trim();
-//			} 
-//			else if (images.has("200x200")) {
-//				primaryImage = images.getString("200x200").trim();
-//			}
-//			else if (images.has("80x80")) {
-//				primaryImage = images.getString("80x80").trim();
-//			}
-//		}
-//		
-		if (primaryImage != null) primaryImage = "http://www.deliveryextra.com.br" + primaryImage;
+		Element primaryImageElement = doc.select("#product-image a").first();
 		
+		if (primaryImageElement != null) {
+			String href = primaryImageElement.attr("href");
+			
+			if (!href.isEmpty()) {
+				if (!href.startsWith("http://www.deliveryextra.com.br")) {
+					primaryImage = "http://www.deliveryextra.com.br" + href;
+				} else {
+					primaryImage = href;
+				}
+			}
+		}
+
 		return primaryImage;
 	}
-	
+
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		Elements secondaryImagesElements = document.select("#product-image__gallery a");
+
+		for (int i = 1; i < secondaryImagesElements.size(); i++) { //starts with index 1 because de primary image is the first image
+			Element e = secondaryImagesElements.get(i);
+
+			if (e != null) {
+				String dataZoomAttr = e.attr("data-zoom");
+
+				if (!dataZoomAttr.isEmpty()) {
+					if (!dataZoomAttr.startsWith("http://www.deliveryextra.com.br")) {
+						dataZoomAttr = "http://www.deliveryextra.com.br" + dataZoomAttr;
+					}
+					secondaryImagesArray.put(dataZoomAttr);
+				}
+			}
+		}
+
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
+	}	
+
 	/**
 	 * In this market, installments not appear in product page
 	 * 
@@ -241,7 +265,7 @@ public class SaopauloExtraCrawler extends Crawler {
 
 		return prices;
 	}
-	
+
 	/**
 	 * e.g:
 	 * 
@@ -291,17 +315,17 @@ public class SaopauloExtraCrawler extends Crawler {
 				if(tag.html().trim().startsWith("window.chaordic_meta")) {
 					skuJson = new JSONObject
 							(node.getWholeData().split(Pattern.quote("window.chaordic_meta= "))[1] +
-							 node.getWholeData().split(Pattern.quote("window.chaordic_meta= "))[1].split(Pattern.quote("}]}"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("window.chaordic_meta= "))[1].split(Pattern.quote("}]}"))[0]
+									);
 
 				}
 			}        
 		}
-		
+
 		if (skuJson.has("product")) {
 			return skuJson.getJSONObject("product");
 		}
-		
+
 		return null;
 	}
 
