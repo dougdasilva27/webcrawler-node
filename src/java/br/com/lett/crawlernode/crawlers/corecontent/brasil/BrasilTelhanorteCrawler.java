@@ -283,14 +283,15 @@ public class BrasilTelhanorteCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
-
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 		
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -383,8 +384,12 @@ public class BrasilTelhanorteCrawler extends Crawler {
 		Element descriptionElement = document.select(".especificacao").first();
 		Element specElement = document.select(".dimensoes").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specElement != null) description = description + specElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
 
 		return description;
 	}
@@ -412,10 +417,10 @@ public class BrasilTelhanorteCrawler extends Crawler {
 			}        
 		}
 		
-		try {
+		if (skuJson != null) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		} else {
+			skuJsonArray = new JSONArray();
 		}
 		
 		return skuJsonArray;

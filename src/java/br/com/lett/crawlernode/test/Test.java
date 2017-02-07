@@ -93,7 +93,7 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			//taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createTestSession("http://www.deliveryextra.com.br/produto/139948/creme-dental-colgate-maxima-protecao-anticaries-90g", market);
+			Session session = SessionFactory.createTestSession("http://www.telhanorte.com.br/esmalte-antiferrugem-siintetico-800-ml-verde-colonial-hammerite-938483/p", market);
 			
 			Task task = TaskFactory.createTask(session);
 			
