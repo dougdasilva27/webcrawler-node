@@ -31,18 +31,13 @@ public class QueueService {
 	private static final Map<String, String> queueURLMap;
 
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed";
-
 	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights";
-	
 	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-development";
-
 	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover";
-
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images";
-
 	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating";
-	
 	private static final String RAKING_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-raking-keywords";
+	private static final String INTEREST_PROCESSED_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/interest-processed";
 
 	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
@@ -55,20 +50,14 @@ public class QueueService {
 
 	static {
 		queueURLMap = new HashMap<>();
-
 		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
-
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
-
 		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
-		
 		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
-
 		queueURLMap.put(QueueName.RATING, RATING_QUEUE_URL);
-
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
-		
 		queueURLMap.put(QueueName.RANKING_KEYWORDS, RAKING_KEYWORDS_QUEUE_URL);
+		queueURLMap.put(QueueName.INTEREST_PROCESSED, INTEREST_PROCESSED_URL);
 	}
 
 	/**
