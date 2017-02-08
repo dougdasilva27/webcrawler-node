@@ -218,15 +218,17 @@ public class BrasilSaraivaCrawler extends Crawler {
 		Element maxInstallmentsElement = doc.select("div.product-price-block div.simple-price span.installments").first();
 		if (maxInstallmentsElement != null) {
 			String installmentText = maxInstallmentsElement.text().trim();
-
-			int endIndexInstallmentNumber = installmentText.indexOf('x');
-
-			String installmentNumberText = installmentText.substring(0, endIndexInstallmentNumber);
-			String installmentPriceText = installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
-
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
-			if (!parsedNumbers.isEmpty()) {
-				installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+			
+			if(!installmentText.isEmpty() && installmentText.contains("x")) {
+				int endIndexInstallmentNumber = installmentText.indexOf('x');
+	
+				String installmentNumberText = installmentText.substring(0, endIndexInstallmentNumber);
+				String installmentPriceText = installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
+	
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				if (!parsedNumbers.isEmpty()) {
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+				}
 			}
 		}
 
