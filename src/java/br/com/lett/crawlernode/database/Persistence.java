@@ -892,7 +892,7 @@ public class Persistence {
 					mapInsert.put(crawlerRanking.TOTAL_FETCHED, ranking.getStatistics().getTotalFetched());
 					
 					
-					queries.add(Main.dbManager.connectionPostgreSQL.createQuery(crawlerRanking, mapInsert));
+					queries.add(Main.dbManager.connectionPostgreSQL.createQueryInsert(crawlerRanking, mapInsert));
 				}
 			}
 			

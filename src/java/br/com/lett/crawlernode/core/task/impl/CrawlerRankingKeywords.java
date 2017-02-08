@@ -35,6 +35,7 @@ import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
+import br.com.lett.crawlernode.core.session.DiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -92,11 +93,13 @@ public abstract class CrawlerRankingKeywords extends Task {
 
 		if(session instanceof RankingKeywordsSession) {
 			this.location = ((RankingKeywordsSession)session).getKeyword();
-		}  else if(session instanceof TestRankingKeywordsSession) {
+		} else if(session instanceof TestRankingKeywordsSession) {
 			this.location = ((TestRankingKeywordsSession)session).getKeyword();
+		} else if(session instanceof DiscoverKeywordsSession) {
+			this.location = ((DiscoverKeywordsSession)session).getKeyword();
 		}
 
-		if(!"mexico".equals(session.getMarket().getCity())){
+		if(!"mexico".equals(session.getMarket().getCity())) {
 			this.location = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
 		}
 
@@ -107,10 +110,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 			session.registerError(error);
 		}
 
-		if(!(session instanceof RankingKeywordsSession)){
-			productsLimit = 2000;
+		if(session instanceof DiscoverKeywordsSession){
+			productsLimit = 5;
 			pageLimit = 250;
-		} else {
+		} else if(session instanceof RankingKeywordsSession || session instanceof TestRankingKeywordsSession) {
 			productsLimit = 300;
 			pageLimit = 35;
 		}
@@ -155,7 +158,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 
 		// only remove the task from queue if it was flawless
 		// and if we are not testing, because when testing there is no message processing
-		else if (session instanceof RankingKeywordsSession) {
+		else if (session instanceof RankingKeywordsSession || session instanceof DiscoverKeywordsSession) {
 			Logging.printLogDebug(logger, session, "Task completed.");
 
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
@@ -180,7 +183,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 				extractProductsFromCurrentPage();
 	
 				// mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-				if(session instanceof RankingKeywordsSession && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)){
+				if(			session instanceof RankingKeywordsSession 
+						|| 	session instanceof DiscoverKeywordsSession
+						&& 	Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+					
 					sendMessagesToAmazonAndMongo();
 				}
 	
@@ -201,17 +207,16 @@ public abstract class CrawlerRankingKeywords extends Task {
 			}
 	
 			// função para popular os dados no banco
-			populateData();
+			if(session instanceof RankingKeywordsSession) {
+				populateData();
+			}
 
 		} catch (Exception e) {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 			session.registerError(error);
 		}
-		
-		// Número de produtos crawleados
-		int numberOfProductsCrawled = this.arrayProducts.size();
 
-		return numberOfProductsCrawled;
+		return this.arrayProducts.size();
 	}
 
 	/**
@@ -416,9 +421,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 			this.log("Vou persistir " + this.arrayProducts.size() + " posições de produtos...");
 
 			Ranking ranking = populateRanking(location);
-
-			//insere os dados no mongo
-			//Persistence.insertPanelRanking(ranking);
 
 			//insere dados no postgres
 			Persistence.insertProductsRanking(ranking);

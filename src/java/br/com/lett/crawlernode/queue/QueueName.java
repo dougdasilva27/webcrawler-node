@@ -16,4 +16,6 @@ public class QueueName {
 	
 	public static final String RANKING_KEYWORDS 			= "crawler-ranking-keywords";
 	
+	public static final String DISCOVER_KEYWORDS 			= "crawler-discover-keywords";
+	
 }

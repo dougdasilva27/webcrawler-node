@@ -34,6 +34,9 @@ public class SessionFactory {
 		else if (queueName.equals(QueueName.RANKING_KEYWORDS)) {
 			return new RankingKeywordsSession(request, queueName, markets);
 		}
+		else if (queueName.equals(QueueName.DISCOVER_KEYWORDS)) {
+			return new DiscoverKeywordsSession(request, queueName, markets);
+		}
 		else {
 			Logging.printLogDebug(logger, "Queue name not recognized.");
 			return null;
