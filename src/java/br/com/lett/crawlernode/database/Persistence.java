@@ -587,7 +587,7 @@ public class Persistence {
 				String documentId = String.valueOf(session.getSessionId());
 
 				Document search = new Document("_id", documentId);
-				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
+				Document modification = new Document("$addToSet", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
 				
 				panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
 				

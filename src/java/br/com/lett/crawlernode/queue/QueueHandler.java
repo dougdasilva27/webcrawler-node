@@ -24,9 +24,12 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 public class QueueHandler {
 
 	protected static final Logger logger = LoggerFactory.getLogger(QueueHandler.class);
+	
+	private static String AWS_ACCESS_KEY  = "AKIAIB4EBBCHAGRUFJLA";
+	private static String SECRET_KEY      = "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";
 
-	private final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
-	private final String SECRET_KEY = "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";
+//	private final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
+//	private final String SECRET_KEY = "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";
 
 	private AmazonSQS sqs;
 
