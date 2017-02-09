@@ -150,6 +150,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 		// and are all gathered inside the session
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+			
+			for(SessionError error : errors) {
+				Logging.printLogError(logger, error.getErrorContent());
+			}
 
 			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
 
