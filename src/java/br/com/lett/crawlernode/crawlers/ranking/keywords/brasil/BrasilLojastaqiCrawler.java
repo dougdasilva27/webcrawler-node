@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilLojastaqiCrawler extends CrawlerRankingKeywords{
 
@@ -15,91 +16,103 @@ public class BrasilLojastaqiCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 15;
+		this.pageSize = 24;
 			
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "http://www.taqi.com.br/pesquisa?q_question="+ this.keywordEncoded +"&q_pageSize=120&q_pageNum="+ this.currentPage;
+		String url = "http://busca.taqi.com.br/busca?q="+ this.keywordEncoded +"&page="+ this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 			
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select("div.box_default_produto div.box_item_default");
+		Elements products =  this.currentDoc.select(".box_item_default .dados_default");
 
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
+		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
-			
-			for(Element e: products) {
-				//seta o id com o seletor
-				Element inid 		= e.select("a.bt_comprar_default").first();
-				String internalPid 	= null;
-				String internalId 	= makeInternalid(inid);
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
+			for(Element e : products) {
 				
-				//monta a url
-				Element eUrl = e.select(".foto_produto > a").first();
-				String productUrl  = "http://www.taqi.com.br"+ eUrl.attr("href");
+				// InternalPid
+				String internalPid = crawlInternalPid();
+				
+				// Url do produto
+				String productUrl = crawlProductUrl(e);
+				
+				// InternalId
+				String internalId = crawlInternalId(productUrl);
 				
 				saveDataProduct(internalId, internalPid, productUrl);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
+				
 			}
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-
+	
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
 	@Override
 	protected boolean hasNextPage() {
+		//se  elemeno page obtiver algum resultado
 		if(this.arrayProducts.size() < this.totalBusca){
 			//tem próxima página
 			return true;
-		} else {
-			//não tem próxima página
-			return false;
-		}
+		} 
+			
+		return false;
 	}
 	
 	@Override
-	protected void setTotalBusca()
-	{
-		Element totalElement = this.currentDoc.select("div.line_form_filtro > label > span").first();
+	protected void setTotalBusca()	{
+		Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
 		
-		if(totalElement != null)
-		{ 	
-			try
-			{				
+		if(totalElement != null) { 	
+			try	{				
 				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-			}
-			catch(Exception e)
-			{
-				this.logError(e.getMessage());
+			} catch(Exception e) {
+				this.logError(CommonMethods.getStackTraceString(e));
 			}
 			
 			this.log("Total da busca: "+this.totalBusca);
 		}
 	}
 	
-	private String makeInternalid(Element e){
+	private String crawlInternalId(String url) {			
+		if(url != null) {
+			String[] tokens = url.split("/");
+			return tokens[tokens.length-1].trim();
+		} 
 		
-		String[] tokens = e.attr("onclick").split(";");
+		return null;
+	}
+	
+	private String crawlInternalPid() {
+		return null;
+	}
+	
+	private String crawlProductUrl(Element e) {
+		String productUrl = null;
+		Element url = e.select("> a:not([class])").first();	
 		
-		String temp = tokens[tokens.length-1];
+		if(url != null) {
+			productUrl = url.attr("href");
+			
+			if(!productUrl.startsWith("http")) {
+				productUrl = "http" + productUrl;
+			}
+		}
 		
-		int x = temp.indexOf("(");
-		int y = temp.indexOf(")", x+1);
-		
-		String[] tokens2 = ((temp.substring(x+1, y).replaceAll("'", "")).trim()).split(",");
-		
-		String inidFinal = tokens2[tokens2.length-1];
-		
-		return inidFinal;
+		return productUrl;
 	}
 }

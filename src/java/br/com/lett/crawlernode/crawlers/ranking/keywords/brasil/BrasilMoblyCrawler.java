@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilMoblyCrawler extends CrawlerRankingKeywords{
 
@@ -28,11 +29,14 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords{
 		this.currentDoc = fetchDocument(url);
 
 		Elements products =  this.currentDoc.select("ul.productsCatalog > li");
+		Element noResult = this.currentDoc.select("#neemu-approximated-search").first();
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
+		if(products.size() >= 1 && noResult == null) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
 
 			for(Element e: products) {
 				//seta o id com o seletor
@@ -57,7 +61,9 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, productUrl);
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
 			this.result = false;
@@ -69,35 +75,28 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-
 		if(this.arrayProducts.size() < this.totalBusca){
 			//tem próxima página
 			return true;
-		} else {
-			//não tem próxima página
-			return false;
-		}
+		} 
+		
+		return false;
 
 	}
 
 	@Override
-	protected void setTotalBusca()
-	{
+	protected void setTotalBusca() {
 		Element totalElement = this.currentDoc.select("li.itens-encontrados").first();
 
-		if(totalElement != null)
-		{ 	
-			try
-			{
-				String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
-
-				this.totalBusca = Integer.parseInt(token);
+		if(totalElement != null) { 	
+			String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
+			if(!token.isEmpty()) {
+				try {				
+					this.totalBusca = Integer.parseInt(token);
+				} catch(Exception e) {
+					this.logError(CommonMethods.getStackTraceString(e));
+				}
 			}
-			catch(Exception e)
-			{
-				this.logError(e.getMessage());
-			}
-
 			this.log("Total da busca: "+this.totalBusca);
 		}
 	}	
