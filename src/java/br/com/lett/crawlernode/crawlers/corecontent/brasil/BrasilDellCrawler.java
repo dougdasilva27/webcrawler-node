@@ -247,7 +247,7 @@ public class BrasilDellCrawler extends Crawler {
 		Element primaryImageElement = document.select(".bigHeroImg").first();
 
 		if (primaryImageElement != null) {			
-			primaryImage = primaryImageElement.attr("arc").trim();
+			primaryImage = primaryImageElement.attr("src").trim();
 		}
 
 		return primaryImage;
