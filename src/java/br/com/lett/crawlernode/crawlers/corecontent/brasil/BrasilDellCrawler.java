@@ -277,7 +277,7 @@ public class BrasilDellCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = doc.select(".thumbnailRow a");
+		Elements imagesElement = doc.select(".thumbnailRow a"); 
 		for (int i = 0; i < imagesElement.size(); i++) { 
 			String image = getImage(imagesElement.get(i));
 
