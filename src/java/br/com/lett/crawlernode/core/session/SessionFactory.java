@@ -47,7 +47,7 @@ public class SessionFactory {
 		return new TestCrawlerSession(url, market);
 	}
 	
-	public static Session createTestRankingSession(Market market, String keyword) {
+	public static Session createTestRankingSession(String keyword, Market market) {
 		return new TestRankingKeywordsSession(market, keyword);
 	}
 }

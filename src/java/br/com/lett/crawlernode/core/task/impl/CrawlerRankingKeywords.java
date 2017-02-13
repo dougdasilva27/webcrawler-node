@@ -375,26 +375,28 @@ public abstract class CrawlerRankingKeywords extends Task {
 
 		List<Long> processedIds = new ArrayList<>();
 
-		if( internalId  != null ){
-			processedIds.addAll(Persistence.fetchProcessedIds(internalId.trim(), this.marketId));
-			rankingProducts.setProcessedIds(processedIds);
-		} else {
-			if(pid != null){
-				processedIds = Persistence.fetchProcessedIdsWithPid(pid, this.marketId);
+		if(!(session instanceof TestRankingKeywordsSession)) {
+			if( internalId  != null ){
+				processedIds.addAll(Persistence.fetchProcessedIds(internalId.trim(), this.marketId));
 				rankingProducts.setProcessedIds(processedIds);
-			} else if(url != null){
-				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
-				rankingProducts.setProcessedIds(processedIds);
+			} else {
+				if(pid != null){
+					processedIds = Persistence.fetchProcessedIdsWithPid(pid, this.marketId);
+					rankingProducts.setProcessedIds(processedIds);
+				} else if(url != null){
+					processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
+					rankingProducts.setProcessedIds(processedIds);
+				}
 			}
-		}
-
-		if(pid != null){
-			rankingProducts.setInteranlPid(pid);
-		}
-
-		if(url != null){
-			rankingProducts.setUrl(url);
-			saveProductUrlToQueue(processedIds, url);
+	
+			if(pid != null){
+				rankingProducts.setInteranlPid(pid);
+			}
+	
+			if(url != null){
+				rankingProducts.setUrl(url);
+				saveProductUrlToQueue(processedIds, url);
+			}
 		}
 
 		this.arrayProducts.add(rankingProducts);

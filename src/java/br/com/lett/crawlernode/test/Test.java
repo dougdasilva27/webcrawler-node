@@ -30,6 +30,7 @@ public class Test {
 	public static final String INSIGHTS_TEST = "insights";
 	public static final String RATING_TEST = "rating";
 	public static final String IMAGES_TEST = "images";
+	public static final String KEYWORDS_TEST = "keywords";
 
 	public static 	DatabaseManager 	dbManager;
 	public static 	ProxyCollection 	proxies;
@@ -93,7 +94,14 @@ public class Test {
 			// for testing we use 1 thread, there is no need for more
 			//taskExecutor = new TaskExecutor(1, 1);
 
-			Session session = SessionFactory.createTestSession("http://www.polishop.com.br/ar-condicionado-pinguino-maxxi-cooling-exclusive-delonghi/p", market);
+			Session session;
+			
+			if(testType.equals(KEYWORDS_TEST)) {
+				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
+			} else {
+				session = SessionFactory.createTestSession("http://www.saraiva.com.br/smartphone-motorola-moto-z-play-preto-tela-55-androidtm601-marshmallow-cam-16mp-dualchip-32gb-9361928.html", market);
+			}
+	
 			
 			Task task = TaskFactory.createTask(session);
 			
