@@ -29,6 +29,7 @@ public class DatabaseManager {
 			connectionPanel.openConnection(credentials.getMongoPanelCredentials());
 			Logging.printLogDebug(logger, "Connection with database Mongo Panel performed successfully!");
 		} catch (Exception e) {
+			Logging.printLogError(logger, "Error establishing connection with Panel.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
@@ -36,6 +37,7 @@ public class DatabaseManager {
 			connectionInsights.openConnection(credentials.getMongoInsightsCredentials());
 			Logging.printLogDebug(logger, "Connection with database Mongo Insights performed successfully!");
 		} catch (Exception e) {
+			Logging.printLogError(logger, "Error establishing connection with Insights.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
@@ -43,6 +45,7 @@ public class DatabaseManager {
 			connectionImages.openConnection(credentials.getMongoImagesCredentials());
 			Logging.printLogDebug(logger, "Connection with database Mongo Frozen performed successfully!");
 		} catch (Exception e) {
+			Logging.printLogError(logger, "Error establishing connection with Frozen.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 
@@ -50,15 +53,16 @@ public class DatabaseManager {
 			connectionPostgreSQL.openConnection(credentials.getPostgresCredentials());
 			Logging.printLogDebug(logger, "Connection with database PostgreSQL performed successfully!");
 		} catch (Exception e) {
+			Logging.printLogError(logger, "Error establishing connection with PostgreSQL.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
 
-	//	private void testMongoConnection() {
-	//		mongoClientBackendPanel.getAddress();
-	//		mongoClientBackendDashboard.getAddress();
-	//		mongoClientMongoImages.getAddress();
-	//	}
+//	private void testMongoConnection() {
+//		mongoClientBackendPanel.getAddress();
+//		mongoClientBackendDashboard.getAddress();
+//		mongoClientMongoImages.getAddress();
+//	}
 
 
 }
