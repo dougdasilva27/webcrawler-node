@@ -31,6 +31,7 @@ public class DatabaseManager {
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error establishing connection with Panel.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
 		}
 
 		try {
@@ -39,6 +40,7 @@ public class DatabaseManager {
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error establishing connection with Insights.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
 		}
 
 		try {
@@ -47,6 +49,7 @@ public class DatabaseManager {
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error establishing connection with Frozen.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
 		}
 
 		try {
@@ -55,6 +58,7 @@ public class DatabaseManager {
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error establishing connection with PostgreSQL.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
 		}
 	}
 
