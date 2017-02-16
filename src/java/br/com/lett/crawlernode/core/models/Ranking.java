@@ -10,19 +10,19 @@ import org.bson.Document;
 
 public class Ranking {
 	
-	private int marketId;
-	private List<RankingProducts> products = new ArrayList<>();
-	private ArrayList<Document> productsResult = new ArrayList<>();
-	private String location;
-	private String rankType;
-	private Timestamp date;
-	private String lmt;
-	private RankingStatistics statistics = new RankingStatistics();
+	protected int marketId;
+	protected List<RankingProducts> products = new ArrayList<>();
+	protected String location;
+	protected String rankType;
+	protected Timestamp date;
+	protected String lmt;
+	protected RankingStatistics statistics = new RankingStatistics();
 
 	public Document getDocument(){		
 		
+		List<Document> productsResult = new ArrayList<>();
 		for(RankingProducts r : this.products){
-			this.productsResult.add(r.getDocument());
+			productsResult.add(r.getDocument());
 		}
 		
 		Date date = new Date( );
@@ -34,21 +34,22 @@ public class Ranking {
 			.append("lmt", 			this.lmt)
 			.append("rank_type", 	this.rankType)
 			.append("location", 	this.location)
-			.append("products", 	this.productsResult)
+			.append("products", 	productsResult)
 			.append("statistics", 	this.statistics.getDocument());
 		
 	}
 	
 	public Document getDocumentUpdate(){		
+		List<Document> productsResult = new ArrayList<>();
 		
 		for(RankingProducts r : this.products){
-			this.productsResult.add(r.getDocument());
+			productsResult.add(r.getDocument());
 		}
 		
 		Document doc = new Document();
 		doc.put("lmt", 			this.lmt);
 		doc.put("statistics", 	this.statistics.getDocument());
-		doc.put("products", 	this.productsResult);
+		doc.put("products", 	productsResult);
 	
 		return doc;
 	}
@@ -112,14 +113,6 @@ public class Ranking {
 
 	public void setStatistics(RankingStatistics statistics) {
 		this.statistics = statistics;
-	}
-
-	public ArrayList<Document> getProductsResult() {
-		return productsResult;
-	}
-
-	public void setProductsResult(ArrayList<Document> productsResult) {
-		this.productsResult = productsResult;
 	}
 
 }

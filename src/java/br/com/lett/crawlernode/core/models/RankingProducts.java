@@ -7,10 +7,10 @@ import org.bson.Document;
 
 public class RankingProducts {
 
-	private String internalPid;
-	private int position;
-	private String url;
-	private List<Long> processedIds = new ArrayList<>();
+	protected String internalPid;
+	protected int position;
+	protected String url;
+	protected List<Long> processedIds = new ArrayList<>();
 	
 	
 	public Document getDocument(){

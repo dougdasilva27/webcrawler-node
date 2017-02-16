@@ -35,7 +35,6 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
@@ -785,7 +784,7 @@ public class Persistence {
 	}
 
 	//busca dados no postgres
-	public static List<Long> fetchProcessedIdsWithPid(String pid, int market) {
+	public static List<Long> fetchProcessedIdsWithInternalPid(String pid, int market) {
 		List<Long> processedIds = new ArrayList<> ();
 
 		try {
@@ -840,7 +839,7 @@ public class Persistence {
 	}
 
 	//busca dados no postgres
-	public static List<Long> fetchProcessedIds(String id, int market) {
+	public static List<Long> fetchProcessedIdsWithInternalId(String id, int market) {
 		List<Long> processedIds = new ArrayList<>();
 
 		try {
@@ -912,45 +911,26 @@ public class Persistence {
 	
 	//insere dados do ranking no mongo
 	public static void insertPanelRanking(Ranking r) {
-		Date date = new Date( );
-		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
-		
-		//se não conseguir inserir tenta atualizar
-		try{
-			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
-					r.getRankType()).append("date", ft.format(date));
-			
-			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING) > 0) {
-				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
-				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING);
-				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
-			} else {
-				Main.dbManager.connectionPanel.insertOne(r.getDocument(),MONGO_COLLECTION_RANKING);
-				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-			}
-			
-		} catch(Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-	}
-	
-	public void insertPanelRankingDiscoverUrls(RankingDiscoverUrls r) {
-		try{
-			Document filter = new Document("market", r.getMarketId()).append("internal_id", r.getInternalId()).append("internal_pid", r.getInternalPid());
-			
-			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING_DISCOVER_URLS) > 0) {
-				Document update = new Document("$set", new Document("url", r.getUrl()).append("lmt", r.getLmt()));
-				
-				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING_DISCOVER_URLS);
-				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
-			} else {
-				Main.dbManager.connectionPanel.insertOne(r.getDocument(), MONGO_COLLECTION_RANKING_DISCOVER_URLS);
-				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-			}
-			
-		} catch(Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
+//		Date date = new Date( );
+//		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
+//		
+//		//se não conseguir inserir tenta atualizar
+//		try{
+//			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
+//					r.getRankType()).append("date", ft.format(date));
+//			
+//			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING) > 0) {
+//				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
+//				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING);
+//				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
+//			} else {
+//				Main.dbManager.connectionPanel.insertOne(r.getDocument(),MONGO_COLLECTION_RANKING);
+//				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
+//			}
+//			
+//		} catch(Exception e) {
+//			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+//		}
 	}
 	
 	//insere dados do categories no mongo

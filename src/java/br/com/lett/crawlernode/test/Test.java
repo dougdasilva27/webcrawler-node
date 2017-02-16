@@ -99,7 +99,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.saraiva.com.br/smartphone-motorola-moto-z-play-preto-tela-55-androidtm601-marshmallow-cam-16mp-dualchip-32gb-9361928.html", market);
+				session = SessionFactory.createTestSession("http://www.climario.com.br/ar-condicionado-split-lg-cassete-inverter-35000-btuh-monofasico-frio-220v/p", market);
 			}
 	
 			

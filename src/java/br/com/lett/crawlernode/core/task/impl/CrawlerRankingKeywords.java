@@ -5,11 +5,9 @@ import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -32,8 +30,9 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingDiscoverUrls;
+import br.com.lett.crawlernode.core.models.RankingDiscoverStats;
 import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProductsDiscover;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.DiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
@@ -55,7 +54,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 	private static Logger logger = LoggerFactory.getLogger(CrawlerRankingKeywords.class);
 
 	protected List<RankingProducts> arrayProducts = new ArrayList<>();
-	protected Set<RankingDiscoverUrls> arrayRankingUrls = new HashSet<>();
+	private List<RankingProductsDiscover> arrayProductsDiscover = new ArrayList<>();
+	
+	private Map<String,String> mapUrlMessageId = new HashMap<>();
 
 	private Map<String, Map<String, MessageAttributeValue>> messages = new HashMap<>(); 
 
@@ -73,7 +74,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 	protected int totalBusca = 0;
 
 	protected int marketId;
-	protected String proxies;
 
 	protected Document currentDoc;
 	protected int currentPage;
@@ -129,7 +129,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 	 */
 	@Override 
 	public void processTask() {
-		extractProducts();
+		int products = extractProducts();
+		
+		this.log("Foram " + products + " lidos");
 	}
 
 	@Override
@@ -212,7 +214,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 	
 			// função para popular os dados no banco
 			if(session instanceof RankingKeywordsSession) {
-				populateData();
+				persistRankingData();
+			} else if(session instanceof DiscoverKeywordsSession) {
+				//persistDiscoverData();
 			}
 
 		} catch (Exception e) {
@@ -266,23 +270,253 @@ public abstract class CrawlerRankingKeywords extends Task {
 		this.log("Total da busca: "+ this.totalBusca);
 	}
 
-	protected Document fetchDocument(String url) {
-		return fetchDocument(url, null);
+	/**
+	 * Salva os dados do produto e chama a função
+	 * que salva a url para mandar pra fila
+	 * @param internalId
+	 * @param pid
+	 * @param url
+	 */
+	protected void saveDataProduct(String internalId, String pid, String url) {
+		RankingProducts rankingProducts = new RankingProducts();
+
+		this.position++;
+		List<Long> processedIds = new ArrayList<>();
+		
+		rankingProducts.setInteranlPid(pid);
+		rankingProducts.setUrl(url);
+		rankingProducts.setPosition(position);
+
+		if(!(session instanceof TestRankingKeywordsSession)) {
+			if( internalId  != null ){
+				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
+			} else if(pid != null){
+				processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
+			} else if(url != null){
+				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
+			}
+			
+			rankingProducts.setProcessedIds(processedIds);
+			((RankingProductsDiscover) rankingProducts).setTaskId("");
+			
+			if(url != null && processedIds.isEmpty()) {
+				saveProductUrlToQueue(url);
+			}
+			
+		}
+
+		this.arrayProducts.add(rankingProducts);
 	}
 
-	protected Document fetchDocument(String url, List<Cookie> cookies) {
-		this.currentDoc = new Document(url);	
+	/**
+	 * Salva as urls que serão enviadas para a fila na amazon
+	 * @param processedIds
+	 * @param url
+	 */
+	protected void saveProductUrlToQueue(String url) {
+		Map<String, MessageAttributeValue> attr = new HashMap<>();
+		attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(this.marketId)));
 
-		if(cookies != null){
-			this.log("Cookies sendo usados: ");
-			for(Cookie cookie : cookies){
-				this.log("Cookie: " + cookie.getName() + " Value: " + cookie.getValue());
+		this.messages.put(url.trim(), attr);
+	}
+
+	
+	/**
+	 * Insert all data on table Ranking in Postgres
+	 */
+	private void persistRankingData(){
+		//se houver 1 ou mais produtos, eles serão cadastrados no banco
+		if(!this.arrayProducts.isEmpty()) {
+			this.log("Vou persistir " + this.arrayProducts.size() + " posições de produtos...");
+
+			Ranking ranking = new Ranking();
+			
+			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
+			Timestamp ts = Timestamp.valueOf(nowISO);
+
+			ranking.setMarketId(this.marketId);
+			ranking.setDate(ts);
+			ranking.setLmt(nowISO);
+			ranking.setRankType(RANK_TYPE);
+			ranking.setLocation(location);
+			ranking.setProducts(this.arrayProducts);
+			
+			RankingStatistics statistics = new RankingStatistics();
+
+			statistics.setPageSize(this.pageSize);
+			statistics.setTotalFetched(this.arrayProducts.size());
+			statistics.setTotalSearch(this.totalBusca);
+			
+			ranking.setStatistics(statistics);
+			
+			//insere dados no postgres
+			Persistence.insertProductsRanking(ranking);
+
+		} else {		
+			this.log("Não vou persistir nada pois não achei nada");
+		}
+	}
+	
+	/**
+	 * Insert all data on table Ranking in Postgres
+	 */
+	private void persistDiscoverData(){
+		//se houver 1 ou mais produtos, eles serão cadastrados no banco
+		if(!this.arrayProductsDiscover.isEmpty()) {
+			this.log("Vou persistir " + this.arrayProductsDiscover.size() + " posições de produtos...");
+
+			RankingDiscoverStats ranking = new RankingDiscoverStats();
+
+			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
+			Timestamp ts = Timestamp.valueOf(nowISO);
+
+			ranking.setMarketId(this.marketId);
+			ranking.setDate(ts);
+			ranking.setLmt(nowISO);
+			ranking.setRankType(RANK_TYPE);
+			ranking.setLocation(location);
+			ranking.setProductsDiscover(sanitizedRankingProducts(this.mapUrlMessageId));
+			
+			RankingStatistics statistics = new RankingStatistics();
+
+			statistics.setPageSize(this.pageSize);
+			statistics.setTotalFetched(this.arrayProducts.size());
+			statistics.setTotalSearch(this.totalBusca);
+			
+			ranking.setStatistics(statistics);
+			
+			//insere dados no mongo
+			Persistence.insertPanelRanking(ranking);
+
+		} else {		
+			this.log("Não vou persistir nada pois não achei nada");
+		}
+	}
+
+	/**
+	 * Create message and call function to send messages
+	 */
+	private void sendMessagesToAmazonAndMongo(){
+		List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
+
+		int counter = 0; 
+
+		this.log("Vou enviar " +  this.messages.size() + " mensagens para o sqs.");
+
+		for(Entry<String, Map<String, MessageAttributeValue>> message : this.messages.entrySet()){
+			SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+			entry.setId(String.valueOf(counter));	// the id must be unique in the batch
+			entry.setMessageAttributes(message.getValue());
+			entry.setMessageBody(message.getKey());
+			
+			entries.add(entry);
+			counter++;
+
+			if(entries.size() > 9 || this.messages.size() == counter){
+
+				//Aqui se envia 10 mensagens para serem enviadas pra amazon e no mongo
+				populateMessagesInMongoAndAmazon(entries);
+				entries.clear();
 			}
 		}
 
+		this.messages.clear();
+	}	
+
+	/**
+	 * Send messages to amazon and populate them on collection task
+	 * @param entries
+	 * @param url
+	 */
+	private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
+		SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.DISCOVER, entries);
+
+		// get send request results
+		List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
+
+		this.log("Estou enviando " + successResultEntryList.size() + " mensagens para a Task e o SQS.");
+		
+		if(!successResultEntryList.isEmpty()){	
+			int count = 0;
+			for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully sent messages
+
+				// the _id field in the document will be the message id, which is the session id in the crawler
+				String messageId = resultEntry.getMessageId();
+				this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
+				
+				Persistence.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, entries.get(count).getMessageBody(), this.location);
+				count++;
+			}
+
+			this.log("Mensagens enviadas com sucesso.");
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param mapUrlMessageId
+	 * @return
+	 */
+	private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String> mapUrlMessageId) {
+		List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
+		
+		for(RankingProducts product : this.arrayProducts) {
+			RankingProductsDiscover productDiscover = new RankingProductsDiscover();
+			
+			productDiscover.setPosition(product.getPosition());
+			productDiscover.setUrl(product.getUrl());
+			
+			List<Long> processedIds = product.getProcessedIds();
+			
+			if(processedIds.isEmpty()) {
+				productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
+				productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
+			} else {
+				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
+				productDiscover.setProcessedIds(processedIds);
+			}
+		}
+		
+		return productsDiscover;
+	}
+	
+	/**
+	 * Fetch Document
+	 * @param url
+	 * @return
+	 */
+	protected Document fetchDocument(String url) {
+		return fetchDocument(url, null);
+	}
+	
+	/**
+	 * Fetch Document eith cookies
+	 * @param url
+	 * @param cookies
+	 * @return
+	 */
+	protected Document fetchDocument(String url, List<Cookie> cookies) {
+		this.currentDoc = new Document(url);	
+
+		StringBuilder string = new StringBuilder();
+		string.append("Cookies sendo usados: ");
+		if(cookies != null){
+			for(Cookie cookie : cookies){
+				string.append("Cookie: " + cookie.getName() + " Value: " + cookie.getValue());
+			}
+		}
+
+		this.log(string.toString());
+		
 		return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 	}
 
+	/**
+	 * Fetch Map of Cookies
+	 * @param url
+	 * @return
+	 */
 	protected Map<String,String> fetchCookies(String url) {
 		this.currentDoc = new Document(url);		
 
@@ -290,6 +524,11 @@ public abstract class CrawlerRankingKeywords extends Task {
 		return DataFetcher.fetchCookies(session, url, null, 1);
 	}
 
+	/**
+	 * Fetch jsonObject
+	 * @param url
+	 * @return
+	 */
 	protected JSONObject fetchJSONObject(String url) {
 		this.currentDoc = new Document(url);	
 
@@ -307,6 +546,11 @@ public abstract class CrawlerRankingKeywords extends Task {
 		return jsonProducts;
 	}
 
+	/**
+	 * Fetch google Json
+	 * @param url
+	 * @return
+	 */
 	protected JsonObject fetchJsonObjectGoogle(String url) {
 		this.currentDoc = new Document(url);
 
@@ -324,6 +568,14 @@ public abstract class CrawlerRankingKeywords extends Task {
 		return jobj;
 	}
 
+	/**
+	 * Fetch String with Post Request
+	 * @param url
+	 * @param payload
+	 * @param headers
+	 * @param cookies
+	 * @return
+	 */
 	protected String fetchStringPOST(String url, String payload, Map<String,String> headers, List<Cookie> cookies){
 		return DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 	}
@@ -359,170 +611,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 
 		return DynamicDataFetcher.fetchPage(this.webdriver, url);
 	}
-
-	/**
-	 * Salva os dados do produto e chama a função
-	 * que salva a url para mandar pra fila
-	 * @param internalId
-	 * @param pid
-	 * @param url
-	 */
-	protected void saveDataProduct(String internalId, String pid, String url) {
-		RankingProducts rankingProducts = new RankingProducts();
-
-		this.position++;
-		rankingProducts.setPosition(position);
-
-		List<Long> processedIds = new ArrayList<>();
-
-		if(!(session instanceof TestRankingKeywordsSession)) {
-			if( internalId  != null ){
-				processedIds.addAll(Persistence.fetchProcessedIds(internalId.trim(), this.marketId));
-				rankingProducts.setProcessedIds(processedIds);
-			} else {
-				if(pid != null){
-					processedIds = Persistence.fetchProcessedIdsWithPid(pid, this.marketId);
-					rankingProducts.setProcessedIds(processedIds);
-				} else if(url != null){
-					processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
-					rankingProducts.setProcessedIds(processedIds);
-				}
-			}
 	
-			if(pid != null){
-				rankingProducts.setInteranlPid(pid);
-			}
-	
-			if(url != null){
-				rankingProducts.setUrl(url);
-				saveProductUrlToQueue(processedIds, url);
-			}
-		}
-
-		this.arrayProducts.add(rankingProducts);
-	}
-
-	/**
-	 * Salva as urls que serão enviadas para a fila na amazon
-	 * @param internalIds
-	 * @param url
-	 */
-	protected void saveProductUrlToQueue(List<Long> internalIds, String url) {
-		if(internalIds.isEmpty()) {
-			Map<String, MessageAttributeValue> attr = new HashMap<>();
-
-			String dataType = "String";
-
-			attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType(dataType).withStringValue(String.valueOf(this.marketId)));
-
-			this.messages.put(url.trim(), attr);
-		} 
-
-	}
-
-
-	private void populateData(){
-		//se houver 1 ou mais produtos, eles serão cadastrados no banco
-		if(!this.arrayProducts.isEmpty() && session instanceof RankingKeywordsSession) {
-			this.log("Vou persistir " + this.arrayProducts.size() + " posições de produtos...");
-
-			Ranking ranking = populateRanking(location);
-
-			//insere dados no postgres
-			Persistence.insertProductsRanking(ranking);
-
-		} else {		
-			this.log("Não vou persistir nada pois não achei nada");
-		}
-	}
-
-	private void sendMessagesToAmazonAndMongo(){
-		List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
-
-		int counter = 0; 
-
-		this.log("Vou enviar " +  this.messages.size() + " mensagens para o sqs.");
-
-		for(Entry<String, Map<String, MessageAttributeValue>> message : this.messages.entrySet()){
-			SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-			entry.setId(String.valueOf(counter));	// the id must be unique in the batch
-			entry.setMessageAttributes(message.getValue());
-			entry.setMessageBody(message.getKey());
-
-			entries.add(entry);
-			counter++;
-
-			if(entries.size() > 9 || this.messages.size() == counter){
-
-				//Aqui se envia 10 mensagens para serem enviadas pra amazon e no mongo
-				populateMessagesInMongoAndAmazon(entries, message.getKey());
-				entries.clear();
-			}
-		}
-
-		this.messages.clear();
-	}	
-
-
-	private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries, String url) {
-		SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.DISCOVER, entries);
-
-		// get send request results
-		List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
-
-		this.log("Estou enviando " + successResultEntryList.size() + " mensagens para a Task e o SQS.");
-
-		if(!successResultEntryList.isEmpty()){			
-			for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully sent messages
-
-				// the _id field in the document will be the message id, which is the session id in the crawler
-				String messageId = resultEntry.getMessageId();
-
-				Persistence.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, url, this.location);
-			}
-
-			this.log("Mensagens enviadas com sucesso.");
-		}
-
-	}
-
-
-	//popula o ranking
-	private Ranking populateRanking(String location) {
-		Ranking ranking = new Ranking();
-
-		List<RankingProducts> productsResult = new ArrayList<>();
-
-		for(RankingProducts r : this.arrayProducts){			
-			productsResult.add(r);
-		}
-
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
-		Timestamp ts = Timestamp.valueOf(nowISO);
-
-		ranking.setMarketId(this.marketId);
-		ranking.setDate(ts);
-		ranking.setLmt(nowISO);
-		ranking.setRankType(RANK_TYPE);
-		ranking.setLocation(location);
-		ranking.setProducts(productsResult);
-		ranking.setStatistics(populateRankingStatistics());
-
-		return ranking;
-	}
-
-	//popula as estatísticas do ranking
-	private RankingStatistics populateRankingStatistics(){
-		RankingStatistics statistics = new RankingStatistics();
-
-		statistics.setPageSize(this.pageSize);
-		statistics.setTotalFetched(this.arrayProducts.size());
-		statistics.setTotalSearch(this.totalBusca);
-
-		return statistics;
-	}
-
-
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);
 	}
