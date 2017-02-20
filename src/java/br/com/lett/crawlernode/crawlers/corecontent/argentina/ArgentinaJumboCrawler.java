@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -77,8 +78,9 @@ public class ArgentinaJumboCrawler extends Crawler {
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+			String productUrl = crawlNewUrl();
 
-			JSONObject searchJson = crawlProductApi(session.getOriginalURL());
+			JSONObject searchJson = crawlProductApi(productUrl);
 			JSONObject productJson = crawlImportantInformations(searchJson);
 
 			String internalId = crawlInternalId(productJson);
@@ -96,7 +98,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 
 			// Creating the product
 			Product product = ProductBuilder.create()
-					.setUrl(session.getOriginalURL())
+					.setUrl(productUrl)
 					.setInternalId(internalId)
 					.setInternalPid(internalPid)
 					.setName(name)
@@ -338,6 +340,11 @@ public class ArgentinaJumboCrawler extends Crawler {
 		return json;
 	}
 
+	/**
+	 * Crawl part of json
+	 * @param json
+	 * @return
+	 */
 	private JSONObject crawlImportantInformations(JSONObject json){
 		JSONObject jsonProduct = new JSONObject();
 
@@ -357,6 +364,14 @@ public class ArgentinaJumboCrawler extends Crawler {
 		return jsonProduct;
 	}
 
+	/**
+	 * Json comes like this
+	 * { "d" : {\"articulo\" : {\"descripcion\" : \"Agua\", ....
+	 * 
+	 * so in this function we get all information in object "d"
+	 * @param json
+	 * @return
+	 */
 	private JSONObject parseJsonLevex(JSONObject json){
 		JSONObject jsonD = new JSONObject();
 
@@ -368,4 +383,69 @@ public class ArgentinaJumboCrawler extends Crawler {
 		return jsonD;
 	}
 
+	/**
+	 * The product url is a search with the exact name of it, when the product has already been discovered we get its name updated
+	 * in a "add to cart" api to update your url, this api requires the internalId of the product
+	 * @return
+	 */
+	private String crawlNewUrl() {
+		String url = session.getOriginalURL();
+		
+		if(session.getInternalId() != null && !session.getInternalId().isEmpty()) {
+			String urlFisrtPeace = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=";
+			String nameEncoded = crawlNameFromAPI(session.getInternalId());
+			
+			if(nameEncoded != null) {
+				url = urlFisrtPeace + nameEncoded;
+			}
+		}
+		
+		return url;
+	}
+	
+	/**
+	 * "add to cart" api
+	 * 
+	 * {\"Carrito\":{\"Total\":\"0,00\",\"Puntos\":\"0\",\"Mensajes\":\"\",
+	 * \"Articulos\":[{\"idArticulo\":\"450570\",\"imagenChica\":\"209001\",\"imagenGrande\":\"209206\",
+	 * \"descripcion\":\"Pimienta Negra En Grano X 50Gr-Bsa-Gr.-50\",\"precioDeVenta\":\"59.90\",
+	 * \"totalArticulo\":\"59.90\",\"unidadDeMedida\":\"100 Gr\",\"precioUnidadDeMedida\":\"119,80\",\"stockMaximo\":\"43.00\",
+	 * \"cantidadPedida\":\"1.00\",\"idMenu\":\"20859\",\"Observaciones\":\"\",\"pesable\":\"False\",\"caracteristicasProducto\":\"\",
+	 * \"Grupo_Marca\":\"SIN MARCA\"}]}}
+	 * 
+	 * @param internalId
+	 * @return
+	 */
+	private String crawlNameFromAPI(String internalId) {
+		String name = null;
+		
+		String url = "https://www.jumbo.com.ar/Comprar/HomeService.aspx/SalvarArticuloEnCarrito";
+		String payload = "{\"accion\": \"agregarProducto\", "
+				+ "\"articulos\": '[{\"id\":\""+ internalId +"\",\"cant\":\"1\",\"unidad\":\"\",\"remplazo\":\"0\",\"descripcionLarga\":\"\","
+						+ "\"precioVenta\":\"\",\"strPesable\":\"\"}]'}";
+		
+		Map<String,String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/json");
+		
+		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+		
+		if(jsonString != null && jsonString.startsWith("{") && jsonString.endsWith("}")) {
+			JSONObject jsonCart = new JSONObject();
+			try {
+				jsonCart = parseJsonLevex(new JSONObject(jsonString)).getJSONObject("Carrito");
+			} catch (Exception e) {
+				Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+			}
+			
+			if(jsonCart.has("Articulos")) {
+				JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
+				
+				if(articulo.has("descripcion")) {
+					name = articulo.getString("descripcion").replaceAll(" ", "%20").replaceAll("´", "%B4");
+				}
+			}
+		}
+		
+		return name;
+	}
 }
