@@ -110,7 +110,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 		}
 
 		if(session instanceof DiscoverKeywordsSession){
-			productsLimit = 15;
+			productsLimit = 2000;
 			pageLimit = 250;
 		} else if(session instanceof RankingKeywordsSession || session instanceof TestRankingKeywordsSession) {
 			productsLimit = 300;
