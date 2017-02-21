@@ -54,7 +54,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 	private static Logger logger = LoggerFactory.getLogger(CrawlerRankingKeywords.class);
 
 	protected List<RankingProducts> arrayProducts = new ArrayList<>();
-	private List<RankingProductsDiscover> arrayProductsDiscover = new ArrayList<>();
 	
 	private Map<String,String> mapUrlMessageId = new HashMap<>();
 
@@ -111,7 +110,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 		}
 
 		if(session instanceof DiscoverKeywordsSession){
-			productsLimit = 2000;
+			productsLimit = 15;
 			pageLimit = 250;
 		} else if(session instanceof RankingKeywordsSession || session instanceof TestRankingKeywordsSession) {
 			productsLimit = 300;
@@ -216,7 +215,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			if(session instanceof RankingKeywordsSession) {
 				persistRankingData();
 			} else if(session instanceof DiscoverKeywordsSession) {
-				//persistDiscoverData();
+				persistDiscoverData();
 			}
 
 		} catch (Exception e) {
@@ -297,7 +296,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 			}
 			
 			rankingProducts.setProcessedIds(processedIds);
-			((RankingProductsDiscover) rankingProducts).setTaskId("");
 			
 			if(url != null && processedIds.isEmpty()) {
 				saveProductUrlToQueue(url);
@@ -361,9 +359,11 @@ public abstract class CrawlerRankingKeywords extends Task {
 	 * Insert all data on table Ranking in Postgres
 	 */
 	private void persistDiscoverData(){
+		List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
+		
 		//se houver 1 ou mais produtos, eles serão cadastrados no banco
-		if(!this.arrayProductsDiscover.isEmpty()) {
-			this.log("Vou persistir " + this.arrayProductsDiscover.size() + " posições de produtos...");
+		if(!products.isEmpty()) {
+			this.log("Vou persistir " + products + " produtos...");
 
 			RankingDiscoverStats ranking = new RankingDiscoverStats();
 
@@ -375,7 +375,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setLmt(nowISO);
 			ranking.setRankType(RANK_TYPE);
 			ranking.setLocation(location);
-			ranking.setProductsDiscover(sanitizedRankingProducts(this.mapUrlMessageId));
+			ranking.setProductsDiscover(products);
 			
 			RankingStatistics statistics = new RankingStatistics();
 
@@ -476,6 +476,8 @@ public abstract class CrawlerRankingKeywords extends Task {
 				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
 				productDiscover.setProcessedIds(processedIds);
 			}
+			
+			productsDiscover.add(productDiscover);
 		}
 		
 		return productsDiscover;

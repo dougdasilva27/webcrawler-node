@@ -7,7 +7,7 @@ public class RankingProductsDiscover extends RankingProducts {
 	private String taskId;
 	private String type;
 
-	public static final String TYPE_NEW = "product-discovered";
+	public static final String TYPE_NEW = "new-product";
 	public static final String TYPE_OLD = "processed-product";
 	
 	public Document getDocument(){

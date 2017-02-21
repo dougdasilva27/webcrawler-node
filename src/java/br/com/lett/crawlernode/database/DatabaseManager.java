@@ -17,12 +17,14 @@ public class DatabaseManager {
 	public MongoDB connectionPanel;
 	public MongoDB connectionInsights; 
 	public MongoDB connectionImages;
+	public MongoDB connectionFrozen;
 	public PostgresSQL connectionPostgreSQL;
 
 	public DatabaseManager(DBCredentials credentials) {
 		connectionPanel = new MongoDB();
 		connectionInsights = new MongoDB();
 		connectionImages = new MongoDB();
+		connectionFrozen = new MongoDB();
 		connectionPostgreSQL = new PostgresSQL();
 
 		try {
@@ -45,13 +47,22 @@ public class DatabaseManager {
 
 		try {
 			connectionImages.openConnection(credentials.getMongoImagesCredentials());
+			Logging.printLogDebug(logger, "Connection with database Mongo Images performed successfully!");
+		} catch (Exception e) {
+			Logging.printLogError(logger, "Error establishing connection with Images.");
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
+		}
+		
+		try {
+			connectionFrozen.openConnection(credentials.getMongoFrozenCredentials());
 			Logging.printLogDebug(logger, "Connection with database Mongo Frozen performed successfully!");
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Error establishing connection with Frozen.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			System.exit(0);
 		}
-
+		
 		try {
 			connectionPostgreSQL.openConnection(credentials.getPostgresCredentials());
 			Logging.printLogDebug(logger, "Connection with database PostgreSQL performed successfully!");

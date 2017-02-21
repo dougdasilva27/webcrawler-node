@@ -64,9 +64,8 @@ public class Persistence {
 	public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD		= "new_skus";
 	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD 		= "status";
 	
-	private static final String MONGO_COLLECTION_RANKING = "Ranking";
 	private static final String MONGO_COLLECTION_CATEGORIES = "Categories";
-	private static final String MONGO_COLLECTION_RANKING_DISCOVER_URLS = "RankingDiscoverUrls";
+	private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
 	private static final String MONGO_COLLECTION_TASK = "Task";
 
 	public static final String MONGO_TASK_STATUS_DONE 	= "done";
@@ -911,26 +910,29 @@ public class Persistence {
 	
 	//insere dados do ranking no mongo
 	public static void insertPanelRanking(Ranking r) {
-//		Date date = new Date( );
-//		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
-//		
-//		//se não conseguir inserir tenta atualizar
-//		try{
-//			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
-//					r.getRankType()).append("date", ft.format(date));
-//			
-//			if(Main.dbManager.connectionPanel.countFind(filter, MONGO_COLLECTION_RANKING) > 0) {
-//				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
-//				Main.dbManager.connectionPanel.updateOne(filter, update, MONGO_COLLECTION_RANKING);
-//				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
-//			} else {
-//				Main.dbManager.connectionPanel.insertOne(r.getDocument(),MONGO_COLLECTION_RANKING);
-//				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-//			}
-//			
-//		} catch(Exception e) {
-//			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-//		}
+		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
+		
+		//se não conseguir inserir tenta atualizar
+		try{
+			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
+					r.getRankType()).append("date", ft.format(new Date()));
+			
+			if(Main.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
+				
+				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
+				Main.dbManager.connectionFrozen.updateOne(filter, update, MONGO_COLLECTION_DISCOVER_STATS);
+				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
+				
+			} else {
+				
+				Main.dbManager.connectionFrozen.insertOne(r.getDocument(),MONGO_COLLECTION_DISCOVER_STATS);
+				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
+				
+			}
+			
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
 	}
 	
 	//insere dados do categories no mongo

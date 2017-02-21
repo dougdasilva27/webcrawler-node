@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.util.Logging;
 import credentials.DBCredentialsSetter;
+import credentials.MongoFrozenCredentialsSetter;
 import credentials.MongoImagesCredentialsSetter;
 import credentials.MongoInsightsCredentialsSetter;
 import credentials.MongoPanelCredentialsSetter;
@@ -34,6 +35,7 @@ public class DatabaseCredentialsSetter {
 		setCredentialsMongoInsights(enviroments, credentials, logs);
 		setCredentialsMongoPanel(enviroments, credentials, logs);
 		setCredentialsMongoImages(enviroments, credentials, logs);
+		setCredentialsMongoFrozen(enviroments, credentials, logs);
 		
 		if(logs.size() > 0) {
 			for(Entry<String, String> log : logs.entrySet()) {
@@ -211,6 +213,48 @@ public class DatabaseCredentialsSetter {
 			credentials.put(MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED));
 		} else {
 			logs.put(MongoImagesCredentialsSetter.DATABASE_IMAGES, MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED);
+		}
+	}
+	
+	private static void setCredentialsMongoFrozen(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
+		if(enviroments.containsKey(MongoFrozenCredentialsSetter.HOST_FROZEN)) {
+			credentials.put(MongoFrozenCredentialsSetter.HOST_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.HOST_FROZEN));
+		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED)) {
+			credentials.put(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED));
+		} else {
+			logs.put(MongoFrozenCredentialsSetter.HOST_FROZEN, MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED);
+		}
+		
+		if(enviroments.containsKey(MongoFrozenCredentialsSetter.PORT_FROZEN)) {
+			credentials.put(MongoFrozenCredentialsSetter.PORT_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.PORT_FROZEN));
+		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED)) {
+			credentials.put(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED));
+		} else {
+			logs.put(MongoFrozenCredentialsSetter.PORT_FROZEN, MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED);
+		}
+		
+		if(enviroments.containsKey(MongoFrozenCredentialsSetter.USERNAME_FROZEN)) {
+			credentials.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.USERNAME_FROZEN));
+		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED)) {
+			credentials.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED));
+		} else {
+			logs.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN, MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED);
+		}
+		
+		if(enviroments.containsKey(MongoFrozenCredentialsSetter.PASSWORD_FROZEN)) {
+			credentials.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.PASSWORD_FROZEN));
+		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED)) {
+			credentials.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED));
+		} else {
+			logs.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN, MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED);
+		}
+		
+		if(enviroments.containsKey(MongoFrozenCredentialsSetter.DATABASE_FROZEN)) {
+			credentials.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.DATABASE_FROZEN));
+		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED)) {
+			credentials.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED));
+		} else {
+			logs.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN, MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED);
 		}
 	}
 
