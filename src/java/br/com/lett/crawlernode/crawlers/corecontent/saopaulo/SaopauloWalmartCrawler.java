@@ -179,8 +179,12 @@ public class SaopauloWalmartCrawler extends Crawler {
 				for (String partnerName : marketplaceMap.keySet()) {
 					if (partnerName.equals("walmart")) { // se o walmart está no mapa dos lojistas, então o produto está disponível
 						available = true;
-						Double priceDouble = marketplaceMap.get(partnerName).getRawCardPaymentOptions("visa").getDouble("1");
-						price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
+						JSONObject prices = marketplaceMap.get(partnerName).getRawCardPaymentOptions("visa");
+						
+						if(prices.has("1")) {
+							Double priceDouble = marketplaceMap.get(partnerName).getRawCardPaymentOptions("visa").getDouble("1");
+							price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
+						}
 					} else { // se não for o walmart, insere no json array de lojistas
 						JSONObject partner = new JSONObject();
 						partner.put("name", partnerName);
@@ -280,9 +284,9 @@ public class SaopauloWalmartCrawler extends Crawler {
 						value = MathCommonsMethods.parseFloat(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);
-						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 					}
 				}
+				prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 				
 				marketplace.put(name, prices);
 			}
