@@ -214,6 +214,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			// função para popular os dados no banco
 			if(session instanceof RankingKeywordsSession) {
 				persistRankingData();
+				persistDiscoverData();
 			} else if(session instanceof DiscoverKeywordsSession) {
 				persistDiscoverData();
 			}
@@ -373,9 +374,14 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setMarketId(this.marketId);
 			ranking.setDate(ts);
 			ranking.setLmt(nowISO);
-			ranking.setRankType(RANK_TYPE);
 			ranking.setLocation(location);
 			ranking.setProductsDiscover(products);
+			
+			if(session instanceof DiscoverKeywordsSession) {
+				ranking.setRankType("dsicover-keywords");
+			} else {
+				ranking.setRankType("ranking-keywords");
+			}
 			
 			RankingStatistics statistics = new RankingStatistics();
 
@@ -386,7 +392,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setStatistics(statistics);
 			
 			//insere dados no mongo
-			Persistence.insertPanelRanking(ranking);
+			Persistence.persistDiscoverStats(ranking);
 
 		} else {		
 			this.log("Não vou persistir nada pois não achei nada");

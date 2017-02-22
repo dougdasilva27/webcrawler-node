@@ -909,7 +909,7 @@ public class Persistence {
 	 */
 	
 	//insere dados do ranking no mongo
-	public static void insertPanelRanking(Ranking r) {
+	public static void persistDiscoverStats(Ranking r) {
 		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
 		
 		//se não conseguir inserir tenta atualizar
