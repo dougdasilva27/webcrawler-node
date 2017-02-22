@@ -72,8 +72,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 
@@ -173,7 +173,7 @@
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>db</artifactId>
-			<version>1.5.1</version>
+			<version>1.6.0</version>
 		</dependency>
 
 		<!-- Assemble and perform queries -->
