@@ -248,9 +248,9 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 			
 			String image = primaryImageElement.attr("href");
 			if(!image.startsWith("http:")){
-				primaryImage = "http:" + image;
+				primaryImage = "http:" + image.toLowerCase();
 			} else {
-				primaryImage = image;
+				primaryImage = image.toLowerCase();
 			}
 			
 		} else if(primaryImageElement != null) {
@@ -260,14 +260,14 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 				String image = e.attr("src");
 				
 				if(!image.startsWith("http:")){
-					primaryImage = "http:" + image;
+					primaryImage = "http:" + image.toLowerCase();
 				} else {
-					primaryImage = image;
+					primaryImage = image.toLowerCase();
 				}
 			}
 		}
 
-		return primaryImage.toLowerCase();
+		return primaryImage;
 	}
 
 	private String crawlSecondaryImages(Document document) {
