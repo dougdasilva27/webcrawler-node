@@ -38,6 +38,7 @@ public class CommonMethods {
 	
 	private static String version = "1"; //TODO
 	
+	
 	/**
 	 * 
 	 * @return
