@@ -30,21 +30,23 @@ public class ProxyCollection {
 	public static final String HA_PROXY_HTTP = "191.235.90.114:3333";
 	public static final String HA_PROXY_HTTPS = "191.235.90.114:3333";
 
-	public static final String BUY 			= "buy";
-	public static final String BONANZA 		= "bonanza";
-	public static final String STORM 		= "storm";
-	public static final String NO_PROXY 	= "no_proxy";
-	public static final String CHARITY 		= "charity";
-	public static final String CHARITY_BR 	= "charity_br";
-	public static final String CHARITY_MX 	= "charity_mx";
-	public static final String AZURE 		= "azure";
+	public static final String BUY 						= "buy";
+	public static final String BONANZA 					= "bonanza";
+	public static final String STORM 					= "storm";
+	public static final String NO_PROXY 				= "no_proxy";
+	public static final String LUMINATI_SERVER_BR 		= "luminati_server_br";
+	public static final String LUMINATI_RESIDENTIAL_BR 	= "luminati_residential_br";
+	public static final String CHARITY 					= "charity";
+	public static final String AZURE 					= "azure";
 
-	public static final int MAX_ATTEMPTS_BUY 		= 2;
-	public static final int MAX_ATTEMPTS_BONANZA 	= 3;
-	public static final int MAX_ATTEMPTS_CHARITY 	= 3;
-	public static final int MAX_ATTEMPTS_AZURE 		= 3;
-	public static final int MAX_ATTEMPTS_STORM		= 3;
-	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 3;
+	public static final int MAX_ATTEMPTS_BUY 					= 2;
+	public static final int MAX_ATTEMPTS_BONANZA 				= 3;
+	public static final int MAX_ATTEMPTS_CHARITY 				= 3;
+	public static final int MAX_ATTEMPTS_LUMINATI_SERVER 		= 4;
+	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
+	public static final int MAX_ATTEMPTS_AZURE 					= 3;
+	public static final int MAX_ATTEMPTS_STORM					= 3;
+	public static final int MAX_ATTEMPTS_NO_RPOXY 				= 3;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
@@ -62,6 +64,8 @@ public class ProxyCollection {
 		this.proxyMaxAttempts = new HashMap<>();
 		this.proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
 		this.proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
+		this.proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER);
+		this.proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL);
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
 		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
 		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
@@ -82,6 +86,18 @@ public class ProxyCollection {
 		this.proxyMap.put(CHARITY, charity);
 	}
 
+	public void setLuminatiServerBrProxy() {
+		List<LettProxy> luminati = new ArrayList<>();
+		luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-static_shared_br", "72nxUzRANwPf3tYcekwii"));
+		this.proxyMap.put(LUMINATI_SERVER_BR, luminati);
+	}
+
+	public void setLuminatiResidentialBrProxy() {
+		List<LettProxy> luminati = new ArrayList<>();
+		luminati.add(new LettProxy(LUMINATI_RESIDENTIAL_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-residential_br", "bKhgwEQijyG92jR9kvBPw"));
+		this.proxyMap.put(LUMINATI_RESIDENTIAL_BR, luminati);
+	}
+	
 	public void setAzureProxy() {
 		List<LettProxy> azure = new ArrayList<>();
 		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));

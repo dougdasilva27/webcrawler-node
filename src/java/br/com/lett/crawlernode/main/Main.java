@@ -109,6 +109,8 @@ public class Main {
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
 		proxies.setCharityProxy();
+		proxies.setLuminatiServerBrProxy();
+		proxies.setLuminatiResidentialBrProxy();
 		proxies.setAzureProxy();
 	}
 	
