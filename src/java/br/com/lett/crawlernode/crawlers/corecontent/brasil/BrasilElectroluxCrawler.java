@@ -75,7 +75,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {		
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -382,7 +382,6 @@ public class BrasilElectroluxCrawler extends Crawler {
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
 							(
 							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
@@ -393,10 +392,10 @@ public class BrasilElectroluxCrawler extends Crawler {
 			}        
 		}
 		
-		try {
+		if (skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		} else {
+			skuJsonArray = new JSONArray();
 		}
 		
 		return skuJsonArray;

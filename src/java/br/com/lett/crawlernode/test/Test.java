@@ -99,7 +99,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.climario.com.br/ar-condicionado-split-lg-cassete-inverter-35000-btuh-monofasico-frio-220v/p", market);
+				session = SessionFactory.createTestSession("http://loja.electrolux.com.br/?ProductLinkNotFound=lavadora-turbo-15kg-ltm15-electrolux", market);
 			}
 	
 			
