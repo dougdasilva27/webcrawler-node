@@ -322,11 +322,11 @@ public class SaopauloExtraCrawler extends Crawler {
 			}        
 		}
 
-		if (skuJson.has("product")) {
+		if (skuJson != null && skuJson.has("product")) {
 			return skuJson.getJSONObject("product");
 		}
 
-		return null;
+		return new JSONObject();
 	}
 
 }
