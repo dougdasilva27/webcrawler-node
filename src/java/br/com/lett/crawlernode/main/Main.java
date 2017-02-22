@@ -25,7 +25,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
 
- 
+
 /**
  * 
  * Environment variables:
@@ -72,37 +72,43 @@ public class Main {
 		Logging.setLogMDC();
 
 		// setting database credentials
-		DBCredentials dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		DBCredentials dbCredentials = new DBCredentials();
+
+		try {
+			dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
 
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
-		
+
 		// fetch all markets information from database
 		markets = new Markets(dbManager);
-		
+
 		// initialize temporary folder for images download
 		Persistence.initializeImagesDirectories(markets);
-		
+
 		// create result manager for processor stage
 		processorResultManager = new ResultManager(false, dbManager);
 
 		// fetching proxies
 		initProxies();
-		
+
 		// initialize global resources
 		initGlobalResources();
 
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
-		
+
 		// create the server
 		server = new Server();
-		
+
 		// create the scheduled task to check the executor status
 		serverExecutorStatusAgent = new ServerExecutorStatusAgent();
 		serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 5);
 	}
-	
+
 	private static void initProxies() {
 		proxies = new ProxyCollection(markets);
 		proxies.setBonanzaProxies();
@@ -113,7 +119,7 @@ public class Main {
 		proxies.setLuminatiResidentialBrProxy();
 		proxies.setAzureProxy();
 	}
-	
+
 	private static void initGlobalResources() {
 		globalResources = new Resources();
 		try {
@@ -126,34 +132,34 @@ public class Main {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	private static File downloadWebdriverExtension() throws IOException {
 		BufferedInputStream in = null;
-	    FileOutputStream fout = null;
-	    try {
-	        in = new BufferedInputStream(new URL("https://s3.amazonaws.com/code-deploy-lett/crawler-node-util/modheader_2_1_1.crx").openStream());
-	        File f = new File("modheader_2_1_1.crx");
-	        if (!f.exists()) {
-	        	f.createNewFile();
-	        }
-	        fout = new FileOutputStream(f);
+		FileOutputStream fout = null;
+		try {
+			in = new BufferedInputStream(new URL("https://s3.amazonaws.com/code-deploy-lett/crawler-node-util/modheader_2_1_1.crx").openStream());
+			File f = new File("modheader_2_1_1.crx");
+			if (!f.exists()) {
+				f.createNewFile();
+			}
+			fout = new FileOutputStream(f);
 
-	        final byte[] data = new byte[1024];
-	        int count;
-	        while ((count = in.read(data, 0, 1024)) != -1) {
-	            fout.write(data, 0, count);
-	        }
-	        
-	        return f;
-	        
-	    } finally {
-	        if (in != null) {
-	            in.close();
-	        }
-	        if (fout != null) {
-	            fout.close();
-	        }
-	    }
+			final byte[] data = new byte[1024];
+			int count;
+			while ((count = in.read(data, 0, 1024)) != -1) {
+				fout.write(data, 0, count);
+			}
+
+			return f;
+
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+			if (fout != null) {
+				fout.close();
+			}
+		}
 	}
 
 }

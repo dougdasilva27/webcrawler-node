@@ -6,13 +6,16 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
-
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
 
 public class TestImageCrawler {
@@ -23,6 +26,8 @@ public class TestImageCrawler {
 
 	private static String marketName;
 	private static String cityName;
+
+	private static Logger logger = LoggerFactory.getLogger(TestImageCrawler.class);
 
 	public static void main(String args[]) {
 
@@ -54,7 +59,13 @@ public class TestImageCrawler {
 		}
 
 		// setting database credentials
-		DBCredentials dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		DBCredentials dbCredentials = new DBCredentials();
+
+		try {
+			dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
 
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);

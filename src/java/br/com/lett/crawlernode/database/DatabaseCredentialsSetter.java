@@ -24,7 +24,7 @@ public class DatabaseCredentialsSetter {
 		super();
 	}
 
-	public static DBCredentials setCredentials() {
+	public static DBCredentials setCredentials() throws Exception {
 		DBCredentialsSetter st = new DBCredentialsSetter();
 		Map<String,String> enviroments = System.getenv();
 		

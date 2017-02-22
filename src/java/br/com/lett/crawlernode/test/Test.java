@@ -6,6 +6,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
@@ -18,6 +20,8 @@ import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
 
 /**
@@ -26,7 +30,7 @@ import credentials.models.DBCredentials;
  *
  */
 public class Test {
-	
+
 	public static final String INSIGHTS_TEST = "insights";
 	public static final String RATING_TEST = "rating";
 	public static final String IMAGES_TEST = "images";
@@ -43,6 +47,8 @@ public class Test {
 	public static String pathWrite;
 	public static String testType;
 
+	private static final Logger logger = LoggerFactory.getLogger(Test.class);
+	
 	public static void main(String args[]) {
 
 		// adding command line options
@@ -68,8 +74,14 @@ public class Test {
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
 		// setting database credentials
-		DBCredentials dbCredentials = DatabaseCredentialsSetter.setCredentials();
-		
+		DBCredentials dbCredentials = new DBCredentials();
+
+		try {
+			dbCredentials = DatabaseCredentialsSetter.setCredentials();
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
+
 		// creating the database manager
 		dbManager = new DatabaseManager(dbCredentials);
 
@@ -95,16 +107,16 @@ public class Test {
 			//taskExecutor = new TaskExecutor(1, 1);
 
 			Session session;
-			
+
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
 				session = SessionFactory.createTestSession("http://loja.electrolux.com.br/?ProductLinkNotFound=lavadora-turbo-15kg-ltm15-electrolux", market);
 			}
-	
-			
+
+
 			Task task = TaskFactory.createTask(session);
-			
+
 			task.process();
 		}
 		else {
