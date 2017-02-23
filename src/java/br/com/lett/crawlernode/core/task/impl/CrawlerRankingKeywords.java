@@ -364,7 +364,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 		
 		//se houver 1 ou mais produtos, eles serão cadastrados no banco
 		if(!products.isEmpty()) {
-			this.log("Vou persistir " + products + " produtos...");
+			this.log("Vou persistir " + products.size() + " produtos...");
 
 			RankingDiscoverStats ranking = new RankingDiscoverStats();
 
