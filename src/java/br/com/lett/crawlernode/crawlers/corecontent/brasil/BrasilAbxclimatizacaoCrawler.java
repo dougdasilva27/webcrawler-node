@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.Pair;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (03/01/2017):
@@ -183,18 +184,13 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlMainPagePrice(Document doc) {
 		Float price = null;
-		Element specialPrice = document.select(".special-price .price").first();		
-
-		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-		} else {
-			Element priceElement = document.select(".price").first();
-			
-			if(priceElement != null) {
-				price = Float.parseFloat( priceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-			}
+		Pair<Integer, Float> installment = getInstallmentPrice(doc);
+		
+		if(installment != null) {
+			Float result = installment.getFirst() * installment.getSecond();
+			price = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 		}
 
 		return price;
@@ -280,23 +276,23 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
-
+			
 			// bank ticket
-			prices.insertBankTicket(price);
+			Element priceBoleto = doc.select(".precoboleto span").first();
+			
+			if(priceBoleto != null) {
+				prices.insertBankTicket(MathCommonsMethods.parseFloat(priceBoleto.text()));
+			} else {
+				prices.insertBankTicket(price);
+			}
 			
 			// 1x card
 			installmentPriceMap.put(1, price);
 			
-			// card payment conditions
-			Elements installments = doc.select(".price-box > p[style]");
-			for(Element e : installments){
-				String text = e.text().toLowerCase();
-				int x = text.indexOf('x');
-
-				Integer installment = Integer.parseInt(text.substring(0, x).trim());
-				Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
-
-				installmentPriceMap.put(installment, value);
+			Pair<Integer, Float> installment = getInstallmentPrice(doc);
+			
+			if(installment != null) {
+				installmentPriceMap.put(installment.getFirst(), installment.getSecond());
 			}
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -310,4 +306,30 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return prices;
 	}
 
+	private Pair<Integer, Float> getInstallmentPrice(Document doc) {
+		Element finalPriceParc = doc.select(".precofinalparc").first();
+		
+		if(finalPriceParc != null) {
+			String text = finalPriceParc.ownText().toLowerCase();
+			
+			if(text.contains("x")) {
+				int x = text.indexOf("x");
+				String number = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+				
+				if(!number.isEmpty()) {
+					Integer numberInstallments = Integer.parseInt(number);
+					
+					Element installmentElement = finalPriceParc.select("span").first();
+					
+					if(installmentElement != null) {
+						Float priceInstallment = MathCommonsMethods.parseFloat(installmentElement.text());
+						
+						return new Pair<Integer, Float>(numberInstallments, priceInstallment);
+					} 
+				}
+			}
+		}
+		
+		return null;
+	}
 }
