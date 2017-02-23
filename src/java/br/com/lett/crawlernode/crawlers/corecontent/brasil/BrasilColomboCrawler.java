@@ -34,11 +34,11 @@ public class BrasilColomboCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		Element productElement = doc.select(".detalhe-produto").first();
 
-		if (session.getOriginalURL().startsWith("https://www.colombo.com.br/produto/") && !session.getOriginalURL().contains("?") && (productElement != null)) {
+		if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && !session.getOriginalURL().contains("?") && (productElement != null)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr");
