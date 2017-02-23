@@ -182,7 +182,12 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
-
+		Element pid = document.select("#ProdutoCodigo").first();
+		
+		if(pid != null) {
+			internalPid = pid.val();
+		}
+		
 		return internalPid;
 	}
 

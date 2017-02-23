@@ -183,9 +183,15 @@ public class FortalezaPaguemenosCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
-
+		Element pid = document.select("#ProdutoCodigo").first();
+		
+		if(pid != null) {
+			internalPid = pid.val();
+		}
+		
 		return internalPid;
 	}
+
 
 	private String crawlName(Document document) {
 		String name = null;

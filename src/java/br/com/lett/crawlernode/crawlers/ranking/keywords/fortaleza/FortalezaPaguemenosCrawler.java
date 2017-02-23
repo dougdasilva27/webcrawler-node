@@ -90,26 +90,27 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
 		
 	}
 	
-	private String crawlInternalId(Element e){
+	private String crawlInternalId(Element e) {
 		String internalId = null;
-		Element eInid = e.select("input").first();
 		
-		if(eInid != null){
-			internalId = eInid.attr("value");
+		Element inid = e.select("div.figure a > img.photo").first();
+
+		if (inid != null) {
+			if (!inid.attr("src").contains("indisponivel")) {
+				String[] tokens2 = inid.attr("src").split("/");
+				internalId = tokens2[tokens2.length - 2];
+			}
 		}
-		
+
 		return internalId;
 	}
-	
-	private String crawlInternalPid(Element e){
+
+	private String crawlInternalPid(Element e) {
 		String internalPid = null;
-		Element pid	= e.select("div.figure a > img.photo").first();
-		
-		if(pid != null){
-			if(!pid.attr("src").contains("indisponivel")){
-				String[] tokens2 = pid.attr("src").split("/");
-				internalPid 	 = tokens2[tokens2.length-2];
-			}
+		Element pid = e.select("input").first();
+
+		if (pid != null) {
+			internalPid = pid.attr("value");
 		}
 		
 		return internalPid;
