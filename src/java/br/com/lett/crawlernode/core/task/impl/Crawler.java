@@ -29,10 +29,12 @@ import br.com.lett.crawlernode.processor.base.Processor;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 
 import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -536,6 +538,7 @@ public class Crawler extends Task {
 	 * @return The resultant product from the analysis
 	 */
 	private Product activeVoid(Product product) throws Exception {
+		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
 		// fetch the previous processed product
 		// if a processed already exists and is void, then
@@ -543,6 +546,9 @@ public class Crawler extends Task {
 		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 		if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
 			Logging.printLogDebug(logger, session, "The previous processed is void. Returning...");
+			
+			Logging.printLogDebug(logger, session, "Updating LRT ...");
+			Persistence.updateProcessedLRT(nowISO, session);
 			
 			return product;
 		}
@@ -578,6 +584,12 @@ public class Crawler extends Task {
 			if (previousProcessedProduct != null && !previousProcessedProduct.isVoid()) {
 				Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
 				Persistence.setProcessedVoidTrue(session);
+				
+				Logging.printLogDebug(logger, session, "Updating LRT ...");
+				Persistence.updateProcessedLRT(nowISO, session);
+				
+				Logging.printLogDebug(logger, session, "Updating LMS ...");
+				Persistence.updateProcessedLMS(nowISO, session);
 			}
 		}
 

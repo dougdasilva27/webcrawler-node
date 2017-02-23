@@ -494,11 +494,10 @@ public class Persistence {
 
 	/**
 	 * Updates processed LastReadTime on processed table.
-	 * @param processed
 	 * @param nowISO
 	 * @param session
 	 */
-	public static void updateProcessedLRT(ProcessedModel processed, String nowISO, Session session) {
+	public static void updateProcessedLRT(String nowISO, Session session) {
 		Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
@@ -522,11 +521,10 @@ public class Persistence {
 
 	/**
 	 * Updates processed LastModifiedTime on processed table.
-	 * @param processed
 	 * @param nowISO
 	 * @param session
 	 */
-	public static void updateProcessedLMT(ProcessedModel processed, String nowISO, Session session) {
+	public static void updateProcessedLMT(String nowISO, Session session) {
 		Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
@@ -538,10 +536,38 @@ public class Persistence {
 
 		try {
 			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
-			Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
+			Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 
 		} catch(Exception e) {
 			Logging.printLogError(logger, session, "Error updating processed product LMT.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+		}
+
+	}
+	
+	/**
+	 * Updates processed LastModifiedStatus on processed table.
+	 * @param nowISO
+	 * @param session
+	 */
+	public static void updateProcessedLMS(String nowISO, Session session) {
+		Processed processedTable = Tables.PROCESSED;
+
+		Map<Field<?>, Object> updateSets = new HashMap<>();
+		updateSets.put(processedTable.LMS, nowISO);
+
+		List<Condition> conditions = new ArrayList<>();
+		conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+
+		try {
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+			Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
+
+		} catch(Exception e) {
+			Logging.printLogError(logger, session, "Error updating processed product LMS.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
