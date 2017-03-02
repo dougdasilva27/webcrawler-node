@@ -49,13 +49,15 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
+		if (url.startsWith("http://www.americanas.com.br/produto/")) {
+			return true;
+		}
 		return false;
 	}
 	
 	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
-		List<String> idList = new ArrayList<String>();
-		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
+		List<String> idList = new ArrayList<>();
+		//String internalPid = crawlSkuInternalPid(embeddedJSONObject);
 		
 		if (embeddedJSONObject.has("skus")) {
 			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
@@ -64,7 +66,8 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 				JSONObject sku = skus.getJSONObject(i);
 				
 				if (sku.has("id")) {
-					String id = internalPid + "-" + sku.getString("id");
+					//String id = internalPid + "-" + sku.getString("id");
+					String id = sku.getString("id");
 					idList.add(id);
 				}
 			}

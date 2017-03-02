@@ -37,25 +37,18 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 			String sku = crawlSkuId(chaordicMeta);
 			
 			JSONObject reviewPage = requestReviewPage(sku, 1);
-			
+						
 			if (reviewPage.has("totalPaginas") && reviewPage.has("totalRegistros")) {
 				Integer numRatings = reviewPage.getInt("totalRegistros");
-				Double totalRating = 0.0;
 				Integer totalPages = reviewPage.getInt("totalPaginas");
+				Double totalRating = 0.0;
+				
+				// get the totalRating in the first page
+				totalRating = totalRating + getTotalRatingFromReviewPage(reviewPage);
 				
 				for (int i = 2; i <= totalPages; i++) {
-					if (reviewPage.has("avaliacoes")) {
-						JSONArray ratings = reviewPage.getJSONArray("avaliacoes");
-						
-						for (int j = 0; j < ratings.length(); j++) {
-							JSONObject rating = ratings.getJSONObject(j);
-							if (rating.has("nota")) {
-								totalRating = totalRating + new Double(rating.getInt("nota"));
-							}
-						}
-					}
-					
 					reviewPage = requestReviewPage(sku, i);
+					totalRating = totalRating + getTotalRatingFromReviewPage(reviewPage);
 				}
 				
 				Double avgRating;
@@ -79,6 +72,23 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 	
 	private boolean isProductPage(Document doc) {
 		return doc.select(".product-details__code").first() != null;
+	}
+	
+	private Double getTotalRatingFromReviewPage(JSONObject reviewPage) {
+		Double totalRating = 0.0;
+		
+		if (reviewPage.has("avaliacoes")) {
+			JSONArray ratings = reviewPage.getJSONArray("avaliacoes");
+			
+			for (int j = 0; j < ratings.length(); j++) {
+				JSONObject rating = ratings.getJSONObject(j);
+				if (rating.has("nota")) {
+					totalRating = totalRating + new Double(rating.getInt("nota"));
+				}
+			}
+		}
+		
+		return totalRating;
 	}
 	
 	private String crawlSkuId(JSONObject jsonProduct) {
