@@ -13,6 +13,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -267,7 +268,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 		headers.put("Content-Type", "application/json");
 		headers.put("X-Requested-With", "XMLHttpRequest");
 
-		JSONObject jsonPrice = new JSONObject(DataFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
+		JSONObject jsonPrice = new JSONObject(POSTFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
 
 		return jsonPrice;
 	}

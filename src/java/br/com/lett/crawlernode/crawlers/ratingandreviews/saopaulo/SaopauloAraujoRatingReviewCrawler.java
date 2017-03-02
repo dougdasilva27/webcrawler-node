@@ -16,6 +16,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
@@ -105,7 +106,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 		headers.put("Content-Type", "application/x-www-form-urlencoded");
 		headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
 		
-		String response = DataFetcher.fetchPagePOSTWithHeaders("http://www.araujo.com.br/userreview", session, payload, cookies, 1, headers);
+		String response = POSTFetcher.fetchPagePOSTWithHeaders("http://www.araujo.com.br/userreview", session, payload, cookies, 1, headers);
 		
 		if(response != null){
 			doc = Jsoup.parse(response);

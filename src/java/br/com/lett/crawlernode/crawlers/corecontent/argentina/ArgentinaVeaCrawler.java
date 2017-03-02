@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import com.mongodb.util.JSON;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
@@ -271,7 +272,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Content-Type", "application/json");
 
-		String response = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+		String response = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 
 		if(response != null && response.contains("descr")){
 			JSONObject jsonD = parseJsonLevex(new JSONObject(response));
@@ -330,7 +331,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 		String urlParameters = "{IdMenu:\"\",textoBusqueda:\""+ tokens[tokens.length-1] +"\","
 				+ " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
-		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
+		String jsonString = POSTFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
 
 		if (jsonString != null && jsonString.startsWith("{")) {
 			json = new JSONObject(jsonString);
@@ -426,7 +427,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Content-Type", "application/json");
 		
-		String jsonString = DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+		String jsonString = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 		
 		if(jsonString != null && jsonString.startsWith("{") && jsonString.endsWith("}")) {
 			JSONObject jsonCart = new JSONObject();

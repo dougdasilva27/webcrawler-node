@@ -15,6 +15,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -343,7 +344,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 		headers.put("X-AjaxPro-Method", method);
 		headers.put("X-AjaxPro-Token", token);
 
-		String response = DataFetcher.fetchPagePOSTWithHeaders(URL_API, session, payload, this.cookies, 1, headers);
+		String response = POSTFetcher.fetchPagePOSTWithHeaders(URL_API, session, payload, this.cookies, 1, headers);
 		
 		return new JSONObject(response);
 	}

@@ -29,6 +29,7 @@ import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingDiscoverStats;
 import br.com.lett.crawlernode.core.models.RankingProducts;
@@ -585,7 +586,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 	 * @return
 	 */
 	protected String fetchStringPOST(String url, String payload, Map<String,String> headers, List<Cookie> cookies){
-		return DataFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+		return POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 	}
 
 	/**
