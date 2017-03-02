@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
 
@@ -102,6 +101,7 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
+
 
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
@@ -257,7 +257,7 @@ public class DataFetcher {
 	}
 
 	/**
-	 * 
+	 * Fetch a stringfied json object.
 	 * @param reqType
 	 * @param session
 	 * @param url
@@ -411,6 +411,7 @@ public class DataFetcher {
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
+		int responseLength = 0;
 		String requestHash = generateRequestHash(session);
 
 		try {
@@ -487,9 +488,19 @@ public class DataFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
+			
+			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(
+					url, 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse,
+					responseLength,
+					requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -531,7 +542,15 @@ public class DataFetcher {
 
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(
+					url, 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse,
+					responseLength,
+					requestHash);
 
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -567,6 +586,7 @@ public class DataFetcher {
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
+		int responseLength = 0;
 		String requestHash = generateRequestHash(session);
 
 		try {
@@ -662,9 +682,19 @@ public class DataFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
+			
+			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(
+					url, 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse,
+					responseLength,
+					requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -703,7 +733,15 @@ public class DataFetcher {
 			return "";
 
 		} catch (Exception e) {
-			sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(
+					url, 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse,
+					responseLength,
+					requestHash);
 
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -814,6 +852,7 @@ public class DataFetcher {
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
+		int responseLength = 0;
 		String requestHash = generateRequestHash(session);
 
 		try {
@@ -890,9 +929,6 @@ public class DataFetcher {
 				throw new ResponseCodeException(responseCode);
 			}
 
-			// assembling request information log message
-			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
-
 			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
 
 			// get image bytes
@@ -900,18 +936,38 @@ public class DataFetcher {
 			BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(localFile));  
 			byte[] b = new byte[8*1024]; // reading each 8kb  
 			int read = 0;  
-			while((read = is.read(b)) > -1){  
+			while ((read = is.read(b)) > -1) {  
+				responseLength += read;
 				bout.write(b, 0, read);  
-			}  
+			}
 			bout.flush();  
 			bout.close();
 			is.close();
+			
+			// assembling request information log message
+			sendRequestInfoLog(
+					session.getOriginalURL(), 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse, 
+					responseLength, 
+					requestHash);
 
 			return localFile;
 
 		} catch (Exception e) {			
 
-			sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+			sendRequestInfoLog(
+					session.getOriginalURL(), 
+					GET_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse,
+					responseLength,
+					requestHash);
 
 			if (localFile != null && localFile.exists()) {
 				localFile.delete();
