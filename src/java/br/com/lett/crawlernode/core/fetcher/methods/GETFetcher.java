@@ -469,7 +469,7 @@ public class GETFetcher {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
-				return GETFetcher.fetchPageGET(session, url, cookies, attempt+1);	
+				return fetchPageGETWithHeaders(session, url, cookies, headers, attempt+1);	
 			}
 
 		}
