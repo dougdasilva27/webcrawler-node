@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
@@ -82,8 +81,6 @@ public class S3Service {
 	 * @return
 	 */
 	public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
-		//AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
-		//AmazonS3 s3client = new AmazonS3Client(credentials);
 		try {
 			return s3clientImages.getObjectMetadata(imagesBucketName, name);
 		} catch (AmazonS3Exception s3Exception) {
@@ -103,8 +100,6 @@ public class S3Service {
 	}
 
 	public static S3Object fetchS3Object(Session session, String name) {
-//		AWSCredentials credentials = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
-//		AmazonS3 s3client = new AmazonS3Client(credentials);
 		try {
 			return s3clientImages.getObject(imagesBucketName, name);
 		} catch (AmazonS3Exception s3Exception) {
