@@ -26,6 +26,9 @@ public class DigitalContentAnalyserUtils {
 	private static final Logger logger = LoggerFactory.getLogger(DigitalContentAnalyserUtils.class);
 
 	// (^|\s|['`+,.!?()])
+	// the ^ in this case means start of string
+	// the $ means end of string
+	// \s is blank spaces
 	private static final String DESCRIPTION_KEYWORD_REGEX_START_STRING_GROUP = "(^|[\\s'`+;:,.!?()])"; // start string
 	private static final String DESCRIPTION_KEYWORD_REGEX_END_STRING_GROUP = "($|[\\s'`+;:,.!?()])"; // end string
 
@@ -124,6 +127,12 @@ public class DigitalContentAnalyserUtils {
 	 * For example, in the string "fim de frase.", the '.' character will be replaced by
 	 * "\.";
 	 * 
+	 * To be completely case insensitive, without having to transform the content to lower case
+	 * we also perform a replacement creating a class of characters in the cases were we can have
+	 * accents.
+	 * e.g: samir -> s[aàáâãäå]m[iìíîï]r
+	 * The above must go only into the regular expression. And must only be APPLIED AFTER the escaping replacement.
+	 * 
 	 * @param keyword
 	 * @return the regular expression String
 	 */
@@ -132,6 +141,13 @@ public class DigitalContentAnalyserUtils {
 				.trim()
 				.toLowerCase()
 				.replaceAll(DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACE_ALL_GROUP, DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACEMENT);
+				//.replaceAll("[aàáâãäå]", "[aàáâãäå]")
+				//.replaceAll("[eèéêë]", "[eèéêë]")
+				//.replaceAll("[iìíîï]", "[iìíîï]")
+				//.replaceAll("[oòóôõö]", "[oòóôõö]")
+				//.replaceAll("[uùúûü]", "[uùúûü]")
+				//.replaceAll("[cCçÇ]", "[cCçÇ]");
+				
 		return 
 				DESCRIPTION_KEYWORD_REGEX_BOUNDARY_GROUP + 
 				"(" + escapedKeyword + ")" + 
