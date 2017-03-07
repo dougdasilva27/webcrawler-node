@@ -7,14 +7,13 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.text.Normalizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import org.jsoup.Jsoup;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +29,6 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
 
 
-/**
- * Classe contém funções de análise de Conteúdo Digital
- * @author fabricio
- *
- */
 public class DigitalContentAnalyser {
 
 	private static final Logger logger = LoggerFactory.getLogger(DigitalContentAnalyser.class);
@@ -98,14 +92,15 @@ public class DigitalContentAnalyser {
 
 
 	public static JSONObject validateRule(String content, JSONObject rule) {
-
+		
 		JSONObject results = new JSONObject();
 
-		if(content == null) content = "";
+		if(content == null) {
+			content = "";
+		}
 
 		try {
-
-			String sanitizedContent = sanitizeBeforeValidateRule(content);
+			String sanitizedContent = DigitalContentAnalyserUtils.sanitizeOriginalDescription(content);
 
 			Integer condition = null;
 			try {
@@ -120,24 +115,23 @@ public class DigitalContentAnalyser {
 				JSONArray desiredKeywords = rule.getJSONArray("value");
 				JSONArray keywordsFound = new JSONArray();
 				JSONArray keywordsNotFound = new JSONArray();
-
-				// Preparando os objetos para realizar as buscas para buscarmos
-				JSONArray desired_keywords_sanitized = new JSONArray();
-
+				
+				// search for each word patter on the description
 				for(int i = 0; i < desiredKeywords.length(); i++) {
-					desired_keywords_sanitized.put(sanitizeBeforeValidateRule(desiredKeywords.get(i).toString()));
-				}
-
-				// Iniciando as buscas
-				for(int i = 0; i < desired_keywords_sanitized.length(); i++) {
-					if(sanitizedContent.contains(desired_keywords_sanitized.get(i).toString() )) {
-						keywordsFound.put(desiredKeywords.get(i).toString());
+					String desiredKeyword = desiredKeywords.get(i).toString();
+					String regex = DigitalContentAnalyserUtils.createDescriptionKeywordRegex(desiredKeyword);
+					Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+					
+					Matcher matcher = pattern.matcher(sanitizedContent);
+					
+					if (matcher.find()) {
+						keywordsFound.put(desiredKeyword);
 					} else {
-						keywordsNotFound.put(desiredKeywords.get(i).toString());
+						keywordsNotFound.put(desiredKeyword);
 					}
 				}
 
-				// Agora damos o resultado, baseado no tipo da regra de keywords
+				// set the result based on the keyword rule type
 				if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_MIN)) {
 					results.put(RULE_SATISFIED, keywordsFound.length() >= condition);
 				} 
@@ -145,7 +139,7 @@ public class DigitalContentAnalyser {
 					results.put(RULE_SATISFIED, keywordsFound.length() == condition);
 				} 
 				else if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_ALL)) {
-					results.put(RULE_SATISFIED, keywordsFound.length() == desired_keywords_sanitized.length());
+					results.put(RULE_SATISFIED, keywordsFound.length() == desiredKeywords.length());
 				} 
 				else if(rule.getString("type").equals(RULE_TYPE_KEYWORDS_NONE)) {
 					results.put(RULE_SATISFIED, keywordsFound.length() == 0);
@@ -155,10 +149,8 @@ public class DigitalContentAnalyser {
 				results.put("keywords_not_found", keywordsNotFound);
 
 			} else if(rule.getString("type").startsWith("words_")) {
-
 				results.put(RULE_SATISFIED, sanitizedContent.trim().split(" ").length >= condition);
 				results.put("words_count", sanitizedContent.trim().split(" ").length);
-
 			}
 
 			return results;
@@ -173,51 +165,51 @@ public class DigitalContentAnalyser {
 
 	}
 
-	private static String sanitizeBeforeValidateRule(String content) {
-
-		String sanitizedContent = content;
-		
-		// Essas palavras ou caracteres devem ser substituídas em qualquer situação, não apenas na lista negra
-		sanitizedContent = sanitizedContent.replace("'", "");
-		sanitizedContent = sanitizedContent.replace("`", "");
-		sanitizedContent = sanitizedContent.replace("+", " ");
-		sanitizedContent = sanitizedContent.replace(",", " ");
-		//sanitizedContent = sanitizedContent.replace(".", " ");
-		sanitizedContent = sanitizedContent.replace("!", " ");
-		sanitizedContent = sanitizedContent.replace("?", " ");
-		sanitizedContent = sanitizedContent.replace("(", " ");
-		sanitizedContent = sanitizedContent.replace(")", " ");
-
-		sanitizedContent = sanitizedContent.replaceAll("\\u00a0", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u2007", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u202F", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u3000", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u1680", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u180e", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u200a", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\xA0", " ");
-		sanitizedContent = sanitizedContent.replaceAll("\\u205f", " ");	
-		
-		// create replacement for double quotes
-		sanitizedContent = sanitizedContent.replaceAll("\\u201d", "\""); // ”
-		sanitizedContent = sanitizedContent.replaceAll("\\u201e", "\""); // „
-		sanitizedContent = sanitizedContent.replaceAll("\\u201c", "\""); // “
-
-		// Básico - Remover caixa alta e espaços vazios no começo e fim
-		sanitizedContent = sanitizedContent.toLowerCase();
-		sanitizedContent = sanitizedContent.trim();
-
-		// Remoção de espaços duplos
-		while (sanitizedContent.contains("  ")) {
-			sanitizedContent = sanitizedContent.replace("  ", " ");
-		}
-
-		sanitizedContent =  " " + Jsoup.parse(Normalizer.normalize(sanitizedContent, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "")).text() + " ";
-
-		sanitizedContent = sanitizedContent.replace("/", " ");
-
-		return sanitizedContent;
-	}
+//	private static String sanitizeBeforeValidateRule(String content) {
+//
+//		String sanitizedContent = content;
+//		
+//		// Essas palavras ou caracteres devem ser substituídas em qualquer situação, não apenas na lista negra
+//		sanitizedContent = sanitizedContent.replace("'", "");
+//		sanitizedContent = sanitizedContent.replace("`", "");
+//		sanitizedContent = sanitizedContent.replace("+", " ");
+//		sanitizedContent = sanitizedContent.replace(",", " ");
+//		//sanitizedContent = sanitizedContent.replace(".", " ");
+//		sanitizedContent = sanitizedContent.replace("!", " ");
+//		sanitizedContent = sanitizedContent.replace("?", " ");
+//		sanitizedContent = sanitizedContent.replace("(", " ");
+//		sanitizedContent = sanitizedContent.replace(")", " ");
+//
+//		sanitizedContent = sanitizedContent.replaceAll("\\u00a0", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u2007", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u202F", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u3000", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u1680", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u180e", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u200a", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\xA0", " ");
+//		sanitizedContent = sanitizedContent.replaceAll("\\u205f", " ");	
+//		
+//		// create replacement for double quotes
+//		sanitizedContent = sanitizedContent.replaceAll("\\u201d", "\""); // ”
+//		sanitizedContent = sanitizedContent.replaceAll("\\u201e", "\""); // „
+//		sanitizedContent = sanitizedContent.replaceAll("\\u201c", "\""); // “
+//
+//		// Básico - Remover caixa alta e espaços vazios no começo e fim
+//		sanitizedContent = sanitizedContent.toLowerCase();
+//		sanitizedContent = sanitizedContent.trim();
+//
+//		// Remoção de espaços duplos
+//		while (sanitizedContent.contains("  ")) {
+//			sanitizedContent = sanitizedContent.replace("  ", " ");
+//		}
+//
+//		sanitizedContent =  " " + Jsoup.parse(Normalizer.normalize(sanitizedContent, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "")).text() + " ";
+//
+//		sanitizedContent = sanitizedContent.replace("/", " ");
+//
+//		return sanitizedContent;
+//	}
 
 	/**
 	 * Classify an image analysing the result of each similarity stage.
