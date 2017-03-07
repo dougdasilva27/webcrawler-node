@@ -121,7 +121,7 @@ public class DigitalContentAnalyser {
 					String desiredKeyword = desiredKeywords.get(i).toString();
 					String regex = DigitalContentAnalyserUtils.createDescriptionKeywordRegex(desiredKeyword);
 					Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-					
+										
 					Matcher matcher = pattern.matcher(sanitizedContent);
 					
 					if (matcher.find()) {

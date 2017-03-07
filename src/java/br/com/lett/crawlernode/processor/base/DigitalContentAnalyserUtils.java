@@ -61,7 +61,7 @@ public class DigitalContentAnalyserUtils {
 
 			ArrayList<Document> featuresDocuments = (ArrayList<Document>) document.get("features");
 
-			LocalFeatureList<Keypoint> features = new MemoryLocalFeatureList<Keypoint>();
+			LocalFeatureList<Keypoint> features = new MemoryLocalFeatureList<>();
 
 			for(Document d: featuresDocuments) {
 				features.add(gson.fromJson(d.toJson(), Keypoint.class));
@@ -117,13 +117,24 @@ public class DigitalContentAnalyserUtils {
 	 * final regular expression.
 	 * Before the actual escaping, we always trim the string and convert it to lower case.
 	 * 
+	 * replace pattern: ([-\\[\\]{}()*+?.,\\^$|#])
+	 * replacement: \\\\$1
+	 * 
+	 * The $1 is interpreted by the parser as being the found pattern itself. For example,
+	 * For example, in the string "fim de frase.", the '.' character will be replaced by
+	 * "\.";
+	 * 
 	 * @param keyword
 	 * @return the regular expression String
 	 */
 	public static String createDescriptionKeywordRegex(String keyword) {
+		String escapedKeyword = keyword
+				.trim()
+				.toLowerCase()
+				.replaceAll(DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACE_ALL_GROUP, DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACEMENT);
 		return 
 				DESCRIPTION_KEYWORD_REGEX_BOUNDARY_GROUP + 
-				"(" + keyword.toLowerCase().trim().replaceAll(DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACE_ALL_GROUP, DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACEMENT) + ")" + 
+				"(" + escapedKeyword + ")" + 
 				DESCRIPTION_KEYWORD_REGEX_BOUNDARY_GROUP;
 	}
 
