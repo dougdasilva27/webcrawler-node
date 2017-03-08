@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilFriopecasCrawler extends CrawlerRankingKeywords {
 
@@ -14,63 +15,104 @@ public class BrasilFriopecasCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
-
 		this.log("Página "+ this.currentPage);
-		
-		String key = this.location.replaceAll(" ", "%20");
-			
-		
+
+		//número de produtos por página do market
+		this.pageSize = 5;
+
+		String keyword = this.location.replaceAll(" ", "%20");
+
 		//monta a url com a keyword e a página
-		String url = "http://www.friopecas.com.br/buscapagina?"
-					+"sl=122bd37a-dd64-4686-a501-c323397f54ee&PS=50&cc=10&sm=0&PageNumber="+ this.currentPage +"&ft="+ key;
-		
-		this.log("Link onde são feitos os crawlers: "+url);			
-		
+		String url = "http://www.friopecas.com.br/"+keyword+"?PageNumber="+this.currentPage+"&PS=15";
+		this.log("Link onde são feitos os crawlers: "+url);	
+
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
-		
-		Elements products =  this.currentDoc.select("div.prateleira > ul > li");
-		
+
+		Elements products =  this.currentDoc.select("div.prateleira.principal div.prateleira.principal.vertical > ul > li[layout]");
+
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
-			for(int i = 0; i < products.size(); i++) {
-				if(products.get(i).hasAttr("layout")){
-					//seta o id com o seletor
-					String[] tokens 	= products.get(i+1).attr("id").split("_");
-					String internalPid 	= null;
-					String internalId 	= tokens[tokens.length-1];
-					
-					//monta a url
-					Element eUrl = products.get(i).select("a.p-name").first();
-					String productUrl  = eUrl.attr("href");
-					
-					saveDataProduct(internalId, internalPid, productUrl);
-					
-					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-					if(this.arrayProducts.size() == productsLimit) break;
+		if(products.size() >= 1) {
+			//se o total de busca não foi setado ainda, chama a função para setar
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
+
+			for(Element e: products) {
+				// InternalPid
+				String internalPid 	= crawlInternalPid(e);
+
+				// InternalId
+				String internalId 	= crawlInternalId(e);
+
+				// Url do produto
+				String productUrl = crawlProductUrl(e);
+
+				saveDataProduct(internalId, internalPid, productUrl);
+
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
 				}
+
 			}
 		} else {
-			setTotalBusca();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		if(!(hasNextPage())) setTotalBusca();
 	}
-	
+
 	@Override
 	protected boolean hasNextPage() {
-		Elements ids = this.currentDoc.select("div.shelf__product-item");
-		
-		if(ids.size() < 50){
-			return false;
-		} else {
+		if(arrayProducts.size() < this.totalBusca){
 			return true;
 		}
+
+		return false;
+	}
+
+	@Override
+	protected void setTotalBusca() {
+		Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
+		if(totalElement != null) {
+			try {
+				this.totalBusca = Integer.parseInt(totalElement.text());
+			} catch(Exception e) {
+				this.logError(CommonMethods.getStackTrace(e));
+			}
+		}
+
+		this.log("Total da busca: "+this.totalBusca);
+	}
+
+	private String crawlInternalId(Element e){
+		String internalId = null;
+		Element id = e.select(".compare-product-checkbox").first();
+		
+		if(id != null) {
+			internalId = id.attr("rel");
+		}
+		
+		return internalId;
+	}
+
+	private String crawlInternalPid(Element e){
+		String internalPid = null;
+
+		return internalPid;
+	}
+
+	private String crawlProductUrl(Element e){
+		String urlProduct = null;
+		Element urlElement = e.select("a.name").first();
+
+		if(urlElement != null){
+			urlProduct = urlElement.attr("href");
+		}
+
+		return urlProduct;
 	}
 
 }

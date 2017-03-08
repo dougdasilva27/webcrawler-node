@@ -20,7 +20,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "https://www.carrefour.com.br/busca/?termo="+ this.keywordEncoded +"&page=" + (this.currentPage - 1);
+		String url = "https://www.carrefour.com.br/busca/?termo="+ this.keywordEncoded +"&page=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar o html
@@ -31,7 +31,10 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
+			
 			for(Element e : products) {
 				
 				// InternalPid
@@ -59,11 +62,16 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalBusca){
-			//tem próxima página
-			return true;
-		} 
+		Element finalPage = this.currentDoc.select("#loadNextPage").first();
+		
+		//if href on id loadNextPage is nor Empty there are more pages.
+		if(finalPage != null) {
+			String href = finalPage.attr("href").trim();
+			
+			if(!href.isEmpty()) {
+				return true;
+			}
+		}
 			
 		return false;
 	}
