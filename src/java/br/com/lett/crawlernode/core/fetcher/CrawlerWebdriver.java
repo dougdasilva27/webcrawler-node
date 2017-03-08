@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.File;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,9 +15,10 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,32 +36,17 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class CrawlerWebdriver {
 	
-
 	protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
-
-	/**
-	 * The URL of the hub that connects to the remote WebDriver instances
-	 */
-	private static final String HUB_URL = "http://52.175.217.27:4444/wd/hub";
 
 	public WebDriver driver;
 
 	private Session session;
-
-
-	public CrawlerWebdriver(DesiredCapabilities capabilities, Session session) {
-		try {
-			driver = new RemoteWebDriver(new URL(HUB_URL), capabilities);
-			this.session = session;
-
-		} catch (MalformedURLException ex) {
-			Logging.printLogError(logger, "Hub URL error! " + ex.getMessage());
-		}
-
-		//driver = new ChromeDriver(capabilities);
-		
-
-		this.session = session;
+	
+	public static final String PHANTOMJS_EXECUTABLE_PATH = "/home/samirleao/Downloads/phantomjs-2.1.1-linux-i686/bin/phantomjs"; 
+	
+	public CrawlerWebdriver(DesiredCapabilities caps, Session session) {
+		driver = new  PhantomJSDriver(caps);
+		this.session = session;	
 	}
 
 	public void addHeaders(Map<String, String> headers) {

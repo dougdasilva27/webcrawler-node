@@ -111,7 +111,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://loja.electrolux.com.br/?ProductLinkNotFound=lavadora-turbo-15kg-ltm15-electrolux", market);
+				session = SessionFactory.createTestSession("https://www.angeloni.com.br/eletro/p/geladeira-panasonic-regeneration-435l-frost-free-nr-bt47-branco-3570178", market);
 			}
 
 

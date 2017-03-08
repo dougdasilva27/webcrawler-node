@@ -50,7 +50,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	 */	
 	private SharedData sharedData = new SharedData();
 
-
 	public FlorianopolisAngelonieletroCrawler(Session session) {
 		super(session);
 		super.config.setFetcher(Fetcher.WEBDRIVER);
@@ -60,7 +59,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
 		boolean shouldVisit = false;
-		shouldVisit = !FILTERS.matcher(href).matches() && (href.startsWith("http://www.angeloni.com.br/eletro/"));
+		shouldVisit = !FILTERS.matcher(href).matches() && (href.startsWith("http://www.angeloni.com.br/eletro/") || href.startsWith("https://www.angeloni.com.br/eletro/"));
 
 		return shouldVisit;
 	}
@@ -70,7 +69,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-						
+										
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
@@ -185,7 +184,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return url.contains("http://www.angeloni.com.br/eletro/p/");
+		return url.contains("http://www.angeloni.com.br/eletro/p/") || url.contains("https://www.angeloni.com.br/eletro/");
 	}
 
 	private Product crawlProduct(Document document) {

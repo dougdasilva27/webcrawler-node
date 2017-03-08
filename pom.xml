@@ -5,7 +5,7 @@
 	<artifactId>webcrawler-node</artifactId>
 	<version>${maven.build.timestamp}</version>
 	<packaging>jar</packaging>
-	
+
 	<properties>
 		<maven.build.timestamp.format>yyyy-MM-dd_HH-mm</maven.build.timestamp.format>
 	</properties>
@@ -285,6 +285,14 @@
 			<artifactId>compiler</artifactId>
 			<version>0.9.4</version>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.codeborne/phantomjsdriver -->
+		<dependency>
+			<groupId>com.codeborne</groupId>
+			<artifactId>phantomjsdriver</artifactId>
+			<version>1.2.1</version>
+		</dependency>
+
 	</dependencies>
 
 	<repositories>
