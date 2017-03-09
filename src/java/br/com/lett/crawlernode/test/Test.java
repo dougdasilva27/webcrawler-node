@@ -112,6 +112,7 @@ public class Test {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
 				session = SessionFactory.createTestSession("http://loja.electrolux.com.br/?ProductLinkNotFound=lavadora-turbo-15kg-ltm15-electrolux", market);
+				
 			}
 
 
