@@ -51,9 +51,17 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 			// Disponibilidade
 			Element elementBuyButton = doc.select(".div_btn_comprar").first();
-			boolean available = true;
-			if(elementBuyButton.text().trim().toLowerCase().contains("produto indisponível")) {
-				available = false;
+			Element elementBuyButtonNew = doc.select(".overlay_button_add_cesta_detalhe").first();
+			boolean available = false;
+			
+			if(elementBuyButton != null) {
+				if(elementBuyButton.text().trim().toLowerCase().contains("produto indisponível")){				
+					available = false;
+				} else {
+					available = true;
+				}
+			} else if(elementBuyButtonNew != null) {
+				available = true;
 			}
 
 			// Nome
