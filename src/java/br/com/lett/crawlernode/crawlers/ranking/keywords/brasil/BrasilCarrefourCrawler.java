@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 
@@ -49,7 +50,9 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, productUrl);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 				
 			}
 		} else {
@@ -84,7 +87,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 			try	{				
 				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 			
 			this.log("Total da busca: "+this.totalBusca);
@@ -103,14 +106,12 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 		return internalId;
 	}
 	
-	private String crawlInternalPid(Element e){
-		String internalPid = null;
-		
-		return internalPid;
+	private String crawlInternalPid(Element e) {
+		return null;
 	}
 	
 	private String crawlProductUrl(Element e){
-		String productUrl = null;
+		String productUrl;
 		
 		productUrl = e.attr("href");
 			
