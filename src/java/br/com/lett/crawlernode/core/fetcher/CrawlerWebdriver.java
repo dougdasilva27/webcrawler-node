@@ -37,7 +37,6 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class CrawlerWebdriver {
 	
-
 	protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
 	/**
