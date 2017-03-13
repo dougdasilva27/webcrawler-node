@@ -41,9 +41,7 @@ public class CrawlerWebdriver {
 	public WebDriver driver;
 
 	private Session session;
-	
-	public static final String PHANTOMJS_EXECUTABLE_PATH = "/home/samirleao/Downloads/phantomjs-2.1.1-linux-i686/bin/phantomjs"; 
-	
+		
 	public CrawlerWebdriver(DesiredCapabilities caps, Session session) {
 		driver = new  PhantomJSDriver(caps);
 		this.session = session;	

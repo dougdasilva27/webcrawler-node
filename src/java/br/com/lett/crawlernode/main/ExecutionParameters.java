@@ -22,6 +22,7 @@ public class ExecutionParameters {
 	private boolean forceImageUpdate;
 
 	private String tmpImageFolder;
+	private String phantomjsPath;
 	private int nthreads;
 	private int coreThreads;
 	private String environment;
@@ -39,6 +40,7 @@ public class ExecutionParameters {
 		forceImageUpdate = getEnvForceImgUpdate();
 		environment = getEnvEnvironment();
 		tmpImageFolder = getEnvTmpImagesFolder();
+		setPhantomjsPath(getEnvPhantomjsPath());
 		version = DEFAULT_CRAWLER_VERSION;
 
 		Logging.printLogDebug(logger, this.toString());
@@ -63,6 +65,8 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
+		sb.append("PhantomjsPath: " + this.phantomjsPath);
+		sb.append("\n");
 		sb.append("Version: " + this.version);
 		sb.append("\n");
 
@@ -75,6 +79,10 @@ public class ExecutionParameters {
 			return true;
 		}
 		return false;
+	}
+	
+	private String getEnvPhantomjsPath() {
+		return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
 	}
 
 	private String getEnvTmpImagesFolder() {
@@ -139,5 +147,13 @@ public class ExecutionParameters {
 
 	public void setTmpImageFolder(String tmpImageFolder) {
 		this.tmpImageFolder = tmpImageFolder;
+	}
+
+	public String getPhantomjsPath() {
+		return phantomjsPath;
+	}
+
+	public void setPhantomjsPath(String phantomjsPath) {
+		this.phantomjsPath = phantomjsPath;
 	}
 }

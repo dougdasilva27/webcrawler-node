@@ -38,8 +38,10 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
@@ -95,10 +97,17 @@ public class DynamicDataFetcher {
 	public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
 
+		String phantomjsPath = null;
+		if (session instanceof TestCrawlerSession) {
+			phantomjsPath = Test.phantomjsPath;
+		} else {
+			phantomjsPath = Main.executionParameters.getPhantomjsPath();
+		}
+		
 		DesiredCapabilities caps = new DesiredCapabilities().phantomjs();
 		caps.setJavascriptEnabled(true);                
 		caps.setCapability("takesScreenshot", true);
-		caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, CrawlerWebdriver.PHANTOMJS_EXECUTABLE_PATH);
+		caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjsPath);
 
 		//
 		// Set proxy via client args

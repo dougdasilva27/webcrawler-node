@@ -16,7 +16,10 @@ public class SessionFactory {
 	public static Session createSession(Request request, Markets markets) {
 		String queueName = request.getQueueName();
 		
-		if (queueName.equals(QueueName.INSIGHTS) || queueName.equals(QueueName.INSIGHTS_DEVELOPMENT) || queueName.equals(QueueName.INTEREST_PROCESSED)) {
+		if ( queueName.equals(QueueName.INSIGHTS) || 
+			 queueName.equals(QueueName.INSIGHTS_DEVELOPMENT) || 
+			 queueName.equals(QueueName.INTEREST_PROCESSED) ||
+			 queueName.equals(QueueName.TEST_PHANTOMJS)) {
 			return new InsightsCrawlerSession(request, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.SEED)) {

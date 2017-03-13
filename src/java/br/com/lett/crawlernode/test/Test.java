@@ -46,6 +46,7 @@ public class Test {
 	private static String city;
 	public static String pathWrite;
 	public static String testType;
+	public static String phantomjsPath;
 
 	private static final Logger logger = LoggerFactory.getLogger(Test.class);
 	
@@ -55,6 +56,7 @@ public class Test {
 		options = new Options();
 		options.addOption("market", true, "Market name");
 		options.addOption("city", true, "City name");
+		options.addOption("phantomjsPath", true, "Path to phantomjs binary");
 		options.addOption("pathwrite", true, "Path that product html goes");
 		options.addOption("testType", true, "Test type [insights, rating, images]");
 
@@ -70,6 +72,7 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
+		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
 		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
@@ -111,7 +114,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("https://www.angeloni.com.br/eletro/p/geladeira-panasonic-regeneration-435l-frost-free-nr-bt47-branco-3570178", market);
+				session = SessionFactory.createTestSession("https://www.angeloni.com.br/eletro/p/ar-condicionado-split-agratto-confort-one-9000-btus-quente-e-frio-220v-acs9qf-r4-3943397", market);
 			}
 
 

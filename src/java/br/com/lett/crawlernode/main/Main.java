@@ -68,6 +68,10 @@ public class Main {
 		executionParameters = new ExecutionParameters();
 		executionParameters.setUpExecutionParameters();
 
+		// check resources
+		Logging.printLogDebug(logger, "Checking files...");
+		checkFiles();
+
 		// setting MDC for logging messages
 		Logging.setLogMDC();
 
@@ -130,6 +134,14 @@ public class Main {
 		} catch (IOException e) {
 			Logging.printLogError(logger, "error during resource download.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+		}
+	}
+
+	private static void checkFiles() {
+		File phantom = new File(executionParameters.getPhantomjsPath());
+		if (!phantom.exists() && !phantom.isDirectory()) {
+			Logging.printLogError(logger, "Phantom webdriver binary not found.");
+			System.exit(1);
 		}
 	}
 

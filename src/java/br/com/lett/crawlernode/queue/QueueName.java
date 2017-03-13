@@ -11,6 +11,7 @@ public class QueueName {
 	public static final String RANKING_KEYWORDS 			= "crawler-ranking-keywords";
 	public static final String DISCOVER_KEYWORDS 			= "crawler-discover-keywords";
 	public static final String INTEREST_PROCESSED 			= "interest-processed";
+	public static final String TEST_PHANTOMJS				= "test-phantomjs";
 	
 	private QueueName() {
 		super();
