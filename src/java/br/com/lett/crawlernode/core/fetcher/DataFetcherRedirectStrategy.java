@@ -124,7 +124,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
 
         final RequestConfig config = clientContext.getRequestConfig();
 
-        URI uri = createLocationURI(location);
+        URI uri = createLocationURI(location, request.getRequestLine().getUri());
 
         // rfc2616 demands the location value be a complete URI
         // Location       = "Location" ":" absoluteURI
@@ -163,17 +163,41 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
     /**
      * @since 4.1
      */
-    protected URI createLocationURI(final String location) throws ProtocolException {
+    protected URI createLocationURI(final String location, final String originalUrl) throws ProtocolException {
         try {
             final URIBuilder b = new URIBuilder(new URI(location).normalize());
-            final String host = b.getHost();
+            String host = b.getHost();
+            String path = b.getPath();
+           
             if (host != null) {
                 b.setHost(host.toLowerCase(Locale.ROOT));
-            }
-            final String path = b.getPath();
+            } else if(location.startsWith("/")) {
+            	final URIBuilder uri = new URIBuilder(new URI(originalUrl).normalize());
+            	host = uri.getHost();
+            	
+            	if (host != null) {
+                    b.setHost(host.toLowerCase(Locale.ROOT));
+                }
+            	
+            } else if(location.startsWith("?")) {
+            	final URIBuilder uri = new URIBuilder(new URI(originalUrl).normalize());
+            	host = uri.getHost();
+            	
+            	if (host != null) {
+                    b.setHost(host.toLowerCase(Locale.ROOT));
+                }
+            	
+            	path = uri.getPath();
+            	
+            	if(path != null) {
+            		b.setPath(path);
+            	}
+            } 
+            
             if (TextUtils.isEmpty(path)) {
                 b.setPath("/");
             }
+            
             return b.build();
         } catch (final URISyntaxException ex) {
             throw new ProtocolException("Invalid redirect URI: " + location, ex);
