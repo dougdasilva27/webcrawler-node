@@ -7,10 +7,10 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 
+import com.amazonaws.util.EC2MetadataUtils;
+
 import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.Session;
-
-import com.amazonaws.util.EC2MetadataUtils;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -21,6 +21,8 @@ import com.amazonaws.util.EC2MetadataUtils;
  */
 
 public class Logging {
+	
+	private static final String VERSION = new Version().getVersion();
 	
 	/**
 	 * Set up MDC variables to be used in logback.xml log config file
@@ -113,8 +115,11 @@ public class Logging {
 	
 	private static JSONObject createMetadata(JSONObject metadata, Session session) {
 		
-		if(metadata == null || !(metadata instanceof JSONObject) ) metadata = new JSONObject();
-		metadata.put("version",  CommonMethods.getVersion());
+		if(metadata == null || !(metadata instanceof JSONObject) ) {
+			metadata = new JSONObject();
+		}
+		
+		metadata.put("version",  VERSION);
 
 		if(session != null) {
 			metadata.put("city", session.getMarket().getCity());
