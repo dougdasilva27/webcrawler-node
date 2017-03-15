@@ -379,7 +379,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setProductsDiscover(products);
 			
 			if(session instanceof DiscoverKeywordsSession) {
-				ranking.setRankType("dsicover-keywords");
+				ranking.setRankType("discover-keywords");
 			} else {
 				ranking.setRankType("ranking-keywords");
 			}
