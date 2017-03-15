@@ -119,6 +119,8 @@ public class DynamicDataFetcher {
 		cliArgsCap.add("--proxy=191.235.90.114:3333");
 		cliArgsCap.add("--proxy-type=http");
 		cliArgsCap.add("--ignore-ssl-errors=true"); // ignore errors in https requests
+		cliArgsCap.add("--load-images=false");
+		
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgsCap);
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-a", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"); // authentication
 		
