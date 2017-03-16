@@ -97,6 +97,7 @@ public class GETFetcher {
 
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
+				
 
 				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
 					requestConfig = RequestConfig.custom()
