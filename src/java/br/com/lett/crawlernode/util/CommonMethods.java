@@ -338,6 +338,10 @@ public class CommonMethods {
     	
     	// comentei porque não estava funcionando.
     	
+    	if(url.contains(" ")) {
+    		finalUrl = url.replaceAll(" ", "%20");
+    	}
+    	
 //    	// In cases with argument (`), it is repalce to %60
 //    	if(url.contains("`")){
 //    		finalUrl = url.replaceAll("`","%60");
