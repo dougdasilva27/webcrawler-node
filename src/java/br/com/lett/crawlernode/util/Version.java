@@ -16,7 +16,7 @@ public class Version {
 	    // try to load from maven properties first
 	    try {
 	        Properties p = new Properties();
-	        InputStream is = getClass().getResourceAsStream("/META-INF/maven/history/history/pom.properties");
+	        InputStream is = getClass().getResourceAsStream("/META-INF/maven/webcrawler-node/webcrawler-node/pom.properties");
 	        if (is != null) {
 	            p.load(is);
 	            version = p.getProperty("version", "");
