@@ -93,6 +93,7 @@ public class GETFetcher {
 			if (randProxy != null) {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
+			
 
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
