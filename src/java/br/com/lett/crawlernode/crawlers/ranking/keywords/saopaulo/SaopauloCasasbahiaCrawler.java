@@ -43,7 +43,6 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
 		String url = "http://buscas2.casasbahia.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual="
 				+ this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + url);
 
 		if (this.currentPage > 1) {
 			if (isCategory) {
