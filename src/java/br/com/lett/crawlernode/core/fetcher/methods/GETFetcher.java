@@ -75,7 +75,7 @@ public class GETFetcher {
 
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
-
+			
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
