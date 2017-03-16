@@ -308,9 +308,9 @@ public class GETFetcher {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(15000)
+							.setConnectTimeout(15000)
+							.setSocketTimeout(15000)
 							.setProxy(proxy)
 							.build();
 				} else {
@@ -330,9 +330,9 @@ public class GETFetcher {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(15000)
+							.setConnectTimeout(15000)
+							.setSocketTimeout(15000)
 							.build();
 				} else {
 					requestConfig = RequestConfig.custom()
