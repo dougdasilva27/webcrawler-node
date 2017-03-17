@@ -1004,11 +1004,7 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
-			if (ProxyCollection.LUMINATI_SERVER_BR.equals(serviceName)) {
-				Logging.printLogDebug(logger, "Replacing luminati for bonanza.");
-				serviceName = ProxyCollection.BONANZA;
-				nextProxy = getNextProxy(serviceName, session);
-			}
+			nextProxy = getNextProxy(serviceName, session);
 		}
 
 		// request using no proxy
@@ -1031,11 +1027,7 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
-			if (ProxyCollection.LUMINATI_SERVER_BR.equals(serviceName)) {
-				Logging.printLogDebug(logger, "Replacing luminati for bonanza.");
-				serviceName = ProxyCollection.BONANZA;
-				nextProxy = getNextProxy(serviceName, session);
-			}
+			nextProxy = getNextProxy(serviceName, session);
 		}
 
 		// request using no proxy
