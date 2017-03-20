@@ -119,8 +119,11 @@ public class Crawler extends Task {
 	@Override
 	public void onFinish() {
 		
+		Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
+				
 		// close the webdriver
 		if (webdriver != null ) {
+			Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
 			webdriver.terminate();
 		}
 		

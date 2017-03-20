@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.File;
-
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -9,6 +11,7 @@ import java.util.Map.Entry;
 import org.apache.commons.io.FileUtils;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -23,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -65,6 +69,17 @@ public class CrawlerWebdriver {
 						"  filters: []                                                     " +
 				"}]));");
 		
+	}
+	
+	public void addCookie(String url) {
+		try {
+			URI uri = new URI(url);			
+			Cookie c = new Cookie("x-a", "xulambis", "." + uri.getHost(), "/", null);
+			driver.manage().addCookie(c);
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, "Cookie could not be set.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
 	}
 
 	public WebElement findElementByCssSelector(String selector) {
@@ -147,6 +162,7 @@ public class CrawlerWebdriver {
 	public void terminate() {
 		this.driver.close();
 		this.driver.quit();
+		
 	}
 
 	/**

@@ -114,7 +114,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("https://www.angeloni.com.br/eletro/p/ar-condicionado-split-agratto-confort-one-9000-btus-quente-e-frio-220v-acs9qf-r4-3943397", market);
+				session = SessionFactory.createTestSession("http://httpbin.org/cookies", market);
 			}
 
 

@@ -136,7 +136,9 @@ public class DynamicDataFetcher {
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-type", proxyServiceName);
 		
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
-
+						
+		webdriver.addCookie(url);
+		
 		webdriver.loadUrl(url);
 
 		return webdriver;
