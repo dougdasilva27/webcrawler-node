@@ -46,7 +46,7 @@ public class ProxyCollection {
 	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
 	public static final int MAX_ATTEMPTS_AZURE 					= 3;
 	public static final int MAX_ATTEMPTS_STORM					= 3;
-	public static final int MAX_ATTEMPTS_NO_RPOXY 				= 3;
+	public static final int MAX_ATTEMPTS_NO_PROXY 				= 3;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
@@ -69,7 +69,7 @@ public class ProxyCollection {
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
 		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
 		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
-		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_RPOXY);
+		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		

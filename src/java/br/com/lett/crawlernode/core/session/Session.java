@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.DateConstants;
 
 public class Session {
@@ -52,14 +53,27 @@ public class Session {
 	/**
 	 * Default empty constructor
 	 */
-	public Session() {
+	public Session(Market market) {
 		super();
 
+		this.market = market;
+		
 		// creating the errors list
 		this.crawlerSessionErrors = new ArrayList<>();
 
 		// creating the map of redirections
 		this.redirectionMap = new HashMap<>();
+		
+		maxConnectionAttemptsWebcrawler = 0;
+		
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler += Test.proxies.getProxyMaxAttempts(proxy);
+		}
+
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Test.proxies.getProxyMaxAttempts(proxy);
+		}
 
 	}
 
@@ -74,8 +88,9 @@ public class Session {
 		originalURL = request.getMessageBody();
 
 		maxConnectionAttemptsWebcrawler = 0;
+		
 		for (String proxy : market.getProxies()) {
-			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.getProxyMaxAttempts(proxy);
+			maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
 		}
 
 		maxConnectionAttemptsImages = 0;

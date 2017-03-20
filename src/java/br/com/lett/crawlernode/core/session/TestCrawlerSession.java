@@ -17,7 +17,7 @@ public class TestCrawlerSession extends Session {
 	private TestType type;
 	
 	public TestCrawlerSession(String url, Market market) {
-		super();
+		super(market);
 
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
@@ -38,7 +38,7 @@ public class TestCrawlerSession extends Session {
 	
 	
 	public TestCrawlerSession(Request request, Market market) {
-		super();
+		super(market);
 		
 		if (QueueName.DISCOVER.equals(request.getQueueName())) {
 			type = TestType.DISCOVER;

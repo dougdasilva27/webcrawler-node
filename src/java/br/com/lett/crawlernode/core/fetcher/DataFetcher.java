@@ -92,7 +92,7 @@ public class DataFetcher {
 	public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
 	public static final String HTTP_HEADER_ACCEPT = "Accept";
 
-	public static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
+	//public static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 
 	public static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	public static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -102,7 +102,8 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
-
+	public static final int BEMOL_TIMEOUT = 15000;
+	
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
 
@@ -246,7 +247,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url + " [" + e.getMessage() + "]");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return getUrlResponseCode(url, session, attempt+1);	
@@ -286,7 +287,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return fetchJson(reqType, session, url, payload, cookies, attempt+1);	
@@ -370,7 +371,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 
@@ -555,7 +556,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return null;
 			} else {
@@ -746,7 +747,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -982,7 +983,7 @@ public class DataFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
 				return null;
 			} else {
