@@ -210,16 +210,9 @@ public class ProxyCollection {
 	 * @param session the crawler session. Used for logging purposes.
 	 * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the service name was not found.
 	 */
-	public List<LettProxy> getProxy(String serviceName) {
-		String service;
-		if (LUMINATI_SERVER_BR.equals(serviceName)) {
-			service = BONANZA;
-		} else {
-			service = serviceName;
-		}
-		
-		if (this.proxyMap.containsKey(service)) {
-			return this.proxyMap.get(service);
+	public List<LettProxy> getProxy(String serviceName) {		
+		if (this.proxyMap.containsKey(serviceName)) {
+			return this.proxyMap.get(serviceName);
 		} 
 
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");

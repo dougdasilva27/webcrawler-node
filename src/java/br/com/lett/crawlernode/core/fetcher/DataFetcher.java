@@ -1005,6 +1005,9 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
+			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
+				serviceName = ProxyCollection.BONANZA;
+			}
 			nextProxy = getNextProxy(serviceName, session);
 		}
 
@@ -1028,6 +1031,9 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
+			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
+				serviceName = ProxyCollection.BONANZA;
+			}
 			nextProxy = getNextProxy(serviceName, session);
 		}
 
