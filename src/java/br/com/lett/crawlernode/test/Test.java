@@ -112,7 +112,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.americanas.com.br/produto/129505798/tv-led-40-semp-full-hd-com-conversor-digital-3-hdmi-1-usb-l40d2900?chave=prf_hm_0_oh_2_txar&condition=NEW", market);
+				session = SessionFactory.createTestSession("https://www.angeloni.com.br/eletro/p/geladeira-panasonic-regeneration-inverter-frost-free-483l-nr-bt54p-aco-escovado-3701233", market);
 				
 			}
 

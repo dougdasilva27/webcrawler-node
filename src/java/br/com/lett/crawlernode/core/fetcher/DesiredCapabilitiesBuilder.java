@@ -80,11 +80,11 @@ public class DesiredCapabilitiesBuilder {
 		desiredCapabilities.setPlatform(Platform.ANY);
 		desiredCapabilities.setVersion("ANY");
 
-		if (browserName != null) {
-			desiredCapabilities.setBrowserName(browserName);
-		} else {
-			desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
-		}
+//		if (browserName != null) {
+//			desiredCapabilities.setBrowserName(browserName);
+//		} else {
+//			desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
+//		}
 
 		if (proxy != null) {
 			desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
@@ -95,9 +95,9 @@ public class DesiredCapabilitiesBuilder {
 			desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
 		}
 
-		if (executablePath != null) {
-			System.setProperty("webdriver.chrome.driver", executablePath);
-		}
+//		if (executablePath != null) {
+//			System.setProperty("webdriver.chrome.driver", executablePath);
+//		}
 
 		ChromeOptions chromeOptions = new ChromeOptions();
 				

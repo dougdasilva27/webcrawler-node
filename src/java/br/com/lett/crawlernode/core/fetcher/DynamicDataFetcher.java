@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +29,9 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.Platform;
 import org.openqa.selenium.Proxy;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
@@ -46,14 +49,14 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 public class DynamicDataFetcher {
 
 	protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
-	
+
 	private static final String SMART_PROXY_SCRIPT_URL = "http://s3.amazonaws.com/phantomjs-scripts/page_content.js";
 	private static final String SMART_PROXY_SCRIPT_MD5 = "3f08999e2f6d7a82bc06c90b754d91e1";
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
-	
+
 	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 2;
 
 	/** 
@@ -93,7 +96,7 @@ public class DynamicDataFetcher {
 	 */
 	public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
-		
+
 		Proxy proxy = new Proxy();
 		proxy.setHttpProxy(ProxyCollection.HA_PROXY_HTTP);
 		proxy.setSslProxy(ProxyCollection.HA_PROXY_HTTPS);
@@ -103,8 +106,6 @@ public class DynamicDataFetcher {
 				.create()
 				.setUserAgent(randUserAgent())
 				.setProxy(proxy)
-				.setBrowserType(BrowserType.CHROME)
-				//.setExecutablePathProperty("/home/samirleao/Downloads/chromedriver")
 				.build();
 
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(capabilities, session);
@@ -121,12 +122,12 @@ public class DynamicDataFetcher {
 		
 		// add all headers on webdriver
 		webdriver.addHeaders(headers);
-
-		webdriver.loadUrl(url);
 		
+		webdriver.loadUrl(url);
+
 		return webdriver;
 	}
-	
+
 	public static String fetchPageSmart(String url, Session session) {
 		return fetchPageSmart(url, session, 1);
 	}
@@ -141,20 +142,20 @@ public class DynamicDataFetcher {
 		try{
 			Document doc = new Document(url);
 			webdriver.loadUrl(url);
-			
+
 			String docString = webdriver.getCurrentPageSource();
-			
+
 			if(docString != null){
 				doc = Jsoup.parse(docString);
 			}
-			
+
 			return doc;
 		} catch (Exception e) {
 			Logging.printLogError(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
 			return new Document(url);
 		}
 	}
-	
+
 	/**
 	 * Use the Charity smart proxy to fetch a page content. This proxy
 	 * requires special headers to use the smart functionality, that allows
@@ -184,7 +185,7 @@ public class DynamicDataFetcher {
 
 			List<Header> headers = new ArrayList<Header>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
-						
+
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
@@ -207,7 +208,7 @@ public class DynamicDataFetcher {
 			httpGet.addHeader("X-proxy-phantomjs-script-md5", SMART_PROXY_SCRIPT_MD5);
 			httpGet.addHeader("X-Proxy-Timeout-Soft", "30");
 			httpGet.addHeader("X-Proxy-Timeout-Hard", "30");
-			
+
 			// perform request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -215,8 +216,8 @@ public class DynamicDataFetcher {
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
 			if( Integer.toString(responseCode).charAt(0) != '2' && 
-				Integer.toString(responseCode).charAt(0) != '3' && 
-				responseCode != 404 ) {
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) {
 				throw new ResponseCodeException(responseCode);
 			}
 
@@ -240,19 +241,19 @@ public class DynamicDataFetcher {
 			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
-				
+
 			} else {
 				return fetchPageSmart(url, session, attempt+1);	
 			}
 		}
 	}
-	
+
 	private static HttpContext createContext(CookieStore cookieStore) {
 		HttpContext localContext = new BasicHttpContext();
 		localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 		return localContext;
 	}
-	
+
 	private static CredentialsProvider createCredentialsProvider(LettProxy proxy) {
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 		if(proxy != null && proxy.getUser() != null) {
@@ -263,7 +264,7 @@ public class DynamicDataFetcher {
 		}
 		return credentialsProvider;
 	}
-	
+
 	private static RequestConfig createRequestConfig(HttpHost proxy) {
 		return RequestConfig.custom()
 				.setCookieSpec(CookieSpecs.STANDARD)

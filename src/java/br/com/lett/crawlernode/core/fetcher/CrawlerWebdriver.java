@@ -42,9 +42,9 @@ public class CrawlerWebdriver {
 	/**
 	 * The URL of the hub that connects to the remote WebDriver instances
 	 */
-	private static final String HUB_URL = "http://52.175.217.27:4444/wd/hub";
+	private static final String HUB_URL = "http://dNwTzahLa1X8X10egY9JTPu5QHPxpSSs:wfcVfjwgbjeZb53hT3RDJbzpJfNYXwhj@LETT.gridlastic.com:80/wd/hub";
 
-	public WebDriver driver;
+	public RemoteWebDriver driver;
 
 	private Session session;
 
