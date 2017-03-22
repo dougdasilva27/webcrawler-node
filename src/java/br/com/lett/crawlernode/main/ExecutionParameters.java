@@ -21,6 +21,7 @@ public class ExecutionParameters {
 	 * this option in case we want to force this, even if the image on market didn't changed. 
 	 */
 	private boolean forceImageUpdate;
+	
 
 	private String tmpImageFolder;
 	private int nthreads;
