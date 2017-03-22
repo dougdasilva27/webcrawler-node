@@ -120,6 +120,7 @@ public class Main {
 		proxies.setLuminatiResidentialBrProxy();
 		proxies.setAzureProxy();
 	}
+	
 
 	private static void initGlobalResources() {
 		globalResources = new Resources();
