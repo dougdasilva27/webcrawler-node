@@ -21,20 +21,15 @@ public class ServerExecutorStatusCollector implements Runnable {
 		logExecutorStatusMessage();
 	}
 	
-	private void logExecutorStatusMessage() {
-		int activeTasks = server.getActiveTasks();
-		long succeededTasks = server.getSucceededTasks();
-		long failedTasksCount = server.getFailedTasksCount();
-		int taskQueueSize = server.getTaskQueueSize();
-		int activeThreads = server.getActiveThreads();
-				
+	private void logExecutorStatusMessage() {				
 		JSONObject metadata = new JSONObject();
 		
-		metadata.put("crawler_node_tasks_active", activeTasks);
-		metadata.put("crawler_node_tasks_success", succeededTasks);
-		metadata.put("crawler_node_tasks_fail", failedTasksCount);
-		metadata.put("crawler_node_tasks_queue_size", taskQueueSize);
-		metadata.put("crawler_node_threads_active", activeThreads);
+		metadata.put("crawler_node_tasks_active", server.getActiveTasks());
+		metadata.put("crawler_node_tasks_success", server.getSucceededTasks());
+		metadata.put("crawler_node_tasks_fail", server.getFailedTasksCount());
+		metadata.put("crawler_node_tasks_queue_size", server.getTaskQueueSize());
+		metadata.put("crawler_node_threads_active", server.getActiveThreads());
+		metadata.put("crawler_node_webdriver_instances", server.getWebdriverInstances());
 		
 		Logging.printLogDebug(logger, null, metadata, "Registering tasks status...");
 	}

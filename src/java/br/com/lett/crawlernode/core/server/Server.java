@@ -41,20 +41,30 @@ public class Server {
 
 	private HttpServer httpServer;
 	private PoolExecutor executor;
+	
+	public static final int DEFAULT_MAX_WEBDRIVER_INSTANCES = 5;
 
 	private final Object lock = new Object();
 	private long succeededTasks;
 	private long failedTasksCount;
+	
+	private final Object webdriverInstancesCounterLock = new Object();
+	private int webdriverInstances;
 
 	public Server() {
-		Logging.printLogDebug(logger, "creating executor....");
+		Logging.printLogDebug(logger, "Initializing values...");
+		succeededTasks = 0;
+		failedTasksCount = 0;
+		webdriverInstances = 0;
+		
+		Logging.printLogDebug(logger, "Creating executor...");
 		createExecutor();
-		Logging.printLogDebug(logger, "done.");
+		Logging.printLogDebug(logger, "Done.");
 		Logging.printLogDebug(logger, executor.toString());
 
-		Logging.printLogDebug(logger, "creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]....");
+		Logging.printLogDebug(logger, "Creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]...");
 		createServer(executor);
-		Logging.printLogDebug(logger, "done.");
+		Logging.printLogDebug(logger, "Done.");
 	}
 
 	private void createExecutor() {
@@ -90,25 +100,25 @@ public class Server {
 	}
 
 	public void incrementSucceededTasks() {
-		synchronized(lock) {
+		synchronized (lock) {
 			succeededTasks++;
 		}
 	}
 	
 	public void incrementFailedTasks() {
-		synchronized(lock) {
+		synchronized (lock) {
 			failedTasksCount++;
 		}
 	}
 
 	public long getSucceededTasks() {
-		synchronized(lock) {
+		synchronized (lock) {
 			return succeededTasks;
 		}
 	}
 
 	public long getFailedTasksCount() {
-		synchronized(lock) {
+		synchronized (lock) {
 			return failedTasksCount;
 		}
 	}
@@ -119,6 +129,28 @@ public class Server {
 
 	public int getActiveThreads() {
 		return executor.getActiveThreadsCount();
+	}
+
+	public int getWebdriverInstances() {
+		synchronized (webdriverInstancesCounterLock) {
+			return webdriverInstances;
+		}
+	}
+	
+	public void incrementWebdriverInstances() {
+		synchronized (webdriverInstancesCounterLock) {
+			webdriverInstances++;
+		}
+	}
+	
+	public void decrementWebdriverInstances() {
+		synchronized (webdriverInstancesCounterLock) {
+			webdriverInstances--;
+		}
+	}
+
+	public void setWebdriverInstances(int webdriverInstances) {
+		this.webdriverInstances = webdriverInstances;
 	}
 
 }

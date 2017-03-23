@@ -36,8 +36,8 @@ public class PoolExecutor extends ThreadPoolExecutor {
 	private final Object lock = new Object();
 
 	private int activeTaskCount = 0;
-	private long failedTaskCount = 0;
-	private long succeededTaskCount = 0;
+//	private long failedTaskCount = 0;
+//	private long succeededTaskCount = 0;
 
 	/**
 	 * Creates a new {@code CrawlerPoolExecutor} with the given initial
@@ -103,17 +103,17 @@ public class PoolExecutor extends ThreadPoolExecutor {
 		}
 	}
 
-	public long getFailedTaskCount() {
-		synchronized(lock) {
-			return failedTaskCount;
-		}
-	}
+//	public long getFailedTaskCount() {
+//		synchronized(lock) {
+//			return failedTaskCount;
+//		}
+//	}
 
-	public long getSucceededTaskCount() {
-		synchronized(lock) {
-			return succeededTaskCount;
-		}
-	}
+//	public long getSucceededTaskCount() {
+//		synchronized(lock) {
+//			return succeededTaskCount;
+//		}
+//	}
 	
 	public int getMaxThreadsCount() {
 		return getMaximumPoolSize();
