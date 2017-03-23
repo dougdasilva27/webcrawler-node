@@ -42,7 +42,7 @@ public class Server {
 	private HttpServer httpServer;
 	private PoolExecutor executor;
 	
-	public static final int DEFAULT_MAX_WEBDRIVER_INSTANCES = 5;
+	public static final int DEFAULT_MAX_WEBDRIVER_INSTANCES = 4;
 
 	private final Object lock = new Object();
 	private long succeededTasks;
