@@ -101,6 +101,7 @@ public class Test {
 			// fetching proxies
 			proxies = new ProxyCollection(markets);
 			proxies.setCharityProxy();
+			proxies.setLuminatiServerBrProxy();
 			proxies.setBonanzaProxies();
 			proxies.setBuyProxies();
 			proxies.setStormProxies();

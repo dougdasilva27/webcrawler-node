@@ -223,7 +223,9 @@ public class BrasilIkesakiCrawler extends Crawler {
 
 	private boolean crawlAvailability(JSONObject json) {
 
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 
 		return false;
 	}
@@ -266,7 +268,9 @@ public class BrasilIkesakiCrawler extends Crawler {
 
 		for (int i = 1; i < images.size(); i++) {				//starts with index 1, because the first image is the primary image
 			String url = images.get(i).attr("rel");
-			if (url != null && !url.isEmpty()) secondaryImagesArray.put(url);
+			if (url != null && !url.isEmpty()) {
+				secondaryImagesArray.put(url);
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -299,7 +303,9 @@ public class BrasilIkesakiCrawler extends Crawler {
 		String description = "";
 		Element specElement = document.select("#caracteristicas").first();
 
-		if (specElement != null) description = description + specElement.html();
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
 
 		return description;
 	}

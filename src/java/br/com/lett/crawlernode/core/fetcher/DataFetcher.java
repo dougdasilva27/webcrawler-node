@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -92,7 +93,7 @@ public class DataFetcher {
 	public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
 	public static final String HTTP_HEADER_ACCEPT = "Accept";
 
-	public static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
+	//public static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 10;
 
 	public static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	public static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -102,7 +103,8 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
-
+	public static final int BEMOL_TIMEOUT = 5000;
+	
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
 
@@ -246,7 +248,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url + " [" + e.getMessage() + "]");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return getUrlResponseCode(url, session, attempt+1);	
@@ -286,7 +288,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 			} else {
 				return fetchJson(reqType, session, url, payload, cookies, attempt+1);	
@@ -370,7 +372,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 
@@ -555,7 +557,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return null;
 			} else {
@@ -746,7 +748,7 @@ public class DataFetcher {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -756,6 +758,64 @@ public class DataFetcher {
 		}
 	}
 
+	/**
+	 * Only request a url(this is specified for api of urlbox)
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookies
+	 * @param attempt
+	 * @return
+	 */
+	public static void fetchPageAPIUrlBox(String url){
+		String randUserAgent = null;
+
+		try {
+			Logging.printLogDebug(logger, "Performing GET request: " + url);
+
+			randUserAgent = DataFetcher.randUserAgent();
+			
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+
+			RequestConfig requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(true) // set redirect to true
+					.setConnectionRequestTimeout(500)
+					.setConnectTimeout(500)
+					.setSocketTimeout(500)
+					.build();
+
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+			
+			List<Header> headers = new ArrayList<>();
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(headers)
+					.setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory())
+					.setSSLHostnameVerifier(new HostNameVerifier())
+					.build();
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// do request
+			httpclient.execute(httpGet);
+			
+		} catch (SocketTimeoutException e) {
+			// do nothing
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
+	}
+	
 	/**
 	 * 
 	 * @param url
@@ -982,7 +1042,7 @@ public class DataFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
 				return null;
 			} else {
@@ -1004,6 +1064,9 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
+//			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
+//				serviceName = ProxyCollection.BONANZA;
+//			}
 			nextProxy = getNextProxy(serviceName, session);
 		}
 
@@ -1027,6 +1090,9 @@ public class DataFetcher {
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
 		if (serviceName != null) {
+//			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
+//				serviceName = ProxyCollection.BONANZA;
+//			}
 			nextProxy = getNextProxy(serviceName, session);
 		}
 

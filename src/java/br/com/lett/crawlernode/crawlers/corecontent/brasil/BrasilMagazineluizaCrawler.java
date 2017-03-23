@@ -195,22 +195,28 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					idForPrice = idForPriceElement.attr("value");
 				}
 				
+				Prices prices = crawlPrices(idForPrice, price);
+				
 				// marketplace
 				Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
 				if (marketplaceName != null) {
 					String sellerName = marketplaceName.text().toLowerCase().trim();
 					if (!sellerName.equals("magazine luiza")) {
-						Float sellerPrice = crawlPriceNoVariations(doc);
+						Double priceDouble = skuJsonInfo.getDouble("salePrice");
+						Float sellerPrice = priceDouble.floatValue();
 
 						JSONObject seller = new JSONObject();
 						seller.put("name", sellerName);
 						seller.put("price", sellerPrice);
+						seller.put("prices", crawlPrices(idForPrice, sellerPrice).getPricesJson());
 
+						available = false;
+						price = null;
+						prices = new Prices();
+						
 						marketplace.put(seller);
 					}
 				}
-				
-				Prices prices = crawlPrices(idForPrice, price);
 				
 				// Descrição
 				String description = "";
@@ -289,6 +295,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							price = priceDouble.floatValue();
 						}
 						
+						Prices prices = crawlPrices(internalIdsecondPart, price);
+						
 						// marketplace
 						Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
 						if (marketplaceName != null) {
@@ -299,12 +307,15 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 								JSONObject seller = new JSONObject();
 								seller.put("name", sellerName);
 								seller.put("price", sellerPrice);
+								seller.put("prices", crawlPrices(internalIdsecondPart, sellerPrice).getPricesJson());
 
+								available = false;
+								price = null;
+								prices = new Prices();
+								
 								marketplace.put(seller);
 							}
 						}
-						
-						Prices prices = crawlPrices(internalIdsecondPart, price);
 						
 						// Descrição -- tem uma para cada variacao -- usando uma API do magazineluiza para pegar a descricao correspondente
 						String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalIdsecondPart + "/";
@@ -366,6 +377,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						price = priceDouble.floatValue();
 					}
 
+					Element idForPriceElement = doc.select(".buy-option[checked]").first();
+					String idForPrice = null;
+					if(idForPriceElement != null){
+						idForPrice = idForPriceElement.attr("value");
+					}
+					
+					Prices prices = crawlPrices(idForPrice, price);
+					
 					// marketplace
 					Element marketplaceName = doc.select(".market-place-delivery .market-place-delivery__seller--big").first();
 					if (marketplaceName != null) {
@@ -376,18 +395,15 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							JSONObject seller = new JSONObject();
 							seller.put("name", sellerName);
 							seller.put("price", sellerPrice);
+							seller.put("prices", crawlPrices(idForPrice, sellerPrice).getPricesJson());
 
+							available = false;
+							price = null;
+							prices = new Prices();
+							
 							marketplace.put(seller);
 						}
 					}
-					
-					Element idForPriceElement = doc.select(".buy-option[checked]").first();
-					String idForPrice = null;
-					if(idForPriceElement != null){
-						idForPrice = idForPriceElement.attr("value");
-					}
-					
-					Prices prices = crawlPrices(idForPrice, price);
 					
 					// Descrição
 					String description = "";
@@ -438,16 +454,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return (url.contains("/p/"));
-	}
-
-	private Float crawlPriceNoVariations(Document document) {
-		Float price = null;
-		Element elementPrice = document.select(".content-buy-product meta[itemprop=price]").first();
-		if(elementPrice != null) {
-			price = Float.parseFloat(elementPrice.attr("content").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-		}
-
-		return price;
 	}
 
 	private Float crawlPriceVariation(Document document) {

@@ -111,6 +111,7 @@ public class Main {
 		// create the scheduled task to check the executor status
 		serverExecutorStatusAgent = new ServerExecutorStatusAgent();
 		serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 5);
+		
 	}
 
 	private static void initProxies() {
@@ -123,6 +124,7 @@ public class Main {
 		proxies.setLuminatiResidentialBrProxy();
 		proxies.setAzureProxy();
 	}
+	
 
 //	private static void initGlobalResources() {
 //		globalResources = new Resources();

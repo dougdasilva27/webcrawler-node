@@ -90,7 +90,20 @@ public class DigitalContentAnalyser {
 
 	}
 
-
+	/**
+	 * For each rule, get all keywords and search for each one on the description text or the
+	 * product original name.
+	 * 
+	 * obs: when creating Pattern to search the text, we pass the second parameter, that is used
+	 * in form of a bitmask, thats why we have to sum them. The Pattern.CASE_INSENSITIVE means that
+	 * we do not differ between the upper or lower case when matching. The Pattern.UNICODE_CASE means that
+	 * we are considering the standard unicode characters and not only the characters in the US-ASCII charset
+	 * as by default in Pattern.CASE_INSENSITIVE.
+	 * 
+	 * @param content
+	 * @param rule
+	 * @return
+	 */
 	public static JSONObject validateRule(String content, JSONObject rule) {
 		
 		JSONObject results = new JSONObject();
@@ -120,7 +133,7 @@ public class DigitalContentAnalyser {
 				for(int i = 0; i < desiredKeywords.length(); i++) {
 					String desiredKeyword = desiredKeywords.get(i).toString();
 					String regex = DigitalContentAnalyserUtils.createDescriptionKeywordRegex(desiredKeyword);
-					Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+					Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE + Pattern.UNICODE_CASE); // case insensitive + unicode_case = bitmask
 										
 					Matcher matcher = pattern.matcher(sanitizedContent);
 					

@@ -722,68 +722,53 @@ public class Persistence {
 		// create folder for each market
 		for(Market m: marketsList) {
 			Logging.printLogInfo(logger, "Processing " + m.getCity());
-			printLogDirectory(m.getCity(), null, null);
+			processDirectory(m.getCity(), null, null);
 
 			Logging.printLogInfo(logger, "Processing " + m.getCity() + " -> " + m.getName());
-			printLogDirectory(m.getCity(), m.getName(), null);
+			processDirectory(m.getCity(), m.getName(), null);
 
 			for(String folder: subdirectories) {
-				printLogDirectory(m.getCity(), m.getName(), folder);
+				processDirectory(m.getCity(), m.getName(), folder);
 			}
 
 		}
 	}
 
 	/**
-	 * Directory creation log
+	 * Directory creation.
+	 * 
 	 * @param city
 	 * @param name
 	 * @param folder
 	 */
-	static void printLogDirectory(String city, String name, String folder){
+	private static void processDirectory(String city, String name, String folder) {
 		File file;
 
-		if(name == null) {
+		if (name == null) {
 			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city);
-		} else if(folder == null) {
+		} else if (folder == null) {
 			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city + "/" + name);
 		} else {
 			file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city + "/" + name + "/" + folder);
 		}
 
 		if (!file.exists()) {
-			if (file.mkdir()) {
-				Logging.printLogInfo(logger, createDefaultMessageInitializeImagesSuccess(file));
+			boolean fileWasCreated = file.mkdir();
+			
+			if (fileWasCreated) {
+				Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
 			} else {
-				Logging.printLogError(logger, createDefaultMessageInitializeImagesFailed(file));
+				Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
 			}
+			
 		} else {
-			Logging.printLogDebug(logger, createDefaultMessageInitializeImagesAlreadyCreated(file));
+			Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " already exists.");
 		}
 	}
-
-	/**
-	 * Default messages to directoty creation
-	 * @param file
-	 * @return
-	 */
-
-	private static String createDefaultMessageInitializeImagesSuccess(File file){
-		return "Directory " + file.getAbsolutePath() + " created!";
-	}
-
-	private static String createDefaultMessageInitializeImagesFailed(File file){
-		return "Failed to create " + file.getAbsolutePath() + " directory!";
-	}
-
-	private static String createDefaultMessageInitializeImagesAlreadyCreated(File file){
-		return  "Directory " + file.getAbsolutePath() + " was already created...";
-	}
-
+	
 
 	/*********************************Ranking*****************************************************/
 	
-
 
 	//busca dados no postgres
 	public static CategoriesRanking fecthCategories(int id) {		

@@ -46,7 +46,7 @@ public class ProxyCollection {
 	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
 	public static final int MAX_ATTEMPTS_AZURE 					= 3;
 	public static final int MAX_ATTEMPTS_STORM					= 3;
-	public static final int MAX_ATTEMPTS_NO_RPOXY 				= 3;
+	public static final int MAX_ATTEMPTS_NO_PROXY 				= 3;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
@@ -69,7 +69,7 @@ public class ProxyCollection {
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
 		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
 		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
-		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_RPOXY);
+		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		
@@ -210,7 +210,7 @@ public class ProxyCollection {
 	 * @param session the crawler session. Used for logging purposes.
 	 * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the service name was not found.
 	 */
-	public List<LettProxy> getProxy(String serviceName) {
+	public List<LettProxy> getProxy(String serviceName) {		
 		if (this.proxyMap.containsKey(serviceName)) {
 			return this.proxyMap.get(serviceName);
 		} 
@@ -238,7 +238,7 @@ public class ProxyCollection {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
 			List<Interval<Integer>> intervals = new ArrayList<>();
-			ArrayList<String> proxies = m.getProxies();
+			List<String> proxies = m.getProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
@@ -254,7 +254,7 @@ public class ProxyCollection {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
 			List<Interval<Integer>> intervals = new ArrayList<>();
-			ArrayList<String> proxies = m.getImageProxies();
+			List<String> proxies = m.getImageProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {

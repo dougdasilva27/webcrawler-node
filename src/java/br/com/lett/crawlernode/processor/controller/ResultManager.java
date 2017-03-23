@@ -1,13 +1,10 @@
 package br.com.lett.crawlernode.processor.controller;
 
 import java.io.File;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,21 +15,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.joda.time.DateTime;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
-
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
+import br.com.lett.crawlernode.processor.base.Extractor;
+import br.com.lett.crawlernode.processor.base.IdentificationLists;
 import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.digitalcontent.Pic;
-import br.com.lett.crawlernode.processor.digitalcontent.RulesEvaluation;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
@@ -41,9 +35,6 @@ import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-
-import br.com.lett.crawlernode.processor.base.Extractor;
-import br.com.lett.crawlernode.processor.base.IdentificationLists;
 
 
 /**
@@ -456,17 +447,17 @@ public class ResultManager {
 		// set pic on digital content
 		pm.getDigitalContent().put("pic", pic);
 
-		// naming rules
-		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
-		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
-
-		// description rules
-		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
-		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
-
-		// create rules summary
-		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
-		pm.getDigitalContent().put("rules_results", rules_results);
+//		// naming rules
+//		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
+//		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
+//
+//		// description rules
+//		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
+//		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
+//
+//		// create rules summary
+//		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
+//		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
 	/**

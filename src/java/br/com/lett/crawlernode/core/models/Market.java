@@ -1,14 +1,14 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Market {
 	
 	private int id;
 	private String city;
 	private String name;
-	private ArrayList<String> proxies;
-	private ArrayList<String> imageProxies;
+	private List<String> proxies;
+	private List<String> imageProxies;
 	
 	/**
 	 * Default constructor used for testing.
@@ -21,8 +21,8 @@ public class Market {
 			int marketId,
 			String marketCity,
 			String marketName,
-			ArrayList<String> proxies,
-			ArrayList<String> imageProxies) {
+			List<String> proxies,
+			List<String> imageProxies) {
 		
 		this.id = marketId;
 		this.city = marketCity;
@@ -65,19 +65,19 @@ public class Market {
 				", image proxies=" + this.imageProxies.toString();
 	}
 
-	public ArrayList<String> getProxies() {
+	public List<String> getProxies() {
 		return proxies;
 	}
 
-	public void setProxies(ArrayList<String> proxies) {
+	public void setProxies(List<String> proxies) {
 		this.proxies = proxies;
 	}
 
-	public ArrayList<String> getImageProxies() {
+	public List<String> getImageProxies() {
 		return imageProxies;
 	}
 
-	public void setImageProxies(ArrayList<String> imageProxies) {
+	public void setImageProxies(List<String> imageProxies) {
 		this.imageProxies = imageProxies;
 	}
 }

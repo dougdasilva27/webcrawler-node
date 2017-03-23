@@ -75,7 +75,7 @@ public class GETFetcher {
 
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
-
+			
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -93,17 +93,19 @@ public class GETFetcher {
 			if (randProxy != null) {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
+			
 
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
+				
 
 				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
 							.setProxy(proxy)
 							.build();
 				} else {
@@ -123,9 +125,9 @@ public class GETFetcher {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
 							.build();
 				} else {
 					requestConfig = RequestConfig.custom()
@@ -254,7 +256,7 @@ public class GETFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= DataFetcher.MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -308,9 +310,9 @@ public class GETFetcher {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(5000)
+							.setConnectTimeout(5000)
+							.setSocketTimeout(5000)
 							.setProxy(proxy)
 							.build();
 				} else {
@@ -330,9 +332,9 @@ public class GETFetcher {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(30000)
-							.setConnectTimeout(30000)
-							.setSocketTimeout(30000)
+							.setConnectionRequestTimeout(5000)
+							.setConnectTimeout(5000)
+							.setSocketTimeout(5000)
 							.build();
 				} else {
 					requestConfig = RequestConfig.custom()
@@ -465,7 +467,7 @@ public class GETFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= DataFetcher.MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {

@@ -233,7 +233,7 @@ public class POSTFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= DataFetcher.MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -541,7 +541,7 @@ public class POSTFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if(attempt >= DataFetcher.MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {

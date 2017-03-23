@@ -13,6 +13,7 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
+	
 
 	/** 
 	 * In case we want to force image update on Amazon bucket, when downloading images
@@ -20,6 +21,7 @@ public class ExecutionParameters {
 	 * this option in case we want to force this, even if the image on market didn't changed. 
 	 */
 	private boolean forceImageUpdate;
+	
 
 	private String tmpImageFolder;
 	private String phantomjsPath;

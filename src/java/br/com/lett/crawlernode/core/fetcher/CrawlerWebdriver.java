@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,7 +17,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
@@ -41,6 +38,8 @@ import br.com.lett.crawlernode.util.Logging;
 public class CrawlerWebdriver {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
+	
+	public static final String PHANTOMJS_EXECUTABLE_PATH = "/home/samirleao/Downloads/phantomjs-2.1.1-linux-i686/bin/phantomjs"; 
 
 	public WebDriver driver;
 

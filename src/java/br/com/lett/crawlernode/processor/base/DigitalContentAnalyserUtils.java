@@ -109,7 +109,7 @@ public class DigitalContentAnalyserUtils {
 				.replaceAll("\\u201e", "\"") 	// „
 				.replaceAll("\\u201c", "\""); 	// “
 
-		sanitizedContent =  Jsoup.parse(sanitizedContent).text().toLowerCase();
+		sanitizedContent =  Jsoup.parse(sanitizedContent).text();
 
 		return sanitizedContent;
 	}
@@ -140,13 +140,13 @@ public class DigitalContentAnalyserUtils {
 		String escapedKeyword = keyword
 				.trim()
 				.toLowerCase()
-				.replaceAll(DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACE_ALL_GROUP, DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACEMENT);
-				//.replaceAll("[aàáâãäå]", "[aàáâãäå]")
-				//.replaceAll("[eèéêë]", "[eèéêë]")
-				//.replaceAll("[iìíîï]", "[iìíîï]")
-				//.replaceAll("[oòóôõö]", "[oòóôõö]")
-				//.replaceAll("[uùúûü]", "[uùúûü]")
-				//.replaceAll("[cCçÇ]", "[cCçÇ]");
+				.replaceAll(DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACE_ALL_GROUP, DESCRIPTION_KEYWORD_ESCAPING_REGEX_REPLACEMENT)
+				.replaceAll("[aàáâãäå]", "[aàáâãäå]")
+				.replaceAll("[eèéêë]", "[eèéêë]")
+				.replaceAll("[iìíîï]", "[iìíîï]")
+				.replaceAll("[oòóôõö]", "[oòóôõö]")
+				.replaceAll("[uùúûü]", "[uùúûü]")
+				.replaceAll("[cCçÇ]", "[cCçÇ]");
 				
 		return 
 				DESCRIPTION_KEYWORD_REGEX_BOUNDARY_GROUP + 

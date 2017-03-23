@@ -15,7 +15,9 @@ public class TestRankingKeywordsSession extends Session {
 		this.keyword = ((CrawlerRankingKeywordsRequest)request).getKeyword();
 	}
 	
-	public TestRankingKeywordsSession(Market market, String keyword) {		
+	public TestRankingKeywordsSession(Market market, String keyword) {
+		super(market);
+		
 		// setting Market
 		this.market = market;
 
