@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -757,6 +758,64 @@ public class DataFetcher {
 		}
 	}
 
+	/**
+	 * Only request a url(this is specified for api of urlbox)
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookies
+	 * @param attempt
+	 * @return
+	 */
+	public static void fetchPageAPIUrlBox(String url){
+		String randUserAgent = null;
+
+		try {
+			Logging.printLogDebug(logger, "Performing GET request: " + url);
+
+			randUserAgent = DataFetcher.randUserAgent();
+			
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+
+			RequestConfig requestConfig = RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(true) // set redirect to true
+					.setConnectionRequestTimeout(500)
+					.setConnectTimeout(500)
+					.setSocketTimeout(500)
+					.build();
+
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+			
+			List<Header> headers = new ArrayList<>();
+			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(headers)
+					.setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory())
+					.setSSLHostnameVerifier(new HostNameVerifier())
+					.build();
+
+			HttpGet httpGet = new HttpGet(url);
+			httpGet.setConfig(requestConfig);
+
+			// do request
+			httpclient.execute(httpGet);
+			
+		} catch (SocketTimeoutException e) {
+			// do nothing
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
+	}
+	
 	/**
 	 * 
 	 * @param url

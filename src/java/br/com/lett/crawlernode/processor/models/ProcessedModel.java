@@ -1,23 +1,18 @@
 package br.com.lett.crawlernode.processor.models;
 
-import org.bson.Document;
-
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.client.MongoDatabase;
-
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.URLBox;
 
 
 
@@ -168,8 +163,6 @@ public class ProcessedModel {
 		JSONObject newChanges = null;
 		boolean mustScheduleUrlToScreenshot = false;
 
-		// Se já foi registrado alguma mudança hoje, acumula no objeto changes
-
 		// Verificando se foi criado agora
 		if(compareTo == null) {
 			newChanges = new JSONObject();
@@ -204,12 +197,12 @@ public class ProcessedModel {
 					(this.getPrice() != null && !this.getPrice().equals(compareTo.getPrice()))
 					) {
 				newChanges.put("price", compareTo.getPrice());
+				mustScheduleUrlToScreenshot = true;
 			}
 
 			// Verificando se mudou sua condição de disponibilidade
 			if(this.getAvailable() != compareTo.getAvailable()) {
 				newChanges.put("available", compareTo.getAvailable());
-				mustScheduleUrlToScreenshot = true;
 			}
 
 			// Verificando se a foto primária se alterou, à partir do seu md5
@@ -290,15 +283,8 @@ public class ProcessedModel {
 			this.setChanges(newChanges);
 		}
 
-		// Se for para escalonar a url para um screenshot, então inserir no Mongo
 		if (mustScheduleUrlToScreenshot) {			
-			Document urlDocument = new Document();
-			urlDocument.append("url", this.url);
-			urlDocument.append("marketId", this.market);
-			urlDocument.append("internalId", this.internalId);
-			urlDocument.append("screenshotProcessed", false);
-
-			//mongo.getCollection("Screenshots").insertOne(urlDocument);
+			URLBox.takeAScreenShot(compareTo.getUrl(), compareTo.getId());
 		}
 	}
 
