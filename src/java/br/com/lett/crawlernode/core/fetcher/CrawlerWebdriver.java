@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -95,7 +97,7 @@ public class CrawlerWebdriver {
 	 * @return
 	 */
 	public String getCurrentPageSource() {
-		return this.driver.getPageSource();
+		return driver.getPageSource();
 	}
 
 	/**
@@ -152,16 +154,18 @@ public class CrawlerWebdriver {
 	 * @return
 	 */
 	public String getCurURL() {
-		return this.driver.getCurrentUrl();
+		return driver.getCurrentUrl();
 	}
 
 	/**
 	 * Terminate the web driver.
 	 */
 	public void terminate() {
-		this.driver.close();
-		this.driver.quit();
-		
+		driver.close();
+		driver.quit();
+		if (!(session instanceof TestCrawlerSession)) {
+			Main.server.decrementWebdriverInstances();
+		}
 	}
 
 	/**

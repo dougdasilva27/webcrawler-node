@@ -132,9 +132,11 @@ public class DynamicDataFetcher {
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-type", proxyServiceName);
 		
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
-						
-		webdriver.addCookie(url);
 		
+		if (!(session instanceof TestCrawlerSession)) {
+			Main.server.incrementWebdriverInstances();
+		}
+								
 		webdriver.loadUrl(url);
 
 		return webdriver;
@@ -195,7 +197,7 @@ public class DynamicDataFetcher {
 			// creating the redirect strategy, so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
 
-			List<Header> headers = new ArrayList<Header>();
+			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
 			CloseableHttpClient httpclient = HttpClients.custom()
@@ -301,8 +303,12 @@ public class DynamicDataFetcher {
 		Parser parser = new Parser(session);
 		parser.parse(pageContent);
 
-		if (pageContent.getHtmlParseData() != null) return pageContent.getHtmlParseData().getHtml();
-		if (pageContent.getTextParseData() != null) return pageContent.getTextParseData().getTextContent();
+		if (pageContent.getHtmlParseData() != null) {
+			return pageContent.getHtmlParseData().getHtml();
+		}
+		if (pageContent.getTextParseData() != null) {
+			return pageContent.getTextParseData().getTextContent();
+		}
 
 		return "";
 	}
