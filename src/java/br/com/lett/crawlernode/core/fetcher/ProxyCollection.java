@@ -238,7 +238,7 @@ public class ProxyCollection {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
 			List<Interval<Integer>> intervals = new ArrayList<>();
-			ArrayList<String> proxies = m.getProxies();
+			List<String> proxies = m.getProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
@@ -254,7 +254,7 @@ public class ProxyCollection {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
 			List<Interval<Integer>> intervals = new ArrayList<>();
-			ArrayList<String> proxies = m.getImageProxies();
+			List<String> proxies = m.getImageProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
