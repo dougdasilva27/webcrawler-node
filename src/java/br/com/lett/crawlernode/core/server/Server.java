@@ -94,6 +94,12 @@ public class Server {
 			CommonMethods.getStackTraceString(ex);
 		}
 	}
+	
+	public boolean isAcceptingWebdriverTasks() {
+		synchronized (webdriverInstancesCounterLock) {
+			return webdriverInstances >= DEFAULT_MAX_WEBDRIVER_INSTANCES;
+		}
+	}
 
 	public int getActiveTasks() {
 		return executor.getActiveTaskCount();

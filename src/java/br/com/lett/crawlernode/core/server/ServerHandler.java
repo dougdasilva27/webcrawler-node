@@ -1,4 +1,5 @@
 package br.com.lett.crawlernode.core.server;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -76,7 +77,7 @@ public class ServerHandler implements HttpHandler {
 		else {
 			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TEST);
 			
-			response = "Testando crawler...";
+			response = "Testing crawler...";
 		}
 
 		OutputStream os = t.getResponseBody();

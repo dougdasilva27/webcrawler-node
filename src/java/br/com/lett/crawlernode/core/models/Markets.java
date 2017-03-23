@@ -23,11 +23,12 @@ public class Markets {
 	
 	public void init() {
 		try {
-			ResultSet rs = dbManager.connectionPostgreSQL.runSqlConsult("SELECT id, city, name, proxies, proxies_images FROM market");
+			ResultSet rs = dbManager.connectionPostgreSQL.runSqlConsult("SELECT id, city, name, crawler_webdriver, proxies, proxies_images FROM market");
 			while(rs.next()) {
 				int marketId = rs.getInt("id");
 				String city = rs.getString("city");
 				String name = rs.getString("name");
+				boolean crawlerWebdriver = rs.getBoolean("crawler_webdriver");
 				ArrayList<String> proxies = new ArrayList<>();
 				ArrayList<String> imageProxies = new ArrayList<>();
 				
@@ -51,6 +52,8 @@ public class Markets {
 						name,
 						proxies,
 						imageProxies);
+				
+				market.setMustUseCrawlerWebdriver(crawlerWebdriver);
 
 				marketsList.add(market);				
 			}

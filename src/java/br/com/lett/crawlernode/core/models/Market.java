@@ -7,6 +7,7 @@ public class Market {
 	private int id;
 	private String city;
 	private String name;
+	private boolean crawlerWebdriver;
 	private List<String> proxies;
 	private List<String> imageProxies;
 	
@@ -29,7 +30,6 @@ public class Market {
 		this.name = marketName;
 		this.proxies = proxies;
 		this.imageProxies = imageProxies;
-		
 	}
 
 	public int getNumber() {
@@ -58,11 +58,12 @@ public class Market {
 	
 	@Override
 	public String toString() {
-		return "Market [id=" + this.id + 
-				", city=" + this.city + 
-				", name=" + this.name +
-				", proxies=" + this.proxies.toString() +
-				", image proxies=" + this.imageProxies.toString();
+		return "Market [id=" + id + 
+				", city=" + city + 
+				", name=" + name +
+				", proxies=" + proxies.toString() +
+				", mustUseWebdriver=" + crawlerWebdriver +
+				", image proxies=" + imageProxies.toString();
 	}
 
 	public List<String> getProxies() {
@@ -79,5 +80,13 @@ public class Market {
 
 	public void setImageProxies(List<String> imageProxies) {
 		this.imageProxies = imageProxies;
+	}
+
+	public boolean mustUseCrawlerWebdriver() {
+		return crawlerWebdriver;
+	}
+
+	public void setMustUseCrawlerWebdriver(boolean crawlerWebdriver) {
+		this.crawlerWebdriver = crawlerWebdriver;
 	}
 }
