@@ -52,36 +52,36 @@ public class CrawlerWebdriver {
 		this.session = session;	
 	}
 
-	public void addHeaders(Map<String, String> headers) {
-		driver.get("chrome-extension://idgpnmonknjnojddfkpgkljpfnnfcklj/icon.png");
-		
-		StringBuilder headersOptions = new StringBuilder();
-		for (Entry<String, String> entry : headers.entrySet()) {
-			headersOptions.append("    {enabled: true, name: '" + entry.getKey() + "', value: '" + entry.getValue() + "', comment: ''}, ");
-		}
-		
-		((JavascriptExecutor)driver).executeScript(
-				"localStorage.setItem('profiles', JSON.stringify([{                " +
-						"  title: 'Selenium', hideComment: true, appendMode: '',           " +
-						"  headers: [                                                      " +
-						headersOptions.toString()											 +
-						"  ],                                                              " +
-						"  respHeaders: [],                                                " +
-						"  filters: []                                                     " +
-				"}]));");
-		
-	}
+//	public void addHeaders(Map<String, String> headers) {
+//		driver.get("chrome-extension://idgpnmonknjnojddfkpgkljpfnnfcklj/icon.png");
+//		
+//		StringBuilder headersOptions = new StringBuilder();
+//		for (Entry<String, String> entry : headers.entrySet()) {
+//			headersOptions.append("    {enabled: true, name: '" + entry.getKey() + "', value: '" + entry.getValue() + "', comment: ''}, ");
+//		}
+//		
+//		((JavascriptExecutor)driver).executeScript(
+//				"localStorage.setItem('profiles', JSON.stringify([{                " +
+//						"  title: 'Selenium', hideComment: true, appendMode: '',           " +
+//						"  headers: [                                                      " +
+//						headersOptions.toString()											 +
+//						"  ],                                                              " +
+//						"  respHeaders: [],                                                " +
+//						"  filters: []                                                     " +
+//				"}]));");
+//		
+//	}
 	
-	public void addCookie(String url) {
-		try {
-			URI uri = new URI(url);			
-			Cookie c = new Cookie("x-a", "xulambis", "." + uri.getHost(), "/", null);
-			driver.manage().addCookie(c);
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Cookie could not be set.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-		}
-	}
+//	public void addCookie(String url) {
+//		try {
+//			URI uri = new URI(url);			
+//			Cookie c = new Cookie("x-a", "xulambis", "." + uri.getHost(), "/", null);
+//			driver.manage().addCookie(c);
+//		} catch (Exception e) {
+//			Logging.printLogError(logger, session, "Cookie could not be set.");
+//			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+//		}
+//	}
 
 	public WebElement findElementByCssSelector(String selector) {
 		return driver.findElement(By.cssSelector(selector));

@@ -40,6 +40,7 @@ public class CrawlerTaskEndpoint {
 		// the case, we must send an error status code to the client
 		//
 		if (session.getMarket().mustUseCrawlerWebdriver() && !Main.server.isAcceptingWebdriverTasks()) {
+			Logging.printLogDebug(logger, session, "Server is full for webdriver tasks.");
 			
 			// send error response
 			response = Server.MSG_TASK_FAILED;
@@ -52,6 +53,8 @@ public class CrawlerTaskEndpoint {
 				
 				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
 			}
+			
+			return response;
 		}
 
 		// create the task

@@ -97,7 +97,10 @@ public class Server {
 	
 	public boolean isAcceptingWebdriverTasks() {
 		synchronized (webdriverInstancesCounterLock) {
-			return webdriverInstances >= DEFAULT_MAX_WEBDRIVER_INSTANCES;
+			if (webdriverInstances >= DEFAULT_MAX_WEBDRIVER_INSTANCES) {
+				return false;
+			}
+			return true;
 		}
 	}
 
@@ -145,12 +148,14 @@ public class Server {
 	
 	public void incrementWebdriverInstances() {
 		synchronized (webdriverInstancesCounterLock) {
+			Logging.printLogDebug(logger, "Incrementing webdriver instances.");
 			webdriverInstances++;
 		}
 	}
 	
 	public void decrementWebdriverInstances() {
 		synchronized (webdriverInstancesCounterLock) {
+			Logging.printLogDebug(logger, "Decrementing webdriver instances.");
 			webdriverInstances--;
 		}
 	}
