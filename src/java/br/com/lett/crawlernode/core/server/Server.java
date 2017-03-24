@@ -25,12 +25,15 @@ public class Server {
 	public static final String MSG_METHOD_NOT_ALLOWED = "request method not allowed";
 	public static final String MSG_SERVER_HEALTH_OK = "the server is fine";
 	public static final String MSG_BAD_REQUEST = "bad request";
+	public static final String MSG_TOO_MANY_REQUESTS = "the server is full";
+	public static final String MSG_TOO_MANY_REQUESTS_WEBDRIVER = "the server is full for webdriver tasks";
 	
 	public static final int HTTP_STATUS_CODE_OK = 200;
 	public static final int HTTP_STATUS_CODE_SERVER_ERROR = 500;
 	public static final int HTTP_STATUS_CODE_BAD_REQUEST = 400;
 	public static final int HTTP_STATUS_CODE_METHOD_NOT_ALLOWED = 402;
 	public static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
+	public static final int HTTP_STATUS_CODE_TOO_MANY_REQUESTS = 429;
 	
 	public static final String ENDPOINT_TASK = "/crawler-task";
 	public static final String ENDPOINT_TEST = "/crawler-test";

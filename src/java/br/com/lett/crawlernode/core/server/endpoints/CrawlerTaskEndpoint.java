@@ -43,8 +43,8 @@ public class CrawlerTaskEndpoint {
 			Logging.printLogDebug(logger, session, "Server is full for webdriver tasks.");
 			
 			// send error response
-			response = Server.MSG_TASK_FAILED;
-			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_SERVER_ERROR, response.length());
+			response = Server.MSG_TOO_MANY_REQUESTS_WEBDRIVER;
+			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_TOO_MANY_REQUESTS, response.length());
 			Main.server.incrementFailedTasks();
 			
 			// set task status on mongo
