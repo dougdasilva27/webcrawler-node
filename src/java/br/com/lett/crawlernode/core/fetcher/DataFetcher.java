@@ -427,6 +427,7 @@ public class DataFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
@@ -602,6 +603,7 @@ public class DataFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),

@@ -32,6 +32,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
+import br.com.lett.crawlernode.util.URLBox;
 
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -608,6 +609,8 @@ public class Crawler extends Task {
 		ProcessedModel currentTruco = newProcessed;
 		ProcessedModel next;
 
+		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		
 		while (true) {
 			session.incrementTrucoAttemptsCounter();
 
@@ -635,9 +638,15 @@ public class Crawler extends Task {
 						Persistence.insertProcessedIdOnMongo(session, Main.dbManager.connectionPanel);
 
 						PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
+						Persistence.updateProcessedLMT(nowISO, session);
 						processPersistenceResult(persistenceResult);
 						scheduleImages(persistenceResult, next);
-
+						
+						// take a screenshot if price was change
+						if(next.getChanges().has("price")) {
+							URLBox.takeAScreenShot(next.getUrl(), session);
+						}
+						
 						return;
 					}
 				}
@@ -645,7 +654,7 @@ public class Crawler extends Task {
 
 			if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
 				Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
-
+				
 				// register business logic error on session
 				SessionError error = new SessionError(SessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
 				session.registerError(error);

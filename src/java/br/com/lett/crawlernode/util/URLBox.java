@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
 
 public class URLBox {
@@ -34,7 +35,17 @@ public class URLBox {
 		// Set request options
 		Map<String, Object> options = new HashMap<>();
 		options.put("full_page", "true");
-		options.put("proxy", "proxylett%3AJ7Rs9rnq%40187.45.228.130%3A60099");
+		
+		LettProxy proxy = session.getRequestProxy(url);
+		
+		if(proxy != null) {
+			if(proxy.getUser() != null) {
+				options.put("proxy", proxy.getUser() + "%3A" + proxy.getPass() + "%40"+ proxy.getAddress()+ "%3A" + proxy.getPort());
+			} else {
+				options.put("proxy", proxy.getAddress()+ "%3A" + proxy.getPort());
+			}
+		}
+		
 		options.put("use_s3", true);
 		
 		String date = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd_HH-mm-ss");

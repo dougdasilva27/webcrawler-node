@@ -9,6 +9,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
@@ -37,6 +38,9 @@ public class Session {
 	/** Association of URL and its final modified version, a redirection for instance */
 	Map<String, String> redirectionMap;
 
+	/** Association of URL and its proxy */
+	protected Map<String, LettProxy> requestProxyMap;
+	
 	/** Market associated with this session */
 	protected Market market;
 
@@ -83,6 +87,7 @@ public class Session {
 		this.queueName = queueName;
 		crawlerSessionErrors = new ArrayList<>();
 		redirectionMap = new HashMap<>();
+		requestProxyMap = new HashMap<>();
 		sessionId = request.getMessageId();
 		market = markets.getMarket(request.getMarketId());
 		originalURL = request.getMessageBody();
@@ -208,6 +213,14 @@ public class Session {
 		this.queueName = queueName;
 	}
 	
+	public LettProxy getRequestProxy(String url) {
+		return requestProxyMap.get(url);
+	}
+
+	public void addRequestProxy(String url, LettProxy proxy) {
+		this.requestProxyMap.put(url, proxy);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
