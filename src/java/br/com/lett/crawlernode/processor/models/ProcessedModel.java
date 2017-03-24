@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.URLBox;
 
 
 
@@ -159,9 +158,8 @@ public class ProcessedModel {
 	 * @category Comparação
 	 * @param compareTo - Recepção de ProcessedModel a ser comparado 
 	 */
-	public void registerChanges(ProcessedModel compareTo) {
+	public void registerChanges(ProcessedModel compareTo, Session session) {
 		JSONObject newChanges = null;
-		boolean mustScheduleUrlToScreenshot = false;
 
 		// Verificando se foi criado agora
 		if(compareTo == null) {
@@ -197,7 +195,6 @@ public class ProcessedModel {
 					(this.getPrice() != null && !this.getPrice().equals(compareTo.getPrice()))
 					) {
 				newChanges.put("price", compareTo.getPrice());
-				mustScheduleUrlToScreenshot = true;
 			}
 
 			// Verificando se mudou sua condição de disponibilidade
@@ -281,10 +278,6 @@ public class ProcessedModel {
 			this.setChanges(null);
 		} else {
 			this.setChanges(newChanges);
-		}
-
-		if (mustScheduleUrlToScreenshot) {			
-			URLBox.takeAScreenShot(compareTo.getUrl(), compareTo.getId());
 		}
 	}
 

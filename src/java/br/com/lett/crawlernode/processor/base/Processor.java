@@ -192,7 +192,7 @@ public class Processor {
 			updateLMS(newProcessedProduct, previousProcessedProduct, nowISO);
 
 			// update changes
-			updateChanges(newProcessedProduct, previousProcessedProduct);
+			updateChanges(newProcessedProduct, previousProcessedProduct, session);
 
 			// update LMT
 			updateLMT(newProcessedProduct, nowISO);
@@ -395,11 +395,12 @@ public class Processor {
 
 	private static void updateChanges(
 			ProcessedModel newProcessedProduct,
-			ProcessedModel previousProcessedProduct) {
+			ProcessedModel previousProcessedProduct,
+			Session session) {
 
 		// detect and register changes
 		// an instance of mongo panel must be passed, so we can schedule url to take screenshot
-		newProcessedProduct.registerChanges(previousProcessedProduct);
+		newProcessedProduct.registerChanges(previousProcessedProduct, session);
 	}
 
 	private static void updateLMS(

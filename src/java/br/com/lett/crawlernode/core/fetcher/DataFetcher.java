@@ -103,7 +103,7 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
-	public static final int BEMOL_TIMEOUT = 5000;
+	public static final int BEMOL_TIMEOUT = 30000;
 	
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
@@ -427,6 +427,7 @@ public class DataFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
@@ -602,6 +603,7 @@ public class DataFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),

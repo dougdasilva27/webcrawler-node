@@ -408,7 +408,6 @@ public class Persistence {
 				}
 
 				if(newProcessedProduct.getChanges() != null){
-					//updateMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString().replace("'","''"));
 					updateMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString());
 				} else {
 					updateMap.put(processedTable.CHANGES, null);
@@ -422,21 +421,18 @@ public class Persistence {
 				}
 
 				if(newProcessedProduct.getMarketplace() != null){
-					//updateMap.put(processedTable.MARKETPLACE,  newProcessedProduct.getMarketplace().toString().replace("'","''"));
 					updateMap.put(processedTable.MARKETPLACE,  newProcessedProduct.getMarketplace().toString());
 				} else {
 					updateMap.put(processedTable.MARKETPLACE,  null);
 				}
 
 				if(newProcessedProduct.getBehaviour() != null){
-					//updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString().replace("'","''"));
 					updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
 				} else {
 					updateMap.put(processedTable.BEHAVIOUR, null);
 				}
 
 				if(newProcessedProduct.getSimilars() != null){
-					//updateMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString().replace("'","''"));
 					updateMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString());
 				} else {
 					updateMap.put(processedTable.SIMILARS, null);
