@@ -67,7 +67,7 @@ public class Session {
 
 		// creating the map of redirections
 		this.redirectionMap = new HashMap<>();
-		
+		requestProxyMap = new HashMap<>();
 		maxConnectionAttemptsWebcrawler = 0;
 		
 		for (String proxy : market.getProxies()) {

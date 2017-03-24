@@ -42,11 +42,11 @@ public class ProxyCollection {
 	public static final int MAX_ATTEMPTS_BUY 					= 2;
 	public static final int MAX_ATTEMPTS_BONANZA 				= 3;
 	public static final int MAX_ATTEMPTS_CHARITY 				= 3;
-	public static final int MAX_ATTEMPTS_LUMINATI_SERVER 		= 4;
+	public static final int MAX_ATTEMPTS_LUMINATI_SERVER 		= 2;
 	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
 	public static final int MAX_ATTEMPTS_AZURE 					= 3;
 	public static final int MAX_ATTEMPTS_STORM					= 3;
-	public static final int MAX_ATTEMPTS_NO_PROXY 				= 3;
+	public static final int MAX_ATTEMPTS_NO_PROXY 				= 1;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
