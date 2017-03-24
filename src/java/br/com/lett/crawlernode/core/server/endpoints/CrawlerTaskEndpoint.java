@@ -39,23 +39,23 @@ public class CrawlerTaskEndpoint {
 		// number of webdriver instances is already at maximum. If that is
 		// the case, we must send an error status code to the client
 		//
-		if (session.getMarket().mustUseCrawlerWebdriver() && !Main.server.isAcceptingWebdriverTasks()) {
-			Logging.printLogDebug(logger, session, "Server is full for webdriver tasks.");
-			
-			// send error response
-			response = Server.MSG_TOO_MANY_REQUESTS_WEBDRIVER;
-			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_TOO_MANY_REQUESTS, response.length());
-			Main.server.incrementFailedTasks();
-			
-			// set task status on mongo
-			if ( session instanceof InsightsCrawlerSession ||
-				 session instanceof DiscoveryCrawlerSession ) {
-				
-				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
-			}
-			
-			return response;
-		}
+//		if (session.getMarket().mustUseCrawlerWebdriver() && !Main.server.isAcceptingWebdriverTasks()) {
+//			Logging.printLogDebug(logger, session, "Server is full for webdriver tasks.");
+//			
+//			// send error response
+//			response = Server.MSG_TOO_MANY_REQUESTS_WEBDRIVER;
+//			t.sendResponseHeaders(Server.HTTP_STATUS_CODE_TOO_MANY_REQUESTS, response.length());
+//			Main.server.incrementFailedTasks();
+//			
+//			// set task status on mongo
+//			if ( session instanceof InsightsCrawlerSession ||
+//				 session instanceof DiscoveryCrawlerSession ) {
+//				
+//				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+//			}
+//			
+//			return response;
+//		}
 
 		// create the task
 		Logging.printLogDebug(logger, session, "creating task for " + session.getOriginalURL());
