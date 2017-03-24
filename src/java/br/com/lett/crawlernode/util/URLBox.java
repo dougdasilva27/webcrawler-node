@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.session.Session;
 
 public class URLBox {
 
@@ -26,7 +27,7 @@ public class URLBox {
 	
 	private static final Logger logger = LoggerFactory.getLogger(URLBox.class);
 	
-	public static void takeAScreenShot(String url, long processedId) {
+	public static void takeAScreenShot(String url, Session session) {
 		String urlboxKey = "2hXKGlSeR95wCDVl";
 		String urlboxSecret = "98108a7bb45240f3b18ed1ea75906d6f";
 
@@ -38,29 +39,29 @@ public class URLBox {
 		
 		String date = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd_HH-mm-ss");
 		
-		options.put("s3_path", "%2Fteste%2F" + processedId + "%2F" + date);
+		options.put("s3_path", "%2Fteste_24-04%2F" + session.getProcessedId() + "%2F" + date);
 		
 		options.put("force", true);
 		options.put("save_html", true);
 
 		try {
-			Logging.printLogDebug(logger, "Take a screenshot for url: " + url);
+			Logging.printLogDebug(logger, session, "Take a screenshot for url: " + url);
 			
 			// Call generateUrl function of urlbox object
-			String apiUrl = generateUrl(url , options, urlboxKey, urlboxSecret);
+			String apiUrl = generateUrl(url , options, urlboxKey, urlboxSecret, session);
 			
-			Logging.printLogDebug(logger, "Api url " + apiUrl);
+			Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 			
 			DataFetcher.fetchPageAPIUrlBox(apiUrl);
 		} catch (UnsupportedEncodingException ex) {
-			Logging.printLogError(logger, "Problem with url encoding");
+			Logging.printLogError(logger, session, "Problem with url encoding");
 			Logging.printLogError(logger, CommonMethods.getStackTrace(ex));
 		}
 		
-		Logging.printLogDebug(logger, "Screenshot was send to s3.");
+		Logging.printLogDebug(logger, session, "Screenshot was send to s3.");
 	}
 
-	public static String generateUrl(String url, Map<String,Object> options, String key, String secret) throws UnsupportedEncodingException {
+	public static String generateUrl(String url, Map<String,Object> options, String key, String secret, Session session) throws UnsupportedEncodingException {
 
 		String encodedUrl = URLEncoder.encode(url, "UTF-8");
 		StringBuilder queryString = new StringBuilder();
@@ -71,11 +72,11 @@ public class URLBox {
 			queryString.append(queryParam);
 		}
 
-		String token = generateToken(queryString.toString(), secret);
+		String token = generateToken(queryString.toString(), secret, session);
 		return String.format("https://api.urlbox.io/v1/%s/%s/jpg?%s", key, token, queryString.toString());
 	}
 
-	private static String generateToken(String input, String key) {
+	private static String generateToken(String input, String key, Session session) {
 		String lSignature = "None";
 		try {
 			Mac lMac = Mac.getInstance("HmacSHA1");
@@ -89,8 +90,8 @@ public class URLBox {
 				lSignature = "0" + lSignature;
 			}
 		} catch (NoSuchAlgorithmException | InvalidKeyException lEx) {
-			Logging.printLogError(logger, "Problems calculating HMAC");
-			Logging.printLogError(logger, CommonMethods.getStackTrace(lEx));
+			Logging.printLogError(logger, session, "Problems calculating HMAC");
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(lEx));
 		} 
 		
 		return lSignature;

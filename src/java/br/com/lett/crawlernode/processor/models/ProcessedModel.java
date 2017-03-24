@@ -159,7 +159,7 @@ public class ProcessedModel {
 	 * @category Comparação
 	 * @param compareTo - Recepção de ProcessedModel a ser comparado 
 	 */
-	public void registerChanges(ProcessedModel compareTo) {
+	public void registerChanges(ProcessedModel compareTo, Session session) {
 		JSONObject newChanges = null;
 		boolean mustScheduleUrlToScreenshot = false;
 
@@ -198,6 +198,7 @@ public class ProcessedModel {
 					) {
 				newChanges.put("price", compareTo.getPrice());
 				mustScheduleUrlToScreenshot = true;
+				Logging.printLogDebug(logger, session, "Detected price change.");
 			}
 
 			// Verificando se mudou sua condição de disponibilidade
@@ -284,7 +285,7 @@ public class ProcessedModel {
 		}
 
 		if (mustScheduleUrlToScreenshot) {			
-			URLBox.takeAScreenShot(compareTo.getUrl(), compareTo.getId());
+			URLBox.takeAScreenShot(compareTo.getUrl(), session);
 		}
 	}
 
