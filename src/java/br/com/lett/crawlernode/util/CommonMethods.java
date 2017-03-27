@@ -37,8 +37,7 @@ import org.slf4j.Logger;
 public class CommonMethods {
 	
 	private static String version = "1"; //TODO
-	
-	
+
 	/**
 	 * 
 	 * @return
