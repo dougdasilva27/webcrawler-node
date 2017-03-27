@@ -11,8 +11,10 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 		super(session);
 	}
 
-	private final static String TIENDA = "coatzacoalcoscrystal";
-	private final static String TIENDA_ID = "4294967212";
+	private static final String TIENDA = "mexicociudadlabor";
+	private static final String TIENDA_ID = "4294967169";
+	private static final String REMOTE_ADDRESS = "74.205.80.195:8080";
+//	private final static String REMOTE_ADDRESS = "174.143.32.125:8080";
 	
 	@Override
 	protected void extractProductsFromCurrentPage() {
@@ -23,7 +25,7 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 		
 		//monta a url com a keyword e a página
 		// primeira página começa em 0 e assim vai.
-		String url = "http://174.143.32.125:8080/endeca-assembler/json/search?N="+ TIENDA_ID +"+"
+		String url = "http://"+ REMOTE_ADDRESS +"/endeca-assembler/json/search?N="+ TIENDA_ID +"+"
 				+ "&Ntt="+ this.keywordEncoded +"&Nrpp=24&No=" + this.arrayProducts.size();
 		
 		this.log("Link onde são feitos os crawlers: "+url);	
@@ -40,7 +42,9 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 			//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 			if(products.length() >= 1) {
 				//se o total de busca não foi setado ainda, chama a função para setar
-				if(this.totalBusca == 0) setTotalBusca(productsInfo);
+				if(this.totalBusca == 0) {
+					setTotalBusca(productsInfo);
+				}
 				
 				for(int i = 0; i < products.length(); i++) {
 					JSONObject product = products.getJSONObject(i);
@@ -57,7 +61,9 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 					saveDataProduct(internalId, internalPid, productUrl);
 					
 					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-					if(this.arrayProducts.size() == productsLimit) break;
+					if(this.arrayProducts.size() == productsLimit) {
+						break;
+					}
 				}
 			} else {
 				this.result = false;
