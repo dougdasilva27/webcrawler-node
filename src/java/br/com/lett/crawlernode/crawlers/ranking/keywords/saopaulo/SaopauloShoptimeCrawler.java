@@ -13,105 +13,108 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
 		super(session);
 	}
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
+	@Override
+	protected void extractProductsFromCurrentPage() {
+		//número de produtos por página do market
+		this.pageSize = 24;
 
-		return internalId;
+		this.log("Página "+ this.currentPage);
+
+		String keyword = location.replaceAll(" ", "+");
+
+		//monta a url com a keyword e a página
+		String url = "http://www.shoptime.com.br/busca/?conteudo="+ this.keywordEncoded +"&limite=24&offset=" + this.arrayProducts.size();
+		this.log("Link onde são feitos os crawlers: "+url);
+
+		String urlAPi = "https://mystique-v1-shoptime.b2w.io/mystique/search?content="+ keyword +
+				"&offset="+ + this.arrayProducts.size() +"&sortBy=moreRelevant&source=neemu";
+
+		//chama função de pegar a url
+//		this.currentDoc = fetchDocument(url, null);
+
+		JSONObject api = fetchJSONObject(urlAPi);
+		JSONArray products = new JSONArray();
+
+		if(api.has("products")) {
+			products = api.getJSONArray("products");
+		}
+
+		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+		if(products.length() >= 1)	{
+			//se o total de busca não foi setado ainda, chama a função para setar
+			if(this.totalBusca == 0){
+				setTotalBusca(api);
+			}
+
+			for(int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
+
+				// InternalPid
+				String internalPid = crawlInternalPid(product);
+
+				// Url do produto
+				String productUrl = crawlProductUrl(internalPid);
+
+				// InternalId
+				String internalId = crawlInternalId();
+
+				saveDataProduct(internalId, internalPid,productUrl);
+
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+				if(this.arrayProducts.size() == productsLimit){
+					break;
+				}
+			}
+		} else {
+			this.result = false;
+			this.log("Keyword sem resultado!");
+		}
+
+		this.log("Finalizando Crawler de produtos da página "+ this.currentPage +" - até agora "+this.arrayProducts.size()+" produtos crawleados");
+
 	}
 
-	private String crawlInternalPid(JSONObject json) {
+	@Override
+	protected boolean hasNextPage() {
+		if(this.arrayProducts.size() < totalBusca) {
+			return true;
+		}
+
+		return false;
+	}
+
+
+	protected void setTotalBusca(JSONObject api) {
+		if(api.has("_result")) {
+			JSONObject result = api.getJSONObject("_result");
+
+			if(result.has("total")) {
+				this.totalBusca = result.getInt("total");
+
+				this.log("Total da busca: "+this.totalBusca);
+			}
+		}
+	}
+
+	private String crawlInternalId(){
+		return null;
+	}
+
+	private String crawlInternalPid(JSONObject product){
 		String internalPid = null;
 
-		if (json.has("originalId")) {
-			internalPid = json.getString("originalId");
+		if(product.has("id")) {
+			internalPid = Integer.toString(product.getInt("id"));
 		}
 
 		return internalPid;
 	}
 
-	private String crawlProductUrl(JSONObject json) {
-		String urlProduct = null;
-
-		if (json.has("productUrlStore")) {
-			urlProduct = json.getString("productUrlStore");
-
-		}
-		return urlProduct;
+	private String crawlProductUrl(String internalPid){
+		return "http://www.shoptime.com.br/produto/" + internalPid;
 	}
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 20;
-
-		this.log("Página " + this.currentPage);
-
-		// monta a url com a keyword e a página
-		String urlJson = "http://busca.shoptime.com.br/api/v1/search?q=" + this.keywordEncoded + "&page="
-				+ this.currentPage + "&results_per_page=24&format=json";
-		// String url =
-		// "http://busca.shoptime.com.br/busca.php?q="+this.keywordWithParamPlus+"&page="+this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + urlJson);
-
-		JSONObject jsonProducts = fetchJSONObject(urlJson);
-
-		if (this.totalBusca == 0) {
-			this.totalBusca = this.setTotalBusca(jsonProducts);
-		}
-
-		if (jsonProducts.has("productsInfo")) {
-			JSONObject products = jsonProducts.getJSONObject("productsInfo");
-
-			if (products.has("products")) {
-				JSONArray arrayProducts = products.getJSONArray("products");
-
-				for (int i = 0; i < arrayProducts.length(); i++) {
-					JSONObject jsonTemp = arrayProducts.getJSONObject(i);
-
-					String internalPid = crawlInternalPid(jsonTemp);
-
-					// InternalId
-					String internalId = crawlInternalId(null);
-
-					// Url do produto
-					String urlProduct = crawlProductUrl(jsonTemp);
-
-					saveDataProduct(internalId, internalPid, urlProduct);
-
-					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-							+ internalPid + " - Url: " + urlProduct);
-					if (this.arrayProducts.size() == productsLimit)
-						break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Fim das páginas");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
+	private JSONObject fecthProductsAPi(String url) {
+		return fetchJSONObject(url);
 	}
-
-	@Override
-	protected boolean hasNextPage() {
-		return true;
-	}
-
-	protected int setTotalBusca(JSONObject json) {
-		int totalBusca = 0;
-
-		if (json.has("searchInfo")) {
-			JSONObject searchInfo = json.getJSONObject("searchInfo");
-
-			if (searchInfo.has("number_of_results")) {
-				totalBusca = searchInfo.getInt("number_of_results");
-			}
-		}
-
-		this.log("Total da busca: " + totalBusca);
-
-		return totalBusca;
-	}
-
 }
