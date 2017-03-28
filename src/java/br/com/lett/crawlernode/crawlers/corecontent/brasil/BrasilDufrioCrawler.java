@@ -179,7 +179,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		
 		String urlForPid = null;
 		if(url.contains("?")){
-			urlForPid = url.split("?")[0];
+			urlForPid = url.split("\\?")[0];
 		} else {
 			urlForPid = url;
 		}

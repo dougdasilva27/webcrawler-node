@@ -180,7 +180,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 		String internalPid = null;
 
 		if(url.contains("?")){
-			url = url.split("?")[0];
+			url = url.split("\\?")[0];
 		}
 		
 		String[] tokens = url.split("/");
