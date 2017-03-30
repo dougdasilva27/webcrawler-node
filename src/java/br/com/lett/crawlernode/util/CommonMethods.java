@@ -409,4 +409,13 @@ public class CommonMethods {
 		
 		return list;
 	}
+
+	/**
+	 * Remove spaces of any string
+	 * @param str
+	 * @return
+	 */
+	public static String removeSpacesFromString(String str) {
+		return str.replaceAll(" ", "%20");
+	}
 }
