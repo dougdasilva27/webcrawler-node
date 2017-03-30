@@ -343,11 +343,23 @@ public class BrasilLojasmmCrawler extends Crawler {
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("href").trim();
 
-			if(!image.startsWith("http")){
+			if(!image.isEmpty() && !image.startsWith("http")){
 				image = "https:" + image;
 			}
 
 			primaryImage = image;
+		}
+
+		if(primaryImage.isEmpty()) {
+			Element specialImage = doc.select(".zoomprincipal > img").first();
+
+			if(specialImage != null) {
+				primaryImage = specialImage.attr("src");
+
+				if(!primaryImage.isEmpty() && !primaryImage.startsWith("http")){
+					primaryImage = "https:" + primaryImage;
+				}
+			}
 		}
 
 		return primaryImage;
