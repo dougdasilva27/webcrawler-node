@@ -47,8 +47,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	private final String NAME_SELECTOR 						= ".data h1";
 	private final String PRICE_SELECTOR 					= ".sale-price span";
 	private final String AVAILABILITY_SELECTOR 				= ".wd-buy-button div[style=\"display:none\"]";
-	private final String PRIMARY_IMAGE_SELECTOR 			= "a.large-gallery";
-	private final String SECONDARY_IMAGES_SELECTOR 			= "a.large-gallery";
+	private final String PRIMARY_IMAGE_SELECTOR 			= ".zoom > img.Image";
 	private final String CATEGORIES_SELECTOR 				= ".wd-browsing-breadcrumbs ul li a span";
 	private final String DESCRIPTION_SELECTOR 				= ".wd-descriptions-text";
 	
@@ -236,7 +235,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		Element primaryImageElement = document.select(PRIMARY_IMAGE_SELECTOR).first();
 
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("href").trim();
+			primaryImage = primaryImageElement.attr("src").trim();
 		}
 
 		return primaryImage;
@@ -246,10 +245,22 @@ public class BrasilDufrioCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select(SECONDARY_IMAGES_SELECTOR);
+		Elements imagesElement = document.select("li.image:not(.selected) > img");
 
-		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			secondaryImagesArray.put(imagesElement.get(i).attr("href").trim());
+		for (Element e : imagesElement) {
+			String image = null;
+
+			if(e.hasAttr("data-image-large") && e.attr("data-image-large").contains("Products")) {
+				image = e.attr("data-image-large").trim();
+			} else if(e.hasAttr("data-image-big") && e.attr("data-image-big").contains("Products")) {
+				image = e.attr("data-image-big").trim();
+			} else if(e.hasAttr("data-small") && e.attr("data-small").contains("Products")) {
+				image = e.attr("data-small").trim();
+			}
+
+			if(image != null) {
+				secondaryImagesArray.put(image);
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -260,7 +271,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(CATEGORIES_SELECTOR);
 
 		for (int i = 1; i < elementCategories.size() - 1; i++) { // starting from index 1, because the first is the market name
