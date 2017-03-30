@@ -549,7 +549,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 		}
 
 
-		return CommonMethods.removeIllegalArguments(primaryImage);
+		return CommonMethods.removeIllegalParameters(primaryImage);
 	}
 
 	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
@@ -566,9 +566,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					Element e = elementFotoSecundaria.get(i);
 
 					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
-						secondaryImagesArray.put(CommonMethods.removeIllegalArguments(e.attr("rev")));
+						secondaryImagesArray.put(CommonMethods.removeIllegalParameters(e.attr("rev")));
 					} else {
-						secondaryImagesArray.put(CommonMethods.removeIllegalArguments(e.attr("href")));
+						secondaryImagesArray.put(CommonMethods.removeIllegalParameters(e.attr("href")));
 					}
 				}
 

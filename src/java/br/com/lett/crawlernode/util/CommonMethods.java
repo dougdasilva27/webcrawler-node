@@ -354,11 +354,12 @@ public class CommonMethods {
     	
     	return finalUrl;
     }
-    
+
 	/**
-	 * Take a screenshot from page in webdriver
+	 *
 	 * @param driver
-	 * @param nameShot
+	 * @param path
+	 * @param logger
 	 */
 	public static void takeAScreenShot(WebDriver driver, String path, Logger logger){
 		CommonMethods.delay();
@@ -411,11 +412,11 @@ public class CommonMethods {
 	}
 
 	/**
-	 * Remove spaces of any string
+	 * Remove spaces and ` of string
 	 * @param str
 	 * @return
 	 */
-	public static String removeSpacesFromString(String str) {
-		return str.replaceAll(" ", "%20");
+	public static String removeIllegalParameters(String str) {
+		return str.replaceAll(" ", "%20").replaceAll("`","%60");
 	}
 }
