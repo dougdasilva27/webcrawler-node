@@ -504,13 +504,14 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		Element elementPrimaryImage = document.select("div#imagem-grande a").first();
 		if(elementPrimaryImage != null) {
 			String baseURL = elementPrimaryImage.attr("href");
-			if (!baseURL.startsWith("http")) {
+			if (!baseURL.startsWith("https")) {
 				if (!baseURL.startsWith("//")) {
-					primaryImage = "http://" + elementPrimaryImage.attr("href");
+					primaryImage = "https://" + baseURL;
+				} else {
+					primaryImage = "https:" + baseURL;
 				}
-				else {
-					primaryImage = "http:" + elementPrimaryImage.attr("href");
-				}
+			} else {
+				primaryImage = baseURL;
 			}
 			
 		}
@@ -532,12 +533,14 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 				String baseURL = elementsSecondaryImages.get(i).attr("href");
 				if (!baseURL.startsWith("http")) {
 					if (!baseURL.startsWith("//")) {
-						secondaryImage = "http://" + baseURL;
+						secondaryImage = "https://" + baseURL;
 					}
 					else {
-						secondaryImage = "http:" + baseURL;
+						secondaryImage = "https:" + baseURL;
 					}
-				}
+				} else {
+				    secondaryImage = baseURL;
+                }
 				
 				if(secondaryImage != null) {
 					if( !secondaryImage.equals(primaryImage) ) {

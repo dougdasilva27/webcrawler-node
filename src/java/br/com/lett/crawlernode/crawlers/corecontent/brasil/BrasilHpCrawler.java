@@ -141,8 +141,10 @@ public class BrasilHpCrawler extends Crawler {
 			Float price = crawlPrice(doc, true);
 			String name = seller.text().toLowerCase().trim();
 			Prices prices = crawlPrices(doc, price);
-			
-			marketplaces.put(name, prices);
+
+			if(!name.isEmpty()) {
+				marketplaces.put(name, prices);
+			}
 		}
 		
 		return marketplaces;
