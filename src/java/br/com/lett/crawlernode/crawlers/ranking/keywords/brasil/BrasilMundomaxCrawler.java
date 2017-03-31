@@ -109,7 +109,7 @@ public class BrasilMundomaxCrawler extends CrawlerRankingKeywords{
 		Element urlElement = e.select(".prod_descr a").first();
 		
 		if(urlElement != null){
-			urlProduct = urlElement.attr("href");
+			urlProduct = urlElement.attr("href").replace("destaque/", "");
 		}
 		
 		return urlProduct;
