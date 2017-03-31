@@ -1,21 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.WebElement;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -23,6 +10,14 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import org.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.WebElement;
+
+import java.util.*;
 
 /**
  * 
@@ -108,30 +103,32 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 					products.add(firstProduct);
 					
 					List<WebElement> options2 = this.webdriver.findElementsByCssSelector("div.col-sm-9 input[name=voltagem]");
-					WebElement second = options2.get(1);
-					String secondVariation = second.getAttribute("id");
-					
-					// if the element is loaded we crawl it and append variation on the name
-					if (!isLoaded(variationDocument, second)) {
+					if(options2.size() > 1) {
+						WebElement second = options2.get(1);
+						String secondVariation = second.getAttribute("id");
 
-						// click
-						Logging.printLogDebug(logger, session, "Clicking on option...");
-						this.webdriver.clickOnElementViaJavascript(second);
+						// if the element is loaded we crawl it and append variation on the name
+						if (!isLoaded(variationDocument, second)) {
 
-						// give some time for safety
-						Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
-						this.webdriver.waitLoad(2000);
+							// click
+							Logging.printLogDebug(logger, session, "Clicking on option...");
+							this.webdriver.clickOnElementViaJavascript(second);
 
-						// get the new html and parse
-						String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
-						variationDocument = Jsoup.parse(html);
+							// give some time for safety
+							Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
+							this.webdriver.waitLoad(2000);
+
+							// get the new html and parse
+							String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
+							variationDocument = Jsoup.parse(html);
+						}
+
+						// crawl sku
+						Product secondProduct = crawlProduct(variationDocument);
+						String secondProductCompleteName = secondProduct.getName() + " " + secondVariation + "v";
+						secondProduct.setName(secondProductCompleteName);
+						products.add(secondProduct);
 					}
-					
-					// crawl sku
-					Product secondProduct = crawlProduct(variationDocument);
-					String secondProductCompleteName = secondProduct.getName() + " " + secondVariation + "v";
-					secondProduct.setName(secondProductCompleteName);
-					products.add(secondProduct);
 				}
 				
 //				Iterator<WebElement> it = options.iterator();
@@ -282,6 +279,9 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 			String compatibleCardName = createCompatibleName(card);
 			if (compatibleCardName != null) {
 
+			    Map<String, String> headers = new HashMap<>();
+			    headers.put("Content-Type","application/x-www-form-urlencoded");
+
 				// assemble POST parameters
 				String parameters = 
 						"cardTypeKey=" + compatibleCardName + 
@@ -289,12 +289,13 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 						"&useTheBestInstallment=false";
 
 				// perform request
-				Document response = DataFetcher.fetchDocument(
-						DataFetcher.POST_REQUEST, 
-						session, 
-						"http://www.angeloni.com.br/eletro/modais/installmentsRender.jsp", 
-						parameters, 
-						null);
+				Document response = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders(
+				        "https://www.angeloni.com.br/eletro/modais/installmentsRender.jsp",
+						session,
+                        parameters,
+						null,
+						1,
+						headers));
 
 				Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
 
@@ -378,7 +379,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		Document response = DataFetcher.fetchDocument(
 				DataFetcher.POST_REQUEST, 
 				session, 
-				"http://www.angeloni.com.br/eletro/modais/paymentMethods.jsp", 
+				"https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp",
 				"productId=" + internalId, 
 				null);
 
