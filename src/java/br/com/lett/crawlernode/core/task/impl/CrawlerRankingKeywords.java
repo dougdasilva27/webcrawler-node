@@ -309,8 +309,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 	}
 
 	/**
-	 * Salva as urls que serão enviadas para a fila na amazon
-	 * @param processedIds
+	 *
 	 * @param url
 	 */
 	protected void saveProductUrlToQueue(String url) {
@@ -379,9 +378,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setProductsDiscover(products);
 			
 			if(session instanceof DiscoverKeywordsSession) {
-				ranking.setRankType("discover-keywords");
+				ranking.setRankType("discover_keywords");
 			} else {
-				ranking.setRankType("ranking-keywords");
+				ranking.setRankType("ranking_keywords");
 			}
 			
 			RankingStatistics statistics = new RankingStatistics();
@@ -428,12 +427,11 @@ public abstract class CrawlerRankingKeywords extends Task {
 		}
 
 		this.messages.clear();
-	}	
+	}
 
 	/**
-	 * Send messages to amazon and populate them on collection task
+	 *
 	 * @param entries
-	 * @param url
 	 */
 	private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
 		SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.DISCOVER, entries);
