@@ -28,7 +28,7 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".listItems li > a");
+		Elements products =  this.currentDoc.select(".listItems li > a:not(.unavailable)");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
@@ -61,7 +61,13 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		return true;
+		Element lastPage = this.currentDoc.select(".navigation li").last();
+
+		if(lastPage != null && !lastPage.hasClass("current")) {
+			return true;
+		}
+
+		return false;
 	}
 	
 	@Override

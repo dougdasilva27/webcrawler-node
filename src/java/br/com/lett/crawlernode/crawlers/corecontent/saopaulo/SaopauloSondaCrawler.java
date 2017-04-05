@@ -62,12 +62,12 @@ public class SaopauloSondaCrawler extends Crawler {
 
 			// Imagem primária
 			String primaryImage = null;
-			Element elementPrimaryImage = doc.select(".box-Imagem img").first();
+			Element elementPrimaryImage = doc.select(".box-Imagem a img").first();
 			if (elementPrimaryImage != null) {
 				primaryImage = elementPrimaryImage.attr("src");
 			}
 			if(primaryImage != null && primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) {
-				primaryImage = ""; //TODO: Verificar o nome da foto genérica
+				primaryImage = null; //TODO: Verificar o nome da foto genérica
 			}
 			String secondaryImages = null;
 

@@ -79,7 +79,19 @@ public class BrasilEfacilCrawler extends Crawler {
 			String secondaryImages = null;
 			if (elementImages.size() > 1) {
 				for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
-					secondaryImagesArray.put("http:" + elementImages.get(i).attr("data-original").trim());
+					String image = elementImages.get(i).attr("data-original").trim();
+
+					if(image.isEmpty()) {
+						image = elementImages.get(i).attr("href").trim();
+					}
+
+					if(!image.isEmpty()) {
+						if(!image.startsWith("http")) {
+							image = "http:" + image;
+						}
+
+						secondaryImagesArray.put(image);
+					}
 				}
 			}
 			if (secondaryImagesArray.length() > 0) {
