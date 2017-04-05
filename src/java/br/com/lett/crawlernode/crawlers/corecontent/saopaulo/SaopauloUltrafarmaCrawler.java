@@ -65,8 +65,11 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			}
 
 			// Nome
-			Elements elementName = doc.select(".div_nome_prod");
-			String name = elementName.text().trim();
+			String name = null;
+			Element elementName = doc.select("h1.div_nome_prod").first();
+			if(elementName != null) {
+				name = elementName.text().trim();
+			}
 
 			// Preço
 			Float price = null;
