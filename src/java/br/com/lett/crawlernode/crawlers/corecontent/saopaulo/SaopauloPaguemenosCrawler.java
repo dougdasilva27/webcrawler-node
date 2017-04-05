@@ -234,7 +234,7 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("href").trim();
 
-			if(primaryImage.equals("../#")){ //no image for product
+			if(primaryImage.equals("#")){ //no image for product
 				return null;
 			}
 		}
