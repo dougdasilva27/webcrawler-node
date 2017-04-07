@@ -60,7 +60,7 @@ public class BrasilMagazineluizaCrawlerUtils {
 	public static JSONObject crawlFullSKUInfo(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJsonProduct = new JSONObject();
-		JSONObject skuJson = null;
+		JSONObject skuJson = new JSONObject();
 
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
