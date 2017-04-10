@@ -193,7 +193,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 
-		if (url.startsWith("http://www.submarino.com.br/produto/")) {
+		if (url.startsWith("https://www.submarino.com.br/produto/") || url.startsWith("http://www.submarino.com.br/produto/")) {
 			return true;
 		}
 		return false;

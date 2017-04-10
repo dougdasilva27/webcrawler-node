@@ -204,7 +204,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 
-		if (url.startsWith("http://www.shoptime.com.br/produto/")) {
+		if (url.startsWith("https://www.shoptime.com.br/produto/") || url.startsWith("http://www.shoptime.com.br/produto/")) {
 			return true;
 		}
 		return false;

@@ -2,12 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 
@@ -113,10 +110,7 @@ public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 	}
 
 	private String crawlProductUrl(String internalPid){
-		return "http://www.submarino.com.br/produto/" + internalPid;
+		return "https://www.submarino.com.br/produto/" + internalPid;
 	}
 
-	private JSONObject fecthProductsAPi(String url) {
-		return fetchJSONObject(url);
-	}
 }

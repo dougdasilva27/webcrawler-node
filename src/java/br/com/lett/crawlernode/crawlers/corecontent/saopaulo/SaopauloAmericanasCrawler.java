@@ -204,7 +204,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 
-		if (url.startsWith("http://www.americanas.com.br/produto/")) {
+		if (url.startsWith("https://www.americanas.com.br/produto/") || url.startsWith("http://www.americanas.com.br/produto/")) {
 			return true;
 		}
 		return false;

@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -112,9 +111,5 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
 
 	private String crawlProductUrl(String internalPid){
 		return "http://www.shoptime.com.br/produto/" + internalPid;
-	}
-
-	private JSONObject fecthProductsAPi(String url) {
-		return fetchJSONObject(url);
 	}
 }

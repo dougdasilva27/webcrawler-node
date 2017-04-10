@@ -1,15 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import org.apache.bcel.generic.RETURN;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords{
 
@@ -116,9 +111,5 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords{
 	
 	private String crawlProductUrl(String internalPid){
 		return "http://www.americanas.com.br/produto/" + internalPid;
-	}
-
-	private JSONObject fecthProductsAPi(String url) {
-		return fetchJSONObject(url);
 	}
 }

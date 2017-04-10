@@ -49,7 +49,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.americanas.com.br/produto/")) {
+		if (url.startsWith("https://www.americanas.com.br/produto/") || url.startsWith("http://www.americanas.com.br/produto/")) {
 			return true;
 		}
 		return false;

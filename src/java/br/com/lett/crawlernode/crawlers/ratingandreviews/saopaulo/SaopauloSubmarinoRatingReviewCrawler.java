@@ -54,7 +54,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.submarino.com.br/produto/")){
+		if (url.startsWith("https://www.submarino.com.br/produto/") || url.startsWith("http://www.submarino.com.br/produto/")){
 			return true;
 		}
 

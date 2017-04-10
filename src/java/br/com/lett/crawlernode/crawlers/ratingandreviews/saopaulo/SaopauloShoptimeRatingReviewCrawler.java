@@ -52,7 +52,7 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.shoptime.com.br/produto/")){
+		if (url.startsWith("https://www.shoptime.com.br/produto/") || url.startsWith("http://www.shoptime.com.br/produto/")){
 			return true;
 		}
 
