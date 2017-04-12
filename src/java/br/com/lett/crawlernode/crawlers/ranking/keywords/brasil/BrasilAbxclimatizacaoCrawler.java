@@ -20,13 +20,13 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "https://www.abxclimatizacao.com.br/catalogsearch/result/?___SID=U&limit=30&q="+ this.keywordEncoded +"&p="+ this.currentPage;
+		String url = "https://abxarcondicionado.com.br/catalogsearch/result/?q="+ this.keywordEncoded +"&p="+ this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 			
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select(".item-products.item");
+		Elements products =  this.currentDoc.select(".item-products.item .product-item");
 				
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			

@@ -182,6 +182,16 @@ public class BrasilStrarCrawler extends Crawler {
 			name = nameElement.text().toString().trim();
 		}
 
+		Element modelElement = document.select("div.product-name h3").last();
+
+		if(modelElement != null) {
+			String text = modelElement.text();
+
+			if(text.contains(":")) {
+				name = name + " " + (text.split(":")[1]).trim();
+			}
+		}
+
 		return name;
 	}
 

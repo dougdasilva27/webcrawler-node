@@ -200,6 +200,12 @@ public class BrasilMultiarCrawler extends Crawler {
 			name = sanitizeName(nameElement.text());
 		}
 
+		Element modelName = document.select(".productReference").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.text();
+		}
+
 		return name;
 	}
 

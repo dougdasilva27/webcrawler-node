@@ -47,7 +47,7 @@ import br.com.lett.crawlernode.util.Pair;
  ************************************************************************************************************************************************************************************/
 public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
-	private static final String HOME_PAGE = "https://abxclimatizacao.com.br/";
+	private static final String HOME_PAGE = "https://abxarcondicionado.com.br/";
 
 	public BrasilAbxclimatizacaoCrawler(Session session) {
 		super(session);
@@ -111,9 +111,14 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap();
 
+			String productUrl = session.getOriginalURL();
+			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
+				productUrl = session.getRedirectedToURL(productUrl);
+			}
+
 			// Creating the product
 			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
+			product.setUrl(productUrl);
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -179,6 +184,12 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 		if (nameElement != null) {
 			name = nameElement.text().toString().trim();
+		}
+
+		Element modelName = document.select("span.sku").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.ownText();
 		}
 
 		return name;

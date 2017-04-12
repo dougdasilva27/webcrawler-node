@@ -192,6 +192,12 @@ public class BrasilCentraltecCrawler extends Crawler {
 			name = sanitizeName( nameElement.text() );
 		}
 
+		Element modelName = document.select(".prod_tit_ref > span[content]").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.ownText();
+		}
+
 		return name;
 	}
 
