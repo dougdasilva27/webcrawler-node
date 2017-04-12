@@ -64,7 +64,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 			String name = crawlName(doc);
 			boolean available = crawlAvailability(productJSON);
 			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);
+			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 			Integer stock = null;
 			JSONArray marketplace = null;
 			String description = crawlDescription(doc);
@@ -322,8 +322,29 @@ public class BrasilSaraivaCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("src");
 		}
 
-		// modify the dimension parameter
-		return CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+		if(primaryImage != null) {
+			if (primaryImage.contains(".gif")) {
+				Elements elementImages = document.select("section.product-image #thumbs-images a img");
+
+				for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the primary image.gif
+					String imageURL = elementImages.get(i).attr("src").trim();
+
+					if (!imageURL.contains(".gif")) {
+						primaryImage = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+						break;
+					}
+				}
+			}
+
+			if (primaryImage.contains(".gif")) {
+				return null;
+			}
+
+			// modify the dimension parameter
+			return CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+		}
+
+		return null;
 	}
 
 	/**
@@ -334,7 +355,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages(Document document, String primaryImage) {
 		String secondaryImages = null;
 
 		Elements elementImages = document.select("section.product-image #thumbs-images a img");
@@ -344,7 +365,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 			String imageURL = elementImages.get(i).attr("src").trim();
 			String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
 
-			secondaryImagesArray.put(biggerImageURL);
+			if(!biggerImageURL.equals(primaryImage) && !biggerImageURL.contains(".gif")) {
+				secondaryImagesArray.put(biggerImageURL);
+			}
 		}			
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
