@@ -59,7 +59,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilMoblyCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.mobly.com.br/";
+	private final String HOME_PAGE = "https://www.mobly.com.br/";
 
 	public BrasilMoblyCrawler(Session session) {
 		super(session);
@@ -75,8 +75,8 @@ public class BrasilMoblyCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
-
+		List<Product> products = new ArrayList<>();
+		
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -105,7 +105,7 @@ public class BrasilMoblyCrawler extends Crawler {
 			Integer stock = null;
 			
 			// Sku variations
-			Elements skus = doc.select("li[data-sku]");
+			Elements skus = doc.select(".product-option .custom-select option[data-js-function]");
 			
 			// JSON of Product in Html
 			JSONObject jsonProduct = crawlJSONProduct(doc, internalPid);
@@ -129,7 +129,7 @@ public class BrasilMoblyCrawler extends Crawler {
 					JSONObject jsonSku = this.assembleJsonProduct(internalID, internalPid, jsonProductsApi, jsonProduct);
 					
 					// Name
-					String name = crawlNameForMutipleVariations(jsonSku, nameMainPage);
+					String name = crawlNameForMutipleVariations(sku, nameMainPage);
 	
 					// Marketplace map
 					Map<String, Float> marketplaceMap = crawlMarketplace(doc, jsonSku);
@@ -232,7 +232,9 @@ public class BrasilMoblyCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".conteiner.product-detail").first() != null ) return true;
+		if ( document.select("#product-info").first() != null ){
+			return true;
+		}
 		return false;
 	}
 	
@@ -243,7 +245,7 @@ public class BrasilMoblyCrawler extends Crawler {
 	private String crawlInternalIdForMutipleVariations(Element sku) {
 		String internalId = null;
 
-		internalId = sku.attr("data-sku").trim();
+		internalId = sku.val().trim();
 		
 		return internalId;
 	}
@@ -252,7 +254,7 @@ public class BrasilMoblyCrawler extends Crawler {
 		String internalId = "";
 
 		for(Element e : skus){
-			internalId =  internalId + " " + e.attr("data-sku");
+			internalId =  internalId + " " + e.val();
 		}
 		
 		internalId = internalId.trim().replaceAll(" ", ",");
@@ -260,11 +262,11 @@ public class BrasilMoblyCrawler extends Crawler {
 		return internalId;
 	}
 	
-	private String crawlNameForMutipleVariations(JSONObject jsonSku, String name) {
+	private String crawlNameForMutipleVariations(Element sku, String name) {
 		String nameVariation = name;	
 		
-		if(jsonSku.has("NameVariation")){
-			nameVariation = nameVariation + "  " + jsonSku.getString("NameVariation");
+		if(sku.hasText()){
+			nameVariation = nameVariation + " " + sku.text();
 		}	
 
 		return nameVariation;
@@ -276,11 +278,10 @@ public class BrasilMoblyCrawler extends Crawler {
 	
 	private String crawlInternalIdSingleProduct(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select(".sel-product-move-to-wishlist").first();
-
+		Element internalIdElement = document.select(".add-wishlistsel-product-move-to-wishlist").first();
+		
 		if (internalIdElement != null) {
-			String[] tokens = internalIdElement.attr("href").split("/");
-			internalId = tokens[tokens.length-1].trim();
+			internalId = internalIdElement.attr("data-simplesku");
 		}
 
 		return internalId;
@@ -310,9 +311,15 @@ public class BrasilMoblyCrawler extends Crawler {
 	 *******************/
 	
 	private JSONObject fetchSkuInformation(String internalIDS){
-		String url = "http://www.mobly.com.br/api/catalog/price/hash/38b5c35d624459682e3bd23521cb4248f631d39d/?skus="+ internalIDS;
+		String url = "https://secure.mobly.com.br/api/catalog/price/hash/34ad996ba25a3c5b5c352406f932a3e31e0a45b7/?skus="+ internalIDS;
 		
-		return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, null);
+		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+		
+		if(json.startsWith("{") && json.endsWith("}")) {
+			return new JSONObject(json);
+		}
+		
+		return new JSONObject();
 	}
 	
 	private JSONObject assembleJsonProduct(String internalID, String internalPid, JSONObject jsonPage, JSONObject jsonProduct){
@@ -355,11 +362,21 @@ public class BrasilMoblyCrawler extends Crawler {
 			}
 		}
 		
-		if(jsonInformation.has("finalPrice")) 		jsonSku.put("Price", jsonInformation.getString("finalPrice"));
-		if(jsonInformation.has("stock_available")) 	jsonSku.put("Available", jsonInformation.getBoolean("stock_available"));
-		if(jsonInformation.has("option")) 			jsonSku.put("NameVariation", jsonInformation.getString("option"));
-		if(jsonInformation.has("installmentsCount"))jsonSku.put("InstallmentMax", Integer.parseInt(jsonInformation.get("installmentsCount").toString()));
-		if(jsonInformation.has("installmentsValue"))jsonSku.put("InstallmentMaxValue", MathCommonsMethods.normalizeTwoDecimalPlaces(Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
+		if(jsonInformation.has("finalPrice")) {
+			jsonSku.put("Price", jsonInformation.getString("finalPrice"));
+		}
+		if(jsonInformation.has("stock_available")) {
+			jsonSku.put("Available", jsonInformation.getBoolean("stock_available"));
+		}
+		if(jsonInformation.has("option")){
+			jsonSku.put("NameVariation", jsonInformation.getString("option"));
+		}
+		if(jsonInformation.has("installmentsCount")){
+			jsonSku.put("InstallmentMax", Integer.parseInt(jsonInformation.get("installmentsCount").toString()));
+		}
+		if(jsonInformation.has("installmentsValue")){
+			jsonSku.put("InstallmentMaxValue", MathCommonsMethods.normalizeTwoDecimalPlaces(Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
+		}
 		
 		return jsonSku;
 	}
@@ -435,10 +452,10 @@ public class BrasilMoblyCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select("#prdImage").first();
+		Element primaryImageElement = document.select(".picture > a").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("src").trim();
+			primaryImage = primaryImageElement.attr("href").trim();
 			
 			if(!primaryImage.startsWith("http")) {
 				primaryImage = "https:" + primaryImage;
@@ -452,7 +469,7 @@ public class BrasilMoblyCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("#productMoreImagesList li");
+		Elements imagesElement = document.select(".product-thumbs .images img");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // start with indez 1 because the first image is the primary image
 			Element e = imagesElement.get(i);
@@ -507,11 +524,16 @@ public class BrasilMoblyCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select(".product-description").first();
 		Element specElement = document.select("#product-attributes").first();
+		Element info = document.select(".tab-box.description-text article").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specElement != null) description = description + specElement.html();
+		if(info != null) {
+			description = description + info.html();
+		}
+		
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
 
 		return description;
 	}
