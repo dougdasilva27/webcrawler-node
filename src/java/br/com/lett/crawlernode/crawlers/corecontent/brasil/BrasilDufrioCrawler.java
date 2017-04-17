@@ -6,34 +6,38 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
-
 /*****************************************************************************************************************************
  * Crawling notes (12/07/2016):
  * 
- * 1) For this crawler, we have one url per each sku.
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 4) The sku page identification is done simply looking for an specific html element.
- * 5) if the sku is unavailable, it's price is not displayed. Yet the crawler tries to crawl the price.
- * 6) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
- * the variations of a given sku.
- * 7) We have one method for each type of information for a sku (please carry on with this pattern).
+ * 1) For this crawler, we have one url per each sku. 2) There is no stock
+ * information for skus in this ecommerce by the time this crawler was made. 3)
+ * There is no marketplace in this ecommerce by the time this crawler was made.
+ * 4) The sku page identification is done simply looking for an specific html
+ * element. 5) if the sku is unavailable, it's price is not displayed. Yet the
+ * crawler tries to crawl the price. 6) There is no internalPid for skus in this
+ * ecommerce. The internalPid must be a number that is the same for all the
+ * variations of a given sku. 7) We have one method for each type of information
+ * for a sku (please carry on with this pattern).
  * 
- * Examples:
- * ex1 (available): https://www.dufrio.com.br/ar-condicionado-frio-split-cassete-inverter-35000-btus-220v-lg.html
- * ex2 (unavailable): https://www.dufrio.com.br/ar-condicionado-frio-split-piso-teto-36000-btus-220v-1-lg.html
+ * Examples: ex1 (available):
+ * https://www.dufrio.com.br/ar-condicionado-frio-split-cassete-inverter-35000-btus-220v-lg.html
+ * ex2 (unavailable):
+ * https://www.dufrio.com.br/ar-condicionado-frio-split-piso-teto-36000-btus-220v-1-lg.html
  *
  ******************************************************************************************************************************/
 
@@ -42,15 +46,6 @@ public class BrasilDufrioCrawler extends Crawler {
 	private final String HOME_PAGE_HTTP = "http://www.dufrio.com.br/";
 	private final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
 
-	private final String SKU_PAGE_IDENTIFICATION_SELECTOR 	= ".medias";
-	private final String INTERNALID_SELECTOR 				= "input.sku";
-	private final String NAME_SELECTOR 						= ".data h1";
-	private final String PRICE_SELECTOR 					= ".sale-price span";
-	private final String AVAILABILITY_SELECTOR 				= ".wd-buy-button div[style=\"display:none\"]";
-	private final String PRIMARY_IMAGE_SELECTOR 			= ".zoom > img.Image";
-	private final String CATEGORIES_SELECTOR 				= ".wd-browsing-breadcrumbs ul li a span";
-	private final String DESCRIPTION_SELECTOR 				= ".wd-descriptions-text";
-	
 	public BrasilDufrioCrawler(Session session) {
 		super(session);
 	}
@@ -58,184 +53,171 @@ public class BrasilDufrioCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && ( (href.startsWith(HOME_PAGE_HTTPS)) || (href.startsWith(HOME_PAGE_HTTP)) );
+		return !FILTERS.matcher(href).matches()
+				&& ((href.startsWith(HOME_PAGE_HTTPS)) || (href.startsWith(HOME_PAGE_HTTP)));
 	}
-
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(doc) ) {
+		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
-			// InternalId
 			String internalId = crawlInternalId(doc);
-
-			// Pid
-			String internalPid = crawlInternalPid(session.getOriginalURL());
-
-			// Name
+			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
-
-			// Price
-			Float price = crawlMainPagePrice(doc);
-
-			// Availability
-			boolean available = crawlAvailability(doc);
-
-			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// Primary image
-			String primaryImage = crawlPrimaryImage(doc);
-
-			// Secondary images
-			String secondaryImages = crawlSecondaryImages(doc);
-
-			// Description
-			String description = crawlDescription(doc);
-
-			// Stock
-			Integer stock = null;
-
-			// Marketplace
-			JSONArray marketplace = crawlMarketplace(doc);
-			
-			// Prices 
+			Float price = crawlPrice(doc);
 			Prices prices = crawlPrices(price, doc);
+			boolean available = crawlAvailability(doc);
+			CategoryCollection categories = crawlCategories(doc);
+			String primaryImage = crawlPrimaryImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
+			String description = crawlDescription(doc);
+			Integer stock = null;
+			JSONArray marketplace = crawlMarketplace();
 
+			String productUrl = session.getOriginalURL();
+			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
+				productUrl = session.getRedirectedToURL(productUrl);
+			}
+			
 			// Creating the product
-			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setAvailable(available);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
+			Product product = ProductBuilder.create()
+					.setUrl(productUrl)
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name).setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description).setStock(stock)
+					.setMarketplace(marketplace).build();
 
 			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
+
 	}
 
-
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(Document document) {
-		if ( document.select(SKU_PAGE_IDENTIFICATION_SELECTOR).first() != null ) return true;
+	private boolean isProductPage(Document doc) {
+		if (doc.select(".detalheProduto").first() != null) {
+			return true;
+		}
 		return false;
 	}
 
-
-	/*******************
-	 * General methods *
-	 *******************/
-
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Elements internalIdElements = document.select(INTERNALID_SELECTOR);
 
-		for(Element e : internalIdElements){
-			String temp = e.attr("value").trim();
-
-			if (temp.matches("\\d+")) {
-				internalId = temp;
-				break;
-			}
+		Element internalIdElement = document.select("div span[itemprop=mpn]").first();
+		if (internalIdElement != null) {
+			internalId = internalIdElement.text().trim();
 		}
-
 
 		return internalId;
 	}
 
-	private String crawlInternalPid(String url) {
+	private String crawlInternalPid(Document doc) {
 		String internalPid = null;
+		Elements scripts = doc.select("script");
 		
-		String urlForPid = null;
-		if(url.contains("?")){
-			urlForPid = url.split("\\?")[0];
-		} else {
-			urlForPid = url;
+		for(Element e : scripts) {
+			String script = e.outerHtml();
+			
+			if(script.contains("dataLayer")) {				
+				int x = script.indexOf('[') + 1;
+				int y = script.indexOf(']');
+				
+				JSONObject datalayer = new JSONObject(script.substring(x, y));
+				
+				if(datalayer.has("google_tag_params")) {
+					JSONObject google = datalayer.getJSONObject("google_tag_params");
+					
+					if(google.has("ecomm_prodid")) {
+						internalPid = google.getString("ecomm_prodid").trim();
+					}
+				}
+				
+				break;
+			}
 		}
-		
-		String[] tokens = urlForPid.split("-p");
-		internalPid = tokens[tokens.length-1];
 		
 		return internalPid;
 	}
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select(NAME_SELECTOR).first();
+		Element nameElement = document.select(".topoNome h1").first();
 
 		if (nameElement != null) {
-			name = sanitizeName(nameElement.text());
+			name = nameElement.ownText().trim();
 		}
 
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element mainPagePriceElement = document.select(PRICE_SELECTOR).first();
+		Element salePriceElement = document.select(".boxValores .v1").first();
 
-		if (mainPagePriceElement != null) {
-			price = Float.parseFloat( mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		boolean oldPrice = false;
+		
+		if(salePriceElement != null) {
+			String priceText = salePriceElement.text().toLowerCase();
+			
+			if(!priceText.contains("de")) {
+				price = MathCommonsMethods.parseFloat(priceText);
+			} else {
+				oldPrice = true;
+			}
+		} else {
+			oldPrice = true;
+		}
+		
+		if(oldPrice) {
+			salePriceElement = document.select(".boxValores .v2").first();
+			
+			if(salePriceElement != null) {
+				price = MathCommonsMethods.parseFloat(salePriceElement.text());
+			}
 		}
 
 		return price;
 	}
 
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select(AVAILABILITY_SELECTOR).first();
-		if (notifyMeElement != null) return false;
-		return true;
+		boolean available;	
+		Element outOfStockElement = document.select("#aviseme").first();
+		
+		if (outOfStockElement != null) {
+			available = false;
+		} else {
+			available = true;
+		}
+
+		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
+	private JSONArray crawlMarketplace() {
 		return new JSONArray();
 	}
 
-	/**
-	 * Crawl the primary image.
-	 * The URL crawled must be modified. It contains the size of the image as parameters in the URL.
-	 * It was observed that the biggest size is 900x900. These two values are modified using an auxiliar method
-	 * from the class URLUtils. Note that the same modification must be done on the secondary images.
-	 * 
-	 * @param document
-	 * @return the URL from the primary image
-	 */
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select(PRIMARY_IMAGE_SELECTOR).first();
+		Element primaryImageElement = document.select(".carouselPrincipal figure > a").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("src").trim();
+			primaryImage = primaryImageElement.attr("href").trim();
 		}
 
 		return primaryImage;
@@ -245,22 +227,11 @@ public class BrasilDufrioCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("li.image:not(.selected) > img");
+		Elements imagesElement = document.select(".carouselPrincipal figure > a");
 
-		for (Element e : imagesElement) {
-			String image = null;
-
-			if(e.hasAttr("data-image-large") && e.attr("data-image-large").contains("Products")) {
-				image = e.attr("data-image-large").trim();
-			} else if(e.hasAttr("data-image-big") && e.attr("data-image-big").contains("Products")) {
-				image = e.attr("data-image-big").trim();
-			} else if(e.hasAttr("data-small") && e.attr("data-small").contains("Products")) {
-				image = e.attr("data-small").trim();
-			}
-
-			if(image != null) {
-				secondaryImagesArray.put(image);
-			}
+		for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
+			String image = imagesElement.get(i).attr("href").trim();
+			secondaryImagesArray.put(image);
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -270,71 +241,80 @@ public class BrasilDufrioCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<>();
-		Elements elementCategories = document.select(CATEGORIES_SELECTOR);
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
 
-		for (int i = 1; i < elementCategories.size() - 1; i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
+		Elements elementCategories = document.select(".breadcrumb li > a");
+		for (int i = 1; i < elementCategories.size(); i++) { // first index is the home page
+			categories.add(elementCategories.get(i).ownText().trim());
 		}
 
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-		return "";
-	}
-
 	private String crawlDescription(Document document) {
-		String description = "";
-		Element descriptionElement = document.select(DESCRIPTION_SELECTOR).first();
-		if (descriptionElement != null) description = description + descriptionElement.html();
+		StringBuilder description = new StringBuilder();
+		Element descriptionElement = document.select("section.linha-01").first();
+		Element caracteristicas = document.select(".caracteristicasDetalhe").first();
+		Element dimensoes = document.select(".dimensoes").first();
 
-		return description;
-	}
-
-	/**************************
-	 * Specific manipulations *
-	 **************************/
-
-	private String sanitizeName(String name) {
-		return name.replace("'","").replace("’","").trim();
-	}
-	
-	private Prices crawlPrices(Float price, Document doc){
-		Prices prices = new Prices();
+		if (descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
 		
-		if(price != null){
-			Element aVista = doc.select(".price-2 .priceContainer .savings .instant-price").first();
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();
-			
-			if(aVista != null){
-				// Preço de boleto e 1 vez no cartão são iguais
-				Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
-				prices.insertBankTicket(bankTicketPrice);
-				installmentPriceMap.put(1, bankTicketPrice);
-			}
-	
-			Elements installments = doc.select(".price-2 .condition");
-			
-			Element parcels = installments.select(".parcels").first();
-			
-			if(parcels != null){				
-				Integer installment = Integer.parseInt(parcels.text().replaceAll("[^0-9]", "").trim());
+		if (caracteristicas != null) {
+			description.append(caracteristicas.html());
+		}
+		
+		if (dimensoes != null) {
+			description.append(dimensoes.html());
+		}
+
+		return description.toString();
+	}
+
+	private Prices crawlPrices(Float price, Document doc) {
+		Prices prices = new Prices();
+
+		if (price != null) {
+			Element aVista = doc.select(".v3").first();
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+			if (aVista != null) {
+				String text = aVista.text().trim();
 				
-				Element parcelValue = installments.select(".parcel-value").first();
-				
-				if(parcelValue != null){		
-					Float value = MathCommonsMethods.parseFloat(parcelValue.text());
+				if(text.contains("boleto")) {
+					int x = text.indexOf("ou") + 2;
+					int y = text.indexOf("no", x);
 					
-					installmentPriceMap.put(installment, value);
+					Float bankTicketPrice = MathCommonsMethods.parseFloat(text.substring(x, y));
+					prices.insertBankTicket(bankTicketPrice);
+				}
+			}
+
+			Elements parcels = doc.select(".parcelas span");
+			
+			for(Element e : parcels) {
+				String parcelText = e.text().toLowerCase();
+				
+				if(parcelText.contains("x")) {
+					Integer parcel = Integer.parseInt(parcelText.split("x")[0]);
+					
+					if(parcelText.contains("(")) {
+						int x = parcelText.indexOf('x');
+						int y = parcelText.indexOf('(');
+						
+						Float parcelPrice = MathCommonsMethods.parseFloat(parcelText.substring(x, y));
+						
+						installmentPriceMap.put(parcel, parcelPrice);
+					} else {
+						Float parcelPrice = MathCommonsMethods.parseFloat(parcelText.split("x")[1]);
+						installmentPriceMap.put(parcel, parcelPrice);
+					}
 				}
 			}
 			
-			
+
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -343,7 +323,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
 
