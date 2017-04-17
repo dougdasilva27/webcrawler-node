@@ -209,6 +209,7 @@ public class Crawler extends Task {
 					processProduct(activeVoidResultProduct);
 				} catch (Exception e) {
 					Logging.printLogError(logger, session, "Error in process product method.");
+					Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
@@ -228,6 +229,7 @@ public class Crawler extends Task {
 				try {
 					processProduct(product);
 				} catch (Exception e) {
+					Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 					SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 					session.registerError(error);
 				}
