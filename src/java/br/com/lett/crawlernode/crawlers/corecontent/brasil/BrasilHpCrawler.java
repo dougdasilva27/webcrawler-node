@@ -142,7 +142,7 @@ public class BrasilHpCrawler extends Crawler {
 			String name = seller.text().toLowerCase().trim();
 			Prices prices = crawlPrices(doc, price);
 
-			if(!name.isEmpty()) {
+			if(!name.isEmpty() && price != null) {
 				marketplaces.put(name, prices);
 			}
 		}
@@ -197,8 +197,13 @@ public class BrasilHpCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null) {
-			Float bankSlipPrice = price;
-			prices.insertBankTicket(bankSlipPrice);
+			Element discount = doc.select(".price.discount").first();
+			
+			if(discount != null) {
+				prices.insertBankTicket(MathCommonsMethods.parseFloat(discount.text()));
+			} else {
+				prices.insertBankTicket(price);
+			}
 
 			Map<Integer, Float> installmentsMap = new HashMap<>();
 			
@@ -238,7 +243,18 @@ public class BrasilHpCrawler extends Crawler {
 
 		Element elementPrimaryImage = document.select("#divFullImage a").first();
 		if(elementPrimaryImage != null) {
-			primaryImage = elementPrimaryImage.attr("href");
+			String image = elementPrimaryImage.attr("href").trim();
+			
+			if(image.isEmpty()) {
+				Element img = elementPrimaryImage.select("> img").first();
+				
+				if(img != null) {
+					image = img.attr("src");
+				}
+			} 
+			
+			primaryImage = image;
+			
 		}
 
 		return primaryImage;
