@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.core.models;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import br.com.lett.crawlernode.util.CommonMethods;
+
 public class Product {
 	
 	private String 		url;
@@ -101,7 +103,11 @@ public class Product {
 	}
 	
 	public void setPrimaryImage(String primaryImage) {
-		this.primaryImage = primaryImage;
+		if(primaryImage != null) {
+			this.primaryImage = CommonMethods.removeIllegalParameters(primaryImage);
+		} else {
+			this.primaryImage = primaryImage;
+		}
 	}
 	
 	public String getSecondaryImages() {

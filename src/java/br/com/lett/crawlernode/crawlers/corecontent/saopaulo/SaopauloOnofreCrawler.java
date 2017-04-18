@@ -51,7 +51,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloOnofreCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.onofre.com.br/";
+	private final String HOME_PAGE = "https://www.onofre.com.br/";
+	private final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
 
 	public SaopauloOnofreCrawler(Session session) {
 		super(session);
@@ -60,13 +61,13 @@ public class SaopauloOnofreCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
 	}
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		Elements skuList = crawlSkuList(doc);
 
@@ -271,7 +272,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("href");
 		}
 		
-		if (!primaryImage.startsWith("http://img")) {
+		if (!primaryImage.startsWith("http")) {
 			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
 		} else {
 			primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super");
