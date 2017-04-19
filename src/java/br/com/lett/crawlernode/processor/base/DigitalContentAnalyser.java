@@ -178,52 +178,6 @@ public class DigitalContentAnalyser {
 
 	}
 
-//	private static String sanitizeBeforeValidateRule(String content) {
-//
-//		String sanitizedContent = content;
-//		
-//		// Essas palavras ou caracteres devem ser substituídas em qualquer situação, não apenas na lista negra
-//		sanitizedContent = sanitizedContent.replace("'", "");
-//		sanitizedContent = sanitizedContent.replace("`", "");
-//		sanitizedContent = sanitizedContent.replace("+", " ");
-//		sanitizedContent = sanitizedContent.replace(",", " ");
-//		//sanitizedContent = sanitizedContent.replace(".", " ");
-//		sanitizedContent = sanitizedContent.replace("!", " ");
-//		sanitizedContent = sanitizedContent.replace("?", " ");
-//		sanitizedContent = sanitizedContent.replace("(", " ");
-//		sanitizedContent = sanitizedContent.replace(")", " ");
-//
-//		sanitizedContent = sanitizedContent.replaceAll("\\u00a0", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u2007", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u202F", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u3000", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u1680", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u180e", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u200a", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\xA0", " ");
-//		sanitizedContent = sanitizedContent.replaceAll("\\u205f", " ");	
-//		
-//		// create replacement for double quotes
-//		sanitizedContent = sanitizedContent.replaceAll("\\u201d", "\""); // ”
-//		sanitizedContent = sanitizedContent.replaceAll("\\u201e", "\""); // „
-//		sanitizedContent = sanitizedContent.replaceAll("\\u201c", "\""); // “
-//
-//		// Básico - Remover caixa alta e espaços vazios no começo e fim
-//		sanitizedContent = sanitizedContent.toLowerCase();
-//		sanitizedContent = sanitizedContent.trim();
-//
-//		// Remoção de espaços duplos
-//		while (sanitizedContent.contains("  ")) {
-//			sanitizedContent = sanitizedContent.replace("  ", " ");
-//		}
-//
-//		sanitizedContent =  " " + Jsoup.parse(Normalizer.normalize(sanitizedContent, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "")).text() + " ";
-//
-//		sanitizedContent = sanitizedContent.replace("/", " ");
-//
-//		return sanitizedContent;
-//	}
-
 	/**
 	 * Classify an image analysing the result of each similarity stage.
 	 * 
