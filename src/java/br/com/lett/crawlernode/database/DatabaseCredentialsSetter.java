@@ -1,19 +1,14 @@
 package br.com.lett.crawlernode.database;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.DBCredentialsSetter;
-import credentials.MongoFrozenCredentialsSetter;
-import credentials.MongoImagesCredentialsSetter;
-import credentials.MongoInsightsCredentialsSetter;
-import credentials.MongoPanelCredentialsSetter;
-import credentials.PostgresCredentialsSetter;
 import credentials.models.DBCredentials;
 
 public class DatabaseCredentialsSetter {
@@ -26,236 +21,34 @@ public class DatabaseCredentialsSetter {
 
 	public static DBCredentials setCredentials() throws Exception {
 		DBCredentialsSetter st = new DBCredentialsSetter();
-		Map<String,String> enviroments = System.getenv();
+
+		List<String> databases = new ArrayList<>();
+		databases.add(DBCredentials.MONGO_PANEL);
+		databases.add(DBCredentials.MONGO_INSIGHTS);
+		databases.add(DBCredentials.MONGO_IMAGES);
+		databases.add(DBCredentials.MONGO_FROZEN);
+		databases.add(DBCredentials.POSTGRES);
 		
-		Map<String,String> credentials = new HashMap<>();
-		Map<String,String> logs = new HashMap<>();
-		
-		setCredentialsPostgres(enviroments, credentials, logs);
-		setCredentialsMongoInsights(enviroments, credentials, logs);
-		setCredentialsMongoPanel(enviroments, credentials, logs);
-		setCredentialsMongoImages(enviroments, credentials, logs);
-		setCredentialsMongoFrozen(enviroments, credentials, logs);
-		
-		if(logs.size() > 0) {
-			for(Entry<String, String> log : logs.entrySet()) {
-				Logging.printLogError(logger, log.getKey() + " ou " + log.getValue() + " devem ser setadas.");
+		try {
+			DBCredentials credentials = st.setDatabaseCredentials(databases);
+			
+			List<String> logErrorsList = st.getLogErors();
+			
+			if(!logErrorsList.isEmpty()) {
+				for(String log : logErrorsList) {
+					Logging.printLogError(logger, log);
+				}
+				
+				System.exit(0);
+			} else {
+				return credentials;
 			}
 			
+		} catch (Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 			System.exit(0);
 		}
 		
-		return st.setDatabaseCredentials(credentials);
+		return new DBCredentials();
 	}
-	
-	private static void setCredentialsPostgres(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
-		if(enviroments.containsKey(PostgresCredentialsSetter.HOST_POSTGRES)) {
-			credentials.put(PostgresCredentialsSetter.HOST_POSTGRES, enviroments.get(PostgresCredentialsSetter.HOST_POSTGRES));
-		} else if(enviroments.containsKey(PostgresCredentialsSetter.HOST_POSTGRES_ENCRYPTED)) {
-			credentials.put(PostgresCredentialsSetter.HOST_POSTGRES_ENCRYPTED, enviroments.get(PostgresCredentialsSetter.HOST_POSTGRES_ENCRYPTED));
-		} else {
-			logs.put(PostgresCredentialsSetter.HOST_POSTGRES, PostgresCredentialsSetter.HOST_POSTGRES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(PostgresCredentialsSetter.PORT_POSTGRES)) {
-			credentials.put(PostgresCredentialsSetter.PORT_POSTGRES, enviroments.get(PostgresCredentialsSetter.PORT_POSTGRES));
-		} else if(enviroments.containsKey(PostgresCredentialsSetter.PORT_POSTGRES_ENCRYPTED)) {
-			credentials.put(PostgresCredentialsSetter.PORT_POSTGRES_ENCRYPTED, enviroments.get(PostgresCredentialsSetter.PORT_POSTGRES_ENCRYPTED));
-		} else {
-			logs.put(PostgresCredentialsSetter.PORT_POSTGRES, PostgresCredentialsSetter.PORT_POSTGRES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(PostgresCredentialsSetter.USERNAME_POSTGRES)) {
-			credentials.put(PostgresCredentialsSetter.USERNAME_POSTGRES, enviroments.get(PostgresCredentialsSetter.USERNAME_POSTGRES));
-		} else if(enviroments.containsKey(PostgresCredentialsSetter.USERNAME_POSTGRES_ENCRYPTED)) {
-			credentials.put(PostgresCredentialsSetter.USERNAME_POSTGRES_ENCRYPTED, enviroments.get(PostgresCredentialsSetter.USERNAME_POSTGRES_ENCRYPTED));
-		} else {
-			logs.put(PostgresCredentialsSetter.USERNAME_POSTGRES, PostgresCredentialsSetter.USERNAME_POSTGRES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(PostgresCredentialsSetter.PASSWORD_POSTGRES)) {
-			credentials.put(PostgresCredentialsSetter.PASSWORD_POSTGRES, enviroments.get(PostgresCredentialsSetter.PASSWORD_POSTGRES));
-		} else if(enviroments.containsKey(PostgresCredentialsSetter.PASSWORD_POSTGRES_ENCRYPTED)) {
-			credentials.put(PostgresCredentialsSetter.PASSWORD_POSTGRES_ENCRYPTED, enviroments.get(PostgresCredentialsSetter.PASSWORD_POSTGRES_ENCRYPTED));
-		} else {
-			logs.put(PostgresCredentialsSetter.PASSWORD_POSTGRES, PostgresCredentialsSetter.PASSWORD_POSTGRES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(PostgresCredentialsSetter.DATABASE_POSTGRES)) {
-			credentials.put(PostgresCredentialsSetter.DATABASE_POSTGRES, enviroments.get(PostgresCredentialsSetter.DATABASE_POSTGRES));
-		} else if(enviroments.containsKey(PostgresCredentialsSetter.DATABASE_POSTGRES_ENCRYPTED)) {
-			credentials.put(PostgresCredentialsSetter.DATABASE_POSTGRES_ENCRYPTED, enviroments.get(PostgresCredentialsSetter.DATABASE_POSTGRES_ENCRYPTED));
-		} else {
-			logs.put(PostgresCredentialsSetter.DATABASE_POSTGRES, PostgresCredentialsSetter.DATABASE_POSTGRES_ENCRYPTED);
-		}
-	}
-	
-	private static void setCredentialsMongoPanel(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
-		if(enviroments.containsKey(MongoPanelCredentialsSetter.HOST_PANEL)) {
-			credentials.put(MongoPanelCredentialsSetter.HOST_PANEL, enviroments.get(MongoPanelCredentialsSetter.HOST_PANEL));
-		} else if(enviroments.containsKey(MongoPanelCredentialsSetter.HOST_PANEL_ENCRYPTED)) {
-			credentials.put(MongoPanelCredentialsSetter.HOST_PANEL_ENCRYPTED, enviroments.get(MongoPanelCredentialsSetter.HOST_PANEL_ENCRYPTED));
-		} else {
-			logs.put(MongoPanelCredentialsSetter.HOST_PANEL, MongoPanelCredentialsSetter.HOST_PANEL_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoPanelCredentialsSetter.PORT_PANEL)) {
-			credentials.put(MongoPanelCredentialsSetter.PORT_PANEL, enviroments.get(MongoPanelCredentialsSetter.PORT_PANEL));
-		} else if(enviroments.containsKey(MongoPanelCredentialsSetter.PORT_PANEL_ENCRYPTED)) {
-			credentials.put(MongoPanelCredentialsSetter.PORT_PANEL_ENCRYPTED, enviroments.get(MongoPanelCredentialsSetter.PORT_PANEL_ENCRYPTED));
-		} else {
-			logs.put(MongoPanelCredentialsSetter.PORT_PANEL, MongoPanelCredentialsSetter.PORT_PANEL_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoPanelCredentialsSetter.USERNAME_PANEL)) {
-			credentials.put(MongoPanelCredentialsSetter.USERNAME_PANEL, enviroments.get(MongoPanelCredentialsSetter.USERNAME_PANEL));
-		} else if(enviroments.containsKey(MongoPanelCredentialsSetter.USERNAME_PANEL_ENCRYPTED)) {
-			credentials.put(MongoPanelCredentialsSetter.USERNAME_PANEL_ENCRYPTED, enviroments.get(MongoPanelCredentialsSetter.USERNAME_PANEL_ENCRYPTED));
-		} else {
-			logs.put(MongoPanelCredentialsSetter.USERNAME_PANEL, MongoPanelCredentialsSetter.USERNAME_PANEL_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoPanelCredentialsSetter.PASSWORD_PANEL)) {
-			credentials.put(MongoPanelCredentialsSetter.PASSWORD_PANEL, enviroments.get(MongoPanelCredentialsSetter.PASSWORD_PANEL));
-		} else if(enviroments.containsKey(MongoPanelCredentialsSetter.PASSWORD_PANEL_ENCRYPTED)) {
-			credentials.put(MongoPanelCredentialsSetter.PASSWORD_PANEL_ENCRYPTED, enviroments.get(MongoPanelCredentialsSetter.PASSWORD_PANEL_ENCRYPTED));
-		} else {
-			logs.put(MongoPanelCredentialsSetter.PASSWORD_PANEL, MongoPanelCredentialsSetter.PASSWORD_PANEL_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoPanelCredentialsSetter.DATABASE_PANEL)) {
-			credentials.put(MongoPanelCredentialsSetter.DATABASE_PANEL, enviroments.get(MongoPanelCredentialsSetter.DATABASE_PANEL));
-		} else if(enviroments.containsKey(MongoPanelCredentialsSetter.DATABASE_PANEL_ENCRYPTED)) {
-			credentials.put(MongoPanelCredentialsSetter.DATABASE_PANEL_ENCRYPTED, enviroments.get(MongoPanelCredentialsSetter.DATABASE_PANEL_ENCRYPTED));
-		} else {
-			logs.put(MongoPanelCredentialsSetter.DATABASE_PANEL, MongoPanelCredentialsSetter.DATABASE_PANEL_ENCRYPTED);
-		}
-	}
-	
-	private static void setCredentialsMongoInsights(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
-		if(enviroments.containsKey(MongoInsightsCredentialsSetter.HOST_INSIGHTS)) {
-			credentials.put(MongoInsightsCredentialsSetter.HOST_INSIGHTS, enviroments.get(MongoInsightsCredentialsSetter.HOST_INSIGHTS));
-		} else if(enviroments.containsKey(MongoInsightsCredentialsSetter.HOST_INSIGHTS_ENCRYPTED)) {
-			credentials.put(MongoInsightsCredentialsSetter.HOST_INSIGHTS_ENCRYPTED, enviroments.get(MongoInsightsCredentialsSetter.HOST_INSIGHTS_ENCRYPTED));
-		} else {
-			logs.put(MongoInsightsCredentialsSetter.HOST_INSIGHTS, MongoInsightsCredentialsSetter.HOST_INSIGHTS_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoInsightsCredentialsSetter.PORT_INSIGHTS)) {
-			credentials.put(MongoInsightsCredentialsSetter.PORT_INSIGHTS, enviroments.get(MongoInsightsCredentialsSetter.PORT_INSIGHTS));
-		} else if(enviroments.containsKey(MongoInsightsCredentialsSetter.PORT_INSIGHTS_ENCRYPTED)) {
-			credentials.put(MongoInsightsCredentialsSetter.PORT_INSIGHTS_ENCRYPTED, enviroments.get(MongoInsightsCredentialsSetter.PORT_INSIGHTS_ENCRYPTED));
-		} else {
-			logs.put(MongoInsightsCredentialsSetter.PORT_INSIGHTS, MongoInsightsCredentialsSetter.PORT_INSIGHTS_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS)) {
-			credentials.put(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS, enviroments.get(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS));
-		} else if(enviroments.containsKey(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS_ENCRYPTED)) {
-			credentials.put(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS_ENCRYPTED, enviroments.get(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS_ENCRYPTED));
-		} else {
-			logs.put(MongoInsightsCredentialsSetter.USERNAME_INSIGHTS, MongoInsightsCredentialsSetter.USERNAME_INSIGHTS_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS)) {
-			credentials.put(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS, enviroments.get(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS));
-		} else if(enviroments.containsKey(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS_ENCRYPTED)) {
-			credentials.put(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS_ENCRYPTED, enviroments.get(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS_ENCRYPTED));
-		} else {
-			logs.put(MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS, MongoInsightsCredentialsSetter.PASSWORD_INSIGHTS_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS)) {
-			credentials.put(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS, enviroments.get(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS));
-		} else if(enviroments.containsKey(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS_ENCRYPTED)) {
-			credentials.put(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS_ENCRYPTED, enviroments.get(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS_ENCRYPTED));
-		} else {
-			logs.put(MongoInsightsCredentialsSetter.DATABASE_INSIGHTS, MongoInsightsCredentialsSetter.DATABASE_INSIGHTS_ENCRYPTED);
-		}
-	}
-	
-	private static void setCredentialsMongoImages(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
-		if(enviroments.containsKey(MongoImagesCredentialsSetter.HOST_IMAGES)) {
-			credentials.put(MongoImagesCredentialsSetter.HOST_IMAGES, enviroments.get(MongoImagesCredentialsSetter.HOST_IMAGES));
-		} else if(enviroments.containsKey(MongoImagesCredentialsSetter.HOST_IMAGES_ENCRYPTED)) {
-			credentials.put(MongoImagesCredentialsSetter.HOST_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.HOST_IMAGES_ENCRYPTED));
-		} else {
-			logs.put(MongoImagesCredentialsSetter.HOST_IMAGES, MongoImagesCredentialsSetter.HOST_IMAGES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoImagesCredentialsSetter.PORT_IMAGES)) {
-			credentials.put(MongoImagesCredentialsSetter.PORT_IMAGES, enviroments.get(MongoImagesCredentialsSetter.PORT_IMAGES));
-		} else if(enviroments.containsKey(MongoImagesCredentialsSetter.PORT_IMAGES_ENCRYPTED)) {
-			credentials.put(MongoImagesCredentialsSetter.PORT_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.PORT_IMAGES_ENCRYPTED));
-		} else {
-			logs.put(MongoImagesCredentialsSetter.PORT_IMAGES, MongoImagesCredentialsSetter.PORT_IMAGES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoImagesCredentialsSetter.USERNAME_IMAGES)) {
-			credentials.put(MongoImagesCredentialsSetter.USERNAME_IMAGES, enviroments.get(MongoImagesCredentialsSetter.USERNAME_IMAGES));
-		} else if(enviroments.containsKey(MongoImagesCredentialsSetter.USERNAME_IMAGES_ENCRYPTED)) {
-			credentials.put(MongoImagesCredentialsSetter.USERNAME_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.USERNAME_IMAGES_ENCRYPTED));
-		} else {
-			logs.put(MongoImagesCredentialsSetter.USERNAME_IMAGES, MongoImagesCredentialsSetter.USERNAME_IMAGES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoImagesCredentialsSetter.PASSWORD_IMAGES)) {
-			credentials.put(MongoImagesCredentialsSetter.PASSWORD_IMAGES, enviroments.get(MongoImagesCredentialsSetter.PASSWORD_IMAGES));
-		} else if(enviroments.containsKey(MongoImagesCredentialsSetter.PASSWORD_IMAGES_ENCRYPTED)) {
-			credentials.put(MongoImagesCredentialsSetter.PASSWORD_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.PASSWORD_IMAGES_ENCRYPTED));
-		} else {
-			logs.put(MongoImagesCredentialsSetter.PASSWORD_IMAGES, MongoImagesCredentialsSetter.PASSWORD_IMAGES_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoImagesCredentialsSetter.DATABASE_IMAGES)) {
-			credentials.put(MongoImagesCredentialsSetter.DATABASE_IMAGES, enviroments.get(MongoImagesCredentialsSetter.DATABASE_IMAGES));
-		} else if(enviroments.containsKey(MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED)) {
-			credentials.put(MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED, enviroments.get(MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED));
-		} else {
-			logs.put(MongoImagesCredentialsSetter.DATABASE_IMAGES, MongoImagesCredentialsSetter.DATABASE_IMAGES_ENCRYPTED);
-		}
-	}
-	
-	private static void setCredentialsMongoFrozen(Map<String,String> enviroments, Map<String,String> credentials, Map<String,String> logs) {
-		if(enviroments.containsKey(MongoFrozenCredentialsSetter.HOST_FROZEN)) {
-			credentials.put(MongoFrozenCredentialsSetter.HOST_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.HOST_FROZEN));
-		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED)) {
-			credentials.put(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED));
-		} else {
-			logs.put(MongoFrozenCredentialsSetter.HOST_FROZEN, MongoFrozenCredentialsSetter.HOST_FROZEN_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoFrozenCredentialsSetter.PORT_FROZEN)) {
-			credentials.put(MongoFrozenCredentialsSetter.PORT_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.PORT_FROZEN));
-		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED)) {
-			credentials.put(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED));
-		} else {
-			logs.put(MongoFrozenCredentialsSetter.PORT_FROZEN, MongoFrozenCredentialsSetter.PORT_FROZEN_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoFrozenCredentialsSetter.USERNAME_FROZEN)) {
-			credentials.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.USERNAME_FROZEN));
-		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED)) {
-			credentials.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED));
-		} else {
-			logs.put(MongoFrozenCredentialsSetter.USERNAME_FROZEN, MongoFrozenCredentialsSetter.USERNAME_FROZEN_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoFrozenCredentialsSetter.PASSWORD_FROZEN)) {
-			credentials.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.PASSWORD_FROZEN));
-		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED)) {
-			credentials.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED));
-		} else {
-			logs.put(MongoFrozenCredentialsSetter.PASSWORD_FROZEN, MongoFrozenCredentialsSetter.PASSWORD_FROZEN_ENCRYPTED);
-		}
-		
-		if(enviroments.containsKey(MongoFrozenCredentialsSetter.DATABASE_FROZEN)) {
-			credentials.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN, enviroments.get(MongoFrozenCredentialsSetter.DATABASE_FROZEN));
-		} else if(enviroments.containsKey(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED)) {
-			credentials.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED, enviroments.get(MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED));
-		} else {
-			logs.put(MongoFrozenCredentialsSetter.DATABASE_FROZEN, MongoFrozenCredentialsSetter.DATABASE_FROZEN_ENCRYPTED);
-		}
-	}
-
 }
