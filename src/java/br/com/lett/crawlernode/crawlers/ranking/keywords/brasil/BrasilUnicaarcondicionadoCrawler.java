@@ -29,8 +29,9 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 
 		Elements products =  this.currentDoc.select("ul.products-grid > li.item > span");		
 		Element emptySearch = this.currentDoc.select(".suggest").first();
-
-		if(products.size() >= 1 && emptySearch == null) {			
+		Element suggestSearch = this.currentDoc.select(".note-msg").first();
+		
+		if(products.size() >= 1 && emptySearch == null && suggestSearch == null) {			
 			for(Element e : products) {
 
 				// InternalPid
