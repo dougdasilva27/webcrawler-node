@@ -63,7 +63,6 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 
 	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
 		List<String> idList = new ArrayList<>();
-		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
 
 		if (embeddedJSONObject.has("skus")) {
 			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
@@ -72,7 +71,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 				JSONObject sku = skus.getJSONObject(i);
 
 				if (sku.has("id")) {
-					String id = internalPid + "-" + sku.getString("id");
+					String id = sku.getString("id");
 					idList.add(id);
 				}
 			}
