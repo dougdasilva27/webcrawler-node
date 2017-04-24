@@ -31,7 +31,9 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
 			
 			for(Element e: products) {
 
@@ -47,7 +49,9 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, productUrl);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
 			this.result = false;
