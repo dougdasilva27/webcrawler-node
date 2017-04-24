@@ -14,58 +14,98 @@ public class BrasilAmbientairCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
+		// número de produtos por página do market
 		this.pageSize = 8;
-			
-		this.log("Página "+ this.currentPage);
-		
-		String key = this.location.replaceAll(" ", "%20");
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.ambientair.com.br/busca.html?loja=110&acao=BU&busca="+ key +"&passo=exibeTodos&ordem=PROD_NOME&pagina="+this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-			
-		//chama função de pegar a url
+
+		this.log("Página " + this.currentPage);
+
+		String keyword = this.location.replaceAll(" ", "%20");
+
+		// monta a url com a keyword e a página
+		String url = "http://www.ambientair.com.br/busca.html?loja=110&acao=BU&busca=" + keyword
+				+ "&passo=exibeTodos&ordem=PROD_NOME&pagina=" + this.currentPage;
+		this.log("Link onde são feitos os crawlers: " + url);
+
+		// chama função de pegar o html
 		this.currentDoc = fetchDocument(url);
-		
-		Elements id =  this.currentDoc.select("div.divProdutos ul > li");
-		
-		int count=0;
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(id.size() >= 1)
-		{			
-			for(Element e : id)
-			{
-				count++;
-				//seta o id com o seletor
-				Element eForId 		= e.select("input.compare").first();
-				String internalId 	= eForId.attr("value");
-				String internalPid 	= null;
-				
-				//monta a url
-				Element eUrl = e.select("> a.produto").first();
-				String productUrl	 = eUrl.attr("href");
-				
+
+		Elements products = this.currentDoc.select("div.divProdutos ul > li");
+
+		// se obter 1 ou mais links de produtos e essa página tiver resultado
+		// faça:
+		if (products.size() >= 1) {
+			for (Element e : products) {
+
+				// InternalPid
+				String internalPid = crawlInternalPid(e);
+
+				// InternalId
+				String internalId = crawlInternalId(e);
+
+				// Url do produto
+				String productUrl = crawlProductUrl(e);
+
 				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("InternalId do produto da "+count+" da página "+ this.currentPage+ ": " + internalId + " url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;	
+
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+						+ internalPid + " - Url: " + productUrl);
+				if (this.arrayProducts.size() == productsLimit) {
+					break;
+				}
+
 			}
-		}
-		else
-		{
-			this.result = false;
+		} else {
 			setTotalBusca();
-			this.log("Keyword sem resultado na página atual!");
+			this.result = false;
+			this.log("Keyword sem resultado!");
 		}
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
+		if (!hasNextPage()) {
+			setTotalBusca();
+		}
+
+		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+				+ this.arrayProducts.size() + " produtos crawleados");
 	}
 
 	@Override
 	protected boolean hasNextPage() {
+		Elements products = this.currentDoc.select("div.divProdutos ul > li");
+
+		if (products.size() >= 8) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private String crawlInternalId(Element e) {
+		String internalId = null;
 		
-		return true;
+		Element id = e.select("input.compare").first();
+		
+		if (id != null) {
+			internalId = id.val();
+		}
+
+		return internalId;
+	}
+
+	private String crawlInternalPid(Element e) {
+		return null;
+	}
+
+	private String crawlProductUrl(Element e) {
+		String productUrl = null;
+		Element eUrl = e.select("a.produto").first();
+		
+		if(eUrl != null) {
+			productUrl = eUrl.attr("href");
+			if (!productUrl.contains("ambientair")) {
+				productUrl = "http://www.ambientair.com.br/" + productUrl;
+			}
+		}
+
+		return productUrl;
 	}
 }

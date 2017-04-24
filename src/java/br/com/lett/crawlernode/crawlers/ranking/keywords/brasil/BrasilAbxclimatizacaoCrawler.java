@@ -31,7 +31,9 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
 			
 			for(Element e: products) {
 				// InternalPid
