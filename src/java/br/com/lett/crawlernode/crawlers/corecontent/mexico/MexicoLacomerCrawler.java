@@ -10,13 +10,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -32,6 +32,11 @@ import br.com.lett.crawlernode.util.Logging;
  * the sku page. (nao existe divisao no cartao de credito).
  * 4) In this market has two others possibles markets, City Market = 305 and Fresko = 14
  * 5) In page of product, has all physicals stores when it is available.
+ * 
+ * Url example: http://www.lacomer.com.mx/lacomer/doHome.action?succId=14&pasId=63&artEan=7501055901401&ver=detallearticulo&opcion=detarticulo
+ * 
+ * pasId -> Lacomer
+ * succId -> Tienda Lomas Anahuac (Mondelez choose)
  * 
  * @author Gabriel Dornelas
  *
@@ -53,7 +58,7 @@ public class MexicoLacomerCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -101,7 +106,9 @@ public class MexicoLacomerCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-code").first() != null) return true;
+		if (doc.select(".product-title").first() != null) {
+			return true;
+		}
 		return false;
 	}
 
@@ -146,8 +153,14 @@ public class MexicoLacomerCrawler extends Crawler {
 		Element salePriceElement = document.select(".price-sales").last();		
 
 		if (salePriceElement != null) {
-			priceText = salePriceElement.ownText();
-			price = Float.parseFloat(priceText.replaceAll("[^0-9.]", ""));
+			priceText = salePriceElement.ownText().trim().toLowerCase();
+			
+			if(priceText.contains("$")) {
+				int x = priceText.indexOf("$") + 1;
+				int y = priceText.indexOf(" ", x);
+				
+				price = Float.parseFloat(priceText.substring(x, y));
+			}
 		}
 		
 		if(price == 0f){
@@ -214,7 +227,9 @@ public class MexicoLacomerCrawler extends Crawler {
 		StringBuilder description = new StringBuilder();
 		Element descriptionElement = document.select(".product-tab").first();
 
-		if(descriptionElement != null) description.append(descriptionElement.html());
+		if(descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
 		
 		return description.toString();
 	}
@@ -235,7 +250,7 @@ public class MexicoLacomerCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 	
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
