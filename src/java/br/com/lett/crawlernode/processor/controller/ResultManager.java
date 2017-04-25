@@ -390,8 +390,8 @@ public class ResultManager {
 												.toString();
 
 		// fetch md5 of the images in amazon
-		String referencePrimaryMd5 = S3Service.fetchMd5FromAmazon(session, referencePrimaryImageAmazonKey); // the desired reference image
-		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey); // the supposed new image
+		String referencePrimaryMd5 = S3Service.fetchEtagFromAmazon(session, referencePrimaryImageAmazonKey); // the desired reference image
+		String primaryMd5 = S3Service.fetchEtagFromAmazon(session, primaryImageAmazonKey); // the supposed new image
 		
 		Logging.printLogDebug(logger, session, "Last downloaded primary image url: " + primaryImageAmazonKey);
 		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);

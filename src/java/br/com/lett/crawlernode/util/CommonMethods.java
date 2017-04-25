@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 /**
  * This class contains common methods that can be used in any class within
  * crawler-node project.
+ * 
  * @author Samir Leao
  *
  */
