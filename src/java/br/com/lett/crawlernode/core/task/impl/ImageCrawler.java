@@ -68,8 +68,8 @@ public class ImageCrawler extends Task {
 			
 			if ( metadata == null ) { // we doesn't have any image under this path in S3 yet
 				Logging.printLogDebug(logger, session, "This image isn't on Amazon yet.");
-
-				if (simpleDownloadResult.imageFile != null && simpleDownloadResult.md5 != null ) {
+				
+				if (simpleDownloadResult.imageFile != null && simpleDownloadResult.md5 != null) {
 					update(simpleDownloadResult);
 				}
 			}
@@ -158,7 +158,7 @@ public class ImageCrawler extends Task {
 		BufferedImage bufferedImage = createImage(imageDownloadResult.imageFile);
 
 		// convert image to jpg if necessary
-		Logging.printLogDebug(logger, session, "Rescaling the image...");
+		Logging.printLogDebug(logger, session, "Converting image to jpg if necessary...");
 		convertImage(bufferedImage, imageDownloadResult.imageFile);
 
 		// upload to Amazon
@@ -177,7 +177,7 @@ public class ImageCrawler extends Task {
 
 		result.imageFile = imageFile;
 		result.md5 = md5;
-
+		
 		return result;
 	}
 

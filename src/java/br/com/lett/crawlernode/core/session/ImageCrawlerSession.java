@@ -80,7 +80,7 @@ public class ImageCrawlerSession extends Session {
 		localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();
 		localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-original.jpg";  
 		
-		imageKeyOnBucket = "product-image/" + processedId + "/" + imageNumber + ".jpg";
+		imageKeyOnBucket = "market" + "/" + "product-image" + "/" + processedId + "/" + imageNumber + ".jpg";
 	}
 	
 	@Override

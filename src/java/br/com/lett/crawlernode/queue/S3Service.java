@@ -117,7 +117,7 @@ public class S3Service {
 
 		ImageCrawlerSession s = (ImageCrawlerSession)session;
 
-		File f = new File(s.getLocalOriginalFileDir());
+		File f = new File(s.getLocalFileDir());
 
 		FileInputStream fileInputStream = new FileInputStream(f);
 
