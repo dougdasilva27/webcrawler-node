@@ -47,8 +47,6 @@ public class ResultManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(ResultManager.class);
 
-	// reference to mongo, to be used on SIFT calculations
-
 	private DatabaseManager db;
 
 	// substitution maps

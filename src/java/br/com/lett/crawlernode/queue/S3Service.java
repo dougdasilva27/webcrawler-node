@@ -320,13 +320,9 @@ public class S3Service {
 
 	}
 
-	public static String fetchEtagFromAmazon(Session session, String key) {
-		return fetchEtagFromAmazon(session, key, 1);
-	}
+	private static String fetchEtagFromAmazon(Session session, String key) {
 
-	private static String fetchEtagFromAmazon(Session session, String key, int attempt) {
-
-		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + key);
+		Logging.printLogDebug(logger, session, "Fetching Etag from Amazon: " + key);
 
 		try {
 			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
