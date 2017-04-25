@@ -64,19 +64,6 @@ public class Processor {
 		String description = product.getDescription();
 		JSONArray marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
-		
-		// sanitize -- JOOQ is doing this internally
-		//url = sanitizeBeforePersist(url);
-		//name = sanitizeBeforePersist(name);
-		//cat1 = sanitizeBeforePersist(cat1);
-		//cat2 = sanitizeBeforePersist(cat2);
-		//cat3 = sanitizeBeforePersist(cat3);
-		//foto = sanitizeBeforePersist(foto);
-		//secondaryPics = sanitizeBeforePersist(secondaryPics);
-		//description = sanitizeBeforePersist(description);
-		//internalId = sanitizeBeforePersist(internalId);
-		//internalPid = sanitizeBeforePersist(internalPid);
-
 
 		// checking fields
 		boolean checkResult = checkFields(price, available, internalId, url, name, session);

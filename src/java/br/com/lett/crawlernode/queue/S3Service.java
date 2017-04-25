@@ -136,7 +136,7 @@ public class S3Service {
 		}
 	}
 
-	public static String getAmazonImageFileMd5(S3Object s3Object) {
+	public static String getImageMd5(S3Object s3Object) {
 		return s3Object.getObjectMetadata().getUserMetaDataOf(MD5_HEX_METADATA_FIELD);
 	}
 
@@ -279,6 +279,42 @@ public class S3Service {
 		}
 		catch (Exception e) {
 			Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+			return null;
+		}
+
+	}
+	
+	/**
+	 * 
+	 * @param session
+	 * @param key
+	 * @return	<br>the image md5
+	 * 			<br>null if the object wasn't found
+	 */
+	public static String fetchImageMd5(Session session, String key) {
+
+		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + key);
+
+		try {
+			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+			
+			if (objectMetadata != null) {
+				return objectMetadata.getUserMetaDataOf(MD5_HEX_METADATA_FIELD);
+			}
+			
+			return null;
+
+		} catch (AmazonS3Exception s3Exception) {
+			if (s3Exception.getStatusCode() == 404) {
+				Logging.printLogWarn(logger, session, "S3 status code: 404 [md5 not found]");
+				return null;
+			} else {
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
+				return null;
+			}
+		} 
+		catch (Exception e) {
+			Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
 			return null;
 		}
 

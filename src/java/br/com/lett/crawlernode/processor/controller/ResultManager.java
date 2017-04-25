@@ -374,12 +374,10 @@ public class ResultManager {
 		// this image is the last downloaded image in the image crawler
 		String primaryImageAmazonKey = new StringBuilder()
 										.append("product-image/")
-										.append(cityNameInfo.get(pm.getMarket()) + "/")
-										.append(marketNameInfo.get(pm.getMarket()) + "/")
-										.append(pm.getInternalId())
-										.append("/1-original.jpg")
+										.append(pm.getId())
+										.append("/1.jpg")
 										.toString();
-
+	
 		// assembling path to the desired primary image on Amazon S3
 		// this image is the one that was previously stored as the image that goes to insights
 		String referencePrimaryImageAmazonKey = new StringBuilder()
@@ -391,7 +389,7 @@ public class ResultManager {
 
 		// fetch md5 of the images in amazon
 		String referencePrimaryMd5 = S3Service.fetchEtagFromAmazon(session, referencePrimaryImageAmazonKey); // the desired reference image
-		String primaryMd5 = S3Service.fetchEtagFromAmazon(session, primaryImageAmazonKey); // the supposed new image
+		String primaryMd5 = S3Service.fetchImageMd5(session, primaryImageAmazonKey); // the supposed new image
 		
 		Logging.printLogDebug(logger, session, "Last downloaded primary image url: " + primaryImageAmazonKey);
 		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);
@@ -451,18 +449,6 @@ public class ResultManager {
 
 		// set pic on digital content
 		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
-
-//		// naming rules
-//		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
-//		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
-//
-//		// description rules
-//		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
-//		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
-//
-//		// create rules summary
-//		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
-//		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
 	/**
