@@ -26,20 +26,27 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 public class ProxyCollection {
 
 	private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
+	
+	public static final String HA_PROXY_HTTP = "191.235.90.114:3333";
+	public static final String HA_PROXY_HTTPS = "191.235.90.114:3333";
 
-	public static final String BUY 		= "buy";
-	public static final String BONANZA 	= "bonanza";
-	public static final String STORM 	= "storm";
-	public static final String NO_PROXY = "no_proxy";
-	public static final String CHARITY 	= "charity";
-	public static final String AZURE 	= "azure";
+	public static final String BUY 						= "buy";
+	public static final String BONANZA 					= "bonanza";
+	public static final String STORM 					= "storm";
+	public static final String NO_PROXY 				= "no_proxy";
+	public static final String LUMINATI_SERVER_BR 		= "luminati_server_br";
+	public static final String LUMINATI_RESIDENTIAL_BR 	= "luminati_residential_br";
+	public static final String CHARITY 					= "charity";
+	public static final String AZURE 					= "azure";
 
-	public static final int MAX_ATTEMPTS_BUY 		= 2;
-	public static final int MAX_ATTEMPTS_BONANZA 	= 3;
-	public static final int MAX_ATTEMPTS_CHARITY 	= 3;
-	public static final int MAX_ATTEMPTS_AZURE 		= 3;
-	public static final int MAX_ATTEMPTS_STORM		= 3;
-	public static final int MAX_ATTEMPTS_NO_RPOXY 	= 3;
+	public static final int MAX_ATTEMPTS_BUY 					= 2;
+	public static final int MAX_ATTEMPTS_BONANZA 				= 3;
+	public static final int MAX_ATTEMPTS_CHARITY 				= 3;
+	public static final int MAX_ATTEMPTS_LUMINATI_SERVER 		= 2;
+	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
+	public static final int MAX_ATTEMPTS_AZURE 					= 3;
+	public static final int MAX_ATTEMPTS_STORM					= 3;
+	public static final int MAX_ATTEMPTS_NO_PROXY 				= 1;
 
 	/** Intervals used to select proxy service when running normal information extraction */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler; // global information
@@ -52,39 +59,53 @@ public class ProxyCollection {
 
 
 	public ProxyCollection(Markets markets) {
-		this.proxyMap = new HashMap<String, List<LettProxy>>();
+		this.proxyMap = new HashMap<>();
 
-		this.proxyMaxAttempts = new HashMap<String, Integer>();
+		this.proxyMaxAttempts = new HashMap<>();
 		this.proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
 		this.proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
+		this.proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER);
+		this.proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL);
 		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
 		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
 		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
-		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_RPOXY);
+		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		
-		this.intervalsMarketsMapWebcrawler = new HashMap<Integer, List<Interval<Integer>>>();
-		this.intervalsMarketsMapImages = new HashMap<Integer, List<Interval<Integer>>>();
+		this.intervalsMarketsMapWebcrawler = new HashMap<>();
+		this.intervalsMarketsMapImages = new HashMap<>();
 		
 		this.assembleIntervalsWebcrawler(markets);
 		this.assembleIntervalsImages(markets);
 	}
 
 	public void setCharityProxy() {
-		List<LettProxy> charity = new ArrayList<LettProxy>();
+		List<LettProxy> charity = new ArrayList<>();
 		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
 		this.proxyMap.put(CHARITY, charity);
 	}
 
+	public void setLuminatiServerBrProxy() {
+		List<LettProxy> luminati = new ArrayList<>();
+		luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-static_shared_br", "72nxUzRANwPf3tYcekwii"));
+		this.proxyMap.put(LUMINATI_SERVER_BR, luminati);
+	}
+
+	public void setLuminatiResidentialBrProxy() {
+		List<LettProxy> luminati = new ArrayList<>();
+		luminati.add(new LettProxy(LUMINATI_RESIDENTIAL_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-residential_br", "bKhgwEQijyG92jR9kvBPw"));
+		this.proxyMap.put(LUMINATI_RESIDENTIAL_BR, luminati);
+	}
+	
 	public void setAzureProxy() {
-		List<LettProxy> azure = new ArrayList<LettProxy>();
+		List<LettProxy> azure = new ArrayList<>();
 		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
 		this.proxyMap.put(AZURE, azure);
 	}
 
 	public void setStormProxies() {
-		List<LettProxy> storm = new ArrayList<LettProxy>();
+		List<LettProxy> storm = new ArrayList<>();
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
 		this.proxyMap.put(STORM, storm);
 	}
@@ -93,7 +114,7 @@ public class ProxyCollection {
 		try {
 			Logging.printLogDebug(logger, "Fetching buyProxies proxies...");
 
-			List<LettProxy> buy = new ArrayList<LettProxy>();
+			List<LettProxy> buy = new ArrayList<>();
 
 			String url = "http://api.buyproxies.org/?a=showProxies&pid=40833&key=80069a39926fb5a7cbc4a684092572b0";
 
@@ -137,7 +158,7 @@ public class ProxyCollection {
 
 			Logging.printLogDebug(logger, "Fetching bonanza proxies...");
 
-			List<LettProxy> bonanza = new ArrayList<LettProxy>();
+			List<LettProxy> bonanza = new ArrayList<>();
 
 			String url = "https://api.proxybonanza.com/v1/userpackages/41202.json";
 
@@ -189,14 +210,14 @@ public class ProxyCollection {
 	 * @param session the crawler session. Used for logging purposes.
 	 * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the service name was not found.
 	 */
-	public List<LettProxy> getProxy(String serviceName) {
+	public List<LettProxy> getProxy(String serviceName) {		
 		if (this.proxyMap.containsKey(serviceName)) {
 			return this.proxyMap.get(serviceName);
 		} 
 
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
 
-		return new ArrayList<LettProxy>();		
+		return new ArrayList<>();		
 	}
 	
 	/**
@@ -216,8 +237,8 @@ public class ProxyCollection {
 	private void assembleIntervalsWebcrawler(Markets markets) {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
-			List<Interval<Integer>> intervals = new ArrayList<Interval<Integer>>();
-			ArrayList<String> proxies = m.getProxies();
+			List<Interval<Integer>> intervals = new ArrayList<>();
+			List<String> proxies = m.getProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
@@ -232,8 +253,8 @@ public class ProxyCollection {
 	private void assembleIntervalsImages(Markets markets) {
 		List<Market> marketList = markets.getMarkets();
 		for (Market m : marketList) {
-			List<Interval<Integer>> intervals = new ArrayList<Interval<Integer>>();
-			ArrayList<String> proxies = m.getImageProxies();
+			List<Interval<Integer>> intervals = new ArrayList<>();
+			List<String> proxies = m.getImageProxies();
 			int index = 1;
 			for (int i = 0; i < proxies.size(); i++) {
 				if (proxyMaxAttempts.get(proxies.get(i)) != null) {
@@ -273,7 +294,9 @@ public class ProxyCollection {
 			intervals = this.intervalsMarketsMapImages.get(market.getNumber());
 		}
 		Interval<Integer> interval = MathCommonsMethods.findInterval(intervals, attempt);
-		if (interval != null) return interval.getName();
+		if (interval != null) {
+			return interval.getName();
+		}
 		return null;
 	}
 

@@ -18,6 +18,7 @@ public class FeatureExtractor {
 		engine = new DoGSIFTEngine();
 	}	
 	
+	
 	/**
 	 * Extract the SIFT features from an image
 	 * @param queryImage The image to extract features and keypoints from

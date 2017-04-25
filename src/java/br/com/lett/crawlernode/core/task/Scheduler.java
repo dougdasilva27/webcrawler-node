@@ -18,9 +18,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import br.com.lett.crawlernode.server.QueueName;
-import br.com.lett.crawlernode.server.QueueHandler;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.queue.QueueHandler;
+import br.com.lett.crawlernode.queue.QueueName;
+import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -36,13 +36,12 @@ public class Scheduler {
 			Long processedId) {
 		Logging.printLogDebug(logger, session, "Scheduling images to be downloaded...");
 
-		List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>(); // send messages batch to Amazon SQS
+		List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
 		//List<TaskDocumentModel> tasksDocuments = new ArrayList<TaskDocumentModel>();
 		Integer counter = 0;
 		Integer insideBatchId = 0;
 
-		String marketName = session.getMarket().getName();
-		String marketCity = session.getMarket().getCity();
+		int marketId = session.getMarket().getNumber();
 		String primaryPic = processed.getPic();
 		String internalId = processed.getInternalId();
 		String secondaryImages = processed.getSecondary_pics();
@@ -58,8 +57,7 @@ public class Scheduler {
 		// assemble the primary image message
 		if (primaryPic != null && !primaryPic.isEmpty()) {
 			Map<String, MessageAttributeValue> attrPrimary = assembleImageMessageAttributes(
-					marketCity, 
-					marketName, 
+					marketId, 
 					QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR, 
 					internalId, 
 					processedId, 
@@ -79,12 +77,8 @@ public class Scheduler {
 				Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
 
 				// send the batch
-				SendMessageBatchResult result = null;
-				if (session instanceof TestCrawlerSession) {
-					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
-				} else {
-					result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
-				}
+				SendMessageBatchResult result;
+				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 
 				// get send request results
 				List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
@@ -138,11 +132,7 @@ public class Scheduler {
 			Logging.printLogDebug(logger, session, "Sending remaining batch of " + entries.size() + " messages...");
 
 			SendMessageBatchResult result = null;
-			if (session instanceof TestCrawlerSession) {
-				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.DEVELOPMENT, entries);
-			} else {
-				result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
-			}
+			result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
 
 			List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
 
@@ -154,16 +144,14 @@ public class Scheduler {
 	}
 
 	private static Map<String, MessageAttributeValue> assembleImageMessageAttributes(
-			String city,
-			String market,
+			int marketId,
 			String type,
 			String internalId,
 			Long processedId,
 			int number) {
 
-		Map<String, MessageAttributeValue> attr = new HashMap<String, MessageAttributeValue>();
-		attr.put(QueueService.CITY_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(city));
-		attr.put(QueueService.MARKET_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(market));
+		Map<String, MessageAttributeValue> attr = new HashMap<>();
+		attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(marketId)));
 		attr.put(QueueService.IMAGE_TYPE, new MessageAttributeValue().withDataType("String").withStringValue(type));
 		attr.put(QueueService.INTERNAL_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(internalId));
 		attr.put(QueueService.PROCESSED_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(processedId)));

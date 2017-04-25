@@ -1,17 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -47,7 +51,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloOnofreCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.onofre.com.br/";
+	private final String HOME_PAGE = "https://www.onofre.com.br/";
+	private final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
 
 	public SaopauloOnofreCrawler(Session session) {
 		super(session);
@@ -56,13 +61,13 @@ public class SaopauloOnofreCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
 	}
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		Elements skuList = crawlSkuList(doc);
 
@@ -72,7 +77,8 @@ public class SaopauloOnofreCrawler extends Crawler {
 			for (Element element : skuList) {
 
 				// fetch current sku URL
-				Document skuDoc = this.fetchSkuURL(element);
+				String currentURL = fetchSkuURL(element);
+				Document skuDoc = fetchSkuDocument(currentURL);
 
 				if (skuDoc != null) {
 					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -90,6 +96,9 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 						// Price
 						Float price = crawlMainPagePrice(skuDoc);
+						
+						// Prices
+						Prices prices = crawlPrices(price);
 
 						// Availability
 						boolean available = crawlAvailability(skuDoc);
@@ -117,11 +126,12 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 						Product product = new Product();
 						
-						product.setUrl(session.getOriginalURL());
+						product.setUrl(currentURL);
 						product.setInternalId(internalID);
 						product.setInternalPid(internalPid);
 						product.setName(name);
 						product.setPrice(price);
+						product.setPrices(prices);
 						product.setCategory1(category1);
 						product.setCategory2(category2);
 						product.setCategory3(category3);
@@ -152,6 +162,10 @@ public class SaopauloOnofreCrawler extends Crawler {
 
 			if (name != null) {
 				Float price = crawlMainPagePrice(doc);
+				
+				// Prices
+				Prices prices = crawlPrices(price);
+				
 				boolean available = crawlAvailability(doc);
 
 				ArrayList<String> categories = crawlCategories(doc); 
@@ -172,6 +186,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -257,7 +272,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("href");
 		}
 		
-		if (!primaryImage.startsWith("http://img")) {
+		if (!primaryImage.startsWith("http")) {
 			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
 		} else {
 			primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super");
@@ -329,21 +344,49 @@ public class SaopauloOnofreCrawler extends Crawler {
 		return document.select(".sku-radio .sku-list li");
 	}
 
-	private Document fetchSkuURL(Element sku) {
+	private String fetchSkuURL(Element sku) {
 		Element elementSkuURL = sku.select("a").first();
 		String skuUrl = null;
-		Document skuDoc = null;
-
-		// get sku URL
 		if (elementSkuURL != null) {
 			skuUrl = "http://www.onofre.com.br" + elementSkuURL.attr("href").trim();
 		}
-
-		// load sku URL
-		if (skuUrl != null) {
-			skuDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, skuUrl, null, null);
+		return skuUrl;
+	}
+	
+	private Document fetchSkuDocument(String skuURL) {
+		Document skuDoc = null;
+		if (skuURL != null) {
+			skuDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, skuURL, null, null);
 		}
-
 		return skuDoc;
+	}
+	
+	/**
+	 * In product page has only one price,
+	 * but in footer has informations of payment methods
+	 *
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+			
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+				
+		
+		return prices;
 	}
 } 

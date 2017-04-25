@@ -1,13 +1,10 @@
 package br.com.lett.crawlernode.processor.controller;
 
 import java.io.File;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,38 +15,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
-
 import br.com.lett.crawlernode.processor.base.DigitalContentAnalyser;
+import br.com.lett.crawlernode.processor.base.Extractor;
+import br.com.lett.crawlernode.processor.base.IdentificationLists;
 import br.com.lett.crawlernode.processor.base.Queries;
 import br.com.lett.crawlernode.processor.base.ReplacementMaps;
 import br.com.lett.crawlernode.processor.digitalcontent.Pic;
-import br.com.lett.crawlernode.processor.digitalcontent.RulesEvaluation;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
-
-import br.com.lett.crawlernode.server.S3Service;
-
+import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
-import br.com.lett.crawlernode.processor.base.Extractor;
-import br.com.lett.crawlernode.processor.base.IdentificationLists;
-
-import com.mongodb.client.MongoDatabase;
 
 /**
  * Classe responsável por processar produtos da tabela crawler a fim de transformá-los em
@@ -62,7 +48,6 @@ public class ResultManager {
 	private static final Logger logger = LoggerFactory.getLogger(ResultManager.class);
 
 	// reference to mongo, to be used on SIFT calculations
-	private MongoDatabase mongo;
 
 	private DatabaseManager db;
 
@@ -95,12 +80,10 @@ public class ResultManager {
 	 */
 	public ResultManager(
 			boolean activateLogging, 
-			MongoDatabase mongo, 
 			DatabaseManager db
 			) throws NullPointerException {
 
 		this.db = db;
-		this.mongo = mongo;
 
 		this.init(activateLogging);
 	}
@@ -121,18 +104,18 @@ public class ResultManager {
 		this.createMarketInfo();
 
 		// initialize substitution maps
-		this.unitsReplaceMap = new LinkedHashMap<String, String>();
-		this.recipientsReplaceMap = new LinkedHashMap<String, String>();
+		this.unitsReplaceMap = new LinkedHashMap<>();
+		this.recipientsReplaceMap = new LinkedHashMap<>();
 
 		// initialize identification maps
-		this.recipientsList = new ArrayList<String>();
-		this.unitsList = new ArrayList<String>();
-		this.classModelList = new ArrayList<ClassModel>();
-		this.brandModelList = new ArrayList<BrandModel>();
+		this.recipientsList = new ArrayList<>();
+		this.unitsList = new ArrayList<>();
+		this.classModelList = new ArrayList<>();
+		this.brandModelList = new ArrayList<>();
 
 		// create model for brand manipulation for identification and substitution
 		try {
-			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettBrandProducts);
+			ResultSet rs = db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettBrandProducts);
 			while(rs.next()) {
 
 				// verify if the brand should be ignored
@@ -222,7 +205,7 @@ public class ResultManager {
 
 		// create manipulation models for lett classes
 		try{
-			ResultSet rs = this.db.runSqlConsult(Queries.queryForLettClassProducts);
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettClassProducts);
 			while (rs.next()) {
 
 				ClassModel aux = null;
@@ -265,8 +248,12 @@ public class ResultManager {
 			// automatically add with brandsReplaceMap and its combinations:
 			// jackdaniels (wrong) -> jack daniels (correct)
 			if (cm.getLettName().contains(" ")) {
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", ""))) 	cm.putOnMap(cm.getLettName().replace(" ", ""), "");
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", "-"))) 	cm.putOnMap(cm.getLettName().replace(" ", "-"), "");
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", ""))) {
+					cm.putOnMap(cm.getLettName().replace(" ", ""), "");
+				}
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace(" ", "-"))) {
+					cm.putOnMap(cm.getLettName().replace(" ", "-"), "");
+				}
 
 				Matcher matcherSpace = space.matcher(cm.getLettName());
 				while(matcherSpace.find()){
@@ -281,8 +268,12 @@ public class ResultManager {
 			// "arco íris" (wrong) -> "arco-íris" (correct)
 			// "arcoíris" (wrong)  -> "arco-íris" (correct)
 			if (cm.getLettName().contains("-")) {
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", ""))) 	cm.putOnMap(cm.getLettName().replace("-", ""), "");
-				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", " "))) 	cm.putOnMap(cm.getLettName().replace("-", " "), "");
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", ""))) {
+					cm.putOnMap(cm.getLettName().replace("-", ""), "");
+				}
+				if(!cm.getMistakes().containsKey(cm.getLettName().replace("-", " "))) {
+					cm.putOnMap(cm.getLettName().replace("-", " "), "");
+				}
 
 				Matcher matcherSpace = space.matcher(cm.getLettName());
 				while(matcherSpace.find()){
@@ -323,11 +314,15 @@ public class ResultManager {
 		pm = extractor.extract(pm);
 
 		// update digital content
-		this.updateDigitalContent(pm, session);
+		updateDigitalContent(pm, session);
 
-		if (logActivated) Logging.printLogDebug(logger, "\n---> Final result:");
+		if (logActivated) {
+			Logging.printLogDebug(logger, "\n---> Final result:");
+		}
 
-		if (logActivated) Logging.printLogDebug(logger, pm.toString());
+		if (logActivated) {
+			Logging.printLogDebug(logger, pm.toString());
+		}
 
 		return pm;
 	}
@@ -354,71 +349,76 @@ public class ResultManager {
 		// count pics
 		// evaluate primary image
 		// evaluate secondary images
-		JSONObject pic = new JSONObject();
+		JSONObject processedModelDigitalContentPic = new JSONObject();
 		try {
 			JSONObject processedModelDigitalContent = pm.getDigitalContent();
 			if (processedModelDigitalContent != null) {
 				if (processedModelDigitalContent.has("pic")) {
-					pic = pm.getDigitalContent().getJSONObject("pic");
+					processedModelDigitalContentPic = pm.getDigitalContent().getJSONObject("pic");
 				}
 			}
-		} 
-		catch (Exception e) { 
+		} catch (Exception e) { 
 			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
 		}
 
 		// count images
-		pic.put("count", DigitalContentAnalyser.imageCount(pm));
+		processedModelDigitalContentPic.put("count", DigitalContentAnalyser.imageCount(pm));
 
 		// evaluate primary image
-		JSONObject picPrimary = new JSONObject();
-		if(pic.has("primary") ) {
-			picPrimary = pic.getJSONObject("primary");
+		JSONObject processedModelDigitalContentPicPrimary = new JSONObject();
+		if (processedModelDigitalContentPic.has("primary") ) {
+			processedModelDigitalContentPicPrimary = processedModelDigitalContentPic.getJSONObject("primary");
 		}
 
 		// assembling path to primary image stored on Amazon S3
 		// this image is the last downloaded image in the image crawler
-		StringBuilder primaryImageAmazonKey = new StringBuilder();
-		primaryImageAmazonKey.append("product-image/");
-		primaryImageAmazonKey.append(this.cityNameInfo.get(pm.getMarket()) + "/");
-		primaryImageAmazonKey.append(this.marketNameInfo.get(pm.getMarket()) + "/");
-		primaryImageAmazonKey.append(pm.getInternalId());
-		primaryImageAmazonKey.append("/1-original.jpg");
+		String primaryImageAmazonKey = new StringBuilder()
+										.append("product-image/")
+										.append(cityNameInfo.get(pm.getMarket()) + "/")
+										.append(marketNameInfo.get(pm.getMarket()) + "/")
+										.append(pm.getInternalId())
+										.append("/1-original.jpg")
+										.toString();
 
 		// assembling path to the desired primary image on Amazon S3
 		// this image is the one that was previously stored as the image that goes to insights
-		StringBuilder desiredPrimaryImageAmazonKey = new StringBuilder();
-		desiredPrimaryImageAmazonKey.append("product-image/");
-		desiredPrimaryImageAmazonKey.append("lett/");
-		desiredPrimaryImageAmazonKey.append(pm.getLettId());
-		desiredPrimaryImageAmazonKey.append("/1-original.jpg");
+		String referencePrimaryImageAmazonKey = new StringBuilder()
+												.append("product-image/")
+												.append("lett/")
+												.append(pm.getLettId())
+												.append("/1-original.jpg")
+												.toString();
 
-		// fetch md5 of the desired image
-		String desiredPrimaryMd5 = S3Service.fetchMd5FromAmazon(session, desiredPrimaryImageAmazonKey.toString());
+		// fetch md5 of the images in amazon
+		String referencePrimaryMd5 = S3Service.fetchMd5FromAmazon(session, referencePrimaryImageAmazonKey); // the desired reference image
+		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey); // the supposed new image
+		
+		Logging.printLogDebug(logger, session, "Last downloaded primary image url: " + primaryImageAmazonKey);
+		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);
+		
+		Logging.printLogDebug(logger, session, "Reference primary image url: " + referencePrimaryImageAmazonKey);
+		Logging.printLogDebug(logger, session, "Reference primary image md5: " + referencePrimaryMd5);
 
-		// fetch md5 for the supposed new image
-		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey.toString());
+		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-
-		// if md 5 is null, clean and add set as no_image
-		if(primaryMd5 == null) {
-			picPrimary = new JSONObject();
-			picPrimary.put("status", Pic.NO_IMAGE);
-			picPrimary.put("verified_by", "crawler_" + nowISO);
-
-		} 
-		else {
-			if( !(picPrimary.has("md5") && picPrimary.get("md5").equals(primaryMd5)) ) { // if image has changed
+		// if md5 is null, clean and add set as no_image
+		if (primaryMd5 == null) {
+			Logging.printLogDebug(logger, session, "Amazon md5 of the last downloaded image is null...seting status to no_image...");
+			processedModelDigitalContentPicPrimary = new JSONObject();
+			processedModelDigitalContentPicPrimary.put("status", Pic.NO_IMAGE);
+			processedModelDigitalContentPicPrimary.put("verified_by", "crawler_" + nowISO);
+		} else {
+			// if image has changed
+			if( !(processedModelDigitalContentPicPrimary.has("md5") && processedModelDigitalContentPicPrimary.get("md5").equals(primaryMd5)) ) {
 				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey.toString());
 
 				// get dimensions from image
-				picPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
+				processedModelDigitalContentPicPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
 
 				// old similarity value
 				// was calculate using the naive similarity finder
 				// set to 0 because this algorithm was removed
-				picPrimary.put("similarity", 0);
+				processedModelDigitalContentPicPrimary.put("similarity", 0);
 
 				// compute similarity of the new image using the SIFT algorithm
 				// commented...looking for a better way to deal with image features TODO
@@ -430,12 +430,12 @@ public class ResultManager {
 //					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 //				}				
 
-				picPrimary.put("similarity_sift", new JSONObject()); // TODO put an empty object....we don't know if some program is looking for this field
+				processedModelDigitalContentPicPrimary.put("similarity_sift", new JSONObject()); // TODO put an empty object....we don't know if some program is looking for this field
 
 				// setting fields of the new primary image
-				picPrimary.put("md5", primaryMd5); // updated md5
-				picPrimary.put("status", Pic.NOT_VERIFIED);
-				picPrimary.put("verified_by", "crawler_" + nowISO);
+				processedModelDigitalContentPicPrimary.put("md5", primaryMd5); // updated md5
+				processedModelDigitalContentPicPrimary.put("status", Pic.NOT_VERIFIED);
+				processedModelDigitalContentPicPrimary.put("verified_by", "crawler_" + nowISO);
 
 				// delete local images
 				if(primaryImage != null) {
@@ -444,38 +444,38 @@ public class ResultManager {
 			}
 		}
 
-		pic.put("primary", picPrimary);
+		processedModelDigitalContentPic.put("primary", processedModelDigitalContentPicPrimary);
 
 		// computing pic secondary
-		Pic.setPicSecondary(lettDigitalContent, pic);
+		Pic.setPicSecondary(lettDigitalContent, processedModelDigitalContentPic);
 
 		// set pic on digital content
-		pm.getDigitalContent().put("pic", pic);
+		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
 
-		// naming rules
-		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
-		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
-
-		// description rules
-		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
-		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
-
-		// create rules summary
-		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
-		pm.getDigitalContent().put("rules_results", rules_results);
+//		// naming rules
+//		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
+//		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
+//
+//		// description rules
+//		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
+//		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
+//
+//		// create rules summary
+//		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
+//		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
 	/**
 	 * Fetch market informations.
 	 */
 	private void createMarketInfo() {
-		this.cityNameInfo = new HashMap<Integer, String>();
-		this.marketNameInfo = new HashMap<Integer, String>();
-		this.marketid = new ArrayList<Integer>();
+		this.cityNameInfo = new HashMap<>();
+		this.marketNameInfo = new HashMap<>();
+		this.marketid = new ArrayList<>();
 
 		try {
 
-			ResultSet rs = this.db.runSqlConsult("SELECT * FROM market");
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
 
 			while(rs.next()) {
 
@@ -504,7 +504,7 @@ public class ResultManager {
 	 */
 	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
 		try {
-			ResultSet rs = this.db.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
 			while(rs.next()) {
 				String referenceDigitalContent = rs.getString("digital_content");
 				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {

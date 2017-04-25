@@ -11,10 +11,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (15/07/2016):
@@ -121,14 +124,18 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
+			// Prices 
+			Prices prices = crawlPrices(doc, price);
+			
 			// Creating the product
 			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
 			
+			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setAvailable(available);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
@@ -175,7 +182,12 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
-
+		Element pid = document.select("#ProdutoCodigo").first();
+		
+		if(pid != null) {
+			internalPid = pid.val();
+		}
+		
 		return internalPid;
 	}
 
@@ -222,7 +234,7 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("href").trim();
 
-			if(primaryImage.equals("../#")){ //no image for product
+			if(primaryImage.equals("#")){ //no image for product
 				return null;
 			}
 		}
@@ -264,6 +276,44 @@ public class SaopauloPaguemenosCrawler extends Crawler {
 		return description;
 	}
 
-	
-
+	/**
+	 * In this market has no bank slip payment method
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			installmentPriceMap.put(1, price);
+			
+			Element installments = doc.select("#lblParcelamento").first();
+			
+			if(installments != null){
+				Element installmentElement = installments.select("#lblParcelamento1 > strong").first();
+				
+				if(installmentElement != null) {
+					Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", ""));
+					
+					Element valueElement = installments.select("#lblParcelamento2 > strong").first();
+					
+					if(valueElement != null) {
+						Float value = MathCommonsMethods.parseFloat(valueElement.text());
+						
+						installmentPriceMap.put(installment, value);
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
 }

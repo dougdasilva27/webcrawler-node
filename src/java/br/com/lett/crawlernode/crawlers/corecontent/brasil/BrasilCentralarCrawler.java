@@ -5,16 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -67,7 +68,7 @@ public class BrasilCentralarCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -149,7 +150,9 @@ public class BrasilCentralarCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".dados1").first() != null ) return true;
+		if ( document.select(".dados1").first() != null ) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -160,19 +163,29 @@ public class BrasilCentralarCrawler extends Crawler {
 	
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select("input[name=cod_pro]").first();
-
-		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value");
+		Element boxElement = document.select(".dados1 .box").first();
+		
+		if (boxElement != null) {
+			Elements boxChildElements = boxElement.children();
+			
+			for (Element boxChild : boxChildElements) {
+				String childText = StringUtils.stripAccents(boxChild.text().toLowerCase());
+				
+				if (childText.contains("codigo do produto")) {
+					String[] tokens = childText.split(":");
+					
+					if (tokens.length > 1) {
+						internalId = tokens[1].trim();
+					}
+				}
+			}
 		}
 
 		return internalId;
 	}
 
 	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+		return null;
 	}
 	
 	private String crawlName(Document document) {

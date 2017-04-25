@@ -2,31 +2,29 @@ package br.com.lett.crawlernode.core.session;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.DateConstants;
 
 public class Session {
 
 	protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-	public static final String DISCOVERY_TYPE 	= "discovery";
-	public static final String SEED_TYPE 		= "seed";
-	public static final String INSIGHTS_TYPE 	= "insights";
-	public static final String TEST_TYPE 		= "test";
+	protected DateTime date = new DateTime(DateConstants.timeZone);
 	
-	protected DateTime date = new DateTime(DateTimeZone.forID("America/Sao_Paulo"));
+	protected String taskStaus;
 
 	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
 	protected String sessionId;
@@ -34,29 +32,24 @@ public class Session {
 	/** Name of the queue from which the message was retrieved */
 	protected String queueName;
 
-	/**
-	 * A receipt handle used to delete a message from the Amazon sqs
-	 * The id is useful to identify the message, but the it can't be used to delete the message.
-	 * Only the messageReceiptHandle can be used for this. It's a string received at the moment
-	 * we get the message from the queue 
-	 */
-	protected String messageReceiptHandle;
-
 	/** Original URL of the sku being crawled */
 	protected String originalURL;
 
 	/** Association of URL and its final modified version, a redirection for instance */
 	Map<String, String> redirectionMap;
 
+	/** Association of URL and its proxy */
+	protected Map<String, LettProxy> requestProxyMap;
+	
 	/** Market associated with this session */
 	protected Market market;
 
 	/** Errors occurred during crawling session */
-	protected ArrayList<SessionError> crawlerSessionErrors;
-	
+	protected List<SessionError> crawlerSessionErrors;
+
 	/** The maximum number of connection attempts to be made when crawling normal information */
 	protected int maxConnectionAttemptsWebcrawler;
-	
+
 	/** The maximum number of connection attempts to be made when downloading images */
 	protected int maxConnectionAttemptsImages;
 
@@ -64,74 +57,70 @@ public class Session {
 	/**
 	 * Default empty constructor
 	 */
-	public Session() {
+	public Session(Market market) {
 		super();
 
+		this.market = market;
+		
 		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<SessionError>();
+		this.crawlerSessionErrors = new ArrayList<>();
 
 		// creating the map of redirections
-		this.redirectionMap = new HashMap<String, String>();
+		this.redirectionMap = new HashMap<>();
+		requestProxyMap = new HashMap<>();
+		maxConnectionAttemptsWebcrawler = 0;
 		
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler += Test.proxies.getProxyMaxAttempts(proxy);
+		}
+
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Test.proxies.getProxyMaxAttempts(proxy);
+		}
+
 	}
 
-	public Session(Message message, String queueName, Markets markets) {
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+	public Session(Request request, String queueName, Markets markets) {		
+		taskStaus = Task.STATUS_COMPLETED;
 
-		// setting queue name
 		this.queueName = queueName;
+		crawlerSessionErrors = new ArrayList<>();
+		redirectionMap = new HashMap<>();
+		requestProxyMap = new HashMap<>();
+		sessionId = request.getMessageId();
+		market = markets.getMarket(request.getMarketId());
+		originalURL = request.getMessageBody();
 
-		// creating the errors list
-		this.crawlerSessionErrors = new ArrayList<SessionError>();
-
-		// creating the map of redirections
-		this.redirectionMap = new HashMap<String, String>();
-
-		// setting session id
-		this.sessionId = message.getMessageId();
-
-		// setting message receipt handle
-		this.setMessageReceiptHandle(message.getReceiptHandle());
-
-		// setting Market
-		String city = null;
-		String name = null;
-		if (attrMap.containsKey(QueueService.CITY_MESSAGE_ATTR) && attrMap.containsKey(QueueService.MARKET_MESSAGE_ATTR)) {
-			city = attrMap.get(QueueService.CITY_MESSAGE_ATTR).getStringValue();
-			name = attrMap.get(QueueService.MARKET_MESSAGE_ATTR).getStringValue();
-			this.market = markets.getMarket(city, name);
-		}
-		
 		maxConnectionAttemptsWebcrawler = 0;
-		for (String proxy : market.getProxies()) {
-			maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler + Main.proxies.getProxyMaxAttempts(proxy);
-		}
 		
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+		}
+
 		maxConnectionAttemptsImages = 0;
 		for (String proxy : market.getImageProxies()) {
 			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
 		}
-
-		// setting URL and originalURL
-		this.originalURL = message.getBody();
+		
 	}
-	
+
 	public DateTime getDate() {
 		return this.date;
 	}
-	
+
 	public int getMaxConnectionAttemptsCrawler() {
 		return this.maxConnectionAttemptsWebcrawler;
 	}
-	
+
 	public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
 		this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
 	}
-	
+
 	public int getMaxConnectionAttemptsImages() {
 		return this.maxConnectionAttemptsImages;
 	}
-	
+
 	public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
 		this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
 	}
@@ -177,13 +166,13 @@ public class Session {
 	public void setMarket(Market market) {
 		this.market = market;
 	}
-
-	public String getMessageReceiptHandle() {
-		return messageReceiptHandle;
+	
+	public String getTaskStatus() {
+		return taskStaus;
 	}
-
-	public void setMessageReceiptHandle(String messageReceiptHandle) {
-		this.messageReceiptHandle = messageReceiptHandle;
+	
+	public void setTaskStatus(String taskStatus) {
+		this.taskStaus = taskStatus;
 	}
 
 	public int getVoidAttempts() {
@@ -208,21 +197,7 @@ public class Session {
 		/* do nothing by default */
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("session id: " + this.sessionId + "\n");
-		sb.append("queue name: " + this.getQueueName() + "\n");
-		sb.append("url: " + this.originalURL + "\n");
-		sb.append("market id: " + this.market.getNumber() + "\n");
-		sb.append("market name: " + this.market.getName() + "\n");
-		sb.append("market city: " + this.market.getCity() + "\n");
-
-		return sb.toString();
-	}
-
-	public ArrayList<SessionError> getErrors() {
+	public List<SessionError> getErrors() {
 		return crawlerSessionErrors;
 	}
 
@@ -236,6 +211,26 @@ public class Session {
 
 	public void setQueueName(String queueName) {
 		this.queueName = queueName;
+	}
+	
+	public LettProxy getRequestProxy(String url) {
+		return requestProxyMap.get(url);
+	}
+
+	public void addRequestProxy(String url, LettProxy proxy) {
+		this.requestProxyMap.put(url, proxy);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("sessionId: " + sessionId + "\n");
+		sb.append("queueName: " + getQueueName() + "\n");
+		sb.append("url: " + originalURL + "\n");
+		sb.append("marketId: " + market.getNumber() + "\n");
+
+		return sb.toString();
 	}
 
 }

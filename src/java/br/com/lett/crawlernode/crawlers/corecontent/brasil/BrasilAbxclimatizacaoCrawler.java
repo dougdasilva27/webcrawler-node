@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,16 +11,17 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.Pair;
 
 /************************************************************************************************************************************************************************************
- * Crawling notes (25/08/2016):
+ * Crawling notes (03/01/2017):
  * 
  * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
  *  
@@ -47,7 +47,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  ************************************************************************************************************************************************************************************/
 public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
-	private final String HOME_PAGE = "https://www.abxclimatizacao.com.br/";
+	private static final String HOME_PAGE = "https://abxarcondicionado.com.br/";
 
 	public BrasilAbxclimatizacaoCrawler(Session session) {
 		super(session);
@@ -63,7 +63,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -76,7 +76,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 
 			// Pid
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = crawlInternalPid();
 
 			// Name
 			String name = crawlName(doc);
@@ -91,7 +91,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			boolean available = crawlAvailability(doc);
 
 			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
+			ArrayList<String> categories = crawlCategories();
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
@@ -108,15 +108,17 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			// Stock
 			Integer stock = null;
 
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+			JSONArray marketplace = assembleMarketplaceFromMap();
+
+			String productUrl = session.getOriginalURL();
+			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
+				productUrl = session.getRedirectedToURL(productUrl);
+			}
 
 			// Creating the product
 			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
+			product.setUrl(productUrl);
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -149,7 +151,10 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-name") != null ) return true;
+		if (doc.select(".product-name") != null ){
+			return true;
+		}
+		
 		return false;
 	}
 
@@ -160,25 +165,17 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Elements internalIdElements = document.select(".data-table tr");
+		Element internalIdElements = document.select(".product-shop .sku").first();
 
-		for(Element e : internalIdElements){
-			String ref = e.text().trim();
-
-			if(ref.toLowerCase().startsWith("ref")){
-				int x = ref.indexOf(":") + 1;
-
-				internalId = ref.substring(x).trim();
-			}
+		if(internalIdElements != null) {
+			internalId = internalIdElements.ownText().trim();
 		}
 
 		return internalId;
 	}
 
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		return internalPid;
+	private String crawlInternalPid() {
+		return null;
 	}
 
 	private String crawlName(Document document) {
@@ -189,16 +186,23 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			name = nameElement.text().toString().trim();
 		}
 
+		Element modelName = document.select("span.sku").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.ownText();
+		}
+
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlMainPagePrice(Document doc) {
 		Float price = null;
-		Element specialPrice = document.select(".precos .new").first();		
-
-		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-		} 
+		Pair<Integer, Float> installment = getInstallmentPrice(doc);
+		
+		if(installment != null) {
+			Float result = installment.getFirst() * installment.getSecond();
+			price = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+		}
 
 		return price;
 	}
@@ -213,11 +217,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return true;
 	}
 
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
-	}
-
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	private JSONArray assembleMarketplaceFromMap() {
 		return new JSONArray();
 	}
 
@@ -254,10 +254,8 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-
-		return categories;
+	private ArrayList<String> crawlCategories() {
+		return new ArrayList<>();
 	}
 
 	private String getCategory(ArrayList<String> categories, int n) {
@@ -273,8 +271,13 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		Element descriptionElement = document.select(".short-description").first();
 		Element princElement = document.select(".product-collateral").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (princElement != null) description = description + princElement.html();
+		if (descriptionElement != null){
+			description = description + descriptionElement.html();
+		}
+		
+		if (princElement != null){
+			description = description + princElement.html();
+		}
 
 		return description;
 	}
@@ -283,25 +286,24 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
-
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
+			
 			// bank ticket
-			Element boleto = doc.select(".boleto_bancario_view").first();
-			if(boleto != null){
-				Float bankTicket = MathCommonsMethods.parseFloat(boleto.ownText());
-				prices.insertBankTicket(bankTicket);
+			Element priceBoleto = doc.select(".precoboleto span").first();
+			
+			if(priceBoleto != null) {
+				prices.insertBankTicket(MathCommonsMethods.parseFloat(priceBoleto.text()));
+			} else {
+				prices.insertBankTicket(price);
 			}
-
-			// card payment conditions
-			Elements installments = doc.select(".tabela1 td");
-			for(Element e : installments){
-				String text = e.text();
-				int x = text.indexOf("x");
-
-				Integer installment = Integer.parseInt(text.substring(0, x).trim());
-				Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
-
-				installmentPriceMap.put(installment, value);
+			
+			// 1x card
+			installmentPriceMap.put(1, price);
+			
+			Pair<Integer, Float> installment = getInstallmentPrice(doc);
+			
+			if(installment != null) {
+				installmentPriceMap.put(installment.getFirst(), installment.getSecond());
 			}
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -315,4 +317,30 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return prices;
 	}
 
+	private Pair<Integer, Float> getInstallmentPrice(Document doc) {
+		Element finalPriceParc = doc.select(".precofinalparc").first();
+		
+		if(finalPriceParc != null) {
+			String text = finalPriceParc.ownText().toLowerCase();
+			
+			if(text.contains("x")) {
+				int x = text.indexOf("x");
+				String number = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+				
+				if(!number.isEmpty()) {
+					Integer numberInstallments = Integer.parseInt(number);
+					
+					Element installmentElement = finalPriceParc.select("span").first();
+					
+					if(installmentElement != null) {
+						Float priceInstallment = MathCommonsMethods.parseFloat(installmentElement.text());
+						
+						return new Pair<Integer, Float>(numberInstallments, priceInstallment);
+					} 
+				}
+			}
+		}
+		
+		return null;
+	}
 }

@@ -2,15 +2,21 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
@@ -45,55 +51,39 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 			// Disponibilidade
 			Element elementBuyButton = doc.select(".div_btn_comprar").first();
-			boolean available = true;
-			if(elementBuyButton == null || elementBuyButton.text().trim().toLowerCase().contains("produto indisponível")) {
-				available = false;
+			Element elementBuyButtonNew = doc.select(".overlay_button_add_cesta_detalhe").first();
+			boolean available = false;
+			
+			if(elementBuyButton != null) {
+				if(elementBuyButton.text().trim().toLowerCase().contains("produto indisponível")){				
+					available = false;
+				} else {
+					available = true;
+				}
+			} else if(elementBuyButtonNew != null) {
+				available = true;
 			}
 
 			// Nome
-			Elements elementName = doc.select(".div_nome_produto");
-			String name = elementName.text().trim();
+			String name = null;
+			Element elementName = doc.select("h1.div_nome_prod").first();
+			if(elementName != null) {
+				name = elementName.text().trim();
+			}
 
 			// Preço
 			Float price = null;
-			Elements elementPrice = doc.select(".div_preco_detalhe .txt_preco");
-			if(elementPrice.size() > 0) {
-				String priceText = elementPrice.first().text();
-				price = Float.parseFloat(priceText.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}				
-
-			//Float price = 0f;
+			Element elementPrice = doc.select(".txt_preco_por").first();
+			if(elementPrice != null) {
+				String priceText = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".");
+				
+				if(!priceText.isEmpty()) {
+					price = Float.parseFloat(priceText);
+				}
+			}
 
 			// Categorias
-			Elements elementCategories = doc.select(".breadCrumbs li"); 
-			String category1 = ""; 
-			String category2 = ""; 
-			String category3 = "";
-
-			String[] cat = new String[9];
-			cat[0] = "";
-			cat[1] = "";
-			cat[2] = "";
-			cat[3] = "";
-			cat[4] = "";
-			cat[5] = "";
-			cat[6] = "";
-			cat[7] = "";
-			cat[8] = "";
-			int j = 0;
-			for(int i = 0; i < elementCategories.size(); i++) {
-				Element e = elementCategories.get(i);
-				cat[j] = e.text().toString();
-				cat[j] = cat[j].replace(">", "");
-				j++;
-			}
-			category1 = cat[2];
-			category2 = cat[4];
-			if(elementCategories.size() > 5){
-				category3 = cat[6];
-			} else{
-				category3 = null;
-			}
+			CategoryCollection categories = crawlCategories(doc);
 
 			// Imagem primária
 			Elements elementPrimaryImage = doc.select("#imagem-grande");
@@ -139,22 +129,27 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Product product = new Product();
+			//Prices
+			Prices prices = crawlPrices(doc, price);
 			
-			product.setUrl(session.getOriginalURL());
-			product.setInternalId(internalID);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalID)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
@@ -171,5 +166,54 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.ultrafarma.com.br/produto/detalhes");
+	}
+	
+	/**
+	 * There is no bankSlip price.
+	 * 
+	 * There is no card payment options, other than cash price.
+	 * So for installments, we will have only one installment for each
+	 * card brand, and it will be equals to the price crawled on the sku
+	 * main page.
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document document, Float price) {
+		Prices prices = new Prices();
+
+		if(price != null) {
+			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
+	
+			installmentPriceMap.put(1, price);
+	
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		}
+
+		return prices;
+	}
+	
+	private CategoryCollection crawlCategories(Document doc) {
+		CategoryCollection categories = new CategoryCollection();
+		
+		Elements cats = doc.select(".breadCrumbs li a");
+		int i = 0;
+		
+		for(Element e : cats) {
+			if(i != 0) {
+				String text = e.ownText().trim();
+				categories.add(text);
+			}
+			i++;
+		}
+		
+		return categories;
 	}
 }

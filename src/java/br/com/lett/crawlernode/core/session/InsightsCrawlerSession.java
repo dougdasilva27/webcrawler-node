@@ -1,12 +1,7 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.util.Map;
-
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.core.server.request.Request;
 
 public class InsightsCrawlerSession extends Session {
 
@@ -23,29 +18,19 @@ public class InsightsCrawlerSession extends Session {
 	private int voidAttemptsCounter;
 
 
-	public InsightsCrawlerSession(Message message, String queueName, Markets markets) {
-		super(message, queueName, markets);
-
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
+	public InsightsCrawlerSession(Request request, String queueName, Markets markets) {
+		super(request, queueName, markets);
+		
+		processedId = request.getProcessedId();
+		internalId = request.getInternalId();
+		
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
 		this.voidAttemptsCounter = 0;
 
-		// setting processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		}
-
-		// setting internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-		}
-
 		// initialize counters
 		this.trucoAttemptsCounter = 0;
 		this.voidAttemptsCounter = 0;
-
 	}
 	
 	@Override

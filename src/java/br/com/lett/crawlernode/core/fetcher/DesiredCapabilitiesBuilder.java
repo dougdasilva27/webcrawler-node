@@ -1,18 +1,38 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.openqa.selenium.Platform;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
-import org.openqa.selenium.remote.BrowserType;
+import org.openqa.selenium.Proxy;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 
 public class DesiredCapabilitiesBuilder {
+	protected static final Logger logger = LoggerFactory.getLogger(DesiredCapabilitiesBuilder.class);
 
+	private static final String DEFAULT_BROWSER = "chrome";
+	private static final String DEFAULT_PROXY = "191.235.90.114:3333";
+
+	private Session session;
 	private String userAgent;
 	private String executablePath;
 	private LettProxy lettProxy;
+	private Proxy proxy;
 	private List<String> clientArgs;
 	private String browserName;
 
@@ -39,48 +59,80 @@ public class DesiredCapabilitiesBuilder {
 		return this;
 	}
 
+	public DesiredCapabilitiesBuilder setSession(Session session) {
+		this.session = session;
+		return this;
+	}
+
+	public DesiredCapabilitiesBuilder setProxy(Proxy proxy) {
+		this.proxy = proxy;
+		return this;
+	}
+
 	public DesiredCapabilitiesBuilder setBrowserType(String browserName) {
 		this.browserName = browserName;
 		return this;
 	}
 
 	public DesiredCapabilities build() {
-		DesiredCapabilities desiredCapabilities = DesiredCapabilities.phantomjs();
+		DesiredCapabilities desiredCapabilities = DesiredCapabilities.chrome();
 
 		desiredCapabilities.setPlatform(Platform.ANY);
 		desiredCapabilities.setVersion("ANY");
-		desiredCapabilities.setBrowserName(browserName);
 
-		this.clientArgs = createClientArgs();
+//		if (browserName != null) {
+//			desiredCapabilities.setBrowserName(browserName);
+//		} else {
+//			desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
+//		}
 
-		if (browserName.equals(BrowserType.PHANTOMJS)) {
-			if (this.userAgent != null) {
-				desiredCapabilities.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", this.userAgent);
-			}
-
-			if (this.clientArgs != null && this.clientArgs.size() > 0) {
-				desiredCapabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, this.clientArgs);
-			}
-
-			if (this.executablePath != null) {
-				desiredCapabilities.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, this.executablePath);
-			}
-
-			//capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "Authorization", proxy.getUser() + ":" + proxy.getPass());
+		if (proxy != null) {
+			desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
+		} else {
+			Proxy defaultProxy = new Proxy();
+			defaultProxy.setHttpProxy(DEFAULT_PROXY);
+			defaultProxy.setSslProxy(DEFAULT_PROXY);
+			desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
 		}
 
+//		if (executablePath != null) {
+//			System.setProperty("webdriver.chrome.driver", executablePath);
+//		}
+
+		ChromeOptions chromeOptions = new ChromeOptions();
+				
+		try {
+			File extensionFile;
+			if (Main.globalResources == null) { // testando
+				extensionFile = new File(getClass().getClassLoader().getResource("modheader_2_1_1.crx").getFile());
+			} else {
+				extensionFile = Main.globalResources.getWebdriverExtension();
+			}
+			
+			Logging.printLogDebug(logger, session, "Seting webdriver extension from file: " + extensionFile.getAbsolutePath());
+			chromeOptions.addExtensions(extensionFile);
+			
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+
+		if (userAgent != null) {
+			List<String> chromeArgs = new ArrayList<>();
+			chromeArgs.add("--user-agent=" + userAgent);
+			chromeArgs.add("--allow-insecure-localhost");
+			chromeArgs.add("--ssl-version-max=tls1.3");
+			chromeArgs.add("--ssl-version-min=tls1");
+			chromeArgs.add("--ignore-certificate-errors");
+			chromeArgs.add("--ignore-urlfetcher-cert-requests");
+
+			chromeOptions.addArguments(chromeArgs);
+
+			desiredCapabilities.setCapability("chromeOptions", chromeOptions);
+		}
+
+		desiredCapabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+
 		return desiredCapabilities;
-	}
-
-	private List<String> createClientArgs() {
-		List<String> clientArgs = new ArrayList<String>();
-
-		clientArgs.add("--web-security=false");
-		clientArgs.add("--ignore-ssl-errors=true");
-		clientArgs.add("--ssl-protocol=any");		// necessary to fetch https urls
-		clientArgs.add("--load-images=false");		// don't download images when fetching pages
-
-		return clientArgs;
 	}
 
 }

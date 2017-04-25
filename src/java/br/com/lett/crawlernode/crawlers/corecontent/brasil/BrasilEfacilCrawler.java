@@ -11,12 +11,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
@@ -79,7 +79,19 @@ public class BrasilEfacilCrawler extends Crawler {
 			String secondaryImages = null;
 			if (elementImages.size() > 1) {
 				for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
-					secondaryImagesArray.put("http:" + elementImages.get(i).attr("data-original").trim());
+					String image = elementImages.get(i).attr("data-original").trim();
+
+					if(image.isEmpty()) {
+						image = elementImages.get(i).attr("href").trim();
+					}
+
+					if(!image.isEmpty()) {
+						if(!image.startsWith("http")) {
+							image = "http:" + image;
+						}
+
+						secondaryImagesArray.put(image);
+					}
 				}
 			}
 			if (secondaryImagesArray.length() > 0) {
@@ -140,10 +152,21 @@ public class BrasilEfacilCrawler extends Crawler {
 
 				// Price
 				Float price = null;
-
+		
 				if (available) {
 					// Price BankTicket 1x
-					Float priceBank = Float.parseFloat(info.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					Float priceBank = null;
+					
+					if(info.has("offerPrice")){
+						priceBank = Float.parseFloat(info.getString("offerPrice").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+					} else {
+						Element priceElement = doc.select("input[id^=offerPrice_hd_]").first();
+						
+						if(priceElement != null) {
+							priceBank = Float.parseFloat(priceElement.val());
+						}
+					}
+					
 
 					// Prices Json
 					JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank);

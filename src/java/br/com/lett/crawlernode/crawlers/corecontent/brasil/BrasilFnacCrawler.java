@@ -13,11 +13,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -216,9 +216,9 @@ public class BrasilFnacCrawler extends Crawler {
 				Float installmentPrice = null;
 				
 				if (installmentNumberElement != null) {
-					String installmentText = MathCommonsMethods.parseNumbers(installmentNumberElement.text().trim()).get(0);
+					String installmentText = installmentNumberElement.text().trim();
 					if (installmentText != null && !installmentText.isEmpty()) {
-						installmentNumber = Integer.parseInt(installmentText);
+						installmentNumber = Integer.parseInt(MathCommonsMethods.parseNumbers(installmentText).get(0));
 					}
 				}
 				if (installmentPriceElement != null) {
@@ -271,7 +271,6 @@ public class BrasilFnacCrawler extends Crawler {
 		}
 		return nameSkuJson;
 	}
-
 
 	/**
 	 * Get the script having a json with the availability information.

@@ -15,12 +15,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -69,11 +69,10 @@ public class BrasilLojasmelCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
-
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -166,7 +165,9 @@ public class BrasilLojasmelCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") ) return true;
+		if ( url.endsWith("/p") ) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -226,14 +227,15 @@ public class BrasilLojasmelCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
-
-		if(json.has("available")) return json.getBoolean("available");
+		if (json.has("available")) {
+			return json.getBoolean("available");
+		}
 		
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -280,13 +282,11 @@ public class BrasilLojasmelCrawler extends Crawler {
 		String[] tokens2 = dimensionImage.split("-"); //to get the image-id
 		String dimensionImageFinal = tokens2[0] + "-1000-1000";
 		
-		String urlReturn = url.replace(dimensionImage, dimensionImageFinal); //The image size is changed
-		
-		return urlReturn;	
+		return url.replace(dimensionImage, dimensionImageFinal); //The image size is changed
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(".bread-crumb > ul li a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
@@ -397,18 +397,18 @@ public class BrasilLojasmelCrawler extends Crawler {
 		return prices;
 	}
 
-	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard) {
 		Map<Integer,Float> mapInstallments = new HashMap<>();
 
 		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
-		for(Element i : installmentsCard){
+		for (Element i : installmentsCard) {
 			Element installmentElement = i.select("td.parcelas").first();
 
-			if(installmentElement != null){
+			if (installmentElement != null) {
 				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
-				Integer installment = null;
+				Integer installment;
 
-				if(textInstallment.contains("vista")){
+				if (textInstallment.contains("vista")) {
 					installment = 1;					
 				} else {
 					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
@@ -416,7 +416,7 @@ public class BrasilLojasmelCrawler extends Crawler {
 
 				Element valueElement = i.select("td:not(.parcelas)").first();
 
-				if(valueElement != null){
+				if (valueElement != null) {
 					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
 					mapInstallments.put(installment, value);
@@ -428,9 +428,7 @@ public class BrasilLojasmelCrawler extends Crawler {
 	}
 
 	private String removeAccents(String str) {
-		str = Normalizer.normalize(str, Normalizer.Form.NFD);
-		str = str.replaceAll("[^\\p{ASCII}]", "");
-		return str;
+		return Normalizer.normalize(str, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
 	}
 	
 	/**
@@ -440,26 +438,28 @@ public class BrasilLojasmelCrawler extends Crawler {
 	private JSONArray crawlSkuJsonArray(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		JSONArray skuJsonArray = null;
+		JSONArray skuJsonArray;
+		
+		String varSkuPrefix = "var skuJson_0 = ";
+		String varSkuSufix = "}]};";
 		
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
+				if(tag.html().trim().startsWith(varSkuPrefix)) {
 					skuJson = new JSONObject
 							(
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+							node.getWholeData().split(Pattern.quote(varSkuPrefix))[1] +
+							node.getWholeData().split(Pattern.quote(varSkuPrefix))[1].split(Pattern.quote(varSkuSufix))[0]
 							);
 
 				}
 			}        
 		}
 		
-		try {
+		if (skuJson != null && skuJson.has("skus")) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		} else {
+			skuJsonArray = new JSONArray();
 		}
 		
 		return skuJsonArray;

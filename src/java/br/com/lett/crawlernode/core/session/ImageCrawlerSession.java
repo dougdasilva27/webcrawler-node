@@ -3,26 +3,26 @@ package br.com.lett.crawlernode.core.session;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
+import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends Session {
 	
 	public static final String PRIMARY_IMG_TYPE = "primary";
 	public static final String SECONDARY_IMG_TYPE = "secondary";
+	public static final String DEFAULT_EXTENSION = "jpg";
 
 	/** Internal id of the sku being processed */
 	private String internalId;
@@ -34,10 +34,10 @@ public class ImageCrawlerSession extends Session {
 	 * Primary image always have a number=1
 	 * First secondary image has number=2, and so on
 	 */
-	private int number;
+	private int imageNumber;
 	
 	/** The image type: primary | secondary */
-	private String type;
+	private String imageType;
 
 	private String localFileDir;  
 	private String localOriginalFileDir;  
@@ -51,64 +51,64 @@ public class ImageCrawlerSession extends Session {
 	private String md5AmazonPath;
 	private String localMd5AmazonPath;
 
-	public ImageCrawlerSession(Message message, String queueName, Markets markets) {
-		super(message, queueName, markets);
-
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
+	public ImageCrawlerSession(Request request, String queueName, Markets markets) {		
+		super(request, queueName, markets);
+				
+		ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest)request;
 		
 		// get the type
-		if (attrMap.containsKey("type")) {
-			this.type = attrMap.get("type").getStringValue();
+		if (imageCrawlerRequest.getImageType() != null) {
+			this.imageType = imageCrawlerRequest.getImageType();
 		} else {
 			Logging.printLogError(logger, "Error: 'type' field not found on message attributes.");
 		}
 		
 		// get the internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
+		if (imageCrawlerRequest.getInternalId() != null) {
+			this.internalId = request.getInternalId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.INTERNAL_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
 		// get processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
+		if (imageCrawlerRequest.getProcessedId() != null) {
+			this.processedId = request.getProcessedId();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.PROCESSED_ID_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 				
 		// get the number
-		if (attrMap.containsKey(QueueService.NUMBER_MESSAGE_ATTR)) {
-			this.number = Integer.parseInt(attrMap.get(QueueService.NUMBER_MESSAGE_ATTR).getStringValue());
+		if (imageCrawlerRequest.getImageNumber() != null) {
+			imageNumber = imageCrawlerRequest.getImageNumber();
 		} else {
 			Logging.printLogError(logger, "Error: " + QueueService.NUMBER_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
 		// set local directories 
-		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "_" + createImageBaseName();  
-		
-		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-original.jpg";  
-		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-regular.jpg";  
-		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + "-small.jpg";
+		this.localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();  
+				
+		this.localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-original.jpg";  
+		this.localRegularFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-regular.jpg";  
+		this.localSmallFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-small.jpg";
 
 		// set names
-		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-original.jpg";
-		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-small.jpg";
-		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + number + "-regular.jpg";
+		this.originalName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-original.jpg";
+		this.smallName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-small.jpg";
+		this.regularName = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + imageNumber + "-regular.jpg";
 		
 		// set Amazon path name
-		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + number + "-md5.txt";
-		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + number + ".rev-" + number + "-md5.txt";
+		this.md5AmazonPath = "product-image/" + super.market.getCity() + "/" + super.market.getName() + "/" + internalId + "/" + ".rev-" + imageNumber + "-md5.txt";
+		this.localMd5AmazonPath = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + ".rev-" + imageNumber + "-md5.txt";
 	}
 	
 	@Override
 	public void clearSession() {
 		try {
-			Files.deleteIfExists(Paths.get(this.localFileDir));
-			Files.deleteIfExists(Paths.get(this.localOriginalFileDir));
-			Files.deleteIfExists(Paths.get(this.localSmallFileDir));
-			Files.deleteIfExists(Paths.get(this.localRegularFileDir));
-			Files.deleteIfExists(Paths.get(this.localMd5AmazonPath));
+			Files.deleteIfExists(Paths.get(localFileDir));
+			Files.deleteIfExists(Paths.get(localOriginalFileDir));
+			Files.deleteIfExists(Paths.get(localSmallFileDir));
+			Files.deleteIfExists(Paths.get(localRegularFileDir));
+			Files.deleteIfExists(Paths.get(localMd5AmazonPath));
 		} catch (IOException e) {
 			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
 		}
@@ -124,8 +124,12 @@ public class ImageCrawlerSession extends Session {
 	 * @return a String representing the name of the image.
 	 */
 	private String createImageBaseName() {
-		String s = super.originalURL + new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		return DigestUtils.md5Hex(s) + "." + FilenameUtils.getExtension(super.originalURL);
+		String s = super.originalURL + new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		String extension = FilenameUtils.getExtension(super.originalURL);
+		if (extension == null || extension.isEmpty()) {
+			extension = DEFAULT_EXTENSION;
+		}
+		return DigestUtils.md5Hex(s) + "." + extension;
 	}
 
 	public String getLocalFileDir() {
@@ -160,12 +164,12 @@ public class ImageCrawlerSession extends Session {
 		this.localRegularFileDir = localRegularFileDir;
 	}
 
-	public int getNumber() {
-		return number;
+	public int getImageNumber() {
+		return imageNumber;
 	}
 
-	public void setNumber(int number) {
-		this.number = number;
+	public void setImageNumber(int number) {
+		this.imageNumber = number;
 	}
 
 	public String getInternalId() {
@@ -209,11 +213,11 @@ public class ImageCrawlerSession extends Session {
 	}
 
 	public String getType() {
-		return type;
+		return imageType;
 	}
 
 	public void setType(String type) {
-		this.type = type;
+		this.imageType = type;
 	}
 
 	public String getMd5AmazonPath() {

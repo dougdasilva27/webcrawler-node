@@ -1,16 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class RiodejaneiroZonasulCrawler extends Crawler {
@@ -103,38 +107,43 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
 			// Imagem primária
 			String primaryImage = null;
-			Element elementPrimaryImage = doc.select("#img_zoom img").first();
+			Element elementPrimaryImage = doc.select(".img_principal").first();
 			if (elementPrimaryImage != null) {
-				primaryImage = elementPrimaryImage.attr("src").trim();
+				primaryImage = crawlImage(elementPrimaryImage);
 			}
-
-			if(primaryImage.contains("produto_sem_foto")) primaryImage = "";
 
 			// Imagens secundárias
 			String secondaryImages = null;
 
-			JSONArray SecondaryImagesArray = new JSONArray();
-			Elements elementSecondaryImage = doc.select("#ctl00_cphMasterPage1_dlFotos td img");
+			JSONArray secondaryImagesArray = new JSONArray();
+			Elements elementSecondaryImage = doc.select("#ctl00_cphMasterPage1_dlFotos td > a");
 
 			if(elementSecondaryImage.size() > 1){
-				for(int i = 0; i < elementSecondaryImage.size(); i++) {
-					Element e = elementSecondaryImage.get(i);
-					if( !e.attr("src").replace("/60_60/", "/430_430/").equals(primaryImage) ) {
-						SecondaryImagesArray.put(e.attr("src").replace("/60_60/", "/430_430/"));
+				for(Element e : elementSecondaryImage) {
+					String image = crawlImage(e);
+					
+					if( image != null && !image.equals(primaryImage)) {
+						secondaryImagesArray.put(image);
 					}
 				}
 			}
-			if(SecondaryImagesArray.length() > 0) {
-				secondaryImages = SecondaryImagesArray.toString();
+			
+			if(secondaryImagesArray.length() > 0) {
+				secondaryImages = secondaryImagesArray.toString();
 			}
 
 			// Descrição
 			String description = "";
 
 			Element elementInfoUL = doc.select(".info ul").first();
+			if(elementInfoUL != null) 	{
+				description = description + elementInfoUL.html();
+			}
+			
 			Element elementInfoDET = doc.select(".info .det").first();
-			if(elementInfoUL != null) 	description = description + elementInfoUL.html();
-			if(elementInfoDET != null) 	description = description + elementInfoDET.html();
+			if(elementInfoDET != null) 	{
+				description = description + elementInfoDET.html();
+			}
 
 			// Estoque
 			Integer stock = null;
@@ -142,14 +151,18 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 			
+			Product product = new Product();
+			
+			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setAvailable(available);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -175,5 +188,71 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.zonasulatende.com.br/Produto/");
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+		}
+
+		return prices;
+	}
+	
+	/**
+	 * Crawl any image for attribute "onClick"
+	 * @param onClick
+	 * @return
+	 */
+	private String crawlImage(Element e) {
+		String image;
+		
+		if(e.hasAttr("onClick")) {
+			String onClick = e.attr("onClick");
+			if(onClick.contains("'") && !onClick.toLowerCase().contains("video")) {
+				String[] tokens = onClick.split("'");
+				
+				image = tokens[tokens.length-2].trim();
+				
+				if(image.contains("280_280")) {
+					image = image.replace("280-280", "430_430");
+				} else if(image.contains("60_60")) {
+					image = image.replace("60_60", "430_430");
+				}
+				
+			} else {
+				return null;
+			}
+		} else {
+			image = e.attr("src").trim();
+			
+			if(image.contains("video")) {
+				return null;
+			}
+		}
+		
+		if(image.contains("produto_sem_foto")) {
+			return null;
+		}
+		
+		return image;
 	}
 }

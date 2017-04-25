@@ -1,10 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.http.NameValuePair;
@@ -18,10 +19,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (11/07/2016):
@@ -68,7 +72,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			try {
 				String url = curURL;
 				List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
-				List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
+				List<NameValuePair> paramsNew = new ArrayList<>();
 
 				for (NameValuePair param : paramsOriginal) {
 					if (!param.getName().equals("sc")) {
@@ -77,7 +81,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 				}
 
 				paramsNew.add(new BasicNameValuePair("sc", "10"));
-				URIBuilder builder = new URIBuilder(curURL.toString().split("\\?")[0]);
+				URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
 
 				builder.clearParameters();
 				builder.setParameters(paramsNew);
@@ -147,6 +151,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = new JSONArray();
 			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
+			
 			// create the product
 			Product product = new Product();
 			product.setUrl(session.getOriginalURL());
@@ -154,6 +161,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -295,36 +303,47 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		return description;
 	}
 
-//	private JSONObject fetchSkuEndpoint(String internalId) {
-//		JSONObject skuInfo = null;
-//		String endpointURL = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
-//		
-//		JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, endpointURL, null, this, null);
-//		
-//		if (jsonArray.length() > 0) {
-//			skuInfo = jsonArray.getJSONObject(0);
-//		}
-//		
-//		return skuInfo;
-//	}
+	/**
+	 * No bank slip payment method in this ecommerce.
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price) {
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();	
+			installmentPriceMap.put(1, price);
 	
-//	private Integer crawlStock(JSONObject skuEndpoint) {
-//		Integer stock = null;
-//
-//		if (skuEndpoint != null && skuEndpoint.has("SkuSellersInformation")) {
-//			JSONArray skuSellersArray = skuEndpoint.getJSONArray("SkuSellersInformation");
-//			for(int i = 0; i < skuSellersArray.length(); i++) {
-//				JSONObject seller = skuSellersArray.getJSONObject(i);
-//				if (seller.has("Name") && seller.has("AvailableQuantity")) {
-//					if(seller.getString("Name").equals("Muffato Supermercados")) {
-//						stock = seller.getInt("AvailableQuantity");
-//					}
-//				}
-//			}
-//		}
-//		
-//		return stock;
-//	}
+			Element installmentElement = doc.select(".skuBestInstallmentNumber").first();
+			
+			if(installmentElement != null) {
+				Integer installment = Integer.parseInt(installmentElement.text());
+				
+				Element valueElement = doc.select(".skuBestInstallmentValue").first();
+				
+				if(valueElement != null) {
+					Float value = MathCommonsMethods.parseFloat(valueElement.text());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
 	
 	/**
 	 * Get the script having a json variable with the image in it

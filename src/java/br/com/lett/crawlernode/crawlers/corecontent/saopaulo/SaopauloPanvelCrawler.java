@@ -1,17 +1,23 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class SaopauloPanvelCrawler extends Crawler {
 
@@ -29,6 +35,19 @@ public class SaopauloPanvelCrawler extends Crawler {
 	}
 
 
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		// Cookie do cep do centro de são paulo
+		// Mas o certo seria porto alegre, precisa mudar a cidade.
+		
+		/*BasicClientCookie cookie = new BasicClientCookie("LojaVirtualPanvelCepNavegacao", "01030-010");
+		cookie.setDomain("www.panvel.com");
+		cookie.setPath("/panvel");
+		this.cookies.add(cookie);*/
+	}
+	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
@@ -69,9 +88,9 @@ public class SaopauloPanvelCrawler extends Crawler {
 
 			// Categorias
 			Elements elementCategories = doc.select(".breadcrumb a"); 
-			String category1 = null; 
-			String category2 = null; 
-			String category3 = null;
+			String category1; 
+			String category2; 
+			String category3;
 
 			String[] cat = new String[5];
 			cat[0] = "";
@@ -118,7 +137,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 					else if (elementSecondaryImage.attr("src").contains("produtos/default.jpg") || elementSecondaryImage.attr("src").contains("/video")) { // caso esteja sem imagem
 						image = "";
 					}
-					if (!image.equals("")) {
+					if (image != null && !image.isEmpty()) {
 						secondaryImagesArray.put(image);
 					}
 				}
@@ -165,6 +184,9 @@ public class SaopauloPanvelCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
+			
+			// Prices
+			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
 			
@@ -173,6 +195,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -197,9 +220,52 @@ public class SaopauloPanvelCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return (url.startsWith("http://www.panvel.com/panvel/visualizarProduto") 
+		return 	url.startsWith("http://www.panvel.com/panvel/visualizarProduto") 
 				|| url.startsWith("http://www.panvel.com/panvel/produto") 
 				|| url.startsWith("https://www.panvel.com/panvel/visualizarProduto") 
-				|| url.startsWith("https://www.panvel.com/panvel/produto"));
+				|| url.startsWith("https://www.panvel.com/panvel/produto");
+	}
+	
+	/**
+	 * Showcase price is the price sight
+	 * Some cases has installments
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+		
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+			
+			Element installments = doc.select(".vezes").first();
+			
+			if(installments != null){
+				String text = installments.text().toLowerCase();
+				
+				if(text.contains("x")){
+					int x = text.indexOf("x");
+					
+					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+					Float value = MathCommonsMethods.parseFloat(text.substring(x));
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
+		}
+		
+		return prices;
 	}
 }

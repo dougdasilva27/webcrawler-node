@@ -1,21 +1,16 @@
 package br.com.lett.crawlernode.processor.models;
 
-import org.bson.Document;
-
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.client.MongoDatabase;
-
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 
 
@@ -31,7 +26,9 @@ import br.com.lett.crawlernode.util.Logging;
 public class ProcessedModel {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(ProcessedModel.class);
-
+	
+	private static final DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS").withZone(DateConstants.timeZone);
+	
 	private Long 		id;
 	private String 		internalId;
 	private String 		internalPid;
@@ -127,6 +124,7 @@ public class ProcessedModel {
 		this.secondary_pics = secondary_pics;
 		this.cat1 = cat1;
 		this.cat2 = cat2;
+		this.cat3 = cat3;
 		this.url = url;
 		this.market = market;
 		this.ect = ect;
@@ -160,11 +158,8 @@ public class ProcessedModel {
 	 * @category Comparação
 	 * @param compareTo - Recepção de ProcessedModel a ser comparado 
 	 */
-	public void registerChanges(ProcessedModel compareTo, MongoDatabase mongo) {
+	public void registerChanges(ProcessedModel compareTo, Session session) {
 		JSONObject newChanges = null;
-		boolean mustScheduleUrlToScreenshot = false;
-
-		// Se já foi registrado alguma mudança hoje, acumula no objeto changes
 
 		// Verificando se foi criado agora
 		if(compareTo == null) {
@@ -175,12 +170,16 @@ public class ProcessedModel {
 			// Verificando se já foi registrado alguma mudança hoje, a fim de acumular as próximas
 
 			try {
-				DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-
-				DateTime lrt = f.parseDateTime(compareTo.getLrt());
+				DateTime localLRT = dateFormatter.parseDateTime(compareTo.getLrt());
 
 				// Se já tinha sido lido hoje, acumula
-				if(compareTo.getChanges() != null && lrt.isAfter(new DateTime().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0))) {
+				DateTime beginingOfDay = new DateTime(DateConstants.timeZone)
+						.withHourOfDay(0)
+						.withMinuteOfHour(0)
+						.withSecondOfMinute(0)
+						.withMillisOfSecond(0);
+				
+				if(compareTo.getChanges() != null && localLRT.isAfter(beginingOfDay)) {
 					newChanges = new JSONObject(compareTo.getChanges(), JSONObject.getNames(compareTo.getChanges())); //clone
 				} else {
 					newChanges = new JSONObject();
@@ -201,7 +200,6 @@ public class ProcessedModel {
 			// Verificando se mudou sua condição de disponibilidade
 			if(this.getAvailable() != compareTo.getAvailable()) {
 				newChanges.put("available", compareTo.getAvailable());
-				mustScheduleUrlToScreenshot = true;
 			}
 
 			// Verificando se a foto primária se alterou, à partir do seu md5
@@ -236,13 +234,20 @@ public class ProcessedModel {
 					) {
 
 				JSONArray pic_secondary;
-				try 					{ 	pic_secondary = new JSONArray(compareTo.getSecondary_pics());
-				} catch (Exception e) 	{	pic_secondary = null; }
+				try { 	
+					pic_secondary = new JSONArray(compareTo.getSecondary_pics());
+				} catch (Exception e) {	
+					pic_secondary = null; 
+				}
 
-				if(pic_secondary != null) pic.put("secondary", pic_secondary);
+				if(pic_secondary != null) {
+					pic.put("secondary", pic_secondary);
+				}
 			}
 
-			if(pic.length() > 0) newChanges.put("pic", pic);
+			if(pic.length() > 0) {
+				newChanges.put("pic", pic);
+			}
 
 			// Verificando os campos originais se alteraram
 			JSONObject originals = new JSONObject();
@@ -263,25 +268,16 @@ public class ProcessedModel {
 				originals.put("description", compareTo.getOriginalDescription());
 			}
 
-			if(originals.length() > 0) newChanges.put("originals", originals);
+			if(originals.length() > 0) {
+				newChanges.put("originals", originals);
+			}
 
 		}
 
-		if(newChanges.length() == 0) {
+		if (newChanges.length() == 0) {
 			this.setChanges(null);
 		} else {
 			this.setChanges(newChanges);
-		}
-
-		// Se for para escalonar a url para um screenshot, então inserir no Mongo
-		if (mustScheduleUrlToScreenshot) {			
-			Document urlDocument = new Document();
-			urlDocument.append("url", this.url);
-			urlDocument.append("marketId", this.market);
-			urlDocument.append("internalId", this.internalId);
-			urlDocument.append("screenshotProcessed", false);
-
-			mongo.getCollection("Screenshots").insertOne(urlDocument);
 		}
 	}
 
@@ -353,8 +349,8 @@ public class ProcessedModel {
 			}
 
 			// void change
-			if(this.getVoid() != truco.getVoid()) {
-				Logging.printLogDebug(logger, session, "Change detected. [void][" + this.getVoid() + " -> " + truco.getVoid() + "]");
+			if(this.isVoid() != truco.isVoid()) {
+				Logging.printLogDebug(logger, session, "Change detected. [void][" + this.isVoid() + " -> " + truco.isVoid() + "]");
 				return true;
 			}
 
@@ -678,7 +674,7 @@ public class ProcessedModel {
 		this.marketplace = marketplace;
 	}
 
-	public Boolean getVoid() {
+	public Boolean isVoid() {
 		return void_product;
 	}
 

@@ -18,6 +18,13 @@ public enum Card {
 	CABAL,
 	SENFF,
 	CREDISHOP,
+	NARANJA,
+	NATIVA,
+	JCB,
+	MULTICASH,
+	MULTIEMPRESARIAL,
+	MULTICHEQUE,
+	MULTIBENEFICIOS,
 	
 	SHOP_CARD,
 	UNKNOWN_CARD;
@@ -42,6 +49,13 @@ public enum Card {
 			case CABAL: return "cabal";
 			case SENFF: return "senff";
 			case CREDISHOP: return "credishop";
+			case NARANJA: return "naranja";
+			case NATIVA: return "nativa";
+			case MULTICASH: return "multicash";
+			case JCB: return "jcb";
+			case MULTIEMPRESARIAL: return "multiempresarial";
+			case MULTICHEQUE: return "multicheque";
+			case MULTIBENEFICIOS: return "multibeneficios";
 			default: return "unkown_card";
 		}
 	}

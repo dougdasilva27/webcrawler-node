@@ -6,16 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -362,7 +363,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		Element primaryImageElement = document.select("figure.imageWrapper a").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = HOME_PAGE + primaryImageElement.attr("href").trim();
+			primaryImage = CommonMethods.removeIllegalParameters(HOME_PAGE + primaryImageElement.attr("href").trim());
 		}
 
 		return primaryImage;
@@ -375,7 +376,8 @@ public class BrasilMultisomCrawler extends Crawler {
 		Elements imagesElement = document.select("#carousel li a img");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // start with index 1 because the first image is the primary image
-			secondaryImagesArray.put( HOME_PAGE + imagesElement.get(i).attr("src").trim().replaceAll("false", "true") ); // montando url para pegar a maior imagem
+			secondaryImagesArray.put(CommonMethods.removeIllegalParameters(HOME_PAGE +
+					imagesElement.get(i).attr("src").trim().replaceAll("false", "true"))); // montando url para pegar a maior imagem
 		}
 
 		if (secondaryImagesArray.length() > 0) {

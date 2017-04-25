@@ -15,12 +15,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -283,14 +283,15 @@ public class BrasilTelhanorteCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
-
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 		
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -383,8 +384,12 @@ public class BrasilTelhanorteCrawler extends Crawler {
 		Element descriptionElement = document.select(".especificacao").first();
 		Element specElement = document.select(".dimensoes").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specElement != null) description = description + specElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
 
 		return description;
 	}
@@ -412,10 +417,10 @@ public class BrasilTelhanorteCrawler extends Crawler {
 			}        
 		}
 		
-		try {
+		if (skuJson != null) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		} else {
+			skuJsonArray = new JSONArray();
 		}
 		
 		return skuJsonArray;

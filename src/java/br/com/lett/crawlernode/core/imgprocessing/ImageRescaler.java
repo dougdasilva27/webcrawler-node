@@ -51,7 +51,7 @@ public class ImageRescaler {
 
 		boolean converted = false;
 
-		if( imageType(localFile.getAbsolutePath()).equals("png") || image.getType() == 0) {
+		if( imageType(localFile.getAbsolutePath()).equals("png") || image.getType() == 0 || image.getType() == 6) {
 			Logging.printLogDebug(logger, session, "Image is png...converting to jpg...");
 
 			image = convertFromPNGtoJPG(image);

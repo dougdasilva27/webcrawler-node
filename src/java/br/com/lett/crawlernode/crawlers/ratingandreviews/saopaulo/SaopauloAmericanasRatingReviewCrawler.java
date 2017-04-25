@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -13,11 +11,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.RatingReviewCrawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
@@ -51,13 +49,15 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.americanas.com.br/produto/")) return true;
+		if (url.startsWith("https://www.americanas.com.br/produto/") || url.startsWith("http://www.americanas.com.br/produto/")) {
+			return true;
+		}
 		return false;
 	}
 	
 	private List<String> crawlIdList(JSONObject embeddedJSONObject) {
-		List<String> idList = new ArrayList<String>();
-		String internalPid = crawlSkuInternalPid(embeddedJSONObject);
+		List<String> idList = new ArrayList<>();
+		//String internalPid = crawlSkuInternalPid(embeddedJSONObject);
 		
 		if (embeddedJSONObject.has("skus")) {
 			JSONArray skus = embeddedJSONObject.getJSONArray("skus");
@@ -66,7 +66,8 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 				JSONObject sku = skus.getJSONObject(i);
 				
 				if (sku.has("id")) {
-					String id = internalPid + "-" + sku.getString("id");
+					//String id = internalPid + "-" + sku.getString("id");
+					String id = sku.getString("id");
 					idList.add(id);
 				}
 			}
@@ -88,7 +89,9 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private RatingsReviews crawlRatingReviews(JSONObject embeddedJSONObject) {
-		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
+		RatingsReviews ratingReviews = new RatingsReviews();
+		
+		ratingReviews.setDate(session.getDate());
 
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(embeddedJSONObject);
 		String skuInternalPid = crawlSkuInternalPid(embeddedJSONObject);
@@ -120,29 +123,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 		}
 		return avgOverallRating;
 	}
-	
-	/**
-	 * 
-	 * @param reviewStatistics
-	 * @return
-	 */
-	private Map<String, Integer> crawlRatingDistribution(JSONObject reviewStatistics) {
-		Map<String, Integer> ratingDistributionMap = new HashMap<String, Integer>();
-		
-		if (reviewStatistics.has("RatingDistribution")) {
-			JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
-			
-			for (int i = 0; i < ratingDistribution.length(); i++) {
-				JSONObject rating = ratingDistribution.getJSONObject(i);
-				
-				if (rating.has("Count") && rating.has("RatingValue")) {
-					ratingDistributionMap.put(String.valueOf(rating.getInt("RatingValue")), rating.getInt("Count"));
-				}
-			}
-		}
-		
-		return ratingDistributionMap;
-	}
+
 
 	/**
 	 * e.g: 
@@ -269,6 +250,10 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 									);
 				}
 			}        
+		}
+		
+		if (embeddedJSONObject == null) {
+			embeddedJSONObject = new JSONObject();
 		}
 
 		return embeddedJSONObject;

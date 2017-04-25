@@ -2,18 +2,23 @@ package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
@@ -72,9 +77,9 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			String category2 = "";
 			String category3 = "";
 			ArrayList<String> categories = new ArrayList<String>();
-			
+
 			Elements categ = doc.select("#miolo .breadCrumbs a");
-			
+
 			if(categ.size() > 1) categories.add(categ.get(1).text());
 			Elements subCategoriesElements = doc.select("#miolo .breadCrumbs h3 p");
 			for(Element e : subCategoriesElements) {
@@ -155,13 +160,17 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 				// Estoque
 				Integer stock = null;
 
+				// Prices
+				Prices prices = crawlPrices(doc, price);
+
 				Product product = new Product();
-				
+
 				product.setUrl(session.getOriginalURL());
 				product.setInternalId(internalId);
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
 				product.setCategory3(category3);
@@ -198,11 +207,13 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					Integer stock = null;
 					String scriptName = elementVariation.attr("onclick");
 					stock = Integer.valueOf(scriptName.split("'")[5]);
-					
+
 					// Preço
 					String plus = scriptName.split("'")[7].replace(',', '.');
 					Float priceVariation = normalizeTwoDecimalPlaces(price + Float.valueOf(plus));
-					
+
+					// prices
+					Prices prices = crawlPricesVariation(doc, priceVariation);
 
 					// Disponibilidade
 					boolean available = true;
@@ -215,14 +226,14 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					// Requisição POST para conseguir dados da imagem
 					String requestURL = "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp";
 					String requestParameters = assembleUrlParameters(session.getOriginalURL().split("/")[4], posInternalId);
-					
+
 					String response = DataFetcher.fetchString(
 							DataFetcher.POST_REQUEST, 
 							session, 
 							requestURL, 
 							requestParameters, 
 							null);
-										
+
 					String imageId = parseImageId(response);
 					Element elementPrimaryImage = doc.select(".produtoPrincipal .imagem .holder .cloud-zoom .foto").first();
 					String primaryImage = null;
@@ -247,12 +258,13 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					}
 
 					Product product = new Product();
-					
+
 					product.setUrl(session.getOriginalURL());
 					product.setInternalId(internalId);
 					product.setInternalPid(internalPid);
 					product.setName(name);
 					product.setPrice(priceVariation);
+					product.setPrices(prices);
 					product.setCategory1(category1);
 					product.setCategory2(category2);
 					product.setCategory3(category3);
@@ -305,7 +317,85 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 	public static Float normalizeTwoDecimalPlaces(Float number) {
 		BigDecimal big = new BigDecimal(number);
 		String rounded = big.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
-		
+
 		return Float.parseFloat(rounded);
+	}
+
+	/**
+	 * In cases with variations, to crawl installment is required a default installment in html
+	 * So is calculated installment price.
+	 * @param doc
+	 * @param price
+	 * @param internalPid
+	 * @return
+	 */
+	private Prices crawlPricesVariation(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(prices != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			Element installments = doc.select(".parcelamento b").first();
+
+			if(installments != null){
+				Integer installment = Integer.parseInt(installments.ownText().replaceAll("[^0-9]", ""));
+
+				Float value = MathCommonsMethods.normalizeTwoDecimalPlaces(price/installment);
+				installmentPriceMap.put(installment, value);
+			}
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+
+		return prices;
+	}
+
+	/**
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc, Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			Element installments = doc.select(".parcelamento").first();
+
+			if(installments != null){
+				Element installmentElement = installments.select("b").first();
+				if(installmentElement != null){
+					String text = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
+					if(!text.isEmpty()){
+						Integer installment = Integer.parseInt(text);
+
+						Element valueElement = installments.select("span").first();
+
+						if(valueElement != null) {
+							Float value = MathCommonsMethods.parseFloat(valueElement.text());
+
+							installmentPriceMap.put(installment, value);
+						}
+					}
+				}
+
+			}
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }

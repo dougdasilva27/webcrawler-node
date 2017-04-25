@@ -11,11 +11,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -153,7 +153,8 @@ public class BrasilMundomaxCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document, String url) {
-		if ( document.select(".product").first() != null && !url.startsWith(HOME_PAGE + "destaque/")) return true;
+		if ((document.select(".product").first() != null || document.select(".content > div > div > a > h1").first() != null)
+				&& !url.startsWith(HOME_PAGE + "destaque/")) return true;
 		return false;
 	}
 	
@@ -168,6 +169,12 @@ public class BrasilMundomaxCrawler extends Crawler {
 
 		if (internalIdElement != null) {
 			internalId = internalIdElement.attr("content").toString().trim();			
+		} else {
+			Element unnavailableProduct = document.select(".content > div > div > div > a > span").first();
+
+			if(unnavailableProduct != null) {
+				internalId = unnavailableProduct.text().replaceAll("[^0-9]", "").trim();
+			}
 		}
 
 		return internalId;
@@ -271,6 +278,12 @@ public class BrasilMundomaxCrawler extends Crawler {
 
 		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("href").trim();
+		} else {
+			Element unnavailableProduct = document.select(".content > div > a > img").first();
+
+			if(unnavailableProduct != null) {
+				primaryImage = unnavailableProduct.attr("src");
+			}
 		}
 
 		return primaryImage;
@@ -313,21 +326,21 @@ public class BrasilMundomaxCrawler extends Crawler {
 		}
 		
 		//após pegar o script, é formatado para pegar somente as urls de imagens
-		
-		String[] tokens = scriptImages.split(";");
-		
-		for(int i = 0; i < (tokens.length-1); i++){
-			String temp = tokens[i];
-			if(temp.startsWith("gal.add('IMAGE','http") || temp.startsWith("gal.add('OFFER','http")){
-				String[] tokens2 = temp.split(",");
-				String imageTemp = tokens2[1].replaceAll("'", "").replace("_440_", "_2000_").trim(); // tornando a imagem maior substituindo 440 por 2000
-				
-				int x = imageTemp.indexOf(".jpg");
-				
-				imagesArray.add(imageTemp.substring(0, x+4)); 
+		if(scriptImages != null && scriptImages.contains(";")) {
+			String[] tokens = scriptImages.split(";");
+
+			for (int i = 0; i < (tokens.length - 1); i++) {
+				String temp = tokens[i];
+				if (temp.startsWith("gal.add('IMAGE','http") || temp.startsWith("gal.add('OFFER','http")) {
+					String[] tokens2 = temp.split(",");
+					String imageTemp = tokens2[1].replaceAll("'", "").replace("_440_", "_2000_").trim(); // tornando a imagem maior substituindo 440 por 2000
+
+					int x = imageTemp.indexOf(".jpg");
+
+					imagesArray.add(imageTemp.substring(0, x + 4));
+				}
 			}
 		}
-		
 		return imagesArray;
 	}
 	

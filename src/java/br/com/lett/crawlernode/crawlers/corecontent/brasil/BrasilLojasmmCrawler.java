@@ -11,11 +11,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -65,7 +65,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -103,7 +103,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 			// Availability all products (caso específico que todos produtos estão indisponíveis)
 			boolean unnavailableForAll = false;
 
-			if(skus.size() < 1){
+			if (skus.size() < 1) {
 				skus = doc.select(".ciq option[class]");
 				unnavailableForAll = true;
 			}
@@ -148,7 +148,6 @@ public class BrasilLojasmmCrawler extends Crawler {
 				products.add(product);
 			}
 
-
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
@@ -161,7 +160,9 @@ public class BrasilLojasmmCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select("span[itemprop=productID]").first() != null ) return true;
+		if ( document.select("span[itemprop=productID]").first() != null ) {
+			return true;
+		}
 
 		return false;
 	}
@@ -197,10 +198,11 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select("span[itemprop=name]").first();
-
-		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+		
+		String title = document.title();
+		String[] tokens = title.split("\\|");
+		if (tokens != null && tokens.length > 1) {
+			name = tokens[0].trim();
 		}
 
 		return name;
@@ -212,7 +214,6 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 		if(e != null){
 			String variation = e.text().trim();
-
 			nameVariation = name + " " + variation;
 
 		} else {
@@ -220,7 +221,6 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 			if(variation.toLowerCase().contains("esgotado")){
 				String[] tokens = variation.split("-");
-
 				variation = variation.replace(tokens[tokens.length-1], "").trim().replaceAll("-", "");
 			}
 
@@ -233,10 +233,10 @@ public class BrasilLojasmmCrawler extends Crawler {
 	private Float crawlPrice(Document doc, boolean unnavailableForAll) {
 		Float price = null;	
 
-		if(!unnavailableForAll){
-			Element priceElement = doc.select("span[itemprop=price]:not([name])").first();
+		if (!unnavailableForAll) {
+			Element priceElement = doc.select("#divPreco .p2a b span").first();
 
-			if(priceElement != null){
+			if (priceElement != null) {
 				price = Float.parseFloat( priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 			}
 		}
@@ -265,14 +265,14 @@ public class BrasilLojasmmCrawler extends Crawler {
 			}
 
 			// installments
-			Map<Integer, Float> installments = new TreeMap<Integer, Float>();
+			Map<Integer, Float> installments = new TreeMap<>();
 			Elements installmentElements = document.select("#navpa ul.Menupa li p");
 			for (int i = 0; i < installmentElements.size() - 1; i+=2) {
 				Element installmentNumberElement = installmentElements.get(i);
 				Element installmentPriceElement = installmentElements.get(i+1);
 				
 				List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(installmentNumberElement.text());				
-				if (parsedNumbers.size() > 0) {
+				if (!parsedNumbers.isEmpty()) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
 					Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.ownText());
 					
@@ -287,9 +287,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
 				prices.insertCardInstallment(Card.AMEX.toString(), installments);
 			}
-			
 		}
-
 
 		return prices;
 	}
@@ -325,7 +323,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -345,11 +343,23 @@ public class BrasilLojasmmCrawler extends Crawler {
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("href").trim();
 
-			if(!image.startsWith("https:")){
+			if(!image.isEmpty() && !image.startsWith("http")){
 				image = "https:" + image;
 			}
 
 			primaryImage = image;
+		}
+
+		if(primaryImage.isEmpty()) {
+			Element specialImage = doc.select(".zoomprincipal > img").first();
+
+			if(specialImage != null) {
+				primaryImage = specialImage.attr("src");
+
+				if(!primaryImage.isEmpty() && !primaryImage.startsWith("http")){
+					primaryImage = "https:" + primaryImage;
+				}
+			}
 		}
 
 		return primaryImage;
@@ -379,7 +389,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select("#brd-crumbs ul li a:not([href=index.php])");
 
 		for (int i = 0; i < elementCategories.size(); i++) { 
@@ -401,7 +411,9 @@ public class BrasilLojasmmCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select(".InfoProd").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
 
 		return description;
 	}

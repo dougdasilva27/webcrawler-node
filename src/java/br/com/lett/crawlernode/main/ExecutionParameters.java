@@ -1,17 +1,9 @@
 package br.com.lett.crawlernode.main;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.task.TaskExecutor;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ExecutionParameters {
@@ -21,22 +13,7 @@ public class ExecutionParameters {
 	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
 	public static final String ENVIRONMENT_PRODUCTION	= "production";
 	public static final String DEFAULT_CRAWLER_VERSION = "-1";
-
-	/**
-	 * The maximum number of threads that can be used by the crawler
-	 */
-	private static final String ENV_NTHREADS = "CRAWLER_THREADS";
-
-	private static final String ENV_IMAGE_TASK 			= "IMAGE_TASK";
-	private static final String ENV_RATING_REVIEW_TASK 	= "RATING_REVIEW";
-	private static final String ENV_CORE_THREADS 		= "CRAWLER_CORE_THREADS";
-
-	private static final String ON 						= "ON";
-
-	private Options options;
-	private String environment;
-	private String version;
-	private Boolean debug;
+	
 
 	/** 
 	 * In case we want to force image update on Amazon bucket, when downloading images
@@ -44,112 +21,39 @@ public class ExecutionParameters {
 	 * this option in case we want to force this, even if the image on market didn't changed. 
 	 */
 	private boolean forceImageUpdate;
+	
 
 	private String tmpImageFolder;
-	private boolean imageTaskActivated;
-	private boolean ratingAndReviewsTaskActivated;
-	private String[] args;
-
-	/**
-	 * Number of threads used by the crawler
-	 * Value is passed by an environment variable
-	 */
+	private String phantomjsPath;
 	private int nthreads;
-
 	private int coreThreads;
+	private String environment;
+	private String version;
+	private Boolean debug;
 
-	public ExecutionParameters(String[] args) {
-		this.args = args;
-		options = new Options();
+	public ExecutionParameters() {
 		debug = null;
 	}
 
 	public void setUpExecutionParameters() {
-		this.createOptions();
-		this.parseCommandLineOptions();
-
-		// get the number of threads on environment variable
-		this.nthreads = getEnvNumOfThreads();
-
-		// get the number of core threads on environment variable
-		this.coreThreads = getEnvCoreThreads();
-
-		// get the flag for image tasks on environment variable
-		this.imageTaskActivated = getEnvImageTaskActivated();
-
-		// get the flag for rating and review tasks on environment variable
-		this.ratingAndReviewsTaskActivated = getEnvRateAndReviewTaskActivated();
+		nthreads = getEnvNumOfThreads();
+		coreThreads = getEnvCoreThreads();
+		debug = getEnvDebug();
+		forceImageUpdate = getEnvForceImgUpdate();
+		environment = getEnvEnvironment();
+		tmpImageFolder = getEnvTmpImagesFolder();
+		setPhantomjsPath(getEnvPhantomjsPath());
+		version = DEFAULT_CRAWLER_VERSION;
 
 		Logging.printLogDebug(logger, this.toString());
 	}
 
 	public Boolean getDebug() {
-		return this.debug;
+		return debug;
 	}
 
 	public String getEnvironment() {
-		return this.environment;
-	}
-
-	public boolean isImageTaskActivated() {
-		return this.imageTaskActivated;
-	}
-
-	private void createOptions() {
-
-		options.addOption("h", "help", false, "Show help");
-		options.addOption("debug", false, "Debug mode for logging debug level messages on console");
-		options.addOption("force_image_update", false, "Force image updates on Amazon bucket");
-		options.addOption("rating_reviews", false, "Running rating and reviews crawler");
-		options.addOption("environment", true, "Environment [development, production]");
-		options.addOption("version", true, "Crawler node version");
-		options.addOption("tmpImageFolder", true, "Temporary folder to store downloaded images");
-
-	}
-
-	private void parseCommandLineOptions() {
-		CommandLineParser parser = new DefaultParser();
-		CommandLine cmd = null;
-
-		try {
-			cmd = parser.parse(options, args);
-
-			// debug mode
-			debug = cmd.hasOption("debug");
-
-			// force image update flag
-			forceImageUpdate = cmd.hasOption("force_image_update");
-
-			// environment
-			if (cmd.hasOption("environment")) {
-				environment = cmd.getOptionValue("environment");
-				if (!environment.equals(ENVIRONMENT_DEVELOPMENT) && !environment.equals(ENVIRONMENT_PRODUCTION)) {
-					Logging.printLogError(logger, "Unrecognized environment.");
-					help();
-				}
-			} else {
-				help();
-			}
-
-			// temporary images folder
-			if (cmd.hasOption("tmpImageFolder")) {
-				this.tmpImageFolder = cmd.getOptionValue("tmpImageFolder");
-			} else {
-				help();
-			}
-
-			// version
-			if (cmd.hasOption("version")) {
-				version = cmd.getOptionValue("version");
-			} else {
-				version = DEFAULT_CRAWLER_VERSION;
-			}
-
-		} catch (ParseException e) {
-			Logging.printLogError(logger, " Failed to parse comand line properties.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-			help();
-		}
+		return environment;
 	}
 
 	@Override
@@ -161,47 +65,58 @@ public class ExecutionParameters {
 		sb.append("\n");
 		sb.append("Environment: " + this.environment);
 		sb.append("\n");
-		sb.append("Image task activated: " + this.imageTaskActivated);
-		sb.append("\n");
-		sb.append("Rating and reviews: " + this.ratingAndReviewsTaskActivated);
-		sb.append("\n");
 		sb.append("Force image update: " + this.forceImageUpdate);
+		sb.append("\n");
+		sb.append("PhantomjsPath: " + this.phantomjsPath);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
 		sb.append("\n");
 
 		return sb.toString();
-	} 
+	}
 
-	private void help() {
-		new HelpFormatter().printHelp("Main", this.options);
-		System.exit(0);
+	private boolean getEnvDebug() {
+		String debugEnv = System.getenv(EnvironmentVariables.ENV_DEBUG);
+		if (debugEnv != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	private String getEnvPhantomjsPath() {
+		return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
+	}
+
+	private String getEnvTmpImagesFolder() {
+		return System.getenv(EnvironmentVariables.ENV_TMP_IMG_FOLDER);
+	}
+
+	private String getEnvEnvironment() {
+		return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
 	}
 
 	private int getEnvNumOfThreads() {
-		String nThreads = System.getenv(ENV_NTHREADS);
-		if (nThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
+		String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
+		if (nThreads == null) {
+			return PoolExecutor.DEFAULT_NTHREADS;
+		}
 		return Integer.parseInt(nThreads);
 	}
 
+	private boolean getEnvForceImgUpdate() {
+		String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
+		if (forceImgUpdate != null) {
+			return true;
+		}
+		return false;
+	}
+
 	private int getEnvCoreThreads() {
-		String coreThreads = System.getenv(ENV_CORE_THREADS);
-		if (coreThreads == null) return TaskExecutor.DEFAULT_NTHREADS;
-		return Integer.parseInt(coreThreads);
-	}
-
-	private boolean getEnvImageTaskActivated() {
-		String imageTaskActivated = System.getenv(ENV_IMAGE_TASK);
-		if (imageTaskActivated == null) return false;
-		if (imageTaskActivated.equals(ON)) return true;
-		return false;
-	}
-
-	private boolean getEnvRateAndReviewTaskActivated() {
-		String ratingAndReviewTaskActivated = System.getenv(ENV_RATING_REVIEW_TASK);
-		if (ratingAndReviewTaskActivated == null) return false;
-		if (ratingAndReviewTaskActivated.equals(ON)) return true;
-		return false;
+		String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
+		if (coreThreadsString == null) {
+			return PoolExecutor.DEFAULT_NTHREADS;
+		}
+		return Integer.parseInt(coreThreadsString);
 	}
 
 	public boolean mustForceImageUpdate() {
@@ -236,8 +151,11 @@ public class ExecutionParameters {
 		this.tmpImageFolder = tmpImageFolder;
 	}
 
-	public boolean isRatingAndReviewActivated() {
-		return ratingAndReviewsTaskActivated;
+	public String getPhantomjsPath() {
+		return phantomjsPath;
 	}
 
+	public void setPhantomjsPath(String phantomjsPath) {
+		this.phantomjsPath = phantomjsPath;
+	}
 }

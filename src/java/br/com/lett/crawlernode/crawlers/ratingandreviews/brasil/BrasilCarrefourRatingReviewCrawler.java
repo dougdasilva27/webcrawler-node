@@ -10,10 +10,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.RatingReviewCrawler;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -59,10 +59,11 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	private RatingsReviews crawlRatingReviews(Document document) {
-		RatingsReviews ratingReviews = new RatingsReviews(session.getDate());
+		RatingsReviews ratingReviews = new RatingsReviews();
 		
 		Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
 		
+		ratingReviews.setDate(session.getDate());
 		ratingReviews.setTotalReviews(computeTotalReviewsCount(ratingDistribution));
 		ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
 		

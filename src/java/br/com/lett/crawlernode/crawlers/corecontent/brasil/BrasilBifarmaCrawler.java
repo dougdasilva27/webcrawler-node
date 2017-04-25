@@ -1,17 +1,25 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -30,166 +38,288 @@ public class BrasilBifarmaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if (isProductPage(doc)) {
-
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			// internalId
-			Element elementID = doc.select(".detalhe_produto_informacao .mini_info .left").first();
-			String internalID = null;
-			if (elementID != null) {
-				String textAll = elementID.text();
-				textAll.replaceAll("\\s+", "");
-				int begin = textAll.indexOf(':') + 1;
-				internalID = textAll.substring(begin).trim();
-			}
-
-			// name
-			Element elementName = doc.select(".detalhe_produto_informacao .nome_icone .left").first();
-			String name = elementName.text().trim();
-
-			// price
-			Float price = null;
-			Element elementPrice = doc.select(".boxes .left .produto_preco").first();
-			if (elementPrice == null) {
-				elementPrice = doc.select(".price-box .special-price .price").first();
-			}
-			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
-
-			// categories
-			Elements elementCategories = doc.select(".breadcrumb p a");
-			String category1;
-			String category2;
-			String category3;
-			String[] cat = new String[3];
-			cat[0] = "";
-			cat[1] = "";
-			cat[2] = "";
-			int j = 0;
-
-			for (int i = 0; i < elementCategories.size(); i++) {
-
-				Element e = elementCategories.get(i);
-				cat[j] = e.text().toString();
-				cat[j] = cat[j].replace(">", "");
-				j++;
-
-				if (j > 2)
-					break;
-
-			}
-			category1 = cat[1];
-			category2 = cat[2];
-			category3 = null;
-
-			// Primary image
-			String primaryImage = "";
-			String tmp = "";
-			Elements elementPrimaryImage = doc.select("#detalhe_produto_vitrine_principal a img");
-			tmp = elementPrimaryImage.first().attr("src").trim();
-
-			if (tmp.contains("indisponivel"))
-				primaryImage = "";
-
-			if (tmp.contains("/Ampliada/")) {
-				primaryImage = tmp.replace("/Ampliada/", "/Super/");
-			}
-
-			primaryImage = "http://www.bifarma.com.br" + primaryImage;
-
-			// Secondary images
-			String secondaryImages = null;
-			Elements elementSecondaryImages = doc.select("#detalhe_produto_thumbs ul a");
-			JSONArray secondaryImagesArray = new JSONArray();
-
-			if (elementSecondaryImages.size() > 1) {
-				for (int i = 0; i < elementSecondaryImages.size(); i++) {
-					Element e = elementSecondaryImages.get(i);
-					String attrRel = e.attr("rel");
-					int begin = attrRel.indexOf("largeimage:") + 11;
-					String tmpImage = attrRel.substring(begin);
-					tmpImage = tmpImage.replace("\'", " ").replace('}', ' ').trim();
-					tmpImage = "http://www.bifarma.com.br" + tmpImage;
-					if (!tmpImage.equals(primaryImage)) {
-						secondaryImagesArray.put(tmpImage);
-					}
-				}
-			}
-			if (secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
-
-			// Descricao
-			String description = "";
-			Element elementProductInformation = doc.select(".descricao_produto").first();
-			Element elementWarning = doc.select(".advertencia").first();
-			Element elementOtherInformations = doc.select(".outras_infos").first();
-
-			if (elementProductInformation != null) {
-				description = description + elementProductInformation.html();
-			}
-			if (elementWarning != null) {
-				description = description + elementWarning.html();
-			}
-			if (elementOtherInformations != null) {
-				description = description + elementOtherInformations.html();
-			}
-
-			// Disponibilidade
-			boolean available = true;
-			Element buttonUnavailable = doc.select(".detalhe_produto_informacao .boxes .right .bt_avise_me").first();
-			if (buttonUnavailable != null) {
-				available = false;
-			}
-
-			// Estoque
-			Integer stock = null;
-
-			// Marketplace
-			JSONArray marketplace = null;
 			
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalID);
-			product.setName(name);
-			product.setPrice(price);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			JSONObject productInfo = crawlProductInfo(doc);
+			
+			String internalId = crawlInternalId(productInfo);
+			String internalPid = crawlInternalPid(productInfo);
+			String name = crawlName(productInfo);
+			Float price = crawlPrice(doc);
+			Prices prices = crawlPrices(price, doc);
+			boolean available = crawlAvailability(productInfo);
+			CategoryCollection categories = crawlCategories(productInfo);
+			String primaryImage = crawlPrimaryImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
+			String description = crawlDescription(doc);
+			Integer stock = null;
+			JSONArray marketplace = crawlMarketplace();
+
+			String productUrl = session.getOriginalURL();
+			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
+				productUrl = session.getRedirectedToURL(productUrl);
+			}
+			
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(productUrl)
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name).setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description).setStock(stock)
+					.setMarketplace(marketplace).build();
 
 			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
+
 	}
 
-	private boolean isProductPage(Document document) {
+	private boolean isProductPage(Document doc) {
+		if (doc.select(".product_body").first() != null) {
+			return true;
+		}
+		return false;
+	}
 
-		Elements selectedElements = null;
-		String[] productUrlFeatures = {"#conteudo_produto", "#detalhe_produto", ".detalhe_produto_informacao", ".detalhe_produto_informacao .mini_info .left"};
-		int size = productUrlFeatures.length;
+	private String crawlInternalId(JSONObject info) {
+		String internalId = null;
 
-		for(int i = 0; i < size; i++) {
-			selectedElements = document.select( productUrlFeatures[i] );
-			if(selectedElements == null || selectedElements.size() == 0) {
-				return false;
+		if(info.has("skus")) {
+			JSONArray skus = info.getJSONArray("skus");
+			
+			if(skus.length() > 0) {
+				JSONObject sku = skus.getJSONObject(0);
+				
+				if(sku.has("sku")) {
+					internalId = sku.getString("sku");
+				}
 			}
 		}
 
-		return true;
+		return internalId;
+	}
 
+	private String crawlInternalPid(JSONObject info) {
+		String internalPid = null;
+		
+		if(info.has("id")) {
+			internalPid = info.getString("id");
+		}
+		
+		return internalPid;
+	}
+
+	private String crawlName(JSONObject info) {
+		String name = null;
+
+		if (info.has("name")) {
+			name = info.getString("name");
+		}
+
+		return name;
+	}
+
+	private Float crawlPrice(Document document) {
+		Float price = null;
+		Element salePriceElement = document.select(".product_current_price strong").first();
+		
+		if(salePriceElement != null) {
+			String priceText = salePriceElement.ownText().trim();
+			
+			if(!priceText.isEmpty()) {
+				price = MathCommonsMethods.parseFloat(priceText);
+			}
+		}
+
+		return price;
+	}
+
+	private boolean crawlAvailability(JSONObject info) {
+		boolean available = false;	
+
+		if(info.has("status")) {
+			String status = info.getString("status");
+			
+			if(status.equals("available")) {
+				available = true;
+			}
+		}
+
+		return available;
+	}
+
+	private JSONArray crawlMarketplace() {
+		return new JSONArray();
+	}
+
+	private String crawlPrimaryImage(Document document) {
+		String primaryImage = null;
+		Element primaryImageElement = document.select(".slider-product .slide_image img").first();
+
+		if (primaryImageElement != null) {
+			primaryImage = primaryImageElement.attr("src").trim();
+			
+			if(!primaryImage.contains("bifarma")) {
+				primaryImage = HOME_PAGE + primaryImage;
+			}
+			
+			if(primaryImage.contains("SEM_IMAGEM")) {
+				primaryImage = null;
+			}
+		}
+
+		return primaryImage;
+	}
+
+	private String crawlSecondaryImages(Document document) {
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		Elements imagesElement = document.select(".slider-thumbs .thumb > img");
+
+		for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
+			String image = imagesElement.get(i).attr("src").trim().replace("_mini", "");
+			
+			if(!image.contains("bifarma")) {
+				image = HOME_PAGE + image;
+			}
+			
+			secondaryImagesArray.put(image);
+		}
+
+		if (secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
+	}
+
+	private CategoryCollection crawlCategories(JSONObject info) {
+		CategoryCollection categories = new CategoryCollection();
+
+		if(info.has("categories")) {
+			JSONArray categoriesJson = info.getJSONArray("categories");
+			
+			for (int i = 0; i < categoriesJson.length(); i++) { 
+				JSONObject categorieJson = categoriesJson.getJSONObject(i);
+				
+				if(categorieJson.has("name")) {
+					categories.add(categorieJson.getString("name"));
+				}
+			}
+		}
+		
+
+		return categories;
+	}
+
+	private String crawlDescription(Document document) {
+		StringBuilder description = new StringBuilder();
+		Element descriptionElement = document.select(".accordion-section").first();
+
+		if (descriptionElement != null) {
+			description.append(descriptionElement.html());
+		}
+
+		return description.toString();
+	}
+
+	private Prices crawlPrices(Float price, Document doc) {
+		Prices prices = new Prices();
+
+		if (price != null) {
+
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
+			
+			prices.insertBankTicket(price);
+			installmentPriceMap.put(1, price);
+
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+		}
+
+		return prices;
+	}
+	
+	/**
+	 * Return a json like this:
+	 * "{\"product\": {\n" +
+		"\t        \"id\": \"7748\",\n" +
+		"\t        \"name\": \"Mucilon arroz/aveia 400gr neste\",\n" +
+		"\t        \n" +
+		"\t        \"url\": \"/produto/mucilon-arroz-aveia-400gr-neste-7748\",\n" +
+		"\t        \"images\": {\n" +
+		"\t            \"235x235\": \"/fotos/PRODUTO_SEM_IMAGEM_mini.png\"\n" +
+		"\t        },\n" +
+		"\t        \"status\": \"available\",\n" +
+		"\t\t    \n" +
+		"\t        \"price\": 12.50,\n" +
+		"\t        \"categories\": [{\"name\":\"Mamãe e Bebê\",\"id\":\"8\"},{\"name\":\"Alimentos\",\"id\":\"89\",\"parents\":[\"8\"]},],\n" +
+		"\t        \"installment\": {\n" +
+		"\t            \"count\": 0,\n" +
+		"\t            \"price\": 0.00\n" +
+		"\t        },\n" +
+		"\t        \n" +
+		"\t        \n" +
+		"\t        \n" +
+		"\t        \t\"skus\": [ {\n" +
+		"\t        \t\t\t\"sku\":  \"280263\"\n" +
+		"\t        \t}],\n" +
+		"\t        \n" +
+		"\t        \"details\": {},\n" +
+		"\t \t\t\"published\": \"2017-01-24\"\n" +
+		"\t    }}";
+	 *
+	 * @param doc
+	 * @return
+	 */
+	private JSONObject crawlProductInfo(Document doc) {
+		JSONObject info = new JSONObject();
+		
+		Elements scripts = doc.select("script[type=\"text/javascript\"]");
+		
+		for(Element e : scripts) {
+			String text = e.outerHtml();
+			
+			String varChaordic = "chaordicProduct =";
+			
+			if(text.contains(varChaordic)) {
+				int x = text.indexOf(varChaordic) + varChaordic.length();
+				int y = text.indexOf(";", x);
+				
+				String json = text.substring(x, y).trim();
+				
+				if(json.startsWith("{") && json.endsWith("}")) {
+					JSONObject product = new JSONObject(json);
+					
+					if(product.has("product")) {
+						info = product.getJSONObject("product");
+					}
+				}
+				
+				break;
+			}
+		}
+		
+		return info;
 	}
 }

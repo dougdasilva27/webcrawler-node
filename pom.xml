@@ -3,8 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webcrawler-node</groupId>
 	<artifactId>webcrawler-node</artifactId>
-	<version>2016.11.25d</version>
+	<version>${maven.build.timestamp}</version>
 	<packaging>jar</packaging>
+
+	<properties>
+		<maven.build.timestamp.format>yyyy-MM-dd_HH-mm</maven.build.timestamp.format>
+	</properties>
 
 	<build>
 
@@ -28,10 +32,15 @@
 			</resource>
 		</resources>
 
+		<extensions>
+			<extension>
+				<groupId>org.kuali.maven.wagons</groupId>
+				<artifactId>maven-s3-wagon</artifactId>
+				<version>1.2.1</version>
+			</extension>
+		</extensions>
+
 		<plugins>
-
-
-
 
 			<!-- <plugin> <artifactId>maven-assembly-plugin</artifactId> <executions> 
 				<execution> <phase>package</phase> <goals> <goal>single</goal> </goals> </execution> 
@@ -47,7 +56,6 @@
 				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> </archive> 
 				<outputDirectory>target/deployment</outputDirectory> </configuration> </plugin> -->
 
-
 			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
 				<configuration> <source>1.7</source> <target>1.7</target> <archive> <manifest> 
 				<addClasspath>true</addClasspath> <classpathPrefix>lib/</classpathPrefix> 
@@ -60,14 +68,12 @@
 				<overWriteIfNewer>true</overWriteIfNewer> </configuration> </execution> </executions> 
 				</plugin> -->
 
-
-
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 
@@ -103,9 +109,6 @@
 				</executions>
 			</plugin>
 
-
-
-
 			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
 				<configuration> <source>1.7</source> <target>1.7</target> </configuration> 
 				</plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
@@ -113,10 +116,6 @@
 				</goals> <configuration> <archive> <manifest> <mainClass>br.com.lett.crawlernode.main.Main</mainClass> 
 				</manifest> </archive> <descriptorRefs> <descriptorRef>jar-with-dependencies</descriptorRef> 
 				</descriptorRefs> </configuration> </execution> </executions> </plugin> -->
-
-
-
-
 
 			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> 
 				<version>3.0.2</version> <configuration> <archive> <index>true</index> <manifest> 
@@ -131,14 +130,17 @@
 				<includeScope>runtime</includeScope> </configuration> </execution> </executions> 
 				</plugin> -->
 
-
-
-
-
 		</plugins>
+
 	</build>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>com.sun.net.httpserver</groupId>
+			<artifactId>http</artifactId>
+			<version>20070405</version>
+		</dependency>
 
 		<!-- HTML parser -->
 		<dependency>
@@ -159,17 +161,26 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.5.2</version>
 		</dependency>
-		
+
+		<!-- WebDriver -->
 		<dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>2.47.0</version>
-        </dependency>
-		
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>2.47.0</version>
+		</dependency>
+
+		<!-- Lett database models -->
 		<dependency>
-			<groupId>com.github.detro.ghostdriver</groupId>
-			<artifactId>phantomjsdriver</artifactId>
-			<version>1.1.0</version>
+			<groupId>br.com.lett</groupId>
+			<artifactId>db</artifactId>
+			<version>1.9.0</version>
+		</dependency>
+
+		<!-- Assemble and perform queries -->
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>3.8.6</version>
 		</dependency>
 
 		<!-- JSON for Java -->
@@ -207,17 +218,20 @@
 			<version>1.7.10</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.1.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
 			<version>2.5.16</version>
+		</dependency>
+		<dependency>
+			<groupId>com.cwbase</groupId>
+			<artifactId>logback-redis-appender</artifactId>
+			<version>1.1.5</version>
 		</dependency>
 
 		<!-- Amazon -->
@@ -226,20 +240,16 @@
 			<artifactId>aws-java-sdk-s3</artifactId>
 			<version>1.10.69</version>
 		</dependency>
-
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-sqs-java-extended-client-lib</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-core</artifactId>
 			<version>1.10.77</version>
 		</dependency>
-
 
 		<!-- Joda time required for Amazon -->
 		<dependency>
@@ -248,16 +258,13 @@
 			<version>2.9.4</version>
 		</dependency>
 
-
 		<!-- Image processing -->
-
 		<dependency>
 			<groupId>org.openimaj</groupId>
 			<artifactId>core-image</artifactId>
 			<version>1.3.1</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.openimaj</groupId>
 			<artifactId>image-local-features</artifactId>
@@ -272,9 +279,19 @@
 			<version>2.6.1</version>
 		</dependency>
 
-		<!-- csv format file -->
-		<!-- <dependency> <groupId>net.sf.opencsv</groupId> <artifactId>opencsv</artifactId> 
-			<version>2.3</version> </dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.github.spullara.mustache.java/compiler -->
+		<dependency>
+			<groupId>com.github.spullara.mustache.java</groupId>
+			<artifactId>compiler</artifactId>
+			<version>0.9.4</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.codeborne/phantomjsdriver -->
+		<dependency>
+			<groupId>com.codeborne</groupId>
+			<artifactId>phantomjsdriver</artifactId>
+			<version>1.2.1</version>
+		</dependency>
 
 	</dependencies>
 
@@ -288,6 +305,11 @@
 		<repository>
 			<id>OpenIMAJ maven snapshots repository</id>
 			<url>http://snapshots.openimaj.org</url>
+		</repository>
+
+		<repository>
+			<id>maven.lett.com.br</id>
+			<url>s3://maven.lett.com.br</url>
 		</repository>
 
 	</repositories>

@@ -11,11 +11,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -190,6 +190,12 @@ public class BrasilCentraltecCrawler extends Crawler {
 
 		if (nameElement != null) {
 			name = sanitizeName( nameElement.text() );
+		}
+
+		Element modelName = document.select(".prod_tit_ref > span[content]").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.ownText();
 		}
 
 		return name;

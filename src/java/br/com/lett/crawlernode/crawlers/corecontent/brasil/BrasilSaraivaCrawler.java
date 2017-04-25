@@ -13,21 +13,29 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
+/**
+ * Date: 15/12/16
+ * 
+ * @author gabriel and samirleao
+ *
+ */
 public class BrasilSaraivaCrawler extends Crawler {
 
-	private final String HOME_PAGE_HTTP = "http://www.saraiva.com.br";
-	private final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
+	private static final String HOME_PAGE_HTTP = "http://www.saraiva.com.br";
+	private static final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
 
-	private final int LARGER_IMAGE_DIMENSION = 550;
+	private static final int LARGER_IMAGE_DIMENSION = 550;
 
 
 	public BrasilSaraivaCrawler(Session session) {
@@ -44,54 +52,49 @@ public class BrasilSaraivaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
+
 			JSONObject productJSON = crawlChaordicMeta(doc);
-			
+
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(productJSON);
 			String name = crawlName(doc);
 			boolean available = crawlAvailability(productJSON);
 			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);
+			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 			Integer stock = null;
 			JSONArray marketplace = null;
 			String description = crawlDescription(doc);
-			
+
 			// price is not displayed when sku is unavailable
-			Float price = null;
-			Prices prices = new Prices();
-			if (available) {
-				price = crawlPrice(doc);
-				prices = crawlPrices(doc);
-			}
-			
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
+			Float price = crawlPrice(doc, available);
+			Prices prices = crawlPrices(doc, price);
 
-			Product product = new Product();
+			// Categories
+			CategoryCollection categories = crawlCategories(doc);
 
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
-			
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
+
 			products.add(product);
 
 		} else {
@@ -124,14 +127,14 @@ public class BrasilSaraivaCrawler extends Crawler {
 		if (elementSpan != null) {
 			String spanText = elementSpan.text();
 			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(spanText);
-			if (parsedNumbers.size() > 0) {
+			if (!parsedNumbers.isEmpty()) {
 				internalId = parsedNumbers.get(0);
 			}
 		}
 
 		return internalId;
 	}
-	
+
 	/**
 	 * InternalPid is the id field inside the chaordicMetadataJSON
 	 * 
@@ -140,11 +143,11 @@ public class BrasilSaraivaCrawler extends Crawler {
 	 */
 	private String crawlInternalPid(JSONObject productJSON) {
 		String internalPid = null;
-		
+
 		if (productJSON.has("id")) {
 			internalPid = String.valueOf(productJSON.getInt("id"));
 		}
-		
+
 		return internalPid;
 	}
 
@@ -159,61 +162,122 @@ public class BrasilSaraivaCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlPrice(Document document) {
+	private Float crawlPrice(Document document, boolean available) {
 		Float price = null;
 
-		Element elementPrice = document.select("div.product-price-block div.simple-price span.final-price ").first();
-		if (elementPrice != null) {
-			price = MathCommonsMethods.parseFloat(elementPrice.ownText());
+		if(available) {
+			Element elementPrice = document.select("div.product-price-block div.simple-price span.final-price ").first();
+			if (elementPrice != null) {
+				price = MathCommonsMethods.parseFloat(elementPrice.ownText());
+			}
 		}
-
 		return price;
 	}
-	
-	private Prices crawlPrices(Document document) {
+
+	private Prices crawlPrices(Document document, Float price) {
 		Prices prices = new Prices();
-		
-		Float bankSlipPrice = crawlPrice(document);
-		prices.insertBankTicket(bankSlipPrice);
-		
-		Map<Integer, Float> installments = new HashMap<Integer, Float>();
-		
+
+		if(price != null) {
+			Float bankSlipPrice = price;
+			prices.insertBankTicket(bankSlipPrice);
+
+			Map<Integer, Float> installments = crawlInstallmentsNormalCard(document);
+			Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(document);
+
+
+			if (installments.size() > 0) {
+				prices.insertCardInstallment(Card.VISA.toString(), installments);
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.DINERS.toString(), installments);
+				prices.insertCardInstallment(Card.AURA.toString(), installments);
+				prices.insertCardInstallment(Card.ELO.toString(), installments);
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+				prices.insertCardInstallment(Card.AMEX.toString(), installments);
+
+				if(installmentsShopcardMap.isEmpty()) {
+					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installments);
+				} else {
+					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentsShopcardMap);
+				}
+			}
+
+		}
+
+		return prices;
+	}
+
+	/**
+	 * Normal cards installments
+	 * @param doc
+	 * @return
+	 */
+	private Map<Integer, Float> crawlInstallmentsNormalCard(Document doc){
+		Map<Integer, Float> installments = new HashMap<>();
+
 		// max installments
-		Element maxInstallmentsElement = document.select("div.product-price-block div.simple-price span.installments").first();
+		Element maxInstallmentsElement = doc.select("div.product-price-block div.simple-price span.installments").first();
 		if (maxInstallmentsElement != null) {
 			String installmentText = maxInstallmentsElement.text().trim();
 			
-			int endIndexInstallmentNumber = installmentText.indexOf("x");
-			
-			String installmentNumberText = installmentText.substring(0, endIndexInstallmentNumber);
-			String installmentPriceText = installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
-			
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
-			if (parsedNumbers.size() > 0) {
-				installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+			if(!installmentText.isEmpty() && installmentText.contains("x")) {
+				int endIndexInstallmentNumber = installmentText.indexOf('x');
+	
+				String installmentNumberText = installmentText.substring(0, endIndexInstallmentNumber);
+				String installmentPriceText = installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
+	
+				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				if (!parsedNumbers.isEmpty()) {
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+				}
 			}
 		}
-		
+
 		// 1x
-		Element cashPriceOnCardElement = document.select("div.extra-discount.price-block span.special-price strong").first();
+		Element cashPriceOnCardElement = doc.select("div.extra-discount.price-block span.special-price strong").first();
 		if (cashPriceOnCardElement != null) {
 			String cashPriceText = cashPriceOnCardElement.text();
 			if (!cashPriceText.isEmpty()) {
 				installments.put(1, MathCommonsMethods.parseFloat(cashPriceText));
 			}
 		}
-		
-		if (installments.size() > 0) {
-			prices.insertCardInstallment(Card.VISA.toString(), installments);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-			prices.insertCardInstallment(Card.DINERS.toString(), installments);
-			prices.insertCardInstallment(Card.AURA.toString(), installments);
-			prices.insertCardInstallment(Card.ELO.toString(), installments);
-			prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+
+		return installments;
+	}
+
+	/**
+	 * Shop card installments
+	 * @param doc
+	 * @return
+	 */
+	private Map<Integer, Float> crawlInstallmentsShopCard(Document doc){
+		Map<Integer, Float> installmentsShopcardMap = new HashMap<>();
+
+		Element shopCard = doc.select(".saraiva-card-price").first();
+
+		if(shopCard != null){
+			Element shopCardOneParcel = shopCard.select(".one-parcel .price").first();
+
+			if(shopCardOneParcel != null) {
+				Float priceShop = MathCommonsMethods.parseFloat(shopCardOneParcel.text());
+
+				installmentsShopcardMap.put(1, priceShop);
+			}
+
+			Element installmentsShopCard = shopCard.select(".installments").first();
+
+			if(installmentsShopCard != null) {
+				String text = installmentsShopCard.text().trim().toLowerCase();
+
+				int x = text.indexOf('x');
+
+				Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
+				Float value = MathCommonsMethods.parseFloat(text.substring(x));
+
+				installmentsShopcardMap.put(installment, value);
+			}
 		}
-		
-		return prices;
+
+		return installmentsShopcardMap;
 	}
 
 	/**
@@ -223,14 +287,14 @@ public class BrasilSaraivaCrawler extends Crawler {
 	 */
 	private boolean crawlAvailability(JSONObject productJSON) {
 		boolean available = true;
-		
+
 		if (productJSON.has("status")) {
 			String status = productJSON.getString("status");
-			if (status.equals("unavailable")) {
+			if ("unavailable".equals(status)) {
 				available = false;
 			}
 		}
-		
+
 		return available;
 	}
 
@@ -258,10 +322,29 @@ public class BrasilSaraivaCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("src");
 		}
 
-		// modify the dimension parameter
-		String biggerPrimaryImage = CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+		if(primaryImage != null) {
+			if (primaryImage.contains(".gif")) {
+				Elements elementImages = document.select("section.product-image #thumbs-images a img");
 
-		return biggerPrimaryImage;
+				for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the primary image.gif
+					String imageURL = elementImages.get(i).attr("src").trim();
+
+					if (!imageURL.contains(".gif")) {
+						primaryImage = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+						break;
+					}
+				}
+			}
+
+			if (primaryImage.contains(".gif")) {
+				return null;
+			}
+
+			// modify the dimension parameter
+			return CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+		}
+
+		return null;
 	}
 
 	/**
@@ -272,7 +355,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 	 * @param document
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages(Document document, String primaryImage) {
 		String secondaryImages = null;
 
 		Elements elementImages = document.select("section.product-image #thumbs-images a img");
@@ -282,7 +365,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 			String imageURL = elementImages.get(i).attr("src").trim();
 			String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
 
-			secondaryImagesArray.put(biggerImageURL);
+			if(!biggerImageURL.equals(primaryImage) && !biggerImageURL.contains(".gif")) {
+				secondaryImagesArray.put(biggerImageURL);
+			}
 		}			
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
@@ -290,9 +375,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 		return secondaryImages;
 	}
-	
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select(".breadcrumbs ol li");
 
 		for (int i = 2; i < elementCategories.size(); i++) { // start with index 1 because the first item is the home page
@@ -302,30 +387,22 @@ public class BrasilSaraivaCrawler extends Crawler {
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-
-		return "";
-	}
-	
 	private String crawlDescription(Document document) {
 		StringBuilder description = new StringBuilder();
-		
+
 		Element skuInformation = document.select("#product-information").first();
 		if (skuInformation != null) {
 			description.append(skuInformation.html());
 		}
-		
+
 		Element skuAdditionalInformation = document.select("#product-additional").first();
 		if (skuAdditionalInformation != null) {
 			description.append(skuAdditionalInformation.html());
 		}
-		
+
 		return description.toString();
 	}
-	
+
 	/**
 	 * {
 	 * "page":
@@ -357,15 +434,17 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private JSONObject crawlChaordicMeta(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject chaordicMeta = null;
-		JSONObject skuJson = null;
+		JSONObject skuJson;
+
+		String chaordic = "window.chaordic_meta = ";
 
 		for (Element tag : scriptTags) {                
 			for (DataNode node : tag.dataNodes()) {
-				if (tag.html().trim().startsWith("window.chaordic_meta = ")) {
+				if (tag.html().trim().startsWith(chaordic)) {
 					chaordicMeta = new JSONObject
-							(node.getWholeData().split(Pattern.quote("window.chaordic_meta = "))[1] +
-							 node.getWholeData().split(Pattern.quote("window.chaordic_meta = "))[1].split(Pattern.quote("}}}"))[0]
-							);
+							(node.getWholeData().split(Pattern.quote(chaordic))[1] +
+									node.getWholeData().split(Pattern.quote(chaordic))[1].split(Pattern.quote("}}}"))[0]
+									);
 				}
 			}
 		}

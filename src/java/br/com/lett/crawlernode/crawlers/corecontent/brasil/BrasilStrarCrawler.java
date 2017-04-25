@@ -10,11 +10,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -180,6 +180,16 @@ public class BrasilStrarCrawler extends Crawler {
 
 		if (nameElement != null) {
 			name = nameElement.text().toString().trim();
+		}
+
+		Element modelElement = document.select("div.product-name h3").last();
+
+		if(modelElement != null) {
+			String text = modelElement.text();
+
+			if(text.contains(":")) {
+				name = name + " " + (text.split(":")[1]).trim();
+			}
 		}
 
 		return name;

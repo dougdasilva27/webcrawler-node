@@ -14,12 +14,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 /************************************************************************************************************************************************************************************
@@ -69,7 +69,7 @@ public class BrasilSpicyCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -158,7 +158,9 @@ public class BrasilSpicyCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") ) return true;
+		if ( url.endsWith("/p") ) {
+			return true;
+		}
 		return false;
 	}
 	
@@ -218,14 +220,15 @@ public class BrasilSpicyCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(JSONObject json) {
-
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 		
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 	
 	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -278,7 +281,7 @@ public class BrasilSpicyCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(".bread-crumb > ul li a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
@@ -300,7 +303,9 @@ public class BrasilSpicyCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select(".box_descricao").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
 	
 		return description;
 	}
@@ -318,20 +323,20 @@ public class BrasilSpicyCrawler extends Crawler {
 		return json;
 	}
 	
-	private Integer crawlStock(JSONObject jsonProduct){
+	private Integer crawlStock(JSONObject jsonProduct) {
 		Integer stock = null;
 		
-		if(jsonProduct.has("SkuSellersInformation")){
+		if (jsonProduct.has("SkuSellersInformation")) {
 			JSONArray sellers = jsonProduct.getJSONArray("SkuSellersInformation");
 			
-			for(int i = 0; i < sellers.length(); i++){
+			for (int i = 0; i < sellers.length(); i++) {
 				JSONObject seller = sellers.getJSONObject(i);
 				
-				if(seller.has("Name")){
+				if (seller.has("Name")) {
 					String name = seller.getString("Name").toLowerCase().trim();
 					
-					if(name.equals("spicy")){
-						if(seller.has("AvailableQuantity")){
+					if (name.equals("spicy")) {
+						if (seller.has("AvailableQuantity")) {
 							stock = seller.getInt("AvailableQuantity");
 						}
 						break;
@@ -351,14 +356,14 @@ public class BrasilSpicyCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 			installmentPriceMap.put(1, price);
 			
-			if(jsonProduct.has("BestInstallmentNumber")){
+			if (jsonProduct.has("BestInstallmentNumber")) {
 				Integer installment = jsonProduct.getInt("BestInstallmentNumber");
 				
-				if(jsonProduct.has("BestInstallmentValue")){
+				if (jsonProduct.has("BestInstallmentValue")) {
 					Double valueDouble = jsonProduct.getDouble("BestInstallmentValue");
 					Float value = valueDouble.floatValue();
 					
-					if(installment > 0 && value > 0F){
+					if (installment > 0 && value > 0F) {
 						installmentPriceMap.put(installment, value);
 					}
 				}
@@ -386,7 +391,6 @@ public class BrasilSpicyCrawler extends Crawler {
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
-
 					skuJson = new JSONObject
 							(
 							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
@@ -397,10 +401,10 @@ public class BrasilSpicyCrawler extends Crawler {
 			}        
 		}
 		
-		try {
+		if (skuJson != null) {
 			skuJsonArray = skuJson.getJSONArray("skus");
-		} catch(Exception e) {
-			e.printStackTrace();
+		} else {
+			skuJsonArray = new JSONArray();
 		}
 		
 		return skuJsonArray;

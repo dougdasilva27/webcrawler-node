@@ -26,9 +26,7 @@ public class LettProxy {
 		this.user = user;
 		this.pass = pass;
 	}
-	
-	public static LettProxy proxyA = new LettProxy("TOR", "54.94.176.112", 5566, "Deep web bitch!", "google_bot_id", "3748f3e8cd");
-	
+		
 	@Override
 	public String toString() {
 		return "Proxy [source=" + source + ", address=" + address + ", port="

@@ -3,7 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.ribeiraopreto;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -14,9 +16,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class RibeiraopretoSavegnagoCrawler extends Crawler {
@@ -55,7 +59,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			try {
 				String url = curURL;
 				List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
-				List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
+				List<NameValuePair> paramsNew = new ArrayList<>();
 
 				for (NameValuePair param : paramsOriginal) {
 					if (!param.getName().equals("sc")) {
@@ -64,7 +68,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 				}
 
 				paramsNew.add(new BasicNameValuePair("sc", "1"));
-				URIBuilder builder = new URIBuilder(curURL.toString().split("\\?")[0]);
+				URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
 
 				builder.clearParameters();
 				builder.setParameters(paramsNew);
@@ -168,6 +172,9 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			// Marketplace
 			JSONArray marketplace = null;
 
+			// Prices
+			Prices prices = crawlPrices(price);
+			
 			Product product = new Product();
 			
 			product.setUrl(session.getOriginalURL());
@@ -175,6 +182,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -203,4 +211,26 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 		return ((url.startsWith(HOME_PAGE_SPECIAL) || url.startsWith(HOME_PAGE)) && url.contains("/p?sc="));
 	}
 
+	/**
+	 * In this market, installments not appear in product page
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+			prices.insertBankTicket(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+		}
+
+		return prices;
+	}
 }

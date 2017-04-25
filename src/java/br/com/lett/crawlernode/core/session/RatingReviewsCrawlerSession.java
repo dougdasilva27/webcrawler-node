@@ -1,12 +1,7 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.util.Map;
-
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.server.QueueService;
+import br.com.lett.crawlernode.core.server.request.Request;
 
 public class RatingReviewsCrawlerSession extends Session {
 
@@ -16,20 +11,11 @@ public class RatingReviewsCrawlerSession extends Session {
 	/** Internal id associated with the sku being crawled */
 	private String internalId;
 
-	public RatingReviewsCrawlerSession(Message message, String queueName, Markets markets) {
-		super(message, queueName, markets);
+	public RatingReviewsCrawlerSession(Request request, String queueName, Markets markets) {
+		super(request, queueName, markets);
 		
-		Map<String, MessageAttributeValue> attrMap = message.getMessageAttributes();
-
-		// setting processed id
-		if (attrMap.containsKey(QueueService.PROCESSED_ID_MESSAGE_ATTR)) {
-			this.processedId = Long.parseLong(attrMap.get(QueueService.PROCESSED_ID_MESSAGE_ATTR).getStringValue());
-		}
-
-		// setting internal id
-		if (attrMap.containsKey(QueueService.INTERNAL_ID_MESSAGE_ATTR)) {
-			this.internalId = attrMap.get(QueueService.INTERNAL_ID_MESSAGE_ATTR).getStringValue();
-		}
+		processedId = request.getProcessedId();
+		internalId = request.getInternalId();
 	}
 	
 	@Override
@@ -48,6 +34,17 @@ public class RatingReviewsCrawlerSession extends Session {
 
 	public void setInternalId(String internalId) {
 		this.internalId = internalId;
+	}
+	
+	@Override
+	public String toString() {		
+		StringBuilder stringBuilder = new StringBuilder();
+		
+		stringBuilder.append(super.toString());
+		stringBuilder.append("internalId: " + internalId + "\n");
+		stringBuilder.append("processedId: " + processedId + "\n");
+		
+		return stringBuilder.toString();
 	}
 
 }

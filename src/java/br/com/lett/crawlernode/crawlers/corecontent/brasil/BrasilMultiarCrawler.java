@@ -14,12 +14,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -200,6 +200,12 @@ public class BrasilMultiarCrawler extends Crawler {
 			name = sanitizeName(nameElement.text());
 		}
 
+		Element modelName = document.select(".productReference").first();
+
+		if(modelName != null) {
+			name = name + " " + modelName.text();
+		}
+
 		return name;
 	}
 
@@ -287,7 +293,16 @@ public class BrasilMultiarCrawler extends Crawler {
 		return description;
 	}
 
-
+	
+	/**
+	 * To crawl this prices is accessed a api
+	 * Is removed all accents for crawl price 1x like this:
+	 * Visa à vista	R$ 1.790,00
+	 * 
+	 * @param internalId
+	 * @param price
+	 * @return
+	 */
 	private Prices crawlPrices(Float price, Document doc, JSONObject skuJson){
 		Prices prices = new Prices();
 

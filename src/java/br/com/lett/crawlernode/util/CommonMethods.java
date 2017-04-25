@@ -8,15 +8,25 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.slf4j.Logger;
+
 
 /**
  * This class contains common methods that can be used in any class within
@@ -27,7 +37,7 @@ import org.apache.http.message.BasicNameValuePair;
 public class CommonMethods {
 	
 	private static String version = "1"; //TODO
-	
+
 	/**
 	 * 
 	 * @return
@@ -144,12 +154,15 @@ public class CommonMethods {
 	
 	public static void printStringToFile(String data, String path) {
 		try {
-			PrintWriter out = new PrintWriter(path);
-			out.println(data);
+			extracted(path).println(data);
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static PrintWriter extracted(String path) throws FileNotFoundException {
+		return new PrintWriter(path);
 	}
 	
 	/**
@@ -172,6 +185,148 @@ public class CommonMethods {
 	}
 	
 
+	/**
+	 * String
+	 * @param object 
+	 * @return Boolean - se é string ou não
+	 */
+	public static boolean isString(Object object) {
+		if (object instanceof String) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Integer
+	 * @param object 
+	 * @return Boolean - se é Integer ou não
+	 */
+	public static boolean isInteger(Object object) {
+		if (object instanceof Integer) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Long
+	 * @param object 
+	 * @return Boolean - se é Long ou não
+	 */
+	public static boolean isLong(Object object) {
+		if (object instanceof Long) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Double
+	 * @param object 
+	 * @return Boolean - se é Double ou não
+	 */
+	public static boolean isDouble(Object object) {
+		if (object instanceof Double) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Boolean
+	 * @param object 
+	 * @return Boolean - se é Boolean ou não
+	 */
+	public static boolean isBoolean(Object object) {
+		if (object instanceof Boolean) {
+			return true;
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static String removeAccents(String str) {
+
+		str = Normalizer.normalize(str, Normalizer.Form.NFD);
+		str = str.replaceAll("[^\\p{ASCII}]", "");
+		return str;
+
+	}
+
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static String removeParentheses(String str){
+
+		if(str.contains("(")) {
+			int x = str.indexOf("(");
+			str = str.substring(0, x).replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "");
+		} else {
+			return str.replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "");
+		}
+
+		return str;
+	}
+
+	/**
+	 * Delay in thread
+	 */
+	public static void delay() {
+		int count = randInt(4, 9) * 1000;
+
+		try {
+			Thread.sleep(count);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Delay in thread with specific time
+	 * @param delay
+	 */
+	public static void delay(int delay) {
+		int count =  delay * 1000;
+
+		try {
+			Thread.sleep(count);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Generates a random integer in the interval between min and max
+	 * @param min
+	 * @param max
+	 * @return
+	 */
+	public static int randInt(int min, int max) {
+
+		// NOTE: Usually this should be a field rather than a method
+		// variable so that it is not re-seeded every call.
+		Random rand = new Random();
+
+		// nextInt is normally exclusive of the top value,
+		// so add 1 to make it inclusive
+		int randomNum = rand.nextInt((max - min) + 1) + min;
+
+		return randomNum;
+	}
+	
     /**
      * Replace argument "`" to "%60" from url
      * @param url
@@ -181,6 +336,14 @@ public class CommonMethods {
     	String finalUrl = url;
     	
     	// comentei porque não estava funcionando.
+    	
+    	if(url.contains(" ")) {
+    		finalUrl = url.replaceAll(" ", "%20");
+    	}
+    	
+    	if(url.contains("\"")) {
+    		finalUrl = url.replaceAll("\"", "%22");
+    	}
     	
 //    	// In cases with argument (`), it is repalce to %60
 //    	if(url.contains("`")){
@@ -195,4 +358,69 @@ public class CommonMethods {
     	
     	return finalUrl;
     }
+
+	/**
+	 *
+	 * @param driver
+	 * @param path
+	 * @param logger
+	 */
+	public static void takeAScreenShot(WebDriver driver, String path, Logger logger){
+		CommonMethods.delay();
+		
+		File scrFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+		// Now you can do whatever you need to do with it, for example copy somewhere
+		try {
+			FileUtils.copyFile(scrFile, new File(path + ".png"));
+		} catch (IOException e) {
+			Logging.printLogError(logger, getStackTrace(e));
+		}
+	}
+	
+	/**
+	 * Convert jsonarray ro ArrayList<String>
+	 * @param json
+	 * @return
+	 */
+	public static ArrayList<String> convertJSONArrayToArrayListString(JSONArray json, Logger logger) {
+		ArrayList<String> list = new ArrayList<>();
+		
+		for(int i = 0; i < json.length(); i++) {
+			try {
+				list.add(json.getString(i));
+			} catch (JSONException e) {
+				Logging.printLogError(logger, getStackTrace(e));
+			}
+		}
+		
+		return list;
+	}
+	
+	/**
+	 * Convert jsonarray to List<String>
+	 * @param json
+	 * @return
+	 */
+	public static List<String> convertJSONArrayToListString(JSONArray json, Logger logger) {
+		List<String> list = new ArrayList<>();
+		
+		for(int i = 0; i < json.length(); i++) {
+			try {
+				list.add(json.getString(i));
+			} catch (JSONException e) {
+				Logging.printLogError(logger, getStackTrace(e));
+			}
+		}
+		
+		return list;
+	}
+
+	/**
+	 * Remove spaces and ` of string
+	 * @param str
+	 * @return
+	 */
+	public static String removeIllegalParameters(String str) {
+		return str.replaceAll(" ", "%20").replaceAll("`","%60");
+	}
 }

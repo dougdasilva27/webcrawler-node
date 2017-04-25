@@ -1,16 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class FlorianopolisHippoCrawler extends Crawler {
@@ -31,7 +35,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -77,7 +81,9 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			Elements element_foto = doc.select("div.img a");
 			String primaryImage = (element_foto.size() > 0) ? element_foto.get(0).attr("href") : "";
 			primaryImage = primaryImage.replace("/./", "http://www.hippo.com.br/");
-			if(primaryImage.contains("produto_default_grande.jpg")) primaryImage = "";
+			if(primaryImage.contains("produto_default_grande.jpg")) {
+				primaryImage = "";
+			}
 
 			String secondaryImages = null;
 
@@ -93,7 +99,11 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
-
+			
+			// Prices
+			Prices prices = crawlPrices(price);
+			
+			//create product
 			Product product = new Product();
 			
 			product.setUrl(session.getOriginalURL());
@@ -101,6 +111,7 @@ public class FlorianopolisHippoCrawler extends Crawler {
 			product.setInternalPid(internalPid);
 			product.setName(name);
 			product.setPrice(price);
+			product.setPrices(prices);
 			product.setCategory1(category1);
 			product.setCategory2(category2);
 			product.setCategory3(category3);
@@ -127,5 +138,31 @@ public class FlorianopolisHippoCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document doc) {
 		return url.contains("/produto/") && doc.select("p.nome").first() != null;
+	}
+	
+	/**
+	 * In this market, installments not appear in product page
+	 * Has no bank slip payment method
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price){
+		Prices prices = new Prices();
+
+		if(price != null){
+			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+
+			installmentPriceMap.put(1, price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+		}
+
+		return prices;
 	}
 }

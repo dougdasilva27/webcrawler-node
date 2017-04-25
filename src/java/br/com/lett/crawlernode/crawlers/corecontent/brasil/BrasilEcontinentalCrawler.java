@@ -12,12 +12,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.crawler.Crawler;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -78,7 +79,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Elements variations = doc.select("#ctrEscolheTamanho li a");
-			if (variations.size() == 0) variations = doc.select("#ctrEscolheTamanho option[valormoeda]");
+			if (variations.size() == 0) variations = doc.select("#ctrEscolheTamanho option[valormoeda]"); 
 
 			if(variations.size() > 0){
 
@@ -131,7 +132,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 					String description = crawlDescription(doc);
 
 					// Stock
-					Integer stock = null;
+					Integer stock = crawlStock(e);
 
 					// Marketplace map
 					Map<String, Float> marketplaceMap = crawlMarketplace(doc);
@@ -245,7 +246,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".content-product").first() != null ) return true;
+		if ( document.select(".content-product").first() != null  || document.select(".promotion-product-container").first() != null) return true;
 		return false;
 	}
 
@@ -267,7 +268,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 		headers.put("Content-Type", "application/json");
 		headers.put("X-Requested-With", "XMLHttpRequest");
 
-		JSONObject jsonPrice = new JSONObject(DataFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
+		JSONObject jsonPrice = new JSONObject(POSTFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
 
 		return jsonPrice;
 	}
@@ -330,14 +331,38 @@ public class BrasilEcontinentalCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailabilityVariation(Element e) {
-		if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
-			int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+		if (e.hasAttr("maxqtdcompratam") && !e.attr("maxqtdcompratam").isEmpty()) {
+			int stock = Integer.parseInt(e.attr("maxqtdcompratam").replaceAll("[^0-9]", "").trim());
 			if(stock > 0) {
 				return true;
 			}
+		} else if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
+			int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+			if(stock > 0) {
+				return true;
+			}	
 		}
 
 		return false;
+	}
+	
+	/**
+	 * In cases with attribute maxqtdcompra, stock is not trusted
+	 * @param e
+	 * @return
+	 */
+	private Integer crawlStock(Element e) {
+		Integer stock = null;
+		
+		if (e.hasAttr("maxqtdcompratam") && !e.attr("maxqtdcompratam").isEmpty()) {
+			stock = Integer.parseInt(e.attr("maxqtdcompratam").replaceAll("[^0-9]", "").trim());
+		} 
+		
+//		else if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
+//			stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
+//		}
+		
+		return stock;
 	}
 
 	/*******************

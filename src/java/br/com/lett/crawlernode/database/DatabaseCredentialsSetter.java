@@ -1,96 +1,54 @@
 package br.com.lett.crawlernode.database;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.security.DataCipher;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import credentials.DBCredentialsSetter;
+import credentials.models.DBCredentials;
 
 public class DatabaseCredentialsSetter {
-
+	
 	private static final Logger logger = LoggerFactory.getLogger(DatabaseCredentialsSetter.class);
-
-	public static final String PANEL 	= "panel";
-	public static final String INSIGHTS = "insights";
-	public static final String IMAGES 	= "images";
-
-	private String user;
-
-	private static String key = null;
-
-	public DatabaseCredentialsSetter(String user) {
-		this.user = user;
+	
+	private DatabaseCredentialsSetter() {
+		super();
 	}
 
-	public DBCredentials setDatabaseCredentials() {
+	public static DBCredentials setCredentials() throws Exception {
+		DBCredentialsSetter st = new DBCredentialsSetter();
 
-		MongoCredentials mongoCredentials = new MongoCredentials();
-		PostgresCredentials postgresCredentials = new PostgresCredentials();
-
-		// Creating a data cipher
-		DataCipher dataCipher = new DataCipher();
-
-		// always check if execution parameters is null
-		// because we could be running a test case from Test class
-		if ( Main.executionParameters != null && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) ) { 
-			key = dataCipher.fetchRemoteKey("https://s3.amazonaws.com/security-lett/lett");
-		}
-
+		List<String> databases = new ArrayList<>();
+		databases.add(DBCredentials.MONGO_PANEL);
+		databases.add(DBCredentials.MONGO_INSIGHTS);
+		databases.add(DBCredentials.MONGO_IMAGES);
+		databases.add(DBCredentials.MONGO_FROZEN);
+		databases.add(DBCredentials.POSTGRES);
+		
 		try {
-
-			// mongo insights
-			MongoCredentialsSetter.getMongoInsightsParameters(dataCipher, key, user, INSIGHTS, mongoCredentials);
-
-			// mongo panel
-			MongoCredentialsSetter.getMongoPanelParameters(dataCipher, key, user, PANEL, mongoCredentials);
-
-			// mongo images
-			MongoCredentialsSetter.getMongoImagesParameters(dataCipher, key, user, IMAGES, mongoCredentials);
-
-			// postgres
-			PostgresCredentialsSetter.getPostgresParameters(dataCipher, key, postgresCredentials);
-
+			DBCredentials credentials = st.setDatabaseCredentials(databases);
+			
+			List<String> logErrorsList = st.getLogErors();
+			
+			if(!logErrorsList.isEmpty()) {
+				for(String log : logErrorsList) {
+					Logging.printLogError(logger, log);
+				}
+				
+				System.exit(0);
+			} else {
+				return credentials;
+			}
+			
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Error during database credentials deciphering operation.");
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			System.exit(0);
 		}
-
-
-		return new DBCredentials(mongoCredentials, postgresCredentials);
+		
+		return new DBCredentials();
 	}
-
-	public DBCredentials setDatabaseCredentialsTest() {
-
-		MongoCredentials mongoCredentials = new MongoCredentials();
-		PostgresCredentials postgresCredentials = new PostgresCredentials();
-
-		// Creating a data cipher
-		DataCipher dataCipher = new DataCipher();
-
-		try {
-
-			// mongo insights
-			MongoCredentialsSetter.getMongoInsightsParameters(dataCipher, key, user, INSIGHTS, mongoCredentials);
-
-			// mongo panel
-			MongoCredentialsSetter.getMongoPanelParameters(dataCipher, key, user, PANEL, mongoCredentials);
-
-			// mongo images
-			MongoCredentialsSetter.getMongoImagesParameters(dataCipher, key, user, IMAGES, mongoCredentials);
-
-			// postgres
-			PostgresCredentialsSetter.getPostgresParameters(dataCipher, key, postgresCredentials);
-
-		} catch (Exception e) {
-			Logging.printLogError(logger, "Error during database credentials deciphering operation.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-
-
-		return new DBCredentials(mongoCredentials, postgresCredentials);
-	}
-
 }
