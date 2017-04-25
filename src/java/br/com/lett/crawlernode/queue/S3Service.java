@@ -35,6 +35,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 /**
+ * Utility class to export some methods more
+ * user-friendly to our needs to operate on S3.
  * 
  * @author Samir Leao
  *
@@ -113,6 +115,13 @@ public class S3Service {
 		}
 	}
 
+	/**
+	 * Uploads the current image being processed in the session object to S3.
+	 * 
+	 * @param session
+	 * @param newObjectMetadata the user metadata that goes into the s3object
+	 * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
+	 */
 	public static void uploadImage(Session session, ObjectMetadata newObjectMetadata) throws FileNotFoundException {
 
 		ImageCrawlerSession s = (ImageCrawlerSession)session;
@@ -238,10 +247,6 @@ public class S3Service {
 	}
 
 	public static File fetchImageFromAmazon(Session session, String key) {
-		return fetchImageFromAmazon(session, key, 1); 
-	}
-
-	private static File fetchImageFromAmazon(Session session, String key, int attempt) {
 		Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + key);
 
 		try {
@@ -285,16 +290,16 @@ public class S3Service {
 	}
 	
 	/**
+	 * Fetch the image md5 from the user metadata field on the s3object.
+	 * The key passed as parameter must be the key of an image file.
+	 * <br>Only the images in the bucket have the md5 as an user metadata.
 	 * 
 	 * @param session
-	 * @param key
+	 * @param key the image path on S3 bucket
 	 * @return	<br>the image md5
-	 * 			<br>null if the object wasn't found
+	 * 			<br>null if the object wasn't found or if it isn't an image
 	 */
 	public static String fetchImageMd5(Session session, String key) {
-
-		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + key);
-
 		try {
 			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
 			
@@ -308,8 +313,10 @@ public class S3Service {
 			if (s3Exception.getStatusCode() == 404) {
 				Logging.printLogWarn(logger, session, "S3 status code: 404 [md5 not found]");
 				return null;
+			} else if (s3Exception.getStatusCode() == 501) {
+				Logging.printLogWarn(logger, session, "S3 status code: 501 [forbidden - md5 not found]");
+				return null;
 			} else {
-				Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(s3Exception));
 				return null;
 			}
 		} 
@@ -317,13 +324,17 @@ public class S3Service {
 			Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
 			return null;
 		}
-
 	}
 
-	private static String fetchEtagFromAmazon(Session session, String key) {
-
-		Logging.printLogDebug(logger, session, "Fetching Etag from Amazon: " + key);
-
+	/**
+	 * Fetch the etag metadata from a s3object.
+	 * 
+	 * @param session
+	 * @param key the path to the file in s3 bucket
+	 * @return 	<br>String containing the etag
+	 * 			<br>null if the key lead to no s3 object
+	 */
+	public static String fetchEtagFromAmazon(Session session, String key) {
 		try {
 			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
 
@@ -346,7 +357,6 @@ public class S3Service {
 			Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
 			return null;
 		}
-
 	}
 
 }
