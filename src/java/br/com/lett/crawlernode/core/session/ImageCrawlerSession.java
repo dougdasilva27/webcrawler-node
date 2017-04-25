@@ -19,28 +19,13 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends Session {
 	
-	public static final String PRIMARY_IMG_TYPE = "primary";
-	public static final String SECONDARY_IMG_TYPE = "secondary";
-	public static final String DEFAULT_EXTENSION = "jpg";
+	private static final String DEFAULT_EXTENSION = "jpg";
 
-	/** Internal id of the sku being processed */
 	private String internalId;
-	
 	private Long processedId;
-	
-	/** 
-	 * The number of the image, that is used to assemble the directory.
-	 * Primary image always have a number=1
-	 * First secondary image has number=2, and so on
-	 */
-	private int imageNumber;
-	
-	/** The image type: primary | secondary */
-	private String imageType;
-
-	private String localFileDir;  
-	private String localOriginalFileDir;  
-
+	private int imageNumber;	// 1 is the main image, any value greater than one is a secondary image
+	private String imageType;	// primary | secondary
+	private String localFileDir;
 	private String imageKeyOnBucket;
 
 	public ImageCrawlerSession(Request request, String queueName, Markets markets) {		
@@ -78,7 +63,6 @@ public class ImageCrawlerSession extends Session {
 		
 		// set local directories 
 		localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();
-		localOriginalFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "-original.jpg";  
 		
 		imageKeyOnBucket = "market" + "/" + "product-image" + "/" + processedId + "/" + imageNumber + ".jpg";
 	}
@@ -87,7 +71,7 @@ public class ImageCrawlerSession extends Session {
 	public void clearSession() {
 		try {
 			Files.deleteIfExists(Paths.get(localFileDir));
-			Files.deleteIfExists(Paths.get(localOriginalFileDir));
+			//Files.deleteIfExists(Paths.get(localOriginalFileDir));
 		} catch (IOException e) {
 			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
 		}
@@ -113,14 +97,6 @@ public class ImageCrawlerSession extends Session {
 
 	public void setLocalFileDir(String localFileDir) {
 		this.localFileDir = localFileDir;
-	}
-
-	public String getLocalOriginalFileDir() {
-		return localOriginalFileDir;
-	}
-
-	public void setLocalOriginalFileDir(String localOriginalFileDir) {
-		this.localOriginalFileDir = localOriginalFileDir;
 	}
 
 	public int getImageNumber() {
