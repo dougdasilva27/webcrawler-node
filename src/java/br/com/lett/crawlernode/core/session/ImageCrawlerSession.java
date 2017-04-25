@@ -23,10 +23,10 @@ public class ImageCrawlerSession extends Session {
 
 	private String internalId;
 	private Long processedId;
-	private int imageNumber;	// 1 is the main image, any value greater than one is a secondary image
-	private String imageType;	// primary | secondary
-	private String localFileDir;
-	private String imageKeyOnBucket;
+	private int imageNumber;			// 1 is the main image, any value greater than one is a secondary image
+	private String imageType;			// primary | secondary
+	private String localFileDir; 		// downloaded image temporary file
+	private String imageKeyOnBucket;	// image s3object path on S3 bucket
 
 	public ImageCrawlerSession(Request request, String queueName, Markets markets) {		
 		super(request, queueName, markets);
@@ -61,9 +61,7 @@ public class ImageCrawlerSession extends Session {
 			Logging.printLogError(logger, "Error: " + QueueService.NUMBER_MESSAGE_ATTR + " field not found on message attributes.");
 		}
 		
-		// set local directories 
 		localFileDir = Main.executionParameters.getTmpImageFolder() + "/" + super.market.getCity() + "/" + super.market.getName() + "/images/" + internalId + "_" + imageNumber + "_" + createImageBaseName();
-		
 		imageKeyOnBucket = "market" + "/" + "product-image" + "/" + processedId + "/" + imageNumber + ".jpg";
 	}
 	
@@ -71,7 +69,6 @@ public class ImageCrawlerSession extends Session {
 	public void clearSession() {
 		try {
 			Files.deleteIfExists(Paths.get(localFileDir));
-			//Files.deleteIfExists(Paths.get(localOriginalFileDir));
 		} catch (IOException e) {
 			Logging.printLogError(logger, this, CommonMethods.getStackTraceString(e));
 		}

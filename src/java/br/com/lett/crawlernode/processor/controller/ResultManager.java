@@ -455,16 +455,9 @@ public class ResultManager {
 			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
 
 			while(rs.next()) {
-
-				// city information
-				this.cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
-
-				// market information
-				this.marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
-
-				// Contém ids dos supermercados para teste do processer
-				this.marketid.add(rs.getInt("id"));
-
+				cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
+				marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
+				marketid.add(rs.getInt("id"));
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "Error fetching market info on postgres!");
