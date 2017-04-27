@@ -28,7 +28,7 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select(".lstProd li");
+		Elements products =  this.currentDoc.select(".lstProd > li");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
