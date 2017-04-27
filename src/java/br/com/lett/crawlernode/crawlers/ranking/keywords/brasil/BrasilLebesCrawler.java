@@ -28,7 +28,7 @@ public class BrasilLebesCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products = this.currentDoc.select("div div.prateleira.principal:not(.menu) > ul > li[layout]");
+		Elements products = this.currentDoc.select("div.shelf--products:not([id]) ul > li[layout]");
 
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
@@ -110,10 +110,10 @@ public class BrasilLebesCrawler extends CrawlerRankingKeywords{
 
 	private String crawlProductUrl(Element e){
 		String urlProduct = null;
-		Element urlElement = e.select(".data > h3 a").first();
+		Element urlElement = e.select(".vtex-cpUri").first();
 
 		if(urlElement != null){
-			urlProduct = urlElement.attr("href");
+			urlProduct = urlElement.val();
 		}
 
 		return urlProduct;
