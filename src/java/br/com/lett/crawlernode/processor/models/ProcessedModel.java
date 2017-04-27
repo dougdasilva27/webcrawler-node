@@ -560,7 +560,11 @@ public class ProcessedModel {
 	}
 	
 	public void setOriginalDescription(String originalDescription) {
-		this.originalDescription = originalDescription;
+		if (originalDescription == null) {
+			this.originalDescription = "";
+		} else {
+			this.originalDescription = originalDescription;
+		}
 	}
 
 	public String getSecondary_pics() {
