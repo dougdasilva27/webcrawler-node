@@ -138,7 +138,7 @@ public class SaopauloSondaCrawler extends Crawler {
 
 	private boolean crawlAvailability(Document doc) {
 		Element notifymeButton = doc.select(".btn.btnaviso").first();
-		return (notifymeButton == null);
+		return notifymeButton == null;
 	}
 
 	private Float crawlPrice(Document doc) {

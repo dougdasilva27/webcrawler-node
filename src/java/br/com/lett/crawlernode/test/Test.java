@@ -72,7 +72,7 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
-		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
+		//if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
 		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
@@ -115,7 +115,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://httpbin.org/cookies", market);
+				session = SessionFactory.createTestSession("http://www.angeloni.com.br/super/produto?grupo=4041&idProduto=3766167", market);
 			}
 
 
