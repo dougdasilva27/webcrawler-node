@@ -265,13 +265,11 @@ public class Crawler extends Task {
 	/**
 	 * This method is responsible for the main post processing stages of a crawled product.
 	 * It takes care of the following tasks
-	 * <ul>
-	 * 	<li>1. Print the crawled information;</li>
-	 * 	<li>2. Persist the product;</li>
-	 * 	<li>3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product;</li>
-	 * 	<li>4. Create a new ProcessedModel;</li>
-	 * 	<li>5. Persist the new ProcessedModel;</li>
-	 * </ul>
+	 * 	<br>1. Print the crawled information;
+	 * 	<br>2. Persist the product;
+	 * 	<br>3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product;</li>
+	 * 	<br>4. Create a new ProcessedModel;
+	 * 	<br>5. Persist the new ProcessedModel;
 	 * <p>
 	 * In this method we also have the so called 'truco' stage. In cases that we already have the ProcessedModel, we will only update
 	 * the informations of the previous ProcessedModel with the new information crawled. But we don't update the information in the first try.

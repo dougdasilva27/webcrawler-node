@@ -47,8 +47,6 @@ public class ResultManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(ResultManager.class);
 
-	// reference to mongo, to be used on SIFT calculations
-
 	private DatabaseManager db;
 
 	// substitution maps
@@ -328,7 +326,13 @@ public class ResultManager {
 	}
 
 	/**
-	 * Reevaluates all names and description rules, and also all the images.
+	 * Evaluates the processed product main and secondary images.
+	 * Main image evaluation algorithm:
+	 * <br>Fetch the md5 of the most recent downloaded main image by the image crawler
+	 * <br>If the md5 is null, we set the image status to no_image
+	 * <br>If the md5 exists, we get the previous verified md5 from the digital content and compare to the new one
+	 * <br>If they are equals, there is nothing to be done
+	 * <br>If they are different, we update the md5 field of the digital content and set the image status to no_image
 	 * 
 	 * @param pm
 	 * @param session
@@ -352,10 +356,8 @@ public class ResultManager {
 		JSONObject processedModelDigitalContentPic = new JSONObject();
 		try {
 			JSONObject processedModelDigitalContent = pm.getDigitalContent();
-			if (processedModelDigitalContent != null) {
-				if (processedModelDigitalContent.has("pic")) {
-					processedModelDigitalContentPic = pm.getDigitalContent().getJSONObject("pic");
-				}
+			if (processedModelDigitalContent != null && processedModelDigitalContent.has("pic")) {
+				processedModelDigitalContentPic = pm.getDigitalContent().getJSONObject("pic");
 			}
 		} catch (Exception e) { 
 			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
@@ -365,52 +367,44 @@ public class ResultManager {
 		processedModelDigitalContentPic.put("count", DigitalContentAnalyser.imageCount(pm));
 
 		// evaluate primary image
-		JSONObject processedModelDigitalContentPicPrimary = new JSONObject();
-		if (processedModelDigitalContentPic.has("primary") ) {
+		JSONObject processedModelDigitalContentPicPrimary;
+		if ( processedModelDigitalContentPic.has("primary") ) {
 			processedModelDigitalContentPicPrimary = processedModelDigitalContentPic.getJSONObject("primary");
+		} else {
+			processedModelDigitalContentPicPrimary = new JSONObject();
 		}
 
 		// assembling path to primary image stored on Amazon S3
 		// this image is the last downloaded image in the image crawler
 		String primaryImageAmazonKey = new StringBuilder()
-										.append("product-image/")
-										.append(cityNameInfo.get(pm.getMarket()) + "/")
-										.append(marketNameInfo.get(pm.getMarket()) + "/")
-										.append(pm.getInternalId())
-										.append("/1-original.jpg")
-										.toString();
+											.append("market/")
+											.append("product-image/")
+											.append(pm.getId())
+											.append("/1.jpg")
+											.toString();
 
-		// assembling path to the desired primary image on Amazon S3
-		// this image is the one that was previously stored as the image that goes to insights
-		String referencePrimaryImageAmazonKey = new StringBuilder()
-												.append("product-image/")
-												.append("lett/")
-												.append(pm.getLettId())
-												.append("/1-original.jpg")
-												.toString();
+		// fetch md5 of the image
+		String primaryMd5 = S3Service.fetchImageMd5(session, primaryImageAmazonKey); // the supposed new image
 
-		// fetch md5 of the images in amazon
-		String referencePrimaryMd5 = S3Service.fetchMd5FromAmazon(session, referencePrimaryImageAmazonKey); // the desired reference image
-		String primaryMd5 = S3Service.fetchMd5FromAmazon(session, primaryImageAmazonKey); // the supposed new image
-		
-		Logging.printLogDebug(logger, session, "Last downloaded primary image url: " + primaryImageAmazonKey);
 		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);
-		
-		Logging.printLogDebug(logger, session, "Reference primary image url: " + referencePrimaryImageAmazonKey);
-		Logging.printLogDebug(logger, session, "Reference primary image md5: " + referencePrimaryMd5);
 
 		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		// if md5 is null, clean and add set as no_image
-		if (primaryMd5 == null) {
+		if (primaryMd5 == null) { // if md5 is null, clear and add set as no_image
 			Logging.printLogDebug(logger, session, "Amazon md5 of the last downloaded image is null...seting status to no_image...");
 			processedModelDigitalContentPicPrimary = new JSONObject();
 			processedModelDigitalContentPicPrimary.put("status", Pic.NO_IMAGE);
 			processedModelDigitalContentPicPrimary.put("verified_by", "crawler_" + nowISO);
-		} else {
-			// if image has changed
-			if( !(processedModelDigitalContentPicPrimary.has("md5") && processedModelDigitalContentPicPrimary.get("md5").equals(primaryMd5)) ) {
-				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey.toString());
+
+		} else { // see if the md5 has changed comparing to the last verified md5
+			String previousMd5 = processedModelDigitalContentPicPrimary.has("md5") ? processedModelDigitalContentPicPrimary.getString("md5") : null;
+
+			Logging.printLogDebug(logger, session, "Previous verified md5: " + previousMd5);
+
+			if ( !primaryMd5.equals(previousMd5) ) {
+				Logging.printLogDebug(logger, session, "Previous md5 is different from the new one...updating and seting as not_verified...");
+
+				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
 				// get dimensions from image
 				processedModelDigitalContentPicPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
@@ -420,17 +414,8 @@ public class ResultManager {
 				// set to 0 because this algorithm was removed
 				processedModelDigitalContentPicPrimary.put("similarity", 0);
 
-				// compute similarity of the new image using the SIFT algorithm
-				// commented...looking for a better way to deal with image features TODO
-				
-//				JSONObject similaritySiftResult = null;
-//				try {
-//					similaritySiftResult = DigitalContentAnalyser.similaritySIFT(session, mongo, db, primaryMd5, pm.getLettId(), desiredPrimaryMd5);
-//				} catch (Exception e) {
-//					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-//				}				
-
-				processedModelDigitalContentPicPrimary.put("similarity_sift", new JSONObject()); // TODO put an empty object....we don't know if some program is looking for this field
+				// TODO compute similarity of the new image using the SIFT algorithm
+				processedModelDigitalContentPicPrimary.put("similarity_sift", new JSONObject());
 
 				// setting fields of the new primary image
 				processedModelDigitalContentPicPrimary.put("md5", primaryMd5); // updated md5
@@ -441,6 +426,8 @@ public class ResultManager {
 				if(primaryImage != null) {
 					primaryImage.delete();
 				}
+			} else {
+				Logging.printLogDebug(logger, session, "New image md5 is the same as the previous verified one. Nothing to be done.");
 			}
 		}
 
@@ -451,18 +438,6 @@ public class ResultManager {
 
 		// set pic on digital content
 		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
-
-//		// naming rules
-//		JSONArray nameRulesResults = RulesEvaluation.computeNameRulesResults(lettDigitalContent, pm.getOriginalName());
-//		pm.getDigitalContent().put("name_rules_results", nameRulesResults);
-//
-//		// description rules
-//		JSONArray descriptionRulesResults = RulesEvaluation.computeDescriptionRulesResults(lettDigitalContent, pm.getOriginalDescription());
-//		pm.getDigitalContent().put("description_rules_results", descriptionRulesResults);
-//
-//		// create rules summary
-//		JSONObject rules_results = RulesEvaluation.sumarizeRules(nameRulesResults, descriptionRulesResults);
-//		pm.getDigitalContent().put("rules_results", rules_results);
 	}
 
 	/**
@@ -478,16 +453,9 @@ public class ResultManager {
 			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
 
 			while(rs.next()) {
-
-				// city information
-				this.cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
-
-				// market information
-				this.marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
-
-				// Contém ids dos supermercados para teste do processer
-				this.marketid.add(rs.getInt("id"));
-
+				cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
+				marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
+				marketid.add(rs.getInt("id"));
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(logger, "Error fetching market info on postgres!");

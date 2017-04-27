@@ -2,12 +2,12 @@ package br.com.lett.crawlernode.queue;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -28,7 +28,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -36,6 +35,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 /**
+ * Utility class to export some methods more
+ * user-friendly to our needs to operate on S3.
  * 
  * @author Samir Leao
  *
@@ -44,22 +45,16 @@ public class S3Service {
 
 	protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 
-
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
 	public static final String HTML_UPLOAD_TYPE = "html";
-
+	public static final String MD5_HEX_METADATA_FIELD = "md5Hex";
 
 	// Amazon images
 	private static AWSCredentials credentialsImages;
 	private static AmazonS3 s3clientImages;
-	private static String imagesBucketName     	= "cdn.insights.lett.com.br";
-	private static String accessKeyImages       = "AKIAJL6XD5GTE3IPK6HA";
-	private static String secretKeyImages       = "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";
-
-	static {
-		credentialsImages = new BasicAWSCredentials(accessKeyImages, secretKeyImages);
-		s3clientImages = new AmazonS3Client(credentialsImages);
-	}
+	private static final String IMAGES_BUCKET_NAME   = "lett-media";
+	private static final String ACCES_KEY_IMAGES     = "AKIAJEDMKADEFVS4ISQQ";
+	private static final String SECRET_KEY_IMAGES    = "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";
 
 	// Amazon crawler-session
 	private static AWSCredentials credentialsCrawlerSessions;
@@ -70,6 +65,9 @@ public class S3Service {
 	private static String secretKeyCrawlerSessions      = "ktnK4TLySxyLjIQ0UawTOc683JFAe3y6Mp8ygPxf";
 
 	static {
+		credentialsImages = new BasicAWSCredentials(ACCES_KEY_IMAGES, SECRET_KEY_IMAGES);
+		s3clientImages = new AmazonS3Client(credentialsImages);
+
 		credentialsCrawlerSessions = new BasicAWSCredentials(accessKeyCrawlerSessions, secretKeyCrawlerSessions);
 		s3clientCrawlerSessions = new AmazonS3Client(credentialsCrawlerSessions);
 	}
@@ -82,7 +80,7 @@ public class S3Service {
 	 */
 	public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
 		try {
-			return s3clientImages.getObjectMetadata(imagesBucketName, name);
+			return s3clientImages.getObjectMetadata(IMAGES_BUCKET_NAME, name);
 		} catch (AmazonS3Exception s3Exception) {
 			if (s3Exception.getStatusCode() == 404) {
 				Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -101,7 +99,7 @@ public class S3Service {
 
 	public static S3Object fetchS3Object(Session session, String name) {
 		try {
-			return s3clientImages.getObject(imagesBucketName, name);
+			return s3clientImages.getObject(IMAGES_BUCKET_NAME, name);
 		} catch (AmazonS3Exception s3Exception) {
 			if (s3Exception.getStatusCode() == 404) {
 				Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -117,84 +115,38 @@ public class S3Service {
 		}
 	}
 
-	public static void uploadImageToAmazon(Session session, String md5) {
-		int number = ((ImageCrawlerSession)session).getImageNumber();
+	/**
+	 * Uploads the current image being processed in the session object to S3.
+	 * 
+	 * @param session
+	 * @param newObjectMetadata the user metadata that goes into the s3object
+	 * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
+	 */
+	public static void uploadImage(Session session, ObjectMetadata newObjectMetadata) throws FileNotFoundException {
 
-		String md5Path = ((ImageCrawlerSession)session).getMd5AmazonPath();
-		String localMd5Path = ((ImageCrawlerSession)session).getLocalMd5Path();
+		ImageCrawlerSession s = (ImageCrawlerSession)session;
 
-		File localMd5File = new File(localMd5Path);
+		File f = new File(s.getLocalFileDir());
+
+		FileInputStream fileInputStream = new FileInputStream(f);
+
+		PutObjectRequest putObjectRequest = new PutObjectRequest(
+				IMAGES_BUCKET_NAME, 
+				s.getImageKeyOnBucket(), 
+				fileInputStream, 
+				newObjectMetadata);
+
 		try {
-			FileUtils.writeStringToFile(localMd5File, md5);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		String originalName = ((ImageCrawlerSession)session).getOriginalName();
-		String localOriginalFileDir = ((ImageCrawlerSession)session).getLocalOriginalFileDir();
-
-		String smallName = ((ImageCrawlerSession)session).getSmallName();
-		String localSmallFileDir = ((ImageCrawlerSession)session).getLocalSmallFileDir();
-
-		String regularName = ((ImageCrawlerSession)session).getRegularName();
-		String localRegularFileDir = ((ImageCrawlerSession)session).getLocalRegularFileDir();
-
-		try {
-			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, md5Path, localMd5File));
-			//if(number == 1) s3client.copyObject(new CopyObjectRequest(cdnBucketName, ((ImageCrawlerSession)session).getOriginalName(), cdnBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
-			Logging.printLogDebug(logger, session, "Upload md5 file OK!");
-
-			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, originalName, new File(localOriginalFileDir)));
-			if(number == 1) {
-				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, ((ImageCrawlerSession)session).getOriginalName(), imagesBucketName, originalName.replace(".jpg", "." + md5 + ".jpg")));
-			}
-			Logging.printLogDebug(logger, session, "Upload original OK!");
-
-			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, smallName, new File(localSmallFileDir)));
-			if(number == 1) {
-				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, smallName, imagesBucketName, smallName.replace(".jpg", "." + md5 + ".jpg")));
-			}
-			Logging.printLogDebug(logger, session, "Upload small OK!");
-
-			s3clientImages.putObject(new PutObjectRequest(imagesBucketName, regularName, new File(localRegularFileDir)));
-			if(number == 1) {
-				s3clientImages.copyObject(new CopyObjectRequest(imagesBucketName, regularName, imagesBucketName, regularName.replace(".jpg", "." + md5 + ".jpg")));
-			}
-			Logging.printLogDebug(logger, session, "Upload regular OK!");
-
-		} catch (AmazonServiceException ase) {
-			Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " +
-					"means your request made it " +
-					"to Amazon S3, but was rejected with an error response" +
-					" for some reason.");
-			Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
-			Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
-			Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
-			Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
-			Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
-
+			s3clientImages.putObject(putObjectRequest);
+			Logging.printLogDebug(logger, session, "Uploaded image #" + s.getImageNumber() + " with success!");
+			
 		} catch (AmazonClientException ace) {
-			Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " +
-					"means the client encountered " +
-					"an internal error while trying to " +
-					"communicate with S3, " +
-					"such as not being able to access the network.");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
+			Logging.printLogError(logger, session, "Error Message:    " + ace.getMessage());
 		}
 	}
 
-	public static String getAmazonImageFileMd5(S3Object s3Object) {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
-		String content = "";
-		String line = null;
-		try {
-			while((line = reader.readLine()) != null) {
-				content += line;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return content;
+	public static String getImageMd5(S3Object s3Object) {
+		return s3Object.getObjectMetadata().getUserMetaDataOf(MD5_HEX_METADATA_FIELD);
 	}
 
 	/**
@@ -205,14 +157,14 @@ public class S3Service {
 	public static void uploadCrawlerSessionScreenshotToAmazon(Session session, File file) {
 
 		String amazonLocation = new StringBuilder()
-		.append(crawlerSessionsPrefix)
-		.append("/")
-		.append(session.getSessionId())
-		.append("/")
-		.append("screenshot-")
-		.append(new DateTime(DateConstants.timeZone).millisOfDay())
-		.append(".png")
-		.toString();
+				.append(crawlerSessionsPrefix)
+				.append("/")
+				.append(session.getSessionId())
+				.append("/")
+				.append("screenshot-")
+				.append(new DateTime(DateConstants.timeZone).millisOfDay())
+				.append(".png")
+				.toString();
 
 		try {
 			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
@@ -248,13 +200,13 @@ public class S3Service {
 	public static void uploadCrawlerSessionContentToAmazon(Session session, String requestHash, String html) {		
 
 		String amazonLocation = new StringBuilder()
-		.append(crawlerSessionsPrefix)
-		.append("/")
-		.append(session.getSessionId())
-		.append("/")
-		.append(requestHash)
-		.append(".html")
-		.toString();
+				.append(crawlerSessionsPrefix)
+				.append("/")
+				.append(session.getSessionId())
+				.append("/")
+				.append(requestHash)
+				.append(".html")
+				.toString();
 
 		File htmlFile = null;
 
@@ -295,17 +247,10 @@ public class S3Service {
 	}
 
 	public static File fetchImageFromAmazon(Session session, String key) {
-		return fetchImageFromAmazon(session, key, 1); 
-	}
-
-	private static File fetchImageFromAmazon(Session session, String key, int attempt) {
-
-		//if(attempt > 3) return null; 
-
 		Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + key);
 
 		try {
-			S3Object object = s3clientImages.getObject(new GetObjectRequest(imagesBucketName, key));
+			S3Object object = s3clientImages.getObject(new GetObjectRequest(IMAGES_BUCKET_NAME, key));
 
 			InputStream reader = new BufferedInputStream(object.getObjectContent());
 
@@ -343,19 +288,55 @@ public class S3Service {
 		}
 
 	}
+	
+	/**
+	 * Fetch the image md5 from the user metadata field on the s3object.
+	 * The key passed as parameter must be the key of an image file.
+	 * <br>Only the images in the bucket have the md5 as an user metadata.
+	 * 
+	 * @param session
+	 * @param key the image path on S3 bucket
+	 * @return	<br>the image md5
+	 * 			<br>null if the object wasn't found or if it isn't an image
+	 */
+	public static String fetchImageMd5(Session session, String key) {
+		try {
+			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+			
+			if (objectMetadata != null) {
+				return objectMetadata.getUserMetaDataOf(MD5_HEX_METADATA_FIELD);
+			}
+			
+			return null;
 
-	public static String fetchMd5FromAmazon(Session session, String key) {
-		return fetchMd5FromAmazon(session, key, 1);
+		} catch (AmazonS3Exception s3Exception) {
+			if (s3Exception.getStatusCode() == 404) {
+				Logging.printLogWarn(logger, session, "S3 status code: 404 [md5 not found]");
+				return null;
+			} else if (s3Exception.getStatusCode() == 501) {
+				Logging.printLogWarn(logger, session, "S3 status code: 501 [forbidden - md5 not found]");
+				return null;
+			} else {
+				return null;
+			}
+		} 
+		catch (Exception e) {
+			Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+			return null;
+		}
 	}
 
-	private static String fetchMd5FromAmazon(Session session, String key, int attempt) {
-
-		//if(attempt > 3) return null; 
-
-		Logging.printLogDebug(logger, session, "Fetching image md5 from Amazon: " + key);
-
+	/**
+	 * Fetch the etag metadata from a s3object.
+	 * 
+	 * @param session
+	 * @param key the path to the file in s3 bucket
+	 * @return 	<br>String containing the etag
+	 * 			<br>null if the key lead to no s3 object
+	 */
+	public static String fetchEtagFromAmazon(Session session, String key) {
 		try {
-			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(imagesBucketName, key));
+			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
 
 			String md5 = objectMetadata.getETag();
 
@@ -376,7 +357,6 @@ public class S3Service {
 			Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
 			return null;
 		}
-
 	}
 
 }

@@ -15,20 +15,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
 
 import com.google.gson.Gson;
 
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.imgprocessing.FeatureExtractor;
 import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
-import br.com.lett.crawlernode.core.imgprocessing.ImageRescaler;
+import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.task.base.Task;
@@ -57,40 +54,30 @@ public class ImageCrawler extends Task {
 	public void processTask() {
 
 		try {
-
 			ImageDownloadResult simpleDownloadResult = simpleDownload();
 
-			if (simpleDownloadResult.getImageFile() == null) {
+			if (simpleDownloadResult.imageFile == null) {
 				Logging.printLogError(logger, session, "Failed to download image....returning from image processTask()....");
-
 				session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
-
 				return;
 			}
 
 			// get metadata from the image on Amazon
-			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalName());
-			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getOriginalName());
-
-			// if this image isn't on Amazon yet
-			if ( metadata == null ) {
+			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getImageKeyOnBucket());
+			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getImageKeyOnBucket());
+			
+			if ( metadata == null ) { // we doesn't have any image under this path in S3 yet
 				Logging.printLogDebug(logger, session, "This image isn't on Amazon yet.");
-
-				if (simpleDownloadResult.getImageFile() != null && simpleDownloadResult.getMd5() != null ) {
-
+				
+				if (simpleDownloadResult.imageFile != null && simpleDownloadResult.md5 != null) {
 					update(simpleDownloadResult);
 				}
 			}
 
-			// the image is already on the Amazon
+			// we already have an image under this path in S3
 			else {
 
-				// get the md5 of the image on Amazon
-				S3Object s3Object = S3Service.fetchS3Object(session, ((ImageCrawlerSession)session).getMd5AmazonPath());
-				String amazonMd5 = null;
-				if (s3Object != null) {
-					amazonMd5 = S3Service.getAmazonImageFileMd5(s3Object);
-				}
+				String amazonMd5 = metadata.getUserMetaDataOf(S3Service.MD5_HEX_METADATA_FIELD);
 
 				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getImageNumber() + "... (first check)");
 				if (amazonMd5 == null) {
@@ -98,16 +85,16 @@ public class ImageCrawler extends Task {
 				} else {
 					Logging.printLogDebug(logger, session, "Amazon MD5: " + amazonMd5);
 				}
-				Logging.printLogDebug(logger, session, "Local MD5: " + simpleDownloadResult.getMd5());
+				Logging.printLogDebug(logger, session, "Local MD5: " + simpleDownloadResult.md5);
 
 				// let's see if the md5 has changed
-				if ( amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.getMd5()) ) {
+				if ( amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.md5) ) {
 					Logging.printLogDebug(logger, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
 					ImageDownloadResult finalDownloadResult;
 
 					if (amazonMd5 != null) {
-						finalDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.getMd5());
+						finalDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.md5);
 					} else {
 						finalDownloadResult = simpleDownloadResult;
 					}
@@ -116,7 +103,6 @@ public class ImageCrawler extends Task {
 				}
 				else if (Main.executionParameters.mustForceImageUpdate()) {
 					Logging.printLogDebug(logger, session, "The image md5 is already on Amazon, but i want to force the update.");
-
 					update(simpleDownloadResult);
 				}
 				else {
@@ -142,23 +128,17 @@ public class ImageCrawler extends Task {
 
 		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
-
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed!");
-
 			session.setTaskStatus(Task.STATUS_FAILED);
 		}
-		else {
-
-			// only remove the task from queue if it was flawless
+		else { // only remove the task from queue if it was flawless
 			Logging.printLogDebug(logger, session, "Task completed.");
-
 			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
 
 		// clear the session
 		session.clearSession();
-
 		Logging.printLogDebug(logger, session, "END");
 	}
 
@@ -175,23 +155,19 @@ public class ImageCrawler extends Task {
 
 		// create a buffered image from the downloaded image
 		Logging.printLogDebug(logger, session, "Creating a buffered image...");
-		BufferedImage bufferedImage = createImage(imageDownloadResult.getImageFile());
+		BufferedImage bufferedImage = createImage(imageDownloadResult.imageFile);
 
-		// apply rescaling on the image
-		Logging.printLogDebug(logger, session, "Rescaling the image...");
-		rescale(bufferedImage, imageDownloadResult.getImageFile());
+		// convert image to jpg if necessary
+		Logging.printLogDebug(logger, session, "Converting image to jpg if necessary...");
+		convertImage(bufferedImage, imageDownloadResult.imageFile);
 
 		// upload to Amazon
-		Logging.printLogWarn(logger, session, "Uploading image to Amazon...only the md5 isn't null");
-		if (imageDownloadResult.getMd5() != null) {
-			S3Service.uploadImageToAmazon(session, imageDownloadResult.getMd5());
+		Logging.printLogWarn(logger, session, "Uploading image to Amazon...only if the computed md5 isn't null");
+		if (imageDownloadResult.md5 != null) {
+			ObjectMetadata newObjectMetadata = new ObjectMetadata();
+			newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
+			S3Service.uploadImage(session, newObjectMetadata);
 		}
-
-		// store image metadata, including descriptors and hash
-		// using the md5 of the local original file, to maintain as the original code
-		// for now is commented...looking for a better way to deal with image features TODO
-
-		//storeImageMetaData( bufferedImage, CommonMethods.computeMD5(new File(((ImageCrawlerSession)session).getLocalOriginalFileDir())) );
 	}
 
 	private ImageDownloadResult simpleDownload() throws IOException {
@@ -199,9 +175,9 @@ public class ImageCrawler extends Task {
 		File imageFile = downloadImage();
 		String md5 = CommonMethods.computeMD5(imageFile);
 
-		result.setImageFile(imageFile);
-		result.setMd5(md5);
-
+		result.imageFile = imageFile;
+		result.md5 = md5;
+		
 		return result;
 	}
 
@@ -220,14 +196,14 @@ public class ImageCrawler extends Task {
 				result = simpleDownload();
 
 				// Comparar com a da iteração anterior, se der igual, retorno
-				if ( result.getMd5() != null && result.getMd5().equals(pastIterationMd5) ) {
+				if ( result.md5 != null && result.md5.equals(pastIterationMd5) ) {
 					Logging.printLogDebug(logger, session, "Fiz um download novo e constatei que era igual a imagem que eu tinha da iteração anterior");
 					return result;
 				}
 
 				// Comparar o md5 do download atual com o da Amazon -- se chegou aqui, significa que o download
 				// atual não foi igual ao da iteração anterior
-				if ( amazonMd5.equals(result.getMd5()) ) {
+				if ( amazonMd5.equals(result.md5) ) {
 					Logging.printLogDebug(logger, session, "Imagem do download atual, que é a iteração " + iteration + " é igual a da Amazon.");
 					return result;
 				}
@@ -237,7 +213,7 @@ public class ImageCrawler extends Task {
 				Logging.printLogDebug(logger, session, "O novo download não foi igual ao download da iteração anterior.");
 				Logging.printLogDebug(logger, session, "Vou partir para a próxima iteração.");
 
-				pastIterationMd5 = result.getMd5();
+				pastIterationMd5 = result.md5;
 
 				iteration++;
 
@@ -283,13 +259,13 @@ public class ImageCrawler extends Task {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private void rescale(BufferedImage bufferedImage, File imageFile) throws FileNotFoundException, IOException {
+	private void convertImage(BufferedImage bufferedImage, File imageFile) throws FileNotFoundException, IOException {
 		if (bufferedImage == null) {
 			Logging.printLogError(logger, session, "Image downloaded is null...returning...");
 			return;
 		}
 
-		ImageRescaler.rescale(session, bufferedImage, imageFile);
+		ImageConverter.convertToJPG(session, bufferedImage, imageFile);
 	}
 
 	/**

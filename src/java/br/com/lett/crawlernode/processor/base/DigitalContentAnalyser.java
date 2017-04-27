@@ -73,7 +73,6 @@ public class DigitalContentAnalyser {
 	 * @return
 	 */
 	public static JSONObject imageDimensions(File image) {
-
 		try {
 
 			BufferedImage bimg = ImageIO.read(image);
