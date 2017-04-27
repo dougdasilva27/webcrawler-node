@@ -115,7 +115,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.angeloni.com.br/super/produto?grupo=4041&idProduto=3766167", market);
+				session = SessionFactory.createTestSession("http://www.paodeacucar.com/produto/323741/refresco-em-po-tang-de-abacaxi-25g", market);
 			}
 
 
