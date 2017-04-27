@@ -47,7 +47,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -60,105 +60,28 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 				return products;
 			}
 
-			// ID interno
-			String internalId = null;
-			Element elementInternalId = doc.select("input[name=productId]").first();
-			if (elementInternalId != null) {
-				internalId = elementInternalId.attr("value").trim();
-			}
-
-			// Pid
-			String internalPid = null;
-
-			// Nome
-			Elements elementName = doc.select("h1.product-header__heading");
-			String name = elementName.text().replace("'", "").trim();
-
-			// Preço
-			Element elementPrice = doc.select("div.product-control__price.price_per > span.value").last();
-			Float price = null;
-			if(elementPrice != null) {
-				price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-			} else {
-				elementPrice = doc.select("div.product-control__price > span.value").first();
-				if (elementPrice != null) {
-					price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-				}
-			}
+			String internalId = crawlInternalId(doc);
+			String internalPid = crawlInternalPid(doc);
+			String name = crawlName(doc);
+			Float price = crawlPrice(doc);
 
 			// Categorias
 			Elements elementCategory = doc.select("ul.breadcrumbs__items > li > a");
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-
 			if(elementCategory.size() > 1) category1 = elementCategory.get(1).text().trim();
 			if(elementCategory.size() > 2) category2 = elementCategory.get(2).text().trim();
 
-			// Imagem primária
-			Elements elementPrimaryImage = doc.select("#product-image > a.zoomImage");
-			String primaryImage = elementPrimaryImage.attr("href");
-
-			// Se não tem a foto grande, pega a miniatura mesmo
-			if(primaryImage.equals("#")) {
-				elementPrimaryImage = doc.select("#product-image > a.zoomImage > img");
-				primaryImage = elementPrimaryImage.attr("src");
-			}
-			primaryImage = "http://www.paodeacucar.com.br" + primaryImage;
-			if(primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) {
-				primaryImage = ""; //TODO: Verificar o nome da foto genérica
-			}
-
-			// Imagens secundárias
-			String secondaryImages = "";
-			JSONArray secondaryImagesArray = new JSONArray();
-
-			Elements secondaryImageElement = doc.select(".product-image__gallery--holder ul li a");
-
-			if(secondaryImageElement.size() > 1) {
-				for(int i = 1; i < secondaryImageElement.size(); i++) { // a partir da segunda, porque a primeira é imagem primária
-					String tmp;
-
-					// tentar pegar a imagem grande
-					tmp = secondaryImageElement.get(i).attr("data-zoom").toString();
-
-					if(tmp.equals("#")) { // se não tem a grande, pegar a que tiver
-						tmp = secondaryImageElement.get(i).attr("href");
-					}
-					tmp = "http://www.paodeacucar.com.br" + tmp;
-					secondaryImagesArray.put(tmp);
-				}						
-			}
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
-
-			// Descrição
-			String description = "";
-			Element elementDescriptionText = doc.select("#nutritionalChart").first();
-			if(elementDescriptionText != null) {
-				description = description + elementDescriptionText.html();
-			}
-
-			// Disponibilidade
-			boolean available = false;
-			Element elementAvailable = doc.select(".btnComprarProd").first();
-			if (elementAvailable != null) {
-				available = true;
-			}
-			
-
-			// Estoque
+			String primaryImage = crawlMainImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
+			String description = crawlDescription(doc);
+			boolean available = crawlAvailability(doc);
 			Integer stock = null;
-
-			// Marketplace
 			JSONArray marketplace = null;
-
-			// Prices 
 			Prices prices = crawlPrices(doc, price);
 			
 			Product product = new Product();
-			
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -192,6 +115,98 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.contains("/produto/");
+	}
+	
+	private String crawlInternalId(Document doc) {
+		Element elementInternalId = doc.select("input[name=productId]").first();
+		if (elementInternalId != null) {
+			return elementInternalId.attr("value").trim();
+		}
+		return null;
+	}
+	
+	private String crawlInternalPid(Document doc) {
+		return null;
+	}
+	
+	private String crawlName(Document doc) {
+		Elements elementName = doc.select("h1.product-header__heading");
+		return elementName.text().replace("'", "").trim();
+	}
+	
+	private Float crawlPrice(Document doc) {
+		Float price = null;
+		Element elementPrice = doc.select("div.product-control__price.price_per > span.value").last();
+		if(elementPrice != null) {
+			price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		} else {
+			elementPrice = doc.select("div.product-control__price > span.value").first();
+			if (elementPrice != null) {
+				price = Float.parseFloat( elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			}
+		}
+		return price;
+	}
+	
+	private String crawlMainImage(Document doc) {
+		Elements elementPrimaryImage = doc.select("#product-image > a.zoomImage");
+		String primaryImage = elementPrimaryImage.attr("href");
+
+		// Se não tem a foto grande, pega a miniatura mesmo
+		if(primaryImage.equals("#")) {
+			elementPrimaryImage = doc.select("#product-image > a.zoomImage > img");
+			primaryImage = elementPrimaryImage.attr("src");
+		}
+		primaryImage = "http://www.paodeacucar.com.br" + primaryImage;
+		if(primaryImage.contains("nome_da_imagem_do_sem_foto.gif")) {
+			primaryImage = ""; //TODO: Verificar o nome da foto genérica
+		}
+		
+		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document doc) {
+		String secondaryImages = "";
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		Elements secondaryImageElement = doc.select(".product-image__gallery--holder ul li a");
+
+		if(secondaryImageElement.size() > 1) {
+			for(int i = 1; i < secondaryImageElement.size(); i++) { // a partir da segunda, porque a primeira é imagem primária
+				String tmp;
+
+				// tentar pegar a imagem grande
+				tmp = secondaryImageElement.get(i).attr("data-zoom").toString();
+
+				if(tmp.equals("#")) { // se não tem a grande, pegar a que tiver
+					tmp = secondaryImageElement.get(i).attr("href");
+				}
+				tmp = "http://www.paodeacucar.com.br" + tmp;
+				secondaryImagesArray.put(tmp);
+			}						
+		}
+		if(secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
+	}
+	
+	private boolean crawlAvailability(Document doc) {
+		boolean available = false;
+		Element elementAvailable = doc.select(".btnComprarProd").first();
+		if (elementAvailable != null) {
+			available = true;
+		}
+		return available;
+	}
+	
+	private String crawlDescription(Document doc) {
+		Element elementDescriptionText = doc.select("#nutritionalChart").first();
+		if(elementDescriptionText != null) {
+			return elementDescriptionText.html();
+		}
+		return "";
 	}
 	
 	/**

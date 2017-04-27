@@ -37,21 +37,14 @@ public class SaopauloMamboCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// Id interno
 			String internalId = crawlInternalId(doc);
-
-			// name
 			String name = crawlName(doc);
-
-			// price
 			Float price = crawlPrice(doc);
-
-			// availability
 			boolean available = crawlAvailability(doc);
 
 			// Categorias
@@ -85,28 +78,14 @@ public class SaopauloMamboCrawler extends Crawler {
 				category3 = null;
 			}
 
-			// primary image
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// secondary images
 			String secondaryImages = crawlSecondaryImages(doc);
-
-			// Descrição
-			String description = "";
-			Elements element_descricao = doc.select(".productDescription");
-			description = element_descricao.first().html().replace("'","").replace("’","").trim();
-
-			// Estoque
+			String description = crawlDescription(doc);
 			Integer stock = null;
-
-			// Marketplace
 			JSONArray marketplace = null;
-
-			// prices
 			Prices prices = crawlPrices(internalId, price);
 			
 			Product product = new Product();
-			
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setName(name);
@@ -138,6 +117,14 @@ public class SaopauloMamboCrawler extends Crawler {
 	private boolean isProductPage(Document document) {
 		Element element_id = document.select(".hidden-sku-default").first();
 		return element_id != null;
+	}
+	
+	private String crawlDescription(Document document) {
+		Element elementDescription = document.select(".productDescription").first();
+		if (elementDescription != null) {
+			return elementDescription.html().replace("'","").replace("’","").trim();
+		}
+		return null;
 	}
 	
 	private String crawlInternalId(Document doc) {

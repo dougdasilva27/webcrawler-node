@@ -64,19 +64,10 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			JSONObject chaordicSKUJson = crawlChaordicSKUJson(doc);
 
-			// internal id
 			String internalId = crawlInternalId(doc);
-
-			// internal pid
 			String internalPid = internalId;
-
-			// name
 			String name = crawlName(doc);
-
-			// price
 			Float price = crawlPrice(doc);
-
-			// availability
 			boolean available = crawlAvailability(chaordicSKUJson);
 
 			// categories
@@ -87,28 +78,13 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			// primary image
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// secondary images
 			String secondaryImages = crawlSecondaryImages(doc);			
-
-			// description
-			String description = "";   
-			Element element_moreinfo = doc.select("#nutritionalChart .product-info .product-info__text").first();
-			if(element_moreinfo != null) {
-				description = description + element_moreinfo.html();
-			}
-
-			// stock
+			String description = crawlDescription(doc);
 			Integer stock = null;
-
-			// marketplace
 			JSONArray marketplace = null;
-
-			// Prices 
 			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
-
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -146,6 +122,14 @@ public class SaopauloExtraCrawler extends Crawler {
 		}
 		return name;
 	}
+	
+	private String crawlDescription(Document document) {
+		Element skuInfo = document.select("#nutritionalChart").first();
+		if (skuInfo != null) {
+			return skuInfo.html();
+		}
+		return "";
+	}
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
@@ -174,7 +158,7 @@ public class SaopauloExtraCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 
 		Elements elementsCategories = document.select("#breadCrumbArea .breadcrumbs.group ul li a");
 

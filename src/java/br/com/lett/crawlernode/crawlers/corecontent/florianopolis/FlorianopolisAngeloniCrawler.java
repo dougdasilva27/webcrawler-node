@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -39,32 +40,15 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-			// ID interno
-			String internalId = null;
-			Element elementInternalID = doc.select("input#idProduto[name=idProduto]").first();
-			if(elementInternalID != null) {
-				internalId = elementInternalID.attr("value").trim();
-			} else {
-				return products;
-			}
-
-			// Pid
+			String internalId = crawlInternalId(doc);
 			String internalPid = internalId;
-
-			// Nome
-			Elements elementName = doc.select("#imgProdBig img");
-			String name = elementName.attr("alt").replace("'", "").trim();
-
-			// Preço
-			Elements elementPrice = doc.select("span.valorPrice");
-			Float price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-
-			// Disponibilidade
+			String name = crawlName(doc);
+			Float price = crawlPrice(doc);
 			boolean available = true;
 
 			// Categorias
@@ -114,27 +98,12 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 				secondaryImages = secondaryImagesArray.toString();
 			}
 
-			// Estoque
 			Integer stock = null;
-
-			// Marketplace
 			JSONArray marketplace = null;
-
-			// Descrição
-			String description = "";
-			Element elementTabDescription = doc.select("#abaDescription").first();
-			Element elementTabComposition = doc.select("#abaComposicao").first();
-			Element elementTabIncludedItens = doc.select("#abaIncludedItens").first();
-
-			if(elementTabDescription != null) 		description = description + elementTabDescription.html();
-			if(elementTabComposition != null) 		description = description + elementTabComposition.html();
-			if(elementTabIncludedItens != null) 	description = description + elementTabIncludedItens.html();
-
-			// Prices
+			String description = crawlDescription(doc);
 			Prices prices = crawlPrices(doc, price);
-			
+												
 			Product product = new Product();
-			
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -166,6 +135,42 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.contains("idProduto=");
+	}
+	
+	private String crawlInternalId(Document doc) {
+		Element elementInternalId = doc.select("input#idProduto[name=idProduto]").first();
+		if (elementInternalId != null) {
+			return elementInternalId.attr("value").trim();
+		}
+		return null;
+	}
+	
+	private String crawlName(Document doc) {
+		Element elementName = doc.select("#boxTtl h1.sIfr").first();
+		if (elementName != null) {
+			return elementName.text().trim();
+		}
+		return null;
+	}
+	
+	private Float crawlPrice(Document doc) {
+		Elements elementPrice = doc.select("span.valorPrice");
+		return Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+	}
+	
+	private String crawlDescription(Document doc) {
+		StringBuilder description = new StringBuilder();
+		Element elementTab = doc.select("#abaInfoProd").first();
+		Element elementTabDescription = doc.select("#abaDescription").first();
+		Element elementTabComposition = doc.select("#abaComposicao").first();
+		Element elementTabIncludedItens = doc.select("#abaIncludedItens").first();
+		
+		if (elementTab != null) 				description.append(elementTab.html());
+		if (elementTabDescription != null) 		description.append(elementTabDescription.html());
+		if (elementTabComposition != null) 		description.append(elementTabComposition.html());
+		if (elementTabIncludedItens != null) 	description.append(elementTabIncludedItens.html());
+		
+		return description.toString();
 	}
 	
 	/**

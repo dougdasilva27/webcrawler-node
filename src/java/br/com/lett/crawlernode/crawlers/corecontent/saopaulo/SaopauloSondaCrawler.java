@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -72,18 +73,8 @@ public class SaopauloSondaCrawler extends Crawler {
 			String secondaryImages = null;
 
 			// Descrição
-			String description = "";
-			Elements elementDescription = doc.select("article.bx-detalhe-descricao");
-			for(int i = 0; i < elementDescription.size(); i++) {
-				String information = elementDescription.get(i).select("h2").text();
-				if(information.equals("Ingredientes")) {
-					description = description + elementDescription.get(i).select("p").html();
-				}
-				else if(information.equals("Tabela Nutricional")) {
-					description = description + elementDescription.get(i).select("table tbody").html();
-				}
-			}
-
+			String description = crawlDescription(doc);
+						
 			// Estoque
 			Integer stock = null;
 
@@ -126,6 +117,14 @@ public class SaopauloSondaCrawler extends Crawler {
 	private boolean isProductPage(String url) {
 		return url.contains("/delivery.aspx/produto/");
 	}
+	
+	private String crawlDescription(Document doc) {
+		Element elementDescription = doc.select(".bx-detalhe-descricao").first(); 
+		if (elementDescription != null) {
+			return elementDescription.html();
+		}
+		return "";
+	}
 
 	private String crawlName(Document doc) {
 		String name = null;
@@ -139,7 +138,7 @@ public class SaopauloSondaCrawler extends Crawler {
 
 	private boolean crawlAvailability(Document doc) {
 		Element notifymeButton = doc.select(".btn.btnaviso").first();
-		return (notifymeButton == null);
+		return notifymeButton == null;
 	}
 
 	private Float crawlPrice(Document doc) {
