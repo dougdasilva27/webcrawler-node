@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 
@@ -30,7 +31,11 @@ public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
 			
-			this.redirectUrl = this.currentDoc.baseUri();
+			if(this.session.getRedirectedToURL(url) != null) {
+				this.redirectUrl = this.session.getRedirectedToURL(url);
+			} else {
+				this.redirectUrl = url;
+			}
 			
 		} else {
 			String url;
@@ -53,7 +58,9 @@ public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
 			for(Element e : products) {
 				
 				// InternalPid
@@ -68,7 +75,9 @@ public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 				
 			}
 		} else {
@@ -100,7 +109,7 @@ public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 			try	{				
 				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 			
 			this.log("Total da busca: "+this.totalBusca);
@@ -110,16 +119,18 @@ public class FlorianopolisAngelonieletroCrawler extends CrawlerRankingKeywords{
 	private String crawlInternalId(Element e){
 		String internalId = null;
 		
+		Element id = e.select(".checkbox > input").first();
+		
+		if(id != null){
+			internalId = id.attr("name").replaceAll("[^0-9]", "").trim();
+		}
+		
 		return internalId;
 	}
 	
 	private String crawlInternalPid(Element e){
 		String internalPid = null;
-		Element pid = e.select(".checkbox > input").first();
 		
-		if(pid != null){
-			internalPid = pid.attr("name").replaceAll("[^0-9]", "").trim();
-		}
 		
 		return internalPid;
 	}

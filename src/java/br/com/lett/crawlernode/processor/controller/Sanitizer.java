@@ -296,7 +296,7 @@ public class Sanitizer {
 
 		if (logActivated) Logging.printLogDebug(logger, "----> Final word of processer: " + name);
 		
-		return new ArrayList<String>(Arrays.asList(name.split(" ")));
+		return new ArrayList<>(Arrays.asList(name.split(" ")));
 	}
 	
 	public boolean isLogActivated() {
