@@ -115,7 +115,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.paodeacucar.com/produto/323741/refresco-em-po-tang-de-abacaxi-25g", market);
+				session = SessionFactory.createTestSession("http://www.deliveryextra.com.br/produto/305513/alimento-nutritivo-sem-sabor-nutren-senior-nestle-lata-370g", market);
 			}
 
 

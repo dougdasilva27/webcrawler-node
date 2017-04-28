@@ -179,16 +179,14 @@ public class SaopauloExtraCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element primaryImageElement = doc.select("#product-image a").first();
+		Element primaryImageElement = doc.select("#product-image a.zoomImage img").first();
 		
 		if (primaryImageElement != null) {
-			String href = primaryImageElement.attr("href");
+			String img = primaryImageElement.attr("src");
 			
-			if (!href.isEmpty()) {
-				if (!href.startsWith("http://www.deliveryextra.com.br")) {
-					primaryImage = "http://www.deliveryextra.com.br" + href;
-				} else {
-					primaryImage = href;
+			if (!img.isEmpty()) {
+				if (!img.startsWith("http://www.deliveryextra.com.br")) {
+					primaryImage = "http://www.deliveryextra.com.br" + img;
 				}
 			}
 		}
