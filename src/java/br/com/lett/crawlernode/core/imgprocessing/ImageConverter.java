@@ -36,13 +36,13 @@ public class ImageConverter {
 	 * a transformation on the original jpg image.
 	 * 
 	 * @param session
-	 * @param localFile
+	 * @param localOriginalFile
 	 * @return  <br>the transformed image as a file
 	 * 			<br>null if no file was created
 	 * @throws IOException
 	 */
 	public static File createTransformedImageFile(
-			File localFile,
+			File localOriginalFile,
 			Session session) throws IOException {
 		
 		ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession)session;
@@ -50,7 +50,7 @@ public class ImageConverter {
 		// create a buffered image from the downloaded image
 		// which is the original image
 		Logging.printLogDebug(logger, session, "Creating a buffered image...");
-		BufferedImage bufferedImage = createBufferedImage(localFile, session);
+		BufferedImage bufferedImage = createBufferedImage(localOriginalFile, session);
 		
 		if (bufferedImage == null) {
 			Logging.printLogError(logger, session, "Image downloaded is null...returning...");
@@ -58,7 +58,7 @@ public class ImageConverter {
 		}
 
 		boolean converted = false;
-		if( imageType(localFile.getAbsolutePath()).equals("png") || bufferedImage.getType() == 0) {
+		if( imageType(localOriginalFile.getAbsolutePath()).equals("png") || bufferedImage.getType() == 0) {
 			Logging.printLogDebug(logger, session, "Image is png...converting to jpg...");
 
 			bufferedImage = convertFromPNGtoJPG(bufferedImage);
@@ -95,8 +95,7 @@ public class ImageConverter {
 
 		writer.dispose();
 		
-		return new File(imageCrawlerSession.getLocalTransformedFileDir());
-				
+		return new File(imageCrawlerSession.getLocalTransformedFileDir());	
 	}
 	
 	/**
@@ -114,9 +113,7 @@ public class ImageConverter {
 			ImageWriter writer,
 			String fileDir, 
 			BufferedImage outputImage) throws IOException {
-		
-		System.err.println("Escrevendo imagem transformada...");
-		
+				
 		param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
 		param.setCompressionQuality(ORIGINAL_IMAGE_COMPRESSION_QUALITY);
 		
