@@ -120,19 +120,23 @@ public class S3Service {
 	 * 
 	 * @param session
 	 * @param newObjectMetadata the user metadata that goes into the s3object
+	 * @param f the local file
+	 * @param key the path for the image in the S3 bucket
 	 * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
 	 */
-	public static void uploadImage(Session session, ObjectMetadata newObjectMetadata) throws FileNotFoundException {
+	public static void uploadImage(
+			Session session, 
+			ObjectMetadata newObjectMetadata,
+			File f,
+			String key) throws FileNotFoundException {
 
 		ImageCrawlerSession s = (ImageCrawlerSession)session;
-
-		File f = new File(s.getLocalFileDir());
 
 		FileInputStream fileInputStream = new FileInputStream(f);
 
 		PutObjectRequest putObjectRequest = new PutObjectRequest(
 				IMAGES_BUCKET_NAME, 
-				s.getImageKeyOnBucket(), 
+				key, 
 				fileInputStream, 
 				newObjectMetadata);
 

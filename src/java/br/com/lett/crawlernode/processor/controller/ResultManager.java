@@ -377,11 +377,16 @@ public class ResultManager {
 		// assembling path to primary image stored on Amazon S3
 		// this image is the last downloaded image in the image crawler
 		String primaryImageAmazonKey = new StringBuilder()
-											.append("market/")
-											.append("product-image/")
-											.append(pm.getId())
-											.append("/1.jpg")
-											.toString();
+										.append("market")
+										.append("/")
+										.append("product-image")
+										.append("/")
+										.append(pm.getId())
+										.append("/")
+										.append(1)
+										.append("_original")
+										.append(".jpg")
+										.toString();
 
 		// fetch md5 of the image
 		String primaryMd5 = S3Service.fetchImageMd5(session, primaryImageAmazonKey); // the supposed new image

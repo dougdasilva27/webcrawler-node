@@ -63,8 +63,8 @@ public class ImageCrawler extends Task {
 			}
 
 			// get metadata from the image on Amazon
-			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getImageKeyOnBucket());
-			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getImageKeyOnBucket());
+			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalImageKeyOnBucket());
+			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getOriginalImageKeyOnBucket());
 			
 			if ( metadata == null ) { // we doesn't have any image under this path in S3 yet
 				Logging.printLogDebug(logger, session, "This image isn't on Amazon yet.");
@@ -144,29 +144,40 @@ public class ImageCrawler extends Task {
 
 	/**
 	 * This method takes the following steps:
-	 * 1) Create all rescaled versions of the image
-	 * 2) Upload all the content to the Amazon bucket
-	 * 3) Stores all the image metadata on Mongo
+	 * <br>Creates a transformed version of the image. If necessary, converts to JPG.
+	 * 		An transformed version is always created, even if the image is originally a JPG.
+	 * <br>Upload all the content to the Amazon bucket
 	 * 
 	 * @param imageDownloadResult
 	 * @throws IOException
 	 */
 	private void update(ImageDownloadResult imageDownloadResult) throws IOException {
+		ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession)session;
 
-		// create a buffered image from the downloaded image
-		Logging.printLogDebug(logger, session, "Creating a buffered image...");
-		BufferedImage bufferedImage = createImage(imageDownloadResult.imageFile);
+		// upload the transformed version of the image to Amazon
+		File transformedImageFile = ImageConverter.createTransformedImageFile(imageDownloadResult.imageFile, session);
+		
+		if (transformedImageFile != null) {
+			String transformedImageFileMd5 = CommonMethods.computeMD5(transformedImageFile);
+			ObjectMetadata transformedImageMetadata = new ObjectMetadata();
+			transformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
+			S3Service.uploadImage(
+					session, 
+					transformedImageMetadata, 
+					transformedImageFile, 
+					imageCrawlerSession.getTransformedImageKeyOnBucket());
+		}
 
-		// convert image to jpg if necessary
-		Logging.printLogDebug(logger, session, "Converting image to jpg if necessary...");
-		convertImage(bufferedImage, imageDownloadResult.imageFile);
-
-		// upload to Amazon
+		// upload the original image to Amazon
 		Logging.printLogWarn(logger, session, "Uploading image to Amazon...only if the computed md5 isn't null");
 		if (imageDownloadResult.md5 != null) {
 			ObjectMetadata newObjectMetadata = new ObjectMetadata();
 			newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
-			S3Service.uploadImage(session, newObjectMetadata);
+			S3Service.uploadImage(
+					session, 
+					newObjectMetadata, 
+					new File(imageCrawlerSession.getLocalOriginalFileDir()),
+					imageCrawlerSession.getOriginalImageKeyOnBucket());
 		}
 	}
 
@@ -235,37 +246,6 @@ public class ImageCrawler extends Task {
 	private File downloadImage() throws IOException {
 		Logging.printLogDebug(logger, session, "Downloading image from market...");
 		return DataFetcher.fetchImage(session);
-	}
-
-	/**
-	 * 
-	 * @param imageFile
-	 * @return
-	 * @throws IOException
-	 */
-	private BufferedImage createImage(File imageFile) throws IOException {
-		if (imageFile == null) {
-			Logging.printLogDebug(logger, session, "Image file is null!");
-			return null;
-		}
-
-		return ImageIO.read(imageFile);
-	}
-
-	/**
-	 * 
-	 * @param bufferedImage
-	 * @param imageFile
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 */
-	private void convertImage(BufferedImage bufferedImage, File imageFile) throws FileNotFoundException, IOException {
-		if (bufferedImage == null) {
-			Logging.printLogError(logger, session, "Image downloaded is null...returning...");
-			return;
-		}
-
-		ImageConverter.convertToJPG(session, bufferedImage, imageFile);
 	}
 
 	/**

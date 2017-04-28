@@ -991,7 +991,7 @@ public class DataFetcher {
 				throw new ResponseCodeException(responseCode);
 			}
 
-			localFile = new File(((ImageCrawlerSession)session).getLocalFileDir());
+			localFile = new File(((ImageCrawlerSession)session).getLocalOriginalFileDir());
 
 			// get image bytes
 			BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());  
