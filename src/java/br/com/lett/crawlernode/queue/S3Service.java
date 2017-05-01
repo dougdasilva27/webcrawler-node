@@ -48,6 +48,7 @@ public class S3Service {
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
 	public static final String HTML_UPLOAD_TYPE = "html";
 	public static final String MD5_HEX_METADATA_FIELD = "md5Hex";
+	public static final String MD5_ORIGINAL_HEX_FIELD = "originalMd5Hex";
 
 	// Amazon images
 	private static AWSCredentials credentialsImages;
