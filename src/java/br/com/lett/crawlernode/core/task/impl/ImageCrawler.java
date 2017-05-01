@@ -157,10 +157,12 @@ public class ImageCrawler extends Task {
 		// upload the transformed version of the image to Amazon
 		File transformedImageFile = ImageConverter.createTransformedImageFile(imageDownloadResult.imageFile, session);
 		
+		Logging.printLogWarn(logger, session, "Uploading transformed image to Amazon...");
 		if (transformedImageFile != null) {
 			String transformedImageFileMd5 = CommonMethods.computeMD5(transformedImageFile);
 			ObjectMetadata transformedImageMetadata = new ObjectMetadata();
 			transformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
+			transformedImageMetadata.addUserMetadata(S3Service.MD5_ORIGINAL_HEX_FIELD, imageDownloadResult.md5); // also put the md5 of the original image
 			S3Service.uploadImage(
 					session, 
 					transformedImageMetadata, 
@@ -169,7 +171,7 @@ public class ImageCrawler extends Task {
 		}
 
 		// upload the original image to Amazon
-		Logging.printLogWarn(logger, session, "Uploading image to Amazon...only if the computed md5 isn't null");
+		Logging.printLogWarn(logger, session, "Uploading original image to Amazon...");
 		if (imageDownloadResult.md5 != null) {
 			ObjectMetadata newObjectMetadata = new ObjectMetadata();
 			newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
