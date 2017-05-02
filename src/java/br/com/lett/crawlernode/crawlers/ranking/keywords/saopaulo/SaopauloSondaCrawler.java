@@ -5,36 +5,12 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
 	public SaopauloSondaCrawler(Session session) {
 		super(session);
-	}
-
-	private String crawlInternalId(String url) {
-		String internalId = null;
-
-		String[] tokens = url.split("/");
-		internalId = tokens[tokens.length - 1];
-
-		return internalId;
-	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = e.attr("href");
-
-		if (!urlProduct.startsWith("http://www.sondadelivery.com.br")) {
-			urlProduct = "http://www.sondadelivery.com.br" + urlProduct;
-		}
-
-		return urlProduct;
 	}
 
 	@Override
@@ -47,18 +23,24 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 		String keyword = this.location.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
-		String url = "http://www.sondadelivery.com.br/delivery.aspx/busca/0/0/0/" + this.currentPage + "/" + keyword;
+		String url = "http://busca.sondadelivery.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements id = this.currentDoc.select("div.txt-produto > a");
+		Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
-		if (id.size() >= 1) {
-			for (Element e : id) {
+		if (products.size() >= 1) {
+			for (Element e : products) {
+				// se o total de busca não foi setado ainda, chama a função para
+				// setar
+				if (this.totalBusca == 0) {
+					setTotalBusca();
+				}
+
 				// Url do produto
 				String urlProduct = crawlProductUrl(e);
 
@@ -66,35 +48,72 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 				String internalPid = crawlInternalPid(e);
 
 				// InternalId
-				String internalId = crawlInternalId(urlProduct);
+				String internalId = crawlInternalId(e);
 
 				saveDataProduct(internalId, internalPid, urlProduct);
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
 						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
+
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
+				}
 			}
 		} else {
-			setTotalBusca();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
 				+ this.arrayProducts.size() + " produtos crawleados");
-		if (!(hasNextPage()))
-			setTotalBusca();
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("div.paginacao > a[title=\"Próxima página\"]").first();
+		if(this.arrayProducts.size() < this.totalBusca) {
+			return true;
+		}
+		
+		return false;
+	}
 
-		// se elemeno page não obtiver nenhum resultado
-		if (page == null)
-			return false;
+	@Override
+	protected void setTotalBusca() {
+		Element totalElement = this.currentDoc.select(".neemu-total-products-container strong").first();
 
-		return true;
+		if (totalElement != null) {
+			try {
+				this.totalBusca = Integer.parseInt(totalElement.ownText());
+			} catch (Exception e) {
+				this.logError(CommonMethods.getStackTrace(e));
+			}
+		}
+
+		this.log("Total da busca: " + this.totalBusca);
+	}
+
+	private String crawlInternalId(Element e) {
+		return e.attr("data-id");
+	}
+
+	private String crawlInternalPid(Element e) {
+		return null;
+	}
+
+	private String crawlProductUrl(Element e) {
+		String urlProduct = null;
+		Element url = e.select(".nm-name-container > a").first();
+
+		if (url != null) {
+			urlProduct = url.attr("href");
+
+			if (!urlProduct.contains("sondadelivery")) {
+				urlProduct = "http://www.sondadelivery.com.br/" + urlProduct;
+			} else if (!urlProduct.startsWith("http")) {
+				urlProduct = "http:" + urlProduct;
+			}
+		}
+
+		return urlProduct;
 	}
 }
