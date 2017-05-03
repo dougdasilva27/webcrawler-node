@@ -102,7 +102,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-
+		
 		if( isProductPage(session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -421,15 +421,17 @@ public class SaopauloAmericanasCrawler extends Crawler {
 	private String crawlDescription(Document document, String internalPid) {
 		String description = "";
 		
-		String url = HOME_PAGE + "product-description/shop/" + internalPid;
-		Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		if(docDescription != null){
-			description = description + docDescription.html();
-		}
-		
-		Element elementProductDetails = document.select(".info-section").last();
-		if(elementProductDetails != null){
-			description = description + elementProductDetails.html();
+		if(internalPid != null) {
+			String url = HOME_PAGE + "product-description/shop/" + internalPid;
+			Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			if(docDescription != null){
+				description = description + docDescription.html();
+			}
+			
+			Element elementProductDetails = document.select(".info-section").last();
+			if(elementProductDetails != null){
+				description = description + elementProductDetails.html();
+			}
 		}
 		
 		return description;
