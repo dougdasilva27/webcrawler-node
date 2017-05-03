@@ -106,7 +106,6 @@ public class ImageCrawlerSession extends Session {
 				.append("/")
 				.append(imageNumber)
 				.append("_original")
-				.append(".jpg")
 				.toString();
 	}
 	
