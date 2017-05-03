@@ -6,8 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
 import org.bson.Document;
 import org.openimaj.feature.local.list.LocalFeatureList;
 import org.openimaj.image.feature.local.keypoints.Keypoint;
@@ -55,7 +53,7 @@ public class ImageCrawler extends Task {
 
 		try {
 			ImageDownloadResult simpleDownloadResult = simpleDownload();
-
+			
 			if (simpleDownloadResult.imageFile == null) {
 				Logging.printLogError(logger, session, "Failed to download image....returning from image processTask()....");
 				session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
@@ -63,8 +61,8 @@ public class ImageCrawler extends Task {
 			}
 
 			// get metadata from the image on Amazon
-			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getOriginalImageKeyOnBucket());
-			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getOriginalImageKeyOnBucket());
+			Logging.printLogDebug(logger, session, "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession)session).getTransformedImageKeyOnBucket());
+			ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession)session).getTransformedImageKeyOnBucket());
 			
 			if ( metadata == null ) { // we doesn't have any image under this path in S3 yet
 				Logging.printLogDebug(logger, session, "This image isn't on Amazon yet.");
@@ -77,7 +75,7 @@ public class ImageCrawler extends Task {
 			// we already have an image under this path in S3
 			else {
 
-				String amazonMd5 = metadata.getUserMetaDataOf(S3Service.MD5_HEX_METADATA_FIELD);
+				String amazonMd5 = metadata.getUserMetaDataOf(S3Service.MD5_ORIGINAL_HEX_FIELD);
 
 				Logging.printLogDebug(logger, session, "Looking for change on image # " + ((ImageCrawlerSession)session).getImageNumber() + "... (first check)");
 				if (amazonMd5 == null) {

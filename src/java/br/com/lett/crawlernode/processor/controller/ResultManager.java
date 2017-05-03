@@ -384,12 +384,11 @@ public class ResultManager {
 										.append(pm.getId())
 										.append("/")
 										.append(1)
-										.append("_original")
 										.append(".jpg")
 										.toString();
 
 		// fetch md5 of the image
-		String primaryMd5 = S3Service.fetchImageMd5(session, primaryImageAmazonKey); // the supposed new image
+		String primaryMd5 = S3Service.fetchOriginalImageMd5(session, primaryImageAmazonKey); // the supposed new image
 
 		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);
 
