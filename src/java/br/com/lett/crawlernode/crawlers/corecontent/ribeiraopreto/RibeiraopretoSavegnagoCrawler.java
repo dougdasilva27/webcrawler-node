@@ -109,7 +109,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 				name = elementName.text().trim();
 			}
 
-			// Price
+			// Price[DEBUG] -> [MSG]Crawled information: 
+
 			Float price = null;
 			Element elementPrice = doc.select(".skuBestPrice").first();
 			if(elementPrice != null) {
@@ -143,8 +144,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 			}
 
 			// Imagens
-			String primaryImage = "";
-			String secondaryImages = "";
+			String primaryImage = null;
+			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 			Element elementPrimaryImage = doc.select("#image-main").first();
 
