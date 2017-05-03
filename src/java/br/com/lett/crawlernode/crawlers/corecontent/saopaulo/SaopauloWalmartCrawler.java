@@ -288,22 +288,22 @@ public class SaopauloWalmartCrawler extends Crawler {
 					price = MathCommonsMethods.parseFloat(priceElement.text().trim());
 					installmentPriceMap.put(1, price);
 
-					Element bankTicket = e.select(".sticker-promotional .sticker-image img").first();
-
-					if(bankTicket != null) {
-						String[] tokens = bankTicket.attr("src").split("-");
-						String discountString = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
-
-						if(!discountString.isEmpty()) {
-							Integer discount = Integer.parseInt(discountString);
-							Float bankTicketPrice = (float) (price - (price * (discount.floatValue()/100.0)));
-							prices.insertBankTicket(MathCommonsMethods.normalizeTwoDecimalPlaces(bankTicketPrice));
-						} else {
-							prices.insertBankTicket(price);
-						}
-					} else {
+//					Element bankTicket = e.select(".sticker-promotional .sticker-image img").first();
+//
+//					if(bankTicket != null) {
+//						String[] tokens = bankTicket.attr("src").split("-");
+//						String discountString = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
+//
+//						if(!discountString.isEmpty()) {
+//							Integer discount = Integer.parseInt(discountString);
+//							Float bankTicketPrice = (float) (price - (price * (discount.floatValue()/100.0)));
+//							prices.insertBankTicket(MathCommonsMethods.normalizeTwoDecimalPlaces(bankTicketPrice));
+//						} else {
+//							prices.insertBankTicket(price);
+//						}
+//					} else {
 						prices.insertBankTicket(price);
-					}
+//					}
 				}
 
 				Element installmentElement = e.select(".product-price-installment").first();
