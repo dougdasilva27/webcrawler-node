@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -364,6 +365,25 @@ public class CommonMethods {
 		}
 		
 		return queryMap;
+	}
+    
+    /**
+     * Check if the url contains a valid start with a valid protocol.
+     * A valid start could be http:// or https://
+     * If the url contains anything like http:/// for example, it won't
+     * be a valid url string.
+     * 
+     * @param urlString
+     * @return 	true if it's a valid url string
+     * 			<br>false otherwise
+     */
+    public static boolean checkUrlStart(String urlString) {
+		String protocolRegex = "(^https?://[^/])";  // -> the '?' tells we want s to be optional
+													// -> the [^//] tells that the next character after the two slashes '//' cannot be another slash
+		Pattern pattern = Pattern.compile(protocolRegex);
+		Matcher matcher = pattern.matcher(urlString);
+		
+		return matcher.find();
 	}
 
 	/**
