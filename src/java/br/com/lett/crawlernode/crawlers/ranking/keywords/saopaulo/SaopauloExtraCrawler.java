@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.http.cookie.Cookie;
@@ -18,7 +17,7 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 		super(session);
 	}
 
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+	private List<Cookie> cookies = new ArrayList<>();
 
 	private String crawlInternalId(String url) {
 		String internalId = null;
@@ -42,6 +41,11 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
+	protected void processBeforeFetch() {
+		this.cookies = getCookies();
+	}
+	
+	@Override
 	protected void extractProductsFromCurrentPage() {
 		// número de produtos por página do market
 		this.pageSize = 12;
@@ -53,11 +57,8 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 				+ "&cnt=36&srt=" + this.arrayProducts.size();
 		this.log("Link onde são feitos os crawlers: " + url);
 
-		if (this.currentPage == 1)
-			this.cookies = getCookies();
-
 		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url, cookies);
+		this.currentDoc = fetchDocument(url, this.cookies);
 
 		Elements id = this.currentDoc.select(".boxProduct .showcase-item__name a");
 		Elements result = this.currentDoc.select("div#sli_noresult");
@@ -99,21 +100,31 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 
 	private List<Cookie> getCookies() {
 
-		List<Cookie> listCookies = new ArrayList<Cookie>();
+		List<Cookie> listCookies = new ArrayList<>();
 
 		// Criando cookie da loja 21 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "21");
-		cookie.setDomain(".deliveryextra.com.br");
+		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "241");
+		cookie.setDomain("busca.deliveryextra.com.br");
 		cookie.setPath("/");
-		cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
 		listCookies.add(cookie);
 
 		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
-		cookie2.setDomain(".deliveryextra.com.br");
+		BasicClientCookie cookie2 = new BasicClientCookie("ep.store_name_241", "S%26%23xe3%3Bo%20Paulo");
+		cookie2.setDomain("busca.deliveryextra.com.br");
 		cookie2.setPath("/");
-		cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
 		listCookies.add(cookie2);
+		
+		// Criando cookie simulando um usuário logado
+		BasicClientCookie cookie3 = new BasicClientCookie("ep.currency_code_241", "BRL");
+		cookie3.setDomain("busca.deliveryextra.com.br");
+		cookie3.setPath("/");
+		listCookies.add(cookie3);
+		
+		// Criando cookie simulando um usuário logado
+		BasicClientCookie cookie4 = new BasicClientCookie("ep.language_code_241", "pt-BR");
+		cookie4.setDomain("busca.deliveryextra.com.br");
+		cookie4.setPath("/");
+		listCookies.add(cookie4);
 
 		return listCookies;
 	}
