@@ -6,13 +6,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -26,6 +29,7 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -38,6 +42,8 @@ import org.slf4j.Logger;
 public class CommonMethods {
 	
 	private static String version = "1"; //TODO
+	
+	private static final Logger logger = LoggerFactory.getLogger(CommonMethods.class);
 
 	/**
 	 * 
@@ -185,72 +191,13 @@ public class CommonMethods {
 		return version;
 	}
 	
-
-	/**
-	 * String
-	 * @param object 
-	 * @return Boolean - se é string ou não
-	 */
 	public static boolean isString(Object object) {
-		if (object instanceof String) {
-			return true;
-		}
-
-		return false;
+		return object instanceof String;
 	}
 
-	/**
-	 * Integer
-	 * @param object 
-	 * @return Boolean - se é Integer ou não
-	 */
 	public static boolean isInteger(Object object) {
-		if (object instanceof Integer) {
-			return true;
-		}
-
-		return false;
+		return object instanceof Integer;
 	}
-
-	/**
-	 * Long
-	 * @param object 
-	 * @return Boolean - se é Long ou não
-	 */
-	public static boolean isLong(Object object) {
-		if (object instanceof Long) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Double
-	 * @param object 
-	 * @return Boolean - se é Double ou não
-	 */
-	public static boolean isDouble(Object object) {
-		if (object instanceof Double) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Boolean
-	 * @param object 
-	 * @return Boolean - se é Boolean ou não
-	 */
-	public static boolean isBoolean(Object object) {
-		if (object instanceof Boolean) {
-			return true;
-		}
-
-		return false;
-	}
-
 
 	/**
 	 * 
@@ -258,11 +205,9 @@ public class CommonMethods {
 	 * @return
 	 */
 	public static String removeAccents(String str) {
-
 		str = Normalizer.normalize(str, Normalizer.Form.NFD);
 		str = str.replaceAll("[^\\p{ASCII}]", "");
 		return str;
-
 	}
 
 	/**
@@ -359,6 +304,67 @@ public class CommonMethods {
     	
     	return finalUrl;
     }
+    
+    /**
+     * Rebuild a string as an URI and remove all
+     * illegal characters.
+     * 
+     * @param url the url string
+     * @return	<br>the rebuilded URL as a string
+     * 			<br>the original string if any problem occurred during rebuild
+     */
+    public static String sanitizeUrl(String url) {
+		try {
+			URL urlObject = new URL(url);
+						
+			URIBuilder uriBuilder = new URIBuilder()
+					.setHost(urlObject.getHost())
+					.setPath(urlObject.getPath())
+					.setScheme(urlObject.getProtocol())
+					.setPort(urlObject.getPort());					
+			
+			List<NameValuePair> params = getQueryMap(urlObject);
+						
+			if (params != null && !params.isEmpty()) {
+				uriBuilder.setParameters(params);
+			}
+						
+			return uriBuilder.build().toString();
+
+		} catch (MalformedURLException | URISyntaxException e) {
+			Logging.printLogError(logger, getStackTraceString(e));
+			return url;
+		}
+    }
+    
+    /**
+     * Parse all the parameters inside the url.
+     * 
+     * @param url a java.net.URL instance
+     * @return  <br>an array list with NameValuePairs
+     * 			<br>an empty array list if the url doesn't have any parameter
+     */
+    public static List<NameValuePair> getQueryMap(URL url) {  
+		List<NameValuePair> queryMap = new ArrayList<>();	    
+		String query = url.getQuery();
+
+		if (query != null) {
+			String[] params = query.split(Pattern.quote("&"));  
+			for (String param : params) {
+				String[] chunks = param.split(Pattern.quote("="));
+				
+				String name = chunks[0]; 
+				String value = null;  
+				
+				if(chunks.length > 1) {
+					value = chunks[1];
+				}
+				queryMap.add(new BasicNameValuePair(name, value));
+			}
+		}
+		
+		return queryMap;
+	}
 
 	/**
 	 *

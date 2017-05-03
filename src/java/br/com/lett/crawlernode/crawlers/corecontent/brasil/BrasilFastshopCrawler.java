@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -265,9 +266,9 @@ public class BrasilFastshopCrawler extends Crawler {
 		if(elementPrimaryImage != null) {
 			String tmpImg = elementPrimaryImage.attr("src");
 			if (!tmpImg.startsWith("https:") && !tmpImg.startsWith("http:")) {
-				primaryImage = "https:" + tmpImg;
+				primaryImage = CommonMethods.sanitizeUrl("https:" + tmpImg);
 			} else {
-				primaryImage = tmpImg;
+				primaryImage = CommonMethods.sanitizeUrl(tmpImg);
 			}
 		}
 
@@ -282,9 +283,9 @@ public class BrasilFastshopCrawler extends Crawler {
 			String secondaryImage = e.attr("src");
 			if( !secondaryImage.contains("PRD_447_1.jpg") ) {
 				if (!secondaryImage.startsWith("http:") && !secondaryImage.startsWith("https:")) {
-					secondaryImagesArray.put("https:" + e.attr("src"));
+					secondaryImagesArray.put( CommonMethods.sanitizeUrl("https:" + e.attr("src")) );
 				} else {
-					secondaryImagesArray.put(e.attr("src"));
+					secondaryImagesArray.put( CommonMethods.sanitizeUrl(e.attr("src")) );
 				}
 			}
 		}
