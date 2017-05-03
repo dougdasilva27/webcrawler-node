@@ -304,12 +304,12 @@ public class S3Service {
 	 * @return	<br>the image md5
 	 * 			<br>null if the object wasn't found or if it isn't an image
 	 */
-	public static String fetchImageMd5(Session session, String key) {
+	public static String fetchOriginalImageMd5(Session session, String key) {
 		try {
 			ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
 			
 			if (objectMetadata != null) {
-				return objectMetadata.getUserMetaDataOf(MD5_HEX_METADATA_FIELD);
+				return objectMetadata.getUserMetaDataOf(MD5_ORIGINAL_HEX_FIELD);
 			}
 			
 			return null;
