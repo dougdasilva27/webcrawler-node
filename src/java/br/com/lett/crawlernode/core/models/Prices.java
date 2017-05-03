@@ -41,7 +41,7 @@ public class Prices {
 	 */
 	public void insertBankTicket(Float bankTicketPrice) {
 		JSONObject bankTicket = new JSONObject();
-		if (bankTicketPrice == null) {
+		if (bankTicketPrice == null || bankTicketPrice < 0f) {
 			bankTicket.put("1", JSONObject.NULL);
 		} else {
 			bankTicket.put("1", bankTicketPrice);
