@@ -314,6 +314,14 @@ public class Processor {
 			if(behaviourStart.has("price") && behaviourStart.getDouble("price") == 0.0) {
 				behaviourStart.remove("price");
 			}
+			
+			if ( !behaviourStart.has("available") ) {
+				if (behaviourStart.getString("status").equals("available")) {
+					behaviourStart.put("available", true);
+				} else {
+					behaviourStart.put("available", false);
+				}
+			}
 
 			newBehaviorTreeMap.put(startOfDayISO, behaviourStart);
 		}
