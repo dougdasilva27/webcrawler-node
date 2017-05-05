@@ -38,7 +38,9 @@ public class ProxyCollection {
 	public static final String LUMINATI_RESIDENTIAL_BR 	= "luminati_residential_br";
 	public static final String CHARITY 					= "charity";
 	public static final String AZURE 					= "azure";
+	public static final String FETCHER					= "fetcher";
 
+	public static final int MAX_ATTEMPTS_FETCHER				= 1;
 	public static final int MAX_ATTEMPTS_BUY 					= 2;
 	public static final int MAX_ATTEMPTS_BONANZA 				= 3;
 	public static final int MAX_ATTEMPTS_CHARITY 				= 3;
@@ -61,15 +63,16 @@ public class ProxyCollection {
 	public ProxyCollection(Markets markets) {
 		this.proxyMap = new HashMap<>();
 
-		this.proxyMaxAttempts = new HashMap<>();
-		this.proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
-		this.proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
-		this.proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER);
-		this.proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL);
-		this.proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
-		this.proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
-		this.proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
-		this.proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
+		proxyMaxAttempts = new HashMap<>();
+		proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
+		proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
+		proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER);
+		proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL);
+		proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
+		proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
+		proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
+		proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
+		proxyMaxAttempts.put(FETCHER, MAX_ATTEMPTS_FETCHER);
 
 		this.proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 		
@@ -90,25 +93,31 @@ public class ProxyCollection {
 		List<LettProxy> luminati = new ArrayList<>();
 		//luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-static_shared_br", "72nxUzRANwPf3tYcekwii"));
 		luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
-		this.proxyMap.put(LUMINATI_SERVER_BR, luminati);
+		proxyMap.put(LUMINATI_SERVER_BR, luminati);
+	}
+	
+	public void setFetcherProxy() {
+		List<LettProxy> fetcher = new ArrayList<>();
+		fetcher.add( new LettProxy(FETCHER, "127.0.0.1", 8080, "brazil", "", "") );
+		proxyMap.put(FETCHER, fetcher);
 	}
 
 	public void setLuminatiResidentialBrProxy() {
 		List<LettProxy> luminati = new ArrayList<>();
 		luminati.add(new LettProxy(LUMINATI_RESIDENTIAL_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-residential_br", "bKhgwEQijyG92jR9kvBPw"));
-		this.proxyMap.put(LUMINATI_RESIDENTIAL_BR, luminati);
+		proxyMap.put(LUMINATI_RESIDENTIAL_BR, luminati);
 	}
 	
 	public void setAzureProxy() {
 		List<LettProxy> azure = new ArrayList<>();
 		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
-		this.proxyMap.put(AZURE, azure);
+		proxyMap.put(AZURE, azure);
 	}
 
 	public void setStormProxies() {
 		List<LettProxy> storm = new ArrayList<>();
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
-		this.proxyMap.put(STORM, storm);
+		proxyMap.put(STORM, storm);
 	}
 
 	public void setBuyProxies() {
@@ -212,8 +221,8 @@ public class ProxyCollection {
 	 * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the service name was not found.
 	 */
 	public List<LettProxy> getProxy(String serviceName) {		
-		if (this.proxyMap.containsKey(serviceName)) {
-			return this.proxyMap.get(serviceName);
+		if (proxyMap.containsKey(serviceName)) {
+			return proxyMap.get(serviceName);
 		} 
 
 		Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
@@ -229,8 +238,8 @@ public class ProxyCollection {
 	 * @return
 	 */
 	public Integer getProxyMaxAttempts(String serviceName) {
-		if (this.proxyMaxAttempts.containsKey(serviceName)) {
-			return this.proxyMaxAttempts.get(serviceName);
+		if (proxyMaxAttempts.containsKey(serviceName)) {
+			return proxyMaxAttempts.get(serviceName);
 		}
 		return 0;
 	}

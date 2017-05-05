@@ -118,6 +118,7 @@ public class Main {
 		proxies.setLuminatiServerBrProxy();
 		proxies.setLuminatiResidentialBrProxy();
 		proxies.setAzureProxy();
+		proxies.setFetcherProxy();
 	}
 	
 
