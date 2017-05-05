@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,32 +107,8 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			category2 = category[2];
 			category3 = null;
 
-			// Imagem primária
-			String primaryImage = null;
-			Element elementPrimaryImage = doc.select(".img_principal").first();
-			if (elementPrimaryImage != null) {
-				primaryImage = crawlImage(elementPrimaryImage);
-			}
-
-			// Imagens secundárias
-			String secondaryImages = null;
-
-			JSONArray secondaryImagesArray = new JSONArray();
-			Elements elementSecondaryImage = doc.select("#ctl00_cphMasterPage1_dlFotos td > a");
-
-			if(elementSecondaryImage.size() > 1){
-				for(Element e : elementSecondaryImage) {
-					String image = crawlImage(e);
-					
-					if( image != null && !image.equals(primaryImage)) {
-						secondaryImagesArray.put(image);
-					}
-				}
-			}
-			
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+			String primaryImage = crawlPrimaryImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
 
 			// Descrição
 			String description = "";
@@ -173,6 +151,8 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			product.setMarketplace(marketplace);
 
 			products.add(product);
+			
+			System.err.println(secondaryImages);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -188,6 +168,66 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.zonasulatende.com.br/Produto/");
+	}
+	
+	private String crawlPrimaryImage(Document doc) {
+		String primaryImage = null;
+		Element elementPrimaryImage = doc.select(".img_principal").first();
+		if (elementPrimaryImage != null) {
+			String onClickAttr = elementPrimaryImage.attr("onclick");
+			
+			int beginIndex = onClickAttr.indexOf('\'');
+			int endIndex = onClickAttr.lastIndexOf('\'');
+			
+			primaryImage = onClickAttr.substring(beginIndex + 1, endIndex);
+		}
+		
+		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document doc) throws MalformedURLException {
+		String primaryImage = crawlPrimaryImage(doc);
+		String secondaryImages = null;
+
+		JSONArray secondaryImagesArray = new JSONArray();
+		Elements elementSecondaryImage = doc.select("#ctl00_cphMasterPage1_dlFotos td > a");
+
+		if (elementSecondaryImage.size() > 1) {
+			for(Element e : elementSecondaryImage) {
+				String onClickAttr = e.attr("onclick");
+				
+				int beginIndex = onClickAttr.indexOf('\'');
+				int endIndex = onClickAttr.lastIndexOf('\'');
+				
+				String imageUrl = onClickAttr.substring(beginIndex + 1, endIndex);
+				
+				if (imageUrl != null && !imageUrl.equals(primaryImage)) {
+					
+					String primaryImageSize = parseImageDimensions(primaryImage);
+					if (primaryImageSize != null) {
+						imageUrl = imageUrl.replaceFirst("280_280", primaryImageSize);
+					}
+					
+					if (!imageUrl.equals(primaryImage)) { // check again, because now the imageUrl could have been modified
+						secondaryImagesArray.put(imageUrl);
+					}
+				}
+			}
+		}
+		
+		if(secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
+	}
+	
+	private String parseImageDimensions(String imageUrl) {
+		String[] tokens = imageUrl.split("/"); // https://www.zonasul.com.br/ImgProdutos/280_280/2015422_37827.jpg
+		if (tokens.length >= 5) {
+			return tokens[4];
+		}
+		return null;
 	}
 	
 	/**
@@ -217,42 +257,4 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 		return prices;
 	}
 	
-	/**
-	 * Crawl any image for attribute "onClick"
-	 * @param onClick
-	 * @return
-	 */
-	private String crawlImage(Element e) {
-		String image;
-		
-		if(e.hasAttr("onClick")) {
-			String onClick = e.attr("onClick");
-			if(onClick.contains("'") && !onClick.toLowerCase().contains("video")) {
-				String[] tokens = onClick.split("'");
-				
-				image = tokens[tokens.length-2].trim();
-				
-				if(image.contains("280_280")) {
-					image = image.replace("280-280", "430_430");
-				} else if(image.contains("60_60")) {
-					image = image.replace("60_60", "430_430");
-				}
-				
-			} else {
-				return null;
-			}
-		} else {
-			image = e.attr("src").trim();
-			
-			if(image.contains("video")) {
-				return null;
-			}
-		}
-		
-		if(image.contains("produto_sem_foto")) {
-			return null;
-		}
-		
-		return image;
-	}
 }
