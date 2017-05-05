@@ -111,7 +111,7 @@ public class SaopauloExtraCrawler extends Crawler {
 			product.setAvailable(available);
 
 			products.add(product);
-
+			
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
@@ -216,11 +216,17 @@ public class SaopauloExtraCrawler extends Crawler {
 			if (e != null) {
 				String dataZoomAttr = e.attr("data-zoom");
 
-				if (!dataZoomAttr.isEmpty()) {
+				if (!dataZoomAttr.isEmpty() && !"#".equals(dataZoomAttr)) {
 					if (!dataZoomAttr.startsWith("http://www.deliveryextra.com.br")) {
 						dataZoomAttr = "http://www.deliveryextra.com.br" + dataZoomAttr;
 					}
 					secondaryImagesArray.put(dataZoomAttr);
+				} else {
+					String hrefAttr = e.attr("href");
+					if (!hrefAttr.startsWith("http://www.deliveryextra.com.br")) {
+						hrefAttr = "http://www.deliveryextra.com.br" + hrefAttr;
+					}
+					secondaryImagesArray.put(hrefAttr);
 				}
 			}
 		}
