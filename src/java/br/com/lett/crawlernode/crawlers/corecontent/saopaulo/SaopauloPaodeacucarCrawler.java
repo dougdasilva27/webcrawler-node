@@ -36,7 +36,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 	public void handleCookiesBeforeFetch() {
 
 		// Criando cookie da loja 3 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "3");
+		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "501");
 		cookie.setDomain(".paodeacucar.com.br");
 		cookie.setPath("/");
 		this.cookies.add(cookie);

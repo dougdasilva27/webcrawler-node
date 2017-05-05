@@ -34,7 +34,9 @@ public class BrasilArcondicionadoCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.length() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalBusca == 0) {
+				setTotalBusca();
+			}
 			for(int i = 0; i < products.length(); i++) {
 				JSONObject json = products.getJSONObject(i);
 				
@@ -50,7 +52,9 @@ public class BrasilArcondicionadoCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, productUrl);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit){
+					break;
+				}
 				
 			}
 		} else {
@@ -133,8 +137,8 @@ public class BrasilArcondicionadoCrawler extends CrawlerRankingKeywords{
 		if(json.has("Link")){
 			urlProduct = json.getString("Link");
 			
-			if(!urlProduct.startsWith("http://www.arcondicionado.com.br/")){
-				urlProduct = "http://www.arcondicionado.com.br" + urlProduct;
+			if(!urlProduct.contains("arcondicionado.com")){
+				urlProduct = "https://www.arcondicionado.com.br" + urlProduct;
 			}
 		}
 		

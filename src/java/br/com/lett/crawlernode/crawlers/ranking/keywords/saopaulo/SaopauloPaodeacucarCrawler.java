@@ -110,9 +110,8 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected void processBeforeFetch() {
 		if (this.cookies.size() < 1) {
-			// Criando cookie da loja 3 = São paulo capital
-			BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "3");
-			cookie.setDomain(".deliveryextra.com.br");
+			BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "501");
+			cookie.setDomain(".paodeacucar.com");
 			cookie.setPath("/");
 			cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
 

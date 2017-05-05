@@ -47,7 +47,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  ************************************************************************************************************************************************************************************/
 public class BrasilArcondicionadoCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.arcondicionado.com.br/";
+	private final String HOME_PAGE = "https://www.arcondicionado.com.br/";
 
 	public BrasilArcondicionadoCrawler(Session session) {
 		super(session);
@@ -63,7 +63,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -113,10 +113,16 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
-
+			
+			
+			String url = session.getOriginalURL();
+			if(this.session.getRedirectedToURL(url) != null && name != null) {
+				url = this.session.getRedirectedToURL(url);
+			}
+			
 			// Creating the product
 			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
+			product.setUrl(url);
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
 			product.setName(name);
@@ -149,7 +155,9 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.startsWith(HOME_PAGE + "produto/") ) return true;
+		if ( url.startsWith(HOME_PAGE + "produto/") ){
+			return true; 
+		}
 		return false;
 	}
 	
