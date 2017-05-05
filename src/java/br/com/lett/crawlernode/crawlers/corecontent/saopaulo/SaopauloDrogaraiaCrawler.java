@@ -34,21 +34,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
-			/*
-			 * Descomentar isso quando for mudar o internalId
-			 * 
-			 * String internalId = null;
-			 * Element elementInternalId = doc.select("input[name=product]").first();
-			 * if (elementInternalId != null) {
-			 * 		internalId = elementInternalId.attr("value").trim();
-			 * }
-			 */
 			Element elementInternalID = doc.select("#details .col-2 .data-table tr .data").first();
 			String internalID = null;
 			if(elementInternalID != null) {
@@ -112,29 +103,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 				}
 			}
 
-			// Imagem primária
-			Elements elementPrimaryImage = doc.select(".product-image-gallery img#image-main");
-			String primaryImage = elementPrimaryImage.attr("src").replace("/450x450", "");
-
-			if(primaryImage.contains("naodisponivel")) {
-				primaryImage = null;
-			}
-
-			// Imagens secundárias
-			String secondaryImages = null;
-			JSONArray secundaryImagesArray = new JSONArray();
-			Elements elementsImages = doc.select(".product-img-box .more-views ul li img");
-
-			for(Element elementImage : elementsImages) {
-				String image = elementImage.attr("src").replace("thumbnail/75x", "image");
-				if( !image.equals(primaryImage) ) {
-					secundaryImagesArray.put( image );
-				}
-			}
-
-			if(secundaryImagesArray.length() > 0) {
-				secondaryImages = secundaryImagesArray.toString();
-			}
+			String primaryImage = crawlPrimaryImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
 
 			// Descrição
 			String description = "";
@@ -169,7 +139,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			product.setAvailable(available);
 
 			products.add(product);
-
+			
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
@@ -184,7 +154,35 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document document) {
 		Element elementInternalID = document.select("#details .col-2 .data-table tr .data").first();
-		return ((elementInternalID != null));
+		return elementInternalID != null;
+	}
+	
+	private String crawlPrimaryImage(Document doc) {
+		String primaryImage = null;
+		
+		Element elementPrimaryImage = doc.select(".product-image-gallery img#image-main").first();
+		if (elementPrimaryImage != null) {
+			primaryImage = elementPrimaryImage.attr("data-zoom-image");
+		}
+		
+		return primaryImage;
+	}
+	
+	private String crawlSecondaryImages(Document doc) {
+		String secondaryImages = null;
+		JSONArray secundaryImagesArray = new JSONArray();
+		Elements elementImages = doc.select(".product-image-gallery img.gallery-image");
+
+		for (int i = 2; i < elementImages.size(); i++) {
+			Element elementImage = elementImages.get(i);
+			secundaryImagesArray.put(elementImage.attr("data-zoom-image"));
+		}
+
+		if(secundaryImagesArray.length() > 0) {
+			secondaryImages = secundaryImagesArray.toString();
+		}
+		
+		return secondaryImages;
 	}
 
 	/**
