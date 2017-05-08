@@ -91,8 +91,8 @@ public class ProxyCollection {
 
 	public void setLuminatiServerBrProxy() {
 		List<LettProxy> luminati = new ArrayList<>();
-		//luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-static_shared_br", "72nxUzRANwPf3tYcekwii"));
-		luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
+		luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-static_shared_br", "72nxUzRANwPf3tYcekwii"));
+		//luminati.add(new LettProxy(LUMINATI_SERVER_BR, "zproxy.luminati.io", 22225, "brazil", "lum-customer-lettinsights-zone-gen-country-br", "c2beaafac3f9"));
 		proxyMap.put(LUMINATI_SERVER_BR, luminati);
 	}
 	
