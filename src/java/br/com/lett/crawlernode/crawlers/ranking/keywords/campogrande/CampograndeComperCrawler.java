@@ -46,7 +46,7 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords{
 
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = this.location.replaceAll(" ", "-");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "-");
 		
 		//monta a url com a keyword e a página
 		String url  = "http://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/"+(this.currentPage)+"/"+keyword+".aspx";

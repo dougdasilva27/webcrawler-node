@@ -20,7 +20,7 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página "+ this.currentPage);
 
-		String key = this.location.replaceAll(" ", "%20");		
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");		
 
 		String url = "http://busca.soubarato.com.br/mobile_search_v2?"
 				+"format=json&results_per_page=60&page="+ this.currentPage +"&query="+ key;

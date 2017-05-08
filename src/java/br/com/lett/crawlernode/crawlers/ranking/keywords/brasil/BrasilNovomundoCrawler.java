@@ -21,7 +21,7 @@ public class BrasilNovomundoCrawler extends CrawlerRankingKeywords {
 		//número de produtos por página do market
 		this.pageSize = 24;
 		
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		// Nesse market uma keyword pode redirecionar para uma categoria
 		// com isso pegamos a url redirecionada e acrescentamos a página.

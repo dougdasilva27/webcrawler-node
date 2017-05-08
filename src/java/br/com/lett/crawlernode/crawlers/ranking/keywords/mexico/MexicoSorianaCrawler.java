@@ -81,7 +81,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords{
 		
 		if(totalElement != null) { 	
 			try {
-				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll(this.location, "").replaceAll("[^0-9]", "").trim());
+				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll(this.keywordWithoutAccents, "").replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}

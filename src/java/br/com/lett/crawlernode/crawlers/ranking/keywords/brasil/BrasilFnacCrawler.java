@@ -20,7 +20,7 @@ public class BrasilFnacCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página "+ this.currentPage);
 
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		//monta a url com a keyword e a página
 		String url = "http://www.fnac.com.br/"+ keyword +"?PageNumber="+ this.currentPage +"&PS=50";

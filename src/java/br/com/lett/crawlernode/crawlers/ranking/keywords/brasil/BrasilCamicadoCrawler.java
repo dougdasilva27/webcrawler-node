@@ -19,7 +19,7 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 			
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "-");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "-");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.camicado.com.br/s/"+ key +"/s/0?q="+ this.keywordEncoded +"&ProductGroup1_ps=36&ProductGroup1_p="+ this.currentPage;

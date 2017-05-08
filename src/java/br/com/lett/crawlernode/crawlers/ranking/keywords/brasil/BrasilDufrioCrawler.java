@@ -18,7 +18,7 @@ public class BrasilDufrioCrawler extends CrawlerRankingKeywords{
 		//número de produtos por página do market
 		this.pageSize = 9;
 	
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		this.log("Página "+ this.currentPage);
 		

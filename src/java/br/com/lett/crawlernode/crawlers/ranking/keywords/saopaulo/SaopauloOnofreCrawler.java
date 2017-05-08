@@ -57,7 +57,7 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 		// número de produtos por página do market
 		this.pageSize = 15;
 
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		this.log("Página " + this.currentPage);
 

@@ -19,7 +19,7 @@ public class BrasilElectroluxCrawler extends CrawlerRankingKeywords {
 			
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://loja.electrolux.com.br/"+ key +"?PS=50&PageNumber="+this.currentPage;

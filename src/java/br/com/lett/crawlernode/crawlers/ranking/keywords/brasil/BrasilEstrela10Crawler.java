@@ -19,7 +19,7 @@ public class BrasilEstrela10Crawler extends CrawlerRankingKeywords{
 			
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.estrela10.com.br/pesquisa?t="+ key +"&pg="+ this.currentPage;

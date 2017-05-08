@@ -19,7 +19,7 @@ public class BrasilLojadomecanicoCrawler extends CrawlerRankingKeywords{
 			
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://busca.lojadomecanico.com.br/?q="+ key +"&page="+this.currentPage;

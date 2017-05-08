@@ -17,7 +17,7 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		String url = "http://search.pontofrio.com.br/?strBusca=" + keyword + "&paginaAtual=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: " + url);

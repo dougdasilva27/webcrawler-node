@@ -48,7 +48,7 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 		// número de produtos por página do market
 		this.pageSize = 20;
 
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
 		String url = "http://www.drogariasaopaulo.com.br/" + keyword + "?PS=50&PageNumber=" + this.currentPage;

@@ -19,7 +19,7 @@ public class BrasilRamsonsCrawler extends CrawlerRankingKeywords {
 		
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = this.location.replaceAll(" ", "-");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "-");
 		
 		//monta a url com a keyword e a página
 		String url = "http://busca.ramsons.com.br/busca/"+keyword+"/0/MA%3d%3d/GB/0/0/0/0/0/3/"+(this.currentPage-1)+"/150/0/0/1/0.aspx";

@@ -20,7 +20,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página " + this.currentPage);
 
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
 		String url = "http://busca.sondadelivery.com.br/busca?q=" + keyword + "&page=" + this.currentPage;

@@ -19,7 +19,7 @@ public class BrasilCatralCrawler extends CrawlerRankingKeywords{
 	
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.catral.com.br/"+ keyword +"?PS=50&PageNumber=" + this.currentPage;

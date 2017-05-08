@@ -19,7 +19,7 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords{
 	
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = location.replaceAll(" ", "%20");
+		String keyword = keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.supermuffato.com.br/"+ keyword +"?PageNumber="+ this.currentPage;

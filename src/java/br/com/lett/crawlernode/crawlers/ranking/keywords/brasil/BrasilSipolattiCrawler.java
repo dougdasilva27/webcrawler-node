@@ -25,7 +25,7 @@ public class BrasilSipolattiCrawler extends CrawlerRankingKeywords{
 			
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.sipolatti.com.br/busca/3/0/0//MaisRecente/Decrescente/63/"+ this.currentPage +"////"+ key +".aspx";

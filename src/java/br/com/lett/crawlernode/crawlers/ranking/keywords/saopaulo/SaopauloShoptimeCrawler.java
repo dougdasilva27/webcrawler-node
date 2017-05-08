@@ -19,7 +19,7 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página "+ this.currentPage);
 
-		String keyword = location.replaceAll(" ", "+");
+		String keyword = keywordWithoutAccents.replaceAll(" ", "+");
 
 		//monta a url com a keyword e a página
 		String url = "http://www.shoptime.com.br/busca/?conteudo="+ this.keywordEncoded +"&limite=24&offset=" + this.arrayProducts.size();

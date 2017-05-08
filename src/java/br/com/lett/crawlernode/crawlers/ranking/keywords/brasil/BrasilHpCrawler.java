@@ -20,7 +20,7 @@ public class BrasilHpCrawler extends CrawlerRankingKeywords{
 	
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.lojahp.com.br/?&strBusca="+ keyword +"&paginaAtual=" + this.currentPage;

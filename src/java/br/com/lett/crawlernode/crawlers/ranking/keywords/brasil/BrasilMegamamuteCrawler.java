@@ -19,7 +19,7 @@ public class BrasilMegamamuteCrawler extends CrawlerRankingKeywords {
 	
 		this.log("Página "+ this.currentPage);
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.megamamute.com.br/"+key+"?&utmi_p=_tv&utmi_pc=BuscaFullText&utmi_cp="+key+"&PS=50&PageNumber="+this.currentPage;

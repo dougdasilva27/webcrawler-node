@@ -19,7 +19,7 @@ public class BrasilAmbientairCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página " + this.currentPage);
 
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
 		String url = "http://www.ambientair.com.br/busca.html?loja=110&acao=BU&busca=" + keyword

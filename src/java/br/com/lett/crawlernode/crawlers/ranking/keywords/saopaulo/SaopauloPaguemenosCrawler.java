@@ -65,7 +65,7 @@ public class SaopauloPaguemenosCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página " + this.currentPage);
 
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
 		String url = "http://loja.paguemenos.com.br/busca/3/0/0/Nome/Crescente/20/" + this.currentPage + "////" + key

@@ -112,7 +112,7 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		String keyword = this.location.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		this.log("Página " + this.currentPage);
 

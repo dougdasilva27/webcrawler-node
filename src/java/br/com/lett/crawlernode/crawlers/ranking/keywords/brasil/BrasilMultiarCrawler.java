@@ -21,7 +21,7 @@ public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página "+ this.currentPage);			
 		
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url = "http://www.multiar.com.br/"+ key;

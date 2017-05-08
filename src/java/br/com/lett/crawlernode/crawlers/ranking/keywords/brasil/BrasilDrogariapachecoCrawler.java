@@ -22,7 +22,7 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+this.currentPage);
 		
 		//se a key contiver o +, substitui por %20, pois nesse market a pesquisa na url é assim
-		String key = this.location.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
 		//monta a url com a keyword e a página
 		String url  = "http://www.drogariaspacheco.com.br/"+key+"?PS=50&PageNumber="+this.currentPage;

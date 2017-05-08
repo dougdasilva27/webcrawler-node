@@ -78,7 +78,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 	protected Document currentDoc;
 	protected int currentPage;
 	protected String keywordEncoded;
-	protected String location;
+	protected String keywordWithoutAccents;
+	
+	protected String keyword;
 
 	private Integer doubleCheck;
 
@@ -92,19 +94,19 @@ public abstract class CrawlerRankingKeywords extends Task {
 		this.marketId = session.getMarket().getNumber();
 
 		if(session instanceof RankingKeywordsSession) {
-			this.location = ((RankingKeywordsSession)session).getKeyword();
+			this.keyword = ((RankingKeywordsSession)session).getKeyword();
 		} else if(session instanceof TestRankingKeywordsSession) {
-			this.location = ((TestRankingKeywordsSession)session).getKeyword();
+			this.keyword = ((TestRankingKeywordsSession)session).getKeyword();
 		} else if(session instanceof DiscoverKeywordsSession) {
-			this.location = ((DiscoverKeywordsSession)session).getKeyword();
+			this.keyword = ((DiscoverKeywordsSession)session).getKeyword();
 		}
 
 		if(!"mexico".equals(session.getMarket().getCity())) {
-			this.location = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
+			this.keywordWithoutAccents = CommonMethods.removeAccents(this.keyword.replaceAll("/", " ").replaceAll("\\.", ""));
 		}
 
 		try {
-			this.keywordEncoded = URLEncoder.encode(location, "UTF-8");
+			this.keywordEncoded = URLEncoder.encode(keyword, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 			session.registerError(error);
@@ -337,7 +339,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setDate(ts);
 			ranking.setLmt(nowISO);
 			ranking.setRankType(RANK_TYPE);
-			ranking.setLocation(location);
+			ranking.setLocation(keyword);
 			ranking.setProducts(this.arrayProducts);
 			
 			RankingStatistics statistics = new RankingStatistics();
@@ -374,7 +376,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 			ranking.setMarketId(this.marketId);
 			ranking.setDate(ts);
 			ranking.setLmt(nowISO);
-			ranking.setLocation(location);
+			ranking.setLocation(keyword);
 			ranking.setProductsDiscover(products);
 			
 			if(session instanceof DiscoverKeywordsSession) {
@@ -449,7 +451,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 				String messageId = resultEntry.getMessageId();
 				this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
 				
-				Persistence.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, entries.get(count).getMessageBody(), this.location);
+				Persistence.insertPanelTask(messageId, SCHEDULER_NAME_DISCOVER_KEYWORDS, this.marketId, entries.get(count).getMessageBody(), this.keyword);
 				count++;
 			}
 
