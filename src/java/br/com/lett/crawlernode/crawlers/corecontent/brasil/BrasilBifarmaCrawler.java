@@ -298,9 +298,9 @@ public class BrasilBifarmaCrawler extends Crawler {
 		Elements scripts = doc.select("script[type=\"text/javascript\"]");
 		
 		for(Element e : scripts) {
-			String text = e.outerHtml();
+			String text = e.outerHtml().replaceAll(" ", "");
 			
-			String varChaordic = "chaordicProduct =";
+			String varChaordic = "chaordicProduct=";
 			
 			if(text.contains(varChaordic)) {
 				int x = text.indexOf(varChaordic) + varChaordic.length();
