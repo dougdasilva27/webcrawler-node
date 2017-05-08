@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -115,7 +116,7 @@ public class BrasilClimarioCrawler extends Crawler {
 				Float price = crawlPrice(jsonSku, available);
 
 				// prices
-				Prices prices = crawlPrices(jsonSku, available);
+				Prices prices = crawlPrices(jsonSku, available, doc);
 
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
@@ -229,7 +230,7 @@ public class BrasilClimarioCrawler extends Crawler {
 		return price;
 	}
 
-	private Prices crawlPrices(JSONObject skuInformationsJson, boolean available) {
+	private Prices crawlPrices(JSONObject skuInformationsJson, boolean available, Document doc) {
 		Prices prices = new Prices();
 
 		if (available) {
@@ -237,8 +238,17 @@ public class BrasilClimarioCrawler extends Crawler {
 			// bank slip
 			Float bankSlipPrice = null;
 			if (skuInformationsJson.has("bestPriceFormated") && available) {
-				bankSlipPrice = Float.parseFloat( skuInformationsJson.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-				prices.insertBankTicket(bankSlipPrice);
+				Element bankSlipDiscountRateElement = doc.select("p[class^=flag a-vista]").first();
+				if (bankSlipDiscountRateElement != null) {
+					String className = bankSlipDiscountRateElement.className();
+					List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(className);
+					if (!parsedNumbers.isEmpty()) {
+						Float bankSlipDiscountRate = Float.parseFloat(parsedNumbers.get(0)) / 100;
+						Float bestPriceFormated = Float.parseFloat( skuInformationsJson.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+						bankSlipPrice = bestPriceFormated - (bankSlipDiscountRate * bestPriceFormated);
+						prices.insertBankTicket(bankSlipPrice);
+					}
+				}
 			}
 
 			// installments
