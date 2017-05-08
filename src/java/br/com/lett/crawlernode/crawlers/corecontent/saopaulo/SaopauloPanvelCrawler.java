@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,16 +40,16 @@ public class SaopauloPanvelCrawler extends Crawler {
 	@Override
 	public void handleCookiesBeforeFetch() {
 		Logging.printLogDebug(logger, session, "Adding cookie...");
-		
+
 		// Cookie do cep do centro de são paulo
 		// Mas o certo seria porto alegre, precisa mudar a cidade.
-		
+
 		/*BasicClientCookie cookie = new BasicClientCookie("LojaVirtualPanvelCepNavegacao", "01030-010");
 		cookie.setDomain("www.panvel.com");
 		cookie.setPath("/panvel");
 		this.cookies.add(cookie);*/
 	}
-	
+
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
@@ -114,59 +116,8 @@ public class SaopauloPanvelCrawler extends Crawler {
 				category3 = null;
 			}
 
-			// Imagens
-			Elements elementSecondaryImages = doc.select(".ms-lightbox-template .master-slider.ms-skin-default .ms-slide .ms-thumb");
-			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
-			if (elementSecondaryImages.size() > 1) {
-				for (int i = 1; i < elementSecondaryImages.size(); i++) { // a primeira imagem secundária é igual a primária
-					Element elementSecondaryImage = elementSecondaryImages.get(i);
-					String image = null;
-					if (elementSecondaryImage.attr("src").contains("/4/")) {
-						image = elementSecondaryImage.attr("src").replace("/4/", "/5/").replace("-4","-5");	
-						if(!image.startsWith("http")){
-							image = "http:" + image;
-						}
-					}
-					else if (elementSecondaryImage.attr("src").contains("/2/")) {
-						image = elementSecondaryImage.attr("src").replace("/2/", "/5/").replace("-2","-5");
-						if(!image.startsWith("http")){
-							image = "http:" + image;
-						}
-					}
-					else if (elementSecondaryImage.attr("src").contains("produtos/default.jpg") || elementSecondaryImage.attr("src").contains("/video")) { // caso esteja sem imagem
-						image = "";
-					}
-					if (image != null && !image.isEmpty()) {
-						secondaryImagesArray.put(image);
-					}
-				}
-			}
-
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
-
-			// Imagem primária
-			String primaryImage = null;
-			if (elementSecondaryImages.first() != null) {
-				if (elementSecondaryImages.first().attr("src").contains("/4/")) {
-					primaryImage = elementSecondaryImages.first().attr("src").replace("/4/", "/5/").replace("-4.jpg","-5.jpg");
-					if(!primaryImage.startsWith("http")){
-						primaryImage = "http:" + primaryImage;
-					}
-				}
-				else if (elementSecondaryImages.first().attr("src").contains("/2/")) {
-					primaryImage = elementSecondaryImages.first().attr("src").replace("/2/", "/5/").replace("-2.jpg","-5.jpg");
-					if(!primaryImage.startsWith("http")){
-						primaryImage = "http:" + primaryImage;
-					}
-				}
-
-				else if (elementSecondaryImages.first().attr("src").contains("produtos/default.jpg") || elementSecondaryImages.first().attr("src").contains("/video")) {
-					primaryImage = "";
-				}
-			}
+			String primaryImage = crawlPrimaryImage(doc);
+			String secondaryImages = crawlSecondaryImages(doc);
 
 			// Descrição
 			String description = "";
@@ -184,12 +135,12 @@ public class SaopauloPanvelCrawler extends Crawler {
 
 			// Marketplace
 			JSONArray marketplace = null;
-			
+
 			// Prices
 			Prices prices = crawlPrices(doc, price);
 
 			Product product = new Product();
-			
+
 			product.setUrl(session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -205,6 +156,8 @@ public class SaopauloPanvelCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
+
+			System.err.println(secondaryImages);
 
 			products.add(product);
 
@@ -225,7 +178,35 @@ public class SaopauloPanvelCrawler extends Crawler {
 				|| url.startsWith("https://www.panvel.com/panvel/visualizarProduto") 
 				|| url.startsWith("https://www.panvel.com/panvel/produto");
 	}
-	
+
+	private String crawlPrimaryImage(Document doc) {
+		Element primaryImageElement = doc.select("div.ms-slide a").first();
+		if (primaryImageElement != null) {
+			return primaryImageElement.attr("href");		
+		}
+		return null;
+	}
+
+	private String crawlSecondaryImages(Document doc) throws MalformedURLException {
+		Elements elementSecondaryImages = doc.select("div.ms-slide a");
+		String secondaryImages = null;
+		JSONArray secondaryImagesArray = new JSONArray();
+
+		for (int i = 1; i < elementSecondaryImages.size(); i++) { // a primeira imagem secundária é igual a primária
+			String imageUrl = elementSecondaryImages.get(i).attr("href");
+
+			if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.contains("youtube")) {
+				secondaryImagesArray.put(imageUrl);
+			}
+		}
+
+		if(secondaryImagesArray.length() > 0) {
+			secondaryImages = secondaryImagesArray.toString();
+		}
+
+		return secondaryImages;
+	}
+
 	/**
 	 * Showcase price is the price sight
 	 * Some cases has installments
@@ -236,28 +217,28 @@ public class SaopauloPanvelCrawler extends Crawler {
 	 */
 	private Prices crawlPrices(Document doc, Float price){
 		Prices prices = new Prices();
-		
+
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
-			
+
 			installmentPriceMap.put(1, price);
 			prices.insertBankTicket(price);
-			
+
 			Element installments = doc.select(".vezes").first();
-			
+
 			if(installments != null){
 				String text = installments.text().toLowerCase();
-				
+
 				if(text.contains("x")){
 					int x = text.indexOf("x");
-					
+
 					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
 					Float value = MathCommonsMethods.parseFloat(text.substring(x));
-					
+
 					installmentPriceMap.put(installment, value);
 				}
 			}
-			
+
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
@@ -265,7 +246,7 @@ public class SaopauloPanvelCrawler extends Crawler {
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
 }
