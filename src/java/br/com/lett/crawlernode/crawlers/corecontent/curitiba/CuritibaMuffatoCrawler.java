@@ -19,6 +19,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
@@ -53,7 +54,7 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 public class CuritibaMuffatoCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://delivery.supermuffato.com.br/";
-	
+
 	public CuritibaMuffatoCrawler(Session session) {
 		super(session);
 	}
@@ -103,7 +104,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
@@ -125,35 +126,24 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
-			
+
 			// Sku json from script
 			JSONObject skuJson = crawlSkuJson(doc);
-			
+
+			JSONObject skuJsonFromCatalogAPI = crawlSkuJsonFromCatalogApi(internalId);
+
 			if (skuJson == null) {
 				Logging.printLogError(logger, "The SKU json information used to crawl images is null!");
 			}
-			
-			// Availability
+
 			boolean available = crawlAvailability(skuJson);
-			
-			// Primary image
 			String primaryImage = crawlPrimaryImage(skuJson);
-			
-			// Imagens
-			String secondaryImages = crawlSecondaryImages(doc);
-
-			// Descrição
+			String secondaryImages = crawlSecondaryImages(skuJsonFromCatalogAPI);
 			String description = crawlDescription(doc);
-
-			// Stock
 			Integer stock = null;
-
-			// Marketplace
 			JSONArray marketplace = new JSONArray();
-			
-			// Prices
 			Prices prices = crawlPrices(doc, price);
-			
+
 			// create the product
 			Product product = new Product();
 			product.setUrl(session.getOriginalURL());
@@ -177,11 +167,24 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page.");
 		}
-		
+
 		return products;
 	}
-	
-	
+
+
+
+	private JSONObject crawlSkuJsonFromCatalogApi(String internalId) {
+		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
+		JSONArray apiResponse = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, getUrl, null, null);
+		for (int i = 0; i < apiResponse.length(); i++) {
+			JSONObject sku = apiResponse.getJSONObject(i);
+			if ( sku.has("Id") ) {
+				String skuId = String.valueOf(sku.getInt("Id"));
+				if ( internalId != null && internalId.equals(skuId) ) return sku;
+			}
+		}
+		return new JSONObject();
+	}
 
 	/*******************************
 	 * Product page identification *
@@ -248,7 +251,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 	private String crawlPrimaryImage(JSONObject skuJson) {
 		String primaryImage = null;
-		
+
 		if (skuJson != null && skuJson.has("skus")) {
 			JSONArray skus = skuJson.getJSONArray("skus");
 			if (skus.length() > 0) {
@@ -259,13 +262,29 @@ public class CuritibaMuffatoCrawler extends Crawler {
 				}
 			}
 		}
-		
+
 		return primaryImage;
 	}
 
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages(JSONObject skuJsonFromCatalogAPI) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
+
+		if ( skuJsonFromCatalogAPI.has("Images") ) {
+			JSONArray images = skuJsonFromCatalogAPI.getJSONArray("Images");
+
+			for (int i = 0; i < images.length(); i++) {
+				JSONArray imageVersions = images.getJSONArray(i);
+				
+				for (int j = 0; j < imageVersions.length(); j++) {
+					JSONObject version = imageVersions.getJSONObject(j);
+					
+					if ( !version.getBoolean("IsMain") && version.getString("Path").contains("-1000-1000") ) {
+						secondaryImagesArray.put( version.getString("Path") );
+					}
+				}
+			}
+		}
 
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
@@ -275,7 +294,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
@@ -299,7 +318,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		if(elementDescription != null) {
 			description = description + elementDescription.html();
 		}
-		
+
 		return description;
 	}
 
@@ -312,25 +331,25 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	 */
 	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
-		
+
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();	
 			installmentPriceMap.put(1, price);
-	
+
 			Element installmentElement = doc.select(".skuBestInstallmentNumber").first();
-			
+
 			if(installmentElement != null) {
 				Integer installment = Integer.parseInt(installmentElement.text());
-				
+
 				Element valueElement = doc.select(".skuBestInstallmentValue").first();
-				
+
 				if(valueElement != null) {
 					Float value = MathCommonsMethods.parseFloat(valueElement.text());
-					
+
 					installmentPriceMap.put(installment, value);
 				}
 			}
-			
+
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
@@ -341,10 +360,10 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
-	
+
 	/**
 	 * Get the script having a json variable with the image in it
 	 * @return
@@ -352,21 +371,21 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private JSONObject crawlSkuJson(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
-		
+
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
 				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
 
 					skuJson = new JSONObject
 							(
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-							);
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
+									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
+									);
 
 				}
 			}        
 		}
-		
+
 		return skuJson;
 	}
 
