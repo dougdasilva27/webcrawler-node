@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,6 +32,22 @@ public class BrasilKabumCrawler extends Crawler {
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+	}
+	
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
+		
+		for(Entry<String, String> entry : cookiesMap.entrySet()) {
+			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+			cookie.setDomain(".kabum.com.br");
+			cookie.setPath("/");
+			this.cookies.add(cookie);
+		}
+		
+	
 	}
 
 	@Override
