@@ -52,7 +52,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 20;
+		this.pageSize = 25;
 			
 		this.log("Página "+ this.currentPage);
 		

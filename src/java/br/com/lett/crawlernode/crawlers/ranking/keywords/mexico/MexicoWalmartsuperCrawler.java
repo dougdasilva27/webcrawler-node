@@ -14,7 +14,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 16;
+		this.pageSize = 32;
 			
 		this.log("Página "+ this.currentPage);
 		
