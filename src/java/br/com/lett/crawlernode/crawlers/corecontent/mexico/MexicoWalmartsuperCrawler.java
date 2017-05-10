@@ -232,10 +232,11 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		StringBuilder description = new StringBuilder();
-		Element descriptionElement = document.select("content.e-description.description").first();
+		Elements descriptionElements = document.select("#accordion-panel.accordion-prd-sectn");
 		
-		if(descriptionElement != null) description.append(descriptionElement.html());
-		
+		if (!descriptionElements.isEmpty()) {
+			description.append(descriptionElements.html());
+		}		
 
 		return description.toString();
 	}

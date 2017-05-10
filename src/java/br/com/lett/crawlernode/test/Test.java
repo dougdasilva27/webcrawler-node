@@ -115,7 +115,7 @@ public class Test {
 			if(testType.equals(KEYWORDS_TEST)) {
 				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
 			} else {
-				session = SessionFactory.createTestSession("http://www.deliveryextra.com.br/produto/305513/alimento-nutritivo-sem-sabor-nutren-senior-nestle-lata-370g", market);
+				session = SessionFactory.createTestSession("https://www.superama.com.mx/catalogo/d-despensa/f-dulces/l-chicles/goma-de-mascar-trident-mash-up-sabor-a-menta-18-pzas/0750610560605", market);
 			}
 
 

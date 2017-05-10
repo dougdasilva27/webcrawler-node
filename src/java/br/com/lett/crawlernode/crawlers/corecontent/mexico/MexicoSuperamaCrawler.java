@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -51,7 +52,7 @@ public class MexicoSuperamaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -68,7 +69,7 @@ public class MexicoSuperamaCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			JSONArray marketplace = crawlMarketplace(doc);
-
+			
 			// Creating the product
 			Product product = ProductBuilder.create()
 					.setUrl(session.getOriginalURL())
@@ -211,14 +212,13 @@ public class MexicoSuperamaCrawler extends Crawler {
 		StringBuilder description = new StringBuilder();
 		
 		Element descriptionElement = document.select(".detail-description-content").first();
-		Element ingredientElement = document.select(".content__ingredientes").first();
-		Element nutritionalElement = document.select(".content__nutricional").first();
-		Element caracteristicaElement = document.select(".content__caracteristicas").first();
-	
-		if(descriptionElement != null) description.append(descriptionElement.html());
-		if(ingredientElement != null) description.append(ingredientElement.html());
-		if(nutritionalElement != null) description.append(nutritionalElement.html());
-		if(caracteristicaElement != null) description.append(caracteristicaElement.html());
+		Elements moreInfoElements = document.select("div.detail-moreinfo");
+		
+		if ( document.select(".moreinfo__ingredientes").first() != null ) description.append(" Ingredientes ");
+		if ( document.select(".moreinfo__nutricional").first() != null ) description.append(" Nutricional ");
+		if ( document.select(".moreinfo__caracteristicas").first() != null ) description.append(" Caracteristicas ");
+		if( descriptionElement != null ) description.append(descriptionElement.html());
+		if( !moreInfoElements.isEmpty() ) description.append(moreInfoElements.html());
 		
 		return description.toString();
 	}
