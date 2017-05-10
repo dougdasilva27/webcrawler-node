@@ -10,45 +10,30 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 
-
-/************************************************************************************************************************************************************************************
- * Crawling notes - revision (11/07/2016):
+/**
+ * Date: 25/11/2016
+ * 1) Only one sku per page.
  * 
- * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
- *  
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
+ * Price crawling notes:
+ * 1) For this market was not found product unnavailable
+ * 2) Page of product disappear when javascripit is off, so is accessed this api: "https://www.walmart.com.mx/WebControls/hlGetProductDetail.ashx?upc="+id
+ * 3) InternalId of product is in url and a json, but to fetch api is required internalId, so it is crawl in url
+ * 4) Has no bank ticket in this market
+ * 5) Has no internalPid in this market
+ * 6) IN api when have a json, sometimes has duplicates keys, so is used GSON from google.
  * 
- * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 
- * 4) The sku page identification is done simply looking the URL format.
- * 
- * 5) Even if a product is unavailable, its price is displayed.
- * 
- * 6) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
- * the variations of a given sku.
- * 
- * 7) We have one method for each type of information for a sku (please carry on with this pattern).
- * 
- * Examples:
- * ex1 (available with sku list html error): http://www.onofre.com.br/nan-soy-formula-infantil-com-ferro-para-lactentes-400g/25811/05
+ * @author Gabriel Dornelas
  *
- * Optimizations notes:
- * No optimizations.
- * 
- * Known website errors:
- * 1) Sometimes the selector for sku returns an empty array. This is an error of the page. The crawler looks fot his particular case.
- * It was observed on only one case so far.
- *
- ************************************************************************************************************************************************************************************/
-
+ */
 public class SaopauloOnofreCrawler extends Crawler {
 
 	private final String HOME_PAGE = "https://www.onofre.com.br/";
@@ -69,163 +54,109 @@ public class SaopauloOnofreCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		Elements skuList = crawlSkuList(doc);
-
-		if (skuList.size() > 0) {
-
-			// looking for all products in page
-			for (Element element : skuList) {
-
-				// fetch current sku URL
-				String currentURL = fetchSkuURL(element);
-				Document skuDoc = fetchSkuDocument(currentURL);
-
-				if (skuDoc != null) {
-					Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-					// InternalId
-					String internalID = crawlInternalId(skuDoc);
-
-					// Pid
-					String internalPid = crawlInternalPid(skuDoc);
-
-					// Name
-					String name = crawlName(skuDoc);
-
-					if(name != null) {
-
-						// Price
-						Float price = crawlMainPagePrice(skuDoc);
+		if ( isProductPage(doc) ) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+			
+			// InternalId
+			String internalId = crawlInternalId(doc);
 						
-						// Prices
-						Prices prices = crawlPrices(price);
-
-						// Availability
-						boolean available = crawlAvailability(skuDoc);
-
-						// Categories
-						ArrayList<String> categories = crawlCategories(skuDoc); 
-						String category1 = getCategory(categories, 0); 
-						String category2 = getCategory(categories, 1); 
-						String category3 = getCategory(categories, 2);
-
-						// Primary image
-						String primaryImage = crawlPrimaryImage(skuDoc);
-
-						// Imagens secundárias
-						String secondaryImages = crawlSecondaryImages(skuDoc, primaryImage);
-
-						// Descrição
-						String description = crawlDescription(skuDoc);
-
-						// Estoque
-						Integer stock = null;
-
-						// Marketplace
-						JSONArray marketplace = null;
-
-						Product product = new Product();
-						
-						product.setUrl(currentURL);
-						product.setInternalId(internalID);
-						product.setInternalPid(internalPid);
-						product.setName(name);
-						product.setPrice(price);
-						product.setPrices(prices);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImage);
-						product.setSecondaryImages(secondaryImages);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplace);
-						product.setAvailable(available);
-
-						products.add(product);
-
-					} 
-				} else {
-					Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-				}
-			}
-		}
-
-		/* **********************************************************
-		 * Particular case of html selector error from the website  *
-		 * There is no element in the sku list for the current page *
-		 ************************************************************/
-		else {
-			String internalID = crawlInternalId(doc);
+			// InternalPid
 			String internalPid = crawlInternalPid(doc);
+			
+			// Name
 			String name = crawlName(doc);
+			
+			// Price
+			Float price = crawlPrice(doc);
+			
+			// Prices
+			Prices prices = crawlPrices(price);
+			
+			// Avaiability
+			boolean available = crawlAvailability(doc);
+			
+			// Categories
+			CategoryCollection categories = crawlCategories(doc);
+			
+			// Primary Image
+			String primaryImage = crawlPrimaryImage(doc);
+			
+			// SecondaryImages
+			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+			
+			// Description
+			String description = crawlDescription(doc);
+			
+			// Stock
+			Integer stock = null;
+			
+			// Marketplace
+			JSONArray marketplace = crawlMarketplace(doc);
 
-			if (name != null) {
-				Float price = crawlMainPagePrice(doc);
-				
-				// Prices
-				Prices prices = crawlPrices(price);
-				
-				boolean available = crawlAvailability(doc);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
+			
+			products.add(product);
 
-				ArrayList<String> categories = crawlCategories(doc); 
-
-				String category1 = getCategory(categories, 0); 
-				String category2 = getCategory(categories, 1); 
-				String category3 = getCategory(categories, 2);
-				String primaryImage = crawlPrimaryImage(doc);
-				String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-				String description = crawlDescription(doc);
-				Integer stock = null;
-				JSONArray marketplace = null;
-
-				Product product = new Product();
-				
-				product.setUrl(session.getOriginalURL());
-				product.setInternalId(internalID);
-				product.setInternalPid(internalPid);
-				product.setName(name);
-				product.setPrice(price);
-				product.setPrices(prices);
-				product.setCategory1(category1);
-				product.setCategory2(category2);
-				product.setCategory3(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
-				product.setAvailable(available);
-
-				products.add(product);
-			}
+		} else {
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
+
 	}
 
+	private boolean isProductPage(Document doc) {
+		Element id = doc.select("#cphConteudo_hf_id_produto").first();
+		
+		if(id != null) {
+			return true;
+		}
+		
+		return false;
+	}
 
-	/*******************
-	 * General methods *
-	 *******************/
-
-	private String crawlInternalId(Document document) {
+	private String crawlInternalId(Document doc) {
 		String internalId = null;
-
-		Elements elementInternalID = document.select(".main-product-info .main-product-name input[type=hidden]");
-		if(elementInternalID.size() > 0) {
-			internalId = elementInternalID.first().attr("value");
+		Element id = doc.select("#cphConteudo_hf_id_produto").first();
+		
+		if(id != null) {
+			internalId = id.val();
 		}
 
 		return internalId;
 	}
 
+	/**
+	 * There is no internalPid.
+	 * 
+	 * @param document
+	 * @return
+	 */
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
+		
 		Element elementInternalPid = document.select(".code.col #cphConteudo_lblCode").first();
 		if (elementInternalPid != null) {
 			internalPid = elementInternalPid.text().split(":")[1].trim();
 		}
+		
 		return internalPid;
 	}
 
@@ -240,7 +171,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlPrice(Document document) {
 		Float price = null;
 		Element elementPrice = document.select("#cphConteudo_lblPrecoPor").first();
 
@@ -272,10 +203,10 @@ public class SaopauloOnofreCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("href");
 		}
 		
-		if (!primaryImage.startsWith("http")) {
-			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
-		} else {
+		if (primaryImage.startsWith("https://www.onofre.com.br") || primaryImage.startsWith("http://www.onofre.com.br")) {
 			primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super");
+		} else {
+			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
 		}
 
 		if(primaryImage.contains("imagem_prescricao")) { // only for meds
@@ -291,17 +222,12 @@ public class SaopauloOnofreCrawler extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 		Elements elementSecondaryImages = document.select(".main-product-image .img-thumbs ul li img");
 
-		if(elementSecondaryImages.size() > 1){
-			for(int i = 0; i < elementSecondaryImages.size(); i++) {
-				Element e = elementSecondaryImages.get(i);
-				if(e.attr("src").replace("Produto/Normal", "Produto/Super").equals(primaryImage.replace("http://www.onofre.com.br/",""))) {
-
-				}
-				else{
-					secondaryImagesArray.put(e.attr("src").replace("Produto/Normal", "Produto/Super"));
-				}
+		for(Element e : elementSecondaryImages) {
+			String image = e.attr("src").replace("Produto/Normal", "Produto/Super");
+			
+			if(!image.equals(primaryImage)) {
+				secondaryImagesArray.put(e.attr("src").replace("Produto/Normal", "Produto/Super"));
 			}
-
 		}
 
 		if(secondaryImagesArray.length() > 0) {
@@ -311,56 +237,33 @@ public class SaopauloOnofreCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+	private JSONArray crawlMarketplace(Document document) {
+		return new JSONArray();
+	}
+
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select("#breadcrumbs a");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
-		}	
+		for (int i = 1; i < elementCategories.size(); i++) { // first index is the home page
+			categories.add( elementCategories.get(i).text().trim());
+		}
 
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
+	private String crawlDescription(Document doc) {
+		StringBuilder description = new StringBuilder();
 
-		return "";
-	}
-
-	private String crawlDescription(Document document) {
-		String description = "";
-		Element elementDescription = document.select(".product-details").first(); 
+		Element elementDescription = doc.select(".product-details").first(); 
 		if(elementDescription != null) {
-			description = description + elementDescription.html();
-		}
+			description.append(elementDescription.html());
+		}	
 
-		return description;
-	}
-
-	private Elements crawlSkuList(Document document) {
-		return document.select(".sku-radio .sku-list li");
+		return description.toString();
 	}
 
-	private String fetchSkuURL(Element sku) {
-		Element elementSkuURL = sku.select("a").first();
-		String skuUrl = null;
-		if (elementSkuURL != null) {
-			skuUrl = "http://www.onofre.com.br" + elementSkuURL.attr("href").trim();
-		}
-		return skuUrl;
-	}
-	
-	private Document fetchSkuDocument(String skuURL) {
-		Document skuDoc = null;
-		if (skuURL != null) {
-			skuDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, skuURL, null, null);
-		}
-		return skuDoc;
-	}
-	
+
 	/**
 	 * In product page has only one price,
 	 * but in footer has informations of payment methods
@@ -389,4 +292,5 @@ public class SaopauloOnofreCrawler extends Crawler {
 		
 		return prices;
 	}
-} 
+
+}
