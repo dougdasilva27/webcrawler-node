@@ -175,7 +175,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 
 	private JSONObject crawlSkuJsonFromCatalogApi(String internalId) {
-		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
+		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId + "?sc=10";
 		JSONArray apiResponse;
 		try {
 			apiResponse = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, getUrl, null, null);
