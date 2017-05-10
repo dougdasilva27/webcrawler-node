@@ -16,7 +16,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 9;
+		this.pageSize = 30;
 			
 		this.log("Página "+ this.currentPage);
 		

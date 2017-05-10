@@ -12,9 +12,10 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 	}
 
 	private static final String TIENDA = "mexicociudadlabor";
-	private static final String TIENDA_ID = "4294967169";
-	private static final String REMOTE_ADDRESS = "74.205.80.195:8080";
+//	private static final String TIENDA_ID = "4294967169";
+//	private static final String REMOTE_ADDRESS = "74.205.80.195:8080";
 //	private final static String REMOTE_ADDRESS = "174.143.32.125:8080";
+//	private final static String REMOTE_ADDRESS = "contenido.chedraui.com.mx";
 	
 	@Override
 	protected void extractProductsFromCurrentPage() {
@@ -25,13 +26,13 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 		
 		//monta a url com a keyword e a página
 		// primeira página começa em 0 e assim vai.
-		String url = "http://"+ REMOTE_ADDRESS +"/endeca-assembler/json/search?N="+ TIENDA_ID +"+"
-				+ "&Ntt="+ this.keywordEncoded +"&Nrpp=24&No=" + this.arrayProducts.size();
+		String url = "https://contenido.chedraui.com.mx/endeca-assembler/json/search?"
+				+ "N=4294967169+&Ntt="+ this.keywordEncoded +"&Nrpp=24&No=" + this.arrayProducts.size();
 		
-		this.log("Link onde são feitos os crawlers: "+url);	
+		this.log("Link onde são feitos os crawlers: " + url);	
 		
 		// pega o json da api
-		JSONObject jsonSearch = fetchJSONObject(url);
+		JSONObject jsonSearch = fetchJSONObject("https://contenido.chedraui.com.mx/endeca-assembler/json/search?N=4294967169+&Ntt=queso&Nrpp=24&No=0");
 		
 		// pega as informações importantes
 		JSONObject productsInfo = getImportantInformations(jsonSearch);
