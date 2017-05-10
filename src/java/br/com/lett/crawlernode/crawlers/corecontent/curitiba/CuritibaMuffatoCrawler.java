@@ -25,6 +25,7 @@ import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
@@ -174,8 +175,16 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 
 	private JSONObject crawlSkuJsonFromCatalogApi(String internalId) {
-		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
-		JSONArray apiResponse = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, getUrl, null, null);
+		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId + "?sc=10";
+		JSONArray apiResponse;
+		try {
+			apiResponse = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, getUrl, null, null);
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, "Error trying to fetch sku JSON from Catalog API.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			apiResponse = new JSONArray();
+		}
+		
 		for (int i = 0; i < apiResponse.length(); i++) {
 			JSONObject sku = apiResponse.getJSONObject(i);
 			if ( sku.has("Id") ) {
