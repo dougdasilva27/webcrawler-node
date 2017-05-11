@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 
@@ -65,6 +66,7 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 	
 	private Double getTotalRating(JSONObject trustVoxResponse) {
 		Double totalRating = 0.0;
+		int count = 0;
 		if (trustVoxResponse.has("items")) {
 			JSONArray ratings = trustVoxResponse.getJSONArray("items");
 			
@@ -73,10 +75,12 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 				
 				if (rating.has("rate")) {
 					totalRating += rating.getInt("rate");
+					count++;
 				}
 			}
 		}
-		return totalRating;
+		
+		return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
 	}
 	
 	private JSONObject requestTrustVoxEndpoint(String id) {
