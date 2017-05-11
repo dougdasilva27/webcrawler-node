@@ -51,12 +51,9 @@ public class ServerHandler implements HttpHandler {
 			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TASK);
 			
 			Logging.printLogDebug(logger, "parsing request....");
-			Request request = new Request();
-			try{
-				request = parseRequest(t);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			
+			Request request = parseRequest(t);
+
 			Logging.printLogDebug(logger, request.toString());
 
 			if (CrawlerTaskRequestChecker.checkRequestMethod(request)) {
