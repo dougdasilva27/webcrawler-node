@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.core.server;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
@@ -113,7 +115,7 @@ public class ServerHandler implements HttpHandler {
 			request.setProcessedId(Long.parseLong(processedIdString));
 		}
 
-		request.setMessageBody(getRequestBody(t));			
+		request.setMessageBody(getRequestBody(t.getRequestBody()));			
 		request.setQueueName(queueName);
 		
 		if (request instanceof ImageCrawlerRequest) {
@@ -122,14 +124,15 @@ public class ServerHandler implements HttpHandler {
 		}
 
 		if(request instanceof CrawlerRankingKeywordsRequest) {
-			((CrawlerRankingKeywordsRequest) request).setKeyword(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_KEYWORD));
+			((CrawlerRankingKeywordsRequest) request).setKeyword(
+					getRequestBody(new ByteArrayInputStream(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_KEYWORD).getBytes())));
 		}
 		
 		return request;
 	}
 
-	private String getRequestBody(HttpExchange t) throws IOException {
-		InputStreamReader isr =  new InputStreamReader(t.getRequestBody(), "utf-8");
+	private String getRequestBody(InputStream t) throws IOException {
+		InputStreamReader isr =  new InputStreamReader(t, "utf-8");
 		BufferedReader br = new BufferedReader(isr);
 
 		int b;

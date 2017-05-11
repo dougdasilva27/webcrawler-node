@@ -181,6 +181,9 @@ public abstract class CrawlerRankingKeywords extends Task {
 	//função para extrair produtos do market
 	public int extractProducts() {
 		try {
+			
+			Logging.printLogDebug(logger, "Iniciando keyword " + this.keyword);
+			
 			// Processe implementado pelas classes filhas para executar antes de rodar a keyword
 			this.processBeforeFetch();
 	
