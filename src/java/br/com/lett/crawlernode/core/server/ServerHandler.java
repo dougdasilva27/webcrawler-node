@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.server;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,7 +36,7 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_INTERNAL_ID = "internalId";
 	private static final String MSG_ATTR_IMG_NUMBER = "number";
 	private static final String MSG_ATTR_IMG_TYPE = "type";
-	private static final String MSG_ATTR_KEYWORD = "keyword";
+	//private static final String MSG_ATTR_KEYWORD = "keyword";
 
 	private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 	private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
@@ -52,7 +51,12 @@ public class ServerHandler implements HttpHandler {
 			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TASK);
 			
 			Logging.printLogDebug(logger, "parsing request....");
-			Request request = parseRequest(t);
+			Request request = new Request();
+			try{
+				request = parseRequest(t);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			Logging.printLogDebug(logger, request.toString());
 
 			if (CrawlerTaskRequestChecker.checkRequestMethod(request)) {
@@ -114,8 +118,10 @@ public class ServerHandler implements HttpHandler {
 		if (processedIdString != null) {
 			request.setProcessedId(Long.parseLong(processedIdString));
 		}
-
-		request.setMessageBody(getRequestBody(t.getRequestBody()));			
+		
+		String body = getRequestBody(t.getRequestBody());
+		
+		request.setMessageBody(body);			
 		request.setQueueName(queueName);
 		
 		if (request instanceof ImageCrawlerRequest) {
@@ -124,8 +130,7 @@ public class ServerHandler implements HttpHandler {
 		}
 
 		if(request instanceof CrawlerRankingKeywordsRequest) {
-			((CrawlerRankingKeywordsRequest) request).setKeyword(
-					getRequestBody(new ByteArrayInputStream(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_KEYWORD).getBytes())));
+			((CrawlerRankingKeywordsRequest) request).setKeyword(body);
 		}
 		
 		return request;
