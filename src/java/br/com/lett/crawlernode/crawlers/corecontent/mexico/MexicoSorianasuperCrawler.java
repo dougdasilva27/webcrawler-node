@@ -8,8 +8,10 @@ import java.util.TreeMap;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -83,7 +85,6 @@ public class MexicoSorianasuperCrawler extends Crawler {
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
@@ -115,7 +116,7 @@ public class MexicoSorianasuperCrawler extends Crawler {
 					.setStock(stock)
 					.setMarketplace(marketplace)
 					.build();
-
+			
 			products.add(product);
 
 		} else {
@@ -223,6 +224,10 @@ public class MexicoSorianasuperCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		StringBuilder description = new StringBuilder();
+		
+		Elements activeSubstancesElements = document.select("div.DivSustanciasActivas");
+		if ( !activeSubstancesElements.isEmpty() ) description.append(activeSubstancesElements.html());
+		
 		return description.toString();
 	}
 
