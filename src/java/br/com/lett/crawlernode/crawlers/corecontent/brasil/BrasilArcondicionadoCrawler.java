@@ -204,10 +204,14 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		Float price = null;
 		Element specialPrice = document.select(".produtoInfo .precoPor").first();		
 		
+		if (specialPrice == null) {
+			specialPrice = document.select("#fbits-forma-pagamento .precoPor").first();
+		} 
+				
 		if (specialPrice != null) {
 			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-		} 
-
+		}
+		
 		return price;
 	}
 	
