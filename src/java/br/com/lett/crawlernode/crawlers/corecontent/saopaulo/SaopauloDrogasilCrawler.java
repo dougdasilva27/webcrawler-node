@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 public class SaopauloDrogasilCrawler extends Crawler {
@@ -32,7 +33,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -136,7 +137,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 			
 			// Prices
 			Prices prices = crawlPrices(doc, price);

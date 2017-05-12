@@ -18,7 +18,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
@@ -89,7 +92,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(doc, session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -160,7 +163,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Map<String,Prices> marketplaceMap = this.crawlMarketplaces(docMarketplace, principalSeller, doc);
 
 					// Assemble marketplace from marketplace map
-					JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
+					Marketplace marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
 					// Available
 					boolean available = this.crawlAvailability(marketplaceMap);
@@ -213,7 +216,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 				Map<String,Prices> marketplaceMap = this.crawlMarketplaces(docMarketplace, principalSeller, doc);
 
 				// Assemble marketplace from marketplace map
-				JSONArray marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
+				Marketplace marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
 				// Available
 				boolean available = this.crawlAvailability(marketplaceMap);
@@ -617,13 +620,13 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		return "";
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
+		Marketplace marketplace = new Marketplace();
 
 		for(String sellerName : marketplaceMap.keySet()) {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
-				JSONObject seller = new JSONObject();
-				seller.put("name", sellerName);
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName);
 				
 				Prices prices = marketplaceMap.get(sellerName);
 
@@ -632,12 +635,17 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
 					Float priceFloat = price.floatValue();				
 
-					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
+					sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
 
-				seller.put("prices", marketplaceMap.get(sellerName).toJSON());				
-
-				marketplace.put(seller);
+				sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
+				
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 

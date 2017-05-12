@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -64,7 +65,7 @@ public class SaopauloLenovoCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			CategoryCollection categories = crawlCategories(doc);
 			Integer stock = null;
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			Elements productsElements = doc.select(".tabbedBrowse-productListings li:not([id])");
 

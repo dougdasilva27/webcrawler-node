@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -91,7 +92,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 			Integer stock = null;
 			
 			// Marketplace
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -237,8 +238,8 @@ public class SaopauloOnofreCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 	private CategoryCollection crawlCategories(Document document) {

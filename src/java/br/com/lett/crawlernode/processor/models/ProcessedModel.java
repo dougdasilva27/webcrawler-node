@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -53,7 +54,7 @@ public class ProcessedModel {
 	private Integer 	stock;
 	private JSONObject 	digitalContent;
 	private JSONArray 	behaviour;
-	private JSONArray 	marketplace;
+	private Marketplace 	marketplace;
 	private String 		lmt;
 	private String 		ect;
 	private String 		lat;
@@ -107,7 +108,7 @@ public class ProcessedModel {
 			Boolean void_product, 
 			Integer stock, 
 			JSONArray behaviour, 
-			JSONArray marketplace) {
+			Marketplace marketplace) {
 		
 		this.id = id;
 		this.internalId = internalId;
@@ -317,7 +318,7 @@ public class ProcessedModel {
 				(this.digitalContent == null) ? this.digitalContent : new JSONObject(this.digitalContent.toString()), 
 				this.lettId, this.similars, this.available, this.void_product, this.stock, 
 				(this.behaviour == null) ? this.behaviour : new JSONArray(this.behaviour.toString()),
-				(this.marketplace == null) ? this.marketplace : new JSONArray(this.marketplace.toString())
+				(this.marketplace == null) ? this.marketplace : this.marketplace.clone()
 		);
 	}
 	
@@ -670,11 +671,11 @@ public class ProcessedModel {
 		this.behaviour = behaviour;
 	}
 
-	public JSONArray getMarketplace() {
+	public Marketplace getMarketplace() {
 		return marketplace;
 	}
 
-	public void setMarketplace(JSONArray marketplace) {
+	public void setMarketplace(Marketplace marketplace) {
 		this.marketplace = marketplace;
 	}
 
@@ -713,7 +714,7 @@ public class ProcessedModel {
 		stringBuilder.append("Available: " + this.available + "\n");
 		stringBuilder.append("Void: " + this.void_product + "\n");
 		stringBuilder.append("Stock: " + this.stock + "\n");
-		stringBuilder.append("Marketplace: " +  (this.marketplace != null ? this.marketplace.length() : null) + "\n");
+		stringBuilder.append("Marketplace: " +  (this.marketplace != null ? this.marketplace.size() : null) + "\n");
 		
 		return stringBuilder.toString();
 	}

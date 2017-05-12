@@ -301,37 +301,37 @@ public class Persistence {
 				insertMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
 				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondary_pics());
 
-				if(prices != null) {
+				if (prices != null) {
 					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 				} else {
 					insertMap.put(processedTable.PRICES, null);
 				}
 
-				if(newProcessedProduct.getChanges() != null){
+				if (newProcessedProduct.getChanges() != null) {
 					insertMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString());
 				} else {
 					insertMap.put(processedTable.CHANGES, null);
 				}
 
-				if(newProcessedProduct.getDigitalContent() != null){
+				if (newProcessedProduct.getDigitalContent() != null) {
 					insertMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString());
 				} else {
 					insertMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
 
-				if(newProcessedProduct.getMarketplace() != null){
+				if (newProcessedProduct.getMarketplace() != null && !newProcessedProduct.getMarketplace().isEmpty()) {
 					insertMap.put(processedTable.MARKETPLACE, newProcessedProduct.getMarketplace().toString());
 				} else {
 					insertMap.put(processedTable.MARKETPLACE, null);
 				}
 
-				if(newProcessedProduct.getBehaviour() != null){
+				if (newProcessedProduct.getBehaviour() != null) {
 					insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
 				} else {
 					insertMap.put(processedTable.BEHAVIOUR, null);
 				}
 
-				if(newProcessedProduct.getSimilars() != null){
+				if (newProcessedProduct.getSimilars() != null) {
 					insertMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString());
 				} else {
 					insertMap.put(processedTable.SIMILARS, null);
@@ -383,37 +383,37 @@ public class Persistence {
 				updateMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
 				updateMap.put(processedTable.SECONDARY_PICS, 		newProcessedProduct.getSecondary_pics());
 
-				if(prices != null) {
+				if (prices != null) {
 					updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
 				} else {
 					updateMap.put(processedTable.PRICES, null);
 				}
 
-				if(newProcessedProduct.getChanges() != null){
+				if (newProcessedProduct.getChanges() != null) {
 					updateMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString());
 				} else {
 					updateMap.put(processedTable.CHANGES, null);
 				}
 
-				if(newProcessedProduct.getDigitalContent() != null){
+				if (newProcessedProduct.getDigitalContent() != null) {
 					updateMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString());
 				} else {
 					updateMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
 
-				if(newProcessedProduct.getMarketplace() != null){
+				if (newProcessedProduct.getMarketplace() != null && !newProcessedProduct.getMarketplace().isEmpty()) {
 					updateMap.put(processedTable.MARKETPLACE,  newProcessedProduct.getMarketplace().toString());
 				} else {
 					updateMap.put(processedTable.MARKETPLACE,  null);
 				}
 
-				if(newProcessedProduct.getBehaviour() != null){
+				if (newProcessedProduct.getBehaviour() != null) {
 					updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
 				} else {
 					updateMap.put(processedTable.BEHAVIOUR, null);
 				}
 
-				if(newProcessedProduct.getSimilars() != null){
+				if (newProcessedProduct.getSimilars() != null) {
 					updateMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString());
 				} else {
 					updateMap.put(processedTable.SIMILARS, null);

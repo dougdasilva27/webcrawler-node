@@ -95,7 +95,7 @@ public class Processor {
 					newProcessedProduct.setStock(stock);
 				}
 				
-				if (marketplace != null && marketplace.size() > 0) {
+				if (marketplace != null && !marketplace.isEmpty()) {
 					newProcessedProduct.setMarketplace(marketplace);
 				} else {
 					newProcessedProduct.setMarketplace(null);
@@ -384,7 +384,7 @@ public class Processor {
 	private static void updateStatus(ProcessedModel newProcessedProduct) {
 		String newStatus = "available";
 		if(!newProcessedProduct.getAvailable()) {
-			if(newProcessedProduct.getMarketplace() != null && newProcessedProduct.getMarketplace().length() > 0) {
+			if(newProcessedProduct.getMarketplace() != null && newProcessedProduct.getMarketplace().size() > 0) {
 				newStatus = "only_marketplace";
 			} else {
 				newStatus = "unavailable";
@@ -527,7 +527,7 @@ public class Processor {
 						behaviour = null;
 					}
 
-					JSONArray actualMarketplace;
+					Marketplace actualMarketplace;
 					if(rs.getString("marketplace") != null) {
 						try {
 							actualMarketplace = new JSONArray(rs.getString("marketplace"));
@@ -562,8 +562,7 @@ public class Processor {
 					Prices actualPrices;
 					try {
 						actualPrices = new Prices(actualPricesJson);
-					} catch (MalformedPricesException e) {
-						Logging.printLogError(logger, Util.getStackTraceString(e));
+					} catch (Exception e) {
 						actualPrices = new Prices();
 					}
 
