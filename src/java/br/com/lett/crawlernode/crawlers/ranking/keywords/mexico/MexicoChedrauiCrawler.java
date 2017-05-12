@@ -32,7 +32,7 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 		this.log("Link onde são feitos os crawlers: " + url);	
 		
 		// pega o json da api
-		JSONObject jsonSearch = fetchJSONObject("https://contenido.chedraui.com.mx/endeca-assembler/json/search?N=4294967169+&Ntt=queso&Nrpp=24&No=0");
+		JSONObject jsonSearch = fetchJSONObject(url);
 		
 		// pega as informações importantes
 		JSONObject productsInfo = getImportantInformations(jsonSearch);
