@@ -175,6 +175,13 @@
 			<artifactId>db</artifactId>
 			<version>1.9.0</version>
 		</dependency>
+		
+		<!-- Lett models -->
+		<dependency>
+			<groupId>br.com.lett</groupId>
+			<artifactId>lett-models</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 		<!-- Assemble and perform queries -->
 		<dependency>
