@@ -183,8 +183,8 @@ public class ColombiaCarullaCrawler extends Crawler {
 
 		for (String seller : marketplaces.keySet()) {
 			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-				if(marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.AMEX.toString()).has("1")){
-					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getRawCardPaymentOptions(Card.AMEX.toString()).getDouble("1");
+				if ( marketplaces.get(MAIN_SELLER_NAME_LOWER).getCardPaymentOptions(Card.AMEX.toString()).containsKey(1) ) {
+					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getCardPaymentOptions(Card.AMEX.toString()).get(1);
 					price = priceDouble.floatValue(); 
 				}
 				
@@ -268,9 +268,9 @@ public class ColombiaCarullaCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				
-				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).has("1")){
+				if (marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
 					// Pegando o preço de uma vez no cartão
-					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).getDouble("1");
+					Double price = marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).get(1);
 					Float priceFloat = price.floatValue();				
 					
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
