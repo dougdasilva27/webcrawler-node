@@ -157,7 +157,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 				
 				seller.put("name", sellerName);
 				seller.put("price", sellerPrice);
-				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
+				seller.put("prices", marketplaceMap.get(sellerName).toJSON());
 
 				marketplace.put(seller);
 			}
@@ -284,7 +284,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		// bank slip
 		Float bankSlipPrice = crawlPrice(document);
-		prices.insertBankTicket(bankSlipPrice);
+		prices.setBankTicketPrice(bankSlipPrice);
 
 		// card payment options
 		Map<Integer, Float> installments = crawlCardInstallments(document);

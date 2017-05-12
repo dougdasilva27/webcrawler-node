@@ -266,7 +266,7 @@ public class BrasilCasashowCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", market);
 				seller.put("price", marketplaceMap.get(market));
-				seller.put("prices", crawlPrices(internalId, marketplaceMap.get(market)).getPricesJson());
+				seller.put("prices", crawlPrices(internalId, marketplaceMap.get(market)).toJSON());
 				
 				marketplaces.put(seller);
 			}
@@ -355,7 +355,7 @@ public class BrasilCasashowCrawler extends Crawler {
 			Element bankTicketElement = docPrices.select("#divBoleto em").first();
 			if(bankTicketElement != null){				
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketElement.text());
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 
 			Elements cardsElements = docPrices.select("#ddlCartao option");

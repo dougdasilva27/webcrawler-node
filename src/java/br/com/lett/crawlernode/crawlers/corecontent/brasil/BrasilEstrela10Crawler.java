@@ -490,7 +490,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 				
 				if(boleto != null){
 					Float inCashPrice = MathCommonsMethods.parseFloat(boleto.text());
-					prices.insertBankTicket(inCashPrice);
+					prices.setBankTicketPrice(inCashPrice);
 				}
 				
 				String url = "http://www.estrela10.com.br/widget/product_payment_options?SkuID="+ internalId +"&ProductID=" + internalPid

@@ -452,7 +452,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 			Prices prices = new Prices();
 			
 			if(!principalSeller.equals(partnerName)){
-				prices.insertBankTicket(partnerPrice);
+				prices.setBankTicketPrice(partnerPrice);
 				
 				Map<Integer,Float> installmentPriceMap = new HashMap<>();
 				installmentPriceMap.put(1, partnerPrice);
@@ -645,7 +645,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
 				
-				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());				
+				seller.put("prices", marketplaceMap.get(sellerName).toJSON());				
 
 				marketplace.put(seller);
 			}
@@ -688,10 +688,10 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 			if(priceDiscount != null){
 				Float priceVista = Float.parseFloat(priceDiscount.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				prices.insertBankTicket(priceVista);
+				prices.setBankTicketPrice(priceVista);
 				installmentPriceMap.put(1, priceVista);
 			} else {
-				prices.insertBankTicket(price);
+				prices.setBankTicketPrice(price);
 				installmentPriceMap.put(1, price);
 			}
 

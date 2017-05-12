@@ -254,7 +254,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
 			installmentMapPrice.put(1, partnerPrice);
-			prices.insertBankTicket(partnerPrice);
+			prices.setBankTicketPrice(partnerPrice);
 
 			Element installmentElement = linePartner.select("span.payment-option").first();
 			if(installmentElement != null){
@@ -399,7 +399,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
-				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
+				seller.put("prices", marketplaceMap.get(sellerName).toJSON());
 
 				marketplace.put(seller);
 			}
@@ -470,7 +470,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					if(pricesJsonProduct.has("bankTicket")){
 						Double price = pricesJsonProduct.getDouble("bankTicket");
 
-						prices.insertBankTicket(price.floatValue());
+						prices.setBankTicketPrice(price.floatValue());
 					}
 
 					if(pricesJsonProduct.has("installments")){

@@ -296,7 +296,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 				Float result = (float) (price - (price * (discount.floatValue()/100.0)));
 				
 				Float bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 
 

@@ -220,7 +220,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				JSONObject partner = new JSONObject();
 				partner.put("name", seller);
 				partner.put("price", price);
-				partner.put("prices", crawlPrices(internalId, price).getPricesJson());
+				partner.put("prices", crawlPrices(internalId, price).toJSON());
 
 				marketplace.put(partner);
 			}
@@ -239,7 +239,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
 			Element bank = doc.select("#ltlPrecoWrapper em").first();
 			if(bank != null){
-				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+				prices.setBankTicketPrice(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
 			}
 
 			Elements cardsElements = doc.select("#ddlCartao option");

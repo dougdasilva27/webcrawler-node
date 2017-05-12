@@ -441,7 +441,7 @@ public class BrasilMoblyCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				seller.put("price", marketplaceMap.get(sellerName));
-				seller.put("prices", crawlPrices(jsonSku, marketplaceMap.get(sellerName)).getPricesJson());
+				seller.put("prices", crawlPrices(jsonSku, marketplaceMap.get(sellerName)).toJSON());
 				
 				marketplace.put(seller);
 			}
@@ -546,7 +546,7 @@ public class BrasilMoblyCrawler extends Crawler {
 			
 			// Preço 1 vez no cartão é igual do boleto
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			if(jsonSku.has("InstallmentMax")){
 				Integer installment = jsonSku.getInt("InstallmentMax");

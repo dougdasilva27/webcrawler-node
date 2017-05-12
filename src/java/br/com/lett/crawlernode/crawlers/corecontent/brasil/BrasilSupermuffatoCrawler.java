@@ -244,7 +244,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 			Element bankSlipPriceElement = paymentOptionsDocument.select("#divBoleto #ltlPrecoWrapper em").first();
 			if (bankSlipPriceElement != null) {
 				Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
 			// installments 

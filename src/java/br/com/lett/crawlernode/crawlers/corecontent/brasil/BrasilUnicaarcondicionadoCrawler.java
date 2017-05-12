@@ -204,7 +204,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 		Element bankTicketPriceElement = document.select(".box-buy .price-info .price-box .avista .price").first();
 		if (bankTicketPriceElement != null) {
 			Float bankTicketPrice = Float.parseFloat( bankTicketPriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
-			prices.insertBankTicket(bankTicketPrice);
+			prices.setBankTicketPrice(bankTicketPrice);
 		}
 		
 		// card payment options

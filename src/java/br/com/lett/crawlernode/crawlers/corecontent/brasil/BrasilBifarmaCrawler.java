@@ -246,7 +246,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
 			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 			
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			installmentPriceMap.put(1, price);
 
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);

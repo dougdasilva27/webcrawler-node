@@ -394,7 +394,7 @@ public class BrasilDellCrawler extends Crawler {
 				Float sightPrice = MathCommonsMethods.parseFloat(sightPriceElement.ownText());
 				
 				// bank ticket
-				prices.insertBankTicket(sightPrice);
+				prices.setBankTicketPrice(sightPrice);
 				
 				// 1x card
 				installmentPriceMap.put(1, sightPrice);
@@ -435,7 +435,7 @@ public class BrasilDellCrawler extends Crawler {
 		
 		if(price != null){
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 		}
 		
 		prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);

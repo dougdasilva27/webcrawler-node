@@ -288,7 +288,7 @@ public class BrasilDufrioCrawler extends Crawler {
 					int y = text.indexOf("no", x);
 					
 					Float bankTicketPrice = MathCommonsMethods.parseFloat(text.substring(x, y));
-					prices.insertBankTicket(bankTicketPrice);
+					prices.setBankTicketPrice(bankTicketPrice);
 				}
 			}
 

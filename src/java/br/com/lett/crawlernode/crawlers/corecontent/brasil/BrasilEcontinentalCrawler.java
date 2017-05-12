@@ -298,7 +298,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 			Double bankSlipPriceDouble = jsonPrice.getDouble("valorVistaNum");
 			Float bankSlipPriceFloat = new Float(bankSlipPriceDouble);
 			if (!bankSlipPriceFloat.equals(0.0f)) {
-				prices.insertBankTicket(MathCommonsMethods.normalizeTwoDecimalPlaces(bankSlipPriceFloat));
+				prices.setBankTicketPrice(MathCommonsMethods.normalizeTwoDecimalPlaces(bankSlipPriceFloat));
 			}
 		}
 
@@ -425,7 +425,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 		// bank slip
 		Float bankSlipPrice = crawlMainPageBankSlipPrice(document);
 		if (bankSlipPrice != null) {
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
 		// installments

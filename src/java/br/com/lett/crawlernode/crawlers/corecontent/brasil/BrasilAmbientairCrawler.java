@@ -209,7 +209,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 			if (!bankSlipText.isEmpty() && bankSlipPriceTextElement != null) {
 				String bankSlipPriceText = bankSlipPriceTextElement.text();
 				if (bankSlipText.contains("boleto")) {
-					prices.insertBankTicket(MathCommonsMethods.parseFloat(bankSlipPriceText));
+					prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bankSlipPriceText));
 				}
 			}
 		}

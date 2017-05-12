@@ -221,7 +221,7 @@ public class BrasilCatralCrawler extends Crawler {
 		// bank slip
 		Float bankSlipPrice = crawlBankSlipPrice(document, jsonSku);
 		if (bankSlipPrice != null) {
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 		}
 
 		// installments

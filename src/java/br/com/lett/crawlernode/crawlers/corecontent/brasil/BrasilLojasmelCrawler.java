@@ -352,7 +352,7 @@ public class BrasilLojasmelCrawler extends Crawler {
 					bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				}
 				
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 
 			Elements cardsElements = doc.select("#ddlCartao option");

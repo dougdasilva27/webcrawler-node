@@ -246,7 +246,7 @@ public class BrasilClimarioCrawler extends Crawler {
 						Float bankSlipDiscountRate = Float.parseFloat(parsedNumbers.get(0)) / 100;
 						Float bestPriceFormated = Float.parseFloat( skuInformationsJson.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
 						bankSlipPrice = bestPriceFormated - (bankSlipDiscountRate * bestPriceFormated);
-						prices.insertBankTicket(bankSlipPrice);
+						prices.setBankTicketPrice(bankSlipPrice);
 					}
 				}
 			}

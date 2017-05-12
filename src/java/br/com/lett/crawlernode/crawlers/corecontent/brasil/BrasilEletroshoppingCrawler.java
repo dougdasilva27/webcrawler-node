@@ -184,7 +184,7 @@ public class BrasilEletroshoppingCrawler extends Crawler {
 					installmentsPriceMap.put(installment, priceInstallment);
 				}
 
-				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.setBankTicketPrice(installmentsPriceMap.get(1));
 				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
 				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
 				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);

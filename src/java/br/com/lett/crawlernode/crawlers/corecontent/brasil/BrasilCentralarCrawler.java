@@ -282,7 +282,7 @@ public class BrasilCentralarCrawler extends Crawler {
 			
 			if(aVista != null){
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();

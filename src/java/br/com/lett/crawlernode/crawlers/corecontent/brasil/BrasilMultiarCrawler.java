@@ -326,7 +326,7 @@ public class BrasilMultiarCrawler extends Crawler {
 				Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 					
 				Float bankTicketPrice = calculateBankTicketPrice(doc, price);
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 				
 				Elements cardsElements = docPrices.select("#ddlCartao option");
 	

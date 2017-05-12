@@ -188,7 +188,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			
 			if(bankSlip != null) {
 				Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlip.text());
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
 			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();

@@ -276,7 +276,7 @@ public class ColombiaCarullaCrawler extends Crawler {
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
 				
-				seller.put("prices", marketplaceMap.get(sellerName).getPricesJson());
+				seller.put("prices", marketplaceMap.get(sellerName).toJSON());
 
 				marketplace.put(seller);
 			}

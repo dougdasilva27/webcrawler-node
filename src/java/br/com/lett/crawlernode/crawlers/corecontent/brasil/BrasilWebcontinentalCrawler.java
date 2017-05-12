@@ -359,7 +359,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
 			if (priceElement != null) {
 				Float bankTicketPrice = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Map<Integer, Float> installmentPriceMap = new HashMap<>();

@@ -278,7 +278,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 		}
 		
 		// insert prices on Price object
-		prices.insertBankTicket(bankTicketPrice);
+		prices.setBankTicketPrice(bankTicketPrice);
 		
 		return prices;
 	}

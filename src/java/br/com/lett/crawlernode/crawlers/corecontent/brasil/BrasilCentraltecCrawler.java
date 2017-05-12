@@ -254,7 +254,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 		}
 		
 		// insert the prices on the Prices object
-		prices.insertBankTicket(bankTicketPrice);
+		prices.setBankTicketPrice(bankTicketPrice);
 		
 		// insert the installments, they are all the same across all the card brands
 		prices.insertCardInstallment(Card.VISA.toString(), installments);

@@ -251,7 +251,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 			Float bankSlipPrice = null;
 			if (skuInformationJson.has("bestPriceFormated") && skuIsAvailable) {
 				bankSlipPrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
 			// installments

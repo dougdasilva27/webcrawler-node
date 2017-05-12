@@ -184,7 +184,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		if(price != null) {
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			prices.insertCardInstallment(Card.SHOP_CARD.toString(), crawlInstallments(price, doc, "01"));
 			prices.insertCardInstallment(Card.VISA.toString(), crawlInstallments(price, doc, "02"));

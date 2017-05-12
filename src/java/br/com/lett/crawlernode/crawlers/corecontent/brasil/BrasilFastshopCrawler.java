@@ -395,7 +395,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
 					// Preço de boleto e 1 vez no cartão são iguais.
 					installmentPriceMap.put(1, offerPrice);
-					prices.insertBankTicket(offerPrice);
+					prices.setBankTicketPrice(offerPrice);
 				}
 
 				if(priceData.has("installmentPrice")){
@@ -434,7 +434,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
 			seller.put("name", mktElement.text().toLowerCase().trim());
 			seller.put("price", price);
-			seller.put("prices", prices.getPricesJson());
+			seller.put("prices", prices.toJSON());
 
 			if (available) {
 				marketplace.put(seller);

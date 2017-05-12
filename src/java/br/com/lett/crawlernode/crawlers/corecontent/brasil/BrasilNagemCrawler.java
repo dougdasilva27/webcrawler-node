@@ -226,7 +226,7 @@ public class BrasilNagemCrawler extends Crawler {
 				String html = jsonPrices.getString("html").replaceAll("\\t", "").replaceAll("\\n", "");
 				Document doc = Jsoup.parse(html);
 
-				prices.insertBankTicket(bankTicketPrice);				
+				prices.setBankTicketPrice(bankTicketPrice);				
 				
 				Elements cardsElements = doc.select("#selDetalheParcelamento" + internalId + " option");
 				

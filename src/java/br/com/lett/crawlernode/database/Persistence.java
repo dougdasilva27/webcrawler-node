@@ -90,7 +90,7 @@ public class Persistence {
 		String internalPid = product.getInternalPid();
 		String name = product.getName();
 		Float price = product.getPrice();
-		JSONObject prices = product.getPrices() == null ? null : product.getPrices().getPricesJson();
+		JSONObject prices = product.getPrices() == null ? null : product.getPrices().toJSON();
 		String cat1 = product.getCategory1();
 		String cat2 = product.getCategory2();
 		String cat3 = product.getCategory3();
@@ -275,7 +275,7 @@ public class Persistence {
 		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
 		Long id;
 
-		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().getPricesJson();
+		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().toJSON();
 
 		Processed processedTable = Tables.PROCESSED;
 

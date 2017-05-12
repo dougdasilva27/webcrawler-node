@@ -233,7 +233,7 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		// bank slip
-		prices.insertBankTicket(crawlBankSlipPrice(skuInformationJson));
+		prices.setBankTicketPrice(crawlBankSlipPrice(skuInformationJson));
 
 		// check for availability
 		boolean skuIsAvailable = false;

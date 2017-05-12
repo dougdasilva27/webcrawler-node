@@ -285,7 +285,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		if(price != null){
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			String url = "https://www.carrefour.com.br/installment/creditCard?productPrice="+ price;
 			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);

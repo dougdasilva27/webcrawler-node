@@ -193,13 +193,13 @@ public class BrasilIbyteCrawler extends Crawler {
 			Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 			
 			if(bankTicketPrice > 0){
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			} else if(installmentPriceMap.size() > 0) {
-				prices.insertBankTicket(installmentPriceMap.get(1));
+				prices.setBankTicketPrice(installmentPriceMap.get(1));
 			}
 			
 		} else if(installmentPriceMap.size() > 0) {
-			prices.insertBankTicket(installmentPriceMap.get(1));
+			prices.setBankTicketPrice(installmentPriceMap.get(1));
 		}
 		
 		return prices;

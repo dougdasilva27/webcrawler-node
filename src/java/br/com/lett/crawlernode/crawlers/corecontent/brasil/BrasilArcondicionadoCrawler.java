@@ -256,7 +256,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		}
 		
 		// insert the prices on the Prices object
-		prices.insertBankTicket(bankTicketPrice);
+		prices.setBankTicketPrice(bankTicketPrice);
 		
 		prices.insertCardInstallment(Card.VISA.toString(), installments);
 		prices.insertCardInstallment(Card.AMEX.toString(), installments);

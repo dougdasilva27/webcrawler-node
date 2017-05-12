@@ -205,7 +205,7 @@ public class BrasilFnacCrawler extends Crawler {
 			installments.put(1, firstInstallmentPrice);
 			
 			// the first installment is also the bank ticket price (boleto bancario)
-			prices.insertBankTicket(firstInstallmentPrice);
+			prices.setBankTicketPrice(firstInstallmentPrice);
 			
 			// the others installments
 			for (int i = 1; i < installmentElements.size(); i++) { // the first one is always the cash price (a vista)

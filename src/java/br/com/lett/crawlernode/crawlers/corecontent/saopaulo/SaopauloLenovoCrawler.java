@@ -226,7 +226,7 @@ public class SaopauloLenovoCrawler extends Crawler {
 
 		if(price != null) {
 			Float bankSlipPrice = price;
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 
 			Map<Integer, Float> installmentsMap = new HashMap<>();
 			installmentsMap.put(1, price);

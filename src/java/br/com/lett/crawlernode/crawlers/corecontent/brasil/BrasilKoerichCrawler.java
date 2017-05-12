@@ -333,7 +333,7 @@ public class BrasilKoerichCrawler extends Crawler {
 
 			Element bank = doc.select("#ltlPrecoWrapper em").first();
 			if(bank != null){
-				prices.insertBankTicket(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+				prices.setBankTicketPrice(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
 			}
 
 			Elements cardsElements = doc.select("#ddlCartao option");

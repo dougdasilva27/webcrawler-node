@@ -208,7 +208,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						JSONObject seller = new JSONObject();
 						seller.put("name", sellerName);
 						seller.put("price", sellerPrice);
-						seller.put("prices", crawlPrices(idForPrice, sellerPrice).getPricesJson());
+						seller.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
 
 						available = false;
 						price = null;
@@ -307,7 +307,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 								JSONObject seller = new JSONObject();
 								seller.put("name", sellerName);
 								seller.put("price", sellerPrice);
-								seller.put("prices", crawlPrices(internalIdsecondPart, sellerPrice).getPricesJson());
+								seller.put("prices", crawlPrices(internalIdsecondPart, sellerPrice).toJSON());
 
 								available = false;
 								price = null;
@@ -395,7 +395,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							JSONObject seller = new JSONObject();
 							seller.put("name", sellerName);
 							seller.put("price", sellerPrice);
-							seller.put("prices", crawlPrices(idForPrice, sellerPrice).getPricesJson());
+							seller.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
 
 							available = false;
 							price = null;
@@ -515,7 +515,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			
 			//preço uma vez no cartão é igual ao do boleto.
 			if(installmentsPriceMap.containsKey(1)){
-				prices.insertBankTicket(installmentsPriceMap.get(1));
+				prices.setBankTicketPrice(installmentsPriceMap.get(1));
 			}
 			
 			prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);

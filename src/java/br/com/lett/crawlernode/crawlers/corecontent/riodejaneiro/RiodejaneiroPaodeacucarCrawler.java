@@ -207,7 +207,7 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);

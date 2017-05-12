@@ -229,7 +229,7 @@ public class BrasilAdiasCrawler extends Crawler {
 		// insert the payment options
 		
 		// bank ticket
-		prices.insertBankTicket(bankTicketPrice);
+		prices.setBankTicketPrice(bankTicketPrice);
 		
 		// all card payment options are the same for all card brands
 		// the available card brands are displayed once we hit the buy button

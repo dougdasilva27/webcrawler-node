@@ -202,7 +202,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 			if(vista != null){
 				Float priceVista = Float.parseFloat(vista.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 				installmentPriceMap.put(1, priceVista);
-				prices.insertBankTicket(priceVista);
+				prices.setBankTicketPrice(priceVista);
 			}
 			
 			// Caso de parcelamento sem juros(Ex: 6x R$94,83)

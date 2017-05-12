@@ -250,7 +250,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		if (isAvailable) {
 
 			Float price = crawlPrice(document);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 
 			if (this.sharedData.cardInstallmentsMap == null) {
 				this.sharedData.cardInstallmentsMap = crawlCardInstallmentsMap(document);

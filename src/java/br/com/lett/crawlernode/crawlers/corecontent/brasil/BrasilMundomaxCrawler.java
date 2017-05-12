@@ -221,7 +221,7 @@ public class BrasilMundomaxCrawler extends Crawler {
 		Element bankSlipPriceElement = document.select(".desconto label").first();
 		if (bankSlipPriceElement != null) {
 			Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
 		// installments

@@ -212,7 +212,7 @@ public class BrasilKalungaCrawler extends Crawler {
 			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
 			
 			// Preço de boleto e 1x no cartao são iguais
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			installmentsPriceMap.put(1, price);
 			
 			Elements installments = doc.select(".line_parcelamento");

@@ -234,7 +234,7 @@ public class BrasilPoloarCrawler extends Crawler {
 				Float bestPrice = MathCommonsMethods.parseFloat(bestPriceElement.text());
 				Float priceWithDiscount = bestPrice - (0.05f * bestPrice);
 				Float bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 		}
 		

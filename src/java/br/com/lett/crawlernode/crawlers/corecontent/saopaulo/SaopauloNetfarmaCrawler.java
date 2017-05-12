@@ -315,7 +315,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			
 			installmentPriceMapAmex.put(1, price);
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);

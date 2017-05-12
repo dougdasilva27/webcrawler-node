@@ -264,7 +264,7 @@ public class BrasilColomboCrawler extends Crawler {
 			
 			if(bankPrice != null){
 				Float bankTicketPrice = Float.parseFloat(bankPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Element installments = doc.select(".parcelas-produto-table").first();

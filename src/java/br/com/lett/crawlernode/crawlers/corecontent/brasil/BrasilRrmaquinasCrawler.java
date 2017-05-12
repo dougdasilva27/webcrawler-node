@@ -268,7 +268,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		// bank slip
 		Float bankSlipPrice = crawlBankSlipPrice(document);
 		if (bankSlipPrice != null) {
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
 		// installments

@@ -244,7 +244,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		}
 		
 		// insert prices on Prices object
-		prices.insertBankTicket(bankTicketPrice);
+		prices.setBankTicketPrice(bankTicketPrice);
 		
 		prices.insertCardInstallment(Card.VISA.toString(), installments);
 		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);

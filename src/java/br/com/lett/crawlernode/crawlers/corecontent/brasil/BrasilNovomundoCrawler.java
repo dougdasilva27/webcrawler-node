@@ -250,7 +250,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 				
 				if(seller.has("IsDefaultSeller")){
 					if(seller.getBoolean("IsDefaultSeller")){
-						partner.put("prices", crawlPrices(internalId, sellerPrice, marketplace, discountBoleto).getPricesJson());
+						partner.put("prices", crawlPrices(internalId, sellerPrice, marketplace, discountBoleto).toJSON());
 					}
 				}
 				
@@ -324,7 +324,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 				Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)));
 				bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Elements installmentsElements = doc.select("#divCredito table tbody");

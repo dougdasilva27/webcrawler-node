@@ -336,7 +336,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 
 			Element installments = doc.select(".parcelamento b").first();
 
@@ -368,7 +368,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 
 			Element installments = doc.select(".parcelamento").first();
 

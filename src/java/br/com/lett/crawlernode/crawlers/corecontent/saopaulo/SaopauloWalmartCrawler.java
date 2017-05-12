@@ -209,7 +209,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				partner.put("name", partnerName);
 				partner.put("price", marketplaceMap.get(partnerName).getBankTicketPrice());
 
-				partner.put("prices", marketplaceMap.get(partnerName).getPricesJson());
+				partner.put("prices", marketplaceMap.get(partnerName).toJSON());
 
 				marketplace.put(partner);
 			}
@@ -338,7 +338,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				if(priceElement != null){
 					Float price = MathCommonsMethods.parseFloat(priceElement.text().trim());
 					installmentPriceMap.put(1, price);
-					prices.insertBankTicket(price);
+					prices.setBankTicketPrice(price);
 				}
 
 				Element installmentElement = e.select(".product-price-installment").first();
@@ -384,7 +384,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 					if(priceElement != null){
 						Float price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 						installmentPriceMap.put(1, price);
-						prices.insertBankTicket(price);
+						prices.setBankTicketPrice(price);
 					}
 
 					Element installmentElement = e.select(".payment-installment-amount").first();
@@ -432,7 +432,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 		if(marketplaces.containsKey("walmart")) {
 			Prices prices = marketplaces.get("walmart");
-			p.insertBankTicket(prices.getBankTicketPrice());		
+			p.setBankTicketPrice(prices.getBankTicketPrice());		
 
 			if(price != null){
 				//preço principal é o mesmo preço de 1x no cartão

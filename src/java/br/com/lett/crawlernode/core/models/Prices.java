@@ -39,7 +39,7 @@ public class Prices {
 	 * 
 	 * @param bankTicketPrice
 	 */
-	public void insertBankTicket(Float bankTicketPrice) {
+	public void setBankTicketPrice(Float bankTicketPrice) {
 		JSONObject bankTicket = new JSONObject();
 		if (bankTicketPrice == null || bankTicketPrice < 0f) {
 			bankTicket.put("1", JSONObject.NULL);
@@ -106,7 +106,7 @@ public class Prices {
 		return null;
 	}
 
-	public JSONObject getPricesJson() {
+	public JSONObject toJSON() {
 		return this.prices;
 	}
 	

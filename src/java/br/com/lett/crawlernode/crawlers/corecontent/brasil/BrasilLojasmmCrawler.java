@@ -261,7 +261,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 			Element bankSlipPriceElement = document.select("#navpa ul.Menupa div.bcaa b").first();
 			if (bankSlipPriceElement != null) {
 				bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 
 			// installments

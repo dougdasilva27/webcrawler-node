@@ -339,7 +339,7 @@ public class Processor {
 		}
 		
 		if (newProcessedProduct.getPrices() != null) {
-			behaviour.put("prices", newProcessedProduct.getPrices().getPricesJson());
+			behaviour.put("prices", newProcessedProduct.getPrices().toJSON());
 		}
 		
 		if(marketplace != null && marketplace.length() > 0) {

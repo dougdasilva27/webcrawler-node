@@ -223,7 +223,7 @@ public class BrasilLebesCrawler extends Crawler {
 		// bank slip
 		Float bankSlipPrice = crawlBankSlipPrice(document, skuInformationJson);
 		if (bankSlipPrice != null) {
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
 		// installments

@@ -228,7 +228,7 @@ public class BrasilKabumCrawler extends Crawler {
 
 		if(priceBoleto != null){
 			Float bankTicket = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-			prices.insertBankTicket(bankTicket);
+			prices.setBankTicketPrice(bankTicket);
 		}
 
 		Elements installmentsPrices = product.select(".ParcelamentoCartao li");

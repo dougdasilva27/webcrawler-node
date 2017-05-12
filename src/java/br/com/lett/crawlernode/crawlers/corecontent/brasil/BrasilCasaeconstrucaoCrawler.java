@@ -313,7 +313,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
 			// Preço principal é o avista (boleto e cartão)
 			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			Element installmentSpecial = doc.select(".monthly-payment span").first();
 			

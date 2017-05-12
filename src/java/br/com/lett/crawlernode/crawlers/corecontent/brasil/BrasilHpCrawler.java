@@ -160,7 +160,7 @@ public class BrasilHpCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName.getKey());
 				seller.put("price", crawlPrice(doc, true));
-				seller.put("prices", sellerName.getValue().getPricesJson());
+				seller.put("prices", sellerName.getValue().toJSON());
 				
 				marketplace.put(seller);
 			}
@@ -200,9 +200,9 @@ public class BrasilHpCrawler extends Crawler {
 			Element discount = doc.select(".price.discount").first();
 			
 			if(discount != null) {
-				prices.insertBankTicket(MathCommonsMethods.parseFloat(discount.text()));
+				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(discount.text()));
 			} else {
-				prices.insertBankTicket(price);
+				prices.setBankTicketPrice(price);
 			}
 
 			Map<Integer, Float> installmentsMap = new HashMap<>();

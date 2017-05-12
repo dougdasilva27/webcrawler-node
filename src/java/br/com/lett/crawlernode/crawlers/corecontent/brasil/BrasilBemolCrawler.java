@@ -198,7 +198,7 @@ public class BrasilBemolCrawler extends Crawler {
 
 		if(price != null){
 
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 
 			try{
 				for(int i = 0; i < jsonPrices.length(); i++) {

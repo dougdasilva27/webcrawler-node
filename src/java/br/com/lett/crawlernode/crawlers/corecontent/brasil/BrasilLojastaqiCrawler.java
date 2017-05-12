@@ -375,7 +375,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 			Element ePrice = doc.select("#detailsSkuId_" + internalId + "  .valor span").first();
 			if(ePrice != null){
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(ePrice.text());
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Map<Integer, Float> installmentPriceMap = new HashMap<>();

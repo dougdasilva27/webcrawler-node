@@ -237,7 +237,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 			// bank slip
 			if (apiSkuInformationResponse.has("Price")) {
 				Float bankSlipPrice = new Float(apiSkuInformationResponse.getDouble("Price"));
-				prices.insertBankTicket(bankSlipPrice);
+				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
 			// installments

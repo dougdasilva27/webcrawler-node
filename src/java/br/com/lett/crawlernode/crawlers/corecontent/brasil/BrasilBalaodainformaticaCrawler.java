@@ -320,7 +320,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 					int discount = Integer.parseInt(bankText.substring(x).replaceAll("[^0-9]", "").trim());
 					
 					Float bankTicket = MathCommonsMethods.normalizeTwoDecimalPlaces((float)(price.doubleValue() - (price.doubleValue() * (discount/100.0))));
-					prices.insertBankTicket(bankTicket);
+					prices.setBankTicketPrice(bankTicket);
 				}
 			}
 			

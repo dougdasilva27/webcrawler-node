@@ -184,7 +184,7 @@ public class BrasilEletrozemaCrawler extends Crawler {
 						
 						if(priceElement != null){
 							Float priceBank = Float.parseFloat(priceElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-							prices.insertBankTicket(priceBank);
+							prices.setBankTicketPrice(priceBank);
 						}
 						
 					} else if(nomeForma.contains("american")){

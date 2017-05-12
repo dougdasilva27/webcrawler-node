@@ -304,7 +304,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			
 			if(vistaPrice != null){
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(vistaPrice.ownText());
-				prices.insertBankTicket(bankTicketPrice);
+				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();

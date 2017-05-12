@@ -292,9 +292,9 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			Element priceBoleto = doc.select(".precoboleto span").first();
 			
 			if(priceBoleto != null) {
-				prices.insertBankTicket(MathCommonsMethods.parseFloat(priceBoleto.text()));
+				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(priceBoleto.text()));
 			} else {
-				prices.insertBankTicket(price);
+				prices.setBankTicketPrice(price);
 			}
 			
 			// 1x card

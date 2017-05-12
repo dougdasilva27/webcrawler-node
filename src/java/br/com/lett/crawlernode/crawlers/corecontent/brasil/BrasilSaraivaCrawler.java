@@ -179,7 +179,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 		if(price != null) {
 			Float bankSlipPrice = price;
-			prices.insertBankTicket(bankSlipPrice);
+			prices.setBankTicketPrice(bankSlipPrice);
 
 			Map<Integer, Float> installments = crawlInstallmentsNormalCard(document);
 			Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(document);

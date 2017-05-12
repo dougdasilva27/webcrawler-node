@@ -541,7 +541,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 				// 1x no cartão e boleto são o mesmo preço
 				installmentPriceMap.put(1, vistaPrice);
-				prices.insertBankTicket(vistaPrice);
+				prices.setBankTicketPrice(vistaPrice);
 			}
 
 			if(jsonPrices.has("parcels")){

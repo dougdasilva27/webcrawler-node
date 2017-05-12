@@ -279,7 +279,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 			
 			installmentPriceMap.put(1, price);
-			prices.insertBankTicket(price);
+			prices.setBankTicketPrice(price);
 			
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
