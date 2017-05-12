@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Product;

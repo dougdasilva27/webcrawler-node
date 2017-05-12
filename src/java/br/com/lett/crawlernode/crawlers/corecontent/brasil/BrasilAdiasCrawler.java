@@ -7,17 +7,16 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.json.JSONArray;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (08/07/2016):

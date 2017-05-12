@@ -17,18 +17,18 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Prices;
 
 /**
  * Date: 03/05/2017
  * 
- * @author Gabriel Dornelas && Samir Leao
+ * @author Gabriel Dornelas
  *
  */
 public class SaopauloWalmartCrawler extends Crawler {
@@ -183,10 +183,10 @@ public class SaopauloWalmartCrawler extends Crawler {
 		Float price = null;
 
 		if (available) {
-			JSONObject prices = marketplaceMap.get("walmart").getRawCardPaymentOptions("visa");
+			Map<Integer, Double> visaCardPaymentOptions = marketplaceMap.get("walmart").getCardPaymentOptions("visa");
 			
-			if(prices.has("1")) {
-				Double priceDouble = marketplaceMap.get("walmart").getRawCardPaymentOptions("visa").getDouble("1");
+			if ( visaCardPaymentOptions.containsKey(1) ) {
+				Double priceDouble = visaCardPaymentOptions.get(1);
 				price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
 			}
 		}

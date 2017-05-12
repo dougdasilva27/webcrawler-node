@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.core.models;
 
 import org.json.JSONArray;
 
+import models.Prices;
+
 public class ProductBuilder {
 	
 	private String 		url;

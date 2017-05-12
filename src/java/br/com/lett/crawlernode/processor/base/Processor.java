@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.Main;
@@ -24,6 +23,9 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import exceptions.MalformedPricesException;
+import models.Prices;
+import models.Util;
 
 public class Processor {
 
@@ -427,6 +429,7 @@ public class Processor {
 	 * @param product
 	 * @param session
 	 * @return the current ProcessedModel stored on database, or null if the product doesn't yet exists on processed table.
+	 * @throws MalformedPricesException 
 	 */
 	public static ProcessedModel fetchPreviousProcessed(Product product, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
@@ -553,8 +556,13 @@ public class Processor {
 						actualPrice = null;
 					}
 					
-					Prices actualPrices = new Prices();
-					actualPrices.setPricesJson(actualPricesJson);
+					Prices actualPrices;
+					try {
+						actualPrices = new Prices(actualPricesJson);
+					} catch (MalformedPricesException e) {
+						Logging.printLogError(logger, Util.getStackTraceString(e));
+						actualPrices = new Prices();
+					}
 
 					actualProcessedProduct = new ProcessedModel(
 							rs.getLong("id"), 

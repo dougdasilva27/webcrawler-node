@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.core.models;
 
+import models.Prices;
+
 public class Behavior {
 	
 	private String date;

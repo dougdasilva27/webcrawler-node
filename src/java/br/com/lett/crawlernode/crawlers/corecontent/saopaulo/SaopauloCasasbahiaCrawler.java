@@ -13,12 +13,12 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Prices;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import models.Prices;
 
 
 /************************************************************************************************************************************************************************************
@@ -91,7 +91,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(doc, session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -637,9 +637,11 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 				JSONObject seller = new JSONObject();
 				seller.put("name", sellerName);
 				
-				if(marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).has("1")){
+				Prices prices = marketplaceMap.get(sellerName);
+				
+				if ( prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1) ) {
 					// Pegando o preço de uma vez no cartão
-					Double price = marketplaceMap.get(sellerName).getRawCardPaymentOptions(Card.VISA.toString()).getDouble("1");
+					Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
 					Float priceFloat = price.floatValue();				
 					
 					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.

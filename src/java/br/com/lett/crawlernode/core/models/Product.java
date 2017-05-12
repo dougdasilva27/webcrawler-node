@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.util.CommonMethods;
+import models.Prices;
 
 public class Product {
 	
