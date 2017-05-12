@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricesException;
+import models.Marketplace;
 import models.Prices;
 import models.Util;
 
@@ -64,7 +65,7 @@ public class Processor {
 		String foto = product.getPrimaryImage();
 		String secondaryPics = product.getSecondaryImages();
 		String description = product.getDescription();
-		JSONArray marketplace = product.getMarketplace();
+		Marketplace marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
 
 		// checking fields
@@ -86,13 +87,15 @@ public class Processor {
 				newProcessedProduct = previousProcessedProduct.clone();
 
 				// update fields with new values
-				if(url != null) {
+				if (url != null) {
 					newProcessedProduct.setUrl(url);
 				}
-				if(stock != null) {
+				
+				if (stock != null) {
 					newProcessedProduct.setStock(stock);
 				}
-				if(marketplace != null && marketplace.length() > 0) {
+				
+				if (marketplace != null && marketplace.size() > 0) {
 					newProcessedProduct.setMarketplace(marketplace);
 				} else {
 					newProcessedProduct.setMarketplace(null);
@@ -248,7 +251,7 @@ public class Processor {
 			Integer stock,
 			boolean available,
 			Float price,
-			JSONArray marketplace,
+			Marketplace marketplace,
 			Session session) {
 		
 		DateTimeFormatter f = DateTimeFormat
@@ -336,7 +339,7 @@ public class Processor {
 		behaviour.put("available", available);
 		behaviour.put("status", newProcessedProduct.getStatus());
 		
-		if(price != null) {
+		if (price != null) {
 			behaviour.put("price", price);
 		}
 		
@@ -344,8 +347,8 @@ public class Processor {
 			behaviour.put("prices", newProcessedProduct.getPrices().toJSON());
 		}
 		
-		if(marketplace != null && marketplace.length() > 0) {
-			behaviour.put("marketplace", marketplace);
+		if (marketplace != null && marketplace.size() > 0) {
+			behaviour.put("marketplace", marketplace.toJSON());
 		}
 		
 		newBehaviorTreeMap.put(nowISO, behaviour);

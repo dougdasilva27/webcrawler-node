@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
@@ -37,7 +38,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( session.getOriginalURL().contains("/produto/") ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -76,7 +77,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-			ArrayList<String> categories = new ArrayList<String>();
+			ArrayList<String> categories = new ArrayList<>();
 
 			Elements categ = doc.select("#miolo .breadCrumbs a");
 
@@ -105,7 +106,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 			if(elementDescriptionTab2 != null) description = description + elementDescriptionTab2.text();
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			// Separando dois caso
 			// Caso 1 - produto não possui variação

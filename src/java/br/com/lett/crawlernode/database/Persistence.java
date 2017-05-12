@@ -20,7 +20,6 @@ import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.Table;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
@@ -53,6 +52,7 @@ import dbmodels.tables.CrawlerOld;
 import dbmodels.tables.CrawlerRanking;
 import dbmodels.tables.Processed;
 import generation.PostgresJSONGsonBinding;
+import models.Marketplace;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
@@ -97,25 +97,12 @@ public class Persistence {
 		String primaryPic = product.getPrimaryImage();
 		String secondaryPics = product.getSecondaryImages();
 		String description = product.getDescription();
-		JSONArray marketplace = product.getMarketplace();
+		Marketplace marketplace = product.getMarketplace();
 		Integer stock = product.getStock();
-
-		// sanitize -- we are supposing JOOQ does this internally
-//		url = sanitizeBeforePersist(url);
-//		name = sanitizeBeforePersist(name);
-//		cat1 = sanitizeBeforePersist(cat1);
-//		cat2 = sanitizeBeforePersist(cat2);
-//		cat3 = sanitizeBeforePersist(cat3);
-//		primaryPic = sanitizeBeforePersist(primaryPic);
-//		secondaryPics = sanitizeBeforePersist(secondaryPics);
-//		description = sanitizeBeforePersist(description);
-//		internalId = sanitizeBeforePersist(internalId);
-//		internalPid = sanitizeBeforePersist(internalPid);
 
 		String marketplaceString = null;
 
-		if(marketplace != null && marketplace.length() > 0) {
-			//marketplaceString = sanitizeBeforePersist(marketplace.toString());
+		if ( marketplace != null && marketplace.size() > 0 ) {
 			marketplaceString = marketplace.toString();
 		}
 
@@ -321,35 +308,30 @@ public class Persistence {
 				}
 
 				if(newProcessedProduct.getChanges() != null){
-					//insertMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString().replace("'","''"));
 					insertMap.put(processedTable.CHANGES, newProcessedProduct.getChanges().toString());
 				} else {
 					insertMap.put(processedTable.CHANGES, null);
 				}
 
 				if(newProcessedProduct.getDigitalContent() != null){
-					//insertMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString().replace("'","''"));
 					insertMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString());
 				} else {
 					insertMap.put(processedTable.DIGITAL_CONTENT, null);
 				}
 
 				if(newProcessedProduct.getMarketplace() != null){
-					//insertMap.put(processedTable.MARKETPLACE, newProcessedProduct.getMarketplace().toString().replace("'","''"));
 					insertMap.put(processedTable.MARKETPLACE, newProcessedProduct.getMarketplace().toString());
 				} else {
 					insertMap.put(processedTable.MARKETPLACE, null);
 				}
 
 				if(newProcessedProduct.getBehaviour() != null){
-					//insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString().replace("'","''"));
 					insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
 				} else {
 					insertMap.put(processedTable.BEHAVIOUR, null);
 				}
 
 				if(newProcessedProduct.getSimilars() != null){
-					//insertMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString().replace("'","''"));
 					insertMap.put(processedTable.SIMILARS, newProcessedProduct.getSimilars().toString());
 				} else {
 					insertMap.put(processedTable.SIMILARS, null);
@@ -414,7 +396,6 @@ public class Persistence {
 				}
 
 				if(newProcessedProduct.getDigitalContent() != null){
-					//updateMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString().replace("'","''") );
 					updateMap.put(processedTable.DIGITAL_CONTENT, newProcessedProduct.getDigitalContent().toString());
 				} else {
 					updateMap.put(processedTable.DIGITAL_CONTENT, null);
@@ -694,15 +675,6 @@ public class Persistence {
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 		}
 	}
-
-
-//	private static String sanitizeBeforePersist(String field) {
-//		if(field == null) {
-//			return null;
-//		} else {
-//			return field.replace("'", "''").trim();
-//		}
-//	}
 
 	/**
 	 * 

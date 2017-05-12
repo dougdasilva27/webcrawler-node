@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -54,7 +55,7 @@ public class MexicoChedrauiCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -70,7 +71,7 @@ public class MexicoChedrauiCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -165,8 +166,8 @@ public class MexicoChedrauiCrawler extends Crawler {
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 

@@ -23,6 +23,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -210,7 +211,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 		String secondaryImages = crawlSecondaryImages(document);
 		Integer stock = null;
 		String description = crawlDescription(document);
-		JSONArray marketplace = null;
+		Marketplace marketplace = new Marketplace();
 		
 		ArrayList<String> categories = crawlCategories(document);
 		String category1 = getCategory(categories, 0);

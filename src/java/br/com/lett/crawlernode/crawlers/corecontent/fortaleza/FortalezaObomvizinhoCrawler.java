@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.fortaleza;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
@@ -11,6 +10,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 
 public class FortalezaObomvizinhoCrawler extends Crawler {
 	
@@ -29,7 +29,7 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -73,7 +73,7 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			Product product = new Product();
 			product.setUrl(session.getOriginalURL());

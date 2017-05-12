@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class FlorianopolisAngeloniCrawler extends Crawler {
@@ -98,7 +99,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 			}
 
 			Integer stock = null;
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 			String description = crawlDescription(doc);
 			Prices prices = crawlPrices(doc, price);
 												

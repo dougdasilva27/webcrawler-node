@@ -27,6 +27,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /************************************************************************************************************************************************************************************
@@ -142,7 +143,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(skuJsonFromCatalogAPI);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = new JSONArray();
+			Marketplace marketplace = new Marketplace();
 			Prices prices = crawlPrices(doc, price);
 
 			// create the product

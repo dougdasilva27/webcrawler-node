@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.core.models;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.util.CommonMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class Product {
@@ -21,7 +21,7 @@ public class Product {
 	private String 		primaryImage;
 	private String 		secondaryImages;
 	private String 		description;
-	private JSONArray 	marketplace;
+	private Marketplace 	marketplace;
 	private Integer 	stock;
 	
 	public Product() {
@@ -131,11 +131,11 @@ public class Product {
 		}
 	}
 	
-	public JSONArray getMarketplace() {
+	public Marketplace getMarketplace() {
 		return marketplace;
 	}
 	
-	public void setMarketplace(JSONArray marketplace) {
+	public void setMarketplace(Marketplace marketplace) {
 		this.marketplace = marketplace;
 	}
 	
@@ -190,7 +190,7 @@ public class Product {
 		sb.append("price: " + this.price + "\n");
 		sb.append("prices: " + (this.prices != null ? this.prices.toString() : null) + "\n");
 		sb.append("available: " + this.available + "\n");
-		sb.append("marketplace: " +  (this.marketplace != null ? this.marketplace.length() : null) + "\n");
+		sb.append("marketplace: " +  (this.marketplace != null ? this.marketplace.size() : null) + "\n");
 		sb.append("category1: " + this.category1 + "\n");
 		sb.append("category2: " + this.category2 + "\n");
 		sb.append("category3: " + this.category3 + "\n");

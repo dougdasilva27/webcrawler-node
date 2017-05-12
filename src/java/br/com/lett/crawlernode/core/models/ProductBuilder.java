@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.models;
 
-import org.json.JSONArray;
-
+import models.Marketplace;
 import models.Prices;
 
 public class ProductBuilder {
@@ -19,7 +18,7 @@ public class ProductBuilder {
 	private String 		primaryImage;
 	private String 		secondaryImages;
 	private String 		description;
-	private JSONArray 	marketplace;
+	private Marketplace 	marketplace;
 	private Integer 	stock;
 	
 	public static ProductBuilder create() {
@@ -90,7 +89,7 @@ public class ProductBuilder {
 		return this;
 	}
 	
-	public ProductBuilder setMarketplace(JSONArray marketplace) {
+	public ProductBuilder setMarketplace(Marketplace marketplace) {
 		this.marketplace = marketplace;
 		return this;
 	}

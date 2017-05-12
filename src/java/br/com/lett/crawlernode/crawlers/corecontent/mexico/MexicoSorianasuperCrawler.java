@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,6 +20,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -95,7 +95,7 @@ public class MexicoSorianasuperCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -195,8 +195,8 @@ public class MexicoSorianasuperCrawler extends Crawler {
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 

@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -67,7 +68,7 @@ public class MexicoSuperamaCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 			
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -162,8 +163,8 @@ public class MexicoSuperamaCrawler extends Crawler {
 		return available;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 

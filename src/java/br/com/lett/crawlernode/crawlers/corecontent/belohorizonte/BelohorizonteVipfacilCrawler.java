@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -12,6 +11,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 
 public class BelohorizonteVipfacilCrawler extends Crawler {
 	
@@ -30,7 +30,7 @@ public class BelohorizonteVipfacilCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -83,7 +83,7 @@ public class BelohorizonteVipfacilCrawler extends Crawler {
 			String description = element_descricao.html();
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			// Estoque
 			Integer stock = null;

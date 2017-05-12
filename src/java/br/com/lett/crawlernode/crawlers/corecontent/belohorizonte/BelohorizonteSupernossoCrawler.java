@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 public class BelohorizonteSupernossoCrawler extends Crawler {
@@ -60,7 +61,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		CategoryCollection categories = crawlCategories(document);
 		String description = crawlDescription(document);
 		Integer stock = null;
-		JSONArray marketplace = crawlMarketplace(document);
+		Marketplace marketplace = crawlMarketplace(document);
 		
 		product.setUrl(session.getOriginalURL());
 		product.setInternalId(internalId);
@@ -146,7 +147,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 				stock = endpointResponse.getInt("stockQuantity");
 			}
 			
-			JSONArray marketplace = new JSONArray();
+			Marketplace marketplace = new Marketplace();
 			
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
@@ -302,8 +303,8 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		return description.toString();
 	}
 	
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 	
 	
