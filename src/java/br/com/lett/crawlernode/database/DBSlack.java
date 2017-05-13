@@ -21,7 +21,7 @@ public class DBSlack {
 	public static void reportErrorRanking(String slack_user, String text, String fields, String keyword, String market, String type) {
 		try {
 			SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
-			SlackMessage message = new SlackMessage("#anomaly-detector", slack_user, "");
+			SlackMessage message = new SlackMessage("#anomaly-ranking", slack_user, "");
 			
 			String textFinal = "\n*"+ type +"*: " + keyword + " *Market*: " + market + 
 					"\n\n" + text + "\n -----------------------------------------------------------------------------------------";
