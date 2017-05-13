@@ -651,57 +651,8 @@ public abstract class CrawlerRanking extends Task {
 		
 		int countToday = this.arrayProducts.size();
 		int countYesterday = yesterdayProcesseds.size();
-		
-		StringBuilder str = new StringBuilder();
-		
-		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
-		str.append("*" + nowISO + "*: " + Integer.toString(countToday) + "\n");
-		str.append("*Variação*: " + Integer.toString(countToday - countYesterday) + "\n");
-		
-		if(countToday < countYesterday && countToday < this.productsLimit ) {
-			if(countToday > 0) {
-				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countToday / (float)countYesterday) * 100f);
-				
-				if(percentage <= 20) {
-					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem."
-							+ "\n\n *Session*: " + session.getSessionId();
-					
-					Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text + "\n" + str.toString());
-					
-					anomalies.put(text, str.toString());
-				} else {
-					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
-				}
-			} else {
-				String text = "*ALERTA* O numero de produtos que o crawler ranking capturou foi menor que ontem, pois hoje *não capturou nada* nessa " + rankType + ". "
-						+ "\n\n *Session*: " + session.getSessionId();
-				
-				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-				
-				anomalies.put(text, str.toString());
-			}
-		} else if(countToday > countYesterday && countYesterday < this.productsLimit) {
-			if(countYesterday > 0) {
-				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countToday / (float)countYesterday) * 100f);
-				
-				if(percentage >= 120) {
-					String text = "O numero de produtos que o crawler ranking capturou foi *" + ( percentage - 100f ) + "%* maior que ontem."
-							+ "\n\n *Session*: " + session.getSessionId();
-					
-					Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-					
-					//anomalies.put(text,  str.toString());
-				} else {
-					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
-				}
-			} else {
-				String text = "O numero de produtos que o crawler ranking capturou foi maior que ontem, pois ontem *não capturou nada* nessa " + rankType + ".";
-				
-				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-				
-				//anomalies.put(text,  str.toString());
-			}
-		} else if(!this.arrayProducts.isEmpty()) {
+	
+		if(countToday > 0 && countYesterday > 0) {
 			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
 		}
 		
@@ -737,7 +688,7 @@ public abstract class CrawlerRanking extends Task {
 		if(countYesterday > countIntersection) {
 			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
 			
-			if(percentage < 20) {
+			if(percentage <= 20) {
 				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
 						+ "\n\n *Session*: " + session.getSessionId();
 				
