@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -644,6 +645,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Seller seller = new Seller(sellerJSON);
 					marketplace.add(seller);
 				} catch (Exception e) {
+					session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					Logging.printLogError(logger, session, Util.getStackTraceString(e));
 				}
 			}

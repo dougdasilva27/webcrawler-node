@@ -23,7 +23,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /**
  * Date: 03/05/2017
@@ -80,7 +83,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 				Map<String, Prices> marketplaceMap = crawlMarketplace(internalId, internalPid, infoDoc);
 				
 				// ARRAY Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 				
 				// Availability
 				boolean available = crawlAvailability(marketplaceMap);
@@ -201,17 +204,22 @@ public class SaopauloWalmartCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
+		Marketplace marketplace = new Marketplace();
 		for (String partnerName : marketplaceMap.keySet()) {
 			if (!partnerName.equals("walmart")) { 
-				JSONObject partner = new JSONObject();
-				partner.put("name", partnerName);
-				partner.put("price", marketplaceMap.get(partnerName).getBankTicketPrice());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", partnerName);
+				sellerJSON.put("price", marketplaceMap.get(partnerName).getBankTicketPrice());
 
-				partner.put("prices", marketplaceMap.get(partnerName).toJSON());
-
-				marketplace.put(partner);
+				sellerJSON.put("prices", marketplaceMap.get(partnerName).toJSON());
+				
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 		

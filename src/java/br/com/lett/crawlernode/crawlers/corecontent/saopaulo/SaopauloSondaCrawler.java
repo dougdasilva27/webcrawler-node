@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -16,6 +15,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class SaopauloSondaCrawler extends Crawler {
@@ -36,7 +36,7 @@ public class SaopauloSondaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -71,18 +71,10 @@ public class SaopauloSondaCrawler extends Crawler {
 			}
 			String secondaryImages = null;
 
-			// Descrição
 			String description = crawlDescription(doc);
-						
-			// Estoque
 			Integer stock = null;
-
-			// Marketplace
-			JSONArray marketplace = null;
-
-			// Prices
+			Marketplace marketplace = new Marketplace();
 			Prices prices = crawlPrices(doc, price);
-			
 			Product product = new Product();
 			
 			product.setUrl(this.session.getOriginalURL());

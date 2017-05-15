@@ -19,7 +19,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 
 /************************************************************************************************************************************************************************************
@@ -144,7 +147,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				Map<String, Prices> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
 
 				// Assemble marketplace from marketplace map
-				JSONArray variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
+				Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 
 				// Available
 				boolean available = this.crawlAvailability(marketplaceMap);
@@ -384,24 +387,29 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return "";
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
+		Marketplace marketplace = new Marketplace();
 
 		for (String sellerName : marketplaceMap.keySet()) {
 			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
-				JSONObject seller = new JSONObject();
-				seller.put("name", sellerName);
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName);
 
 				if (marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
 					// Pegando o preço de uma vez no cartão
 					Double price = marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).get(1);
 					Float priceFloat = price.floatValue();				
 
-					seller.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
+					sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
-				seller.put("prices", marketplaceMap.get(sellerName).toJSON());
-
-				marketplace.put(seller);
+				sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
+				
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 

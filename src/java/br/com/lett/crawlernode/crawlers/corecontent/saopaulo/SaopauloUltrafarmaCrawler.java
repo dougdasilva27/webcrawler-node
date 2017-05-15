@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
@@ -37,7 +38,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -94,7 +95,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
 			JSONArray secondaryImagesArray = new JSONArray();
 			Elements element_fotosecundaria = doc.select(".cont_chama_produtos div img");
-			if(element_fotosecundaria.size()>1){
+			if (element_fotosecundaria.size()>1) {
 				for(int i=1; i<element_fotosecundaria.size();i++){
 					Element e = element_fotosecundaria.get(i);
 					secondaryImagesArray.put(e.attr("src"));
@@ -127,7 +128,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			//Prices
 			Prices prices = crawlPrices(doc, price);

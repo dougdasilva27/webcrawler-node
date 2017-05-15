@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

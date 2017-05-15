@@ -17,13 +17,16 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import exceptions.IllegalSellerValueException;
 import exceptions.MalformedPricesException;
+import exceptions.MalformedSellerException;
 import models.Marketplace;
 import models.Prices;
 import models.Util;
@@ -466,8 +469,7 @@ public class Processor {
 				
 				// TODO hotfix for query
 				// estava falhando aqui
-				// voltei do jeito antigo pra apagar o fogo, estava dando problema na fastshop
-				// averiguar o motivo
+				// voltei do jeito antigo pra apagar o fogo
 				StringBuilder query = new StringBuilder();
 								query.append("SELECT * FROM processed WHERE market = ");
 								query.append(session.getMarket().getNumber());
@@ -527,19 +529,45 @@ public class Processor {
 						behaviour = null;
 					}
 
-					Marketplace actualMarketplace;
-					if(rs.getString("marketplace") != null) {
+					/*
+					 * Creating the marketplace model
+					 * 
+					 * get the JSON representation from database
+					 * if the JSON is null, then an empty model instance is crated
+					 * if any model creating error occurs, an emtpy model is created and
+					 * the error is registered on the session and logged.
+					 */
+					JSONArray actualMarketplaceJSONArray;
+					if (rs.getString("marketplace") != null) {
 						try {
-							actualMarketplace = new JSONArray(rs.getString("marketplace"));
+							actualMarketplaceJSONArray = new JSONArray(rs.getString("marketplace"));
 						} catch (JSONException e) {
-							actualMarketplace = null;
+							actualMarketplaceJSONArray = null;
 						}
 					} else {
-						actualMarketplace = null;
+						actualMarketplaceJSONArray = null;
+					}
+					
+					Marketplace actualMarketplace;
+					try {
+						actualMarketplace = new Marketplace(actualMarketplaceJSONArray);
+					} catch (Exception e) {
+						actualMarketplace = new Marketplace();
+						
+						Logging.printLogError(logger, session, Util.getStackTraceString(e));
+						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					}
 				
+					/*
+					 * Creating the prices model
+					 * 
+					 * get the JSON representation from database
+					 * if the JSON is null, then an empty model instance is crated
+					 * if any model creating error occurs, an emtpy model is created and
+					 * the error is registered on the session and logged.
+					 */
 					JSONObject actualPricesJson;
-					if(rs.getString("prices") != null) {
+					if (rs.getString("prices") != null) {
 						try {
 							actualPricesJson = new JSONObject(rs.getString("prices"));
 						} catch (JSONException e) {
@@ -564,8 +592,14 @@ public class Processor {
 						actualPrices = new Prices(actualPricesJson);
 					} catch (Exception e) {
 						actualPrices = new Prices();
+						
+						Logging.printLogError(logger, session, Util.getStackTraceString(e));
+						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					}
 
+					/*
+					 * Create the Processed model
+					 */
 					actualProcessedProduct = new ProcessedModel(
 							rs.getLong("id"), 
 							rs.getString("internal_id"), 
