@@ -19,7 +19,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (04/08/2016):
@@ -144,7 +147,7 @@ public class BrasilMoblyCrawler extends Crawler {
 					Prices prices = crawlPrices(jsonSku, price);
 					
 					// Marketplace
-					JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
+					Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
 					
 					// Creating the product
 					Product product = new Product();
@@ -195,7 +198,7 @@ public class BrasilMoblyCrawler extends Crawler {
 				Prices prices = crawlPrices(jsonSku, price);
 				
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
+				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, jsonSku);
 
 				// Creating the product
 				Product product = new Product();
@@ -433,17 +436,22 @@ public class BrasilMoblyCrawler extends Crawler {
 		return marketplaces;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, JSONObject jsonSku) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, JSONObject jsonSku) {
+		Marketplace marketplace = new Marketplace();
 		
 		for(String sellerName : marketplaceMap.keySet()){
 			if(!sellerName.equals("mobly")){
-				JSONObject seller = new JSONObject();
-				seller.put("name", sellerName);
-				seller.put("price", marketplaceMap.get(sellerName));
-				seller.put("prices", crawlPrices(jsonSku, marketplaceMap.get(sellerName)).toJSON());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName);
+				sellerJSON.put("price", marketplaceMap.get(sellerName));
+				sellerJSON.put("prices", crawlPrices(jsonSku, marketplaceMap.get(sellerName)).toJSON());
 				
-				marketplace.put(seller);
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 		

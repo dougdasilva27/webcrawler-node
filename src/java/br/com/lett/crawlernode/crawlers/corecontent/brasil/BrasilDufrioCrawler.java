@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /*****************************************************************************************************************************
@@ -76,7 +77,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-			JSONArray marketplace = crawlMarketplace();
+			Marketplace marketplace = crawlMarketplace();
 
 			String productUrl = session.getOriginalURL();
 			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
@@ -97,7 +98,8 @@ public class BrasilDufrioCrawler extends Crawler {
 					.setPrimaryImage(primaryImage)
 					.setSecondaryImages(secondaryImages)
 					.setDescription(description).setStock(stock)
-					.setMarketplace(marketplace).build();
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
@@ -208,8 +210,8 @@ public class BrasilDufrioCrawler extends Crawler {
 		return available;
 	}
 
-	private JSONArray crawlMarketplace() {
-		return new JSONArray();
+	private Marketplace crawlMarketplace() {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

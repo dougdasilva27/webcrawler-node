@@ -19,7 +19,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 public class BrasilNovomundoCrawler extends Crawler {
 
@@ -38,7 +41,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -102,7 +105,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 					int discountBoleto = crawlDiscountBoleto(doc);
 					
 					// marketplace
-					JSONArray marketplace = crawlMarketplace(productInfoJSON, internalId, discountBoleto);
+					Marketplace marketplace = crawlMarketplace(productInfoJSON, internalId, discountBoleto);
 
 					// price
 					Float price = crawlPrice(productInfoJSON);
@@ -147,7 +150,7 @@ public class BrasilNovomundoCrawler extends Crawler {
 					}
 
 					// Prices 
-					Prices prices = crawlPrices(internalId, price, new JSONArray(), discountBoleto);
+					Prices prices = crawlPrices(internalId, price, new Marketplace(), discountBoleto);
 					
 					Product product = new Product();
 
@@ -232,8 +235,9 @@ public class BrasilNovomundoCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray crawlMarketplace(JSONObject productInfoJSON, String internalId, int discountBoleto) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace crawlMarketplace(JSONObject productInfoJSON, String internalId, int discountBoleto) {
+		Marketplace marketplace = new Marketplace();
+		
 		JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
 		
 		for (int i = 0; i < skuSellersInfo.length(); i++) {
@@ -244,17 +248,22 @@ public class BrasilNovomundoCrawler extends Crawler {
 			String sellerId = seller.getString("SellerId");
 			
 			if (!sellerId.equals("1")) {
-				JSONObject partner = new JSONObject();
-				partner.put("name", sellerName);
-				partner.put("price", sellerPrice);
+				JSONObject partnerJSON = new JSONObject();
+				partnerJSON.put("name", sellerName);
+				partnerJSON.put("price", sellerPrice);
 				
 				if(seller.has("IsDefaultSeller")){
 					if(seller.getBoolean("IsDefaultSeller")){
-						partner.put("prices", crawlPrices(internalId, sellerPrice, marketplace, discountBoleto).toJSON());
+						partnerJSON.put("prices", crawlPrices(internalId, sellerPrice, marketplace, discountBoleto).toJSON());
 					}
 				}
 				
-				marketplace.put(partner);
+				try {
+					Seller s = new Seller(partnerJSON);
+					marketplace.add(s);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 
 		}
@@ -310,10 +319,10 @@ public class BrasilNovomundoCrawler extends Crawler {
 		return null;
 	}
 	
-	private Prices crawlPrices(String internalId, Float price, JSONArray marketplace, Integer discountBoleto){
+	private Prices crawlPrices(String internalId, Float price, Marketplace marketplace, Integer discountBoleto){
 		Prices prices = new Prices();
 				
-		if(price != null || marketplace.length() > 0){
+		if (price != null || !marketplace.isEmpty()){
 			String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku=" + internalId + "&d=" + discountBoleto;
 			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 			

@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class BrasilMartinsCrawler extends Crawler {
@@ -76,7 +77,7 @@ public class BrasilMartinsCrawler extends Crawler {
 			Integer stock = null;
 
 			// marketplace
-			JSONArray marketplace = new JSONArray();
+			Marketplace marketplace = new Marketplace();
 
 			Product product = new Product();
 			product.setUrl(session.getOriginalURL());

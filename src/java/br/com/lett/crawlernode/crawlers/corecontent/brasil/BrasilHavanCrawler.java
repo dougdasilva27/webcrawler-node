@@ -21,7 +21,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/07/2016):
@@ -75,7 +78,7 @@ public class BrasilHavanCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -122,7 +125,7 @@ public class BrasilHavanCrawler extends Crawler {
 				Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
 
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 				
 				// Availability
 				boolean available = crawlAvailability(marketplaceMap);
@@ -254,19 +257,24 @@ public class BrasilHavanCrawler extends Crawler {
 		return marketplace;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+		Marketplace marketplace = new Marketplace();
 
 		for (String seller : marketplaceMap.keySet()) {
 			if ( !seller.equals("havan") ) { 
 				Float price = marketplaceMap.get(seller);
 
-				JSONObject partner = new JSONObject();
-				partner.put("name", seller);
-				partner.put("price", price);
-				partner.put("prices", crawlPrices(internalId, price).toJSON());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", seller);
+				sellerJSON.put("price", price);
+				sellerJSON.put("prices", crawlPrices(internalId, price).toJSON());
 
-				marketplace.put(partner);
+				try {
+					Seller s = new Seller(sellerJSON);
+					marketplace.add(s);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 

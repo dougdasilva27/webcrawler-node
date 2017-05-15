@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -80,7 +81,7 @@ public class BrasilPoloarCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -129,7 +130,7 @@ public class BrasilPoloarCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 
 			// Creating the product
 			Product product = new Product();
@@ -277,8 +278,8 @@ public class BrasilPoloarCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

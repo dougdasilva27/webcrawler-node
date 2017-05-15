@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 
 public class BrasilKanuiCrawler extends Crawler {
 
@@ -83,7 +84,7 @@ public class BrasilKanuiCrawler extends Crawler {
 			if(element_descricao_2 != null) description = description + "\n\n" + element_descricao_2.text().replace(".", ".\n").replace("'","").replace("’","").trim();
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			JSONObject json_stock = null;
 			Element element_stock = doc.select("#stock-store").first();

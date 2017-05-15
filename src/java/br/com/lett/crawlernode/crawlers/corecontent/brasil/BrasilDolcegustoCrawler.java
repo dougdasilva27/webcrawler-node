@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 public class BrasilDolcegustoCrawler extends Crawler {
@@ -35,7 +36,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -59,7 +60,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-			ArrayList<String> categories = new ArrayList<String>();
+			ArrayList<String> categories = new ArrayList<>();
 
 			for (Element e : elementsCategories) {
 				if (!e.attr("class").equals("product-back") && !e.attr("class").equals("home")
@@ -116,7 +117,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			Integer stock = null;
 
 			// marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 			
 			// Prices
 			Prices prices = crawlPrices(price);

@@ -27,7 +27,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 public class BrasilCdiscountCrawler extends Crawler {
 
@@ -147,18 +150,23 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		Map<String, Prices> marketplaceMap = crawlMarketplace(document);
 		
-		JSONArray marketplace = new JSONArray();
+		Marketplace marketplace = new Marketplace();
 		
 		if (marketplaceMap.size() > 0) {
-			for(String sellerName : marketplaceMap.keySet()) {
-				JSONObject seller = new JSONObject();
+			for (String sellerName : marketplaceMap.keySet()) {
+				JSONObject sellerJSON = new JSONObject();
 				Float sellerPrice = price;
 				
-				seller.put("name", sellerName);
-				seller.put("price", sellerPrice);
-				seller.put("prices", marketplaceMap.get(sellerName).toJSON());
-
-				marketplace.put(seller);
+				sellerJSON.put("name", sellerName);
+				sellerJSON.put("price", sellerPrice);
+				sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
+				
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 			
 			// if we have a marketplace than the product is unavailable on main market

@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -97,7 +98,7 @@ public class BrasilDellCrawler extends Crawler {
 			String internalPid = crawlInternalPid();
 			boolean available = crawlAvailability(price);
 			Integer stock = null;
-			JSONArray marketplace = assembleMarketplaceFromMap();
+			Marketplace marketplace = assembleMarketplaceFromMap();
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -238,8 +239,8 @@ public class BrasilDellCrawler extends Crawler {
 		return price != null;
 	}
 
-	private JSONArray assembleMarketplaceFromMap() {
-		return new JSONArray();
+	private Marketplace assembleMarketplaceFromMap() {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

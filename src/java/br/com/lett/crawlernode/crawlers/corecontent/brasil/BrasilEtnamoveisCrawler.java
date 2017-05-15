@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -70,7 +71,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -91,7 +92,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 			
 			// Name
 			String name = crawlName(doc);
@@ -236,8 +237,8 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 		return new HashMap<String, Float>();
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		return new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

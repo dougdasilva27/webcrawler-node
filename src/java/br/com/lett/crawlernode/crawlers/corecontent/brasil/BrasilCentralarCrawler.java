@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -111,7 +111,7 @@ public class BrasilCentralarCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 			
 			// Prices 
 			Prices prices = crawlPrices(price, doc);
@@ -216,8 +216,8 @@ public class BrasilCentralarCrawler extends Crawler {
 		return true;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

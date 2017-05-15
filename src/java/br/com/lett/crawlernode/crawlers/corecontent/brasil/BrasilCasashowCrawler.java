@@ -21,7 +21,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (01/08/2016):
@@ -121,7 +124,7 @@ public class BrasilCasashowCrawler extends Crawler {
 				Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
 
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 				
 				// Availability
 				boolean available = crawlAvailability(jsonSku);
@@ -258,17 +261,22 @@ public class BrasilCasashowCrawler extends Crawler {
 		return marketplaces;
 	}
 	
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
-		JSONArray marketplaces = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+		Marketplace marketplaces = new Marketplace();
 		
 		for(String market : marketplaceMap.keySet()){
 			if(!market.equals(SELLER_NAME_LOWER)){
-				JSONObject seller = new JSONObject();
-				seller.put("name", market);
-				seller.put("price", marketplaceMap.get(market));
-				seller.put("prices", crawlPrices(internalId, marketplaceMap.get(market)).toJSON());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", market);
+				sellerJSON.put("price", marketplaceMap.get(market));
+				sellerJSON.put("prices", crawlPrices(internalId, marketplaceMap.get(market)).toJSON());
 				
-				marketplaces.put(seller);
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplaces.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 		

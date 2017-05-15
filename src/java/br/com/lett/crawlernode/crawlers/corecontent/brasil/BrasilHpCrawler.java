@@ -20,7 +20,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /**
  * Date: 15/12/16
@@ -64,7 +67,7 @@ public class BrasilHpCrawler extends Crawler {
 			Integer stock = null;
 			
 			Map<String, Prices> marketplaceMap = crawlMarketplace(doc);
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, doc);
+			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, doc);
 			boolean available = crawlAvailability(marketplaceMap);
 			Float price = crawlPrice(doc, available);
 			Prices prices = crawlPrices(doc, price);
@@ -150,19 +153,24 @@ public class BrasilHpCrawler extends Crawler {
 		return marketplaces;
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, Document doc) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, Document doc) {
+		Marketplace marketplace = new Marketplace();
 
 		String hpSellerName = "hp";
 		
 		for(Entry<String, Prices> sellerName : marketplaceMap.entrySet()) {
 			if ( !sellerName.getKey().equals(hpSellerName) ) {
-				JSONObject seller = new JSONObject();
-				seller.put("name", sellerName.getKey());
-				seller.put("price", crawlPrice(doc, true));
-				seller.put("prices", sellerName.getValue().toJSON());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName.getKey());
+				sellerJSON.put("price", crawlPrice(doc, true));
+				sellerJSON.put("prices", sellerName.getValue().toJSON());
 				
-				marketplace.put(seller);
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 		

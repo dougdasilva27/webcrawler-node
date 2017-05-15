@@ -18,7 +18,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 
 public class BrasilMegamamuteCrawler extends Crawler {
@@ -135,7 +138,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				Float price = crawlPrice(marketplaceMap);
 
 				// Marketplace
-				JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 
 				// Prices
 				Prices prices = crawlPrices(internalId, price);
@@ -210,19 +213,24 @@ public class BrasilMegamamuteCrawler extends Crawler {
 		return marketplaceMap;		
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
-		JSONArray marketplace = new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+		Marketplace marketplace = new Marketplace();
 
 		for (String seller : marketplaceMap.keySet()) {
 			if ( !seller.equals(MAIN_SELLER_LOWER_CASE) ) { 
 				Float price = (float) marketplaceMap.get(seller);
 
-				JSONObject partner = new JSONObject();
-				partner.put("name", seller);
-				partner.put("price", price);
-				partner.put("prices", crawlPrices(internalId, price).toJSON());
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", seller);
+				sellerJSON.put("price", price);
+				sellerJSON.put("prices", crawlPrices(internalId, price).toJSON());
 
-				marketplace.put(partner);
+				try {
+					Seller s = new Seller(sellerJSON);
+					marketplace.add(s);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 

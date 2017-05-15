@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.fortaleza;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

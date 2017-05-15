@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 public class BrasilEfacilCrawler extends Crawler {
@@ -112,7 +113,7 @@ public class BrasilEfacilCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 
 			if (variationSelector == null) { // sem variações
 

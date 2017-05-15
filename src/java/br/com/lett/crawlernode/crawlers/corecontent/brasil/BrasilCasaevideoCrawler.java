@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -71,7 +72,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap();
+			Marketplace marketplace = assembleMarketplaceFromMap();
 
 			// sku data in json
 			JSONArray arraySkus = crawlSkuJsonArray(doc);			
@@ -202,8 +203,8 @@ public class BrasilCasaevideoCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray assembleMarketplaceFromMap() {
-		return new JSONArray();
+	private Marketplace assembleMarketplaceFromMap() {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document doc) {

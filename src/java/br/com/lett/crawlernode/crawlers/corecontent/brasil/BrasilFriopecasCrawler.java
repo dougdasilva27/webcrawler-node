@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -127,7 +128,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = crawlMarketplace(doc);
+			Marketplace marketplace = crawlMarketplace(doc);
 
 			// Prices
 			Prices prices = crawlPrices(internalId, price, doc);
@@ -226,8 +227,8 @@ public class BrasilFriopecasCrawler extends Crawler {
 		return false;
 	}
 
-	private JSONArray crawlMarketplace(Document document) {
-		return new JSONArray();
+	private Marketplace crawlMarketplace(Document document) {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

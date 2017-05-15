@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -125,7 +126,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 			Map<String, Float> marketplaceMap = this.crawlMarketplaces(doc);
 
 			// Assemble marketplace from marketplace map
-			JSONArray marketplaces =  this.assembleMarketplaceFromMap(marketplaceMap);
+			Marketplace marketplaces =  this.assembleMarketplaceFromMap(marketplaceMap);
 
 			// Categories
 			ArrayList<String> categories = this.crawlCategories(doc);
@@ -665,10 +666,8 @@ public class BrasilSipolattiCrawler extends Crawler {
 	}
 
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		JSONArray marketplace = new JSONArray();
-
-		return marketplace;
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+		return new Marketplace();
 	}	
 
 	private Map<String, Float> crawlMarketplaces(Document doc) {

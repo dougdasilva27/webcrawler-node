@@ -20,7 +20,10 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastsh
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 /*************************************************************************************************************************
  * Crawling notes (18/11/2016):
@@ -118,10 +121,10 @@ public class BrasilFastshopCrawler extends Crawler {
 				JSONObject jsonPrices = fetchPrices(internalId, available);
 
 				// Marketplace
-				JSONArray marketplace = crawlMarketPlace(doc, jsonPrices, available);
+				Marketplace marketplace = crawlMarketPlace(doc, jsonPrices, available);
 
 				// boolean
-				boolean availableForFastshop = (available && (marketplace.length() < 1));
+				boolean availableForFastshop = (available && (marketplace.size() < 1));
 
 				// Price
 				Float price = crawlPrice(jsonPrices, availableForFastshop);
@@ -423,21 +426,26 @@ public class BrasilFastshopCrawler extends Crawler {
 		return prices;
 	}
 
-	private JSONArray crawlMarketPlace(Document doc, JSONObject jsonPrices, boolean available){
-		JSONArray marketplace = new JSONArray();
+	private Marketplace crawlMarketPlace(Document doc, JSONObject jsonPrices, boolean available){
+		Marketplace marketplace = new Marketplace();
 
 		Element mktElement = doc.select("span.mktPartnerGreen").first();
 		if (mktElement != null) {
-			JSONObject seller = new JSONObject();
+			JSONObject sellerJSON = new JSONObject();
 			Float price = crawlPrice(jsonPrices, available);
 			Prices prices = crawlPrices(jsonPrices, price);
 
-			seller.put("name", mktElement.text().toLowerCase().trim());
-			seller.put("price", price);
-			seller.put("prices", prices.toJSON());
+			sellerJSON.put("name", mktElement.text().toLowerCase().trim());
+			sellerJSON.put("price", price);
+			sellerJSON.put("prices", prices.toJSON());
 
 			if (available) {
-				marketplace.put(seller);
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, Util.getStackTraceString(e));
+				}
 			}
 		}
 

@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -66,7 +67,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 			String primaryImage = crawlPrimaryImage(doc);
 			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 			Integer stock = null;
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 			String description = crawlDescription(doc);
 
 			// price is not displayed when sku is unavailable

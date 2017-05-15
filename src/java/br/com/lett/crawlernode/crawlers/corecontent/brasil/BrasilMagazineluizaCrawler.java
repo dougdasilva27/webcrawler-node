@@ -18,7 +18,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMagazineluizaCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
+import models.Seller;
+import models.Util;
 
 
 /**
@@ -140,7 +143,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = new JSONArray();
+			Marketplace marketplace = new Marketplace();
 
 			JSONArray skus = new JSONArray();
 			if(skuJsonInfo.has("details")){
@@ -205,16 +208,21 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						Double priceDouble = skuJsonInfo.getDouble("salePrice");
 						Float sellerPrice = priceDouble.floatValue();
 
-						JSONObject seller = new JSONObject();
-						seller.put("name", sellerName);
-						seller.put("price", sellerPrice);
-						seller.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
+						JSONObject sellerJSON = new JSONObject();
+						sellerJSON.put("name", sellerName);
+						sellerJSON.put("price", sellerPrice);
+						sellerJSON.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
 
 						available = false;
 						price = null;
 						prices = new Prices();
 						
-						marketplace.put(seller);
+						try {
+							Seller seller = new Seller(sellerJSON);
+							marketplace.add(seller);
+						} catch (Exception e) {
+							Logging.printLogError(logger, session, Util.getStackTraceString(e));
+						}
 					}
 				}
 				
@@ -304,16 +312,21 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							if (!sellerName.equals("magazine luiza")) {
 								Float sellerPrice = crawlPriceVariation(doc);
 
-								JSONObject seller = new JSONObject();
-								seller.put("name", sellerName);
-								seller.put("price", sellerPrice);
-								seller.put("prices", crawlPrices(internalIdsecondPart, sellerPrice).toJSON());
+								JSONObject sellerJSON = new JSONObject();
+								sellerJSON.put("name", sellerName);
+								sellerJSON.put("price", sellerPrice);
+								sellerJSON.put("prices", crawlPrices(internalIdsecondPart, sellerPrice).toJSON());
 
 								available = false;
 								price = null;
 								prices = new Prices();
 								
-								marketplace.put(seller);
+								try {
+									Seller seller = new Seller(sellerJSON);
+									marketplace.add(seller);
+								} catch (Exception e) {
+									Logging.printLogError(logger, session, Util.getStackTraceString(e));
+								}
 							}
 						}
 						
@@ -392,16 +405,21 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						if (!sellerName.equals("magazine luiza")) {
 							Float sellerPrice = crawlPriceVariation(doc);
 
-							JSONObject seller = new JSONObject();
-							seller.put("name", sellerName);
-							seller.put("price", sellerPrice);
-							seller.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
+							JSONObject sellerJSON = new JSONObject();
+							sellerJSON.put("name", sellerName);
+							sellerJSON.put("price", sellerPrice);
+							sellerJSON.put("prices", crawlPrices(idForPrice, sellerPrice).toJSON());
 
 							available = false;
 							price = null;
 							prices = new Prices();
 							
-							marketplace.put(seller);
+							try {
+								Seller seller = new Seller(sellerJSON);
+								marketplace.add(seller);
+							} catch (Exception e) {
+								Logging.printLogError(logger, session, Util.getStackTraceString(e));
+							}
 						}
 					}
 					

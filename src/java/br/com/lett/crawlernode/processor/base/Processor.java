@@ -29,6 +29,7 @@ import exceptions.MalformedPricesException;
 import exceptions.MalformedSellerException;
 import models.Marketplace;
 import models.Prices;
+import models.Seller;
 import models.Util;
 
 public class Processor {
@@ -505,7 +506,6 @@ public class Processor {
 					} else {
 						changes = null;
 					}
-					
 
 					JSONArray similars;
 					if(rs.getString("similars") != null) {
@@ -530,12 +530,13 @@ public class Processor {
 					}
 
 					/*
-					 * Creating the marketplace model
+					 * Marketplace
 					 * 
 					 * get the JSON representation from database
-					 * if the JSON is null, then an empty model instance is crated
-					 * if any model creating error occurs, an emtpy model is created and
-					 * the error is registered on the session and logged.
+					 * if the JSON is null, then an empty model instance is created.
+					 * Each seller is individually added to the marketplace model, so
+					 * we can analyze for errors in each of one separately and consider
+					 * only those seller that are free of errors.
 					 */
 					JSONArray actualMarketplaceJSONArray;
 					if (rs.getString("marketplace") != null) {
@@ -548,18 +549,10 @@ public class Processor {
 						actualMarketplaceJSONArray = null;
 					}
 					
-					Marketplace actualMarketplace;
-					try {
-						actualMarketplace = new Marketplace(actualMarketplaceJSONArray);
-					} catch (Exception e) {
-						actualMarketplace = new Marketplace();
-						
-						Logging.printLogError(logger, session, Util.getStackTraceString(e));
-						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
-					}
+					Marketplace actualMarketplace = createMarketplace(actualMarketplaceJSONArray, session);
 				
 					/*
-					 * Creating the prices model
+					 * Prices
 					 * 
 					 * get the JSON representation from database
 					 * if the JSON is null, then an empty model instance is crated
@@ -576,16 +569,6 @@ public class Processor {
 					} else {
 						actualPricesJson = null;
 					}
-			
-					Integer actualStock = rs.getInt("stock");
-					if(actualStock == 0) {
-						actualStock = null;
-					}
-					
-					Float actualPrice = rs.getFloat("price"); 
-					if(actualPrice == 0) {
-						actualPrice = null;
-					}
 					
 					Prices actualPrices;
 					try {
@@ -596,6 +579,22 @@ public class Processor {
 						Logging.printLogError(logger, session, Util.getStackTraceString(e));
 						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					}
+			
+					/*
+					 * Stock
+					 */
+					Integer actualStock = rs.getInt("stock");
+					if(actualStock == 0) {
+						actualStock = null;
+					}
+					
+					/*
+					 * Price
+					 */
+					Float actualPrice = rs.getFloat("price"); 
+					if(actualPrice == 0) {
+						actualPrice = null;
+					}					
 
 					/*
 					 * Create the Processed model
@@ -648,6 +647,37 @@ public class Processor {
 		}
 
 		return actualProcessedProduct;
+	}
+	
+	/**
+	 * Get each JSONObject representing a seller from the marketplaceJSONArray
+	 * and creates an instance of Seller model using the corresponding Seller JSON.
+	 * If any error occurs during the creation of one seller, the error is logged and
+	 * this seller is not added to the marketplace model instance.
+	 * 
+	 * @param marketplaceJSONArray
+	 * @param session
+	 * @return
+	 */
+	private static Marketplace createMarketplace(JSONArray marketplaceJSONArray, Session session) {		
+		Marketplace actualMarketplace = new Marketplace();
+		try {
+			if (marketplaceJSONArray != null && marketplaceJSONArray.length() > 0) {
+				for (int i = 0; i < marketplaceJSONArray.length(); i++) {
+					JSONObject sellerJSON = marketplaceJSONArray.getJSONObject(i);
+					try {
+						Seller seller = new Seller(sellerJSON);
+						actualMarketplace.add(seller);
+					} catch (Exception e) {
+						Logging.printLogError(logger, session, Util.getStackTraceString(e));
+					}
+				}
+			}
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, Util.getStackTraceString(e));
+		}
+		
+		return actualMarketplace;
 	}
 
 	private static String sanitizeBeforePersist(String field) {

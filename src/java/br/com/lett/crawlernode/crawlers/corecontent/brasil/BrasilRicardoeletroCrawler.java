@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.Marketplace;
 import models.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
@@ -133,7 +134,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			Integer stock = crawlStock(doc);
 
 			// Marketplace
-			JSONArray marketplace = null;
+			Marketplace marketplace = new Marketplace();
 			
 			// Prices
 			Prices prices = crawlPrices(doc, price);

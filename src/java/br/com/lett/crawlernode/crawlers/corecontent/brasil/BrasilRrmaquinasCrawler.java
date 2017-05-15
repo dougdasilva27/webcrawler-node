@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 
@@ -112,7 +113,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
 
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap(marketplaceMap);
+			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
 			// Sku variations
 			Element skus = doc.select(".product-options").first();
@@ -354,8 +355,8 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		return new HashMap<String, Float>();
 	}
 
-	private JSONArray assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		return new JSONArray();
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {

@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
+import models.Marketplace;
 import models.Prices;
 
 /**
@@ -48,7 +49,7 @@ public class BrasilFnacCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -103,7 +104,7 @@ public class BrasilFnacCrawler extends Crawler {
 			Integer stock = null;
 
 			// marketplace
-			JSONArray marketplace = new JSONArray();
+			Marketplace marketplace = new Marketplace();
 
 			JSONArray skus = fullSkuJson.getJSONArray("skus");
 			

@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import br.com.lett.crawlernode.util.Pair;
+import models.Marketplace;
 import models.Prices;
 
 /************************************************************************************************************************************************************************************
@@ -109,7 +110,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			Integer stock = null;
 
 			// Marketplace
-			JSONArray marketplace = assembleMarketplaceFromMap();
+			Marketplace marketplace = assembleMarketplaceFromMap();
 
 			String productUrl = session.getOriginalURL();
 			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
@@ -217,8 +218,8 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		return true;
 	}
 
-	private JSONArray assembleMarketplaceFromMap() {
-		return new JSONArray();
+	private Marketplace assembleMarketplaceFromMap() {
+		return new Marketplace();
 	}
 
 	private String crawlPrimaryImage(Document document) {
