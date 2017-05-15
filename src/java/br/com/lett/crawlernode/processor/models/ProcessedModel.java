@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import models.Behavior;
 import models.Marketplace;
 import models.Prices;
 
@@ -53,7 +54,7 @@ public class ProcessedModel {
 	private Prices		prices;
 	private Integer 	stock;
 	private JSONObject 	digitalContent;
-	private JSONArray 	behaviour;
+	private Behavior 	behaviour;
 	private Marketplace 	marketplace;
 	private String 		lmt;
 	private String 		ect;
@@ -107,7 +108,7 @@ public class ProcessedModel {
 			Boolean available, 
 			Boolean void_product, 
 			Integer stock, 
-			JSONArray behaviour, 
+			Behavior behaviour, 
 			Marketplace marketplace) {
 		
 		this.id = id;
@@ -317,7 +318,7 @@ public class ProcessedModel {
 				this.prices,
 				(this.digitalContent == null) ? this.digitalContent : new JSONObject(this.digitalContent.toString()), 
 				this.lettId, this.similars, this.available, this.void_product, this.stock, 
-				(this.behaviour == null) ? this.behaviour : new JSONArray(this.behaviour.toString()),
+				(this.behaviour == null) ? this.behaviour : this.behaviour.clone(),
 				(this.marketplace == null) ? this.marketplace : this.marketplace.clone()
 		);
 	}
@@ -663,11 +664,11 @@ public class ProcessedModel {
 		this.similars = similars;
 	}
 
-	public JSONArray getBehaviour() {
+	public Behavior getBehaviour() {
 		return behaviour;
 	}
 
-	public void setBehaviour(JSONArray behaviour) {
+	public void setBehaviour(Behavior behaviour) {
 		this.behaviour = behaviour;
 	}
 

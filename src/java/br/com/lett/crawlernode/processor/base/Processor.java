@@ -2,13 +2,9 @@ package br.com.lett.crawlernode.processor.base;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.List;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,9 +20,9 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-import exceptions.IllegalSellerValueException;
-import exceptions.MalformedPricesException;
-import exceptions.MalformedSellerException;
+
+import models.Behavior;
+import models.BehaviorElement;
 import models.Marketplace;
 import models.Prices;
 import models.Seller;
@@ -85,6 +81,7 @@ public class Processor {
 		try {
 
 			// if the processed model already exists
+			// clone it and update with the current crawled values
 			if (previousProcessedProduct != null) {
 
 				// clone it, creating a new processed model
@@ -160,7 +157,7 @@ public class Processor {
 						false, 
 						false, 
 						stock, 
-						null, 
+						new Behavior(), 		// behavior - will be update in the updateBehavior method just below
 						marketplace);
 			}
 
@@ -239,7 +236,20 @@ public class Processor {
 	}
 
 	/**
-	 * Updates the intra day behavior of the sku.
+	 * Scan means the same as BehaviorElement.
+	 * Updates the intra day behavior of the product.
+	 * When the processed is being created (has just been discovered),
+	 * the current behavior will be empty.
+	 * <br>In this case, this method creates the first behavior element ever for this behavior, which
+	 * is the crawler scanned data that happened just seconds ago. It won't have an
+	 * artificial scan of the first moment of day, because this artificial scan
+	 * is nothing more than the last scan of the previous day. 
+	 * <br>So, if the product has just been discovered, it won't have this.
+	 * On the other side, if the product already exists, then we will only update
+	 * the behavior with the last scan data (add a new behavior element), while preserving
+	 * the other behavior elements, but in this case we also look for the first scan of the day.
+	 * <br>If we can't find it, then we look for the last scan of the previous, and set it
+	 * as the first scan of the current day.
 	 * 
 	 * @param newProcessedProduct
 	 * @param nowISO
@@ -258,131 +268,82 @@ public class Processor {
 			Marketplace marketplace,
 			Session session) {
 		
-		DateTimeFormatter f = DateTimeFormat
-				.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
-				.withZone(DateConstants.timeZone);
+		DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
+		String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		
 		// get the previous behavior object
-		JSONArray oldBehaviour = newProcessedProduct.getBehaviour();
-		if(oldBehaviour == null) {
-			oldBehaviour = new JSONArray();
+		Behavior oldBehaviour;
+		if (newProcessedProduct.getBehaviour() == null) {
+			oldBehaviour = new Behavior();
+		} else {
+			oldBehaviour = newProcessedProduct.getBehaviour().clone();
 		}
-
-		// using a TreeMap to automatically order by the keys
-		Map<String, JSONObject> newBehaviorTreeMap = new TreeMap<>();
-
-		JSONObject lastBehaviorBeforeToday = new JSONObject();
-
-		// Populando newBehaviour
-		DateTime dateTimeNow = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
 		
-		for (int i = 0; i < oldBehaviour.length(); i++) {
+		Behavior newBehavior = new Behavior();
+		
+		// order the old behavior by date asc
+		oldBehaviour.orderByDateAsc();
+		
+		BehaviorElement lastBehaviorBeforeToday = oldBehaviour.getFloor(startOfDay);
 
-			// Adicionando no mapa (para depois ser filtrado)
-			newBehaviorTreeMap.put(oldBehaviour.getJSONObject(i).getString("date"), oldBehaviour.getJSONObject(i));
-
-			// Adicionando primeiro behavior do dia (leitura na hora 00:00:01.000)
-			DateTime currentIterationDateTime = null;
-			DateTime dateTimeLast = null;
-
-			try {
-				currentIterationDateTime = f.parseDateTime(oldBehaviour.getJSONObject(i).getString("date"));
-				if (lastBehaviorBeforeToday.has("date")) {
-					dateTimeLast = f.parseDateTime(lastBehaviorBeforeToday.getString("date"));
-				}
-
-				// Se a data do behavior que estou analisando é anterior à hoje
-				if (currentIterationDateTime.isBefore(dateTimeNow)) {
-
-					// Se o candidato atual a primeiro behavior do dia não existe ou é antes do behavior 
-					// que estou analisando, então atualizo o candidato à primeiro behavior do dia
-					if (dateTimeLast == null || dateTimeLast.isBefore(currentIterationDateTime)) {
-						lastBehaviorBeforeToday = oldBehaviour.getJSONObject(i);
-					}
-				}
-
-			} catch (Exception e) {
-				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-			}
-		}
-
-
-		// Criando behaviour do início de hoje (supostamente)
-		String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
-
+		// Criando behavior do início de hoje (supostamente)
 		if ( lastBehaviorBeforeToday != null && 
-			(!newBehaviorTreeMap.containsKey(startOfDayISO) || !newBehaviorTreeMap.get(startOfDayISO).has("status")) ) {
+			( !oldBehaviour.contains(startOfDayISO) || 
+			  oldBehaviour.get(startOfDayISO).getStatus() == null) ) {
 			
-			JSONObject behaviourStart = lastBehaviorBeforeToday;
-			behaviourStart.put("date", startOfDayISO);
+			BehaviorElement behaviourStart = lastBehaviorBeforeToday.clone();
 			
-			if(!behaviourStart.has("status")) {
-				behaviourStart.put("status", "void");
+			behaviourStart.setDate(startOfDayISO);
+			
+			if (behaviourStart.getStatus() == null) {
+				behaviourStart.setStatus("void");
 			}
 
-			if(behaviourStart.has("price") && behaviourStart.getDouble("price") == 0.0) {
-				behaviourStart.remove("price");
+			if (behaviourStart.getPrice() != null && Double.compare(behaviourStart.getPrice(), 0.0) == 0) {
+				behaviourStart.setPrice(null);
 			}
 			
-			if ( !behaviourStart.has("available") ) {
-				if (behaviourStart.getString("status").equals("available")) {
-					behaviourStart.put("available", true);
+			if ( behaviourStart.getAvailable() == null ) {
+				if ( "available".equals(behaviourStart.getStatus()) ) {
+					behaviourStart.setAvailable(true);
 				} else {
-					behaviourStart.put("available", false);
+					behaviourStart.setAvailable(false);
 				}
 			}
-
-			newBehaviorTreeMap.put(startOfDayISO, behaviourStart);
+			
+			newBehavior.add(behaviourStart); // add the first behavior of this day
 		}
 
-		// Criando behaviour de agora
-		JSONObject behaviour = new JSONObject();
-		
-		behaviour.put("date", nowISO);
-		behaviour.put("stock", stock);
-		behaviour.put("available", available);
-		behaviour.put("status", newProcessedProduct.getStatus());
+		// create behavior element from the last crawler scan
+		BehaviorElement behaviorElement = new BehaviorElement();
+		behaviorElement.setDate(nowISO);
+		behaviorElement.setStock(stock);
+		behaviorElement.setAvailable(available);
+		behaviorElement.setStatus(newProcessedProduct.getStatus());
 		
 		if (price != null) {
-			behaviour.put("price", price);
+			behaviorElement.setPrice(price.doubleValue());
 		}
 		
 		if (newProcessedProduct.getPrices() != null) {
-			behaviour.put("prices", newProcessedProduct.getPrices().toJSON());
+			behaviorElement.setPrices(newProcessedProduct.getPrices());
 		}
 		
 		if (marketplace != null && marketplace.size() > 0) {
-			behaviour.put("marketplace", marketplace.toJSON());
+			behaviorElement.setMarketplace(marketplace);
 		}
 		
-		newBehaviorTreeMap.put(nowISO, behaviour);
-
-		JSONArray newBehaviour = new JSONArray();
-
-		// Criando novo arrray behaviour apenas com as datas de hoje e
-		// mantendo apenas os que tem os campos obrigatórios
-		for(Entry<String, JSONObject> e: newBehaviorTreeMap.entrySet()) {
-			String dateString = e.getKey();
-			DateTime dateTime;
-
-			if(!dateString.contains(".")){
-				dateString = dateString + ".000";
-			}
-
-			try {
-				dateTime = f.parseDateTime(dateString);
-				DateTime beginingOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
-				
-				if( dateTime.isAfter(beginingOfDay) && e.getValue().has("status") ) {
-					newBehaviour.put(e.getValue());
-				}
-
-			} catch (Exception e1) {
-				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e1));
-			}
+		newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
+		
+		// pegando behavior elements apenas com as datas de hoje e
+		// que possuem os campos obrigatorios
+		List<BehaviorElement> filteredBehaviorElements = oldBehaviour.filterAfter(startOfDay);
+		
+		for (BehaviorElement be : filteredBehaviorElements) {
+			newBehavior.add(be);
 		}
 
-		newProcessedProduct.setBehaviour(newBehaviour);
+		newProcessedProduct.setBehaviour(newBehavior);
 	}
 
 	private static void updateStatus(ProcessedModel newProcessedProduct) {
@@ -518,15 +479,33 @@ public class Processor {
 						similars = null;
 					}
 
-					JSONArray behaviour;
-					if(rs.getString("behaviour") != null) {
+					/*
+					 * Behavior
+					 */
+					String behaviorJSONArrayString = rs.getString("behaviour");
+					JSONArray behaviorJSONArray;
+					if (behaviorJSONArrayString != null) {
 						try {
-							behaviour = new JSONArray(rs.getString("behaviour"));
+							behaviorJSONArray = new JSONArray(behaviorJSONArrayString);
 						} catch (JSONException e) {
-							behaviour = null;
+							behaviorJSONArray = null;
 						}
 					} else {
-						behaviour = null;
+						behaviorJSONArray = null;
+					}
+					
+					Behavior behavior = new Behavior();
+					if (behaviorJSONArray != null) {
+						for (int i = 0; i < behaviorJSONArray.length(); i++) {
+							JSONObject behaviorElementJSON = behaviorJSONArray.getJSONObject(i);
+							
+							try {
+								BehaviorElement behaviorElement = new BehaviorElement(behaviorElementJSON);
+								behavior.add(behaviorElement);
+							} catch (Exception e) {
+								Logging.printLogError(logger, session, Util.getStackTraceString(e));
+							}
+						}
 					}
 
 					/*
@@ -634,7 +613,7 @@ public class Processor {
 							rs.getBoolean("available"), 
 							rs.getBoolean("void"), 
 							actualStock, 
-							behaviour, 
+							behavior, 
 							actualMarketplace);
 
 					return actualProcessedProduct;

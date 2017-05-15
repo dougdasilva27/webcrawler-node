@@ -102,7 +102,7 @@ public class Persistence {
 
 		String marketplaceString = null;
 
-		if ( marketplace != null && marketplace.size() > 0 ) {
+		if ( marketplace != null && !marketplace.isEmpty() ) {
 			marketplaceString = marketplace.toString();
 		}
 
