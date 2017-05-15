@@ -342,6 +342,8 @@ public class Processor {
 		for (BehaviorElement be : filteredBehaviorElements) {
 			newBehavior.add(be);
 		}
+		
+		newBehavior.orderByDateAsc();
 
 		newProcessedProduct.setBehaviour(newBehavior);
 	}

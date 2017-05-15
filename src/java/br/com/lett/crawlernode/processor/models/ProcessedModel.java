@@ -691,7 +691,7 @@ public class ProcessedModel {
 	@Override
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder();
-		
+				
 		stringBuilder.append("Processed id: " + this.id + "\n");
 		stringBuilder.append("InternalId: " + this.internalId + "\n");
 		stringBuilder.append("InternalPid: " + this.internalPid + "\n");

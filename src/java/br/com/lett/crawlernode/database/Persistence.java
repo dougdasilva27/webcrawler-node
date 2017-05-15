@@ -53,6 +53,7 @@ import dbmodels.tables.CrawlerRanking;
 import dbmodels.tables.Processed;
 import generation.PostgresJSONGsonBinding;
 import models.Marketplace;
+import models.Prices;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
@@ -262,7 +263,7 @@ public class Persistence {
 		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
 		Long id;
 
-		JSONObject prices = newProcessedProduct.getPrices() == null ? null : newProcessedProduct.getPrices().toJSON();
+		Prices prices = newProcessedProduct.getPrices();		
 
 		Processed processedTable = Tables.PROCESSED;
 
@@ -302,7 +303,7 @@ public class Persistence {
 				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondary_pics());
 
 				if (prices != null) {
-					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
+					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));
 				} else {
 					insertMap.put(processedTable.PRICES, null);
 				}
@@ -384,7 +385,7 @@ public class Persistence {
 				updateMap.put(processedTable.SECONDARY_PICS, 		newProcessedProduct.getSecondary_pics());
 
 				if (prices != null) {
-					updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
+					updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));
 				} else {
 					updateMap.put(processedTable.PRICES, null);
 				}
