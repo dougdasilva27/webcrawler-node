@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +20,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class RiodejaneiroZonasulCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.zonasulatende.com.br/";
+	private final String HOME_PAGE = "https://www.zonasul.com.br/";
 
 	public RiodejaneiroZonasulCrawler(Session session) {
 		super(session);
@@ -37,7 +36,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -167,7 +166,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return url.startsWith("http://www.zonasulatende.com.br/Produto/");
+		return url.startsWith("https://www.zonasul.com.br/Produto/") || url.startsWith("http://www.zonasulatende.com.br/Produto/");
 	}
 	
 	private String crawlPrimaryImage(Document doc) {

@@ -24,7 +24,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 		// Neste market precisa de um código da busca e um código da keyword.
 		if(this.currentPage == 1){
 			//monta a url com a keyword e a página
-			String url = "http://www.zonasulatende.com.br/WebForms/Lista-Facetada.aspx?BuscaPor="+this.keywordEncoded;
+			String url = "https://www.zonasul.com.br/WebForms/Lista-Facetada.aspx?BuscaPor="+this.keywordEncoded;
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
