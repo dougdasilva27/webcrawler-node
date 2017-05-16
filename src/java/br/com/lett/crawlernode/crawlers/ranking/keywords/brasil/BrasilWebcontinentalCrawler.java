@@ -20,6 +20,8 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
+		//https://www.webcontinental.com.br/ccstoreui/v1/search?Ntt=lg&No=0&Nrpp=24
+		//&visitorId=1311WAa4I7-AzQ3Kjl1bI9L__SgrZLzmea82d1NdWqk3mqUCE76&visitId=-4a2b143f%3A15c11174874%3A132-129.80.155.73&language=pt_BR&searchType=simple
 		String url = "http://www.webcontinental.com.br/busca/" + this.keywordEncoded + "/page="+this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 			
