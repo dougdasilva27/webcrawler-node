@@ -30,11 +30,11 @@ import br.com.lett.crawlernode.processor.digitalcontent.Pic;
 import br.com.lett.crawlernode.processor.extractors.ExtractorFlorianopolisAngeloni;
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import models.Processed;
 
 
 /**
@@ -291,7 +291,7 @@ public class ResultManager {
 	 * @param cm Recebe valores do Crawler e os transfere para o ProcessModel
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
-	public ProcessedModel processProduct(ProcessedModel pm, Session session) {	
+	public Processed processProduct(Processed pm, Session session) {	
 		Logging.printLogDebug(logger, session, "Processing product in ResultManager...");
 
 		// preventing extra field to be null
@@ -337,7 +337,7 @@ public class ResultManager {
 	 * @param pm
 	 * @param session
 	 */
-	private void updateDigitalContent(ProcessedModel pm, Session session) {  
+	private void updateDigitalContent(Processed pm, Session session) {  
 		Logging.printLogDebug(logger, session, "Updating digital content...");
 
 		// if the processed model doesn't have a digital content

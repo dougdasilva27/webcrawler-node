@@ -4,12 +4,6 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
-import models.Marketplace;
-
 public class ProcessedModelSanitizer {
 	
 	/**

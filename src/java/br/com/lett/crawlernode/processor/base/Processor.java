@@ -8,6 +8,7 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,16 +17,19 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
+
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+
 import exceptions.IllegalBehaviorElementValueException;
+
 import models.Behavior;
 import models.BehaviorElement;
 import models.BehaviorElement.BehaviorElementBuilder;
 import models.Marketplace;
 import models.Prices;
+import models.Processed;
 import models.Seller;
 import models.Util;
 
@@ -40,17 +44,17 @@ public class Processor {
 	 * @param session
 	 * @return a new ProcessedModel or null in case the Product model has invalid informations
 	 */
-	public static ProcessedModel createProcessed(
+	public static Processed createProcessed(
 			Product product, 
 			Session session, 
-			ProcessedModel previousProcessedProduct, 
+			Processed previousProcessedProduct, 
 			ResultManager processorResultManager) {
 
 		Logging.printLogDebug(logger, session, "Creating processed product...");
 
 		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		ProcessedModel newProcessedProduct = null;
+		Processed newProcessedProduct = null;
 
 		// get crawled information
 		boolean available = product.getAvailable();
@@ -111,7 +115,7 @@ public class Processor {
 				newProcessedProduct.setCat2(cat2);
 				newProcessedProduct.setCat3(cat3);
 
-				newProcessedProduct.setSecondary_pics(secondaryPics);
+				newProcessedProduct.setSecondaryImages(secondaryPics);
 				newProcessedProduct.setCat1(cat1);
 				newProcessedProduct.setCat2(cat2);
 				newProcessedProduct.setCat3(cat3);
@@ -123,7 +127,7 @@ public class Processor {
 
 			// if the product doesn't exists yet, then we must create a new processed model
 			if(newProcessedProduct == null) {
-				newProcessedProduct = new ProcessedModel(
+				newProcessedProduct = new Processed(
 						null, 
 						internalId, 
 						internalPid, 
@@ -261,7 +265,7 @@ public class Processor {
 	 * @param session
 	 */
 	private static void updateBehavior(
-			ProcessedModel newProcessedProduct,
+			Processed newProcessedProduct,
 			String nowISO,
 			Integer stock,
 			boolean available,
@@ -403,7 +407,7 @@ public class Processor {
 		return builder.build();
 	}
 
-	private static void updateStatus(ProcessedModel newProcessedProduct) {
+	private static void updateStatus(Processed newProcessedProduct) {
 		String newStatus = "available";
 		if(!newProcessedProduct.getAvailable()) {
 			if(newProcessedProduct.getMarketplace() != null && newProcessedProduct.getMarketplace().size() > 0) {
@@ -416,18 +420,18 @@ public class Processor {
 	}
 
 	private static void updateChanges(
-			ProcessedModel newProcessedProduct,
-			ProcessedModel previousProcessedProduct,
+			Processed newProcessedProduct,
+			Processed previousProcessedProduct,
 			Session session) {
 
 		// detect and register changes
 		// an instance of mongo panel must be passed, so we can schedule url to take screenshot
-		newProcessedProduct.registerChanges(previousProcessedProduct, session);
+		newProcessedProduct.registerChanges(previousProcessedProduct);
 	}
 
 	private static void updateLMS(
-			ProcessedModel newProcessedProduct, 
-			ProcessedModel previousProcessedProduct,
+			Processed newProcessedProduct, 
+			Processed previousProcessedProduct,
 			String nowISO) {
 
 		// get previous status to verify change
@@ -442,7 +446,7 @@ public class Processor {
 		}
 	}
 
-	private static void updateLMT(ProcessedModel newProcessedProduct, String nowISO) {
+	private static void updateLMT(Processed newProcessedProduct, String nowISO) {
 		if(newProcessedProduct.getChanges() != null && (newProcessedProduct.getChanges().has("pic") || newProcessedProduct.getChanges().has("originals"))) {
 			newProcessedProduct.setLmt(nowISO);
 		}
@@ -456,10 +460,10 @@ public class Processor {
 	 * @return the current ProcessedModel stored on database, or null if the product doesn't yet exists on processed table.
 	 * @throws MalformedPricesException 
 	 */
-	public static ProcessedModel fetchPreviousProcessed(Product product, Session session) {
+	public static Processed fetchPreviousProcessed(Product product, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
 
-		ProcessedModel actualProcessedProduct = null;
+		Processed actualProcessedProduct = null;
 
 		/*
 		 * If we are running a test for new crawlers, it may occur cases where the internalId
@@ -635,7 +639,7 @@ public class Processor {
 					/*
 					 * Create the Processed model
 					 */
-					actualProcessedProduct = new ProcessedModel(
+					actualProcessedProduct = new Processed(
 							rs.getLong("id"), 
 							rs.getString("internal_id"), 
 							rs.getString("internal_pid"), 

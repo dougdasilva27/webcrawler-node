@@ -7,8 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.processor.base.Extractor;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
+import models.Processed;
 
 public class ExtractorFlorianopolisAngeloni extends Extractor {
 	
@@ -25,7 +25,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	 * @category Manipulação
 	 */
 	@Override
-	public ProcessedModel extract(ProcessedModel pm) {
+	public Processed extract(Processed pm) {
 		super.extract(pm);
 		
 		// Higienizar
@@ -55,7 +55,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	 * @param pm objeto da classe ProcessedModel que contém as informações ja processadas.
 	 * @author julinha
 	 */
-	public void preSanitize(ProcessedModel pm) {
+	public void preSanitize(Processed pm) {
 		
 		//Chamando o método original
 		super.preSanitize(pm);
@@ -75,7 +75,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	 * @param pm - objeto da classe ProcessedModel
 	 */
 	@Override
-	public void extractClass(ProcessedModel pm) {
+	public void extractClass(Processed pm) {
 		
 		//Chamando o método original
 		super.extractClass(pm);
@@ -93,7 +93,7 @@ public class ExtractorFlorianopolisAngeloni extends Extractor {
 	 * @param pm objeto da classe ProcessedModel 
 	 */
 	@Override
-	public void extractUnitAndQuantity(ProcessedModel pm) {
+	public void extractUnitAndQuantity(Processed pm) {
 		
 		//Chamando o método original
 		super.extractUnitAndQuantity(pm);

@@ -7,9 +7,6 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.imageio.ImageIO;
 
 import org.json.JSONArray;
@@ -25,8 +22,8 @@ import br.com.lett.crawlernode.core.imgprocessing.ImageComparator;
 import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
+import models.Processed;
 
 
 public class DigitalContentAnalyser {
@@ -50,7 +47,7 @@ public class DigitalContentAnalyser {
 	 * @param pm
 	 * @return
 	 */
-	public static int imageCount(ProcessedModel pm) {
+	public static int imageCount(Processed pm) {
 		Integer picCount = 0;
 
 		if(pm.getPic() != null && !pm.getPic().isEmpty()) {
@@ -58,7 +55,7 @@ public class DigitalContentAnalyser {
 		}
 
 		try {
-			JSONArray secondaryPics = new JSONArray(pm.getSecondary_pics());
+			JSONArray secondaryPics = new JSONArray(pm.getSecondaryImages());
 
 			return picCount = picCount + secondaryPics.length();
 		} catch (Exception e) { 

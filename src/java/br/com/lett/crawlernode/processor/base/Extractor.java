@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.processor.models.BrandModel;
 import br.com.lett.crawlernode.processor.models.ClassModel;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.Logging;
+import models.Processed;
 
 /**
  * Classe Extratora pai de todas as classes extratoras de todos os supermercados
@@ -69,7 +69,7 @@ public abstract class Extractor {
 	 * @param processedModel
 	 * @return processedModel
 	 */
-	public ProcessedModel extract(ProcessedModel processedModel) {
+	public Processed extract(Processed processedModel) {
 		processedModel.setExtra(processedModel.getOriginalName());
 		return processedModel;
 	}
@@ -80,7 +80,7 @@ public abstract class Extractor {
 	 * @author Doug
 	 * @param pm - ProcessModel à ser padronizado/hizienizado
 	 */
-	public void preSanitize(ProcessedModel pm) {
+	public void preSanitize(Processed pm) {
 		
 		// Higieniza o nome do CrawlerModel
 		String sanitizedName = pm.getOriginalName();
@@ -247,7 +247,7 @@ public abstract class Extractor {
 	 * @param pm -ProcessModel que contém a marca à ser extraída
 	 * @category Manipulação
 	 */
-	public void extractBrand(ProcessedModel pm) {
+	public void extractBrand(Processed pm) {
 
 		try {
 			if (logActivated) Logging.printLogInfo(logger, "\n---> Extracting brand...");
@@ -331,7 +331,7 @@ public abstract class Extractor {
 	 * @param pm - ProcessModel que contém a classe à ser extraída
 	 * @category Manipulação
 	 */
-	public void extractClass(ProcessedModel pm) {
+	public void extractClass(Processed pm) {
 		try {
 			if (logActivated) System.out.println("\n---> Extracting class...");
 			
@@ -345,7 +345,7 @@ public abstract class Extractor {
 				if (i > 0) {
 					// Classe do produto é tudo antes da marca
 					int indexOfBrand = normalizedName.indexOf(normalizedBrand);
-					pm.set_class(pm.getSanitizedName().substring(0, indexOfBrand).trim());
+					pm.setProcessedClass(pm.getSanitizedName().substring(0, indexOfBrand).trim());
 					
 					// No momento extra é tudo além de marca e classe
 					pm.setExtra(pm.getSanitizedName().substring(indexOfBrand + pm.getBrand().length(), pm.getSanitizedName().length()).trim());
@@ -355,7 +355,7 @@ public abstract class Extractor {
 			} else {
 				
 				// se não encontrar a marca, colocaremos temporariamente no class
-				pm.set_class(pm.getSanitizedName().trim());
+				pm.setProcessedClass(pm.getSanitizedName().trim());
 				
 				// classe ainda em construção para alertar a falta de marca 
 				if (logActivated) Logging.printLogDebug(logger, pm.getOriginalName());
@@ -379,7 +379,7 @@ public abstract class Extractor {
 				// Início
 				Pattern pattern = Pattern.compile("^" + Pattern.quote(classModel.getLettName().trim()) + "(\\s|$)"); // Espaço depois ou no final
 				
-			    Matcher matcher = pattern.matcher(pm.get_class());
+			    Matcher matcher = pattern.matcher(pm.getProcessedClass());
 			    
 			    // Corrige as ocorrências do segundo caso de abrevição de classe
 			    if(classModel.getLettName().length() > currentSizeClass){
@@ -388,15 +388,15 @@ public abstract class Extractor {
 				    	
 				    	currentSizeClass = classModel.getLettName().length();
 				    	
-				    	if (logActivated) Logging.printLogDebug(logger, "-- Found CLASS: " + classModel.getLettName() + "\n    '" + pm.get_class() + "' -> '");
+				    	if (logActivated) Logging.printLogDebug(logger, "-- Found CLASS: " + classModel.getLettName() + "\n    '" + pm.getProcessedClass() + "' -> '");
 				    	
-				    	String prependToExtra = pm.get_class().substring(matcher.end(), pm.get_class().length());
+				    	String prependToExtra = pm.getProcessedClass().substring(matcher.end(), pm.getProcessedClass().length());
 				    	
 				    	// Atualizando class...
 				    	newClass = classModel.getLettName();
 				    	newExtra = prependToExtra + " " + pm.getExtra();
 				    	
-				    	if (logActivated) Logging.printLogDebug(logger, pm.get_class() + "'");
+				    	if (logActivated) Logging.printLogDebug(logger, pm.getProcessedClass() + "'");
 				    	
 				    	found = true;
 					    
@@ -406,7 +406,7 @@ public abstract class Extractor {
 			
 			// Caso não encontre classe todo conteúdo irá para o extra
 			if(!found) {
-				newExtra = pm.get_class() + " " + pm.getExtra();
+				newExtra = pm.getProcessedClass() + " " + pm.getExtra();
 				newClass = "";
 			}
 			
@@ -417,7 +417,7 @@ public abstract class Extractor {
 		    newClass = newClass.trim();
 		    
 		    // Determina o extra e a classe
-		    pm.set_class(newClass);
+		    pm.setProcessedClass(newClass);
 		    pm.setExtra(newExtra);
 				
 		} catch (Exception e) {
@@ -431,7 +431,7 @@ public abstract class Extractor {
 	 * @param pm - ProcessModel que contém o recipiente à ser extraída
 	 * @author Doug
 	 */
-	public void extractRecipient(ProcessedModel pm) {
+	public void extractRecipient(Processed pm) {
 		try {
 			if (logActivated) Logging.printLogDebug(logger, "\n---> Extracting recipient...");
 			
@@ -468,7 +468,7 @@ public abstract class Extractor {
 	 * @param pm - ProcessModel que contém o fator de multiplicação à ser extraída
 	 * @category Manipulação
 	 */
-	public void extractMultiplier(ProcessedModel pm) {
+	public void extractMultiplier(Processed pm) {
 		try {
 			if (logActivated) Logging.printLogInfo(logger, "\n---> Extracting multiplier...");
 			
@@ -609,7 +609,7 @@ public abstract class Extractor {
 	 * @author Doug
 	 * @param pm - ProcessModel que contém a unidade e quantidade à ser extraída
 	 */	
-	public void extractUnitAndQuantity(ProcessedModel pm) {
+	public void extractUnitAndQuantity(Processed pm) {
 		try {
 			if (logActivated) Logging.printLogInfo(logger, "\n---> Extracting unit and quantity...");
 			
@@ -678,7 +678,7 @@ public abstract class Extractor {
 	 * @param pm - ProcessModel que contém o extra
 	 * @category Manipulação
 	 */	
-	public void sanitizeExtra(ProcessedModel pm) {
+	public void sanitizeExtra(Processed pm) {
 		try {
 			if (logActivated) Logging.printLogInfo(logger, "\n---> Sanitizing extra...");
 			

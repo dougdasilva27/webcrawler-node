@@ -40,7 +40,6 @@ import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
@@ -50,10 +49,12 @@ import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerOld;
 import dbmodels.tables.CrawlerRanking;
-import dbmodels.tables.Processed;
+
 import generation.PostgresJSONGsonBinding;
+
 import models.Marketplace;
 import models.Prices;
+import models.Processed;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
@@ -225,7 +226,7 @@ public class Persistence {
 
 
 	public static void updateRating(RatingsReviews ratingReviews, Session session) {
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
 
@@ -257,7 +258,7 @@ public class Persistence {
 	 * @param session
 	 * @return
 	 */
-	public static PersistenceResult persistProcessedProduct(ProcessedModel newProcessedProduct, Session session) {
+	public static PersistenceResult persistProcessedProduct(Processed newProcessedProduct, Session session) {
 		Logging.printLogDebug(logger, session, "Persisting processed product...");
 
 		PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
@@ -265,7 +266,7 @@ public class Persistence {
 
 		Prices prices = newProcessedProduct.getPrices();		
 
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		try {
 			if(newProcessedProduct.getId() == null) {
@@ -276,7 +277,7 @@ public class Persistence {
 				insertMap.put(processedTable.INTERNAL_ID, 			newProcessedProduct.getInternalId());
 				insertMap.put(processedTable.INTERNAL_PID, 			newProcessedProduct.getInternalPid());
 				insertMap.put(processedTable.ORIGINAL_NAME, 		newProcessedProduct.getOriginalName());
-				insertMap.put(processedTable.CLASS, 				newProcessedProduct.get_class());
+				insertMap.put(processedTable.CLASS, 				newProcessedProduct.getProcessedClass());
 				insertMap.put(processedTable.BRAND, 				newProcessedProduct.getBrand());
 				insertMap.put(processedTable.RECIPIENT, 			newProcessedProduct.getRecipient());
 				insertMap.put(processedTable.QUANTITY, 				newProcessedProduct.getQuantity());
@@ -300,7 +301,7 @@ public class Persistence {
 				insertMap.put(processedTable.ORIGINAL_DESCRIPTION, 	newProcessedProduct.getOriginalDescription());
 				insertMap.put(processedTable.PRICE, 				newProcessedProduct.getPrice());
 				insertMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
-				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondary_pics());
+				insertMap.put(processedTable.SECONDARY_PICS,		newProcessedProduct.getSecondaryImages());
 
 				if (prices != null) {
 					insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));
@@ -358,7 +359,7 @@ public class Persistence {
 				updateMap.put(processedTable.INTERNAL_ID, 			newProcessedProduct.getInternalId());
 				updateMap.put(processedTable.INTERNAL_PID, 			newProcessedProduct.getInternalPid());
 				updateMap.put(processedTable.ORIGINAL_NAME, 		newProcessedProduct.getOriginalName());
-				updateMap.put(processedTable.CLASS, 				newProcessedProduct.get_class());
+				updateMap.put(processedTable.CLASS, 				newProcessedProduct.getProcessedClass());
 				updateMap.put(processedTable.BRAND, 				newProcessedProduct.getBrand());
 				updateMap.put(processedTable.RECIPIENT,				newProcessedProduct.getRecipient());
 				updateMap.put(processedTable.QUANTITY, 				newProcessedProduct.getQuantity());
@@ -382,7 +383,7 @@ public class Persistence {
 				updateMap.put(processedTable.ORIGINAL_DESCRIPTION, 	newProcessedProduct.getOriginalDescription());
 				updateMap.put(processedTable.PRICE, 				newProcessedProduct.getPrice());
 				updateMap.put(processedTable.STOCK, 				newProcessedProduct.getStock());
-				updateMap.put(processedTable.SECONDARY_PICS, 		newProcessedProduct.getSecondary_pics());
+				updateMap.put(processedTable.SECONDARY_PICS, 		newProcessedProduct.getSecondaryImages());
 
 				if (prices != null) {
 					updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));
@@ -454,7 +455,7 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void setProcessedVoidTrue(Session session) {
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
 
@@ -487,7 +488,7 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void updateProcessedLRT(String nowISO, Session session) {
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
 		updateSets.put(processedTable.LRT, nowISO);
@@ -514,7 +515,7 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void updateProcessedLMT(String nowISO, Session session) {
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
 		updateSets.put(processedTable.LMT, nowISO);
@@ -542,7 +543,7 @@ public class Persistence {
 	 * @param session
 	 */
 	public static void updateProcessedLMS(String nowISO, Session session) {
-		Processed processedTable = Tables.PROCESSED;
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
 		Map<Field<?>, Object> updateSets = new HashMap<>();
 		updateSets.put(processedTable.LMS, nowISO);
@@ -778,7 +779,7 @@ public class Persistence {
 		List<Long> processedIds = new ArrayList<> ();
 
 		try {
-			Processed processed = Tables.PROCESSED;
+			dbmodels.tables.Processed processed = Tables.PROCESSED;
 			
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
@@ -806,7 +807,7 @@ public class Persistence {
 		List<Long> processedIds = new ArrayList<> ();
 
 		try {
-			Processed processed = Tables.PROCESSED;
+			dbmodels.tables.Processed processed = Tables.PROCESSED;
 
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
@@ -833,7 +834,7 @@ public class Persistence {
 		List<Long> processedIds = new ArrayList<>();
 
 		try {
-			Processed processed = Tables.PROCESSED;
+			dbmodels.tables.Processed processed = Tables.PROCESSED;
 
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
