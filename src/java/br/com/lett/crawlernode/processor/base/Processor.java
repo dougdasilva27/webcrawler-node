@@ -463,7 +463,7 @@ public class Processor {
 	public static Processed fetchPreviousProcessed(Product product, Session session) {
 		Logging.printLogDebug(logger, session, "Fetching previous processed product...");
 
-		Processed actualProcessedProduct = null;
+		Processed actualProcessedProduct;
 
 		/*
 		 * If we are running a test for new crawlers, it may occur cases where the internalId
@@ -686,7 +686,7 @@ public class Processor {
 			}
 		}
 
-		return actualProcessedProduct;
+		return null;
 	}
 
 	/**
