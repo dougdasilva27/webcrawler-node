@@ -315,23 +315,7 @@ public class Processor {
 		}
 
 		// create behavior element from the last crawler scan
-		BehaviorElement behaviorElement = new BehaviorElement();
-		behaviorElement.setDate(nowISO);
-		behaviorElement.setStock(stock);
-		behaviorElement.setAvailable(available);
-		behaviorElement.setStatus(newProcessedProduct.getStatus());
-		
-		if (price != null) {
-			behaviorElement.setPrice(price.doubleValue());
-		}
-		
-		if (newProcessedProduct.getPrices() != null) {
-			behaviorElement.setPrices(newProcessedProduct.getPrices());
-		}
-		
-		if (marketplace != null && marketplace.size() > 0) {
-			behaviorElement.setMarketplace(marketplace);
-		}
+		BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
 		
 		newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
 		
@@ -346,6 +330,35 @@ public class Processor {
 		newBehavior.orderByDateAsc();
 
 		newProcessedProduct.setBehaviour(newBehavior);
+	}
+	
+	private static BehaviorElement createNewBehaviorElement(
+			String nowISO, 
+			Integer stock, 
+			Boolean available, 
+			String status, 
+			Float price,
+			Prices prices,
+			Marketplace marketplace) {
+		BehaviorElement behaviorElement = new BehaviorElement();
+		behaviorElement.setDate(nowISO);
+		behaviorElement.setStock(stock);
+		behaviorElement.setAvailable(available);
+		behaviorElement.setStatus(status);
+		
+		if (price != null) {
+			behaviorElement.setPrice(price.doubleValue());
+		}
+		
+		if (prices != null) {
+			behaviorElement.setPrices(prices);
+		}
+		
+		if (marketplace != null && marketplace.size() > 0) {
+			behaviorElement.setMarketplace(marketplace);
+		}
+		
+		return behaviorElement;
 	}
 
 	private static void updateStatus(ProcessedModel newProcessedProduct) {
