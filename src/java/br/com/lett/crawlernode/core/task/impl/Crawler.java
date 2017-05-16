@@ -26,13 +26,14 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.base.Processor;
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import br.com.lett.crawlernode.util.URLBox;
+import containers.ProcessedComparison;
+import models.Processed;
 
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -291,7 +292,7 @@ public class Crawler extends Task {
 		Persistence.persistProduct(product, session);
 
 		// fetch the previous processed product stored on database
-		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+		Processed previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
 		if ( (previousProcessedProduct == null && 
 				(session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) 
@@ -300,7 +301,7 @@ public class Crawler extends Task {
 		{
 
 			// create the new processed product
-			ProcessedModel newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+			Processed newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
 
 			// the product doesn't exists yet
 			if (previousProcessedProduct == null) { 
@@ -386,7 +387,7 @@ public class Crawler extends Task {
 	}
 
 
-	private void scheduleImages(PersistenceResult persistenceResult, ProcessedModel processed) {
+	private void scheduleImages(PersistenceResult persistenceResult, Processed processed) {
 		Long createdId = null;
 		if (persistenceResult instanceof ProcessedModelPersistenceResult) {
 			createdId = ((ProcessedModelPersistenceResult) persistenceResult).getCreatedId();
@@ -507,8 +508,15 @@ public class Crawler extends Task {
 	 * @param p2
 	 * @return true if they are different or false otherwise
 	 */
-	private boolean compare(ProcessedModel p1, ProcessedModel p2) {
-		return p1.compareHugeChanges(p2, session);
+	private boolean compare(Processed p1, Processed p2) {
+		ProcessedComparison comparison = p1.compareHugeChanges(p2);
+		
+		if (comparison.changed) {
+			Logging.printLogDebug(logger, session, "Change detected in processed models [field " + comparison.field + "]");
+			Logging.printLogDebug(logger, session, "Went from " + comparison.from + " to " + comparison.to);			
+		}
+		
+		return comparison.changed;
 	}
 
 	private void printCrawledInformation(Product product) {
@@ -547,7 +555,7 @@ public class Crawler extends Task {
 		// fetch the previous processed product
 		// if a processed already exists and is void, then
 		// we won't perform new attempts to extract the current product
-		ProcessedModel previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+		Processed previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 		if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
 			Logging.printLogDebug(logger, session, "The previous processed is void. Returning...");
 			
@@ -608,9 +616,9 @@ public class Crawler extends Task {
 	 * @param newProcessed the initial processed model, from which we will start the iteration
 	 * @param previousProcessed the processed model that already exists in database
 	 */
-	private void truco(ProcessedModel newProcessed, ProcessedModel previousProcessed) throws Exception {
-		ProcessedModel currentTruco = newProcessed;
-		ProcessedModel next;
+	private void truco(Processed newProcessed, Processed previousProcessed) throws Exception {
+		Processed currentTruco = newProcessed;
+		Processed next;
 
 		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		

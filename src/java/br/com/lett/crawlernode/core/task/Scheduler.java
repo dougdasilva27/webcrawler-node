@@ -15,13 +15,12 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
 
-import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
+import models.Processed;
 
 
 public class Scheduler {
@@ -32,7 +31,7 @@ public class Scheduler {
 	public static void scheduleImages(
 			Session session,
 			QueueHandler queueHandler,
-			ProcessedModel processed,
+			Processed processed,
 			Long processedId) {
 		Logging.printLogDebug(logger, session, "Scheduling images to be downloaded...");
 
@@ -44,7 +43,7 @@ public class Scheduler {
 		int marketId = session.getMarket().getNumber();
 		String primaryPic = processed.getPic();
 		String internalId = processed.getInternalId();
-		String secondaryImages = processed.getSecondary_pics();
+		String secondaryImages = processed.getSecondaryImages();
 		JSONArray secondaryPicsJSON = null;
 
 		// get the secondary pics json array
