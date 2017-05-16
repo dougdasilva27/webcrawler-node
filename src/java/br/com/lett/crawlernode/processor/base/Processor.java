@@ -285,17 +285,61 @@ public class Processor {
 		// order the old behavior by date asc
 		oldBehaviour.orderByDateAsc();
 
+		//
+		// adding the first behavior element of this day
+		// which is the last behavior element from yesterday
+		//
+		addFirstBehaviorElementOfDay(oldBehaviour, newBehavior, startOfDay, startOfDayISO, session);
+
+		// create the new BehaviorElement
+		try {
+			BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
+			newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, Util.getStackTraceString(e));
+		}		
+
+		// pegando behavior elements apenas com as datas de hoje e
+		// que possuem os campos obrigatorios
+		List<BehaviorElement> filteredBehaviorElements = oldBehaviour.filterAfter(startOfDay);
+
+		for (BehaviorElement be : filteredBehaviorElements) {
+			newBehavior.add(be);
+		}
+
+		newBehavior.orderByDateAsc();
+
+		newProcessedProduct.setBehaviour(newBehavior);
+	}
+
+	/**
+	 * This method selects the last behavior element from the previous day (selected from the oldBehavior).
+	 * Then, this behavior element is added to the newBehavior.
+	 * 
+	 * @param oldBehaviour the previous behavior
+	 * @param newBehavior the behavior being assembled now
+	 * @param startOfDay DateTime of the start of the current day.
+	 * @param startDayBehaviorElementDate the date of the start of the current day plus 1 second, parsed to String
+	 * @param session
+	 */
+	private static void addFirstBehaviorElementOfDay(
+			Behavior oldBehaviour,
+			Behavior newBehavior,
+			DateTime startOfDay, 
+			String startDayBehaviorElementDate,
+			Session session) {
+
 		BehaviorElement lastBehaviorBeforeToday = oldBehaviour.getFloor(startOfDay);
-		
+
 		// Criando behavior do início de hoje (supostamente)
 		if ( lastBehaviorBeforeToday != null && 
-				( !oldBehaviour.contains(startOfDayISO) || 
-						oldBehaviour.get(startOfDayISO).getStatus() == null) ) {
+				( !oldBehaviour.contains(startDayBehaviorElementDate) || 
+						oldBehaviour.get(startDayBehaviorElementDate).getStatus() == null) ) {
 
 			BehaviorElementBuilder builder = new BehaviorElement.BehaviorElementBuilder();
 
 			// date
-			builder.setDate(startOfDayISO);
+			builder.setDate(startDayBehaviorElementDate);
 
 			// status
 			if (lastBehaviorBeforeToday.getStatus() == null) {
@@ -320,12 +364,12 @@ public class Processor {
 			} else {
 				builder.setAvailable(false);
 			}
-			
+
 			// marketplace
 			if ( lastBehaviorBeforeToday.getMarketplace() != null ) {
 				builder.setMarketplace( lastBehaviorBeforeToday.getMarketplace().clone() );
 			}
-			
+
 			// add the first behavior of this day
 			try {
 				BehaviorElement be = builder.build();
@@ -335,26 +379,6 @@ public class Processor {
 				Logging.printLogError(logger, session, Util.getStackTraceString(e));
 			}
 		}
-
-		// create behavior element from the last crawler scan
-		try {
-			BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
-			newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, Util.getStackTraceString(e));
-		}		
-
-		// pegando behavior elements apenas com as datas de hoje e
-		// que possuem os campos obrigatorios
-		List<BehaviorElement> filteredBehaviorElements = oldBehaviour.filterAfter(startOfDay);
-
-		for (BehaviorElement be : filteredBehaviorElements) {
-			newBehavior.add(be);
-		}
-		
-		newBehavior.orderByDateAsc();
-		
-		newProcessedProduct.setBehaviour(newBehavior);
 	}
 
 	private static BehaviorElement createNewBehaviorElement(
