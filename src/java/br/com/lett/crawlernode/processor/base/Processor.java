@@ -286,7 +286,7 @@ public class Processor {
 		oldBehaviour.orderByDateAsc();
 
 		BehaviorElement lastBehaviorBeforeToday = oldBehaviour.getFloor(startOfDay);
-
+		
 		// Criando behavior do início de hoje (supostamente)
 		if ( lastBehaviorBeforeToday != null && 
 				( !oldBehaviour.contains(startOfDayISO) || 
@@ -351,9 +351,9 @@ public class Processor {
 		for (BehaviorElement be : filteredBehaviorElements) {
 			newBehavior.add(be);
 		}
-
+		
 		newBehavior.orderByDateAsc();
-
+		
 		newProcessedProduct.setBehaviour(newBehavior);
 	}
 
