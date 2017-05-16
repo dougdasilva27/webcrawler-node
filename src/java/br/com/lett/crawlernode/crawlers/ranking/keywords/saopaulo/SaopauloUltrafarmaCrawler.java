@@ -48,7 +48,7 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products = this.currentDoc.select("a.nome_produtos_home");
+		Elements products = this.currentDoc.select("a.nome_produtos_vitrine");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
