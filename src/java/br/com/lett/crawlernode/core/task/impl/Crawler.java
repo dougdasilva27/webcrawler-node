@@ -512,7 +512,7 @@ public class Crawler extends Task {
 		ProcessedComparison comparison = p1.compareHugeChanges(p2);
 		
 		if (comparison.changed) {
-			Logging.printLogDebug(logger, session, "Change detected in processed models [field " + comparison.field + "]");
+			Logging.printLogDebug(logger, session, "Change detected between the current and previous processed [field " + comparison.field + "]");
 			Logging.printLogDebug(logger, session, "Went from " + comparison.from + " to " + comparison.to);			
 		}
 		
