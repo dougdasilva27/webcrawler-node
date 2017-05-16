@@ -20,9 +20,10 @@ import br.com.lett.crawlernode.processor.models.ProcessedModel;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-
+import exceptions.IllegalBehaviorElementValueException;
 import models.Behavior;
 import models.BehaviorElement;
+import models.BehaviorElement.BehaviorElementBuilder;
 import models.Marketplace;
 import models.Prices;
 import models.Seller;
@@ -91,11 +92,11 @@ public class Processor {
 				if (url != null) {
 					newProcessedProduct.setUrl(url);
 				}
-				
+
 				if (stock != null) {
 					newProcessedProduct.setStock(stock);
 				}
-				
+
 				if (marketplace != null && !marketplace.isEmpty()) {
 					newProcessedProduct.setMarketplace(marketplace);
 				} else {
@@ -105,11 +106,11 @@ public class Processor {
 				newProcessedProduct.setPic(foto);
 				newProcessedProduct.setPrice(price);
 				newProcessedProduct.setPrices(prices);
-				
+
 				newProcessedProduct.setCat1(cat1);
 				newProcessedProduct.setCat2(cat2);
 				newProcessedProduct.setCat3(cat3);
-				
+
 				newProcessedProduct.setSecondary_pics(secondaryPics);
 				newProcessedProduct.setCat1(cat1);
 				newProcessedProduct.setCat2(cat2);
@@ -267,10 +268,10 @@ public class Processor {
 			Float price,
 			Marketplace marketplace,
 			Session session) {
-		
+
 		DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
 		String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		
+
 		// get the previous behavior object
 		Behavior oldBehaviour;
 		if (newProcessedProduct.getBehaviour() == null) {
@@ -278,60 +279,84 @@ public class Processor {
 		} else {
 			oldBehaviour = newProcessedProduct.getBehaviour().clone();
 		}
-		
+
 		Behavior newBehavior = new Behavior();
-		
+
 		// order the old behavior by date asc
 		oldBehaviour.orderByDateAsc();
-		
+
 		BehaviorElement lastBehaviorBeforeToday = oldBehaviour.getFloor(startOfDay);
 
 		// Criando behavior do início de hoje (supostamente)
 		if ( lastBehaviorBeforeToday != null && 
-			( !oldBehaviour.contains(startOfDayISO) || 
-			  oldBehaviour.get(startOfDayISO).getStatus() == null) ) {
-			
-			BehaviorElement behaviourStart = lastBehaviorBeforeToday.clone();
-			
-			behaviourStart.setDate(startOfDayISO);
-			
-			if (behaviourStart.getStatus() == null) {
-				behaviourStart.setStatus("void");
+				( !oldBehaviour.contains(startOfDayISO) || 
+						oldBehaviour.get(startOfDayISO).getStatus() == null) ) {
+
+			BehaviorElementBuilder builder = new BehaviorElement.BehaviorElementBuilder();
+
+			// date
+			builder.setDate(startOfDayISO);
+
+			// status
+			if (lastBehaviorBeforeToday.getStatus() == null) {
+				builder.setStatus("void");
+			} else {
+				builder.setStatus(lastBehaviorBeforeToday.getStatus());
+			}			
+
+			// price
+			if (lastBehaviorBeforeToday.getPrice() != null && Double.compare(lastBehaviorBeforeToday.getPrice(), 0.0) == 0) {
+				builder.setPrice(null);
+			} else {
+				builder.setPrice(lastBehaviorBeforeToday.getPrice());
 			}
 
-			if (behaviourStart.getPrice() != null && Double.compare(behaviourStart.getPrice(), 0.0) == 0) {
-				behaviourStart.setPrice(null);
+			// prices
+			builder.setPrices(lastBehaviorBeforeToday.getPrices());
+
+			// available
+			if ( "available".equals(lastBehaviorBeforeToday.getStatus()) ) {
+				builder.setAvailable(true);
+			} else {
+				builder.setAvailable(false);
 			}
 			
-			if ( behaviourStart.getAvailable() == null ) {
-				if ( "available".equals(behaviourStart.getStatus()) ) {
-					behaviourStart.setAvailable(true);
-				} else {
-					behaviourStart.setAvailable(false);
-				}
+			// marketplace
+			if ( lastBehaviorBeforeToday.getMarketplace() != null ) {
+				builder.setMarketplace( lastBehaviorBeforeToday.getMarketplace().clone() );
 			}
 			
-			newBehavior.add(behaviourStart); // add the first behavior of this day
+			// add the first behavior of this day
+			try {
+				BehaviorElement be = builder.build();
+				newBehavior.add(be);
+			} catch (Exception e) {
+				Logging.printLogError(logger, session, "Error creating first behavior element from the day");
+				Logging.printLogError(logger, session, Util.getStackTraceString(e));
+			}
 		}
 
 		// create behavior element from the last crawler scan
-		BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
-		
-		newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
-		
+		try {
+			BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
+			newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, Util.getStackTraceString(e));
+		}		
+
 		// pegando behavior elements apenas com as datas de hoje e
 		// que possuem os campos obrigatorios
 		List<BehaviorElement> filteredBehaviorElements = oldBehaviour.filterAfter(startOfDay);
-		
+
 		for (BehaviorElement be : filteredBehaviorElements) {
 			newBehavior.add(be);
 		}
-		
+
 		newBehavior.orderByDateAsc();
 
 		newProcessedProduct.setBehaviour(newBehavior);
 	}
-	
+
 	private static BehaviorElement createNewBehaviorElement(
 			String nowISO, 
 			Integer stock, 
@@ -339,26 +364,19 @@ public class Processor {
 			String status, 
 			Float price,
 			Prices prices,
-			Marketplace marketplace) {
-		BehaviorElement behaviorElement = new BehaviorElement();
-		behaviorElement.setDate(nowISO);
-		behaviorElement.setStock(stock);
-		behaviorElement.setAvailable(available);
-		behaviorElement.setStatus(status);
-		
-		if (price != null) {
-			behaviorElement.setPrice(price.doubleValue());
-		}
-		
-		if (prices != null) {
-			behaviorElement.setPrices(prices);
-		}
-		
-		if (marketplace != null && marketplace.size() > 0) {
-			behaviorElement.setMarketplace(marketplace);
-		}
-		
-		return behaviorElement;
+			Marketplace marketplace) throws IllegalBehaviorElementValueException {
+
+		BehaviorElementBuilder builder = new BehaviorElementBuilder()
+				.setDate(nowISO)
+				.setStock(stock)
+				.setAvailable(available)
+				.setStatus(status)
+				.setMarketplace(marketplace);
+
+		if (price != null) builder.setPrice(price.doubleValue());
+		if (prices != null) builder.setPrices(prices);
+
+		return builder.build();
 	}
 
 	private static void updateStatus(ProcessedModel newProcessedProduct) {
@@ -438,29 +456,29 @@ public class Processor {
 		if (internalId != null) {
 
 			try {
-//				Processed processedTable = Tables.PROCESSED;
-//				
-//				List<Condition> conditions = new ArrayList<>();
-//				conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
-//						.and(processedTable.INTERNAL_ID.equal(internalId)));
-				
+				//				Processed processedTable = Tables.PROCESSED;
+				//				
+				//				List<Condition> conditions = new ArrayList<>();
+				//				conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
+				//						.and(processedTable.INTERNAL_ID.equal(internalId)));
+
 				// TODO hotfix for query
 				// estava falhando aqui
 				// voltei do jeito antigo pra apagar o fogo
 				StringBuilder query = new StringBuilder();
-								query.append("SELECT * FROM processed WHERE market = ");
-								query.append(session.getMarket().getNumber());
-								query.append(" AND internal_id = '");
-								query.append(internalId);
-								query.append("' LIMIT 1");
-				
-//				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
+				query.append("SELECT * FROM processed WHERE market = ");
+				query.append(session.getMarket().getNumber());
+				query.append(" AND internal_id = '");
+				query.append(internalId);
+				query.append("' LIMIT 1");
+
+				//				ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
 				Logging.printLogDebug(logger, session, "Running query: " + query.toString());
 				ResultSet rs = Main.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
-				
+
 
 				while(rs.next()) {
-					
+
 					JSONObject digitalContent;
 					if(rs.getString("digital_content") != null) {
 						try {
@@ -471,7 +489,7 @@ public class Processor {
 					} else {
 						digitalContent = null;
 					}
-					
+
 					JSONObject changes;
 					if(rs.getString("changes") != null) {
 						try {
@@ -508,12 +526,12 @@ public class Processor {
 					} else {
 						behaviorJSONArray = null;
 					}
-					
+
 					Behavior behavior = new Behavior();
 					if (behaviorJSONArray != null) {
 						for (int i = 0; i < behaviorJSONArray.length(); i++) {
 							JSONObject behaviorElementJSON = behaviorJSONArray.getJSONObject(i);
-							
+
 							try {
 								BehaviorElement behaviorElement = new BehaviorElement(behaviorElementJSON);
 								behavior.add(behaviorElement);
@@ -542,9 +560,9 @@ public class Processor {
 					} else {
 						actualMarketplaceJSONArray = null;
 					}
-					
+
 					Marketplace actualMarketplace = createMarketplace(actualMarketplaceJSONArray, session);
-				
+
 					/*
 					 * Prices
 					 * 
@@ -563,17 +581,17 @@ public class Processor {
 					} else {
 						actualPricesJson = null;
 					}
-					
+
 					Prices actualPrices;
 					try {
 						actualPrices = new Prices(actualPricesJson);
 					} catch (Exception e) {
 						actualPrices = new Prices();
-						
+
 						Logging.printLogError(logger, session, Util.getStackTraceString(e));
 						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					}
-			
+
 					/*
 					 * Stock
 					 */
@@ -581,7 +599,7 @@ public class Processor {
 					if(actualStock == 0) {
 						actualStock = null;
 					}
-					
+
 					/*
 					 * Price
 					 */
@@ -642,7 +660,7 @@ public class Processor {
 
 		return actualProcessedProduct;
 	}
-	
+
 	/**
 	 * Get each JSONObject representing a seller from the marketplaceJSONArray
 	 * and creates an instance of Seller model using the corresponding Seller JSON.
@@ -670,7 +688,7 @@ public class Processor {
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, Util.getStackTraceString(e));
 		}
-		
+
 		return actualMarketplace;
 	}
 
