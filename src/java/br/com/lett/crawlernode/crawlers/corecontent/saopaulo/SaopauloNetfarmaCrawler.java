@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -97,10 +98,12 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			// Preço
 			Float price = crawlPrice(jsonProduct, available);
 
-			// Categorias
-			String category1 = null; 
-			String category2 = null; 
-			String category3 = null;
+			// Categories
+			CategoryCollection categories = crawlCategories(doc);
+			
+			String category1 = categories.getCategory(0); 
+			String category2 = categories.getCategory(1); 
+			String category3 = categories.getCategory(2);
 
 			// primary image
 			String primaryImage = crawlPrimaryImage(doc);
@@ -165,6 +168,17 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return internalPid;
 	}
 	
+	private CategoryCollection crawlCategories(Document doc) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = doc.select(".breadcrumb__link span");
+
+		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
+			categories.add( elementCategories.get(i).text().trim() );
+		}
+
+		return categories;
+	}
+	
 	private String crawlInternalId(JSONObject jsonProduct){
 		String internalId = null;
 		
@@ -184,10 +198,12 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 			name = elementName.text().trim();
 		}
 		
-		// get 'gramatura' attribute
-		Element gramaturaElement = document.select(".product-details__measurement").first();
-		if (gramaturaElement != null) {
-			if (name != null) name = name + " " + gramaturaElement.text().trim();
+		if (name != null) {
+			// get 'gramatura' attribute
+			Element gramaturaElement = document.select(".product-details__measurement").first();
+			if (gramaturaElement != null) {
+				name = name + " " + gramaturaElement.text().trim();
+			}
 		}
 		
 		return name;
@@ -196,11 +212,9 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 	private Float crawlPrice(JSONObject jsonProduct, boolean available) {
 		Float price = null;
 		
-		if(available){
-			if(jsonProduct.has("price")){
-				Double priceDouble = jsonProduct.getDouble("price");
-				price = priceDouble.floatValue();
-			}
+		if(available && jsonProduct.has("price")){
+			Double priceDouble = jsonProduct.getDouble("price");
+			price = priceDouble.floatValue();
 		}
 		
 		return price;
@@ -208,9 +222,9 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 	
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element elementPrimaryImage = document.select(".product-image img[data-zoom-image]").first();
+		Element elementPrimaryImage = document.select("#product-gallery a").first();
 		if (elementPrimaryImage != null) {
-			primaryImage = elementPrimaryImage.attr("src").trim();
+			primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
 		}
 		return primaryImage;
 	}
@@ -219,18 +233,23 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 		
-		Elements element_fotosecundaria = document.select("#product-gallery > a");
-		if(element_fotosecundaria.size()>1){
-			for(int i=1; i<element_fotosecundaria.size();i++){
-				Element e = element_fotosecundaria.get(i);
-				if(e.attr("src").contains("/imagens/icon_video.png")){
-
-				}else{
-					secondaryImagesArray.put(e.attr("href"));
+		Elements elementSecundaria = document.select("#product-gallery a");
+		if(elementSecundaria.size() > 1){
+			for(int i = 1; i<elementSecundaria.size();i++){
+				Element e = elementSecundaria.get(i);
+				Element img = e.select("> img").first();
+				
+				String image = e.attr("data-zoom-image");
+				
+				if(!image.isEmpty() && !image.contains("youtube")){
+					secondaryImagesArray.put(image);
+				} else if(img != null && !image.contains("youtube")) {
+					secondaryImagesArray.put(img.attr("src"));
 				}
 			}
 
 		}
+		
 		if(secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}

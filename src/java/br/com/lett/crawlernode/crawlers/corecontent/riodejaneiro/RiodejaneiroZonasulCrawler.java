@@ -21,7 +21,7 @@ import models.Prices;
 
 public class RiodejaneiroZonasulCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.zonasulatende.com.br/";
+	private final String HOME_PAGE = "https://www.zonasul.com.br/";
 
 	public RiodejaneiroZonasulCrawler(Session session) {
 		super(session);
@@ -152,8 +152,6 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
 			products.add(product);
 			
-			System.err.println(secondaryImages);
-
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
@@ -167,7 +165,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return url.startsWith("http://www.zonasulatende.com.br/Produto/");
+		return url.startsWith("https://www.zonasul.com.br/Produto/") || url.startsWith("http://www.zonasulatende.com.br/Produto/");
 	}
 	
 	private String crawlPrimaryImage(Document doc) {

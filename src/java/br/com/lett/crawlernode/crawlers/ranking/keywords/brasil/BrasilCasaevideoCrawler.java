@@ -17,87 +17,111 @@ public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
 	public BrasilCasaevideoCrawler(Session session) {
 		super(session);
 	}
+	
+	@Override
+	protected void processBeforeFetch() {
+		this.cookies = this.getCookies("http://www.casaevideo.com.br");
+	}
 
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+	private List<Cookie> cookies = new ArrayList<>();
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 12;
+		this.pageSize = 16;
 
 		this.log("Página "+ this.currentPage);
 
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		//monta a url com a keyword e a página
-		String url = "http://www.casaevideo.com.br/webapp/wcs/stores/servlet/SearchDisplay?searchTerm="+ key 
-				+"&pageSize=150&beginIndex="+this.arrayProducts.size();
+		String url = "http://www.casaevideo.com.br/" + keyword + "?&utmi_p=_&utmi_pc=BuscaFullText&utmi_cp="+ keyword +"&PageNumber=" + this.currentPage;
 
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
-		
-		if(this.currentPage == 1) this.cookies = this.getCookies(url);
-		
 		this.currentDoc = fetchDocument(url, cookies);
 
-		Elements products =  this.currentDoc.select("div.product > div.product_info");
+		Elements products =  this.currentDoc.select(".prateleira ul li[layout] > span.box-item");
+		Elements productsPid =  this.currentDoc.select(".prateleira ul li[id].helperComplement");
+		
+		Element emptySearch = this.currentDoc.select("#busca-vazia-extra-middle").first();
+		
+		int count = 0;
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			setTotalBusca();
-
+		if(products.size() >= 1 && emptySearch == null) {
 			for(Element e: products) {
 				//seta o id com o seletor
-				Element pid = e.select("> div.product_price").first();
-				String[] tokens 	= pid.attr("id").split("_");
-				String internalPid 	= tokens[tokens.length-1];
-				String internalId 	= null;
+				String internalPid 	= crawlInternalPid(productsPid.get(count));
+				String internalId 	= crawlInternalId(e);
 
 				//monta a url
-				String productUrl  = "http://www.casaevideo.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId="+ internalPid;
+				String productUrl = crawlProductUrl(e); 
 
 				saveDataProduct(internalId, internalPid, productUrl);
+				count++;
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
+			setTotalBusca();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-
+		
+		if(!hasNextPage()) {
+			setTotalBusca();
+		}
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca){
-			//tem próxima página
-			return true;
-		} else {
-			//não tem próxima página
+		Elements lastPage = this.currentDoc.select(".prateleira ul li[id].helperComplement");
+		
+		if(lastPage.size() < this.pageSize) {
 			return false;
 		}
+		
+		return true;
 	}
-
-	@Override
-	protected void setTotalBusca() {
-		Element totalElement = this.currentDoc.select("span#searchTotalCount").first();
-
-		if(totalElement != null) { 	
-			try {				
-				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-
-			this.log("Total da busca: "+this.totalBusca);
+	
+	private String crawlInternalId(Element e){
+		String internalId = null;
+		Element id = e.select(".buy-button-asynchronous-product-id").first();
+		
+		if(id != null) {
+			internalId = id.val();
 		}
+		
+		return internalId;
+	}
+	
+	private String crawlInternalPid(Element e) {
+		String internalPid = e.attr("id").split("_")[1];
+		
+		return internalPid;
+	}
+	
+	private String crawlProductUrl(Element e){
+		String productUrl = null;
+		
+		Element url = e.select("> a[title]").first();
+			
+		if(url != null){
+			productUrl = url.attr("href");
+		}
+		
+		
+		return productUrl;
 	}
 	
 	private List<Cookie> getCookies(String url){
-		List<Cookie> cookiesList = new ArrayList<Cookie>();
+		List<Cookie> cookiesList = new ArrayList<>();
 		
 		Map<String,String> mapCookies = fetchCookies("http://www.casaevideo.com.br/webapp/wcs/stores/servlet/pt/auroraesite");
 		
@@ -117,11 +141,5 @@ public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
 		
 		
 		return cookiesList;
-		
-//		// Criando cookie
-//		BasicClientCookie cookieUser = new BasicClientCookie("WC_PERSISTENT", "wJJO5caQ2GjWEGkrQaY%2bqsAtA%2fY%3d%0a%3b2016%2d09%2d06+09%3a51%3a30%2e27%5f1473165479279%2d2101281%5f10152%5f%2d1002%2c%2d6%2cBRL%5f10152");
-//		cookieUser.setDomain("www.casaevideo.com.br");
-//		cookieUser.setPath("/");
-
 	}
 }

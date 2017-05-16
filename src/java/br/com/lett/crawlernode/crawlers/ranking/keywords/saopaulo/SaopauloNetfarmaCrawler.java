@@ -12,24 +12,29 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 		super(session);
 	}
 
-	private String crawlInternalId(String url) {
+	private String crawlInternalId() {
 		String internalId = null;
-
-		String[] tokens = url.split("/");
-		internalId = tokens[tokens.length - 2];
 
 		return internalId;
 	}
 
 	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-
-		return internalPid;
+		return e.attr("id").split("-")[1];
 	}
 
 	private String crawlProductUrl(Element e) {
-		String urlProduct = e.attr("href");
-
+		String urlProduct = null;
+		
+		Element url = e.select(" > a").first();
+		
+		if(url != null) {
+			urlProduct = url.attr("href");
+			
+			if(!urlProduct.startsWith("http")) {
+				urlProduct = "http:" + urlProduct;
+			}
+		}
+		
 		return urlProduct;
 	}
 
@@ -41,14 +46,15 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = "http://busca.netfarma.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage
+		String url = "http://busca2.netfarma.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage
 				+ "&results_per_page=80";
+		
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products = this.currentDoc.select("div.produtos > ul .nome a");
+		Elements products = this.currentDoc.select("#lista-produtos .product-item");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
@@ -61,7 +67,7 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 				String internalPid = crawlInternalPid(e);
 
 				// InternalId
-				String internalId = crawlInternalId(urlProduct);
+				String internalId = crawlInternalId();
 
 				saveDataProduct(internalId, internalPid, urlProduct);
 
@@ -71,23 +77,28 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 					break;
 			}
 		} else {
+			setTotalBusca();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
 				+ this.arrayProducts.size() + " produtos crawleados");
-		if (!(hasNextPage()))
+		
+		if (!(hasNextPage())) {
 			setTotalBusca();
+		}
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("li.neemu-pagination-last.neemu-pagination-inactive").first();
+		Element pageInactive = this.currentDoc.select("li.neemu-pagination-last.neemu-pagination-inactive").first();
+		Element page = this.currentDoc.select("li.neemu-pagination-last").first();;
 
 		// se elemeno page obtiver algum resultado
-		if (page != null)
+		if (pageInactive != null || page == null){
 			return false;
+		}
 
 		return true;
 	}
