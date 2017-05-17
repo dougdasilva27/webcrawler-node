@@ -176,7 +176,7 @@
 			<version>1.10.0</version>
 		</dependency>
 		
-		<!-- Lett models -->
+		<!-- Lett models  -->
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>lett-models</artifactId>
