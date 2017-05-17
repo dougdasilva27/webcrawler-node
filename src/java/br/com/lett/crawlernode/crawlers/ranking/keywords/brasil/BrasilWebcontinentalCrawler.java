@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -15,64 +15,147 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 125;
+		this.pageSize = 12;
 			
 		this.log("Página "+ this.currentPage);
 		
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+		
 		//monta a url com a keyword e a página
-		//https://www.webcontinental.com.br/ccstoreui/v1/search?Ntt=lg&No=0&Nrpp=24
-		//&visitorId=1311WAa4I7-AzQ3Kjl1bI9L__SgrZLzmea82d1NdWqk3mqUCE76&visitId=-4a2b143f%3A15c11174874%3A132-129.80.155.73&language=pt_BR&searchType=simple
-		String url = "http://www.webcontinental.com.br/busca/" + this.keywordEncoded + "/page="+this.currentPage;
+		String url = "https://www.webcontinental.com.br/ccstoreui/v1/search?Ntt="+ keyword +"&No="+ this.arrayProducts.size() +"&Nrpp=24";
 		this.log("Link onde são feitos os crawlers: "+url);	
 			
 		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+		JSONObject apiSearch = fetchJSONObject(url);
 		
-		Elements products =  this.currentDoc.select("ul.listaProdutos > li");
-		
-		int count=0;
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
-			for(Element e: products) {
-				count++;
-				//seta o id com o seletor
-				String internalPid 	= null;
-				String internalId 	= e.attr("data-prid");
-				
+		if(apiSearch.has("resultsList")) {
+			JSONObject results = apiSearch.getJSONObject("resultsList");
+			
+			//se o total de busca não foi setado ainda, chama a função para setar
+			if(this.totalBusca == 0){
+				setTotalBusca(results);
+			}
+			
+			JSONArray products = new JSONArray();
+			
+			if(results.has("records")) {
+				products = results.getJSONArray("records");
+			}
+
+			for(int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
+				// InternalPid
+				String internalPid 	= crawlInternalPid(product);
+
+				// InternalId
+				String internalId = crawlInternalId(product);
+
 				//monta a url
-				Element eUrl = e.select("div.campo a").first();
-				String productUrl = eUrl.attr("href");
-				
-				if(!productUrl.contains("webcontinental")){
-					productUrl = "http://www.webcontinental.com.br" + productUrl;
-				}
-				
+				String productUrl = crawlProductUrl(product);
+
 				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("InternalId do produto da "+count+" da página "+ this.currentPage+ ": " + internalId);
-				if(this.arrayProducts.size() == productsLimit) break;
+
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
-			setTotalBusca();
 			this.result = false;
-			this.log("Keyword sem resultado!");
+			this.log("Keyword sem resultados!");
 		}
-
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		if(!hasNextPage()) setTotalBusca();
+
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("div.disabled span.next").first();
-		
-		//se  elemeno page não obtiver nenhum resultado
-		if(page != null) {
-			//não tem próxima página
-			return false;
+		//se os produtos cadastrados não atingiram o total tem proxima pagina
+		if(this.arrayProducts.size() < this.totalBusca) {
+			return true;
 		}
 		
-		return true;
+		return false;
+	}
+
+
+	protected void setTotalBusca(JSONObject results) {
+		if(results.has("totalNumRecs")) {
+			this.totalBusca = results.getInt("totalNumRecs");
+		}
+		
+		this.log("Total da busca: "+this.totalBusca);
+	}
+
+
+	private String crawlInternalPid(JSONObject product){
+		String internalPid = null;
+		
+		if(product.has("attributes")) {
+			JSONObject attributes = product.getJSONObject("attributes");
+			
+			if(attributes.has("product.repositoryId")) {
+				JSONArray id = attributes.getJSONArray("product.repositoryId");
+				
+				if(id.length() > 0) {
+					internalPid = id.getString(0);
+				}
+			}
+		}
+		
+		return internalPid;
+	}
+
+	private String crawlProductUrl(JSONObject product){
+		String urlProduct = null;
+		
+		if(product.has("records")) {
+			JSONArray records = product.getJSONArray("records");
+			
+			if(records.length() > 0) {
+				JSONObject record = records.getJSONObject(0);
+				
+				if(record.has("attributes")) {
+					JSONObject attributes = record.getJSONObject("attributes");
+					
+					if(attributes.has("product.route")) {
+						JSONArray url = attributes.getJSONArray("product.route");
+						
+						if(url.length() > 0) {
+							urlProduct = "https://www.webcontinental.com.br" + url.getString(0);
+						}
+					}
+				}
+			}
+		}
+		
+		return urlProduct;
+	}
+	
+	private String crawlInternalId(JSONObject product){
+		String internalId = null;
+		
+		if(product.has("records")) {
+			JSONArray records = product.getJSONArray("records");
+			
+			if(records.length() > 0) {
+				JSONObject record = records.getJSONObject(0);
+				
+				if(record.has("attributes")) {
+					JSONObject attributes = record.getJSONObject("attributes");
+					
+					if(attributes.has("sku.repositoryId")) {
+						JSONArray id = attributes.getJSONArray("sku.repositoryId");
+						
+						if(id.length() == 1) {
+							internalId = id.getString(0);
+						}
+					}
+				}
+			}
+		}
+		
+		return internalId;
 	}
 }
