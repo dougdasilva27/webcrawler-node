@@ -450,4 +450,24 @@ public class CommonMethods {
 	public static String removeIllegalParameters(String str) {
 		return str.replaceAll(" ", "%20").replaceAll("`","%60");
 	}
+	
+	/**
+	 * Get Intersection of two arrays
+	 * @param a1
+	 * @param a2
+	 * @return
+	 */
+	public static List<?> getIntersectionOfTwoArrays(List<?> a1, List<?> a2) {
+		List<Object> list = new ArrayList<>();
+		
+		for(int i = 0; i < a1.size(); i++) {
+			Object obj = a1.get(i);
+			
+			if(a2.contains(obj) && !list.contains(obj)) {
+				list.add(obj);
+			}
+		}
+		
+		return list;
+	}
 }

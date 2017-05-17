@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.database.DBSlack;
+import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
@@ -49,6 +52,7 @@ import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public abstract class CrawlerRankingKeywords extends Task {
 
@@ -229,7 +233,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 			session.registerError(error);
 		}
-
+		
+		// Identify anomalies
+		anomalyDetector(this.keyword, this.session.getMarket().getNumber());
+		
 		return this.arrayProducts.size();
 	}
 
@@ -623,7 +630,7 @@ public abstract class CrawlerRankingKeywords extends Task {
 
 		return DynamicDataFetcher.fetchPage(this.webdriver, url);
 	}
-	
+
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);
 	}
@@ -643,4 +650,97 @@ public abstract class CrawlerRankingKeywords extends Task {
 		Logging.printLogError(logger, session, message);
 	}	
 
+	
+	/***************************************************************************************************************************
+	* ANOMALIAS DE SHARE OF SEARCH
+	* 
+	* O crawler ranking roda todos os dias geralmente de 05:00 as 06:45 da manhã.
+	* 
+	* Em alguns casos em determinadas keywords, o resultado pode vir diferente ou sequer nem vir caso o site mude
+	* ou ocorra algum erro nos crawlers.
+	* 
+	* Por isso foi desenvolvido essa funcionalidade para detectar alguns tipos de anomalias como:
+	* 
+	* 1- Caso o número de produtos capturados hoje seja 20% maior ou menor que ontem
+	* 2- Caso os produtos capturados ontem não estejam em pelo menos 50% do share de determinada keyword hoje.
+	* 
+	* Com essas duas regras conseguimos identificar se uma keyword em determinado market rodou ou mesmo se um site mudou.
+	* 
+	****************************************************************************************************************************/
+	private void anomalyDetector(String location, int market) {
+		Map<String,String> anomalies = new HashMap<>();
+		
+		List<Long> yesterdayProcesseds = DatabaseDataFetcher.fetchProcessedsFromCrawlerRanking(location, market, new Date());
+		
+		int countToday = this.arrayProducts.size();
+		int countYesterday = yesterdayProcesseds.size();
+		
+		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
+		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
+		
+		StringBuilder str = new StringBuilder();
+		
+		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
+		str.append("*" + nowISO + "*: " + Integer.toString(countToday) + "\n");
+		str.append("*Variação*: " + Integer.toString(countToday - countYesterday) + "\n");
+		
+		if(countToday < countYesterday) {
+			if(countToday > 0) {
+				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countToday / countYesterday) * 100f);
+				
+				if(percentage < 20) {
+					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem.";
+					anomalies.put(text, str.toString());
+				} else {
+					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
+				}
+			} else {
+				String text = "*ALERTA* O numero de produtos que o crawler ranking capturou foi menor que ontem, pois hoje *não capturou nada* nessa keyword.";
+				anomalies.put(text, str.toString());
+			}
+		} else if(countToday > countYesterday) {
+			if(countYesterday > 0) {
+				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countYesterday / countToday) * 100f);
+				
+				if(percentage < 20) {
+					String text = "O numero de produtos que o crawler ranking capturou foi *" + percentage + "%* maior que ontem.";
+					anomalies.put(text,  str.toString());
+				} else {
+					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
+				}
+			} else {
+				String text = "O numero de produtos que o crawler ranking capturou foi maior que ontem, pois ontem *não capturou nada* nessa keyword.";
+				anomalies.put(text,  str.toString());
+			}
+		} else if(!this.arrayProducts.isEmpty()) {
+			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
+		}
+		
+		for(Entry<String, String> entry : anomalies.entrySet()) {
+			DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market);
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies) {
+		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, this.arrayProducts);
+		
+		int countYesterday = yesterdayProcesseds.size();
+		int countIntersection = intersection.size();
+		
+		StringBuilder str = new StringBuilder();
+		
+		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
+		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
+		
+		if(countYesterday > countIntersection) {
+			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countIntersection / countYesterday) * 100f);
+			
+			if(percentage < 20) {
+				String text = "O crawler ranking capturou apenas cerca de " + percentage + "% dos produtos capturados nessa keyword em relação a ontem.";
+				anomalies.put(text,  str.toString());
+			}
+		}
+	}
+	
 }

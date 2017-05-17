@@ -2,19 +2,25 @@ package br.com.lett.crawlernode.database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Result;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
+import dbmodels.tables.CrawlerRanking;
 
 public class DatabaseDataFetcher {
 	
@@ -80,5 +86,59 @@ public class DatabaseDataFetcher {
 		}
 		return null;
 	}
-
+	
+	/**
+	 * Return all processeds from crawler_ranking
+	 * for this location
+	 * and market
+	 * from yesterday
+	 * 
+	 * @param location
+	 * @param market
+	 * @param date
+	 * @return
+	 */
+	public static List<Long> fetchProcessedsFromCrawlerRanking(String location, int market, Date date) {
+		List<Long> processeds = new ArrayList<>();
+		
+		try {
+			List<Long> allProcessedsThisMarket = new ArrayList<>();
+			
+			List<Field<?>> fieldsP = new ArrayList<>();
+			fieldsP.add(Tables.PROCESSED.ID);
+			
+			List<Condition> conditionsP = new ArrayList<>();
+			conditionsP.add(Tables.PROCESSED.MARKET.equal(market));
+			
+			Result<Record> products = Main.dbManager.connectionPostgreSQL.runSelect(Tables.PROCESSED, fieldsP, conditionsP);
+			
+			for(Record r : products) {
+				allProcessedsThisMarket.add(r.getValue(Tables.PROCESSED.ID));
+			}
+			
+			
+			CrawlerRanking ranking = Tables.CRAWLER_RANKING;
+			
+			List<Field<?>> fields = new ArrayList<>();
+			fields.add(ranking.PROCESSED_ID);
+			
+		    Timestamp timestamp = new java.sql.Timestamp(date.getTime());
+			
+			List<Condition> conditions = new ArrayList<>();
+			conditions.add(ranking.LOCATION.equal(location));
+			conditions.add(ranking.PROCESSED_ID.in(allProcessedsThisMarket));
+			conditions.add(ranking.DATE.between(timestamp, new Timestamp(timestamp.getTime() - (24*60*60*1000))));
+			
+			Result<Record> records = Main.dbManager.connectionPostgreSQL.runSelect(ranking, fields, conditions);
+			
+			for(Record r : records) {
+				processeds.add(r.getValue(ranking.PROCESSED_ID));
+			}
+			
+		} catch(Exception e) {
+			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+		}
+		
+		return processeds;
+	}
 }
