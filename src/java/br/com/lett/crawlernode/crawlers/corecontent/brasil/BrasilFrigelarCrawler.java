@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (22/09/2016):
@@ -108,6 +109,9 @@ public class BrasilFrigelarCrawler extends Crawler {
 
 				// Price
 				Float price = crawlMainPagePrice(jsonSku, available);
+				
+				// Prices
+				Prices prices = new Prices();
 
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
@@ -126,6 +130,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 				product.setInternalPid(internalPid);
 				product.setName(name);
 				product.setPrice(price);
+				product.setPrices(prices);
 				product.setAvailable(available);
 				product.setCategory1(category1);
 				product.setCategory2(category2);
