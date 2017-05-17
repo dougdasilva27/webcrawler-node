@@ -645,7 +645,6 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Seller seller = new Seller(sellerJSON);
 					marketplace.add(seller);
 				} catch (Exception e) {
-					session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					Logging.printLogError(logger, session, Util.getStackTraceString(e));
 				}
 			}

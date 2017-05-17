@@ -410,7 +410,6 @@ public class Persistence {
 				}
 
 				if (newProcessedProduct.getBehaviour() != null) {
-					System.err.println(newProcessedProduct.getBehaviour());
 					updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
 				} else {
 					updateMap.put(processedTable.BEHAVIOUR, null);
