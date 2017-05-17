@@ -617,7 +617,6 @@ public class Processor {
 						actualPrices = new Prices();
 
 						Logging.printLogError(logger, session, Util.getStackTraceString(e));
-						session.registerError(new SessionError(SessionError.EXCEPTION, Util.getStackTraceString(e)));
 					}
 
 					/*
