@@ -353,7 +353,7 @@ public class Processor {
 			}			
 
 			// price
-			if (lastBehaviorBeforeToday.getPrice() != null && Double.compare(lastBehaviorBeforeToday.getPrice(), 0.0) == 0) {
+			if (lastBehaviorBeforeToday.getPrice() != null && Double.compare(lastBehaviorBeforeToday.getPrice(), 0.0) <= 0) {
 				builder.setPrice(null);
 			} else {
 				builder.setPrice(lastBehaviorBeforeToday.getPrice());
