@@ -149,9 +149,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 	@Override
 	protected void onFinish() {
 		super.onFinish();
-		
-		// Identify anomalies
-		anomalyDetector(this.keyword, this.session.getMarket());
+		if(session instanceof RankingKeywordsSession) {
+			// Identify anomalies
+			anomalyDetector(this.keyword, this.session.getMarket());
+		}
 		
 		List<SessionError> errors = session.getErrors();
 
