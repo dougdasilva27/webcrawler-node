@@ -692,13 +692,15 @@ public abstract class CrawlerRankingKeywords extends Task {
 				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countToday / countYesterday) * 100f);
 				
 				if(percentage < 20) {
-					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem.";
+					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem."
+							+ "\n\n *Session*: " + session.getSessionId();
 					anomalies.put(text, str.toString());
 				} else {
 					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
 				}
 			} else {
-				String text = "*ALERTA* O numero de produtos que o crawler ranking capturou foi menor que ontem, pois hoje *não capturou nada* nessa keyword.";
+				String text = "*ALERTA* O numero de produtos que o crawler ranking capturou foi menor que ontem, pois hoje *não capturou nada* nessa keyword. "
+						+ "\n\n *Session*: " + session.getSessionId();
 				anomalies.put(text, str.toString());
 			}
 		} else if(countToday > countYesterday) {
@@ -706,7 +708,8 @@ public abstract class CrawlerRankingKeywords extends Task {
 				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countYesterday / countToday) * 100f);
 				
 				if(percentage < 20) {
-					String text = "O numero de produtos que o crawler ranking capturou foi *" + percentage + "%* maior que ontem.";
+					String text = "O numero de produtos que o crawler ranking capturou foi *" + percentage + "%* maior que ontem."
+							+ "\n\n *Session*: " + session.getSessionId();
 					anomalies.put(text,  str.toString());
 				} else {
 					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
@@ -746,7 +749,8 @@ public abstract class CrawlerRankingKeywords extends Task {
 			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countIntersection / countYesterday) * 100f);
 			
 			if(percentage < 20) {
-				String text = "O crawler ranking capturou apenas cerca de " + percentage + "% dos produtos capturados nessa keyword em relação a ontem.";
+				String text = "O crawler ranking capturou apenas cerca de " + percentage + "% dos produtos capturados nessa keyword em relação a ontem."
+						+ "\n\n *Session*: " + session.getSessionId();
 				anomalies.put(text,  str.toString());
 			}
 		}
