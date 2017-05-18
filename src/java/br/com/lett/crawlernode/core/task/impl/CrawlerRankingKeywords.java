@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingDiscoverStats;
 import br.com.lett.crawlernode.core.models.RankingProducts;
@@ -149,6 +149,10 @@ public abstract class CrawlerRankingKeywords extends Task {
 	@Override
 	protected void onFinish() {
 		super.onFinish();
+		
+		// Identify anomalies
+		anomalyDetector(this.keyword, this.session.getMarket());
+		
 		List<SessionError> errors = session.getErrors();
 
 		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
@@ -233,9 +237,6 @@ public abstract class CrawlerRankingKeywords extends Task {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 			session.registerError(error);
 		}
-		
-		// Identify anomalies
-		anomalyDetector(this.keyword, this.session.getMarket().getNumber());
 		
 		return this.arrayProducts.size();
 	}
@@ -667,16 +668,18 @@ public abstract class CrawlerRankingKeywords extends Task {
 	* Com essas duas regras conseguimos identificar se uma keyword em determinado market rodou ou mesmo se um site mudou.
 	* 
 	****************************************************************************************************************************/
-	private void anomalyDetector(String location, int market) {
+	private void anomalyDetector(String location, Market market) {
 		Map<String,String> anomalies = new HashMap<>();
 		
-		List<Long> yesterdayProcesseds = DatabaseDataFetcher.fetchProcessedsFromCrawlerRanking(location, market, new Date());
+		Logging.printLogDebug(logger, "Searching for anomalies ...");
+
+		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
+		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
+		
+		List<Long> yesterdayProcesseds = DatabaseDataFetcher.fetchProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO);
 		
 		int countToday = this.arrayProducts.size();
 		int countYesterday = yesterdayProcesseds.size();
-		
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
-		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
 		
 		StringBuilder str = new StringBuilder();
 		
@@ -716,8 +719,14 @@ public abstract class CrawlerRankingKeywords extends Task {
 			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies);
 		}
 		
-		for(Entry<String, String> entry : anomalies.entrySet()) {
-			DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market);
+		if(anomalies.size() > 0) {
+			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for thios keyword.");
+			
+			for(Entry<String, String> entry : anomalies.entrySet()) {
+				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName());
+			}
+		} else {
+			Logging.printLogDebug(logger, "No anomaly was identified.");
 		}
 	}
 	
