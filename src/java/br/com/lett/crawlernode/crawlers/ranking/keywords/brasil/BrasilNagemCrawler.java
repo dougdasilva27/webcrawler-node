@@ -32,8 +32,8 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) {
-				setTotalBusca();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
 			}
 						
 			for(Element e : products) {
@@ -65,7 +65,7 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 		
@@ -73,18 +73,18 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("p.qtd-encontrados span").first();
 		
 		try {
 			if(totalElement != null) {
-				this.totalBusca = Integer.parseInt(totalElement.text());
+				this.totalProducts = Integer.parseInt(totalElement.text());
 			}
 		} catch(Exception e) {
 			this.logError(CommonMethods.getStackTrace(e));
 		}
 		
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 
 	

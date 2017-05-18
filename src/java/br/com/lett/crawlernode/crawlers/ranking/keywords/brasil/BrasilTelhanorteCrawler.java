@@ -72,7 +72,7 @@ public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se os produtos cadastrados não atingiram o total tem proxima pagina
-		if(this.arrayProducts.size() < this.totalBusca) return true;
+		if(this.arrayProducts.size() < this.totalProducts) return true;
 		else									  		return false;
 	}
 
@@ -81,13 +81,13 @@ public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
 		try{
 
 			if(json.has("total")){
-				this.totalBusca = json.getInt("total");
+				this.totalProducts = json.getInt("total");
 			}
 
 		} catch(Exception e) {
 			e.printStackTrace();
 			this.logError(e.getMessage() +" Erro ao parsear jsonTotal");
 		}
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}	
 }

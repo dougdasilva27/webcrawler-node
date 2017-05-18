@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.server.ServerHandler;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
@@ -41,7 +41,7 @@ public class CrawlerTaskRequestChecker {
 			}
 		}
 		
-		if(QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingKeywordsRequest)request).getKeyword() == null) {
+		if(QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingRequest)request).getLocation() == null) {
 			Logging.printLogError(logger, "Request is missing keyword");
 			return false;
 		}

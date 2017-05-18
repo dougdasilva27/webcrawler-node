@@ -59,8 +59,8 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 		if (products.size() >= 1) {
 			// se o total de busca não foi setado ainda, chama a função para
 			// setar
-			if (this.totalBusca == 0)
-				setTotalBusca();
+			if (this.totalProducts == 0)
+				setTotalProducts();
 
 			for (Element e : products) {
 				// Url do produto
@@ -102,7 +102,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("div.pag p").first();
 
 		if (totalElement != null) {
@@ -111,12 +111,12 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
 				String token = totalElement.text().substring(x + 2).trim();
 
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 			} catch (Exception e) {
 				this.logError(e.getMessage());
 			}
 
-			this.log("Total da busca: " + this.totalBusca);
+			this.log("Total da busca: " + this.totalProducts);
 		}
 	}
 }

@@ -64,8 +64,8 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 		if (id.size() >= 1 && result.size() < 1) {
 			// se o total de busca não foi setado ainda, chama a função para
 			// setar
-			if (this.totalBusca == 0)
-				setTotalBusca();
+			if (this.totalProducts == 0)
+				setTotalProducts();
 
 			for (Element e : id) {
 				// Url do produto
@@ -120,16 +120,16 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("span.sli_bct_total_records").first();
 
 		try {
 			if (totalElement != null)
-				this.totalBusca = Integer.parseInt(totalElement.text());
+				this.totalProducts = Integer.parseInt(totalElement.text());
 		} catch (Exception e) {
 			this.logError(e.getMessage());
 		}
 
-		this.log("Total da busca: " + this.totalBusca);
+		this.log("Total da busca: " + this.totalProducts);
 	}
 }

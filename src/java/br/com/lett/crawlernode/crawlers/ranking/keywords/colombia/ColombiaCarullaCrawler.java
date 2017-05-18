@@ -68,7 +68,7 @@ public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			for(Element e : products) {		
 				// InternalId
 				String internalId = crawlInternalId(e);
@@ -96,7 +96,7 @@ public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} 
@@ -105,7 +105,7 @@ public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca()	{
+	protected void setTotalProducts()	{
 		Element totalElement = this.currentDoc.select(".plpPaginationTop .pull-left").first();
 		
 		if(totalElement != null) { 	
@@ -113,12 +113,12 @@ public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 				String text = totalElement.ownText().toLowerCase().trim();
 				int x = text.indexOf("de")+2;
 				
-				this.totalBusca = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", ""));
+				this.totalProducts = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", ""));
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

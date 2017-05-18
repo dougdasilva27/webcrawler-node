@@ -15,7 +15,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
@@ -96,7 +96,7 @@ public class ServerHandler implements HttpHandler {
 		if (QueueName.IMAGES.equals(queueName)) {
 			request = new ImageCrawlerRequest();
 		} else if(QueueName.RANKING_KEYWORDS.equals(queueName) || QueueName.DISCOVER_KEYWORDS.equals(queueName)) {
-			request = new CrawlerRankingKeywordsRequest();
+			request = new CrawlerRankingRequest();
 		} else {
 			request = new Request();
 		}
@@ -126,8 +126,8 @@ public class ServerHandler implements HttpHandler {
 			((ImageCrawlerRequest) request).setImageType(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_TYPE));
 		}
 
-		if(request instanceof CrawlerRankingKeywordsRequest) {
-			((CrawlerRankingKeywordsRequest) request).setKeyword(body);
+		if(request instanceof CrawlerRankingRequest) {
+			((CrawlerRankingRequest) request).setLocation(body);
 		}
 		
 		return request;

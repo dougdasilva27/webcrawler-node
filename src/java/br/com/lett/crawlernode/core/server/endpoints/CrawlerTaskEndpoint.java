@@ -9,13 +9,10 @@ import com.sun.net.httpserver.HttpExchange;
 
 import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 

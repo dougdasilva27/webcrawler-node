@@ -96,8 +96,8 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
 			// se o total de busca não foi setado ainda, chama a função para
 			// setar
-			if (this.totalBusca == 0)
-				setTotalBusca();
+			if (this.totalProducts == 0)
+				setTotalProducts();
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
@@ -122,22 +122,22 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = null;
 		if (!isCategory) {
 			totalElement = this.currentDoc.select(".resultado .resultado strong").first();
 
 			if (totalElement != null) {
 				try {
-					this.totalBusca = Integer.parseInt(totalElement.text());
+					this.totalProducts = Integer.parseInt(totalElement.text());
 				} catch (Exception e) {
 					this.logError(e.getMessage());
 				}
 			}
-			this.log("Total da busca: " + this.totalBusca);
+			this.log("Total da busca: " + this.totalProducts);
 		} else {
 			if (this.arrayProducts.size() < 100 && !hasNextPage()) {
-				this.totalBusca = this.arrayProducts.size();
+				this.totalProducts = this.arrayProducts.size();
 			}
 		}
 	}

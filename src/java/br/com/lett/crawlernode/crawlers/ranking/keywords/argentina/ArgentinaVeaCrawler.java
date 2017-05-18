@@ -53,7 +53,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.length() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) this.totalBusca = products.length();
+			if(this.totalProducts == 0) this.totalProducts = products.length();
 			
 			for(int i = 0; i < products.length(); i++) {
 				JSONObject product = products.getJSONObject(i);
@@ -79,7 +79,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords{
 		}
 		
 		//número de produtos por página do market
-		this.pageSize = this.totalBusca;
+		this.pageSize = this.totalProducts;
 	
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}

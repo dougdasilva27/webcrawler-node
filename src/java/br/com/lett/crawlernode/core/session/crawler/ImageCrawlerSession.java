@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.session;
+package br.com.lett.crawlernode.core.session.crawler;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +11,7 @@ import org.joda.time.DateTime;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;

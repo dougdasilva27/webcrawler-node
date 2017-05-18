@@ -30,7 +30,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: products) {
 
@@ -59,7 +59,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		// se não atingiu o total da busca ainda tem mais páginas.
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			return true;
 		}
 		
@@ -67,17 +67,17 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select(".itemCount > span").last();
 		
 		if(totalElement != null) { 	
 			try {
-				this.totalBusca = Integer.parseInt(totalElement.text());
+				this.totalProducts = Integer.parseInt(totalElement.text());
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

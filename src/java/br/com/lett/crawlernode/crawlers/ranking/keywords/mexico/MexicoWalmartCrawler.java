@@ -35,7 +35,7 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords{
 			//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 			if(products.size() >= 1) {
 				//se o total de busca não foi setado ainda, chama a função para setar
-				if(this.totalBusca == 0) this.setTotalBusca(jsonSearch);
+				if(this.totalProducts == 0) this.setTotalBusca(jsonSearch);
 				
 				for(int i = 0; i < products.size(); i++) {
 					JsonObject product = products.get(i).getAsJsonObject();
@@ -74,7 +74,7 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		// se não atingiu o total da busca ainda tem mais páginas.
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			return true;
 		}
 		
@@ -86,12 +86,12 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords{
 		
 		if(products.has("numFound")) { 	
 			try {
-				this.totalBusca = Integer.parseInt(products.get("numFound").getAsString());
+				this.totalProducts = Integer.parseInt(products.get("numFound").getAsString());
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

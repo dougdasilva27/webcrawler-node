@@ -47,12 +47,12 @@ public class BrasilCentraltecCrawler extends CrawlerRankingKeywords{
 				if(this.arrayProducts.size() == productsLimit) break;
 			}
 		} else {
-			setTotalBusca();
+			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 	
-		if(!hasNextPage()) setTotalBusca();
+		if(!hasNextPage()) setTotalProducts();
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
@@ -60,7 +60,7 @@ public class BrasilCentraltecCrawler extends CrawlerRankingKeywords{
 	protected boolean hasNextPage() {
 				
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} 

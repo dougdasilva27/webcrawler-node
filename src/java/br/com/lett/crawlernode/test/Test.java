@@ -35,6 +35,7 @@ public class Test {
 	public static final String RATING_TEST = "rating";
 	public static final String IMAGES_TEST = "images";
 	public static final String KEYWORDS_TEST = "keywords";
+	public static final String CATEGORIES_TEST = "categories";
 
 	public static 	DatabaseManager 	dbManager;
 	public static 	ProxyCollection 	proxies;
@@ -72,7 +73,7 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
-		//if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
+		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
 		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
@@ -113,9 +114,11 @@ public class Test {
 			Session session;
 
 			if(testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingSession("Monitor Ultra Wide", market);
+				session = SessionFactory.createTestRankingKeywordsSession("papinha", market);
+			} else if(testType.equals(CATEGORIES_TEST)) { 
+				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market);
 			} else {
-				session = SessionFactory.createTestSession("https://www.superama.com.mx/catalogo/d-despensa/f-dulces/l-chicles/goma-de-mascar-trident-mash-up-sabor-a-menta-18-pzas/0750610560605", market);
+				session = SessionFactory.createTestSession("https://www.netfarma.com.br/papinha-nestle-baby-gemas-de-ovos-carne-e-legumes-115g", market);
 			}
 
 

@@ -33,7 +33,7 @@ public class BrasilFrigelarCrawler extends CrawlerRankingKeywords {
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: products) {
 				// InternalPid
@@ -61,7 +61,7 @@ public class BrasilFrigelarCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if(arrayProducts.size() < this.totalBusca){
+		if(arrayProducts.size() < this.totalProducts){
 			return true;
 		}
 		
@@ -69,16 +69,16 @@ public class BrasilFrigelarCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
 		
 		try {
-			if(totalElement != null) this.totalBusca = Integer.parseInt(totalElement.text());
+			if(totalElement != null) this.totalProducts = Integer.parseInt(totalElement.text());
 		} catch(Exception e) {
 			this.logError(e.getMessage());
 		}
 		
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 	
 	private String crawlInternalId(Element e){

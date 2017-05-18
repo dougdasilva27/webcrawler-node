@@ -33,7 +33,7 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();			
+			if(this.totalProducts == 0) setTotalProducts();			
 			
 			for(Element e: products) {
 				// InternalPid
@@ -73,7 +73,7 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("span.itm01 strong").first();
 		
 		if(totalElement != null) {
@@ -82,12 +82,12 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords{
 				
 				String token = totalElement.text().substring(0, x).trim();
 				
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

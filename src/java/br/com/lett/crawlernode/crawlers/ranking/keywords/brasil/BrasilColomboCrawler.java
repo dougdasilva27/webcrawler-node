@@ -50,11 +50,11 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords{
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
-			setTotalBusca();
+			setTotalProducts();
 		}
 	
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		if(!(hasNextPage())) setTotalBusca();
+		if(!(hasNextPage())) setTotalProducts();
 	}
 
 	@Override

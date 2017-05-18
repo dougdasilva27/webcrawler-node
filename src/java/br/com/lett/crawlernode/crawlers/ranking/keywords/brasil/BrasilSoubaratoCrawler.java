@@ -69,7 +69,7 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se os produtos cadastrados não atingiram o total tem proxima pagina
-		if(this.arrayProducts.size() < this.totalBusca) return true;
+		if(this.arrayProducts.size() < this.totalProducts) return true;
 		else									  		return false;
 	}
 
@@ -80,13 +80,13 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 
 			JSONObject jsonTotal = jsonPage.getJSONObject("query_metadata");
 
-			this.totalBusca = jsonTotal.getInt("total_result_count");
+			this.totalProducts = jsonTotal.getInt("total_result_count");
 
 		} catch(Exception e) {
 			e.printStackTrace();
 			this.logError(e.getMessage() +" Erro ao parsear jsonTotal");
 		}
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 
 }

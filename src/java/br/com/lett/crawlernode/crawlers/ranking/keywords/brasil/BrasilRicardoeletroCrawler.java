@@ -47,13 +47,13 @@ public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 				
 			}
 		} else {
-			setTotalBusca();
+			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		if(!(hasNextPage())) setTotalBusca();
+		if(!(hasNextPage())) setTotalProducts();
 	}
 	
 	@Override

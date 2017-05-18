@@ -33,7 +33,7 @@ public class BrasilCasasshowCrawler extends CrawlerRankingKeywords {
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: products) {
 				//monta a url
@@ -62,7 +62,7 @@ public class BrasilCasasshowCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} else {
@@ -72,7 +72,7 @@ public class BrasilCasasshowCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected void setTotalBusca()
+	protected void setTotalProducts()
 	{
 		Element totalElement = this.currentDoc.select("div#neemu-total-products").first();
 		
@@ -82,14 +82,14 @@ public class BrasilCasasshowCrawler extends CrawlerRankingKeywords {
 			{
 				String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
 				
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 			}
 			catch(Exception e)
 			{
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 }

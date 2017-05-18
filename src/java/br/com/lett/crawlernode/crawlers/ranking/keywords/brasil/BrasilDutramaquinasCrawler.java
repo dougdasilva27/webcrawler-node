@@ -30,7 +30,7 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords{
 			url = "http://www.dutramaquinas.com.br/busca/" + this.keywordEncoded;
 		} else {
 			url = "http://www.dutramaquinas.com.br/model/md_busca.php?vc_termo="+ this.keywordEncoded +"&termo_tipo="+ this.termoUrl
-				+ "&total_prod_ambos="+ this.termoAmbos +"&total_prod_algum="+ this.termoAlgum +"&ordering=relevancia&tot_rows="+this.totalBusca
+				+ "&total_prod_ambos="+ this.termoAmbos +"&total_prod_algum="+ this.termoAlgum +"&ordering=relevancia&tot_rows="+this.totalProducts
 				+ "&pg_num="+ this.currentPage +"&max=27";
 		}
 		
@@ -47,7 +47,7 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.currentPage == 1) setTotalBusca();
+			if(this.currentPage == 1) setTotalProducts();
 			
 			for(Element e: products) {
 				//seta o id com o seletor
@@ -75,7 +75,7 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} else {
@@ -85,7 +85,7 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca()
+	protected void setTotalProducts()
 	{
 		Element totalElement = this.currentDoc.select("input#tot_rows").first();
 		
@@ -93,14 +93,14 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords{
 		{ 	
 			try
 			{				
-				this.totalBusca = Integer.parseInt(totalElement.attr("value"));
+				this.totalProducts = Integer.parseInt(totalElement.attr("value"));
 			}
 			catch(Exception e)
 			{
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

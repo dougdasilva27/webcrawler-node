@@ -77,7 +77,7 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 					break;
 			}
 		} else {
-			setTotalBusca();
+			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
@@ -86,7 +86,7 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 				+ this.arrayProducts.size() + " produtos crawleados");
 		
 		if (!(hasNextPage())) {
-			setTotalBusca();
+			setTotalProducts();
 		}
 	}
 

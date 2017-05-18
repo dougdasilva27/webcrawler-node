@@ -1,9 +1,12 @@
-package br.com.lett.crawlernode.core.session;
+package br.com.lett.crawlernode.core.session.crawler;
 
 import java.util.ArrayList;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.TestType;
 import br.com.lett.crawlernode.queue.QueueName;
 
 public class TestCrawlerSession extends Session {

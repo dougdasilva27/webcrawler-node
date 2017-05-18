@@ -62,7 +62,7 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords{
 		//se essa página tiver resultado faça:	
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: products) {
 				// Url do produto
@@ -103,16 +103,16 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("p#divResultado strong").last();
 		
 		try {
-			this.totalBusca = Integer.parseInt(totalElement.text());
+			this.totalProducts = Integer.parseInt(totalElement.text());
 		} catch(Exception e) {
 			this.logError(e.getMessage());
 		}
 		
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 	
 	private String crawlInternalId(String url){

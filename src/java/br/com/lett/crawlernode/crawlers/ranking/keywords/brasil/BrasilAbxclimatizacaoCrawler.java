@@ -31,8 +31,8 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) {
-				setTotalBusca();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
 			}
 			
 			for(Element e: products) {
@@ -68,7 +68,7 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select(".amount:not([href])").first();
 		
 		if(totalElement != null) {
@@ -76,13 +76,13 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 				int x = totalElement.text().indexOf("de");
 				String token = totalElement.text().substring(x).replaceAll("[^0-9]", "").trim();
 				
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 				
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

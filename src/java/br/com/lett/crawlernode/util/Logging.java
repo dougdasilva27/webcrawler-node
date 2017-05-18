@@ -9,8 +9,8 @@ import org.slf4j.MDC;
 
 import com.amazonaws.util.EC2MetadataUtils;
 
-import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -128,7 +128,7 @@ public class Logging {
 			metadata.put("session_type", session.getClass().getSimpleName());
 			
 			if(session instanceof RankingKeywordsSession) {
-				metadata.put("location", ((RankingKeywordsSession)session).getKeyword());
+				metadata.put("location", ((RankingKeywordsSession)session).getLocation());
 			}
 		}
 		

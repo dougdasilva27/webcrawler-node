@@ -26,9 +26,8 @@ import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.task.base.Task;
-import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
-
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;

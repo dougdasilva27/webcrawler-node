@@ -55,13 +55,13 @@ public class BrasilAmbientairCrawler extends CrawlerRankingKeywords {
 
 			}
 		} else {
-			setTotalBusca();
+			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 
 		if (!hasNextPage()) {
-			setTotalBusca();
+			setTotalProducts();
 		}
 
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "

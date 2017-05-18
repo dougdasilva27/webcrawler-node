@@ -122,7 +122,7 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
 				+ this.arrayProducts.size() + " produtos crawleados");
 		if (!(hasNextPage()))
-			setTotalBusca();
+			setTotalProducts();
 	}
 
 	@Override
@@ -140,7 +140,7 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("p.amount").first();
 
 		if (totalElement != null) {
@@ -148,12 +148,12 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
 				String token = totalElement.text().replaceAll("[^0-9]", "").trim();
 
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 			} catch (Exception e) {
 				this.logError(e.getMessage());
 			}
 
-			this.log("Total da busca: " + this.totalBusca);
+			this.log("Total da busca: " + this.totalProducts);
 		}
 	}
 }

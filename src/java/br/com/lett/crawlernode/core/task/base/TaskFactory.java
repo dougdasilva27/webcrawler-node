@@ -6,16 +6,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.session.DiscoverKeywordsSession;
-import br.com.lett.crawlernode.core.session.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.RankingKeywordsSession;
-import br.com.lett.crawlernode.core.session.RatingReviewsCrawlerSession;
-import br.com.lett.crawlernode.core.session.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -53,8 +56,12 @@ public class TaskFactory {
 			return createImageCrawlerTask(session);
 		}
 
-		if (session instanceof RankingKeywordsSession || session instanceof DiscoverKeywordsSession || session instanceof TestRankingKeywordsSession) {			
+		if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof TestRankingKeywordsSession) {			
 			return createCrawlerRankingKeywordsTask(session);
+		}
+		
+		if (session instanceof RankingCategoriesSession || session instanceof RankingDiscoverCategoriesSession || session instanceof TestRankingCategoriesSession) {			
+			return createCrawlerRankingCategoriesTask(session);
 		}
 		
 		if (session instanceof TestCrawlerSession) {
@@ -123,7 +130,27 @@ public class TaskFactory {
 	private static Task createCrawlerRankingKeywordsTask(Session session) {
 
 		// assemble the class name
-		String taskClassName = assembleRankingKeywordsClassName(session.getMarket());
+		String taskClassName = assembleRankingClassName(session.getMarket(), "keywords");
+
+		try {
+
+			// instantiating a crawler task with the given session as it's constructor parameter
+			Constructor<?> constructor = Class.forName(taskClassName).getConstructor(Session.class);
+			Task task = (Task) constructor.newInstance(session);
+
+			return task;
+		} catch (Exception ex) {
+			Logging.printLogError(logger, session, "Error instantiating task: " + taskClassName);
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+		}
+
+		return null;
+	}
+	
+	private static Task createCrawlerRankingCategoriesTask(Session session) {
+
+		// assemble the class name
+		String taskClassName = assembleRankingClassName(session.getMarket(), "categories");
 
 		try {
 
@@ -190,8 +217,8 @@ public class TaskFactory {
 	 * @param name The name of the market
 	 * @return The name of the crawler class
 	 */
-	private static String assembleRankingKeywordsClassName(Market market) {
-		String crawlerClassName = "br.com.lett.crawlernode.crawlers.ranking.keywords." + market.getCity() + ".";
+	private static String assembleRankingClassName(Market market, String rankType) {
+		String crawlerClassName = "br.com.lett.crawlernode.crawlers.ranking."+ rankType +"." + market.getCity() + ".";
 		crawlerClassName += market.getCity().substring(0, 1).toUpperCase();
 		crawlerClassName += market.getCity().substring(1, market.getCity().length());
 		crawlerClassName += market.getName().substring(0, 1).toUpperCase();
@@ -199,5 +226,6 @@ public class TaskFactory {
 		crawlerClassName += "Crawler";	
 		return crawlerClassName;
 	}
-
+	
+	
 }

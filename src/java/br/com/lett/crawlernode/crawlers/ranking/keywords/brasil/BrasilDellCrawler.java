@@ -41,7 +41,7 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.length() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0){
+			if(this.totalProducts == 0){
 				setTotalBusca(products);
 			}
 			
@@ -80,7 +80,7 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} 
@@ -94,12 +94,12 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords{
 			
 			if(info.has("ResultCount-Products")) {
 				try	{				
-					this.totalBusca = Integer.parseInt(info.getString("ResultCount-Products").trim());
+					this.totalProducts = Integer.parseInt(info.getString("ResultCount-Products").trim());
 				} catch(Exception e) {
 					this.logError(CommonMethods.getStackTraceString(e));
 				}
 				
-				this.log("Total da busca: "+this.totalBusca);
+				this.log("Total da busca: "+this.totalProducts);
 			}
 		}
 	}

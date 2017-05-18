@@ -32,7 +32,7 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 			JSONObject results = apiSearch.getJSONObject("resultsList");
 			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0){
+			if(this.totalProducts == 0){
 				setTotalBusca(results);
 			}
 			
@@ -72,7 +72,7 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se os produtos cadastrados não atingiram o total tem proxima pagina
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 		
@@ -82,10 +82,10 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 
 	protected void setTotalBusca(JSONObject results) {
 		if(results.has("totalNumRecs")) {
-			this.totalBusca = results.getInt("totalNumRecs");
+			this.totalProducts = results.getInt("totalNumRecs");
 		}
 		
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 
 

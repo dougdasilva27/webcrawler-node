@@ -41,7 +41,7 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.length() >= 1)	{
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0){
+			if(this.totalProducts == 0){
 				setTotalBusca(api);
 			}
 			
@@ -75,7 +75,7 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < totalBusca) {
+		if(this.arrayProducts.size() < totalProducts) {
 		    return true;
         }
 		
@@ -88,9 +88,9 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords{
 		    JSONObject result = api.getJSONObject("_result");
 
 		    if(result.has("total")) {
-                this.totalBusca = result.getInt("total");
+                this.totalProducts = result.getInt("total");
 
-                this.log("Total da busca: "+this.totalBusca);
+                this.log("Total da busca: "+this.totalProducts);
             }
 		}
 	}

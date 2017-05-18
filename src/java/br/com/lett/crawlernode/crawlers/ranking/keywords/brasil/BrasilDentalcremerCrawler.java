@@ -79,7 +79,7 @@ public class BrasilDentalcremerCrawler extends CrawlerRankingKeywords{
 		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 		if(this.arrayProducts.size() < productsLimit) setTotalBusca(jsonProduct);
-		else										   this.totalBusca = 0;
+		else										   this.totalProducts = 0;
 	}
 
 	@Override
@@ -90,7 +90,7 @@ public class BrasilDentalcremerCrawler extends CrawlerRankingKeywords{
 	
 	protected void setTotalBusca(JSONObject j)
 	{
-		if(this.totalBusca == 0 && j != null) this.totalBusca += j.getInt("total");
+		if(this.totalProducts == 0 && j != null) this.totalProducts += j.getInt("total");
 	}
 
 	

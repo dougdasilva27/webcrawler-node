@@ -35,7 +35,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords{
 			JSONArray products = search.getJSONArray("res");
 			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) {
+			if(this.totalProducts == 0) {
 				setTotalBusca(search);
 			}
 			
@@ -69,7 +69,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 		
@@ -79,10 +79,10 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords{
 	protected void setTotalBusca(JSONObject search) {
 		if(search.has("total")) { 	
 
-			this.totalBusca = search.getInt("total");
+			this.totalProducts = search.getInt("total");
 
 		
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

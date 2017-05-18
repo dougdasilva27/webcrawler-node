@@ -157,8 +157,8 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 		// faça:
 		if (products.size() >= 1) {
 			// total de produtos na busca
-			if (this.totalBusca == 0) {
-				setTotalBusca();
+			if (this.totalProducts == 0) {
+				setTotalProducts();
 			}
 
 			for (Element e : products) {
@@ -192,7 +192,7 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		// se não peguei todos os produtos tem próxima página
-		if (this.arrayProducts.size() < this.totalBusca) {
+		if (this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 
@@ -200,17 +200,17 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("p.amount").first();
 
 		if (totalElement != null) {
 			try {
-				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
+				this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
 			} catch (Exception e) {
 				this.logError(e.getMessage());
 			}
 		}
 
-		this.log("Total da busca: " + this.totalBusca);
+		this.log("Total da busca: " + this.totalProducts);
 	}
 }

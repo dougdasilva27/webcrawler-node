@@ -37,8 +37,8 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 			for (Element e : products) {
 				// se o total de busca não foi setado ainda, chama a função para
 				// setar
-				if (this.totalBusca == 0) {
-					setTotalBusca();
+				if (this.totalProducts == 0) {
+					setTotalProducts();
 				}
 
 				// Url do produto
@@ -70,7 +70,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 		
@@ -78,18 +78,18 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select(".neemu-total-products-container strong").first();
 
 		if (totalElement != null) {
 			try {
-				this.totalBusca = Integer.parseInt(totalElement.ownText());
+				this.totalProducts = Integer.parseInt(totalElement.ownText());
 			} catch (Exception e) {
 				this.logError(CommonMethods.getStackTrace(e));
 			}
 		}
 
-		this.log("Total da busca: " + this.totalBusca);
+		this.log("Total da busca: " + this.totalProducts);
 	}
 
 	private String crawlInternalId(Element e) {

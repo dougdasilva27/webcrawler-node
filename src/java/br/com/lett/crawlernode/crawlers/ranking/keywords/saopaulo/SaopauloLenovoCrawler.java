@@ -69,8 +69,8 @@ public class SaopauloLenovoCrawler extends CrawlerRankingKeywords {
 		if (products.size() >= 1) {
 			// se o total de busca não foi setado ainda, chama a função para
 			// setar
-			if (this.totalBusca == 0) {
-				setTotalBusca();
+			if (this.totalProducts == 0) {
+				setTotalProducts();
 			}
 
 			for (Element e : products) {
@@ -119,7 +119,7 @@ public class SaopauloLenovoCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("#numresultform label").first();
 
 		if (totalElement != null) {
@@ -127,12 +127,12 @@ public class SaopauloLenovoCrawler extends CrawlerRankingKeywords {
 
 				String[] tokens = totalElement.ownText().split("de");
 
-				this.totalBusca = Integer.parseInt(tokens[tokens.length - 1].replaceAll("[^0-9]", "").trim());
+				this.totalProducts = Integer.parseInt(tokens[tokens.length - 1].replaceAll("[^0-9]", "").trim());
 			} catch (Exception e) {
 				this.logError(CommonMethods.getStackTraceString(e));
 			}
 
-			this.log("Total da busca: " + this.totalBusca);
+			this.log("Total da busca: " + this.totalProducts);
 		}
 	}
 

@@ -35,7 +35,7 @@ public class BrasilEletrocityCrawler extends CrawlerRankingKeywords {
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(int i = 0; i < products.size(); i++) {
 				Element e = products.get(i);
@@ -65,7 +65,7 @@ public class BrasilEletrocityCrawler extends CrawlerRankingKeywords {
 	protected boolean hasNextPage() {
 		
 		//se  elemeno page não obtiver nenhum resultado
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			//tem próxima página
 			return true;
 		}
@@ -74,17 +74,17 @@ public class BrasilEletrocityCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
 		
 		if(totalElement != null) { 	
 			try	{
-				this.totalBusca = Integer.parseInt(totalElement.text());
+				this.totalProducts = Integer.parseInt(totalElement.text());
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

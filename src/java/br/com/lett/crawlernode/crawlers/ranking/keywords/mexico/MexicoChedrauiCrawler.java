@@ -43,7 +43,7 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 			//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 			if(products.length() >= 1) {
 				//se o total de busca não foi setado ainda, chama a função para setar
-				if(this.totalBusca == 0) {
+				if(this.totalProducts == 0) {
 					setTotalBusca(productsInfo);
 				}
 				
@@ -81,7 +81,7 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		// se não atingiu o total da busca ainda tem mais páginas.
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			return true;
 		}
 		
@@ -92,12 +92,12 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 	protected void setTotalBusca(JSONObject productsInfo) {
 		if(productsInfo.has("totalBusca")) { 	
 			try {
-				this.totalBusca = productsInfo.getInt("totalBusca");
+				this.totalProducts = productsInfo.getInt("totalBusca");
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

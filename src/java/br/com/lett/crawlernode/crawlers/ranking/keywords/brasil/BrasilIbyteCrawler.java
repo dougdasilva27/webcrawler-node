@@ -32,7 +32,7 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1 && noResults) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e : products) {
 				// InternalPid
@@ -60,13 +60,13 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se  o número de produtos pegos for menor que o resultado total da busca, existe proxima pagina
-		if(this.arrayProducts.size() < this.totalBusca) return true;
+		if(this.arrayProducts.size() < this.totalProducts) return true;
 		
 		return false;
 	}
 	
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("div.mostrando").first();
 		
 		if(totalElement != null) {
@@ -76,12 +76,12 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 				
 				String token = totalElement.text().substring(x+2, y).trim();
 				
-				this.totalBusca = Integer.parseInt(token);
+				this.totalProducts = Integer.parseInt(token);
 			} catch(Exception e) {
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 

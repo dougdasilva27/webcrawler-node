@@ -77,8 +77,8 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 		// faça:
 		if (id.size() >= 1 && result.size() < 1) {
 			// seta o total da busca
-			if (this.totalBusca == 0)
-				setTotalBusca();
+			if (this.totalProducts == 0)
+				setTotalProducts();
 
 			for (Element e : id) {
 
@@ -106,7 +106,7 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
 				+ this.arrayProducts.size() + " produtos crawleados");
 		if (!(hasNextPage()))
-			setTotalBusca();
+			setTotalProducts();
 
 	}
 
@@ -116,14 +116,14 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 	}
 
 	@Override
-	protected void setTotalBusca() {
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("div.item.pages.last span").first();
 
 		if (totalElement != null) {
 			try {
 				String[] token = totalElement.text().split("de");
 
-				this.totalBusca = Integer.parseInt(token[token.length - 1].trim());
+				this.totalProducts = Integer.parseInt(token[token.length - 1].trim());
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -131,6 +131,6 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 			}
 		}
 
-		this.log("Total da busca: " + this.totalBusca);
+		this.log("Total da busca: " + this.totalProducts);
 	}
 }

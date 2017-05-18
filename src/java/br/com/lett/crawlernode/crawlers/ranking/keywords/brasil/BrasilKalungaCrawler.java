@@ -39,7 +39,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords{
 
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0){
+			if(this.totalProducts == 0){
 				setTotalBusca(apiSearch);
 			}
 
@@ -72,7 +72,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se os produtos cadastrados não atingiram o total tem proxima pagina
-		if(this.arrayProducts.size() < this.totalBusca) {
+		if(this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 		
@@ -83,13 +83,13 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords{
 	protected void setTotalBusca(JSONObject apiSearch) {
 		if(apiSearch.has("quantidade")) {
 			try {
-				this.totalBusca = Integer.parseInt(apiSearch.getString("quantidade"));
+				this.totalProducts = Integer.parseInt(apiSearch.getString("quantidade"));
 			} catch(Exception e) {
 				this.logError(CommonMethods.getStackTraceString(e));
 			}
 		}
 		
-		this.log("Total da busca: "+this.totalBusca);
+		this.log("Total da busca: "+this.totalProducts);
 	}
 
 

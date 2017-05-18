@@ -32,9 +32,9 @@ public class MexicoSuperamaCrawler extends CrawlerRankingKeywords{
 			//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 			if(products.length() >= 1) {
 				//se o total de busca não foi setado ainda, chama a função para setar
-				if(this.totalBusca == 0){
-					this.totalBusca = products.length();
-					this.log("Total da busca: " + this.totalBusca); 
+				if(this.totalProducts == 0){
+					this.totalProducts = products.length();
+					this.log("Total da busca: " + this.totalProducts); 
 				}
 				
 				for(int i = 0; i < products.length(); i++) {

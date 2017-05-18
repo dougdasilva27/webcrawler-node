@@ -45,15 +45,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
 import org.joda.time.DateTime;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -61,10 +57,11 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.session.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
@@ -1175,7 +1172,7 @@ public class DataFetcher {
 
 		Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 
-		if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
+		if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
 			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
 		} else {
 			if (session instanceof ImageCrawlerSession) {

@@ -37,7 +37,7 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 		if(id.size() >= 1)
 		{
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0) setTotalBusca();
+			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: id)
 			{
@@ -69,7 +69,7 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} else {
@@ -79,7 +79,7 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected void setTotalBusca()
+	protected void setTotalProducts()
 	{
 		Element totalElement = this.currentDoc.select("input.productGroupCount").first();
 		
@@ -87,14 +87,14 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 		{ 	
 			try
 			{				
-				this.totalBusca = Integer.parseInt(totalElement.attr("value"));
+				this.totalProducts = Integer.parseInt(totalElement.attr("value"));
 			}
 			catch(Exception e)
 			{
 				this.logError(e.getMessage());
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 }

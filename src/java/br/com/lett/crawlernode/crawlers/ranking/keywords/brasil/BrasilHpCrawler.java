@@ -34,8 +34,8 @@ public class BrasilHpCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalBusca == 0){
-				setTotalBusca();
+			if(this.totalProducts == 0){
+				setTotalProducts();
 			}
 			
 			for(Element e : products) {
@@ -69,7 +69,7 @@ public class BrasilHpCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalBusca){
+		if(this.arrayProducts.size() < this.totalProducts){
 			//tem próxima página
 			return true;
 		} 
@@ -78,17 +78,17 @@ public class BrasilHpCrawler extends CrawlerRankingKeywords{
 	}
 	
 	@Override
-	protected void setTotalBusca()	{
+	protected void setTotalProducts()	{
 		Element totalElement = this.currentDoc.select(".resultado strong").first();
 		
 		if(totalElement != null) { 	
 			try	{				
-				this.totalBusca = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
+				this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
 				this.logError(CommonMethods.getStackTraceString(e));
 			}
 			
-			this.log("Total da busca: "+this.totalBusca);
+			this.log("Total da busca: "+this.totalProducts);
 		}
 	}
 	

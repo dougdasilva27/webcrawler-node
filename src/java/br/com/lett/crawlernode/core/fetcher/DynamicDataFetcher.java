@@ -28,13 +28,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.test.Test;
@@ -100,7 +99,7 @@ public class DynamicDataFetcher {
 			phantomjsPath = Main.executionParameters.getPhantomjsPath();
 		}
 		
-		DesiredCapabilities caps = new DesiredCapabilities().phantomjs();
+		DesiredCapabilities caps = DesiredCapabilities.phantomjs();
 		caps.setJavascriptEnabled(true);                
 		caps.setCapability("takesScreenshot", true);
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjsPath);

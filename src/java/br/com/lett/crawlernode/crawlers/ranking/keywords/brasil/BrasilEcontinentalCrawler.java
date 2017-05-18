@@ -48,7 +48,7 @@ public class BrasilEcontinentalCrawler extends CrawlerRankingKeywords{
 				
 			}
 		} else {
-			this.setTotalBusca();
+			this.setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}

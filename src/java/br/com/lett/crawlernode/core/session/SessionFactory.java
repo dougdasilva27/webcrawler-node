@@ -6,6 +6,18 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingCategoriesSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -38,7 +50,13 @@ public class SessionFactory {
 			return new RankingKeywordsSession(request, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.DISCOVER_KEYWORDS)) {
-			return new DiscoverKeywordsSession(request, queueName, markets);
+			return new RankingDiscoverKeywordsSession(request, queueName, markets);
+		}
+		else if (queueName.equals(QueueName.RANKING_CATEGORIES)) {
+			return new RankingCategoriesSession(request, queueName, markets);
+		}
+		else if (queueName.equals(QueueName.DISCOVER_CATEGORIES)) {
+			return new RankingDiscoverCategoriesSession(request, queueName, markets);
 		}
 		else {
 			Logging.printLogDebug(logger, "Queue name not recognized.");
@@ -50,7 +68,11 @@ public class SessionFactory {
 		return new TestCrawlerSession(url, market);
 	}
 	
-	public static Session createTestRankingSession(String keyword, Market market) {
+	public static Session createTestRankingKeywordsSession(String keyword, Market market) {
 		return new TestRankingKeywordsSession(market, keyword);
+	}
+	
+	public static Session createTestRankingCategoriesSession(String categorieUrl, Market market) {
+		return new TestRankingCategoriesSession(market, categorieUrl);
 	}
 }
