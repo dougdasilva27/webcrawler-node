@@ -642,12 +642,14 @@ public abstract class CrawlerRanking extends Task {
 	private void anomalyDetector(String location, Market market, String rankType) {
 		Map<String,String> anomalies = new HashMap<>();
 		
-		Logging.printLogDebug(logger, "Searching for anomalies ...");
+		Logging.printLogDebug(logger, session, "Searching for anomalies ...");
 
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
 		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
 		
 		List<Long> yesterdayProcesseds = DatabaseDataFetcher.fetchProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO);
+		
+		Logging.printLogDebug(logger, session, "Yesterday products: " + yesterdayProcesseds.size());
 		
 		int countToday = this.arrayProducts.size();
 		int countYesterday = yesterdayProcesseds.size();
@@ -658,13 +660,16 @@ public abstract class CrawlerRanking extends Task {
 		str.append("*" + nowISO + "*: " + Integer.toString(countToday) + "\n");
 		str.append("*Variação*: " + Integer.toString(countToday - countYesterday) + "\n");
 		
-		if(countToday < countYesterday) {
+		if(countToday < countYesterday && countToday < this.productsLimit ) {
 			if(countToday > 0) {
-				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countToday / countYesterday) * 100f);
+				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countToday / (float)countYesterday) * 100f);
 				
 				if(percentage < 20) {
 					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem."
 							+ "\n\n *Session*: " + session.getSessionId();
+					
+					Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text + "\n" + str.toString());
+					
 					anomalies.put(text, str.toString());
 				} else {
 					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
@@ -672,21 +677,30 @@ public abstract class CrawlerRanking extends Task {
 			} else {
 				String text = "*ALERTA* O numero de produtos que o crawler ranking capturou foi menor que ontem, pois hoje *não capturou nada* nessa " + rankType + ". "
 						+ "\n\n *Session*: " + session.getSessionId();
+				
+				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+				
 				anomalies.put(text, str.toString());
 			}
-		} else if(countToday > countYesterday) {
+		} else if(countToday > countYesterday && countYesterday < this.productsLimit) {
 			if(countYesterday > 0) {
-				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countYesterday / countToday) * 100f);
+				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countYesterday / (float)countToday) * 100f);
 				
-				if(percentage < 20) {
+				if(percentage > 20) {
 					String text = "O numero de produtos que o crawler ranking capturou foi *" + percentage + "%* maior que ontem."
 							+ "\n\n *Session*: " + session.getSessionId();
+					
+					Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+					
 					anomalies.put(text,  str.toString());
 				} else {
 					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
 				}
 			} else {
 				String text = "O numero de produtos que o crawler ranking capturou foi maior que ontem, pois ontem *não capturou nada* nessa " + rankType + ".";
+				
+				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+				
 				anomalies.put(text,  str.toString());
 			}
 		} else if(!this.arrayProducts.isEmpty()) {
@@ -700,13 +714,19 @@ public abstract class CrawlerRanking extends Task {
 				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName(), "Categoria");
 			}
 		} else {
-			Logging.printLogDebug(logger, "No anomaly was identified.");
+			Logging.printLogDebug(logger, session, "No anomaly was identified.");
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
-		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, this.arrayProducts);
+		List<Long> todayProcesseds = new ArrayList<>();
+		
+		for(RankingProducts r : this.arrayProducts) {
+			todayProcesseds.addAll(r.getProcessedIds());
+		}
+		
+		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
 		
 		int countYesterday = yesterdayProcesseds.size();
 		int countIntersection = intersection.size();
@@ -717,11 +737,14 @@ public abstract class CrawlerRanking extends Task {
 		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
 		
 		if(countYesterday > countIntersection) {
-			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces((countIntersection / countYesterday) * 100f);
+			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
 			
 			if(percentage < 20) {
-				String text = "O crawler ranking capturou apenas cerca de " + percentage + "% dos produtos capturados nessa " + rankType + " em relação a ontem."
+				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
 						+ "\n\n *Session*: " + session.getSessionId();
+				
+				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+				
 				anomalies.put(text,  str.toString());
 			}
 		}
