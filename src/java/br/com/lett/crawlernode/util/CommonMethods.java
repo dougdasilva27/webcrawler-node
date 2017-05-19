@@ -26,6 +26,10 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -469,5 +473,40 @@ public class CommonMethods {
 		}
 		
 		return list;
+	}
+	
+	/**
+	 * Crawl json inside element html
+	 * 
+	 * @param doc
+	 * @param cssElement
+	 * @param token
+	 * @param finalIndex
+	 * @return
+	 */
+	public static JSONObject getSpecificJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) {
+		JSONObject object = new JSONObject();
+		
+		Elements scripts = doc.select(cssElement);
+		
+		for(Element e : scripts) {
+			String script = e.outerHtml().replaceAll(" ", "");
+			
+			if(script.contains(token)) {
+				int x = script.indexOf(token) + token.length();
+				int y = script.indexOf(finalIndex, x);
+				
+				String json = script.substring(x, y);
+				
+				if(json.startsWith("{") && json.endsWith("}")) {
+					object = new JSONObject(json);
+				}
+				
+				break;
+			}
+		}
+		
+		
+		return object;
 	}
 }
