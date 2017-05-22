@@ -217,7 +217,7 @@ public abstract class CrawlerRanking extends Task {
 		}
 	}
 	/**
-	 * Função checa de 4 forma se existe proxima pagina
+	 * Função checa de 4 formas se existe proxima pagina
 	 * 
 	 * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit)
 	 * 2 - Se naquele market foi identificado se há proxima pagina (hasNextPage())
