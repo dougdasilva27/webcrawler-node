@@ -114,19 +114,33 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords{
 
 		List<Cookie> listCookies = new ArrayList<Cookie>();
 
-		// Criando cookie da loja 42 = Rio de Janeiro capital
+		// Criando cookie da loja 21 = São Paulo capital
 		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "42");
-		cookie.setDomain(".deliveryextra.com.br");
-		cookie.setPath("/");
+		cookie.setDomain("busca.deliveryextra.com.br");
 		cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		cookie.setPath("/");
 		listCookies.add(cookie);
 
 		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie2 = new BasicClientCookie("ep.customer_logged", "-2143598207");
-		cookie2.setDomain(".deliveryextra.com.br");
-		cookie2.setPath("/");
+		BasicClientCookie cookie2 = new BasicClientCookie("ep.store_name_42", "Rio%20de%20Janeiro");
+		cookie2.setDomain("busca.deliveryextra.com.br");
 		cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		cookie2.setPath("/");
 		listCookies.add(cookie2);
+
+		// Criando cookie simulando um usuário logado
+		BasicClientCookie cookie3 = new BasicClientCookie("ep.currency_code_42", "BRL");
+		cookie3.setDomain("busca.deliveryextra.com.br");
+		cookie3.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		cookie3.setPath("/");
+		listCookies.add(cookie3);
+
+		// Criando cookie simulando um usuário logado
+		BasicClientCookie cookie4 = new BasicClientCookie("ep.language_code_42", "pt-BR");
+		cookie4.setDomain("busca.deliveryextra.com.br");
+		cookie4.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+		cookie4.setPath("/");
+		listCookies.add(cookie4);
 
 		return listCookies;
 	}

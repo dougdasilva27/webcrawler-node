@@ -125,7 +125,7 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 		cookie4.setDomain("busca.deliveryextra.com.br");
 		cookie4.setPath("/");
 		listCookies.add(cookie4);
-
+		
 		return listCookies;
 	}
 

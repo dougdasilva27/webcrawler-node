@@ -494,7 +494,7 @@ public abstract class CrawlerRanking extends Task {
 			string.append("Cookies been used: ");
 			
 			for(Cookie cookie : cookies){
-				string.append("Cookie: " + cookie.getName() + " Value: " + cookie.getValue());
+				string.append("\nCookie: " + cookie.getName() + " Value: " + cookie.getValue());
 			}
 			
 			this.log(string.toString());
