@@ -664,7 +664,7 @@ public abstract class CrawlerRanking extends Task {
 			if(countToday > 0) {
 				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countToday / (float)countYesterday) * 100f);
 				
-				if(percentage < 20) {
+				if(percentage <= 20) {
 					String text = "O crawler ranking capturou apenas " + percentage + "% do numero de produtos em relação a ontem."
 							+ "\n\n *Session*: " + session.getSessionId();
 					
@@ -684,15 +684,15 @@ public abstract class CrawlerRanking extends Task {
 			}
 		} else if(countToday > countYesterday && countYesterday < this.productsLimit) {
 			if(countYesterday > 0) {
-				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countYesterday / (float)countToday) * 100f);
+				Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countToday / (float)countYesterday) * 100f);
 				
-				if(percentage > 20) {
-					String text = "O numero de produtos que o crawler ranking capturou foi *" + percentage + "%* maior que ontem."
+				if(percentage >= 120) {
+					String text = "O numero de produtos que o crawler ranking capturou foi *" + ( percentage - 100f ) + "%* maior que ontem."
 							+ "\n\n *Session*: " + session.getSessionId();
 					
 					Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
 					
-					anomalies.put(text,  str.toString());
+					//anomalies.put(text,  str.toString());
 				} else {
 					analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
 				}
@@ -701,14 +701,14 @@ public abstract class CrawlerRanking extends Task {
 				
 				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
 				
-				anomalies.put(text,  str.toString());
+				//anomalies.put(text,  str.toString());
 			}
 		} else if(!this.arrayProducts.isEmpty()) {
 			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
 		}
 		
 		if(anomalies.size() > 0) {
-			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for thios " + rankType + ".");
+			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " + rankType + ".");
 			
 			for(Entry<String, String> entry : anomalies.entrySet()) {
 				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName(), "Categoria");
