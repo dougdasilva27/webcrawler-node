@@ -335,39 +335,39 @@ public class BrasilMultiarCrawler extends Crawler {
 					String text = e.text().toLowerCase();
 	
 					if (text.contains("visa")) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 						
 					} else if (text.contains("mastercard")) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 						
 					} else if (text.contains("diners")) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 						
 					} else if (text.contains("american") || text.contains("amex")) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
 						
 					} else if (text.contains("hipercard")) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
 						
 					} else if (text.contains("credicard") ) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 						
 					} else if (text.contains("elo") ) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 						
 					} else if (text.contains("aura") ) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 						
 					} else if (text.contains("discover") ) {
-						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, doc);
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"), price, bankTicketPrice, doc);
 						prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
 						
 					}
@@ -379,7 +379,7 @@ public class BrasilMultiarCrawler extends Crawler {
 		return prices;
 	}
 
-	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard, Float price, Document docMain){
+	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard, Float price, Float bankTicketPrice, Document docMain){
 		Map<Integer,Float> mapInstallments = new HashMap<>();
 
 		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
@@ -392,7 +392,7 @@ public class BrasilMultiarCrawler extends Crawler {
 
 				if(textInstallment.contains("vista")){
 					installment = 1;
-					Float value = calculate1xCard(docMain, price);
+					Float value = calculate1xCard(docMain, price, bankTicketPrice);
 
 					mapInstallments.put(installment, value);
 				} else {
@@ -436,7 +436,7 @@ public class BrasilMultiarCrawler extends Crawler {
 	// O preço de 1x no cartão não aparece com javascript desligado na pagina principal, mas aparece a porcentagem de desconto
 	// Assim é calculado o preço no boleto de acordo com o preço principal.
 	// O preço correspondente na página acessada de preços, está errado, com isso necessita ser calculado.
-	private Float calculate1xCard(Document doc, Float price){
+	private Float calculate1xCard(Document doc, Float price, Float bankTicketPrice){
 		Float oneXCard = null;
 		Elements discounts = doc.select(".list-inline li > p[class]");
 		
@@ -450,6 +450,10 @@ public class BrasilMultiarCrawler extends Crawler {
 				oneXCard = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				break;
 			}
+		}
+		
+		if(oneXCard == null) {
+			oneXCard = bankTicketPrice;
 		}
 		
 		return oneXCard;
