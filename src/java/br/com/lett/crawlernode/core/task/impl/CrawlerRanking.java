@@ -35,8 +35,6 @@ import br.com.lett.crawlernode.core.models.RankingProductsDiscover;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.ranking.RankingCategoriesSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverCategoriesSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
@@ -204,10 +202,10 @@ public abstract class CrawlerRanking extends Task {
 			}
 	
 			// função para popular os dados no banco
-			if(session instanceof RankingCategoriesSession) {
+			if(session instanceof RankingSession) {
 				persistRankingData();
 				persistDiscoverData();
-			} else if(session instanceof RankingDiscoverCategoriesSession) {
+			} else if(session instanceof RankingDiscoverSession) {
 				persistDiscoverData();
 			}
 
