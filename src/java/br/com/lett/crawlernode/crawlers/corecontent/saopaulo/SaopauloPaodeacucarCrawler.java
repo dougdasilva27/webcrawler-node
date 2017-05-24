@@ -25,7 +25,8 @@ import models.Prices;
 
 public class SaopauloPaodeacucarCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.paodeacucar.com";
+	private final String HOME_PAGE = "https://www.paodeacucar.com";
+	private final String HOME_PAGE_HTTP = "http://www.paodeacucar.com";
 
 	public SaopauloPaodeacucarCrawler(Session session) {
 		super(session);
@@ -434,7 +435,13 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 	private JSONObject crawlProductInformatioFromGPAApi(String productUrl) { 
 		JSONObject productsInfo = new JSONObject();
 		
-		String id = productUrl.replace(HOME_PAGE, "").split("/")[2];
+		String id;
+		if(productUrl.startsWith(HOME_PAGE)) {
+			id = productUrl.replace(HOME_PAGE, "").split("/")[2];
+		} else {
+			id = productUrl.replace(HOME_PAGE_HTTP, "").split("/")[2];
+		}
+		
 		String url = "https://api.gpa.digital/pa/products/"+ id +"?storeId="+ STORE_ID +"&isClienteMais=false";
 		
 		JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);

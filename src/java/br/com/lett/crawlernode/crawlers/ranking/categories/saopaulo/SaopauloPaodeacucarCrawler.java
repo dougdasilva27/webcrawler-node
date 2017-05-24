@@ -6,12 +6,11 @@ import java.util.List;
 
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
@@ -21,54 +20,64 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
 	private List<Cookie> cookies = new ArrayList<>();
 
+	private static final String HOME_PAGE = "https://www.paodeacucar.com/";
+	private static final String STORE_ID = "501";
+	
 	@Override
 	public void extractProductsFromCurrentPage() {
 		// número de produtos por página do market
-		this.pageSize = 12;
+		this.pageSize = 36;
 
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url;
+		String url = this.location;
 		
-		if(this.location.contains("?")) {
-			url = this.location + "&p=" + (this.currentPage - 1);
+		if(url.contains("?")) {
+			url = url.replace(HOME_PAGE, "https://api.gpa.digital/pa/products/list/").replace("%2520", "%20") 
+					+ "&storeId="+ STORE_ID +"&qt=36&p=" + this.currentPage;
 		} else {
-			url = this.location + "?p=" + (this.currentPage - 1);
+			url = url.replace(HOME_PAGE, "https://api.gpa.digital/pa/products/list/") + "?storeId="+ STORE_ID +"&qt=36&p=" + this.currentPage;
 		}
 		
-		this.log("Link onde são feitos os crawlers: " + url);
+		this.log("Link onde são feitos os crawlers: " + this.location + "?p=" + this.currentPage);
 
 		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url, cookies);
-
-		Elements id = this.currentDoc.select(".boxProduct .showcase-item__name a");
-		Elements result = this.currentDoc.select("div#sli_noresult");
-
+		JSONObject search = fetchJSONObject(url, cookies);
+		
+		if(search.has("content")) {
+			search = search.getJSONObject("content");
+		}
+				
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (id.size() >= 1 && result.size() < 1) {
+		if (search.has("products") && search.getJSONArray("products").length() > 0) {
+			JSONArray products = search.getJSONArray("products");
+			
 			// se o total de busca não foi setado ainda, chama a função para
-			// setar
-			if (this.totalProducts == 0)
-				setTotalProducts();
+			if (this.totalProducts == 0) {
+				setTotalProducts(search);
+			}
 
-			for (Element e : id) {
+			for (int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
+				
 				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+				String productUrl = crawlProductUrl(product);
 
 				// InternalPid
-				String internalPid = crawlInternalPid(e);
+				String internalPid = crawlInternalPid(product);
 
 				// InternalId
-				String internalId = crawlInternalId(urlProduct);
+				String internalId = crawlInternalId(product);
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+				saveDataProduct(internalId, internalPid, productUrl);
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
+						+ internalPid + " - Url: " + productUrl);
+				
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
+				}
 			}
 		} else {
 			this.result = false;
@@ -82,10 +91,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select(".nextPage > a").first();
-
-		// se elemento page obtiver algum resultado
-		if (page != null) {
+		if (this.arrayProducts.size() < this.totalProducts) {
 			return true;
 		}
 
@@ -94,7 +100,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected void processBeforeFetch() {
-		if (this.cookies.size() < 1) {
+		if (this.cookies.isEmpty()) {
 			BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "501");
 			cookie.setDomain(".paodeacucar.com");
 			cookie.setPath("/");
@@ -104,38 +110,40 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 		}
 	}
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("p.description").first();
-
-		if(totalElement != null) {
-			String total = totalElement.ownText();
-			
-			if(total.contains("de")) {
-				String[] tokens = total.split("de");
-				
-				try {
-					this.totalProducts = Integer.parseInt(tokens[tokens.length-1].replaceAll("[^0-9]", ""));
-				} catch (Exception e) {
-					this.logError(CommonMethods.getStackTrace(e));
-				}
-
-				this.log("Total da busca: " + this.totalProducts);
-			}
+	protected void setTotalProducts(JSONObject search) {
+		if(search.has("totalElements")) {		
+			this.totalProducts = search.getInt("totalElements");
+			this.log("Total da busca: " + this.totalProducts);				
 		}
 	}
-
-	private String crawlInternalId(String url) {
-		String[] tokens = url.split("/");
-		
-		return tokens[tokens.length - 2];
-	}
 	
-	private String crawlInternalPid(Element e) {
-		return null;
+	private String crawlInternalId(	JSONObject product) {
+		String internalId = null;
+		
+		if(product.has("id")) {
+			internalId = product.get("id").toString();
+		}
+
+		return internalId;
 	}
 
-	private String crawlProductUrl(Element e) {
-		return e.attr("href");
+	private String crawlInternalPid(JSONObject product) {
+		String internalPid = null;
+		
+		if(product.has("sku")) {
+			internalPid = product.getString("sku");
+		}
+
+		return internalPid;
+	}
+
+	private String crawlProductUrl(JSONObject product) {
+		String urlProduct = null;
+
+		if(product.has("urlDetails")) {
+			urlProduct = HOME_PAGE + product.getString("urlDetails");
+		}
+		
+		return urlProduct;
 	}
 }
