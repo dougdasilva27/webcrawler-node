@@ -518,11 +518,34 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 * @return
 	 */
+	@Deprecated
 	protected JSONObject fetchJSONObject(String url) {
 		this.currentDoc = new Document(url);	
 
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+
+		JSONObject jsonProducts;
+		try{
+			jsonProducts = new JSONObjectIgnoreDuplicates(json);
+		} catch(Exception e){
+			jsonProducts = new JSONObject();
+			this.logError(CommonMethods.getStackTraceString(e));
+		}
+
+		return jsonProducts;
+	}
+	
+	/**
+	 * Fetch jsonObject
+	 * @param url
+	 * @return
+	 */
+	protected JSONObject fetchJSONObject(String url, List<Cookie> cookies) {
+		this.currentDoc = new Document(url);	
+
+		//faz a conexão na url baixando o document html
+		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
 		JSONObject jsonProducts;
 		try{
