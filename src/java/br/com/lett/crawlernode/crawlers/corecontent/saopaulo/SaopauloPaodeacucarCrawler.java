@@ -60,7 +60,10 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			JSONObject jsonSku = crawlProductInformatioFromGPAApi(session.getOriginalURL());
+			// Url
+			String productUrl = session.getOriginalURL();
+			
+			JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
 
 			// InternalId 
 			String internalId = crawlInternalId(jsonSku);
@@ -95,9 +98,14 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 			// Stock
 			Integer stock = null;
 
+			// Pid não sendo null, o produto não está void
+			if(internalPid != null && session.getRedirectedToURL(productUrl) != null) {
+				productUrl = session.getRedirectedToURL(productUrl);
+			}
+			
 			// Creating the product
 			Product product = ProductBuilder.create()
-					.setUrl(session.getOriginalURL())
+					.setUrl(productUrl)
 					.setInternalId(internalId)
 					.setInternalPid(internalPid)
 					.setName(name)

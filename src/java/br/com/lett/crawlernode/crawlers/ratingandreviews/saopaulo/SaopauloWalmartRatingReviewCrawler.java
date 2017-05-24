@@ -109,10 +109,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 
 
 	private boolean isProductPage(String url) {
-		if (url.startsWith("http://www.walmart.com.br/produto/") || 
-			url.startsWith("https://www.walmart.com.br/produto/") || 
-			(url.endsWith("/pr"))) {
-			
+		if ( url.contains("walmart.com.br/produto/") || url.endsWith("/pr")) {
 			return true;
 		}
 		return false;
