@@ -23,7 +23,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 	@Override
 	public void extractProductsFromCurrentPage() {
 		// número de produtos por página do market
-		this.pageSize = 36;
+		this.pageSize = 0;
 
 		this.log("Página " + this.currentPage);
 
