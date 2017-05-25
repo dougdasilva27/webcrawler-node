@@ -50,7 +50,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 			String internalPid = crawlInternalPid(productInfo);
 			String name = crawlName(productInfo);
 			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(price, doc);
+			Prices prices = crawlPrices(price, productInfo);
 			boolean available = crawlAvailability(productInfo);
 			CategoryCollection categories = crawlCategories(productInfo);
 			String primaryImage = crawlPrimaryImage(doc);
@@ -241,7 +241,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 		return description.toString();
 	}
 
-	private Prices crawlPrices(Float price, Document doc) {
+	private Prices crawlPrices(Float price, JSONObject info) {
 		Prices prices = new Prices();
 
 		if (price != null) {
@@ -250,6 +250,17 @@ public class BrasilBifarmaCrawler extends Crawler {
 			
 			prices.setBankTicketPrice(price);
 			installmentPriceMap.put(1, price);
+			
+			if(info.has("installment")) {
+				JSONObject installment = info.getJSONObject("installment");
+				
+				if(installment.has("price") && installment.has("count")) {
+					Double priceInstallment = installment.getDouble("price");
+					Integer installmentCount = installment.getInt("count");
+					
+					installmentPriceMap.put(installmentCount, priceInstallment.floatValue());
+				}
+			}
 
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -300,7 +311,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 		Elements scripts = doc.select("script[type=\"text/javascript\"]");
 		
 		for(Element e : scripts) {
-			String text = e.outerHtml().replaceAll(" ", "");
+			String text = e.outerHtml();
 			
 			String varChaordic = "chaordicProduct=";
 			
@@ -321,6 +332,8 @@ public class BrasilBifarmaCrawler extends Crawler {
 				break;
 			}
 		}
+		
+		System.err.println(info);
 		
 		return info;
 	}
