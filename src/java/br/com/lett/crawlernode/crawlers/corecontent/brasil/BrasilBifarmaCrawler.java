@@ -59,14 +59,14 @@ public class BrasilBifarmaCrawler extends Crawler {
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
 
-			String productUrl = session.getOriginalURL();
-			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
-				productUrl = session.getRedirectedToURL(productUrl);
-			}
+//			String productUrl = session.getOriginalURL();
+//			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
+//				productUrl = session.getRedirectedToURL(productUrl);
+//			}
 			
 			// Creating the product
 			Product product = ProductBuilder.create()
-					.setUrl(productUrl)
+					.setUrl(session.getOriginalURL())
 					.setInternalId(internalId)
 					.setInternalPid(internalPid)
 					.setName(name).setPrice(price)
