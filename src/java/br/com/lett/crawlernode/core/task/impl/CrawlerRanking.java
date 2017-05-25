@@ -682,9 +682,9 @@ public abstract class CrawlerRanking extends Task {
 		if(anomalies.size() > 0) {
 			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " + rankType + ".");
 			
-			for(Entry<String, String> entry : anomalies.entrySet()) {
-				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName(), "Categoria");
-			}
+//			for(Entry<String, String> entry : anomalies.entrySet()) {
+//				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName(), this.rankType);
+//			}
 		} else {
 			Logging.printLogDebug(logger, session, "No anomaly was identified.");
 		}
