@@ -245,8 +245,14 @@ public class DynamicDataFetcher {
 			}
 
 			// process response and parse
-			return processContent(pageContent, session);
+			String response = processContent(pageContent, session);
 
+			if(response != null && response.trim().isEmpty()) {
+				throw new ResponseCodeException(0);
+			}
+			
+			return response;
+			
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing request: " + url);
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
