@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,6 +26,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +65,8 @@ public class GETFetcher {
 			String url, 
 			List<Cookie> cookies, 
 			int attempt) {
-
+		
+		
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
@@ -73,6 +76,25 @@ public class GETFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
+			if(attempt == 1) {
+				Map<String,String> headers = new HashMap<>();
+				
+				if(cookies != null) {
+					StringBuilder cookiesHeader = new StringBuilder();
+					
+					for(Cookie c : cookies) {
+						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+					}
+					
+					headers.put("Cookie", cookiesHeader.toString());
+				}
+				
+				String payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
+				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
+				
+				return response.getJSONObject("response").getString("body");
+			}
+			
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
 			
@@ -283,6 +305,23 @@ public class GETFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
+			if(attempt == 1) {				
+				if(cookies != null) {
+					StringBuilder cookiesHeader = new StringBuilder();
+					
+					for(Cookie c : cookies) {
+						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+					}
+					
+					headers.put("Cookie", cookiesHeader.toString());
+				}
+				
+				String payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
+				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
+				
+				return response.getJSONObject("response").getString("body");
+			}
+			
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
 
