@@ -47,6 +47,7 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -205,7 +206,12 @@ public class DataFetcher {
 	 * @return A JSONObject with the data from the url passed, or null if something went wrong.
 	 */
 	public static JSONObject fetchJSONObject(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
-		return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
+		try {
+			return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
+		} catch(JSONException e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+			return new JSONObject();
+		}
 	}
 
 	/**
@@ -219,7 +225,12 @@ public class DataFetcher {
 	 * @return A JSONArray with the data from the url passed, or null if something went wrong.
 	 */
 	public static JSONArray fetchJSONArray(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
-		return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
+		try {
+			return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
+		} catch(JSONException e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+			return new JSONArray();
+		}
 	}
 
 	/**

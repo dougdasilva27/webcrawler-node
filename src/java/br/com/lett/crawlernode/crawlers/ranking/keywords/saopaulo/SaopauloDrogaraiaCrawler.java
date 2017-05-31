@@ -62,10 +62,10 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
 	private String crawlProductUrl(Element e) {
 		String urlProduct = null;
-		Element urlElement = e.select("div.productInfo div > a").first();
+		Element urlElement = e.select("div.product-info div > a").first();
 
 		if (urlElement != null) {
-			urlProduct = urlElement.attr("href");
+			urlProduct = urlElement.attr("title");
 		}
 
 		return urlProduct;
