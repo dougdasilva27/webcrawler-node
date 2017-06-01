@@ -75,7 +75,8 @@ public class GETFetcher {
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
-
+			
+			// Request via fetcher on first attempt
 			if(attempt == 1) {
 				Map<String,String> headers = new HashMap<>();
 				
@@ -305,6 +306,7 @@ public class GETFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
+			// Request via fetcher on first attempt
 			if(attempt == 1) {				
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();

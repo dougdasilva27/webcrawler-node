@@ -91,6 +91,25 @@ public class POSTFetcher {
 		try {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
+			// Request via fetcher on first attempt
+			if(attempt == 1) {
+				Map<String,String> headers = new HashMap<>();
+				
+				if(cookies != null && !cookies.isEmpty()) {
+					StringBuilder cookiesHeader = new StringBuilder();
+					for(Cookie c : cookies) {
+						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+					}
+					
+					headers.put("Cookie", cookiesHeader.toString());
+				}
+				
+				JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, urlParameters, headers, null);
+				JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
+				
+				return response.getJSONObject("response").getString("body");
+			}
+			
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
 
@@ -245,7 +264,8 @@ public class POSTFetcher {
 
 	public static String fetchJsonPOST(Session session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
-
+		
+		// Request via fetcher on first attempt
 		if(attempt == 1) {
 			Map<String,String> headers = new HashMap<>();
 			
@@ -396,7 +416,8 @@ public class POSTFetcher {
 		try {
 
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
-
+			
+			// Request via fetcher on first attempt
 			if(attempt == 1) {
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
