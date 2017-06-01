@@ -700,7 +700,7 @@ public class POSTFetcher {
 	 * @param specificProxy JSONObject Ex:
 	 * 			 {"source":"proxy_5","host":"1.1.1.1.1","port":89745,"location":"England","user":"crawler","pass":"12345"} -- if doesn't needed put null
 	 * 
-	 * @return String with all parameters for request 'FETCHER'
+	 * @return JSONObject with all parameters for request 'FETCHER'
 	 */
 	public static JSONObject fetcherPayloadBuilder(
 			String url, 
@@ -744,7 +744,8 @@ public class POSTFetcher {
 			payload.put(FETCHER_PARAMETER_PROXIES, specific);
 		} else {
 			JSONObject proxies = new JSONObject();
-
+			
+			// Proxies sequencie to be used for requests (1x per proxy service)
 			JSONArray any = new JSONArray();
 			any.put(ProxyCollection.BUY);
 			any.put(ProxyCollection.AZURE);

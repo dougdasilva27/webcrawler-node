@@ -96,7 +96,7 @@ public class CampograndeComperCrawler extends Crawler {
 
 			// Imagens
 			String primaryImage = "";
-			String secondaryImages = "";
+			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 			Element elementPrimaryImage = doc.select("#ProdutoImagem").first();
 
