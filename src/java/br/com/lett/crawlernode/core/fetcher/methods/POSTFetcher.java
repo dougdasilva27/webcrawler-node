@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.core.fetcher.methods;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,8 +58,8 @@ public class POSTFetcher {
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
 	private static final String FETCHER_USER = "fetcher";
 	private static final String FETCHER_PASSWORD = "lettNasc";
-	private static final String FETCHER_HOST = "http://"+ FETCHER_USER +":"+ FETCHER_PASSWORD +"@development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
-	//private static final String FETCHER_HOST = "http://"+ FETCHER_USER +":"+ FETCHER_PASSWORD +"@localhost:3000/";
+	private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	//private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
@@ -580,6 +582,10 @@ public class POSTFetcher {
 		Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a "+ 
 												payload.getString(FETCHER_PARAMETER_METHOD) +" request in: " + payload.getString(FETCHER_PARAMETER_URL));
 
+		//Authentication
+		URL requestURL = new URI(FETCHER_HOST).toURL();
+		String fetcherUrl = requestURL.getProtocol() + "://" + FETCHER_USER + ":" + FETCHER_PASSWORD + "@" + requestURL.getHost();
+		
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 		RequestConfig requestConfig = RequestConfig.custom()
@@ -603,7 +609,7 @@ public class POSTFetcher {
 		StringEntity input = new StringEntity(payload.toString());
 		input.setContentType(FETCHER_CONTENT_TYPE);
 
-		HttpPost httpPost = new HttpPost(FETCHER_HOST);
+		HttpPost httpPost = new HttpPost(fetcherUrl);
 		httpPost.setEntity(input);	
 		httpPost.setEntity(new StringEntity(payload.toString(), ContentType.create(FETCHER_CONTENT_TYPE)));
 		httpPost.setConfig(requestConfig);
@@ -623,7 +629,7 @@ public class POSTFetcher {
 		// creating the page content result from the http request
 		PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 		pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
-		pageContent.setUrl(FETCHER_HOST); // setting url
+		pageContent.setUrl(fetcherUrl); // setting url
 
 		Integer responseLength = pageContent.getContentData().length;
 
