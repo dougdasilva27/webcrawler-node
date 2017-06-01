@@ -54,7 +54,10 @@ public class POSTFetcher {
 	protected static final Logger logger = LoggerFactory.getLogger(POSTFetcher.class);
 
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
-	private static final String FETCHER_HOST = "http://localhost:3000";
+	private static final String FETCHER_USER = "fetcher";
+	private static final String FETCHER_PASSWORD = "lettNasc";
+	private static final String FETCHER_HOST = "http://"+ FETCHER_USER +":"+ FETCHER_PASSWORD +"@development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	//private static final String FETCHER_HOST = "http://"+ FETCHER_USER +":"+ FETCHER_PASSWORD +"@localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
@@ -108,25 +111,7 @@ public class POSTFetcher {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
 
-			RequestConfig requestConfig = null;
-			if (proxy != null) {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(false)
-						.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
-						.setProxy(proxy)
-						.build();
-			} else {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(false)
-						.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
-						.build();
-			}
+			RequestConfig requestConfig = getRequestConfig(proxy);
 
 			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
@@ -262,7 +247,7 @@ public class POSTFetcher {
 		if(attempt == 1) {
 			Map<String,String> headers = new HashMap<>();
 			
-			if(cookies != null) {
+			if(cookies != null && !cookies.isEmpty()) {
 				StringBuilder cookiesHeader = new StringBuilder();
 				for(Cookie c : cookies) {
 					cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
@@ -271,7 +256,7 @@ public class POSTFetcher {
 				headers.put("Cookie", cookiesHeader.toString());
 			}
 			
-			String payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
+			JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
 			JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
 			
 			return response.getJSONObject("response").getString("body");
@@ -411,7 +396,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			if(attempt == 1) {
-				if(cookies != null) {
+				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					for(Cookie c : cookies) {
 						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
@@ -420,7 +405,7 @@ public class POSTFetcher {
 					headers.put("Cookie", cookiesHeader.toString());
 				}
 				
-				String payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
+				JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
 				
 				return response.getJSONObject("response").getString("body");
@@ -447,25 +432,7 @@ public class POSTFetcher {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
 
-			RequestConfig requestConfig = null;
-			if (proxy != null) {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true)
-						.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
-						.setProxy(proxy)
-						.build();
-			} else {
-				requestConfig = RequestConfig.custom()
-						.setCookieSpec(CookieSpecs.STANDARD)
-						.setRedirectsEnabled(true)
-						.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-						.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-						.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
-						.build();
-			}
+			RequestConfig requestConfig = getRequestConfig(proxy);
 
 			List<Header> reqHeaders = new ArrayList<>();
 			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
@@ -599,13 +566,19 @@ public class POSTFetcher {
 		}
 	}
 
-	public static JSONObject requestWithFetcher(Session session, String payload) throws Exception {
-		CloseableHttpResponse closeableHttpResponse = null;
-		Integer responseLength = 0;
+	/**
+	 * Request a url with fetcher
+	 * 
+	 * @param session
+	 * @param payload - JSONObject with all parameters to request fetcher
+	 * @return JSONObject - response of fetcher, doc in https://www.notion.so/lett/Fetcher-e63950ab50c849aaa46931d124eba168#303c4ee9f1e347dabab305bd6725f49c
+	 * @throws Exception
+	 */
+	public static JSONObject requestWithFetcher(Session session, JSONObject payload) throws Exception {
 		String requestHash = DataFetcher.generateRequestHash(session);
 
-		Logging.printLogDebug(logger, session, "Performing POST request: " + FETCHER_HOST);
-
+		Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a "+ 
+												payload.getString(FETCHER_PARAMETER_METHOD) +" request in: " + payload.getString(FETCHER_PARAMETER_URL));
 
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -627,16 +600,16 @@ public class POSTFetcher {
 
 		HttpContext localContext = new BasicHttpContext();
 
-		StringEntity input = new StringEntity(payload);
+		StringEntity input = new StringEntity(payload.toString());
 		input.setContentType(FETCHER_CONTENT_TYPE);
 
 		HttpPost httpPost = new HttpPost(FETCHER_HOST);
 		httpPost.setEntity(input);	
-		httpPost.setEntity(new StringEntity(payload, ContentType.create(FETCHER_CONTENT_TYPE)));
+		httpPost.setEntity(new StringEntity(payload.toString(), ContentType.create(FETCHER_CONTENT_TYPE)));
 		httpPost.setConfig(requestConfig);
 
 		// do request
-		closeableHttpResponse = httpclient.execute(httpPost, localContext);
+		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
 		// analysing the status code
 		// if there was some response code that indicates forbidden access or server error we want to try again
@@ -652,7 +625,7 @@ public class POSTFetcher {
 		pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 		pageContent.setUrl(FETCHER_HOST); // setting url
 
-		responseLength = pageContent.getContentData().length;
+		Integer responseLength = pageContent.getContentData().length;
 
 		// assembling request information log message
 		DataFetcher.sendRequestInfoLog(
@@ -666,7 +639,7 @@ public class POSTFetcher {
 				requestHash);
 
 		// saving request content result on Amazon
-		String content = "";
+		String content;
 		if (pageContent.getContentCharset() == null) {
 			content = new String(pageContent.getContentData());
 		} else {
@@ -702,7 +675,7 @@ public class POSTFetcher {
 	 * 
 	 * @return String with all parameters for request 'FETCHER'
 	 */
-	public static String fetcherPayloadBuilder(
+	public static JSONObject fetcherPayloadBuilder(
 			String url, 
 			String method, 
 			boolean retrieveStatistics, 
@@ -758,6 +731,32 @@ public class POSTFetcher {
 			payload.put(FETCHER_PARAMETER_PROXIES, proxies);
 		}
 
-		return payload.toString();
+		return payload;
+	}
+	
+	/**
+	 * Get requets config
+	 * @param proxy
+	 * @return
+	 */
+	private static RequestConfig getRequestConfig(HttpHost proxy) {
+		if (proxy != null) {
+			return RequestConfig.custom()
+					.setCookieSpec(CookieSpecs.STANDARD)
+					.setRedirectsEnabled(true)
+					.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+					.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
+					.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
+					.setProxy(proxy)
+					.build();
+		}
+			
+		return RequestConfig.custom()
+				.setCookieSpec(CookieSpecs.STANDARD)
+				.setRedirectsEnabled(true)
+				.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+				.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
+				.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT)
+				.build();
 	}
 }

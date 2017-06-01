@@ -79,7 +79,7 @@ public class GETFetcher {
 			if(attempt == 1) {
 				Map<String,String> headers = new HashMap<>();
 				
-				if(cookies != null) {
+				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					
 					for(Cookie c : cookies) {
@@ -89,7 +89,7 @@ public class GETFetcher {
 					headers.put("Cookie", cookiesHeader.toString());
 				}
 				
-				String payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
+				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 				
 				return response.getJSONObject("response").getString("body");
@@ -306,7 +306,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
 			if(attempt == 1) {				
-				if(cookies != null) {
+				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					
 					for(Cookie c : cookies) {
@@ -316,7 +316,7 @@ public class GETFetcher {
 					headers.put("Cookie", cookiesHeader.toString());
 				}
 				
-				String payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
+				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 				
 				return response.getJSONObject("response").getString("body");
