@@ -59,8 +59,8 @@ public class POSTFetcher {
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
 	private static final String FETCHER_USER = "fetcher";
 	private static final String FETCHER_PASSWORD = "lettNasc";
-	//private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
-	private static final String FETCHER_HOST = "http://localhost:3000/";
+	private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	//private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
@@ -673,7 +673,6 @@ public class POSTFetcher {
 		} else {
 			content = new String(pageContent.getContentData(), pageContent.getContentCharset());
 		}
-		S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
 		// see if some code error occured
 		// sometimes the remote server doesn't send the http error code on the headers

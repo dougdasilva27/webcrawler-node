@@ -783,6 +783,7 @@ public class Persistence {
 			
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
+			fields.add(processed.MASTER_ID);
 					
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
@@ -791,8 +792,15 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-				processedIds.add(record.get(processed.ID));
+//				Long masterId = record.get(processed.MASTER_ID);
+//				
+//				if(masterId != null) {
+//					processedIds.add(record.get(processed.MASTER_ID));
+//				} else {
+					processedIds.add(record.get(processed.ID));
+//				}
 			}
+
 			
 		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
@@ -811,6 +819,7 @@ public class Persistence {
 
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
+			fields.add(processed.MASTER_ID);
 					
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
@@ -819,8 +828,15 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-				processedIds.add(record.get(processed.ID));
+//				Long masterId = record.get(processed.MASTER_ID);
+//				
+//				if(masterId != null) {
+//					processedIds.add(record.get(processed.MASTER_ID));
+//				} else {
+					processedIds.add(record.get(processed.ID));
+//				}
 			}
+
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
@@ -838,6 +854,7 @@ public class Persistence {
 
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
+			fields.add(processed.MASTER_ID);
 					
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
@@ -846,7 +863,13 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-				processedIds.add(record.get(processed.ID));
+//				Long masterId = record.get(processed.MASTER_ID);
+//				
+//				if(masterId != null) {
+//					processedIds.add(record.get(processed.MASTER_ID));
+//				} else {
+					processedIds.add(record.get(processed.ID));
+//				}
 			}
 
 
