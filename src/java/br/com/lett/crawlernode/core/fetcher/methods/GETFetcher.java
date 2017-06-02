@@ -38,6 +38,7 @@ import br.com.lett.crawlernode.core.fetcher.PageContent;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -77,7 +78,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 			
 			// Request via fetcher on first attempt
-			if(attempt == 1) {
+			if(attempt == 1&& Main.USING_FETCHER) {
 				Map<String,String> headers = new HashMap<>();
 				
 				if(cookies != null && !cookies.isEmpty()) {
@@ -307,7 +308,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1) {				
+			if(attempt == 1 && Main.USING_FETCHER) {				
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					

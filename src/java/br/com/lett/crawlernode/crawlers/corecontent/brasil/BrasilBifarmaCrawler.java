@@ -333,8 +333,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 			}
 		}
 		
-		System.err.println(info);
-		
 		return info;
 	}
 }

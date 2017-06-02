@@ -47,6 +47,7 @@ import br.com.lett.crawlernode.core.fetcher.PageContent;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -58,8 +59,8 @@ public class POSTFetcher {
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
 	private static final String FETCHER_USER = "fetcher";
 	private static final String FETCHER_PASSWORD = "lettNasc";
-	private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
-	//private static final String FETCHER_HOST = "http://localhost:3000/";
+	//private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
@@ -92,7 +93,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1) {
+			if(attempt == 1 && Main.USING_FETCHER) {
 				Map<String,String> headers = new HashMap<>();
 				
 				if(cookies != null && !cookies.isEmpty()) {
@@ -266,7 +267,7 @@ public class POSTFetcher {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 		
 		// Request via fetcher on first attempt
-		if(attempt == 1) {
+		if(attempt == 1 && Main.USING_FETCHER) {
 			Map<String,String> headers = new HashMap<>();
 			
 			if(cookies != null && !cookies.isEmpty()) {
@@ -418,7 +419,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 			
 			// Request via fetcher on first attempt
-			if(attempt == 1) {
+			if(attempt == 1 && Main.USING_FETCHER) {
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					for(Cookie c : cookies) {

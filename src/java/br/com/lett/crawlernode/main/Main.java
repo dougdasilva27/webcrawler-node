@@ -56,6 +56,8 @@ public class Main {
 	public static ServerExecutorStatusAgent	serverExecutorStatusAgent;
 	public static Server					server;
 
+	public static final boolean USING_FETCHER = true;
+	
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");	
 
