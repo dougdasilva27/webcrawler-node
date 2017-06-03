@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.main;
 
 import java.io.File;
 
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +57,9 @@ public class Main {
 	public static ServerExecutorStatusAgent	serverExecutorStatusAgent;
 	public static Server					server;
 
-	public static final boolean USING_FETCHER = true;
-	
+//	public static final boolean USING_FETCHER = true;
+	public static boolean USING_FETCHER = (new DateTime().getHourOfDay() % 2 == 0); // Adaptando para apenas usar fetcher em horas pares
+
 	public static void main(String args[]) {
 		Logging.printLogDebug(logger, "Starting webcrawler-node...");	
 
