@@ -320,8 +320,10 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 	private String crawlDescription(JSONObject json) {
 		String description = "";
 		
-		if(json.has("shortDescription")){
-			description += json.getString("shortDescription");
+		if (json.has("shortDescription")) {
+			if (json.get("shortDescription") instanceof String) {
+				description += json.getString("shortDescription");
+			}
 		}
 		
 		// This key in json has a map of attributes -> {label: "", value = ""} , For crawl niutritional table we make the html and put the values in html
