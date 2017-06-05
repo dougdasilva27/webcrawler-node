@@ -72,10 +72,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			 * e sem variação) 
 			 */
 			String internalId = null;
-			Element elementInternalId = doc.select("small[itemprop=productID]").first();
+			Element elementInternalId = doc.select("#productId").first();
 			if(elementInternalId != null){
-				int begin = elementInternalId.text().indexOf(".com") + 4;
-				internalId = elementInternalId.text().substring(begin).replace(")", "").trim();
+				internalId = elementInternalId.val().trim();
 			}
 
 			// Pid
