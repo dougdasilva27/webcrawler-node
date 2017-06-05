@@ -26,6 +26,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.joda.time.DateTime;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 			
 			// Request via fetcher on first attempt
-			if(attempt == 1&& Main.USING_FETCHER) {
+			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 				Map<String,String> headers = new HashMap<>();
 				
 				if(cookies != null && !cookies.isEmpty()) {

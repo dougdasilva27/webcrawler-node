@@ -36,6 +36,7 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -93,7 +94,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER) {
+			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 				Map<String,String> headers = new HashMap<>();
 				
 				if(cookies != null && !cookies.isEmpty()) {
@@ -267,7 +268,7 @@ public class POSTFetcher {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 		
 		// Request via fetcher on first attempt
-		if(attempt == 1 && Main.USING_FETCHER) {
+		if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 			Map<String,String> headers = new HashMap<>();
 			
 			if(cookies != null && !cookies.isEmpty()) {
@@ -419,7 +420,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 			
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER) {
+			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					for(Cookie c : cookies) {
