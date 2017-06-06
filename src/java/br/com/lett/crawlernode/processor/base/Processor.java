@@ -201,7 +201,16 @@ public class Processor {
 			}
 
 			// update behavior
-			updateBehavior(newProcessedProduct, nowISO, stock, available, price, marketplace, session);
+			updateBehavior(
+					newProcessedProduct, 
+					nowISO, 
+					stock, 
+					available, 
+					newProcessedProduct.getStatus(), 
+					price, 
+					newProcessedProduct.getPrices(), 
+					marketplace, 
+					session);
 
 			Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
@@ -264,12 +273,14 @@ public class Processor {
 	 * @param marketplace
 	 * @param session
 	 */
-	private static void updateBehavior(
+	public static void updateBehavior(
 			Processed newProcessedProduct,
 			String nowISO,
 			Integer stock,
 			boolean available,
+			String status,
 			Float price,
+			Prices prices,
 			Marketplace marketplace,
 			Session session) {
 
@@ -297,7 +308,15 @@ public class Processor {
 
 		// create the new BehaviorElement
 		try {
-			BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(), marketplace);
+			BehaviorElement behaviorElement = createNewBehaviorElement(
+					nowISO, 
+					stock, 
+					available, 
+					status, 
+					price, 
+					prices, 
+					marketplace);
+			
 			newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, Util.getStackTraceString(e));

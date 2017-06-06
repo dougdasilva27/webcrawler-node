@@ -51,7 +51,7 @@ import dbmodels.tables.CrawlerOld;
 import dbmodels.tables.CrawlerRanking;
 
 import generation.PostgresJSONGsonBinding;
-
+import models.Behavior;
 import models.Marketplace;
 import models.Prices;
 import models.Processed;
@@ -65,7 +65,7 @@ public class Persistence {
 	public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD 	= "found_skus";
 	public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD		= "new_skus";
 	public static final String MONGO_TASK_COLLECTION_STATUS_FIELD 		= "status";
-	
+
 	private static final String MONGO_COLLECTION_CATEGORIES = "Categories";
 	private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
 	private static final String MONGO_COLLECTION_TASK = "Task";
@@ -447,9 +447,51 @@ public class Persistence {
 
 		return persistenceResult;
 	}
+	/**
+	 * Updates processed Behaviour on processed table.
+	 * This method is used in active void to include the behavior of void status.
+	 * 
+	 * @param newBehaviour
+	 * @param session
+	 */
+	public static void updateProcessedBehaviour(Behavior newBehaviour, Session session) {
+		dbmodels.tables.Processed processedTable = Tables.PROCESSED;
+
+		Map<Field<?>, Object> updateSets = new HashMap<>();
+
+		if(newBehaviour != null){
+			updateSets.put(processedTable.BEHAVIOUR, newBehaviour.toString());
+		} else {
+			updateSets.put(processedTable.BEHAVIOUR, null);
+		}
+
+		List<Condition> conditions = new ArrayList<>();
+		conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+		conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+
+		try {
+			Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+			Logging.printLogDebug(logger, session, "Processed product behaviour updated with success.");
+
+		} catch(Exception e) {
+			Logging.printLogError(logger, session, "Error updating processed product behaviour.");
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+
+			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
+		}
+	}
 
 	/**
 	 * Set void value of a processed model.
+	 * This method sets the following values:
+	 * <ul>
+	 * <li>available = false</li>
+	 * <li>status = "void"</li>
+	 * <li>void = true</li>
+	 * <li>marketplace = null</li>
+	 * <li>price = null</li>
+	 * <li>prices = new Prices() which is an empty prices model</li>
+	 * </ul>
 	 * @param processed
 	 * @param voidValue A boolean indicating whether the processed product void must be set to true or false
 	 * @param session
@@ -464,6 +506,7 @@ public class Persistence {
 		updateSets.put(processedTable.VOID, true);
 		updateSets.put(processedTable.MARKETPLACE, null);
 		updateSets.put(processedTable.PRICE, null);
+		updateSets.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(new Prices().toJSON()));
 
 		List<Condition> conditions = new ArrayList<>();
 
@@ -484,6 +527,7 @@ public class Persistence {
 
 	/**
 	 * Updates processed LastReadTime on processed table.
+	 * 
 	 * @param nowISO
 	 * @param session
 	 */
@@ -511,6 +555,7 @@ public class Persistence {
 
 	/**
 	 * Updates processed LastModifiedTime on processed table.
+	 * 
 	 * @param nowISO
 	 * @param session
 	 */
@@ -536,9 +581,10 @@ public class Persistence {
 		}
 
 	}
-	
+
 	/**
 	 * Updates processed LastModifiedStatus on processed table.
+	 * 
 	 * @param nowISO
 	 * @param session
 	 */
@@ -602,9 +648,9 @@ public class Persistence {
 
 				Document search = new Document("_id", documentId);
 				Document modification = new Document("$addToSet", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
-				
+
 				panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
-				
+
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
 			}
 		} catch (Exception e) {
@@ -627,7 +673,7 @@ public class Persistence {
 
 				Document search = new Document("_id", documentId);
 				Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_NEW_SKUS_FIELD, processedId));
-				
+
 				panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
 
 				Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
@@ -724,33 +770,33 @@ public class Persistence {
 
 		if (!file.exists()) {
 			boolean fileWasCreated = file.mkdir();
-			
+
 			if (fileWasCreated) {
 				Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
 			} else {
 				Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
 			}
-			
+
 		} else {
 			Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " already exists.");
 		}
 	}
-	
+
 
 	/*********************************Ranking*****************************************************/
-	
+
 
 	//busca dados no postgres
 	public static CategoriesRanking fecthCategories(int id) {		
 		try {
 			CrawlerCategories crawlerCategories = Tables.CRAWLER_CATEGORIES;
-			
+
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(crawlerCategories.CAT1);
 			fields.add(crawlerCategories.CAT2);
 			fields.add(crawlerCategories.CAT3);
 			fields.add(crawlerCategories.URL);
-			
+
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(crawlerCategories.ID.equal((long) id));
 
@@ -780,11 +826,11 @@ public class Persistence {
 
 		try {
 			dbmodels.tables.Processed processed = Tables.PROCESSED;
-			
+
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
 			fields.add(processed.MASTER_ID);
-					
+
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
 			conditions.add(processed.INTERNAL_PID.equal(pid));
@@ -792,20 +838,20 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
-					processedIds.add(record.get(processed.ID));
-//				}
+				//				Long masterId = record.get(processed.MASTER_ID);
+				//				
+				//				if(masterId != null) {
+				//					processedIds.add(record.get(processed.MASTER_ID));
+				//				} else {
+				processedIds.add(record.get(processed.ID));
+				//				}
 			}
 
-			
+
 		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
-		
+
 		return processedIds;
 	}
 
@@ -820,7 +866,7 @@ public class Persistence {
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
 			fields.add(processed.MASTER_ID);
-					
+
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
 			conditions.add(processed.URL.equal(url));
@@ -828,20 +874,20 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
-					processedIds.add(record.get(processed.ID));
-//				}
+				//				Long masterId = record.get(processed.MASTER_ID);
+				//				
+				//				if(masterId != null) {
+				//					processedIds.add(record.get(processed.MASTER_ID));
+				//				} else {
+				processedIds.add(record.get(processed.ID));
+				//				}
 			}
 
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
-		
+
 		return processedIds;
 	}
 
@@ -855,7 +901,7 @@ public class Persistence {
 			List<Field<?>> fields = new ArrayList<>();
 			fields.add(processed.ID);
 			fields.add(processed.MASTER_ID);
-					
+
 			List<Condition> conditions = new ArrayList<>();
 			conditions.add(processed.MARKET.equal(market));
 			conditions.add(processed.INTERNAL_ID.equal(id));
@@ -863,13 +909,13 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
-					processedIds.add(record.get(processed.ID));
-//				}
+				//				Long masterId = record.get(processed.MASTER_ID);
+				//				
+				//				if(masterId != null) {
+				//					processedIds.add(record.get(processed.MASTER_ID));
+				//				} else {
+				processedIds.add(record.get(processed.ID));
+				//				}
 			}
 
 
@@ -883,7 +929,7 @@ public class Persistence {
 	public static void insertProductsRanking(Ranking ranking){
 		try {
 			List<Query> queries = new ArrayList<>();
-			
+
 			CrawlerRanking crawlerRanking = Tables.CRAWLER_RANKING;
 
 			List<RankingProducts> products = ranking.getProducts();
@@ -894,7 +940,7 @@ public class Persistence {
 				for(Long processedId : processedIds){
 
 					Map<Field<?>, Object> mapInsert = new HashMap<>();
-					
+
 					mapInsert.put(crawlerRanking.RANK_TYPE, 	ranking.getRankType());
 					mapInsert.put(crawlerRanking.DATE, 			ranking.getDate());
 					mapInsert.put(crawlerRanking.LOCATION, 		ranking.getLocation());
@@ -903,12 +949,12 @@ public class Persistence {
 					mapInsert.put(crawlerRanking.PROCESSED_ID, 	processedId);
 					mapInsert.put(crawlerRanking.TOTAL_SEARCH, 	ranking.getStatistics().getTotalSearch());
 					mapInsert.put(crawlerRanking.TOTAL_FETCHED, ranking.getStatistics().getTotalFetched());
-					
-					
+
+
 					queries.add(Main.dbManager.connectionPostgreSQL.createQueryInsert(crawlerRanking, mapInsert));
 				}
 			}
-			
+
 			Main.dbManager.connectionPostgreSQL.runBatchInsert(queries);
 
 			Logging.printLogDebug(logger, "Produtos cadastrados no postgres.");
@@ -918,59 +964,59 @@ public class Persistence {
 		}
 	}
 
-	
+
 	/**
 	 * Queries in database panel
 	 */
-	
+
 	//insere dados do ranking no mongo
 	public static void persistDiscoverStats(Ranking r) {
 		SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd");
-		
+
 		//se não conseguir inserir tenta atualizar
 		try{
 			Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", 
 					r.getRankType()).append("date", ft.format(new Date()));
-			
+
 			if(Main.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
-				
+
 				Document update =  new Document("$set", new Document(r.getDocumentUpdate()));
 				Main.dbManager.connectionFrozen.updateOne(filter, update, MONGO_COLLECTION_DISCOVER_STATS);
 				Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
-				
+
 			} else {
-				
+
 				Main.dbManager.connectionFrozen.insertOne(r.getDocument(),MONGO_COLLECTION_DISCOVER_STATS);
 				Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-				
+
 			}
-			
+
 		} catch(Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	//insere dados do categories no mongo
 	public void insertPanelCategories(Categories cg) {
 		Document categories = new Document();
 		categories.put("market", cg.getMarket());
 		categories.put("cat1", cg.getCat1());
 		categories.put("cat1_name", cg.getCat1Name());
-		
+
 		if(cg.getCat2() != null) {
 			categories.put("cat2", cg.getCat2());
 			categories.put("cat2_name", cg.getCat2Name());
-			
+
 			if(cg.getCat3() != null) {
 				categories.put("cat3", cg.getCat3());
 				categories.put("cat3_name", cg.getCat3Name());
 			}
 		}
-		
+
 		categories.put("url", cg.getUrl());
 		categories.put("ect", cg.getDataCreated());
 		categories.put("lmt", cg.getDataUpdated());
-		           	
+
 		try{
 			Main.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
 			Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
@@ -978,11 +1024,11 @@ public class Persistence {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
 	}
-	
+
 	//insere dados do categories no mongo		
 	public int updatePanelCategories(Categories cg)	{		
 		Document filter = new Document("cat1", cg.getCat1()).append("cat2", cg.getCat2()).append("cat3", cg.getCat3()).append("market", cg.getMarket());
-		
+
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
 		Document update =  new Document("$set", new Document("lmt", nowISO).append("url", cg.getUrl()));
 
@@ -991,25 +1037,25 @@ public class Persistence {
 		} catch (Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
 		}
-		
+
 		return 0;
 	}
-	
+
 	//insere as categorias no mongo
 	public Set<CategoriesRanking> extractCategories(String id) {
 		Set<CategoriesRanking> arrayCategories = new HashSet<> ();
-		
+
 		try {
 			FindIterable<Document> iterable = Main.dbManager.connectionPanel.runFind(Filters.and(Filters.eq("_id", new ObjectId(id))), MONGO_COLLECTION_CATEGORIES);
-			
+
 			for(Document e: iterable){
 				CategoriesRanking categories = new CategoriesRanking();
-				
+
 				categories.setCat1(e.getString("cat1"));
 				categories.setCat2(e.getString("cat2"));
 				categories.setCat3(e.getString("cat3"));
 				categories.setUrl(e.getString("url"));
-				
+
 				arrayCategories.add(categories);
 			}
 		} catch (Exception e) {
@@ -1017,11 +1063,11 @@ public class Persistence {
 		}
 		return arrayCategories;
 	}
-	
+
 	//insere dados da task
 	public static void insertPanelTask(String sessionId, String schedullerName, int marketID, String url, String location) {
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-		
+
 		Document taskDocument = new Document()
 				.append("_id", sessionId)
 				.append("scheduler", schedullerName)
@@ -1032,7 +1078,7 @@ public class Persistence {
 				.append("location", location)
 				//.append("processed_id", null)
 				.append("found_skus", new ArrayList<String>());
-		           	
+
 		try{
 			Main.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
 		} catch(Exception e) {
