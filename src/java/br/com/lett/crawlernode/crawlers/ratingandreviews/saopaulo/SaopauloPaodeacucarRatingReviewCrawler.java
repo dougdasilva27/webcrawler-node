@@ -20,7 +20,7 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
 	// Loja 501 sp
 	private static final String STORE_ID = "501";
 	
-	private final String HOME_PAGE = "http://www.paodeacucar.com";
+	private static final String HOME_PAGE = "https://www.paodeacucar.com";
 	
 	@Override
 	public void handleCookiesBeforeFetch() {
@@ -119,7 +119,18 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
 	private JSONObject crawlProductInformatioFromGPAApi(String productUrl) { 
 		JSONObject productsInfo = new JSONObject();
 		
-		String id = productUrl.replace("http://www.paodeacucar.com", "").split("/")[2];
+		String id;
+		
+		if(productUrl.contains("?")) {
+			int x = productUrl.indexOf("produto/") + "produto/".length();
+			int y = productUrl.indexOf("?", x);
+			
+			id = productUrl.substring(x, y);
+		} else {
+			int x = productUrl.indexOf("produto/") + "produto/".length();
+			id = productUrl.substring(x);
+		}
+		
 		String url = "https://api.gpa.digital/pa/products/"+ id +"/review";
 		
 		JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
