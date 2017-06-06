@@ -79,7 +79,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			Integer stock = null;
 			
 			// Sku info in json on html
-			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc);
+			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "var digitalData = ");
 			
 			// Skus
 			JSONArray skus = crawlSkusFromJson(skuJsonInfo);
@@ -92,6 +92,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 			
 			// Products with different url , we crawl only the product with the original url
 			boolean skusWithDiferentUrl = skus.length() > 1 && BrasilMagazineluizaCrawlerUtils.skusWithURL(doc);
+			
+			// Unnavailable Product
+			boolean unnavailableProduct = skus.length() == 0;
 			
 			if(singleProduct) {
 				JSONObject sku = skus.getJSONObject(0);
@@ -240,6 +243,43 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				products.add(product);
 			}
 			
+			else if(unnavailableProduct) {
+				skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "digitalData = ");
+				
+				// InternalId
+				String internalId = crawlInternalIdUnnavailableProduct(skuJsonInfo);
+				
+				// InternalPid
+				String internalPidUnnavailableProduct = internalId;
+				
+				// Description
+				String description = crawlDescription(doc);
+				
+				// Categories
+				CategoryCollection categoriesUnnavailableProduct = crawlCategoriesUnnavailableProduct(doc);
+				
+				// Creating the product
+				Product product = ProductBuilder.create()
+						.setUrl(session.getOriginalURL())
+						.setInternalId(internalId)
+						.setInternalPid(internalPidUnnavailableProduct)
+						.setName(frontPageName)
+						.setPrice(null)
+						.setPrices(new Prices())
+						.setAvailable(false)
+						.setCategory1(categoriesUnnavailableProduct.getCategory(0))
+						.setCategory2(categoriesUnnavailableProduct.getCategory(1))
+						.setCategory3(categoriesUnnavailableProduct.getCategory(2))
+						.setPrimaryImage(primaryImage)
+						.setSecondaryImages(secondaryImages)
+						.setDescription(description)
+						.setStock(stock)
+						.setMarketplace(new Marketplace())
+						.build();
+
+				products.add(product);
+			}
+			
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
@@ -251,7 +291,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 	private boolean isProductPage(String url, Document doc) {
-		return url.contains("/p/") &&  doc.select("h1[itemprop=name]").first() != null;
+		return (url.contains("/p/") || url.contains("/p1/")) &&  doc.select("h1[itemprop=name]").first() != null;
 	}
 	
 	/**
@@ -269,6 +309,21 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		}
 		
 		return internalId;
+	}
+	
+	/**
+	 * Crawl internalId for unnavailable product
+	 * @param skuInfo
+	 * @return
+	 */
+	private String crawlInternalIdUnnavailableProduct(JSONObject skuInfo) {
+		String id = null;
+		
+		if(skuInfo.has("idSku") && skuInfo.get("idSku") instanceof String) {
+			id = skuInfo.getString("idSku");
+		}
+		
+		return id;
 	}
 	
 	/**
@@ -310,10 +365,16 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 	 */
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
+		
 		Element elementDescription = doc.select(".factsheet-main-container").first();
+		Element anchorDescription = doc.select("#anchor-description").first();
 		
 		if (elementDescription != null) {
 			description.append(elementDescription.html());
+		}
+		
+		if (anchorDescription != null) {
+			description.append(anchorDescription.html());
 		}
 		
 		return description.toString();
@@ -358,6 +419,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 		
 		if(primaryImage == null) {
 			Element primaryImageElement = doc.select(".img-product-out-of-stock img").first();
+			
+			if(primaryImageElement != null) {
+				primaryImage = primaryImageElement.attr("src");
+			}
+		}
+		
+		if(primaryImage == null) {
+			Element primaryImageElement = doc.select(".unavailable__product-img").first();
 			
 			if(primaryImageElement != null) {
 				primaryImage = primaryImageElement.attr("src");
@@ -418,6 +487,22 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select(".container-bread-crumb-detail.bread-none-line ul li[typeof=v:Breadcrumb] a");
+
+		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
+			categories.add( elementCategories.get(i).text().trim() );
+		}
+
+		return categories;
+	}
+	
+	/**
+	 * Crawl categories
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategoriesUnnavailableProduct(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".cbreadcrumb__title a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
 			categories.add( elementCategories.get(i).text().trim() );

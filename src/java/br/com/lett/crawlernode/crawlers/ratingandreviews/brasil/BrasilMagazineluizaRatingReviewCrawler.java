@@ -207,7 +207,7 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 		List<String> idList = new ArrayList<>();
 		
 		if(internalPid != null) {
-			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc);
+			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "var digitalData = ");
 			
 			JSONArray skus = new JSONArray();
 			if(skuJsonInfo.has("details")){

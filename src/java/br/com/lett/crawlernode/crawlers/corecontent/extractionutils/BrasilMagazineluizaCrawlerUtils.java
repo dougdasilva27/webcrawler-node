@@ -57,18 +57,18 @@ public class BrasilMagazineluizaCrawlerUtils {
 	 * 
 	 * @return a json object containing all sku informations in this page.
 	 */
-	public static JSONObject crawlFullSKUInfo(Document document) {
+	public static JSONObject crawlFullSKUInfo(Document document, String token) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJsonProduct = new JSONObject();
 		JSONObject skuJson = new JSONObject();
 
 		for (Element tag : scriptTags){                
 			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var digitalData = ")) {
+				if(tag.html().trim().startsWith(token)) {
 					skuJson = new JSONObject
 							(
-									node.getWholeData().split(Pattern.quote("var digitalData = "))[1] +
-									node.getWholeData().split(Pattern.quote("var digitalData = "))[1].split(Pattern.quote("}]};"))[0]
+									node.getWholeData().split(Pattern.quote(token))[1] +
+									node.getWholeData().split(Pattern.quote(token))[1].split(Pattern.quote("}]};"))[0]
 									);
 
 				}
