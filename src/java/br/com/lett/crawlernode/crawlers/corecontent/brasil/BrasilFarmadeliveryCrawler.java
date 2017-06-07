@@ -36,7 +36,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -50,9 +50,9 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
 			// Pid
 			String internalPid = null;
-			Element elementInternalPid = doc.select(".std .data-table tbody td").get(1);
-			if (elementInternalPid != null) {
-				internalPid = elementInternalPid.text().trim();
+			Elements elementInternalPid = doc.select(".std .data-table tbody td");
+			if (elementInternalPid != null && elementInternalPid.size() > 1) {
+				internalPid = elementInternalPid.get(1).text().trim();
 			}
 
 			// Nome
@@ -62,7 +62,10 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			// Preço
 			Float price = null;
 			Element elementPrice = doc.select(".price-box .regular-price .price").first();
-			if(elementPrice == null) elementPrice = doc.select(".price-box .special-price .price").first();
+			if(elementPrice == null){
+				elementPrice = doc.select(".price-box .special-price .price").first();
+			}
+			
 			if (elementPrice != null) {
 				 price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
@@ -70,13 +73,15 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			// Disponibilidade
 			boolean available = true;
 			Element button_unavailable = doc.select("a.btn-esgotado").first();
-			if(button_unavailable != null) available = false;
+			if(button_unavailable != null){ 
+				available = false;
+			}
 
 			// Categorias
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
-			ArrayList<String> categories = new ArrayList<String>();
+			ArrayList<String> categories = new ArrayList<>();
 			Elements elementCategories = doc.select(".breadcrumbs ul li");
 
 			for(Element e : elementCategories) {
