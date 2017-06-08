@@ -315,7 +315,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER) {				
+			if ( attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0) ) {				
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					
