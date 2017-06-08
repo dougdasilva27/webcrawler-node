@@ -48,7 +48,6 @@ import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public abstract class CrawlerRanking extends Task {
 
@@ -702,8 +701,10 @@ public abstract class CrawlerRanking extends Task {
 		int countToday = this.arrayProducts.size();
 		int countYesterday = yesterdayProcesseds.size();
 	
-		if(countToday > 0 && countYesterday > 0) {
-			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
+		if(countYesterday > 0 && countToday == 0) {
+			SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie, yesterday in this location we"
+					+ " crawl " + countYesterday + " products and today we crawl 0 products.");
+			session.registerError(error);
 		}
 		
 		if(anomalies.size() > 0) {
@@ -717,36 +718,36 @@ public abstract class CrawlerRanking extends Task {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
-		List<Long> todayProcesseds = new ArrayList<>();
-		
-		for(RankingProducts r : this.arrayProducts) {
-			todayProcesseds.addAll(r.getProcessedIds());
-		}
-		
-		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
-		
-		int countYesterday = yesterdayProcesseds.size();
-		int countIntersection = intersection.size();
-		
-		StringBuilder str = new StringBuilder();
-		
-		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
-		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
-		
-		if(countYesterday > countIntersection) {
-			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
-			
-			if(percentage <= 20) {
-				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
-						+ "\n\n *Session*: " + session.getSessionId();
-				
-				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-				
-				anomalies.put(text,  str.toString());
-			}
-		}
-	}
+//	@SuppressWarnings("unchecked")
+//	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
+//		List<Long> todayProcesseds = new ArrayList<>();
+//		
+//		for(RankingProducts r : this.arrayProducts) {
+//			todayProcesseds.addAll(r.getProcessedIds());
+//		}
+//		
+//		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
+//		
+//		int countYesterday = yesterdayProcesseds.size();
+//		int countIntersection = intersection.size();
+//		
+//		StringBuilder str = new StringBuilder();
+//		
+//		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
+//		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
+//		
+//		if(countYesterday > countIntersection) {
+//			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
+//			
+//			if(percentage <= 20) {
+//				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
+//						+ "\n\n *Session*: " + session.getSessionId();
+//				
+//				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+//				
+//				anomalies.put(text,  str.toString());
+//			}
+//		}
+//	}
 	
 }
