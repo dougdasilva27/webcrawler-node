@@ -486,6 +486,10 @@ public abstract class CrawlerRanking extends Task {
 	protected Document fetchDocument(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		if(cookies != null){
 			StringBuilder string = new StringBuilder();
 			string.append("Cookies been used: ");
@@ -521,6 +525,10 @@ public abstract class CrawlerRanking extends Task {
 	protected JSONObject fetchJSONObject(String url) {
 		this.currentDoc = new Document(url);	
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -543,6 +551,10 @@ public abstract class CrawlerRanking extends Task {
 	protected JSONObject fetchJSONObject(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -565,6 +577,10 @@ public abstract class CrawlerRanking extends Task {
 	protected JsonObject fetchJsonObjectGoogle(String url) {
 		this.currentDoc = new Document(url);
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -588,6 +604,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected String fetchStringPOST(String url, String payload, Map<String,String> headers, List<Cookie> cookies){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		return POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 	}
 
@@ -596,6 +616,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 */
 	protected CrawlerWebdriver startWebDriver(String url){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		this.log("Iniciando webdriver");
 		return DynamicDataFetcher.fetchPageWebdriver(url, session);
 	}
@@ -606,6 +630,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected Document fetchDocumentWithWebDriver(String url){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		// se o webdriver não estiver iniciado, inicio ele
 		if(this.webdriver == null){
 			Document doc = new Document(url);

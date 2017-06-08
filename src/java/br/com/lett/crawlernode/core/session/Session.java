@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.Main;
@@ -90,7 +91,10 @@ public class Session {
 		requestProxyMap = new HashMap<>();
 		sessionId = request.getMessageId();
 		market = markets.getMarket(request.getMarketId());
-		originalURL = request.getMessageBody();
+		
+		if(!(request instanceof CrawlerRankingRequest)) {
+			originalURL = request.getMessageBody();
+		}
 
 		maxConnectionAttemptsWebcrawler = 0;
 		

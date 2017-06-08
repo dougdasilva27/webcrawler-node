@@ -24,16 +24,17 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords{
 		String originalUrl = "https://www.bemol.com.br/webapp/wcs/stores/servlet/SearchDisplay?storeId=10001&catalogId=10001&langId=-6"
 				+ "&pageSize=50&beginIndex="+ this.arrayProducts.size() +"&sType=SimpleSearch&showResultsPage=true&searchTerm="+ this.keywordEncoded;
 		
-		
 		// Nesse market uma keyword pode redirecionar para uma categoria
 		// com isso pegamos a url redirecionada e acrescentamos a página.
-		if(this.currentPage ==1){			
+		if(this.redirectUrl == null){			
 			this.log("Link onde são feitos os crawlers: "+originalUrl);	
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(originalUrl);
 			
-			this.redirectUrl = this.currentDoc.baseUri();
+			if(this.currentPage == 1) {
+				this.redirectUrl = this.session.getRedirectedToURL(session.getOriginalURL());
+			}
 		} else {
 			String url;
 			
@@ -41,7 +42,10 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords{
 				url = originalUrl;
 			} else {
 				url = this.redirectUrl + "?beginIndex=" + this.arrayProducts.size();
+				this.pageSize = 12;
 			}
+			
+			this.log("Link onde são feitos os crawlers: " + url);	
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
@@ -53,7 +57,9 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
+			}
 			for(Element e : products) {
 				
 				// InternalId

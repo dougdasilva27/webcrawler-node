@@ -1219,4 +1219,32 @@ public class DataFetcher {
 		return DigestUtils.md5Hex(s);
 	}
 
+	/**
+	 * Set request proxy for requests in fetcher
+	 * @param session
+	 * @param response
+	 * @param url
+	 */
+	public static void setRequestProxyForFetcher(Session session, JSONObject response, String url) {
+		JSONObject statistics = response.getJSONObject("statistics");
+		
+		if(statistics.has("requests")) {
+			JSONArray requests = statistics.getJSONArray("requests");
+			
+			if(requests.length() > 0) {
+				JSONObject succesRequest = requests.getJSONObject(requests.length()-1);
+				
+				if(succesRequest.has("proxy")) {
+					JSONObject proxyObj = succesRequest.getJSONObject("proxy");
+					
+					if(proxyObj.length() > 0 && proxyObj.has("source")) {
+						LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), 
+								null, proxyObj.getString("location"), null, null);
+						
+						session.addRequestProxy(url, lettProxy);
+					}
+				}
+			}
+		}
+	}
 }
