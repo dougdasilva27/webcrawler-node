@@ -245,7 +245,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select(".availability in-stock").first();
+		Element notifyMeElement = document.select(".availability.in-stock").first();
 		
 		if (notifyMeElement != null) {
 			return true;
