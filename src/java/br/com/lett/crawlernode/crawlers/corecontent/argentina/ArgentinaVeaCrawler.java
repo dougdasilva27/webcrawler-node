@@ -251,16 +251,17 @@ public class ArgentinaVeaCrawler extends Crawler {
 		return secondaryImages;
 	}
 
+	/**
+	 * We don't crawl categories because this market,
+	 * only have info of categories in categorie page,
+	 * so if we need categories information, we will see
+	 * in share of categories.
+	 * 
+	 * @param json
+	 * @return
+	 */
 	private CategoryCollection crawlCategories(JSONObject json) {
 		CategoryCollection categories = new CategoryCollection();
-
-		if(json.has("Grupo_Tipo")){
-			String category = json.getString("Grupo_Tipo");
-
-			if(!category.isEmpty()){
-				categories.add(category);
-			}
-		}
 
 		return categories;
 	}
