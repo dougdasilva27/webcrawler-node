@@ -397,7 +397,7 @@ public class ResultManager {
 		if ( primaryMd5 == null ) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
 			Logging.printLogDebug(logger, session, "Amazon md5 of the last downloaded image is null");
 			
-			String previousStatus = processedModelDigitalContentPicPrimary.getString("status");
+			String previousStatus = processedModelDigitalContentPicPrimary.has("status") ? processedModelDigitalContentPicPrimary.getString("status") : null;
 			
 			Logging.printLogDebug(logger, session, "Previous image status is " + previousStatus);
 			
