@@ -464,6 +464,7 @@ public class Persistence {
 		updateSets.put(processedTable.VOID, true);
 		updateSets.put(processedTable.MARKETPLACE, null);
 		updateSets.put(processedTable.PRICE, null);
+		updateSets.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(new Prices().toJSON()));
 
 		List<Condition> conditions = new ArrayList<>();
 
