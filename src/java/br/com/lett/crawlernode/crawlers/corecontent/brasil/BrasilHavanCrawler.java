@@ -22,9 +22,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
 import models.Seller;
 import models.Util;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/07/2016):

@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import br.com.lett.crawlernode.util.CommonMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class Product {
 	

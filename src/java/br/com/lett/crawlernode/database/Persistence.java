@@ -53,8 +53,8 @@ import dbmodels.tables.CrawlerRanking;
 import generation.PostgresJSONGsonBinding;
 
 import models.Marketplace;
-import models.Prices;
 import models.Processed;
+import models.prices.Prices;
 
 public class Persistence {
 	private static final Logger logger = LoggerFactory.getLogger(Persistence.class);

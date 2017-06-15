@@ -24,7 +24,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/07/2016):

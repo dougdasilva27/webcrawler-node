@@ -22,9 +22,9 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMagazi
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
 import models.Seller;
 import models.Util;
+import models.prices.Prices;
 
 /**
  * 

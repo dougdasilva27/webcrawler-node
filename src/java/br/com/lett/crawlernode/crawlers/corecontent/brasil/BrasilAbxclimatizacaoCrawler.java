@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (03/01/2017):
