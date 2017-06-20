@@ -470,14 +470,14 @@ public class Processor {
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
 		String internalId = product.getInternalId();
-		if (internalId == null) {
+		if ( internalId == null || internalId.isEmpty() ) {
 			internalId = session.getInternalId();
 		}
 
 		// sanitize
 		internalId = sanitizeBeforePersist(internalId);
 
-		if (internalId != null) {
+		if ( internalId != null && !internalId.isEmpty() ) {
 
 			try {
 				//				Processed processedTable = Tables.PROCESSED;
