@@ -1,18 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -32,12 +34,18 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			String internalPid = crawlInternalPid(document);
+			
+			// Api onde se consegue todos os preços
+			JSONObject initialJson = SaopauloB2WCrawlersUtils.getDataLayer(document);
+			
+			// Pega só o que interessa do json da api
+			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(initialJson);
+			
+			String internalPid = crawlInternalPid(infoProductJson);
 			
 			RatingsReviews ratingReviews = crawlRatingReviews(internalPid);
 
-			List<String> idList = crawlIdList(document);
+			List<String> idList = crawlIdList(infoProductJson);
 			for (String internalId : idList) {
 				RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
 				clonedRatingReviews.setInternalId(internalId);
@@ -59,51 +67,54 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 		return false;
 	}
 
-	private String crawlInternalPid(Document doc) {
-		String internalID = null;
+	private String crawlInternalPid(JSONObject assembleJsonProduct) {
+		String internalPid = null;
 
-		Element elementInternalID = doc.select(".p-name#main-product-name .p-code").first();
-		if (elementInternalID != null) {
-			internalID =  elementInternalID.text().split(" ")[1].replace(")", " ").trim() ;
+		if (assembleJsonProduct.has("internalPid")) {
+			internalPid = assembleJsonProduct.getString("internalPid").trim();
 		}
 
-		return internalID;
+		return internalPid;
 	}
 	
-	private List<String> crawlIdList(Document doc) {
+	private List<String> crawlIdList(JSONObject infoProductJson) {
 		List<String> idList = new ArrayList<>();
 		
-		Elements elementsProductOptions = doc.select(".pure-select option");
-		if(elementsProductOptions.size() < 1){
-			elementsProductOptions = doc.select(".pure-input-1 option");
-		}
-
-		if(elementsProductOptions.size() > 0){
-			for(Element e : elementsProductOptions){			
-				idList.add(e.attr("value"));
-			}
-		} else {
-			String id = null;
-			
-			// montando restante do internalId
-			Element idElement = doc.select(".toggle-container[data-sku]").first();
-			if (idElement != null) {
-				id = idElement.attr("data-sku").trim();
-			} else {
-				idElement = doc.select("input[name=soldout.skus]").first();
-				if (idElement != null) {
-					id = idElement.attr("value").trim();
-				}
-			}
-			
-			if(id != null){
-				idList.add(id);
-			}
+		// sku data in json
+		Map<String,String> skuOptions = crawlSkuOptions(infoProductJson);
+		
+		for (String internalId : skuOptions.keySet()) {	
+			idList.add(internalId);
 		}
 		
 		return idList;
 	}
 
+	private Map<String,String> crawlSkuOptions(JSONObject infoProductJson){
+		Map<String,String> skuMap = new HashMap<>();
+
+		if(infoProductJson.has("skus")){
+			JSONArray skus = infoProductJson.getJSONArray("skus");
+
+			for(int i = 0; i < skus.length(); i++){
+				JSONObject sku = skus.getJSONObject(i);
+
+				if(sku.has("internalId")){
+					String internalId = sku.getString("internalId");
+					String name = "";
+
+					if (sku.has("variationName")) {
+						name = sku.getString("variationName");
+					}
+
+					skuMap.put(internalId, name);
+				}
+			}
+		}
+
+		return skuMap;
+	}
+	
 	/**
 	 * Crawl rating and reviews stats using the bazaar voice endpoint.
 	 * To get only the stats summary we need at first, we only have to do
@@ -124,9 +135,9 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey();
 		String endpointRequest = assembleBazaarVoiceEndpointRequest(internalPid, bazaarVoicePassKey);
 
-		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);		
+		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);	
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalPid);
-
+		
 		ratingReviews.setTotalReviews(getTotalReviewCount(reviewStatistics));
 		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
