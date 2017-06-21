@@ -35,10 +35,10 @@ public class SaopauloExtraCrawler extends CrawlerRankingCategories {
 		// monta a url com a keyword e a página
 		String url;
 		
-		if(this.location.contains("?")) {
-			url = this.location + "&p=" + this.currentPage;
+		if(this.categoryUrl.contains("?")) {
+			url = this.categoryUrl + "&p=" + this.currentPage;
 		} else {
-			url = this.location + "?p=" + this.currentPage;
+			url = this.categoryUrl + "?p=" + this.currentPage;
 		}
 		
 		this.log("Link onde são feitos os crawlers: " + url);

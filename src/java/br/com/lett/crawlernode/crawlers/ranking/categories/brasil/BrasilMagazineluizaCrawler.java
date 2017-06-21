@@ -40,9 +40,9 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 		String url;
 		
 		if(this.cat1) {
-			url = this.location;
+			url = this.categoryUrl;
 		} else {
-			url = this.location + "/" + this.currentPage + "/";
+			url = this.categoryUrl + "/" + this.currentPage + "/";
 		}
 
 		this.log("Link onde são feitos os crawlers: " + url);

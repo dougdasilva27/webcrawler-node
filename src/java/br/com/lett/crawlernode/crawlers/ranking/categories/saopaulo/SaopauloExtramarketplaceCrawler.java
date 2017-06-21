@@ -31,7 +31,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 		this.pageSize = 21;
 		
 		// monta a url com a catehoria e a página
-		String url = this.location + "&paginaAtual=" + this.currentPage;
+		String url = this.categoryUrl + "&paginaAtual=" + this.currentPage;
 
 		this.log("Link onde são feitos os crawlers: " + url);
 

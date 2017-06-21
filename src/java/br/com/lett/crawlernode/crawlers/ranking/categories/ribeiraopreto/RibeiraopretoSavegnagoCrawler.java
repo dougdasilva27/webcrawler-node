@@ -39,10 +39,10 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingCategories {
 		//monta a url com a keyword e a página
 		String url;
 		
-		if(this.location.contains("?")) {
-			url = this.location + "&sc="+ CITY_CODE +"&PageNumber="+this.currentPage;
+		if(this.categoryUrl.contains("?")) {
+			url = this.categoryUrl + "&sc="+ CITY_CODE +"&PageNumber="+this.currentPage;
 		} else {
-			url = this.location + "?sc="+ CITY_CODE +"&PageNumber="+this.currentPage;
+			url = this.categoryUrl + "?sc="+ CITY_CODE +"&PageNumber="+this.currentPage;
 		}
 		
 		this.log("Link onde são feitos os crawlers: "+url);	

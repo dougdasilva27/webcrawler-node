@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.core.session.ranking;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 
@@ -13,7 +13,7 @@ public class TestRankingSession extends Session {
 	public TestRankingSession(Request request, String queueName, Markets markets) {
 		super(request, queueName, markets);
 		
-		this.location = ((CrawlerRankingRequest)request).getLocation();
+		this.location = ((CrawlerRankingKeywordsRequest)request).getLocation();
 	}
 	
 	public TestRankingSession(Market market, String location) {

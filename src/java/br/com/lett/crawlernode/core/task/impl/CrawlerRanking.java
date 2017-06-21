@@ -321,7 +321,7 @@ public abstract class CrawlerRanking extends Task {
 			ranking.setDate(ts);
 			ranking.setLmt(nowISO);
 			ranking.setRankType(this.rankType);
-			ranking.setLocation(location);
+			ranking.setLocation(this.location);
 			ranking.setProducts(this.arrayProducts);
 			
 			RankingStatistics statistics = new RankingStatistics();

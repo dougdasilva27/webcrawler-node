@@ -11,8 +11,19 @@ public class TestRankingCategoriesSession extends TestRankingSession {
 
 	}
 
-	public TestRankingCategoriesSession(Market market, String categorieUrl) {
-		super(market, categorieUrl);
+	public TestRankingCategoriesSession(Market market, String categoryUrl, String location) {
+		super(market, location);
+		
+		this.categoryUrl = categoryUrl;
 	}
 
+	private String categoryUrl;
+	
+	public String getCategoryUrl() {
+		return categoryUrl;
+	}
+
+	public void setCategoryUrl(String categoryUrl) {
+		this.categoryUrl = categoryUrl;
+	}
 }

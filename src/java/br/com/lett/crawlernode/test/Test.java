@@ -112,11 +112,11 @@ public class Test {
 			Session session;
 
 			if(testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingKeywordsSession("papinha", market);
+				session = SessionFactory.createTestRankingKeywordsSession("cerveja", market);
 			} else if(testType.equals(CATEGORIES_TEST)) { 
-				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market);
+				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
 			} else {
-				session = SessionFactory.createTestSession("http://www.extra.com.br/Eletrodomesticos/FornodeMicroondas/Microondas-20-Litros-Midea-Liva---MTAS21-7923456.html?IdProduto=4514606&recsource=btermo&rectype=p9_ov_f_s5", market);
+				session = SessionFactory.createTestSession("http://www.extra.com.br/tvseacessorios/Televisores/TVLED/TV-LED-32-AOC-HD-LE32H1465-com-Conversor-Digital-Integrado-Entradas-HDMI-e-Entrada-USB-8442637.html", market);
 			}
 
 
