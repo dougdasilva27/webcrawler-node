@@ -48,7 +48,7 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
 			Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);			
 			Double avgRating = getTotalAvgRating(rating);
 
-			ratingReviews.setTotalReviews(totalNumOfEvaluations);
+			ratingReviews.setTotalRating(totalNumOfEvaluations);
 			ratingReviews.setAverageOverallRating(avgRating);
 			ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
 			ratingReviewsCollection.addRatingReviews(ratingReviews);

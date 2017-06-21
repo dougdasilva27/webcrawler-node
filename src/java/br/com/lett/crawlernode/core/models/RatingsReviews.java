@@ -103,7 +103,7 @@ public class RatingsReviews implements Cloneable {
 		return totalReviews;
 	}
 
-	public void setTotalReviews(Integer totalReviews) {
+	public void setTotalRating(Integer totalReviews) {
 		this.totalReviews = totalReviews;
 	}
 

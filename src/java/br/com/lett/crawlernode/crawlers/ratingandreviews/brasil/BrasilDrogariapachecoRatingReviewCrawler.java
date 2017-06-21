@@ -56,7 +56,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);			
 				Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
 				
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 			
 				List<String> idList = crawlIdList(skuJson);

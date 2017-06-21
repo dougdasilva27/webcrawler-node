@@ -39,7 +39,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);			
 				Double avgRating = getTotalAvgRating(doc);
 
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 
 				for(int i = 0; i < products.length(); i++) {					

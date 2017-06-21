@@ -40,7 +40,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 				Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
 
 				ratingReviews.setInternalId(internalId);
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 
 				ratingReviewsCollection.addRatingReviews(ratingReviews);

@@ -138,7 +138,7 @@ public class SaopauloShoptimeRatingReviewCrawler extends RatingReviewCrawler {
 		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);	
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalPid);
 		
-		ratingReviews.setTotalReviews(getTotalReviewCount(reviewStatistics));
+		ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
 		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
 		return ratingReviews;

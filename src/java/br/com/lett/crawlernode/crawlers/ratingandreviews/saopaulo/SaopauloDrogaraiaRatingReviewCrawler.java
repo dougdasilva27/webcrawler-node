@@ -39,7 +39,7 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
 			
 			JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
 			
-			ratingReviews.setTotalReviews(getTotalNumOfRatings(trustVoxResponse));
+			ratingReviews.setTotalRating(getTotalNumOfRatings(trustVoxResponse));
 			ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
 			
 			ratingReviewsCollection.addRatingReviews(ratingReviews);

@@ -57,7 +57,7 @@ public class RiodejaneiroPaodeacucarRatingReviewCrawler extends RatingReviewCraw
 				Double averageOverallRating = new Double(totalRating) / new Double(totalOfEvaluations);
 
 				ratingsReviews.setAverageOverallRating(averageOverallRating);
-				ratingsReviews.setTotalReviews(totalOfEvaluations);
+				ratingsReviews.setTotalRating(totalOfEvaluations);
 			}
 
 			ratingReviewsCollection.addRatingReviews(ratingsReviews);

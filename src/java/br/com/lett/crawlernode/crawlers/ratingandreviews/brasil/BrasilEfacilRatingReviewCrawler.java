@@ -51,7 +51,7 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
 				
 				ratingReviews.setDate(session.getDate());
 				ratingReviews.setInternalId(internalId);
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 				
 				ratingReviewsCollection.addRatingReviews(ratingReviews);

@@ -40,7 +40,7 @@ public class BrasilSaraivaRatingReviewCrawler extends RatingReviewCrawler {
 				Double avgRating = getTotalAvgRating(document);
 				
 				ratingReviews.setInternalId(internalId);
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 
 				ratingReviewsCollection.addRatingReviews(ratingReviews);

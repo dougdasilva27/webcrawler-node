@@ -54,7 +54,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);			
 				Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
 				
-				ratingReviews.setTotalReviews(getTotalNumOfReviews(docRating));
+				ratingReviews.setTotalRating(getTotalNumOfReviews(docRating));
 				ratingReviews.setAverageOverallRating(avgRating);
 			
 				List<String> idList = crawlIdList(skuJson);

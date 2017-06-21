@@ -58,7 +58,7 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 					avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating/numRatings);
 				}
 				
-				ratingReviews.setTotalReviews(numRatings);
+				ratingReviews.setTotalRating(numRatings);
 				ratingReviews.setAverageOverallRating(avgRating);				
 			}
 			

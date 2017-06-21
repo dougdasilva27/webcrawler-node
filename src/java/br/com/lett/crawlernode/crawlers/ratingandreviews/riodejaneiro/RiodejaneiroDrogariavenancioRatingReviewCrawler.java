@@ -37,7 +37,7 @@ public class RiodejaneiroDrogariavenancioRatingReviewCrawler extends RatingRevie
 			Integer totalNumOfEvaluations = getTotalNumOfRatings(document);			
 			Double avgRating = getTotalAvgRating(document);
 
-			ratingReviews.setTotalReviews(totalNumOfEvaluations);
+			ratingReviews.setTotalRating(totalNumOfEvaluations);
 			ratingReviews.setAverageOverallRating(avgRating);
 
 			List<String> idList = crawlInternalIds(document);
