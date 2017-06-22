@@ -334,7 +334,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 		String[] tokens = url.split("=");
 
 		String urlSearch = "https://www.disco.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-		String urlParameters = "{IdMenu:\"\",textoBusqueda:\""+ tokens[tokens.length-1] +"\","
+		String urlParameters = "{IdMenu:\"\",textoBusqueda:\""+ CommonMethods.removeAccents(tokens[tokens.length-1]) +"\","
 				+ " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
 		String jsonString = POSTFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
