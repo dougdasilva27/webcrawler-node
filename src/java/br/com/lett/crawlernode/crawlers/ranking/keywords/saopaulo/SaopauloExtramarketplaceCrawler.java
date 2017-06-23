@@ -41,7 +41,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
 		// monta a url com a keyword e a página
 
-		String url = "http://buscando2.extra.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual="
+		String url = "http://buscando.extra.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual="
 				+ this.currentPage;
 
 		if (this.currentPage > 1) {
@@ -55,27 +55,27 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements id = this.currentDoc.select("a.link.url");
+		Elements products = this.currentDoc.select("a.link.url");
 
 		if (this.currentPage == 1) {
-			if (this.currentDoc.baseUri().contains("Filtro")) {
+			String redirectUrl = this.session.getRedirectedToURL(url);
+			if (redirectUrl != null && redirectUrl.contains("Filtro")) {
 				isCategory = true;
-				this.urlCategory = this.currentDoc.baseUri();
+				this.urlCategory = redirectUrl;
 			} else {
 				isCategory = false;
 			}
 		}
 
 		// número de produtos por página do market
-		if (!isCategory)
-			this.pageSize = 20;
+		if (!isCategory) this.pageSize = 20;
 
 		Elements result = this.currentDoc.select(".naoEncontrado");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
-		if (id.size() >= 1 && result.size() < 1) {
-			for (Element e : id) {
+		if (products.size() >= 1 && result.size() < 1) {
+			for (Element e : products) {
 				// InternalPid
 				String internalPid = crawlInternalPid(e);
 
