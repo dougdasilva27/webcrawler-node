@@ -79,8 +79,12 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 				}
 			}
 		}
+
+		if(count > 0) {
+			return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		} 
 		
-		return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		return totalRating;
 	}
 	
 	private JSONObject requestTrustVoxEndpoint(String id) {

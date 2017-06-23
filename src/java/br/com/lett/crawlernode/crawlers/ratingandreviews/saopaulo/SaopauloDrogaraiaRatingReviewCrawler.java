@@ -80,7 +80,11 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
 			}
 		}
 		
-		return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		if(count > 0) {
+			return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		} 
+		
+		return totalRating;
 	}
 	
 	private JSONObject requestTrustVoxEndpoint(String id) {
