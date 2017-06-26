@@ -131,6 +131,10 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
 			id = productUrl.substring(x);
 		}
 		
+		if(id != null && id.contains("/")) {
+			id = id.split("/")[0];
+		}
+		
 		String url = "https://api.gpa.digital/pa/products/"+ id +"/review";
 		
 		JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
