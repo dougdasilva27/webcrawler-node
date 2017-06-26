@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,7 +12,6 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMagazineluizaCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -206,29 +204,17 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 	private List<String> crawlIdList(Document doc, String internalPid) {
 		List<String> idList = new ArrayList<>();
 		
-		if(internalPid != null) {
-			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "var digitalData = ");
+		if(internalPid != null) {						
 			
-			JSONArray skus = new JSONArray();
-			if(skuJsonInfo.has("details")){
-				skus = skuJsonInfo.getJSONArray("details");
-			}
+			idList.add(internalPid);
 			
-						
-			if (BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skus) && skus.length() > 1) {
-				for(int i = 0; i < skus.length(); i++) {
-					idList.add(internalPid + "-" + skus.getJSONObject(i).getString("sku"));
-				}
-			} else {
-				idList.add(internalPid);
-			}
 		}
 		
 		return idList;
 	}
 	
 	private boolean isProductPage(String url) {
-		return url.contains("/p/");
+		return url.contains("/p/") || url.contains("/p1/");
 	}
 
 }
