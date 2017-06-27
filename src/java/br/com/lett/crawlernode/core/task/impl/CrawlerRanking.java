@@ -291,6 +291,42 @@ public abstract class CrawlerRanking extends Task {
 
 		this.arrayProducts.add(rankingProducts);
 	}
+	
+	/**
+	 * Salva os dados do produto e chama a função
+	 * que salva a url para mandar pra fila
+	 * @param internalId
+	 * @param pid
+	 * @param url
+	 */
+	protected void saveDataProduct(String internalId, String pid, String url, int position) {
+		RankingProducts rankingProducts = new RankingProducts();
+
+		List<Long> processedIds = new ArrayList<>();
+		
+		rankingProducts.setInteranlPid(pid);
+		rankingProducts.setUrl(url);
+		rankingProducts.setPosition(position);
+
+		if(!(session instanceof TestRankingSession)) {
+			if( internalId  != null ){
+				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
+			} else if(pid != null){
+				processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
+			} else if(url != null){
+				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
+			}
+			
+			rankingProducts.setProcessedIds(processedIds);
+			
+			if(url != null && processedIds.isEmpty()) {
+				saveProductUrlToQueue(url);
+			}
+			
+		}
+
+		this.arrayProducts.add(rankingProducts);
+	}
 
 	/**
 	 *
