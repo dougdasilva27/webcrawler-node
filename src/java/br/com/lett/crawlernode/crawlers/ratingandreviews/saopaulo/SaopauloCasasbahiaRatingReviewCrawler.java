@@ -158,7 +158,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
 	}
 	
 	private boolean isProductPage(Document doc) {
-		Element productElement = doc.select(".produtoNome h1 span").first();
+		Element productElement = doc.select(".produtoNome h1").first();
 
 		if (productElement != null){
 			return true;

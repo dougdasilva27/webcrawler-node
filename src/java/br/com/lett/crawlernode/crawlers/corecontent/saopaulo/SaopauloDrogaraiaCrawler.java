@@ -110,8 +110,16 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 			// Descrição
 			String description = "";
+			Element shortDescription = doc.select(".product-short-description").first();
 			Element elementDescription = doc.select("#details").first();
-			if(elementDescription != null) description = elementDescription.html().trim();
+			
+			if(shortDescription != null) {
+				description += shortDescription.html().trim();
+			}
+			
+			if(elementDescription != null) {
+				description += elementDescription.html().trim();
+			}
 
 			// Estoque
 			Integer stock = null;
