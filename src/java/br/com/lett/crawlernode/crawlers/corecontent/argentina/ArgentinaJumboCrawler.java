@@ -83,41 +83,45 @@ public class ArgentinaJumboCrawler extends Crawler {
 			String productUrl = crawlNewUrl();
 
 			JSONObject searchJson = crawlProductApi(productUrl);
-			JSONObject productJson = crawlImportantInformations(searchJson);
-
-			String internalId = crawlInternalId(productJson);
-			String internalPid = crawlInternalPid();
-			String name = crawlName(productJson);
-			Float price = crawlPrice(productJson);
-			Integer stock = crawlStock(productJson);
-			Prices prices = crawlPrices(price);
-			boolean available = crawlAvailability(stock);
-			CategoryCollection categories = crawlCategories(productJson);
-			String primaryImage = crawlPrimaryImage(productJson);
-			String secondaryImages = crawlSecondaryImages();
-			String description = crawlDescription(internalId);
-			Marketplace marketplace = crawlMarketplace();
-
-			// Creating the product
-			Product product = ProductBuilder.create()
-					.setUrl(productUrl)
-					.setInternalId(internalId)
-					.setInternalPid(internalPid)
-					.setName(name)
-					.setPrice(price)
-					.setPrices(prices)
-					.setAvailable(available)
-					.setCategory1(categories.getCategory(0))
-					.setCategory2(categories.getCategory(1))
-					.setCategory3(categories.getCategory(2))
-					.setPrimaryImage(primaryImage)
-					.setSecondaryImages(secondaryImages)
-					.setDescription(description)
-					.setStock(stock)
-					.setMarketplace(marketplace)
-					.build();
-
-			products.add(product);
+			JSONArray productsArray = crawlProducts(searchJson);
+			
+			for(int i = 0; i < productsArray.length(); i++) {
+				JSONObject productJson = productsArray.getJSONObject(i);
+	
+				String internalId = crawlInternalId(productJson);
+				String internalPid = crawlInternalPid();
+				String name = crawlName(productJson);
+				Float price = crawlPrice(productJson);
+				Integer stock = crawlStock(productJson);
+				Prices prices = crawlPrices(price);
+				boolean available = crawlAvailability(stock);
+				CategoryCollection categories = crawlCategories(productJson);
+				String primaryImage = crawlPrimaryImage(productJson);
+				String secondaryImages = crawlSecondaryImages();
+				String description = crawlDescription(internalId);
+				Marketplace marketplace = crawlMarketplace();
+	
+				// Creating the product
+				Product product = ProductBuilder.create()
+						.setUrl(productUrl)
+						.setInternalId(internalId)
+						.setInternalPid(internalPid)
+						.setName(name)
+						.setPrice(price)
+						.setPrices(prices)
+						.setAvailable(available)
+						.setCategory1(categories.getCategory(0))
+						.setCategory2(categories.getCategory(1))
+						.setCategory3(categories.getCategory(2))
+						.setPrimaryImage(primaryImage)
+						.setSecondaryImages(secondaryImages)
+						.setDescription(description)
+						.setStock(stock)
+						.setMarketplace(marketplace)
+						.build();
+	
+				products.add(product);
+			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -348,23 +352,19 @@ public class ArgentinaJumboCrawler extends Crawler {
 	 * @param json
 	 * @return
 	 */
-	private JSONObject crawlImportantInformations(JSONObject json){
-		JSONObject jsonProduct = new JSONObject();
-
+	private JSONArray crawlProducts(JSONObject json){
 		if(json != null){
 			JSONObject jsonD = parseJsonLevex(json);
 
 			if(jsonD.has("ResultadosBusquedaLevex")){
 				JSONArray products = jsonD.getJSONArray("ResultadosBusquedaLevex");
 
-				if(products.length() > 0){
-					jsonProduct = products.getJSONObject(0);
-				}
+				return products;
 			}
 
 		}
 
-		return jsonProduct;
+		return new JSONArray();
 	}
 
 	/**
