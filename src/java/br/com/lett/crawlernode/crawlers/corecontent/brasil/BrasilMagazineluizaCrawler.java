@@ -217,7 +217,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					Marketplace marketplace = crawlMarketPlace(doc, null, idForPrice);
 					
 					// Availability
-					boolean available = crawlAvailabilitySkuWithDifferentUrl(skuJsonInfo);
+					boolean available = crawlAvailabilitySkuWithDifferentUrl(skuJsonInfo, marketplace);
 					
 					// Price
 					Float price = crawlPrice(skuJsonInfo, available);
@@ -246,7 +246,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 							.setStock(stock)
 							.setMarketplace(marketplace)
 							.build();
-					System.err.println("opa");
 	
 					products.add(product);
 				}
@@ -664,8 +663,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 	 * @param skuInfo
 	 * @return
 	 */
-	private boolean crawlAvailabilitySkuWithDifferentUrl(JSONObject skuInfo) {
-		if(skuInfo.has("stockAvailability") && skuInfo.get("stockAvailability") instanceof Boolean) {
+	private boolean crawlAvailabilitySkuWithDifferentUrl(JSONObject skuInfo, Marketplace marketplace) {
+		if(skuInfo.has("stockAvailability") && skuInfo.get("stockAvailability") instanceof Boolean && marketplace.isEmpty()) {
 			return skuInfo.getBoolean("stockAvailability");
 		}
 		
