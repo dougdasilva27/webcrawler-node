@@ -46,7 +46,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
 		if (this.currentPage > 1) {
 			if (isCategory) {
-				url = this.urlCategory + "&paginaAtual=" + this.currentPage;
+				url = this.urlCategory + "&paginaAtual=13" /*+ this.currentPage*/;
 			}
 		}
 

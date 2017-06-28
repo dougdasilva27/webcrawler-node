@@ -364,7 +364,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		Element primaryImageElement = document.select("figure.imageWrapper a").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = CommonMethods.removeIllegalParameters(HOME_PAGE + primaryImageElement.attr("href").trim());
+			primaryImage = CommonMethods.sanitizeUrl(HOME_PAGE + primaryImageElement.attr("href").trim());
 		}
 
 		return primaryImage;
@@ -377,7 +377,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		Elements imagesElement = document.select("#carousel li a img");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // start with index 1 because the first image is the primary image
-			secondaryImagesArray.put(CommonMethods.removeIllegalParameters(HOME_PAGE +
+			secondaryImagesArray.put(CommonMethods.sanitizeUrl(HOME_PAGE +
 					imagesElement.get(i).attr("src").trim().replaceAll("false", "true"))); // montando url para pegar a maior imagem
 		}
 

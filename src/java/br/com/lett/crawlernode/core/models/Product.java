@@ -105,7 +105,7 @@ public class Product {
 	
 	public void setPrimaryImage(String primaryImage) {
 		if(primaryImage != null) {
-			this.primaryImage = CommonMethods.removeIllegalParameters(primaryImage);
+			this.primaryImage = CommonMethods.sanitizeUrl(primaryImage);
 		} else {
 			this.primaryImage = primaryImage;
 		}
