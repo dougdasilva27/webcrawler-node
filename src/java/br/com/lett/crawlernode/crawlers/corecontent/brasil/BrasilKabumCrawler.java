@@ -113,7 +113,7 @@ public class BrasilKabumCrawler extends Crawler {
 			Float price = null;
 
 			// availability
-			boolean available = true;
+			boolean available = false;
 
 			// categories
 			String category1 = "";
@@ -156,7 +156,7 @@ public class BrasilKabumCrawler extends Crawler {
 				//Available
 				Element elementAvailability = elementProduct.select(".disponibilidade img").first();	
 				Element availablePromo = doc.select(".box_comprar-cm .textocomprar").first();
-				if((elementAvailability == null || !elementAvailability.attr("alt").equals("produto_disponivel")) && availablePromo == null) {
+				if((elementAvailability == null || elementAvailability.attr("alt").equalsIgnoreCase("produto_disponivel")) && availablePromo == null) {
 					available = true;
 				}
 
