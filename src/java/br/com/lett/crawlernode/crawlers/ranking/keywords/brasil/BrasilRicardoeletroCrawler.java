@@ -18,8 +18,10 @@ public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página "+ this.currentPage);
 		
+		String keyword = this.keywordWithoutAccents.replaceAll(" ", "+");
+		
 		//monta a url com a keyword e a página
-		String url = "http://www.ricardoeletro.com.br/Busca/Resultado/?p="+this.currentPage+"&loja=&q="+this.keywordEncoded;
+		String url = "http://www.ricardoeletro.com.br/Busca/Resultado/?p="+this.currentPage+"&loja=&q="+keyword;
 		this.log("Link onde são feitos os crawlers: "+url);			
 		
 		//chama função de pegar a url

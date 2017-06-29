@@ -44,7 +44,7 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 
         if (this.currentPage == 1) {
 			String redirectUrl = this.session.getRedirectedToURL(url);
-			if (redirectUrl != null && redirectUrl.contains("Filtro")) {
+			if (redirectUrl != null && !redirectUrl.equals(url)) {
 				isCategory = true;
 				this.urlCategory = redirectUrl;
 			} else {
