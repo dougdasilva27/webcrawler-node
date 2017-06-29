@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -35,15 +32,6 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 		}
 		
 		this.currentDoc = fetchDocument(url);
-		
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/fastshop.html"));
-			
-			out.write(currentDoc.toString());
-			out.close();
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
 		
 		if(this.currentPage == 1){
 			//verifica se a keyword é de categoria ou busca.
@@ -102,10 +90,9 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 		return false;
 	}
 	
-	private void isCategory(String url)
-	{
+	private void isCategory(String url) {
 	
-		if(!url.equals(this.currentDoc.baseUri())){
+		if(session.getRedirectedToURL(url) != null && !url.equals(session.getRedirectedToURL(url))){
 			Element codigoCatElement = this.currentDoc.select("div.compare_controls.disabled a").first();
 			
 			if(codigoCatElement != null){
