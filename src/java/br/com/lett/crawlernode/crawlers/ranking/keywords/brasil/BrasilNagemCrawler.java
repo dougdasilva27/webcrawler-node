@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -21,13 +24,13 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "http://www.nagem.com.br/modulos/navegacao/busca.php?b="+this.keywordEncoded+"&q=50&p="+this.currentPage;
+		String url = "http://www.nagem.com.br/navegacao?busca="+ this.keywordEncoded +"&p="+ this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);			
 		
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select("form#frmListaProdutos > table");
+		Elements products =  this.currentDoc.select("#divlistaprodutos > div > a");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
@@ -37,14 +40,14 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 			}
 						
 			for(Element e : products) {
+				//monta a url
+				String productUrl = crawlProductUrl(e);
+				
 				//InternalPid
-				String internalPid 	= crawlInternalPid(e);
+				String internalPid = crawlInternalPid(productUrl);
 				
 				//InternalId
 				String internalId = internalPid;
-				
-				//monta a url
-				String productUrl = crawlProductUrl(e);
 				
 				saveDataProduct(internalId, internalPid, productUrl);
 				
@@ -74,36 +77,49 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 	
 	@Override
 	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("p.qtd-encontrados span").first();
+		Element totalElement = this.currentDoc.select("#spanpaginacao").first();
 		
-		try {
-			if(totalElement != null) {
-				this.totalProducts = Integer.parseInt(totalElement.text());
+		if(totalElement != null) {
+			try {
+				String text = totalElement.text().toLowerCase();
+				
+				if(text.contains("de")) {
+					this.totalProducts = Integer.parseInt(text.replaceAll("[^0-9]", ""));
+				}
+			} catch(Exception e) {
+				this.logError(CommonMethods.getStackTrace(e));
 			}
-		} catch(Exception e) {
-			this.logError(CommonMethods.getStackTrace(e));
 		}
 		
 		this.log("Total da busca: "+this.totalProducts);
 	}
 
 	
-	private String crawlInternalPid(Element e){
-		String internalPid = e.attr("id");;
+	private String crawlInternalPid(String url){
+		String internalPid = null;
+		
+		if(url != null) {
+			try {
+				URL productUrl = new URL(url);
+				
+				String path = productUrl.getPath();
+				
+				if(path != null) {
+					internalPid = path.split("/")[4];
+				}
+			} catch (MalformedURLException e) {
+				this.logError(CommonMethods.getStackTrace(e));
+			}
+		}
 		
 		return internalPid;
 	}
 	
 	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		Element urlElement = e.select("td.dtl-produto td > a[href]").first();
+		String urlProduct = e.attr("href");
 		
-		if(urlElement != null){
-			urlProduct = urlElement.attr("href");
-			
-			if(!urlProduct.contains("nagem")){
-				urlProduct = "http://www.nagem.com.br/" + urlElement.attr("href");
-			}
+		if(!urlProduct.contains("nagem")){
+			urlProduct = "http://www.nagem.com.br" + urlProduct;
 		}
 		
 		return urlProduct;
