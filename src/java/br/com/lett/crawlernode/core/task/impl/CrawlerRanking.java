@@ -552,7 +552,7 @@ public abstract class CrawlerRanking extends Task {
 	}
 
 	/**
-	 * Fetch jsonObject
+	 * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
 	 * @param url
 	 * @return
 	 */
