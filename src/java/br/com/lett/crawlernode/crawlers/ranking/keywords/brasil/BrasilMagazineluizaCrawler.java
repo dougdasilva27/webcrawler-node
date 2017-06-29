@@ -32,7 +32,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements id = this.currentDoc.select("div.wrapper-content li[itemscope] > a");
+		Elements id = this.currentDoc.select("div.wrapper-content li[itemscope] > a[data-product]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(id.size() >= 1) {
@@ -83,6 +83,10 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords{
 			this.log("Keyword sem resultado!");
 		}
 	
+		if(!hasNextPage() && this.arrayProducts.size() > this.totalProducts) {
+			this.totalProducts = this.arrayProducts.size();
+		}
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 		
 	}
