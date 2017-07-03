@@ -42,18 +42,18 @@ public class BrasilIbyteCrawler extends Crawler {
 
 			// ID interno
 			String internalId = null;
-			Element elementInternalId = doc.select("input[name=product]").first();
-			if(elementInternalId != null) {
-				internalId = elementInternalId.attr("value").trim();
+			Element elementId = doc.select(".view-sku").first();
+			if (elementId != null && elementId.text().contains(":")) {
+				internalId = elementId.text().split(":")[1].replace(")", "").trim();
 			}
 
 			// Pid
 			String internalPid = null;
-			Element elementInternalPid = doc.select(".view-sku").first();
-			if (elementInternalPid != null && elementInternalPid.text().contains(":")) {
-				internalPid = elementInternalPid.text().split(":")[1].replace(")", "").trim();
+			Element elementPid = doc.select("input[name=product]").first();
+			if(elementPid != null) {
+				internalPid = elementPid.attr("value").trim();
 			}
-
+			
 			// Nome
 			String name = null;
 			Element elementName = doc.select(".product-name h1").first();
