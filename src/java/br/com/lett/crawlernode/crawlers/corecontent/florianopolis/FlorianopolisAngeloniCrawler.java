@@ -155,7 +155,13 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 	
 	private Float crawlPrice(Document doc) {
 		Elements elementPrice = doc.select("span.valorPrice");
-		return Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		String priceText = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
+		
+		if(!priceText.isEmpty()) {
+			return Float.parseFloat(priceText);
+		}
+		
+		return null;
 	}
 	
 	private String crawlDescription(Document doc) {
