@@ -439,6 +439,15 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			if(docDescription != null){
 				description = description + docDescription.html();
 			}
+			Element desc2 = document.select(".info-description-frame-inside").first();
+			
+			if(desc2 != null) {
+				String urlDesc2 = HOME_PAGE + "product-description/acom/" + internalPid;
+				Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
+				if(docDescriptionFrame != null){
+					description = description + docDescriptionFrame.html();
+				}
+			}
 			
 			Element elementProductDetails = document.select(".info-section").last();
 			if(elementProductDetails != null){
