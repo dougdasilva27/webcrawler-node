@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.Seller;
@@ -555,7 +554,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		}
 
 
-		return CommonMethods.sanitizeUrl(primaryImage);
+		return primaryImage;
 	}
 
 	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
@@ -572,9 +571,9 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Element e = elementFotoSecundaria.get(i);
 
 					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
-						secondaryImagesArray.put(CommonMethods.sanitizeUrl(e.attr("rev")));
+						secondaryImagesArray.put(e.attr("rev"));
 					} else {
-						secondaryImagesArray.put(CommonMethods.sanitizeUrl(e.attr("href")));
+						secondaryImagesArray.put(e.attr("href"));
 					}
 				}
 
