@@ -304,11 +304,36 @@ public class CommonMethods {
 			}
 			
 			// replace porque tem casos que a url tem um – e o apache não interpreta esse caracter
-			return uriBuilder.build().toString().replace("%C3%A2%C2%80%C2%93", "%E2%80%93");
+			return replaceSpecialCharacterDash(uriBuilder.build().toString());
 		} catch (MalformedURLException | URISyntaxException e) {
 			Logging.printLogError(logger, getStackTraceString(e));
 			return url;
 		}
+    }
+    
+    /**
+     * In some cases, url has this character –
+     * So then when we encode this url, this character become like this %C3%A2%C2%80%C2%93 or this %25E2%2580%2593,
+     * for resolve this problem, we replace this encode for %E2%80%93
+     * @param str
+     * @return
+     */
+    private static String replaceSpecialCharacterDash(String str) {
+    	String finalStr = str;
+    	
+    	if(finalStr.contains("–")) {
+    		finalStr = finalStr.replaceAll("–", "%E2%80%93");
+    	}
+    	
+    	if(finalStr.contains("%C3%A2%C2%80%C2%93")) {
+    		finalStr = finalStr.replaceAll("%C3%A2%C2%80%C2%93", "%E2%80%93");
+    	}
+    	
+    	if(finalStr.contains("%25E2%2580%2593")) {
+    		finalStr = finalStr.replaceAll("%25E2%2580%2593", "%E2%80%93");
+    	}
+    	
+    	return finalStr;
     }
     
     /**
