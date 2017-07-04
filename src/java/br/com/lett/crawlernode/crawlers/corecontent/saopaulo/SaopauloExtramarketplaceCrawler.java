@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.Seller;
@@ -533,8 +532,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 			}
 		}
 
-
-		return CommonMethods.sanitizeUrl(primaryImage);
+		return primaryImage;
 	}
 
 	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
@@ -551,9 +549,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 					Element e = elementFotoSecundaria.get(i);
 
 					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
-						secondaryImagesArray.put(CommonMethods.sanitizeUrl(e.attr("rev")));
+						secondaryImagesArray.put(e.attr("rev"));
 					} else {
-						secondaryImagesArray.put(CommonMethods.sanitizeUrl(e.attr("href")));
+						secondaryImagesArray.put(e.attr("href"));
 					}
 				}
 
@@ -580,7 +578,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
 	private ArrayList<String> crawlCategories(Document document) {
 		Elements elementCategories = document.select(".breadcrumb a");
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 
 		for(int i = 1; i < elementCategories.size(); i++) { // starts with index 1 because the first item is the home page
 			Element e = elementCategories.get(i);
