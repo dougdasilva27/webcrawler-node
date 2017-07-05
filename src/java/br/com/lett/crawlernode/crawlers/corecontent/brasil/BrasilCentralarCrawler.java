@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -53,7 +52,7 @@ import models.prices.Prices;
 public class BrasilCentralarCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.centralar.com.br/";
-	
+
 	public BrasilCentralarCrawler(Session session) {
 		super(session);
 	}
@@ -88,7 +87,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 			// Price
 			Float price = crawlMainPagePrice(doc);
-			
+
 			// Availability
 			boolean available = crawlAvailability(doc);
 
@@ -112,7 +111,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 			// Marketplace
 			Marketplace marketplace = crawlMarketplace(doc);
-			
+
 			// Prices 
 			Prices prices = crawlPrices(price, doc);
 
@@ -139,7 +138,7 @@ public class BrasilCentralarCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
@@ -155,28 +154,24 @@ public class BrasilCentralarCrawler extends Crawler {
 		}
 		return false;
 	}
-	
-	
+
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element boxElement = document.select(".dados1 .box").first();
-		
+		Element boxElement = document.select(".dados1 .box div[style]:not([class])").first();
+
 		if (boxElement != null) {
-			Elements boxChildElements = boxElement.children();
-			
-			for (Element boxChild : boxChildElements) {
-				String childText = StringUtils.stripAccents(boxChild.text().toLowerCase());
-				
-				if (childText.contains("codigo do produto")) {
-					String[] tokens = childText.split(":");
-					
-					if (tokens.length > 1) {
-						internalId = tokens[1].trim();
-					}
+			String childText = boxElement.ownText().toLowerCase();
+
+			if (childText.contains("do produto:")) {
+				String[] tokens = childText.split(":");
+
+				if (tokens.length > 1) {
+					internalId = tokens[1].trim();
 				}
 			}
 		}
@@ -187,7 +182,7 @@ public class BrasilCentralarCrawler extends Crawler {
 	private String crawlInternalPid(Document document) {
 		return null;
 	}
-	
+
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select(".titulo h1[property=name]").first();
@@ -209,7 +204,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
 		return price;
 	}
-	
+
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".Aviseme").first();
 		if (notifyMeElement != null) return false;
@@ -259,45 +254,45 @@ public class BrasilCentralarCrawler extends Crawler {
 		String description = "";
 		Element specElement = document.select(".bx-caracteristicas-tecnicas").first();
 		Element dimensionsElement = document.select(".float.medidas").first();
-		
+
 		if (specElement != null) description = description + specElement.html();
 		if (dimensionsElement != null) description = description + dimensionsElement.html();
 
 		return description;
 	}
-	
+
 	/**************************
 	 * Specific manipulations *
 	 **************************/
-	
+
 	private String sanitizeName(String name) {
 		return name.replace("'","").replace("’","").trim();
 	}
-	
+
 	private Prices crawlPrices(Float price, Document doc){
 		Prices prices = new Prices();
-		
+
 		if(price != null){
 			Element aVista = doc.select(".preco4 .preco1").first();
-			
+
 			if(aVista != null){
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
-			
+
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 			Elements installments = doc.select(".parcelasAbertas span");
-			
+
 			for(Element e : installments) {
 				String text = e.text().toLowerCase();
 				int x = text.indexOf("x");
-				
+
 				Integer installment = Integer.parseInt(text.substring(0,x).replaceAll("[^0-9]", "").trim());
 				Float value = MathCommonsMethods.parseFloat(text.substring(x+1));
-				
+
 				installmentPriceMap.put(installment, value);
 			}
-			
+
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -305,7 +300,7 @@ public class BrasilCentralarCrawler extends Crawler {
 			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
 
