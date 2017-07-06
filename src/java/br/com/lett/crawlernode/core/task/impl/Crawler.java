@@ -33,8 +33,8 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import br.com.lett.crawlernode.util.URLBox;
 import containers.ProcessedComparison;
-import models.Prices;
 import models.Processed;
+import models.prices.Prices;
 
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
