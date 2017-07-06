@@ -4,7 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.server.ServerHandler;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
@@ -41,9 +42,21 @@ public class CrawlerTaskRequestChecker {
 			}
 		}
 		
-		if(QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingRequest)request).getLocation() == null) {
+		if(QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingKeywordsRequest)request).getLocation() == null) {
 			Logging.printLogError(logger, "Request is missing keyword");
 			return false;
+		}
+		
+		if(QueueName.RANKING_CATEGORIES.equals(request.getQueueName())) {
+			if(((CrawlerRankingCategoriesRequest) request).getLocation() == null) {
+				Logging.printLogError(logger, "Request is missing category id");
+				return false;
+			}
+			
+			if(((CrawlerRankingCategoriesRequest) request).getCategoryUrl() == null) {
+				Logging.printLogError(logger, "Request is missing category url");
+				return false;
+			}
 		}
 		
 		return true;

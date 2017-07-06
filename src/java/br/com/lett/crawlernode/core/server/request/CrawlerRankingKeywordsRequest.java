@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.core.server.request;
 
-public class CrawlerRankingRequest extends Request {
+public class CrawlerRankingKeywordsRequest extends Request {
 	
 	private String location;
 	
-	public CrawlerRankingRequest() {
+	public CrawlerRankingKeywordsRequest() {
 		super();
 	}
 

@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilColomboCrawler extends Crawler {
 
@@ -42,7 +42,7 @@ public class BrasilColomboCrawler extends Crawler {
 		if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && !session.getOriginalURL().contains("?") && (productElement != null)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr");
+			Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
 
 			// ID interno
 			String internalId = null;
@@ -148,7 +148,7 @@ public class BrasilColomboCrawler extends Crawler {
 
 				// Disponibilidade
 				boolean available = true;
-				Element elementUnavailable = doc.select(".form-indisponivel").first();
+				Element elementUnavailable = doc.select("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)").first();
 				if (elementUnavailable != null) {
 					available = false;
 				}
@@ -181,7 +181,7 @@ public class BrasilColomboCrawler extends Crawler {
 
 			else { // múltiplas variações
 
-				Elements variations = doc.select(".dados-itens-table.dados-itens-detalhe tr");
+				Elements variations = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
 
 				for(Element e : variations) {
 
@@ -189,7 +189,7 @@ public class BrasilColomboCrawler extends Crawler {
 					String variationInternalId = null;
 					Element variationElementInternalID = e.select("input").first();
 					if (variationElementInternalID != null) {
-						variationInternalId = variationElementInternalID.attr("value").trim();
+						variationInternalId = e.attr("data-item").trim();
 					}
 
 					// Nome
@@ -260,6 +260,8 @@ public class BrasilColomboCrawler extends Crawler {
 		
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+			
+			installmentPriceMap.put(1, price);
 			
 			Element bankPrice = doc.select(".dados-preco-valor").first();
 			

@@ -25,6 +25,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.impl.client.RedirectLocations;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.Args;
@@ -117,7 +118,9 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
                     "Received redirect response " + response.getStatusLine()
                     + " but no location header");
         }
-        final String location = CommonMethods.removeIllegalArguments(locationHeader.getValue());
+        
+        final String location = CommonMethods.sanitizeUrl(locationHeader.getValue());
+        
         if (this.log.isDebugEnabled()) {
             this.log.debug("Redirect requested to location '" + location + "'");
         }
@@ -164,7 +167,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
      * @since 4.1
      */
     protected URI createLocationURI(final String location, final String originalUrl) throws ProtocolException {
-        try {
+        try {        	
             final URIBuilder b = new URIBuilder(new URI(location).normalize());
             String host = b.getHost();
             String path = b.getPath();

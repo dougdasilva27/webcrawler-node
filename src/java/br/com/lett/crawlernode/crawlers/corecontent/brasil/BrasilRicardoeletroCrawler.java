@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
 
@@ -127,8 +127,16 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 			// Descrição
 			String description = "";   
-			Element elementDescription = doc.select("#ProdutoDescricao").first();
-			if(elementDescription != null) description = elementDescription.html().replace("’","").trim();
+			Element elementDescription = doc.select("#aba-descricao").first();
+			Element elementDescription2 = doc.select("#aba-caracteristicas").first();
+			
+			if(elementDescription != null) {
+				description += elementDescription.html().replace("’","").trim();
+			}
+			
+			if(elementDescription2 != null) {
+				description += elementDescription2.html().replace("’","").trim();
+			}
 
 			// Estoque
 			Integer stock = crawlStock(doc);
@@ -221,30 +229,39 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 		
 		if(price != null){
 			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
-			Elements parcelas = doc.select("#ProdutoDetalhesParcelamentoJuros p");
+			installmentsPriceMap.put(1, price);
+			prices.setBankTicketPrice(price);
 			
-			if(parcelas.size() > 0){
-				for(Element e : parcelas){
-					String parcela = e.text().toLowerCase();
-					
-					int x = parcela.indexOf("x");
-					int y = parcela.indexOf("r$");
-					
-					Integer installment = Integer.parseInt(parcela.substring(0, x).trim());
-					Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-					
-					installmentsPriceMap.put(installment, priceInstallment);
-				}
-				
-				prices.setBankTicketPrice(installmentsPriceMap.get(1));
-				prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
-				prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
-				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
-				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
-				prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
+			Element parcel1 = doc.select(".produto-detalhes-preco-parcelado-parcelas").first();
+			setParcels(parcel1, installmentsPriceMap);
+			
+			Elements parcels = doc.select(".produto-detalhes-preco-parcelado");
+			if(parcels.size() > 1) {
+				setParcels(parcels.get(1), installmentsPriceMap);
 			}
+			
+			prices.setBankTicketPrice(installmentsPriceMap.get(1));
+			prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
+			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
 		}
 		
 		return prices;
+	}
+	
+	private void setParcels(Element e, Map<Integer,Float> installmentsPriceMap) {
+		if(e != null){
+			String parcela = e.text().toLowerCase();
+			
+			int x = parcela.indexOf("x");
+			int y = parcela.indexOf("r$");
+			
+			Integer installment = Integer.parseInt(parcela.substring(0, x).replaceAll("[^0-9]", "").trim());
+			Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			
+			installmentsPriceMap.put(installment, priceInstallment);
+		}
 	}
 }

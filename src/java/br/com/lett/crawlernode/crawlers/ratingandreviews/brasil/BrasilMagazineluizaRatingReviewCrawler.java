@@ -7,6 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -33,35 +34,56 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 
 		if (isProductPage(session.getOriginalURL())) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
-			String internalPid = crawlInternalPid(document);
-			RatingsReviews ratingReviews = crawlRatingReviews(internalPid);
 
-			List<String> idList = crawlIdList(document, internalPid);
+			boolean isNewSite = document.select(".breadcrumb__title").first() != null;
 			
-			for (String internalId : idList) {
-				RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
-				clonedRatingReviews.setInternalId(internalId);
-				ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+			if(isNewSite) {
+				BrasilMagazineluizaRatingReviewNewCrawler rating = new BrasilMagazineluizaRatingReviewNewCrawler(session);
+				ratingReviewsCollection.addRatingReviews(rating.crawlRatingNew(document));
+			} else {
+				String internalPid = crawlInternalPid(document);
+				RatingsReviews ratingReviews = crawlRatingReviews(internalPid);
+
+				List<String> idList = crawlIdList(document, internalPid);
+
+				for (String internalId : idList) {
+					RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
+					clonedRatingReviews.setInternalId(internalId);
+					ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+				}
 			}
+		} else {
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 
 		return ratingReviewsCollection;
 
 	}
-	
-	private String crawlInternalPid(Document doc){
+
+	/**
+	 * 
+	 * @param doc
+	 * @return
+	 */
+	private String crawlInternalPid(Document doc) {
 		String internalPid = null;
-		
-		Element pidElement = doc.select("small[itemprop=productID]").first();
-		if(pidElement != null){
-			int begin = pidElement.text().indexOf(".com") + 4;
-			internalPid = pidElement.text().substring(begin).replace(")", "").trim();
+		Elements scripts = doc.select("script");
+
+		for(Element e : scripts) {
+			String html = e.outerHtml().toLowerCase();
+
+			if(html.contains("oas_query") && html.contains("productid")) {
+				int x = html.indexOf("productid=") + 10;
+				int y = html.indexOf("&", x);
+
+				internalPid = html.substring(x, y);
+				break;
+			}
 		}
-		
+
 		return internalPid;
 	}
-	
+
 	/**
 	 * Crawl rating and reviews stats using the bazaar voice endpoint.
 	 * To get only the stats summary we need at first, we only have to do
@@ -85,7 +107,7 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);		
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalPid);
 
-		ratingReviews.setTotalReviews(getTotalReviewCount(reviewStatistics));
+		ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
 		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
 		return ratingReviews;
@@ -178,10 +200,10 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 	private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
 		if(ratingReviewsEndpointResponse.has("BatchedResults")){
 			JSONObject batchedResults = ratingReviewsEndpointResponse.getJSONObject("BatchedResults");
-			
+
 			if(batchedResults.has("q0")){
 				JSONObject q0 = batchedResults.getJSONObject("q0");
-				
+
 				if (q0.has("Includes")) {
 					JSONObject includes = q0.getJSONObject("Includes");
 
@@ -202,33 +224,33 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 
 		return new JSONObject();
 	}
-	
+
 	private List<String> crawlIdList(Document doc, String internalPid) {
 		List<String> idList = new ArrayList<>();
-		
+
 		if(internalPid != null) {
-			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc);
-			
+			JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "var digitalData = ");
+
 			JSONArray skus = new JSONArray();
 			if(skuJsonInfo.has("details")){
 				skus = skuJsonInfo.getJSONArray("details");
 			}
-			
-						
+
+
 			if (BrasilMagazineluizaCrawlerUtils.hasVoltageSelector(skus) && skus.length() > 1) {
 				for(int i = 0; i < skus.length(); i++) {
-					idList.add(internalPid + "-" + skus.getJSONObject(i).getString("sku"));
+					idList.add(skus.getJSONObject(i).getString("sku"));
 				}
 			} else {
 				idList.add(internalPid);
 			}
 		}
-		
+
 		return idList;
 	}
-	
+
 	private boolean isProductPage(String url) {
-		return url.contains("/p/");
+		return url.contains("/p/") || url.contains("/p1/");
 	}
 
 }

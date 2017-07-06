@@ -52,7 +52,7 @@ public class SaopauloOnofreRatingReviewCrawler extends RatingReviewCrawler {
 					JSONObject rating = details.getJSONObject("rating");
 					
 					if(rating.has("total") && rating.has("value")) {
-						ratingReviews.setTotalReviews(Integer.parseInt(rating.getString("total")));
+						ratingReviews.setTotalRating(Integer.parseInt(rating.getString("total")));
 						ratingReviews.setAverageOverallRating(Double.parseDouble(rating.getString("value")));
 					}
 				}

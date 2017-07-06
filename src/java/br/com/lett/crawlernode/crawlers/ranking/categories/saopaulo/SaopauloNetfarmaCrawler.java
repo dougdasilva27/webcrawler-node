@@ -20,7 +20,7 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingCategories {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = this.location + "?tamanho=24&ordenar=popular&pagina=" + this.currentPage;
+		String url = this.categoryUrl + "?tamanho=24&ordenar=popular&pagina=" + this.currentPage;
 		
 		this.log("Link onde são feitos os crawlers: " + url);
 
@@ -65,15 +65,20 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected boolean hasNextPage() {
-		Element pageInactive = this.currentDoc.select("li.neemu-pagination-last.neemu-pagination-inactive").first();
-		Element page = this.currentDoc.select("li.neemu-pagination-last").first();;
+		Element page = this.currentDoc.select(".product-pagination > a").last();
 
 		// se elemeno page obtiver algum resultado
-		if (pageInactive != null || page == null){
+		if (page != null){
+			int lastPage = Integer.parseInt(page.attr("data-pagina"));
+			
+			if(this.currentPage < lastPage) {
+				return true;
+			}
+			
 			return false;
 		}
 
-		return true;
+		return false;
 	}
 
 	private String crawlInternalId() {

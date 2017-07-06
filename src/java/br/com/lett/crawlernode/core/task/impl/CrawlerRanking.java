@@ -48,7 +48,6 @@ import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 public abstract class CrawlerRanking extends Task {
 
@@ -292,6 +291,42 @@ public abstract class CrawlerRanking extends Task {
 
 		this.arrayProducts.add(rankingProducts);
 	}
+	
+	/**
+	 * Salva os dados do produto e chama a função
+	 * que salva a url para mandar pra fila
+	 * @param internalId
+	 * @param pid
+	 * @param url
+	 */
+	protected void saveDataProduct(String internalId, String pid, String url, int position) {
+		RankingProducts rankingProducts = new RankingProducts();
+
+		List<Long> processedIds = new ArrayList<>();
+		
+		rankingProducts.setInteranlPid(pid);
+		rankingProducts.setUrl(url);
+		rankingProducts.setPosition(position);
+
+		if(!(session instanceof TestRankingSession)) {
+			if( internalId  != null ){
+				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
+			} else if(pid != null){
+				processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
+			} else if(url != null){
+				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
+			}
+			
+			rankingProducts.setProcessedIds(processedIds);
+			
+			if(url != null && processedIds.isEmpty()) {
+				saveProductUrlToQueue(url);
+			}
+			
+		}
+
+		this.arrayProducts.add(rankingProducts);
+	}
 
 	/**
 	 *
@@ -322,7 +357,7 @@ public abstract class CrawlerRanking extends Task {
 			ranking.setDate(ts);
 			ranking.setLmt(nowISO);
 			ranking.setRankType(this.rankType);
-			ranking.setLocation(location);
+			ranking.setLocation(this.location);
 			ranking.setProducts(this.arrayProducts);
 			
 			RankingStatistics statistics = new RankingStatistics();
@@ -486,6 +521,10 @@ public abstract class CrawlerRanking extends Task {
 	protected Document fetchDocument(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		if(cookies != null){
 			StringBuilder string = new StringBuilder();
 			string.append("Cookies been used: ");
@@ -513,26 +552,18 @@ public abstract class CrawlerRanking extends Task {
 	}
 
 	/**
-	 * Fetch jsonObject
+	 * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
 	 * @param url
 	 * @return
 	 */
-	@Deprecated
 	protected JSONObject fetchJSONObject(String url) {
 		this.currentDoc = new Document(url);	
 
-		//faz a conexão na url baixando o document html
-		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
-
-		JSONObject jsonProducts;
-		try{
-			jsonProducts = new JSONObjectIgnoreDuplicates(json);
-		} catch(Exception e){
-			jsonProducts = new JSONObject();
-			this.logError(CommonMethods.getStackTraceString(e));
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
 		}
-
-		return jsonProducts;
+		
+		return fetchJSONObject(url, null);
 	}
 	
 	/**
@@ -543,6 +574,10 @@ public abstract class CrawlerRanking extends Task {
 	protected JSONObject fetchJSONObject(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -565,6 +600,10 @@ public abstract class CrawlerRanking extends Task {
 	protected JsonObject fetchJsonObjectGoogle(String url) {
 		this.currentDoc = new Document(url);
 
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -588,6 +627,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected String fetchStringPOST(String url, String payload, Map<String,String> headers, List<Cookie> cookies){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		return POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 	}
 
@@ -596,6 +639,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 */
 	protected CrawlerWebdriver startWebDriver(String url){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		this.log("Iniciando webdriver");
 		return DynamicDataFetcher.fetchPageWebdriver(url, session);
 	}
@@ -606,6 +653,10 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected Document fetchDocumentWithWebDriver(String url){
+		if(this.currentPage == 1) {
+			this.session.setOriginalURL(url);
+		}
+		
 		// se o webdriver não estiver iniciado, inicio ele
 		if(this.webdriver == null){
 			Document doc = new Document(url);
@@ -674,8 +725,10 @@ public abstract class CrawlerRanking extends Task {
 		int countToday = this.arrayProducts.size();
 		int countYesterday = yesterdayProcesseds.size();
 	
-		if(countToday > 0 && countYesterday > 0) {
-			analyzeCrawledProducts(yesterdayProcesseds, yesterdayISO, anomalies, rankType);
+		if(countYesterday > 0 && countToday == 0) {
+			SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie, yesterday in this location we"
+					+ " crawl " + countYesterday + " products and today we crawl 0 products.");
+			session.registerError(error);
 		}
 		
 		if(anomalies.size() > 0) {
@@ -689,36 +742,36 @@ public abstract class CrawlerRanking extends Task {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
-		List<Long> todayProcesseds = new ArrayList<>();
-		
-		for(RankingProducts r : this.arrayProducts) {
-			todayProcesseds.addAll(r.getProcessedIds());
-		}
-		
-		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
-		
-		int countYesterday = yesterdayProcesseds.size();
-		int countIntersection = intersection.size();
-		
-		StringBuilder str = new StringBuilder();
-		
-		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
-		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
-		
-		if(countYesterday > countIntersection) {
-			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
-			
-			if(percentage <= 20) {
-				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
-						+ "\n\n *Session*: " + session.getSessionId();
-				
-				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-				
-				anomalies.put(text,  str.toString());
-			}
-		}
-	}
+//	@SuppressWarnings("unchecked")
+//	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
+//		List<Long> todayProcesseds = new ArrayList<>();
+//		
+//		for(RankingProducts r : this.arrayProducts) {
+//			todayProcesseds.addAll(r.getProcessedIds());
+//		}
+//		
+//		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
+//		
+//		int countYesterday = yesterdayProcesseds.size();
+//		int countIntersection = intersection.size();
+//		
+//		StringBuilder str = new StringBuilder();
+//		
+//		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
+//		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
+//		
+//		if(countYesterday > countIntersection) {
+//			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
+//			
+//			if(percentage <= 20) {
+//				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
+//						+ "\n\n *Session*: " + session.getSessionId();
+//				
+//				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
+//				
+//				anomalies.put(text,  str.toString());
+//			}
+//		}
+//	}
 	
 }

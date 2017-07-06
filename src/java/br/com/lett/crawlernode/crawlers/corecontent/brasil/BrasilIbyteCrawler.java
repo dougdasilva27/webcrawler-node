@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilIbyteCrawler extends Crawler {
 
@@ -42,39 +42,37 @@ public class BrasilIbyteCrawler extends Crawler {
 
 			// ID interno
 			String internalId = null;
-			Element elementInternalId = doc.select("input[name=product]").first();
-			if(elementInternalId != null) {
-				internalId = elementInternalId.attr("value").trim();
+			Element elementId = doc.select(".view-sku").first();
+			if (elementId != null && elementId.text().contains(":")) {
+				internalId = elementId.text().split(":")[1].replace(")", "").trim();
 			}
 
 			// Pid
 			String internalPid = null;
-			Element elementInternalPid = doc.select(".product-name h3").first();
-			if (elementInternalPid != null) {
-				internalPid = elementInternalPid.text().split(":")[1].replace(")", "").trim();
+			Element elementPid = doc.select("input[name=product]").first();
+			if(elementPid != null) {
+				internalPid = elementPid.attr("value").trim();
 			}
-
+			
 			// Nome
 			String name = null;
-			Element elementName = doc.select(".product-name h2").first();
+			Element elementName = doc.select(".product-name h1").first();
 			if(elementName != null) {
 				name = elementName.text().trim();
 			}
 
 			// Disponibilidade
-			boolean available = true;
-			Element elementBuyButton = doc.select(".button.btn-cart").first();
+			boolean available = false;
+			Element elementBuyButton = doc.select(".back-in-stock-form.avise_me").first();
 			if (elementBuyButton == null) {
-				available = false;
+				available = true;
 			}
 
 			// Preço
 			Float price = null;
-			if(available) {
-				Element elementPrice = doc.select(".preco-produto span.price").first();
-				if(elementPrice != null) {
-					price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-				}
+			Element elementPrice = doc.select(".regular-price .price").first();
+			if(elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
 			// Categoria
@@ -95,14 +93,13 @@ public class BrasilIbyteCrawler extends Crawler {
 
 			// Imagem primária
 			String primaryImage = null;
-			Element elementPrimaryImage = doc.select(".product-img-box .product-image-zoom img").first();
+			Element elementPrimaryImage = doc.select(".product-image .cloud-zoom").first();
 			if(elementPrimaryImage != null) {
-				primaryImage = elementPrimaryImage.attr("src").replace("674x525/", "");
+				primaryImage = elementPrimaryImage.attr("href");
 			}
 
 			// Imagens secundárias
-			Element elementProduct = doc.select(".product-essential").first();
-			Elements elementImages = elementProduct.select(".product-img-box #products-carousel ul li a");
+			Elements elementImages = doc.select("#galeria div a");
 			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 
@@ -117,8 +114,8 @@ public class BrasilIbyteCrawler extends Crawler {
 
 			// Descrição
 			String description = "";
-			Element elementDescription = doc.select("#product_tabs_description_contents").first();
-			Element elementAdditionalContents = doc.select("#product_tabs_additional_contents").first();
+			Element elementDescription = doc.select("#descricao").first();
+			Element elementAdditionalContents = doc.select("#atributos").first();
 			if (elementDescription != null) {
 				description = description + elementDescription.html();
 			}
@@ -133,7 +130,7 @@ public class BrasilIbyteCrawler extends Crawler {
 			Marketplace marketplace = new Marketplace();
 			
 			// Prices 
-			Prices prices = crawlPrices(doc);
+			Prices prices = crawlPrices(doc, price);
 			
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
@@ -162,23 +159,28 @@ public class BrasilIbyteCrawler extends Crawler {
 	}
 
 
-	private Prices crawlPrices(Document doc){
+	private Prices crawlPrices(Document doc, Float price){
 		Prices prices = new Prices();
 		Map<Integer,Float> installmentPriceMap = new HashMap<>();
 		
-		Elements installments = doc.select(".bloco-formas-pagamento li");
-		
-		for(Element e : installments){
-			String text = e.text().toLowerCase();
-			int x = text.indexOf("x");
+		if(price != null) {
+			Elements installments = doc.select(".formas li #simularParcelamento tr");
 			
-			Integer installment = Integer.parseInt(text.substring(0,x).trim());
-			Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+			for(Element e : installments){
+				Elements values = e.select("td");
+				
+				if(values.size() > 1) {				
+					Integer installment = Integer.parseInt(values.first().ownText().replaceAll("[^0-9]", ""));
+					Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+					
+					installmentPriceMap.put(installment, value);
+				}
+			}
 			
-			installmentPriceMap.put(installment, value);
-		}
-		
-		if(installmentPriceMap.size() > 0){
+			if(installmentPriceMap.size() < 1){
+				installmentPriceMap.put(1, price);
+			}
+			
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -186,21 +188,20 @@ public class BrasilIbyteCrawler extends Crawler {
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-		}
-		
-		Element priceBoleto = doc.select(".in-cash").first();
-		
-		if(priceBoleto != null){
-			Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 			
-			if(bankTicketPrice > 0){
-				prices.setBankTicketPrice(bankTicketPrice);
-			} else if(installmentPriceMap.size() > 0) {
-				prices.setBankTicketPrice(installmentPriceMap.get(1));
+			Element priceBoleto = doc.select(".boletoBox .price").first();
+			
+			if(priceBoleto != null){
+				Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+				
+				if(bankTicketPrice > 0){
+					prices.setBankTicketPrice(bankTicketPrice);
+				} else {
+					prices.setBankTicketPrice(price);
+				}
+			} else {
+				prices.setBankTicketPrice(price);
 			}
-			
-		} else if(installmentPriceMap.size() > 0) {
-			prices.setBankTicketPrice(installmentPriceMap.get(1));
 		}
 		
 		return prices;
@@ -211,7 +212,7 @@ public class BrasilIbyteCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		Element elementProduct = document.select(".product-essential").first();
+		Element elementProduct = document.select(".view-sku").first();
 		return (elementProduct != null);
 	}
 }

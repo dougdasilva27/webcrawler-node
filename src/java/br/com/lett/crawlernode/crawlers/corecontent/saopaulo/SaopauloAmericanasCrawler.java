@@ -20,9 +20,9 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
 import models.Seller;
 import models.Util;
+import models.prices.Prices;
 
 
 /************************************************************************************************************************************************************************************
@@ -438,6 +438,15 @@ public class SaopauloAmericanasCrawler extends Crawler {
 			Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 			if(docDescription != null){
 				description = description + docDescription.html();
+			}
+			Element desc2 = document.select(".info-description-frame-inside").first();
+			
+			if(desc2 != null) {
+				String urlDesc2 = HOME_PAGE + "product-description/acom/" + internalPid;
+				Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
+				if(docDescriptionFrame != null){
+					description = description + docDescriptionFrame.html();
+				}
 			}
 			
 			Element elementProductDetails = document.select(".info-section").last();

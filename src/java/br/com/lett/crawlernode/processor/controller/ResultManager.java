@@ -393,12 +393,21 @@ public class ResultManager {
 		Logging.printLogDebug(logger, session, "Last downloaded primary image md5: " + primaryMd5);
 
 		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
-
-		if (primaryMd5 == null) { // if md5 is null, clear and add set as no_image
-			Logging.printLogDebug(logger, session, "Amazon md5 of the last downloaded image is null...seting status to no_image...");
-			processedModelDigitalContentPicPrimary = new JSONObject();
-			processedModelDigitalContentPicPrimary.put("status", Pic.NO_IMAGE);
-			processedModelDigitalContentPicPrimary.put("verified_by", "crawler_" + nowISO);
+		
+		if ( primaryMd5 == null ) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
+			Logging.printLogDebug(logger, session, "Amazon md5 of the last downloaded image is null");
+			
+			String previousStatus = processedModelDigitalContentPicPrimary.has("status") ? processedModelDigitalContentPicPrimary.getString("status") : null;
+			
+			Logging.printLogDebug(logger, session, "Previous image status is " + previousStatus);
+			
+			if ( !Pic.NO_IMAGE.equals(previousStatus) ) { // if the previous verified status is different from no-image, clear and set as not-verified
+				Logging.printLogDebug(logger, session, "Previous image status is different from " + Pic.NO_IMAGE + "...let's clear and set to not-verified");
+				
+				processedModelDigitalContentPicPrimary = new JSONObject();
+				processedModelDigitalContentPicPrimary.put("status", Pic.NOT_VERIFIED);
+				processedModelDigitalContentPicPrimary.put("verified_by", "crawler_" + nowISO);
+			}
 
 		} else { // see if the md5 has changed comparing to the last verified md5
 			String previousMd5 = processedModelDigitalContentPicPrimary.has("md5") ? processedModelDigitalContentPicPrimary.getString("md5") : null;

@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.brasil;
 
+import java.util.Iterator;
+
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -40,9 +43,9 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 		String url;
 		
 		if(this.cat1) {
-			url = this.location;
+			url = this.categoryUrl;
 		} else {
-			url = this.location + "/" + this.currentPage + "/";
+			url = this.categoryUrl + "/" + this.currentPage + "/";
 		}
 
 		this.log("Link onde são feitos os crawlers: " + url);
@@ -62,21 +65,39 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 			}
 
 			for (Element e : products) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+				JSONObject product = new JSONObject(e.attr("data-product"));
+				
+				if(product.has("stockTypes")) {
+					JSONObject variations = product.getJSONObject("stockTypes");
+					
+					@SuppressWarnings("unchecked")
+					Iterator<String> variationsList = variations.keys();
+					
+					int count = 0;
+					while(variationsList.hasNext()) {
+						// InternalId
+						String internalId = variationsList.next();
+						
+						// InternalPid
+						String internalPid 	= crawlInternalPid(product);
+						
+						// Url do produto
+						String urlProduct = crawlProductUrl(e, internalId, internalPid);
+						
+						if(count == 0) {
+							this.position++;
+							count++;
+						}
 
-				// InternalId
-				String internalId = crawlInternalId(e);
-
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
-
-				saveDataProduct(internalId, internalPid, productUrl);
-
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
+						saveDataProduct(internalId, null, urlProduct, this.position);
+						
+						this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+						if(this.arrayProducts.size() == productsLimit) {
+							break;
+						}
+					}
+					
+					
 				}
 			}
 		} else {
@@ -121,33 +142,27 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 		}
 	}
 
-	private String crawlInternalId(Element e) {
-		return null;
-	}
-
-	private String crawlInternalPid(Element e) {
+	private String crawlInternalPid(JSONObject product){
 		String internalPid = null;
-
-		if (e.hasAttr("id")) {
-			String[] tokens = e.attr("id").split("_");
-			internalPid = tokens[tokens.length - 1];
+		
+		if(product.has("product")){
+			internalPid = product.getString("product");
 		}
-
+		
 		return internalPid;
 	}
-
-	private String crawlProductUrl(Element e) {
-		String productUrl = null;
-		Element urlElement = e.select("a[itemprop]").first();
-
-		if (urlElement != null) {
-			productUrl = urlElement.attr("href");
-
-			if (!productUrl.startsWith("http://www.magazineluiza.com.br")) {
-				productUrl = "http://www.magazineluiza.com.br" + productUrl;
-			}
+	
+	private String crawlProductUrl(Element e, String internalId, String internalPid){
+		String urlProduct = e.attr("href");
+			
+		if(internalId != null && internalPid != null) {
+			urlProduct = urlProduct.replace(internalPid, internalId);
 		}
-
-		return productUrl;
+		
+		if(!urlProduct.startsWith("http://www.magazineluiza.com.br")) {
+			urlProduct = "http://www.magazineluiza.com.br" + urlProduct;
+		}
+		
+		return urlProduct;
 	}
 }

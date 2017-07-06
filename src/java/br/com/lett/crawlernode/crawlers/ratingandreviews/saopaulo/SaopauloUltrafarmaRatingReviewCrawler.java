@@ -49,7 +49,7 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
 		RatingsReviews ratingReviews = new RatingsReviews();
 		
 		ratingReviews.setDate(session.getDate());
-		ratingReviews.setTotalReviews(computeTotalReviewsCount(doc));
+		ratingReviews.setTotalRating(computeTotalReviewsCount(doc));
 		ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
 		
 		return ratingReviews;

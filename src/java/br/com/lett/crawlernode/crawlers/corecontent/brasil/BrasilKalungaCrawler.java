@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilKalungaCrawler extends Crawler {
 
@@ -78,9 +78,15 @@ public class BrasilKalungaCrawler extends Crawler {
 
 			// Preço
 			Float price = null;
-			Element elementPrice = doc.select(".container-price .por .valor span").first();
+			Element elementPrice = doc.select(".container-price .por .valor span.valorg").first();
 			if (elementPrice != null && available) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				String priceString = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
+				
+				if(!priceString.isEmpty()) {
+					price = Float.parseFloat(priceString);
+				} else {
+					available = false;
+				}
 			}
 
 			// Categoria
@@ -88,7 +94,7 @@ public class BrasilKalungaCrawler extends Crawler {
 			String category2 = "";
 			String category3 = "";
 			Elements elementCategories = doc.select("#breadcrumbs a");
-			ArrayList<String> categories = new ArrayList<String>();
+			ArrayList<String> categories = new ArrayList<>();
 			for(int i = 1; i < elementCategories.size(); i++) {
 				Element e = elementCategories.get(i);
 				categories.add(e.text());

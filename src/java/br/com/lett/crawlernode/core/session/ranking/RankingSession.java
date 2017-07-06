@@ -1,7 +1,8 @@
 package br.com.lett.crawlernode.core.session.ranking;
 
 import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
+import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 
@@ -12,7 +13,11 @@ public class RankingSession extends Session {
 	public RankingSession(Request request, String queueName, Markets markets) {
 		super(request, queueName, markets);
 
-		this.location = ((CrawlerRankingRequest) request).getLocation();
+		if(request instanceof CrawlerRankingKeywordsRequest) {
+			this.location = ((CrawlerRankingKeywordsRequest) request).getLocation();
+		} else if(request instanceof CrawlerRankingCategoriesRequest) {
+			this.location = ((CrawlerRankingCategoriesRequest) request).getLocation();
+		}
 	}
 
 	public String getLocation() {

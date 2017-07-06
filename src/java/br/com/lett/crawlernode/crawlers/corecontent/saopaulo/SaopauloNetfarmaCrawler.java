@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (27/10/2016):
@@ -278,11 +278,11 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 	
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element elementWarning = document.select(".product-description .nano-content span").first();
+		Element elementWarning = document.select("#detalhes.product-description").first();
 		if (elementWarning != null) {
 			description = description + elementWarning.text();
 		}
-		Element elementProductDetails = document.select(".product-description .nano-content div").last();
+		Element elementProductDetails = document.select("#product-tips.product-description").last();
 		if (elementProductDetails != null) {
 			description = description + elementProductDetails.text();
 		}

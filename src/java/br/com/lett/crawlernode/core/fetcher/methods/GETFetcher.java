@@ -92,10 +92,16 @@ public class GETFetcher {
 					headers.put("Cookie", cookiesHeader.toString());
 				}
 				
-				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
+				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 				
-				return response.getJSONObject("response").getString("body");
+				DataFetcher.setRequestProxyForFetcher(session, response, url);
+				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+				
+				String content = response.getJSONObject("response").getString("body");
+				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+				
+				return content;
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
@@ -125,13 +131,13 @@ public class GETFetcher {
 			if (proxy != null) {
 				
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 							.setProxy(proxy)
 							.build();
 				} else {
@@ -147,13 +153,13 @@ public class GETFetcher {
 
 			} else {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 							.build();
 				} else {
 					requestConfig = RequestConfig.custom()
@@ -309,7 +315,7 @@ public class GETFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER) {				
+			if ( attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0) ) {				
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
 					
@@ -323,7 +329,14 @@ public class GETFetcher {
 				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 				
-				return response.getJSONObject("response").getString("body");
+				DataFetcher.setRequestProxyForFetcher(session, response, url);
+				
+				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+				
+				String content = response.getJSONObject("response").getString("body");
+				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+				
+				return content;
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
@@ -351,7 +364,7 @@ public class GETFetcher {
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
@@ -373,7 +386,7 @@ public class GETFetcher {
 
 			} else {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true

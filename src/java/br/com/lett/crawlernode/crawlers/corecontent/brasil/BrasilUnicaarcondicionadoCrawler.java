@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (20/07/2016):
@@ -79,11 +79,11 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 			// Name
 			String name = crawlName(doc);
 
-			// Price
-			Float price = crawlMainPagePrice(doc);
-			
 			// Prices
 			Prices prices = crawlPrices(doc);
+
+			// Price
+			Float price = crawlMainPagePrice(doc, prices);
 			
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -186,12 +186,16 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlMainPagePrice(Document document, Prices prices) {
 		Float price = null;
 		Element mainPagePriceElement = document.select(".box-buy .regular-price span").first();
 
 		if (mainPagePriceElement != null) {
 			price = Float.parseFloat( mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		}
+		
+		if(price == null && prices.getCardInstallmentValue(Card.VISA.toString(), 1) != null) {
+			price = prices.getCardInstallmentValue(Card.VISA.toString(), 1).floatValue();
 		}
 
 		return price;
@@ -241,13 +245,13 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select("#block-outofstock").first();
+		Element notifyMeElement = document.select(".availability.in-stock").first();
 		
 		if (notifyMeElement != null) {
-			return false;
+			return true;
 		}
 		
-		return true;
+		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {

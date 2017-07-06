@@ -87,13 +87,29 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 
 	private String crawlInternalId(Element e){
 		String internalId = null;
-		Element idElement = e.select("> a").first();
+		Element idElement = e.select("> a img").first();
 		
-		if(idElement != null){
-			String[] tokens = idElement.attr("href").split("=");
+		if(idElement != null) {
+			String text = idElement.attr("data-original");
 			
-			if(tokens[tokens.length-1] != null){
-				internalId = tokens[tokens.length-1].trim();
+			if(text.contains("/")) {
+				String[] tokens = text.split("/");
+				String text2 = tokens[tokens.length-1].trim();
+				
+				if(text2.contains("-")) {
+					String[] tokens2 = text2.split("-");
+					internalId = tokens2[0].replaceAll("[^0-9]", "");
+					
+					if(internalId.isEmpty()) {
+						internalId = tokens2[tokens2.length-2];
+					}
+				} else {
+					String possibleInternalId = text2.replaceAll("[^0-9]", "").trim();
+					
+					if(!possibleInternalId.isEmpty()) {
+						internalId = possibleInternalId;
+					}
+				}
 			}
 		}
 		
@@ -102,6 +118,16 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 	
 	private String crawlInternalPid(Element e){
 		String internalPid = null;
+		
+		Element idElement = e.select("> a").first();
+		
+		if(idElement != null){
+			String[] tokens = idElement.attr("href").split("=");
+			
+			if(tokens[tokens.length-1] != null){
+				internalPid = tokens[tokens.length-1].trim();
+			}
+		}
 		
 		return internalPid;
 	}

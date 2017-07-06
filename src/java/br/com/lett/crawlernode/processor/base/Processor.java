@@ -8,27 +8,23 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.controller.ResultManager;
-
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-
 import exceptions.IllegalBehaviorElementValueException;
-
+import exceptions.MalformedPricesException;
 import models.Behavior;
 import models.BehaviorElement;
 import models.BehaviorElement.BehaviorElementBuilder;
+import models.prices.Prices;
 import models.Marketplace;
-import models.Prices;
 import models.Processed;
 import models.Seller;
 import models.Util;
@@ -493,14 +489,14 @@ public class Processor {
 		 * have it, in case of a product crawled from a URL scheduled by the crawler discover for example.
 		 */
 		String internalId = product.getInternalId();
-		if (internalId == null) {
+		if ( internalId == null || internalId.isEmpty() ) {
 			internalId = session.getInternalId();
 		}
 
 		// sanitize
 		internalId = sanitizeBeforePersist(internalId);
 
-		if (internalId != null) {
+		if ( internalId != null && !internalId.isEmpty() ) {
 
 			try {
 				//				Processed processedTable = Tables.PROCESSED;

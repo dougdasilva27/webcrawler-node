@@ -15,14 +15,12 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
 import models.Seller;
 import models.Util;
+import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
@@ -78,6 +76,7 @@ import models.Util;
 public class SaopauloPontofrioCrawler extends Crawler {
 
 	private final String MAIN_SELLER_NAME_LOWER = "pontofrio";
+	private final String MAIN_SELLER_NAME_LOWER_2 = "pontofrio.com";
 	private final String HOME_PAGE = "http://www.pontofrio.com.br/";
 
 	public SaopauloPontofrioCrawler(Session session) {
@@ -514,7 +513,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 
 			Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
 			
-			if(comprar == null && partnerName.equals(MAIN_SELLER_NAME_LOWER)){
+			if(comprar == null && (partnerName.equals(MAIN_SELLER_NAME_LOWER) || partnerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2))){
 				price = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
 				break;
 			}
@@ -526,7 +525,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		boolean available = false;
 
 		for (String seller : marketplaces.keySet()) {
-			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
+			if (seller.equals(MAIN_SELLER_NAME_LOWER) || seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2)) {
 				available = true;
 			}
 		}
@@ -555,7 +554,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		}
 
 
-		return CommonMethods.removeIllegalParameters(primaryImage);
+		return primaryImage;
 	}
 
 	private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
@@ -572,9 +571,9 @@ public class SaopauloPontofrioCrawler extends Crawler {
 					Element e = elementFotoSecundaria.get(i);
 
 					if(!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")){
-						secondaryImagesArray.put(CommonMethods.removeIllegalParameters(e.attr("rev")));
+						secondaryImagesArray.put(e.attr("rev"));
 					} else {
-						secondaryImagesArray.put(CommonMethods.removeIllegalParameters(e.attr("href")));
+						secondaryImagesArray.put(e.attr("href"));
 					}
 				}
 
@@ -625,7 +624,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		Marketplace marketplace = new Marketplace();
 
 		for(String sellerName : marketplaceMap.keySet()) {
-			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
+			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) && !sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2)) {
 				JSONObject sellerJSON = new JSONObject();
 				sellerJSON.put("name", sellerName);
 				
@@ -756,7 +755,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		for (String seller : marketplaces.keySet()) {
-			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
+			if (seller.equals(MAIN_SELLER_NAME_LOWER) || seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2)) {
 				prices = marketplaces.get(seller);
 				break;
 			}

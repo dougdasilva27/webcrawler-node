@@ -26,7 +26,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void processBeforeFetch() {
 		if(this.cookies.size() < 1){
-			Map<String,String> cookiesMap = fetchCookies("https://www.disco.com.ar/Comprar/Home.aspx");
+			Map<String,String> cookiesMap = fetchCookies("https://www.disco.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="+this.keywordEncoded);
 
 			for(String cookieName : cookiesMap.keySet()){
 				if(cookieName.equals("ASP.NET_SessionId")){

@@ -23,10 +23,10 @@ public class SaopauloWalmartCrawler extends CrawlerRankingCategories {
 		// monta a url com a keyword e a página
 		String url;
 		
-		if(this.location.contains("?")) {
-			url = this.location + "&PageNumber=" + this.currentPage;
+		if(this.categoryUrl.contains("?")) {
+			url = this.categoryUrl + "&PageNumber=" + this.currentPage;
 		} else {
-			url = this.location + "?PageNumber=" + this.currentPage;
+			url = this.categoryUrl + "?PageNumber=" + this.currentPage;
 		}
 		
 		this.log("Link onde são feitos os crawlers: " + url);

@@ -39,7 +39,7 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 			
 			JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
 			
-			ratingReviews.setTotalReviews(getTotalNumOfRatings(trustVoxResponse));
+			ratingReviews.setTotalRating(getTotalNumOfRatings(trustVoxResponse));
 			ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
 			
 			ratingReviewsCollection.addRatingReviews(ratingReviews);
@@ -79,8 +79,12 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
 				}
 			}
 		}
+
+		if(count > 0) {
+			return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		} 
 		
-		return MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / count);
+		return totalRating;
 	}
 	
 	private JSONObject requestTrustVoxEndpoint(String id) {

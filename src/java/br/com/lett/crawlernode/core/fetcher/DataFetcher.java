@@ -101,7 +101,7 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
-	public static final int BEMOL_TIMEOUT = 30000;
+	public static final int THIRTY_SECONDS_TIMEOUT = 30000;
 	
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
@@ -110,6 +110,8 @@ public class DataFetcher {
 	public static List<String> userAgents;
 
 	public static List<String> errorCodes;
+	
+	public static List<String> highTimeoutMarkets;
 
 	/**
 	 * Static initialization block
@@ -140,6 +142,8 @@ public class DataFetcher {
 				);
 
 		errorCodes = Arrays.asList("403");
+		
+		highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao");
 	}
 
 	/**
@@ -1219,4 +1223,32 @@ public class DataFetcher {
 		return DigestUtils.md5Hex(s);
 	}
 
+	/**
+	 * Set request proxy for requests in fetcher
+	 * @param session
+	 * @param response
+	 * @param url
+	 */
+	public static void setRequestProxyForFetcher(Session session, JSONObject response, String url) {
+		JSONObject statistics = response.getJSONObject("statistics");
+		
+		if(statistics.has("requests")) {
+			JSONArray requests = statistics.getJSONArray("requests");
+			
+			if(requests.length() > 0) {
+				JSONObject succesRequest = requests.getJSONObject(requests.length()-1);
+				
+				if(succesRequest.has("proxy")) {
+					JSONObject proxyObj = succesRequest.getJSONObject("proxy");
+					
+					if(proxyObj.length() > 0 && proxyObj.has("source")) {
+						LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), 
+								null, proxyObj.getString("location"), null, null);
+						
+						session.addRequestProxy(url, lettProxy);
+					}
+				}
+			}
+		}
+	}
 }

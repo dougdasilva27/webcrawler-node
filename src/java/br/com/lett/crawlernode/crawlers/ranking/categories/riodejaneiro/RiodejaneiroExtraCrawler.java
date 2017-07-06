@@ -52,10 +52,10 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingCategories {
 		// monta a url com a keyword e a página
 		String url;
 
-		if(this.location.contains("?")) {
-			url = this.location + "&p=" + (this.currentPage - 1);
+		if(this.categoryUrl.contains("?")) {
+			url = this.categoryUrl + "&p=" + (this.currentPage - 1);
 		} else {
-			url = this.location + "?p=" + (this.currentPage - 1);
+			url = this.categoryUrl + "?p=" + (this.currentPage - 1);
 		}
 
 		this.log("Link onde são feitos os crawlers: " + url);

@@ -57,7 +57,6 @@ public class Test {
 		options = new Options();
 		options.addOption("market", true, "Market name");
 		options.addOption("city", true, "City name");
-		options.addOption("phantomjsPath", true, "Path to phantomjs binary");
 		options.addOption("pathwrite", true, "Path that product html goes");
 		options.addOption("testType", true, "Test type [insights, rating, images]");
 
@@ -73,7 +72,6 @@ public class Test {
 		// getting command line options
 		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
-		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath"); else { help(); }
 		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
 
@@ -114,11 +112,11 @@ public class Test {
 			Session session;
 
 			if(testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingKeywordsSession("papinha", market);
+				session = SessionFactory.createTestRankingKeywordsSession("cerveja", market);
 			} else if(testType.equals(CATEGORIES_TEST)) { 
-				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market);
+				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
 			} else {
-				session = SessionFactory.createTestSession("https://www.netfarma.com.br/papinha-nestle-baby-gemas-de-ovos-carne-e-legumes-115g", market);
+				session = SessionFactory.createTestSession("http://www.extra.com.br/tvseacessorios/Televisores/TVLED/TV-LED-32-AOC-HD-LE32H1465-com-Conversor-Digital-Integrado-Entradas-HDMI-e-Entrada-USB-8442637.html", market);
 			}
 
 

@@ -40,7 +40,7 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 						Double totalRating = crawlTotalRating(document);
 						Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating);
 						
-						ratingReviews.setTotalReviews(numRatings);
+						ratingReviews.setTotalRating(numRatings);
 						ratingReviews.setAverageOverallRating(avgRating);
 					}
 				}

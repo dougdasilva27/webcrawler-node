@@ -51,7 +51,7 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
 					avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
 				}
 				
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 				
 				ratingReviewsCollection.addRatingReviews(ratingReviews);

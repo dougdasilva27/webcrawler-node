@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.core.models;
 
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class ProductBuilder {
 	

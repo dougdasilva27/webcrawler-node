@@ -31,7 +31,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = this.location;
+		String url = this.categoryUrl;
 		
 		if(url.contains("?")) {
 			url = url.replace(HOME_PAGE, "https://api.gpa.digital/pa/products/list/").replace("%2520", "%20") 
@@ -40,7 +40,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 			url = url.replace(HOME_PAGE, "https://api.gpa.digital/pa/products/list/") + "?storeId="+ STORE_ID +"&qt=36&p=" + this.currentPage;
 		}
 		
-		this.log("Link onde são feitos os crawlers: " + this.location + "?p=" + this.currentPage);
+		this.log("Link onde são feitos os crawlers: " + this.categoryUrl + "?p=" + this.currentPage);
 
 		// chama função de pegar a url
 		JSONObject search = fetchJSONObject(url, cookies);

@@ -109,7 +109,14 @@ public class POSTFetcher {
 				JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, urlParameters, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
 				
-				return response.getJSONObject("response").getString("body");
+				DataFetcher.setRequestProxyForFetcher(session, response, url);
+				
+				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+				
+				String content = response.getJSONObject("response").getString("body");
+				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+				
+				return content;
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
@@ -267,6 +274,8 @@ public class POSTFetcher {
 	public static String fetchJsonPOST(Session session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
 		Logging.printLogDebug(logger, session, "Fazendo requisição POST com content-type JSON: " + url);
 		
+		String requestHash = DataFetcher.generateRequestHash(session);
+		
 		// Request via fetcher on first attempt
 		if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 			Map<String,String> headers = new HashMap<>();
@@ -283,13 +292,18 @@ public class POSTFetcher {
 			JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
 			JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
 			
-			return response.getJSONObject("response").getString("body");
+			DataFetcher.setRequestProxyForFetcher(session, response, url);
+			
+			session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+			
+			String content = response.getJSONObject("response").getString("body");
+			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+			
+			return content;
 		}
 		
 		String randUserAgent = DataFetcher.randUserAgent();
 		LettProxy randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
-
-		String requestHash = DataFetcher.generateRequestHash(session);
 
 		CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 

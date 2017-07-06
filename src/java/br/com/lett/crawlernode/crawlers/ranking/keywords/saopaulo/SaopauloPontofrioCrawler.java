@@ -8,6 +8,9 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 
+	private boolean isCategory;
+	private String urlCategory;
+	
 	public SaopauloPontofrioCrawler(Session session) {
 		super(session);
 	}
@@ -20,6 +23,13 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		String url = "http://search.pontofrio.com.br/?strBusca=" + keyword + "&paginaAtual=" + this.currentPage;
+		
+		if (this.currentPage > 1) {
+			if (isCategory) {
+				url = this.urlCategory + "&paginaAtual=" + this.currentPage;
+			}
+		}
+		
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
@@ -28,8 +38,20 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 		Elements products = this.currentDoc.select("a.link.url");
 
 		// número de produtos por página do market
-        this.pageSize = 20;
+		if (!isCategory) {
+			this.pageSize = 20;
+		}
 
+        if (this.currentPage == 1) {
+			String redirectUrl = this.session.getRedirectedToURL(url);
+			if (redirectUrl != null && !redirectUrl.equals(url)) {
+				isCategory = true;
+				this.urlCategory = redirectUrl;
+			} else {
+				isCategory = false;
+			}
+		}
+        
 		Elements result = this.currentDoc.select(".naoEncontrado");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado

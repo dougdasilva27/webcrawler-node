@@ -72,7 +72,7 @@ public class SessionFactory {
 		return new TestRankingKeywordsSession(market, keyword);
 	}
 	
-	public static Session createTestRankingCategoriesSession(String categorieUrl, Market market) {
-		return new TestRankingCategoriesSession(market, categorieUrl);
+	public static Session createTestRankingCategoriesSession(String categorieUrl, Market market, String location) {
+		return new TestRankingCategoriesSession(market, categorieUrl, location);
 	}
 }

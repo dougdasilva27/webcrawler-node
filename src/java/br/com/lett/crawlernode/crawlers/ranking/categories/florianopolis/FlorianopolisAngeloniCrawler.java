@@ -20,7 +20,7 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingCategories {
 	protected void processBeforeFetch() {
 		super.processBeforeFetch();
 		
-		Document doc = fetchDocument(this.location);
+		Document doc = fetchDocument(this.categoryUrl);
 		
 		Elements breadCrumbs = doc.select("#breadcrumb .boxInIn ul li > a"); // primeiro e segundo elemento não são categorias
 		
@@ -40,9 +40,9 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingCategories {
 		String url;
 		
 		if(this.cat1) {
-			url = this.location.replace("index", "ofertas") + "&itemsPerPage=150&page=" + this.currentPage;
+			url = this.categoryUrl.replace("index", "ofertas") + "&itemsPerPage=150&page=" + this.currentPage;
 		} else {
-			url = this.location.replace("index", "produtos") + "&itemsPerPage=150&page=" + this.currentPage;
+			url = this.categoryUrl.replace("index", "produtos") + "&itemsPerPage=150&page=" + this.currentPage;
 		}
 		
 		this.log("Link onde são feitos os crawlers: "+ url);	

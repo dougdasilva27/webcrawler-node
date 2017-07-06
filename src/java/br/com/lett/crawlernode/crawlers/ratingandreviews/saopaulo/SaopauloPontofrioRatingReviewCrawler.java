@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /**
  * Date: 14/12/16
@@ -35,10 +34,10 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
 			RatingsReviews ratingReviews = new RatingsReviews();			
 			ratingReviews.setDate(session.getDate());
 
-			Integer totalNumOfEvaluations = getTotalNumOfRatings(document);			
-			Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
+			Integer totalNumOfEvaluations = getTotalRating(document);			
+			Double avgRating = getTotalAvgRating(document);
 
-			ratingReviews.setTotalReviews(totalNumOfEvaluations);
+			ratingReviews.setTotalRating(totalNumOfEvaluations);
 			ratingReviews.setAverageOverallRating(avgRating);
 
 			List<String> idList = crawlInternalIds(document);
@@ -53,62 +52,38 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
 
 	}
 
+
 	/**
-	 * Example: 
-	 * (baseado em 60 avaliações)
-	 * Distribuição das Notas
-	 * 5 Estrelas (32)
-	 * 4 Estrelas (9)
-	 * 3 Estrelas (3)
-	 * 2 Estrelas (3)
-	 * 1 Estrela (13)
 	 * 
+	 * @param doc
+	 * @return
+	 */
+	private Integer getTotalRating(Document doc) {
+		Integer total = null;
+		
+		Element rating = doc.select(".rating .rating-count").first();
+		
+		if(rating != null) {
+			total = Integer.parseInt(rating.ownText().replaceAll("[^0-9]", ""));
+		}
+	
+		return total;
+	}
+	
+	/**
 	 * @param Double
 	 * @return
 	 */
-	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-		Double avgRating = null;
-		Elements rating = docRating.select("#pr-snapshot-histogram .pr-ratings-histogram-content > li");
-
-		if (totalRating != null && totalRating > 0) {
-			Double total = 0.0;
-
-			for (Element e : rating) {
-				Element totalStar = e.select(".pr-histogram-count span").first();
-
-				if (totalStar != null) {
-					Integer totalVotes = Integer.parseInt(totalStar.text().replaceAll("[^0-9]", "").trim());
-
-					if(e.hasClass("pr-histogram-5Stars")){
-						total += totalVotes * 5;
-					} else if(e.hasClass("pr-histogram-4Stars")){
-						total += totalVotes * 4;
-					} else if(e.hasClass("pr-histogram-3Stars")){
-						total += totalVotes * 3;
-					} else if(e.hasClass("pr-histogram-2Stars")){
-						total += totalVotes * 2;
-					} else if(e.hasClass("pr-histogram-1Stars")){
-						total += totalVotes * 1;
-					}
-				}
-			}
-
-			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(total / totalRating);
+	private Double getTotalAvgRating(Document doc) {
+		Double avgRating = null;	
+		
+		Element avg = doc.select(".rating .rating-value").first();
+		
+		if(avg != null) {
+			avgRating = Double.parseDouble(avg.ownText().replace(",", "."));
 		}
-
+		
 		return avgRating;
-	}
-
-
-	private Integer getTotalNumOfRatings(Document doc) {
-		Integer totalRating = null;
-		Element totalRatingElement = doc.select(".pr-snapshot-average-based-on-text .count").first();
-
-		if(totalRatingElement != null){
-			totalRating = Integer.parseInt(totalRatingElement.text());
-		}
-
-		return totalRating;
 	}
 
 	private List<String> crawlInternalIds(Document doc){
@@ -184,7 +159,7 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
 	}
 	
 	private boolean isProductPage(Document doc) {
-		Element productElement = doc.select(".produtoNome h1 span").first();
+		Element productElement = doc.select(".produtoNome h1").first();
 
 		if (productElement != null){
 			return true;

@@ -22,7 +22,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+this.currentPage);
 			
 		//monta a url com a keyword e a página
-		String url = "http://www.drogariavenancio.com.br/busca.asp?PalavraChave="+ keyword +"&nrRows=60&idPage=" + this.currentPage;
+		String url = "https://www.drogariavenancio.com.br/busca.asp?PalavraChave="+ keyword +"&nrRows=60&idPage=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);			
 			
 			

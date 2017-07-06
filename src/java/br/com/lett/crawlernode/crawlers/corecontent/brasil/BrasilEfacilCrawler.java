@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilEfacilCrawler extends Crawler {
 

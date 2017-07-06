@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -58,11 +58,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
-
-//			String productUrl = session.getOriginalURL();
-//			if(internalId != null && session.getRedirectedToURL(productUrl) != null) {
-//				productUrl = session.getRedirectedToURL(productUrl);
-//			}
 			
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -258,7 +253,9 @@ public class BrasilBifarmaCrawler extends Crawler {
 					Double priceInstallment = installment.getDouble("price");
 					Integer installmentCount = installment.getInt("count");
 					
-					installmentPriceMap.put(installmentCount, priceInstallment.floatValue());
+					if(installmentCount > 0) {
+						installmentPriceMap.put(installmentCount, priceInstallment.floatValue());
+					}
 				}
 			}
 

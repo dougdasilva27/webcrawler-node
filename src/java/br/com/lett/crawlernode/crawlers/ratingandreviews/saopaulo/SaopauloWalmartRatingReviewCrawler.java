@@ -39,7 +39,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);			
 				Double avgRating = getTotalAvgRating(doc);
 
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
 
 				for(int i = 0; i < products.length(); i++) {					
@@ -93,7 +93,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	 */
 	private Integer getTotalNumOfRatings(Document docRating) {
 		Integer totalRating = null;
-		Element totalRatingElement = docRating.select("#product-review h3.section-title").first();
+		Element totalRatingElement = docRating.select(".star-rating-write-review").first();
 
 		if(totalRatingElement != null) {
 			String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

@@ -21,7 +21,7 @@ public class CuritibaMuffatoCrawler extends CrawlerRankingCategories{
 		super.processBeforeFetch();
 
 		// número de produtos por página do market
-		if (StringUtils.countMatches(this.location.replace(HOME_PAGE, ""), "/") > 0) {
+		if (StringUtils.countMatches(this.categoryUrl.replace(HOME_PAGE, ""), "/") > 0) {
 			this.pageSize = 24;
 		} else {
 			this.pageSize = 12;
@@ -39,10 +39,10 @@ public class CuritibaMuffatoCrawler extends CrawlerRankingCategories{
 		String url;
 		
 		if(!this.cat1) {
-			if(this.location.contains("?")) {
-				url = this.location + "&sc=10&PageNumber=" + this.currentPage;
+			if(this.categoryUrl.contains("?")) {
+				url = this.categoryUrl + "&sc=10&PageNumber=" + this.currentPage;
 			} else {
-				url = this.location + "?sc=10&PageNumber=" + this.currentPage;
+				url = this.categoryUrl + "?sc=10&PageNumber=" + this.currentPage;
 			}
 		} else {
 			url = this.location;

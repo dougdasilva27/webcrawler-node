@@ -147,7 +147,7 @@ public class CampograndeComperCrawler extends CrawlerRankingCategories {
 	}
 	
 	private String getCategoryUrl() {
-		String url = this.location;
+		String url = this.categoryUrl;
 		
 		if(this.currentPage > 1) {
 			String[] tokens = url.split("/");

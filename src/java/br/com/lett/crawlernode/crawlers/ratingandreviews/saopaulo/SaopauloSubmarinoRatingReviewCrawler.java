@@ -106,7 +106,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
 
-		ratingReviews.setTotalReviews(getTotalReviewCount(reviewStatistics));
+		ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
 		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
 		return ratingReviews;

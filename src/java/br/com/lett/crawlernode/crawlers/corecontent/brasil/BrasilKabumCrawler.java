@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +21,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class BrasilKabumCrawler extends Crawler {
 
@@ -59,6 +61,15 @@ public class BrasilKabumCrawler extends Crawler {
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/kabum.html"));
+				
+				out.write(doc.toString());
+				out.close();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			
 			/**
 			 * Caso fixo do blackfriday
 			 * onde aparentemente a página do produto dá um refresh para a página do produto na blackfriday.
@@ -102,7 +113,7 @@ public class BrasilKabumCrawler extends Crawler {
 			Float price = null;
 
 			// availability
-			boolean available = true;
+			boolean available = false;
 
 			// categories
 			String category1 = "";
@@ -122,7 +133,7 @@ public class BrasilKabumCrawler extends Crawler {
 			if(elementProduct != null){
 
 				// Prices
-				prices = crawlPrices(elementProduct);
+				prices = crawlPrices(elementProduct, doc);
 
 				//Name 
 				Element elementName = elementProduct.select("#titulo_det h1").first();
@@ -143,9 +154,10 @@ public class BrasilKabumCrawler extends Crawler {
 				}
 
 				//Available
-				Element elementAvailability = elementProduct.select(".disponibilidade img").first();			
-				if(elementAvailability == null || !elementAvailability.attr("alt").equals("produto_disponivel")) {
-					available = false;
+				Element elementAvailability = elementProduct.select(".disponibilidade img").first();	
+				Element availablePromo = doc.select(".box_comprar-cm .textocomprar").first();
+				if((elementAvailability == null || elementAvailability.attr("alt").equalsIgnoreCase("produto_disponivel")) && availablePromo == null) {
+					available = true;
 				}
 
 				// Categories
@@ -221,12 +233,16 @@ public class BrasilKabumCrawler extends Crawler {
 	}
 
 
-	private Prices crawlPrices(Element product){
+	private Prices crawlPrices(Element product, Document doc){
 		Prices prices = new Prices();
 		Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 		Element priceBoleto = product.select(".preco_desconto strong").first();
 
+		if(priceBoleto == null){
+			priceBoleto = doc.select(".preco_desconto_avista-cm").first();
+		}
+		
 		if(priceBoleto != null){
 			Float bankTicket = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 			prices.setBankTicketPrice(bankTicket);
@@ -234,6 +250,10 @@ public class BrasilKabumCrawler extends Crawler {
 
 		Elements installmentsPrices = product.select(".ParcelamentoCartao li");
 
+		if(installmentsPrices.size() < 1) {
+			installmentsPrices = doc.select(".ParcelamentoCartao-cm li");
+		}
+		
 		for(Element e : installmentsPrices){
 			String text = e.text().toLowerCase();
 

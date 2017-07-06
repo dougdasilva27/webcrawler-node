@@ -41,7 +41,7 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
 		// monta a url com a keyword e a página
 
-		String url = "http://buscas2.casasbahia.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual="
+		String url = "http://buscas.casasbahia.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual="
 				+ this.currentPage;
 
 		if (this.currentPage > 1) {
@@ -55,12 +55,13 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements id = this.currentDoc.select("a.link.url");
+		Elements products = this.currentDoc.select("a.link.url");
 
 		if (this.currentPage == 1) {
-			if (this.currentDoc.baseUri().contains("Filtro")) {
+			String redirectUrl = this.session.getRedirectedToURL(url);
+			if (redirectUrl != null && !redirectUrl.equals(url)) {
 				isCategory = true;
-				this.urlCategory = this.currentDoc.baseUri();
+				this.urlCategory = redirectUrl;
 			} else {
 				isCategory = false;
 			}
@@ -74,12 +75,12 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
-		if (id.size() >= 1 && result.size() < 1) {
+		if (products.size() >= 1 && result.size() < 1) {
 			// se o total de busca não foi setado ainda, chama a função para
 			// setar
 			if (this.totalProducts == 0)
 				setTotalProducts();
-			for (Element e : id) {
+			for (Element e : products) {
 				// InternalPid
 				String internalPid = crawlInternalPid(e);
 

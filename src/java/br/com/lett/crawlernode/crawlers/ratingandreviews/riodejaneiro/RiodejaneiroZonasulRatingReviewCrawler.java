@@ -51,7 +51,7 @@ public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler 
 				if (totalNumberOfEvaluations > 0) {
 					Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumberOfEvaluations);
 					
-					ratingsReviews.setTotalReviews(totalNumberOfEvaluations);
+					ratingsReviews.setTotalRating(totalNumberOfEvaluations);
 					ratingsReviews.setAverageOverallRating(avgRating);
 				}
 			}

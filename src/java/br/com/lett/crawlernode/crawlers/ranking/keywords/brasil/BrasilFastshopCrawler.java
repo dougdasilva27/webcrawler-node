@@ -21,15 +21,15 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 		
 		//monta url temporária de parãmetro para verificação do isCategory
-		String urlTemp = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/SearchDisplay?searchTerm="+ this.keywordEncoded +"&pageSize=50&"
+		String urlTemp = "https://www.fastshop.com.br/webapp/wcs/stores/servlet/SearchDisplay?searchTerm="+ this.keywordEncoded +"&pageSize=50&"
 				+ "beginIndex=" + this.arrayProducts.size() + "&storeId=10151&catalogId=11052&langId=-6&sType=SimpleSearch"
 						+ "&resultCatEntryType=2&showResultsPage=true&searchSource=Q&hotsite=fastshop";
 		
-		String url;
+		String url = urlTemp;
 		//monta a url de acordo com o tipo: categoria ou busca.
-		if(isCategory) 	url = this.urlCategory+"&beginIndex="+this.arrayProducts.size();
-		else			url = urlTemp;
-		
+		if(isCategory) {
+			url = this.urlCategory+"&beginIndex="+this.arrayProducts.size();
+		}
 		
 		this.currentDoc = fetchDocument(url);
 		
@@ -45,7 +45,9 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
+			}
 			
 			for(Element e: products) {
 				// InternalPid
@@ -88,10 +90,9 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 		return false;
 	}
 	
-	private void isCategory(String url)
-	{
+	private void isCategory(String url) {
 	
-		if(!url.equals(this.currentDoc.baseUri())){
+		if(session.getRedirectedToURL(url) != null && !url.equals(session.getRedirectedToURL(url))){
 			Element codigoCatElement = this.currentDoc.select("div.compare_controls.disabled a").first();
 			
 			if(codigoCatElement != null){

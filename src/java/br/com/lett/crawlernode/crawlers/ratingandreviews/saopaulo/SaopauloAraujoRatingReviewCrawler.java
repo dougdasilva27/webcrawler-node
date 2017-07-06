@@ -15,7 +15,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
@@ -55,7 +54,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);			
 				Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
 				
-				ratingReviews.setTotalReviews(totalNumOfEvaluations);
+				ratingReviews.setTotalRating(getTotalNumOfReviews(docRating));
 				ratingReviews.setAverageOverallRating(avgRating);
 			
 				List<String> idList = crawlIdList(skuJson);
@@ -177,6 +176,17 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 		}
 		
 		return totalRating;
+	}
+	
+	/**
+	 * Number of ratings appear in page rating 
+	 * @param docRating
+	 * @return
+	 */
+	private Integer getTotalNumOfReviews(Document docRating) {
+		Elements totalRatingElement = docRating.select(".resenhas .quem > li");
+		
+		return totalRatingElement.size();
 	}
 	 
 

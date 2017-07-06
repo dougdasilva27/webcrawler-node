@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import br.com.lett.crawlernode.util.CommonMethods;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class Product {
 	
@@ -105,7 +105,7 @@ public class Product {
 	
 	public void setPrimaryImage(String primaryImage) {
 		if(primaryImage != null) {
-			this.primaryImage = CommonMethods.removeIllegalParameters(primaryImage);
+			this.primaryImage = CommonMethods.sanitizeUrl(primaryImage);
 		} else {
 			this.primaryImage = primaryImage;
 		}

@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Prices;
+import models.prices.Prices;
 
 public class SaopauloDrogaraiaCrawler extends Crawler {
 
@@ -110,8 +110,16 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 			// Descrição
 			String description = "";
+			Element shortDescription = doc.select(".product-short-description").first();
 			Element elementDescription = doc.select("#details").first();
-			if(elementDescription != null) description = elementDescription.html().trim();
+			
+			if(shortDescription != null) {
+				description += shortDescription.html().trim();
+			}
+			
+			if(elementDescription != null) {
+				description += elementDescription.html().trim();
+			}
 
 			// Estoque
 			Integer stock = null;
