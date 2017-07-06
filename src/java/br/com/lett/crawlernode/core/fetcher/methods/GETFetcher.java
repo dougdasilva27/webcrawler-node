@@ -131,13 +131,13 @@ public class GETFetcher {
 			if (proxy != null) {
 				
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 							.setProxy(proxy)
 							.build();
 				} else {
@@ -153,13 +153,13 @@ public class GETFetcher {
 
 			} else {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
-							.setConnectionRequestTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setConnectTimeout(DataFetcher.BEMOL_TIMEOUT)
-							.setSocketTimeout(DataFetcher.BEMOL_TIMEOUT)
+							.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
+							.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 							.build();
 				} else {
 					requestConfig = RequestConfig.custom()
@@ -364,7 +364,7 @@ public class GETFetcher {
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true
@@ -386,7 +386,7 @@ public class GETFetcher {
 
 			} else {
 
-				if (session.getMarket().getName() != null && session.getMarket().getName().equals("bemol")) {
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
 							.setCookieSpec(CookieSpecs.STANDARD)
 							.setRedirectsEnabled(true) // set redirect to true

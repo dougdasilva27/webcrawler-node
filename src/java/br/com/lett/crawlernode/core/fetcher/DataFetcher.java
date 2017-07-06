@@ -101,7 +101,7 @@ public class DataFetcher {
 	public static final int DEFAULT_CONNECT_TIMEOUT_IMG = 20000; // ms
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
-	public static final int BEMOL_TIMEOUT = 30000;
+	public static final int THIRTY_SECONDS_TIMEOUT = 30000;
 	
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
@@ -110,6 +110,8 @@ public class DataFetcher {
 	public static List<String> userAgents;
 
 	public static List<String> errorCodes;
+	
+	public static List<String> highTimeoutMarkets;
 
 	/**
 	 * Static initialization block
@@ -140,6 +142,8 @@ public class DataFetcher {
 				);
 
 		errorCodes = Arrays.asList("403");
+		
+		highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao");
 	}
 
 	/**
