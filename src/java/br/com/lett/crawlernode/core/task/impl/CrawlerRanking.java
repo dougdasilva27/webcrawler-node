@@ -350,7 +350,7 @@ public abstract class CrawlerRanking extends Task {
 
 			Ranking ranking = new Ranking();
 			
-			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
+			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
 			Timestamp ts = Timestamp.valueOf(nowISO);
 
 			ranking.setMarketId(this.marketId);
@@ -388,7 +388,7 @@ public abstract class CrawlerRanking extends Task {
 
 			RankingDiscoverStats ranking = new RankingDiscoverStats();
 
-			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
+			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
 			Timestamp ts = Timestamp.valueOf(nowISO);
 
 			ranking.setMarketId(this.marketId);

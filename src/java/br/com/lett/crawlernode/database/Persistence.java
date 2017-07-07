@@ -793,13 +793,13 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
+				Long masterId = record.get(processed.MASTER_ID);
+				
+				if(masterId != null) {
+					processedIds.add(record.get(processed.MASTER_ID));
+				} else {
 					processedIds.add(record.get(processed.ID));
-//				}
+				}
 			}
 
 			
@@ -829,13 +829,13 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
+				Long masterId = record.get(processed.MASTER_ID);
+				
+				if(masterId != null) {
+					processedIds.add(record.get(processed.MASTER_ID));
+				} else {
 					processedIds.add(record.get(processed.ID));
-//				}
+				}
 			}
 
 
@@ -864,13 +864,13 @@ public class Persistence {
 			Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
 			for(Record record : results) {
-//				Long masterId = record.get(processed.MASTER_ID);
-//				
-//				if(masterId != null) {
-//					processedIds.add(record.get(processed.MASTER_ID));
-//				} else {
+				Long masterId = record.get(processed.MASTER_ID);
+				
+				if(masterId != null) {
+					processedIds.add(record.get(processed.MASTER_ID));
+				} else {
 					processedIds.add(record.get(processed.ID));
-//				}
+				}
 			}
 
 
