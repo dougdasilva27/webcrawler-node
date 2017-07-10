@@ -180,7 +180,7 @@
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>lett-models</artifactId>
-			<version>0.0.4</version>
+			<version>1.0.4</version>
 		</dependency>
 
 		<!-- Assemble and perform queries -->
