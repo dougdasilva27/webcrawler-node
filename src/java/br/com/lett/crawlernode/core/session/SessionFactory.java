@@ -61,7 +61,7 @@ public class SessionFactory {
 			return new RankingDiscoverCategoriesSession(request, queueName, markets);
 		}
 		else {
-			Logging.printLogDebug(logger, "Queue name not recognized.");
+			Logging.printLogDebug(logger, "Queue name not recognized." + "[" + queueName + "]");
 			return null;
 		}
 	}
