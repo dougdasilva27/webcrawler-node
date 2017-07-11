@@ -36,17 +36,17 @@ public class ProxyCollection {
 	public static final String NO_PROXY 				= "no_proxy";
 	public static final String LUMINATI_SERVER_BR 		= "luminati_server_br";
 	public static final String LUMINATI_RESIDENTIAL_BR 	= "luminati_residential_br";
-	public static final String CHARITY 					= "charity";
-	public static final String AZURE 					= "azure";
+	//public static final String CHARITY 					= "charity";
+	//public static final String AZURE 					= "azure";
 	public static final String FETCHER					= "fetcher";
 
 	public static final int MAX_ATTEMPTS_FETCHER				= 1;
 	public static final int MAX_ATTEMPTS_BUY 					= 2;
 	public static final int MAX_ATTEMPTS_BONANZA 				= 3;
-	public static final int MAX_ATTEMPTS_CHARITY 				= 3;
+	//public static final int MAX_ATTEMPTS_CHARITY 				= 3;
 	public static final int MAX_ATTEMPTS_LUMINATI_SERVER 		= 2;
 	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL 	= 2;
-	public static final int MAX_ATTEMPTS_AZURE 					= 3;
+	//public static final int MAX_ATTEMPTS_AZURE 					= 3;
 	public static final int MAX_ATTEMPTS_STORM					= 3;
 	public static final int MAX_ATTEMPTS_NO_PROXY 				= 1;
 
@@ -68,8 +68,8 @@ public class ProxyCollection {
 		proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
 		proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER);
 		proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL);
-		proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
-		proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
+		//proxyMaxAttempts.put(CHARITY, MAX_ATTEMPTS_CHARITY);
+		//proxyMaxAttempts.put(AZURE, MAX_ATTEMPTS_AZURE);
 		proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
 		proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 		proxyMaxAttempts.put(FETCHER, MAX_ATTEMPTS_FETCHER);
@@ -83,11 +83,11 @@ public class ProxyCollection {
 		this.assembleIntervalsImages(markets);
 	}
 
-	public void setCharityProxy() {
-		List<LettProxy> charity = new ArrayList<>();
-		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
-		this.proxyMap.put(CHARITY, charity);
-	}
+//	public void setCharityProxy() {
+//		List<LettProxy> charity = new ArrayList<>();
+//		charity.add(new LettProxy(CHARITY, "workdistribute.charityengine.com", 20000, "world", "", "ff548a45065c581adbb23bbf9253de9b"));
+//		this.proxyMap.put(CHARITY, charity);
+//	}
 
 	public void setLuminatiServerBrProxy() {
 		List<LettProxy> luminati = new ArrayList<>();
@@ -108,11 +108,11 @@ public class ProxyCollection {
 		proxyMap.put(LUMINATI_RESIDENTIAL_BR, luminati);
 	}
 	
-	public void setAzureProxy() {
-		List<LettProxy> azure = new ArrayList<>();
-		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
-		proxyMap.put(AZURE, azure);
-	}
+//	public void setAzureProxy() {
+//		List<LettProxy> azure = new ArrayList<>();
+//		azure.add(new LettProxy(AZURE, "191.235.90.114", 3333, "brazil", "", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"));
+//		proxyMap.put(AZURE, azure);
+//	}
 
 	public void setStormProxies() {
 		List<LettProxy> storm = new ArrayList<>();

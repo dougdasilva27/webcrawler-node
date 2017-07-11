@@ -141,9 +141,9 @@ public class DynamicDataFetcher {
 		return webdriver;
 	}
 
-	public static String fetchPageSmart(String url, Session session) {
-		return fetchPageSmart(url, session, 1);
-	}
+//	public static String fetchPageSmart(String url, Session session) {
+//		return fetchPageSmart(url, session, 1);
+//	}
 
 	/**
 	 * 
@@ -179,93 +179,93 @@ public class DynamicDataFetcher {
 	 * @param session
 	 * @return the HTML code of the fetched page, after javascript code execution
 	 */
-	private static String fetchPageSmart(String url, Session session, int attempt) {
-		LettProxy lettProxy = Main.proxies.getProxy(ProxyCollection.CHARITY).get(0);
-		String randUserAgent = randUserAgent();
-		CloseableHttpResponse closeableHttpResponse = null;
-
-		try {
-			CookieStore cookieStore = new BasicCookieStore();
-
-			CredentialsProvider credentialsProvider = createCredentialsProvider(lettProxy);
-
-			HttpHost proxy = new HttpHost(lettProxy.getAddress(), lettProxy.getPort());
-
-			RequestConfig requestConfig = createRequestConfig(proxy);
-
-			// creating the redirect strategy, so we can get the final redirected URL
-			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-
-			List<Header> headers = new ArrayList<>();
-			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
-
-			CloseableHttpClient httpclient = HttpClients.custom()
-					.setDefaultCookieStore(cookieStore)
-					.setUserAgent(randUserAgent)
-					.setDefaultRequestConfig(requestConfig)
-					.setRedirectStrategy(redirectStrategy)
-					.setDefaultCredentialsProvider(credentialsProvider)
-					.setDefaultHeaders(headers)
-					.build();
-
-			HttpContext localContext = createContext(cookieStore);
-
-			HttpGet httpGet = new HttpGet(url);
-			httpGet.setConfig(requestConfig);
-
-			// set authentication and configuration headers
-			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-			httpGet.addHeader("Proxy-Authorization", "Basic " + Base64.encodeBase64String(authenticator.getBytes()));
-			httpGet.addHeader("X-Proxy-Country", "BR");
-			httpGet.addHeader("X-proxy-phantomjs-script-url", SMART_PROXY_SCRIPT_URL);
-			httpGet.addHeader("X-proxy-phantomjs-script-md5", SMART_PROXY_SCRIPT_MD5);
-			httpGet.addHeader("X-Proxy-Timeout-Soft", "30");
-			httpGet.addHeader("X-Proxy-Timeout-Hard", "30");
-
-			// perform request
-			closeableHttpResponse = httpclient.execute(httpGet, localContext);
-
-			// analysing the status code
-			// if there was some response code that indicates forbidden access or server error we want to try again
-			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-			if( Integer.toString(responseCode).charAt(0) != '2' && 
-					Integer.toString(responseCode).charAt(0) != '3' && 
-					responseCode != 404 ) {
-				throw new ResponseCodeException(responseCode);
-			}
-
-			// creating the page content result from the http request
-			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
-			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
-			pageContent.setUrl(url); // setting url
-
-			// record the redirected URL on the session
-			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
-				session.addRedirection(url, redirectStrategy.getFinalURL());
-			}
-
-			// process response and parse
-			String response = processContent(pageContent, session);
-
-			if(response != null && response.trim().isEmpty()) {
-				throw new ResponseCodeException(0);
-			}
-			
-			return response;
-			
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing request: " + url);
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
-			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
-				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
-				return "";
-
-			} else {
-				return fetchPageSmart(url, session, attempt+1);	
-			}
-		}
-	}
+//	private static String fetchPageSmart(String url, Session session, int attempt) {
+//		LettProxy lettProxy = Main.proxies.getProxy(ProxyCollection.CHARITY).get(0);
+//		String randUserAgent = randUserAgent();
+//		CloseableHttpResponse closeableHttpResponse = null;
+//
+//		try {
+//			CookieStore cookieStore = new BasicCookieStore();
+//
+//			CredentialsProvider credentialsProvider = createCredentialsProvider(lettProxy);
+//
+//			HttpHost proxy = new HttpHost(lettProxy.getAddress(), lettProxy.getPort());
+//
+//			RequestConfig requestConfig = createRequestConfig(proxy);
+//
+//			// creating the redirect strategy, so we can get the final redirected URL
+//			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+//
+//			List<Header> headers = new ArrayList<>();
+//			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
+//
+//			CloseableHttpClient httpclient = HttpClients.custom()
+//					.setDefaultCookieStore(cookieStore)
+//					.setUserAgent(randUserAgent)
+//					.setDefaultRequestConfig(requestConfig)
+//					.setRedirectStrategy(redirectStrategy)
+//					.setDefaultCredentialsProvider(credentialsProvider)
+//					.setDefaultHeaders(headers)
+//					.build();
+//
+//			HttpContext localContext = createContext(cookieStore);
+//
+//			HttpGet httpGet = new HttpGet(url);
+//			httpGet.setConfig(requestConfig);
+//
+//			// set authentication and configuration headers
+//			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+//			httpGet.addHeader("Proxy-Authorization", "Basic " + Base64.encodeBase64String(authenticator.getBytes()));
+//			httpGet.addHeader("X-Proxy-Country", "BR");
+//			httpGet.addHeader("X-proxy-phantomjs-script-url", SMART_PROXY_SCRIPT_URL);
+//			httpGet.addHeader("X-proxy-phantomjs-script-md5", SMART_PROXY_SCRIPT_MD5);
+//			httpGet.addHeader("X-Proxy-Timeout-Soft", "30");
+//			httpGet.addHeader("X-Proxy-Timeout-Hard", "30");
+//
+//			// perform request
+//			closeableHttpResponse = httpclient.execute(httpGet, localContext);
+//
+//			// analysing the status code
+//			// if there was some response code that indicates forbidden access or server error we want to try again
+//			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+//			if( Integer.toString(responseCode).charAt(0) != '2' && 
+//					Integer.toString(responseCode).charAt(0) != '3' && 
+//					responseCode != 404 ) {
+//				throw new ResponseCodeException(responseCode);
+//			}
+//
+//			// creating the page content result from the http request
+//			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+//			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+//			pageContent.setUrl(url); // setting url
+//
+//			// record the redirected URL on the session
+//			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+//				session.addRedirection(url, redirectStrategy.getFinalURL());
+//			}
+//
+//			// process response and parse
+//			String response = processContent(pageContent, session);
+//
+//			if(response != null && response.trim().isEmpty()) {
+//				throw new ResponseCodeException(0);
+//			}
+//			
+//			return response;
+//			
+//		} catch (Exception e) {
+//			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing request: " + url);
+//			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+//
+//			if(attempt >= MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY) {
+//				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+//				return "";
+//
+//			} else {
+//				return fetchPageSmart(url, session, attempt+1);	
+//			}
+//		}
+//	}
 
 	private static HttpContext createContext(CookieStore cookieStore) {
 		HttpContext localContext = new BasicHttpContext();

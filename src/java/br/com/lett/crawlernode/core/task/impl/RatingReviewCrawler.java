@@ -174,8 +174,8 @@ public class RatingReviewCrawler extends Task {
 		String html;
 		if (this.config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-		} else if (this.config.getFetcher() == Fetcher.SMART) {
-			html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
+		//} else if (this.config.getFetcher() == Fetcher.SMART) {
+			//html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
 		} else {
 			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 			html = this.webdriver.getCurrentPageSource();

@@ -161,19 +161,19 @@ public class POSTFetcher {
 			httpPost.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-				httpPost.addHeader("Proxy-Authorization", headerValue);
-
-				// setting header for proxy country
-				httpPost.addHeader("X-Proxy-Country", "BR");
-			}
+//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+//				httpPost.addHeader("Proxy-Authorization", headerValue);
+//
+//				// setting header for proxy country
+//				httpPost.addHeader("X-Proxy-Country", "BR");
+//			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-			}
+//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+//				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+//			}
 
 			if(urlParameters != null && urlParameters.split("&").length > 0) {
 				ArrayList<NameValuePair> postParameters = new ArrayList<>();
@@ -345,19 +345,19 @@ public class POSTFetcher {
 		httpPost.setConfig(requestConfig);
 
 		// if we are using charity engine, we must set header for authentication
-		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-			httpPost.addHeader("Proxy-Authorization", headerValue);
-
-			// setting header for proxy country
-			httpPost.addHeader("X-Proxy-Country", "BR");
-		}
+//		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+//			String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+//			String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+//			httpPost.addHeader("Proxy-Authorization", headerValue);
+//
+//			// setting header for proxy country
+//			httpPost.addHeader("X-Proxy-Country", "BR");
+//		}
 
 		// if we are using azure, we must set header for authentication
-		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-			httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-		}
+//		if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+//			httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+//		}
 
 
 		if(payload != null) {
@@ -497,19 +497,19 @@ public class POSTFetcher {
 			httpPost.setEntity(input);
 
 			// if we are using charity engine, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-				httpPost.addHeader("Proxy-Authorization", headerValue);
-
-				// setting header for proxy country
-				httpPost.addHeader("X-Proxy-Country", "BR");
-			}
+//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+//				httpPost.addHeader("Proxy-Authorization", headerValue);
+//
+//				// setting header for proxy country
+//				httpPost.addHeader("X-Proxy-Country", "BR");
+//			}
 
 			// if we are using azure, we must set header for authentication
-			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-			}
+//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+//				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+//			}
 
 			if(headers.containsKey("Content-Type")){
 				if(payload != null) {
@@ -763,7 +763,7 @@ public class POSTFetcher {
 			// Proxies sequencie to be used for requests (1x per proxy service)
 			JSONArray any = new JSONArray();
 			any.put(ProxyCollection.BUY);
-			any.put(ProxyCollection.AZURE);
+			//any.put(ProxyCollection.AZURE);
 			any.put(ProxyCollection.STORM);
 			any.put(ProxyCollection.LUMINATI_SERVER_BR);
 			any.put(ProxyCollection.BONANZA);
