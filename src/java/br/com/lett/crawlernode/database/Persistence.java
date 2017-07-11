@@ -218,7 +218,7 @@ public class Persistence {
 
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error inserting product on database!");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 			session.registerError( new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)) );
 		}
