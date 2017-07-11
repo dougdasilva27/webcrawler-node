@@ -116,10 +116,10 @@ public class Main {
 		proxies.setBonanzaProxies();
 		proxies.setBuyProxies();
 		proxies.setStormProxies();
-		proxies.setCharityProxy();
+		//proxies.setCharityProxy();
 		proxies.setLuminatiServerBrProxy();
 		proxies.setLuminatiResidentialBrProxy();
-		proxies.setAzureProxy();
+		//proxies.setAzureProxy();
 		proxies.setFetcherProxy();
 	}
 	
