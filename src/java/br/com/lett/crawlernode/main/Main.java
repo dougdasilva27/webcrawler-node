@@ -94,7 +94,7 @@ public class Main {
 		processorResultManager = new ResultManager(false, dbManager);
 
 		// fetching proxies
-		initProxies();
+		proxies = new ProxyCollection(markets);
 
 		// initialize global resources
 		//initGlobalResources();
@@ -111,32 +111,6 @@ public class Main {
 		
 	}
 
-	private static void initProxies() {
-		proxies = new ProxyCollection(markets);
-		proxies.setBonanzaProxies();
-		proxies.setBuyProxies();
-		proxies.setStormProxies();
-		//proxies.setCharityProxy();
-		proxies.setLuminatiServerBrProxy();
-		proxies.setLuminatiResidentialBrProxy();
-		//proxies.setAzureProxy();
-		proxies.setFetcherProxy();
-	}
-	
-
-//	private static void initGlobalResources() {
-//		globalResources = new Resources();
-//		try {
-//			globalResources.setWebdriverExtension(downloadWebdriverExtension());
-//		} catch (MalformedURLException e) {
-//			Logging.printLogError(logger, "error in resource URL.");
-//			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-//		} catch (IOException e) {
-//			Logging.printLogError(logger, "error during resource download.");
-//			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-//		}
-//	}
-
 	private static void checkFiles() {
 		File phantom = new File(executionParameters.getPhantomjsPath());
 		if (!phantom.exists() && !phantom.isDirectory()) {
@@ -144,34 +118,5 @@ public class Main {
 			System.exit(1);
 		}
 	}
-
-//	private static File downloadWebdriverExtension() throws IOException {
-//		BufferedInputStream in = null;
-//		FileOutputStream fout = null;
-//		try {
-//			in = new BufferedInputStream(new URL("https://s3.amazonaws.com/code-deploy-lett/crawler-node-util/modheader_2_1_1.crx").openStream());
-//			File f = new File("modheader_2_1_1.crx");
-//			if (!f.exists()) {
-//				f.createNewFile();
-//			}
-//			fout = new FileOutputStream(f);
-//
-//			final byte[] data = new byte[1024];
-//			int count;
-//			while ((count = in.read(data, 0, 1024)) != -1) {
-//				fout.write(data, 0, count);
-//			}
-//
-//			return f;
-//
-//		} finally {
-//			if (in != null) {
-//				in.close();
-//			}
-//			if (fout != null) {
-//				fout.close();
-//			}
-//		}
-//	}
 
 }

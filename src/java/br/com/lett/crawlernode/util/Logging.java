@@ -29,18 +29,18 @@ public class Logging {
 	 */
 	public static void setLogMDC() {
 
-		Pattern IPV4_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
-		
-		String host = EC2MetadataUtils.getPrivateIpAddress();
-		
-		// Avoiding ip parse errors in Elasticsearch index
-		if(host == null || !IPV4_PATTERN.matcher(host).matches()) {
-			host = "0.0.0.0";
-		}
-		
-		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
-		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
-		MDC.put("HOST", host);
+//		Pattern IPV4_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+//		
+//		String host = EC2MetadataUtils.getPrivateIpAddress();
+//		
+//		// Avoiding ip parse errors in Elasticsearch index
+//		if(host == null || !IPV4_PATTERN.matcher(host).matches()) {
+//			host = "0.0.0.0";
+//		}
+//		
+//		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
+//		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
+//		MDC.put("HOST", host);
 
 	}
 		
