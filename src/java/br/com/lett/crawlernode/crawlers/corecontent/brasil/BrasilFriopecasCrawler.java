@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -57,12 +58,6 @@ public class BrasilFriopecasCrawler extends Crawler {
 	private final String NAME_SELECTOR 										= ".fn.productName";
 	private final String PRICE_SELECTOR 									= ".plugin-preco .preco-a-vista .skuPrice";
 
-	private final String PRIMARY_IMAGE_SELECTOR 							= "#image a";
-	private final String PRIMARY_IMAGE_SELECTOR_ATTRIBUTE 					= "href";
-
-	private final String SECONDARY_IMAGES_SELECTOR 							= ".thumbs li a";
-	private final String SECONDARY_IMAGES_SELECTOR_ATTRIBUTE				= "zoom";
-
 	private final String CATEGORIES_SELECTOR 								= ".bread-crumb ul li a";
 	
 	private final String DESCRIPTION_SELECTOR 								= ".about-product";
@@ -82,7 +77,9 @@ public class BrasilFriopecasCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
+		
+		CommonMethods.printStringToFile(doc.toString(), "/home/samirleao/Documents/climario.html");
 		
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -165,7 +162,6 @@ public class BrasilFriopecasCrawler extends Crawler {
 	/*******************************
 	 * Product page identification *
 	 *******************************/
-
 	private boolean isProductPage(String url) {
 		if ( url.startsWith("http://www.friopecas.com.br/") && url.endsWith("/p") ) return true;
 		return false;
@@ -188,8 +184,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 	}
 
 	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-		return internalPid;
+		return null;
 	}
 
 	private String crawlName(Document document) {
@@ -233,10 +228,16 @@ public class BrasilFriopecasCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select(PRIMARY_IMAGE_SELECTOR).first();
+		Element primaryImageElement = document.select("#image a").first();
 
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr(PRIMARY_IMAGE_SELECTOR_ATTRIBUTE);
+			primaryImage = primaryImageElement.attr("href");
+		} else {
+			primaryImageElement = document.select("#image img").first();
+			
+			if (primaryImageElement != null) {
+				primaryImage = primaryImageElement.attr("src").trim();
+			}
 		}
 
 		return primaryImage;
@@ -246,10 +247,12 @@ public class BrasilFriopecasCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select(SECONDARY_IMAGES_SELECTOR);
+		Elements imagesElement = document.select(".thumbs li a");
 	
 		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			secondaryImagesArray.put(imagesElement.get(i).attr(SECONDARY_IMAGES_SELECTOR_ATTRIBUTE));
+			String imageUrl = imagesElement.get(i).attr("zoom");
+			if ( imageUrl.isEmpty() ) imageUrl = imagesElement.get(i).attr("rel");
+			if ( !imageUrl.isEmpty() ) secondaryImagesArray.put(imageUrl);
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -260,7 +263,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		Elements elementCategories = document.select(CATEGORIES_SELECTOR);
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name

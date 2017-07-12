@@ -104,7 +104,7 @@ public class Product {
 	}
 	
 	public void setPrimaryImage(String primaryImage) {
-		if(primaryImage != null) {
+		if ( primaryImage != null && !primaryImage.isEmpty() ) {
 			this.primaryImage = CommonMethods.sanitizeUrl(primaryImage);
 		} else {
 			this.primaryImage = primaryImage;
