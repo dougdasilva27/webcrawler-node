@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.models;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -21,7 +22,7 @@ public class Product {
 	private String 		primaryImage;
 	private String 		secondaryImages;
 	private String 		description;
-	private Marketplace 	marketplace;
+	private Marketplace marketplace;
 	private Integer 	stock;
 	
 	public Product() {
@@ -65,7 +66,11 @@ public class Product {
 	}
 	
 	public void setPrice(Float price) {
-		this.price = price;
+		if ( price != null ) {
+			this.price = MathCommonsMethods.normalizeTwoDecimalPlaces(price);
+		} else {
+			this.price = price;
+		}		
 	}
 	
 	public boolean getAvailable() {
