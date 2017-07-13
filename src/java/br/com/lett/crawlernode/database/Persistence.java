@@ -212,7 +212,7 @@ public class Persistence {
 			// Map of Table - FieldsOfTable
 			Map<Table<?>,Map<Field<?>, Object>> tablesMap = new HashMap<>();
 			tablesMap.put(crawler, insertMapCrawler);
-			tablesMap.put(crawlerOld, insertMapCrawlerOld);
+			// tablesMap.put(crawlerOld, insertMapCrawlerOld); // Comentando temporariamente inserção na crawler_old
 
 			Main.dbManager.connectionPostgreSQL.runBatchInsertWithNTables(tables, tablesMap);
 
