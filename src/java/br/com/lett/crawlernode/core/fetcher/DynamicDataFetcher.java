@@ -45,8 +45,7 @@ public class DynamicDataFetcher {
 
 	protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
-	private static final String SMART_PROXY_SCRIPT_URL = "http://s3.amazonaws.com/phantomjs-scripts/page_content.js";
-	private static final String SMART_PROXY_SCRIPT_MD5 = "3f08999e2f6d7a82bc06c90b754d91e1";
+	private static final String HA_PROXY = "191.235.90.114:3333";
 
 	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
 	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -99,6 +98,9 @@ public class DynamicDataFetcher {
 			phantomjsPath = Main.executionParameters.getPhantomjsPath();
 		}
 		
+		// choose a proxy randomly
+		LettProxy proxy = randomProxy(ProxyCollection.BONANZA);
+		
 		DesiredCapabilities caps = DesiredCapabilities.phantomjs();
 		caps.setJavascriptEnabled(true);                
 		caps.setCapability("takesScreenshot", true);
@@ -111,13 +113,18 @@ public class DynamicDataFetcher {
 		// that the HAProxy is expecting
 		//
 		List<String> cliArgsCap = new ArrayList<>();
-		cliArgsCap.add("--proxy=191.235.90.114:3333");
-		cliArgsCap.add("--proxy-type=http");
+		
+		if ( proxy != null ) {
+			cliArgsCap.add("--proxy=" + proxy.getAddress() + ":" + proxy.getPort());
+			cliArgsCap.add("--proxy-auth=" + proxy.getUser() + ":" + proxy.getPass());
+			cliArgsCap.add("--proxy-type=http");
+		}
+		
 		cliArgsCap.add("--ignore-ssl-errors=true"); // ignore errors in https requests
 		cliArgsCap.add("--load-images=false");
 		
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgsCap);
-		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-a", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"); // authentication
+		//caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-a", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD"); // authentication
 		
 		//
 		// Set a random user agent
@@ -127,11 +134,11 @@ public class DynamicDataFetcher {
 		//
 		// Tell the HAProxy which proxy service we want to use
 		//
-		String proxyServiceName = session.getMarket().getProxies().get(0);
-		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-type", proxyServiceName);
+		//String proxyServiceName = session.getMarket().getProxies().get(0);
+		//caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "x-type", proxyServiceName);
 		
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
-		
+				
 		if (!(session instanceof TestCrawlerSession)) {
 			Main.server.incrementWebdriverInstances();
 		}
@@ -140,10 +147,15 @@ public class DynamicDataFetcher {
 
 		return webdriver;
 	}
-
-//	public static String fetchPageSmart(String url, Session session) {
-//		return fetchPageSmart(url, session, 1);
-//	}
+	
+	private static LettProxy randomProxy(String proxyService) {
+		List<LettProxy> proxies =  Main.proxies.getProxy(proxyService);  
+		if ( !proxies.isEmpty() ) {
+			int i = MathCommonsMethods.randInt(0, proxies.size() - 1);
+			return proxies.get(i);
+		}
+		return null;
+	}
 
 	/**
 	 * 
