@@ -171,43 +171,43 @@ public class Persistence {
 			}
 
 			// Create a fields and values of crawler_old
-			CrawlerOld crawlerOld = Tables.CRAWLER_OLD;
+//			CrawlerOld crawlerOld = Tables.CRAWLER_OLD;
+//
+//			Map<Field<?>, Object> insertMapCrawlerOld = new HashMap<>();
+//
+//			insertMapCrawlerOld.put(crawlerOld.AVAILABLE, available);
+//			insertMapCrawlerOld.put(crawlerOld.MARKET, session.getMarket().getNumber());
+//			insertMapCrawlerOld.put(crawlerOld.INTERNAL_ID, internalId);
+//			insertMapCrawlerOld.put(crawlerOld.INTERNAL_PID, internalPid);
+//			insertMapCrawlerOld.put(crawlerOld.URL, url);
+//			insertMapCrawlerOld.put(crawlerOld.STOCK, stock);
+//			insertMapCrawlerOld.put(crawlerOld.NAME, name);
+//			insertMapCrawlerOld.put(crawlerOld.SECONDARY_PICS, secondaryPics);
+//			insertMapCrawlerOld.put(crawlerOld.CAT1, cat1);
+//			insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
+//			insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
+//			insertMapCrawlerOld.put(crawlerOld.PIC, primaryPic);
 
-			Map<Field<?>, Object> insertMapCrawlerOld = new HashMap<>();
-
-			insertMapCrawlerOld.put(crawlerOld.AVAILABLE, available);
-			insertMapCrawlerOld.put(crawlerOld.MARKET, session.getMarket().getNumber());
-			insertMapCrawlerOld.put(crawlerOld.INTERNAL_ID, internalId);
-			insertMapCrawlerOld.put(crawlerOld.INTERNAL_PID, internalPid);
-			insertMapCrawlerOld.put(crawlerOld.URL, url);
-			insertMapCrawlerOld.put(crawlerOld.STOCK, stock);
-			insertMapCrawlerOld.put(crawlerOld.NAME, name);
-			insertMapCrawlerOld.put(crawlerOld.SECONDARY_PICS, secondaryPics);
-			insertMapCrawlerOld.put(crawlerOld.CAT1, cat1);
-			insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
-			insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
-			insertMapCrawlerOld.put(crawlerOld.PIC, primaryPic);
-
-			if(price != null) {
-				insertMapCrawlerOld.put(crawlerOld.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
-			}
-
-			if(prices != null) {
-				insertMapCrawlerOld.put(crawlerOld.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
-			}
-
-			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
-				insertMapCrawlerOld.put(crawlerOld.DESCRIPTION, description);
-			}
-
-			if(marketplaceString != null) {
-				insertMapCrawlerOld.put(crawlerOld.MARKETPLACE, marketplaceString);
-			}
+//			if(price != null) {
+//				insertMapCrawlerOld.put(crawlerOld.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
+//			}
+//
+//			if(prices != null) {
+//				insertMapCrawlerOld.put(crawlerOld.PRICES, CONVERT_STRING_GSON.converter().from(prices.toString()));
+//			}
+//
+//			if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ", "").trim().isEmpty()) {
+//				insertMapCrawlerOld.put(crawlerOld.DESCRIPTION, description);
+//			}
+//
+//			if(marketplaceString != null) {
+//				insertMapCrawlerOld.put(crawlerOld.MARKETPLACE, marketplaceString);
+//			}
 
 			// List of tables for batch insert
 			List<Table<?>> tables = new ArrayList<>();
 			tables.add(crawler);
-			tables.add(crawlerOld);
+			//tables.add(crawlerOld);
 
 			// Map of Table - FieldsOfTable
 			Map<Table<?>,Map<Field<?>, Object>> tablesMap = new HashMap<>();
