@@ -178,7 +178,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 						
 						// Creating the product
 						Product product = ProductBuilder.create()
-								.setUrl(session.getOriginalURL().replace(internalPid, internalId))
+								.setUrl(session.getOriginalURL())
 								.setInternalId(internalId)
 								.setInternalPid(internalPid)
 								.setName(fullName)
@@ -229,7 +229,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 					
 					// Creating the product
 					Product product = ProductBuilder.create()
-							.setUrl(session.getOriginalURL().replace(internalPid, selectedValue))
+							.setUrl(session.getOriginalURL())
 							.setInternalId(selectedValue)
 							.setInternalPid(internalPid)
 							.setName(fullName)
