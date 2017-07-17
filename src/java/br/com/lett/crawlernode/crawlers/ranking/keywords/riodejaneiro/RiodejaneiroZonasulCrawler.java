@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -35,15 +32,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
-			
-			try {
-				BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/zonasul.html"));
-				
-				out.write(currentDoc.toString());
-				out.close();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
 		}
 	
 		this.log("Página "+this.currentPage);
