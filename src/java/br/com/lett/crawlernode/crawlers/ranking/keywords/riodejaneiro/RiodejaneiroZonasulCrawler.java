@@ -1,20 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import org.jsoup.nodes.Document;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 
 	public RiodejaneiroZonasulCrawler(Session session) {
 		super(session);
 	}
-
-	private String codigo = "";
-	private String keyBusca = "";
 	
 	@Override
 	protected void extractProductsFromCurrentPage() {
@@ -28,15 +28,22 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
-			
-			setParameterForNextPage(this.currentDoc);
 		} else {
-			//monta a url com a keyword e a página
-			String url = "http://www.zonasulatende.com.br/WebForms/Lista-Facetada.aspx?"+this.codigo+"&"+this.keyBusca+"&Pagina="+this.currentPage;
+			//monta a url com o código da keyword e a página
+			String url = session.getRedirectedToURL(session.getOriginalURL()) + "&Pagina="+this.currentPage;
 			this.log("Link onde são feitos os crawlers: "+url);
 			
 			//chama função de pegar a url
 			this.currentDoc = fetchDocument(url);
+			
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/zonasul.html"));
+				
+				out.write(currentDoc.toString());
+				out.close();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
 		}
 	
 		this.log("Página "+this.currentPage);
@@ -46,7 +53,9 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
+			}
 			
 			for(Element e: products) {
 				// Url do produto
@@ -61,7 +70,9 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, productUrl);;
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
 			this.result = false;
@@ -81,21 +92,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 		return false;
 	}
 	
-	
-	//pega o link da keyword que esta transformado em um código
-	private void setParameterForNextPage(Document doc) {
-		Element link = doc.select("a.num").first();
-		
-		if(link != null) {
-			String[] tokens = link.attr("href").split("\\?");
-			String[] tokens2 = tokens[tokens.length-1].split("&");
-			
-			this.codigo = tokens2[0];
-			this.keyBusca = tokens2[1];
-		}
-	
-	}
-	
 	@Override
 	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select("div.result").first();
@@ -107,7 +103,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
 				
 				this.totalProducts = Integer.parseInt(token.substring(x).replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 			
 			this.log("Total da busca: "+this.totalProducts);
