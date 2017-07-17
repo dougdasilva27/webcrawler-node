@@ -63,13 +63,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				BrasilMagazineluizaCrawlerNew newMagalu = new BrasilMagazineluizaCrawlerNew(session);
 				products.add(newMagalu.crawlProduct(doc));
 			} else {
-				
-				// InternalId for Single Product
-				String internalIdSingleProduct = crawlInternalIdSingleProduct(doc);
-				
-				// InternalPid
-				String internalPid = internalIdSingleProduct;
-				
 				// Product name
 				String frontPageName = crawlNameFrontPage(doc);
 				
@@ -87,6 +80,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 				
 				// Sku info in json on html
 				JSONObject skuJsonInfo = BrasilMagazineluizaCrawlerUtils.crawlFullSKUInfo(doc, "var digitalData = ");
+				
+				// InternalId for Single Product
+				String internalIdSingleProduct = crawlInternalIdSingleProduct(doc, skuJsonInfo);
+				
+				// InternalPid
+				String internalPid = internalIdSingleProduct;
 				
 				// Skus
 				JSONArray skus = crawlSkusFromJson(skuJsonInfo);
@@ -308,12 +307,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 	 * @param doc
 	 * @return
 	 */
-	private String crawlInternalIdSingleProduct(Document doc) {
+	private String crawlInternalIdSingleProduct(Document doc, JSONObject skuJson) {
 		String internalId = null;
-		Element elementInternalId = doc.select("#productId").first();
 		
-		if(elementInternalId != null){
-			internalId = elementInternalId.val().trim();
+		if(skuJson.has("idSkuFull")) {
+			internalId = skuJson.getString("idSkuFull");
+		} else {
+			Element elementInternalId = doc.select("#productId").first();
+			
+			if(elementInternalId != null){
+				internalId = elementInternalId.val().trim();
+			}
 		}
 		
 		return internalId;
