@@ -65,6 +65,12 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
 	protected boolean hasNextPage() {
 		if(this.arrayProducts.size() < totalProducts) {
 			return true;
+		} else {
+			Element nextPage = this.currentDoc.select(".card.card-pagination svg.pagination-icon").first();
+			
+			if(nextPage != null) {
+				return true;
+			}
 		}
 
 		return false;
@@ -72,7 +78,7 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void setTotalProducts() {
-		Element e = this.currentDoc.select(".form-group.display-sm-inline-block span[data-reactid=27]").first();
+		Element e = this.currentDoc.select(".form-group.display-sm-inline-block span[data-reactid]").first();
 		
 		if(e != null) {
 			String total = e.ownText().replaceAll("[^0-9]", "").trim();
