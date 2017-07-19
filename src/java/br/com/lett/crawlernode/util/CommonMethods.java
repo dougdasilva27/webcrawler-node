@@ -289,7 +289,7 @@ public class CommonMethods {
      */
     public static String sanitizeUrl(String url) {
 		try {
-			URL urlObject = new URL(url);
+			URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
 						
 			URIBuilder uriBuilder = new URIBuilder()
 					.setHost(urlObject.getHost())

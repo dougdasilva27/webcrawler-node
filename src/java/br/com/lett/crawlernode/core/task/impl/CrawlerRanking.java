@@ -193,7 +193,7 @@ public abstract class CrawlerRanking extends Task {
 				
 			} while (checkIfHasNextPage());
 	
-			if(this.arrayProducts.size() == productsLimit){
+			if(this.position == productsLimit){
 				log(productsLimit + " reached products!");
 			} else if(this.result) {
 				log("End of pages!");
@@ -224,9 +224,9 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected boolean checkIfHasNextPage() {
-		if(this.arrayProducts.size() < productsLimit && hasNextPage() && this.result) {
-			if(doubleCheck == null || this.arrayProducts.size() > doubleCheck) {
-				doubleCheck = this.arrayProducts.size();
+		if(this.position < productsLimit && hasNextPage() && this.result) {
+			if(doubleCheck == null || position >= doubleCheck) {
+				doubleCheck = this.position;
 			} else {
 				return false;
 			}
@@ -248,8 +248,8 @@ public abstract class CrawlerRanking extends Task {
 
 	//função que seta o Total de busca de cada categoria
 	protected void setTotalProducts(){
-		if(this.arrayProducts.size() < productsLimit){
-			this.totalProducts = this.arrayProducts.size();
+		if(this.arrayProducts.size() < productsLimit && !hasNextPage()){
+			this.totalProducts = this.position;
 		}
 
 		this.log("Total da busca: "+ this.totalProducts);
