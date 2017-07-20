@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,8 +47,6 @@ public class BrasilKabumCrawler extends Crawler {
 			cookie.setPath("/");
 			this.cookies.add(cookie);
 		}
-		
-	
 	}
 
 	@Override
@@ -61,15 +57,6 @@ public class BrasilKabumCrawler extends Crawler {
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			try {
-				BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/kabum.html"));
-				
-				out.write(doc.toString());
-				out.close();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			
 			/**
 			 * Caso fixo do blackfriday
 			 * onde aparentemente a página do produto dá um refresh para a página do produto na blackfriday.
