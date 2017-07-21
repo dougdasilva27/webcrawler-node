@@ -27,6 +27,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -35,6 +36,8 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.core.session.Session;
 
 
 /**
@@ -458,6 +461,42 @@ public class CommonMethods {
 		}
 		
 		return list;
+	}
+	
+	/**
+	 * Crawl skuJson from html in VTEX Sites
+	 * @param document
+	 * @param session
+	 * @return
+	 */
+	public static JSONObject crawlSkuJsonVTEX(Document document, Session session) {
+		Elements scriptTags = document.getElementsByTag("script");
+		String scriptVariableName = "var skuJson_0 = ";
+		JSONObject skuJson;
+		String skuJsonString = null;
+		
+		for (Element tag : scriptTags){                
+			for (DataNode node : tag.dataNodes()) {
+				if(tag.html().trim().startsWith(scriptVariableName)) {
+					skuJsonString =
+							node.getWholeData().split(Pattern.quote(scriptVariableName))[1] +
+							node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
+					break;
+				}
+			}        
+		}
+		
+		try {
+			skuJson = new JSONObject(skuJsonString);
+			
+		} catch (JSONException e) {
+			Logging.printLogError(logger, session, "Error creating JSONObject from var skuJson_0");
+			Logging.printLogError(logger, session, getStackTraceString(e));
+			
+			skuJson = new JSONObject();
+		}
+		
+		return skuJson;
 	}
 	
 	/**
