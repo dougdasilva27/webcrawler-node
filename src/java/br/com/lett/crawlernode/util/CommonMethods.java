@@ -504,7 +504,7 @@ public class CommonMethods {
 	 * 
 	 * @param doc
 	 * @param cssElement
-	 * @param token
+	 * @param token whithout spaces
 	 * @param finalIndex
 	 * @return
 	 */
