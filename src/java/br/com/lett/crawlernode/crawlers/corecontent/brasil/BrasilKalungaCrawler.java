@@ -209,7 +209,7 @@ public class BrasilKalungaCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return (url.contains("/prod/"));
+		return url.contains("/prod/");
 	}
 	
 	private Prices crawlPrices(Document doc, Float price){
