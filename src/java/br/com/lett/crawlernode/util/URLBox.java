@@ -51,6 +51,8 @@ public class URLBox {
 			} else {
 				options.put("proxy", proxy.getAddress()+ "%3A" + proxy.getPort());
 			}
+			
+			System.err.println(options);
 		}
 		
 		options.put("use_s3", true);

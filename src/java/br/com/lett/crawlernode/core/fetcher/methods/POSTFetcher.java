@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -120,7 +119,7 @@ public class POSTFetcher {
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
-			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
@@ -303,7 +302,7 @@ public class POSTFetcher {
 		}
 		
 		String randUserAgent = DataFetcher.randUserAgent();
-		LettProxy randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
+		LettProxy randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 		CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
@@ -451,7 +450,7 @@ public class POSTFetcher {
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
-			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 

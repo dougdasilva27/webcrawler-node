@@ -562,9 +562,6 @@ public abstract class CrawlerRanking extends Task {
 	protected Document fetchDocument(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
-		// Screenshot
-		takeAScreenshot(url);
-		
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		} 
@@ -580,7 +577,12 @@ public abstract class CrawlerRanking extends Task {
 			this.log(string.toString());
 		}
 		
-		return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		// Screenshot
+		takeAScreenshot(url);
+		
+		return doc;
 	}
 
 	/**

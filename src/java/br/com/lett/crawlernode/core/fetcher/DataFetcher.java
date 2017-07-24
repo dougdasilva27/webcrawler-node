@@ -431,7 +431,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
 			randUserAgent = randUserAgent();
-			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = createCookieStore(cookies);
 
@@ -607,7 +607,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
 			randUserAgent = randUserAgent();
-			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+			randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = createCookieStore(cookies);
 
@@ -933,9 +933,9 @@ public class DataFetcher {
 			// choosing the preferred proxy service
 			randUserAgent = randUserAgent();
 			if (session instanceof ImageCrawlerSession) {
-				randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies());
+				randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies(), session.getOriginalURL());
 			} else {
-				randProxy = randLettProxy(attempt, session, session.getMarket().getProxies());
+				randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), session.getOriginalURL());
 			}
 
 			CookieStore cookieStore = new BasicCookieStore();
@@ -1072,7 +1072,7 @@ public class DataFetcher {
 	 * @param proxyServices
 	 * @return
 	 */
-	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices) {
+	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
 		LettProxy nextProxy = null;
 		String serviceName = getProxyService(attempt, session, proxyServices);
 
@@ -1081,6 +1081,7 @@ public class DataFetcher {
 //				serviceName = ProxyCollection.BONANZA;
 //			}
 			nextProxy = getNextProxy(serviceName, session);
+			session.addRequestProxy(url, nextProxy);
 		}
 
 		// request using no proxy
