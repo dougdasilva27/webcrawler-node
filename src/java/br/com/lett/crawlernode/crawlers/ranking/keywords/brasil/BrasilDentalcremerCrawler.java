@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilDentalcremerCrawler extends CrawlerRankingKeywords{
@@ -24,6 +25,11 @@ public class BrasilDentalcremerCrawler extends CrawlerRankingKeywords{
 		//monta a url com a keyword e a página
 		String url = "http://busca.dentalcremer.com.br/api/search?apikey=dentalcremer&order=bestselling&page="+this.currentPage+"&q="+this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
+		
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+			String printUrl = "http://busca.dentalcremer.com.br/?q="+ this.keywordEncoded +"&page=" + this.currentPage;
+			takeAScreenshot(printUrl);
+		}
 		
 		JSONObject json = fetchJSONObject(url);
 		boolean hasResults = false;;

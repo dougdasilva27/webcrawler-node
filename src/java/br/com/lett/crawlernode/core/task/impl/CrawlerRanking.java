@@ -48,6 +48,7 @@ import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.URLBox;
 
 public abstract class CrawlerRanking extends Task {
 
@@ -68,16 +69,17 @@ public abstract class CrawlerRanking extends Task {
 	protected int position	 = 0;
 	protected int totalProducts = 0;
 
-	protected int marketId;
-
 	protected Document currentDoc;
 	protected int currentPage;
 	
+	protected int marketId;
 	protected String location;
 	private String rankType;
 	private String schedulerNameDiscoverProducts;
 
 	private Integer doubleCheck;
+	
+	private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
 	//variável que identifica se há resultados na página
 	protected boolean result;
@@ -212,6 +214,7 @@ public abstract class CrawlerRanking extends Task {
 			session.registerError(error);
 		}
 	}
+	
 	/**
 	 * Função checa de 4 formas se existe proxima pagina
 	 * 
@@ -272,6 +275,25 @@ public abstract class CrawlerRanking extends Task {
 		rankingProducts.setUrl(url);
 		rankingProducts.setPosition(position);
 
+		if(!screenshotsAddress.isEmpty()) {
+			switch (this.currentPage) {
+				case 1:
+					if(screenshotsAddress.containsKey(1)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(1));
+					}
+					break;
+					
+				case 2:
+					if(screenshotsAddress.containsKey(2)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(2));
+					}
+					break;
+					
+				default:
+					break;
+			}
+		}
+
 		if(!(session instanceof TestRankingSession)) {
 			if( internalId  != null ){
 				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
@@ -308,6 +330,25 @@ public abstract class CrawlerRanking extends Task {
 		rankingProducts.setUrl(url);
 		rankingProducts.setPosition(position);
 
+		if(!screenshotsAddress.isEmpty()) {
+			switch (this.currentPage) {
+				case 1:
+					if(screenshotsAddress.containsKey(1)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(1));
+					}
+					break;
+					
+				case 2:
+					if(screenshotsAddress.containsKey(2)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(2));
+					}
+					break;
+					
+				default:
+					break;
+			}
+		}
+		
 		if(!(session instanceof TestRankingSession)) {
 			if( internalId  != null ){
 				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
@@ -521,9 +562,12 @@ public abstract class CrawlerRanking extends Task {
 	protected Document fetchDocument(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);	
 
+		// Screenshot
+		takeAScreenshot(url);
+		
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
-		}
+		} 
 		
 		if(cookies != null){
 			StringBuilder string = new StringBuilder();
@@ -674,6 +718,30 @@ public abstract class CrawlerRanking extends Task {
 		return DynamicDataFetcher.fetchPage(this.webdriver, url);
 	}
 
+	/**
+	 * Take a screenshot for audit
+	 * only the first 2 pages
+	 * @param url
+	 */
+	protected void takeAScreenshot(String url) {
+		if(this.currentPage <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
+			String printUrl = URLBox.takeAScreenShot(url, session, this.currentPage);
+			
+			switch (this.currentPage) {
+				case 1:
+					this.screenshotsAddress.put(1, printUrl);
+					break;
+				
+				case 2:
+					this.screenshotsAddress.put(2, printUrl);
+					break;
+	
+				default:
+					break;
+			}
+		}
+	}
+	
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);
 	}
@@ -733,45 +801,9 @@ public abstract class CrawlerRanking extends Task {
 		
 		if(anomalies.size() > 0) {
 			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " + rankType + ".");
-			
-//			for(Entry<String, String> entry : anomalies.entrySet()) {
-//				DBSlack.reportErrorRanking("webcrawler-node", entry.getKey(), entry.getValue(), location, market.getName(), this.rankType);
-//			}
 		} else {
 			Logging.printLogDebug(logger, session, "No anomaly was identified.");
 		}
 	}
-	
-//	@SuppressWarnings("unchecked")
-//	private void analyzeCrawledProducts(List<Long> yesterdayProcesseds, String yesterdayISO, Map<String,String> anomalies, String rankType) {
-//		List<Long> todayProcesseds = new ArrayList<>();
-//		
-//		for(RankingProducts r : this.arrayProducts) {
-//			todayProcesseds.addAll(r.getProcessedIds());
-//		}
-//		
-//		List<Long> intersection = (List<Long>) CommonMethods.getIntersectionOfTwoArrays(yesterdayProcesseds, todayProcesseds);
-//		
-//		int countYesterday = yesterdayProcesseds.size();
-//		int countIntersection = intersection.size();
-//		
-//		StringBuilder str = new StringBuilder();
-//		
-//		str.append("*" + yesterdayISO + "*: " + Integer.toString(countYesterday) + "\n");
-//		str.append("*Interseção de hoje e ontem*: " + Integer.toString(countIntersection) + "\n");
-//		
-//		if(countYesterday > countIntersection) {
-//			Float percentage = MathCommonsMethods.normalizeTwoDecimalPlaces(((float)countIntersection / (float)countYesterday) * 100f);
-//			
-//			if(percentage <= 20) {
-//				String text = "O crawler ranking capturou apenas cerca de *" + percentage + "%* dos produtos capturados nessa " + rankType + " em relação a ontem."
-//						+ "\n\n *Session*: " + session.getSessionId();
-//				
-//				Logging.printLogDebug(logger, session, "Anomaly was identified: \n" + text.replaceAll("\\*", "") + "\n" + str.toString().replaceAll("\\*", ""));
-//				
-//				anomalies.put(text,  str.toString());
-//			}
-//		}
-//	}
 	
 }

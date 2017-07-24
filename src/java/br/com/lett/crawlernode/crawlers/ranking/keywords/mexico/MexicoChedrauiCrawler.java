@@ -3,6 +3,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
@@ -30,6 +31,12 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords{
 				+ "N=4294967169+&Ntt="+ this.keywordEncoded +"&Nrpp=24&No=" + this.arrayProducts.size();
 		
 		this.log("Link onde são feitos os crawlers: " + url);	
+		
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+			String printUrl = "http://www.chedraui.com.mx/index.php/mexicociudadlabor/endeca/result/?&N=4294967169+&Ntt="
+					+ this.keywordEncoded +"&No=" + this.arrayProducts.size();
+			takeAScreenshot(printUrl);
+		}
 		
 		// pega o json da api
 		JSONObject jsonSearch = fetchJSONObject(url);

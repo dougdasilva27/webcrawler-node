@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
@@ -24,7 +25,12 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 		//monta a url com a keyword e a página
 		String url = "https://www.webcontinental.com.br/ccstoreui/v1/search?Ntt="+ keyword +"&No="+ this.arrayProducts.size() +"&Nrpp=24";
 		this.log("Link onde são feitos os crawlers: "+url);	
-			
+		
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+			String printUrl = "https://www.webcontinental.com.br/searchresults?Ntt=ar"+ keyword +"&Nty=1&No=0&Nrpp=12&Rdm=856&searchType=simple&type=search&page=" + this.currentPage;
+			takeAScreenshot(printUrl);
+		}
+		
 		//chama função de pegar a url
 		JSONObject apiSearch = fetchJSONObject(url);
 		

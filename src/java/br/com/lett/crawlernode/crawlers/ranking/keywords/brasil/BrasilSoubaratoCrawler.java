@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
@@ -25,6 +26,11 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 		String url = "http://busca.soubarato.com.br/mobile_search_v2?"
 				+"format=json&results_per_page=60&page="+ this.currentPage +"&query="+ key;
 
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+			String printUrl = "http://www.soubarato.com.br/busca/?content="+ this.keywordEncoded +"&limit=28&source=nanook&offset=" + this.arrayProducts.size();
+			takeAScreenshot(printUrl);
+		}
+		
 		JSONObject jsonPage = fetchJSONObject(url);
 
 

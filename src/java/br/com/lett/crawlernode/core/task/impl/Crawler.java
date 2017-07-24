@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
@@ -31,15 +35,9 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
-import br.com.lett.crawlernode.util.URLBox;
 import containers.ProcessedComparison;
 import models.Processed;
 import models.prices.Prices;
-
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both
@@ -664,7 +662,7 @@ public class Crawler extends Task {
 						
 						// take a screenshot if price was change
 						if(next.getChanges().has("price")) {
-							URLBox.takeAScreenShot(next.getUrl(), session);
+							//URLBox.takeAScreenShot(next.getUrl(), session);
 						}
 						
 						return;

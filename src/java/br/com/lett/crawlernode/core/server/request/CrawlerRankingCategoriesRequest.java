@@ -4,6 +4,7 @@ public class CrawlerRankingCategoriesRequest extends Request {
 	
 	private String location;
 	private String categoryUrl;
+	private Boolean takeAScreenshot;
 	
 	public CrawlerRankingCategoriesRequest() {
 		super();
@@ -23,6 +24,14 @@ public class CrawlerRankingCategoriesRequest extends Request {
 
 	public void setCategoryUrl(String categoryUrl) {
 		this.categoryUrl = categoryUrl;
+	}
+	
+	public Boolean getTakeAScreenshot() {
+		return takeAScreenshot;
+	}
+
+	public void setTakeAScreenshot(Boolean takeAScreenshot) {
+		this.takeAScreenshot = takeAScreenshot;
 	}
 
 }

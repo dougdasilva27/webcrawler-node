@@ -47,9 +47,7 @@ import comunication.MongoDB;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerCategories;
-import dbmodels.tables.CrawlerOld;
 import dbmodels.tables.CrawlerRanking;
-
 import generation.PostgresJSONGsonBinding;
 import models.Behavior;
 import models.Marketplace;
@@ -949,6 +947,7 @@ public class Persistence {
 					mapInsert.put(crawlerRanking.PROCESSED_ID, 	processedId);
 					mapInsert.put(crawlerRanking.TOTAL_SEARCH, 	ranking.getStatistics().getTotalSearch());
 					mapInsert.put(crawlerRanking.TOTAL_FETCHED, ranking.getStatistics().getTotalFetched());
+					mapInsert.put(crawlerRanking.SCREENSHOT, 	rankingProducts.getScreenshot());
 
 
 					queries.add(Main.dbManager.connectionPostgreSQL.createQueryInsert(crawlerRanking, mapInsert));

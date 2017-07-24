@@ -22,7 +22,6 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;

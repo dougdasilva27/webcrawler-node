@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class MexicoSuperamaCrawler extends CrawlerRankingKeywords{
@@ -23,7 +24,12 @@ public class MexicoSuperamaCrawler extends CrawlerRankingKeywords{
 		// primeira página começa em 0 e assim vai.
 		String url = "https://www.superama.com.mx/buscador/resultado?busqueda=" + this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
-			
+		
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 1) {
+			String printUrl = "https://www.superama.com.mx/buscar/" + this.keywordEncoded;
+			takeAScreenshot(printUrl);
+		}
+		
 		JSONObject jsonSearch = fetchJSONObject(url);
 		
 		if(jsonSearch.has("Products")){

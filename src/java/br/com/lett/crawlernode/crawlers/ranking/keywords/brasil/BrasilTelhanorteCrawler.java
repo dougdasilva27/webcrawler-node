@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
@@ -22,6 +23,11 @@ public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
 
 		String url = "http://busca.telhanorte.com.br/api/search?apikey=telhanorte&no-cache=1468348873262&page="+this.currentPage+"&q="+this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
+		
+		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+			String printUrl = "http://busca.telhanorte.com.br/busca?q="+ this.keywordEncoded +"&page=" + this.currentPage;
+			takeAScreenshot(printUrl);
+		}
 		
 		JSONObject json = fetchJSONObject(url);
 

@@ -11,6 +11,7 @@ public class RankingProducts {
 	protected int position;
 	protected String url;
 	protected List<Long> processedIds = new ArrayList<>();
+	protected String screenshot;
 	
 	
 	public Document getDocument(){
@@ -56,6 +57,14 @@ public class RankingProducts {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public String getScreenshot() {
+		return screenshot;
+	}
+
+	public void setScreenshot(String screenshot) {
+		this.screenshot = screenshot;
 	}
 	
 }

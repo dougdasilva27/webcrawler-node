@@ -38,6 +38,7 @@ public class ServerHandler implements HttpHandler {
 	private static final String MSG_ATTR_IMG_NUMBER = "number";
 	private static final String MSG_ATTR_IMG_TYPE = "type";
 	private static final String MSG_ATTR_CATEGORY_ID = "categoryId";
+	private static final String MSG_ATTR_SCREENSHOT = "screenshot";
 	//private static final String MSG_ATTR_KEYWORD = "keyword";
 
 	private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
@@ -132,6 +133,7 @@ public class ServerHandler implements HttpHandler {
 
 		if(request instanceof CrawlerRankingKeywordsRequest) {
 			((CrawlerRankingKeywordsRequest) request).setLocation(body);
+			((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT) != null);
 		}
 		
 		if(request instanceof CrawlerRankingCategoriesRequest) {
