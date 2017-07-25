@@ -167,7 +167,9 @@ public class BrasilTelhanorteCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") || url.contains("/p?attempt=")) return true;
+		if ( url.endsWith("/p") ){
+			return true;
+		}
 		return false;
 	}
 	

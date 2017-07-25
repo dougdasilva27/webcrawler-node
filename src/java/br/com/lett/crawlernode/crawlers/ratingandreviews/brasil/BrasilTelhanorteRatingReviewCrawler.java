@@ -25,9 +25,9 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
  * @author gabriel
  *
  */
-public class BrasilPolishopRatingReviewCrawler extends RatingReviewCrawler {
+public class BrasilTelhanorteRatingReviewCrawler extends RatingReviewCrawler {
 
-	public BrasilPolishopRatingReviewCrawler(Session session) {
+	public BrasilTelhanorteRatingReviewCrawler(Session session) {
 		super(session);
 	}
 
@@ -106,7 +106,7 @@ public class BrasilPolishopRatingReviewCrawler extends RatingReviewCrawler {
 		requestURL.append(id);
 		
 		requestURL.append("&");
-		requestURL.append("store_id=655");
+		requestURL.append("store_id=73909");
 		
 		requestURL.append("&");
 		requestURL.append(session.getOriginalURL());

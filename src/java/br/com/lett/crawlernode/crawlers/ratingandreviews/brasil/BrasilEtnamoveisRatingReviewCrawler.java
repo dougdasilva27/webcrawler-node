@@ -10,7 +10,7 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * Date: 13/12/16
+ * Date: 25/07/17
  * @author gabriel
  *
  */
