@@ -202,7 +202,7 @@ public class BrasilPolishopCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.endsWith("/p") || url.contains("/p?attempt=")) {
+		if (url.endsWith("/p")) {
 			return true;
 		}
 		return false;
