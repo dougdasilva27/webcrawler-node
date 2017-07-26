@@ -20,7 +20,7 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 
 		//monta a url com a keyword e a página
-		String url = "http://www.farmadelivery.com.br/catalogsearch/result/?p="+this.currentPage+"&q="+this.keywordEncoded;
+		String url = "https://www.farmadelivery.com.br/catalogsearch/result/?p="+this.currentPage+"&q="+this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
 
 		//chama função de pegar url

@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 
@@ -62,24 +63,25 @@ public class BrasilAbxclimatizacaoCrawler extends CrawlerRankingKeywords{
 	protected boolean hasNextPage() {
 		Element nextPage = this.currentDoc.select(".next.i-next").first();
 		
-		if(nextPage != null) return true;
+		if(nextPage != null) {
+			return true;
+		}
 		
 		return false;
 	}
 	
 	@Override
 	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".amount:not([href])").first();
+		Element totalElement = this.currentDoc.select(".amount:not([href]) strong").first();
 		
 		if(totalElement != null) {
 			try {
-				int x = totalElement.text().indexOf("de");
-				String token = totalElement.text().substring(x).replaceAll("[^0-9]", "").trim();
+				String token = totalElement.text().replaceAll("[^0-9]", "").trim();
 				
 				this.totalProducts = Integer.parseInt(token);
 				
 			} catch(Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 			
 			this.log("Total da busca: "+this.totalProducts);

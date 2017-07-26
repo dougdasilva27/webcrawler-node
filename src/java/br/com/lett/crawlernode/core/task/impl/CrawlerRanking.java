@@ -726,20 +726,22 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 */
 	protected void takeAScreenshot(String url) {
-		if(this.currentPage <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
-			String printUrl = URLBox.takeAScreenShot(url, session, this.currentPage);
-			
-			switch (this.currentPage) {
-				case 1:
-					this.screenshotsAddress.put(1, printUrl);
-					break;
+		if(session instanceof RankingSession) {
+			if(this.currentPage <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
+				String printUrl = URLBox.takeAScreenShot(url, session, this.currentPage);
 				
-				case 2:
-					this.screenshotsAddress.put(2, printUrl);
-					break;
-	
-				default:
-					break;
+				switch (this.currentPage) {
+					case 1:
+						this.screenshotsAddress.put(1, printUrl);
+						break;
+					
+					case 2:
+						this.screenshotsAddress.put(2, printUrl);
+						break;
+		
+					default:
+						break;
+				}
 			}
 		}
 	}

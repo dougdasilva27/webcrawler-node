@@ -68,7 +68,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 					}
 				}
 
-				paramsNew.add(new BasicNameValuePair("sc", "1"));
+				paramsNew.add(new BasicNameValuePair("sc", "2"));
 				URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
 
 				builder.clearParameters();
@@ -210,7 +210,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		return ((url.startsWith(HOME_PAGE_SPECIAL) || url.startsWith(HOME_PAGE)) && url.contains("/p?sc="));
+		return ((url.startsWith(HOME_PAGE_SPECIAL) || url.startsWith(HOME_PAGE)) && url.contains("/p"));
 	}
 
 	/**

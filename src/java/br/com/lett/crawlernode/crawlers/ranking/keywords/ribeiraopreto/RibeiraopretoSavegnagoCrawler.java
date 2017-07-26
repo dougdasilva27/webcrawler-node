@@ -15,7 +15,7 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords{
 
 	/**
 	 * Código das cidades:
-	 *  Ribeirão Preto - 1
+	 *  Ribeirão Preto - 2
 	 *  Sertãozinho - 6
 	 *	Jardianópolis - 11
 	 *	Jaboticabal - 7
@@ -28,7 +28,7 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords{
 	 *	Matão - 8
 	 */
 	//	private static final int cityCode = ControllerKeywords.codeCity;
-	private static final int cityCode = 1;
+	private static final int cityCode = 2;
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
@@ -38,13 +38,13 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 
 		//monta a url com a keyword e a página
-		String url = "http://www.savegnago.com.br/"+this.keywordEncoded+"?&sc="+cityCode+"&PageNumber="+this.currentPage;
+		String url = "http://busca.savegnago.com.br/busca?q="+this.keywordEncoded+"&sc="+cityCode+"&page="+this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".shelf__container .shelf__container > ul li[layout] > div");		
+		Elements products =  this.currentDoc.select("li.nm-product-item");		
 
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
@@ -90,7 +90,7 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
+		Element totalElement = this.currentDoc.select("span.nm-total-products").first();
 
 		try {
 			if(totalElement != null) {
@@ -104,23 +104,29 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords{
 	}
 
 	private String crawlInternalId(Element e){
-		String internalId = null;
-
-		return internalId;
+		return null;
 	}
 
 	private String crawlInternalPid(Element e){
-		String internalPid = e.attr("data-product-id");
-		
-		return internalPid;
+		return e.attr("data-sku");
 	}
 
 	private String crawlProductUrl(Element e){
 		String urlProduct = null;
-		Element urlElement = e.select("h3 a").first();
+		Element urlElement = e.select("h2 a").first();
 
 		if(urlElement != null){
 			urlProduct = urlElement.attr("href");
+			
+			if(!urlProduct.startsWith("http")) {
+				urlProduct = "http:" + urlProduct;
+			}
+			
+			if(!urlProduct.contains("sc") && urlProduct.contains("?")) {
+				urlProduct += "&sc=" + cityCode;
+			} else if(!urlProduct.contains("sc")) {
+				urlProduct += "?sc=" + cityCode;
+			}
 		}
 
 		return urlProduct;

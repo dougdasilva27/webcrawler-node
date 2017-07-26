@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 	
@@ -31,7 +32,9 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:	
 		if(products.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
+			}
 			
 			for(Element e: products) {
 				//seta o id da classe pai com o id retirado do elements
@@ -45,7 +48,9 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 				
 			}
 		} else {
@@ -76,9 +81,11 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 		Element totalElement = this.currentDoc.select("div#ctnTituloQtdItensEncontrados strong").first();
 		
 		try {
-			if(totalElement != null) this.totalProducts = Integer.parseInt(totalElement.text());
+			if(totalElement != null) {
+				this.totalProducts = Integer.parseInt(totalElement.text());
+			}
 		} catch(Exception e) {
-			this.logError(e.getMessage());
+			this.logError(CommonMethods.getStackTrace(e));
 		}
 		
 		this.log("Total da busca: "+this.totalProducts);

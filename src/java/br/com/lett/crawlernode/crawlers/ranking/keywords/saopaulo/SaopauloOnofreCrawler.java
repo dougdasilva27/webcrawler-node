@@ -68,7 +68,6 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
-		;
 
 		Elements id = this.currentDoc.select("div.shelf-product");
 		Elements result = this.currentDoc.select("div#sli_noresult");
@@ -112,7 +111,11 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		return true;
+		if(this.totalProducts > this.arrayProducts.size()) {
+			return true;
+		}
+		
+		return false;
 	}
 
 	@Override
