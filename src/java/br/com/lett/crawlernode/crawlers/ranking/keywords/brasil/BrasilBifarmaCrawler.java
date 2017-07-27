@@ -17,7 +17,7 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = "http://www.bifarma.com.br/busca_Loja.html?q=" + this.keywordEncoded;
+		String url = "https://www.bifarma.com.br/busca_Loja.html?q=" + this.keywordWithoutAccents.replace(" ", "+");
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar o html
@@ -93,7 +93,9 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 			productUrl = url.attr("content");
 	
 			if (!productUrl.contains("bifarma")) {
-				productUrl = "http://www.bifarma.com.br/" + productUrl;
+				productUrl = "https://www.bifarma.com.br/" + productUrl;
+			} else if(!productUrl.contains("http")) {
+				productUrl = "https://" + productUrl;
 			}
 		}
 

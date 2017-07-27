@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
@@ -46,7 +47,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
 		// monta a url com a keyword e a página
 		String url = "http://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage
-				+ "&tipo=bar&termoPesquisa=" + this.keywordEncoded;
+				+ "&tipo=bar&termoPesquisa=" + this.keywordWithoutAccents.replace(" ", "+");
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
@@ -90,13 +91,9 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		Element page = this.currentDoc
-				.select("a[href] img[src=\"https://cdn1.staticpanvel.com.br/resourcescdn13/site/imagens/btForward.png\"]")
-				.first();
-
-		// se elemeno page obtiver algum resultado
-		if (page != null)
+		if ((this.totalProducts > this.arrayProducts.size()) && this.currentDoc.select("a.lnk_mais_detalhes.gsaLink").size() > 0) {
 			return true;
+		}
 
 		return false;
 	}
@@ -113,7 +110,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
 				this.totalProducts = Integer.parseInt(token);
 			} catch (Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 
 			this.log("Total da busca: " + this.totalProducts);
