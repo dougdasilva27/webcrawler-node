@@ -495,8 +495,6 @@ public class BrasilEstrela10Crawler extends Crawler {
 				String url = "http://www.estrela10.com.br/widget/product_payment_options?SkuID="+ internalId +"&ProductID=" + internalPid
 						+ "&Template=/wd.product.payment.options.result.custom.template";
 				
-				System.err.println(url);
-				
 				Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 				
 				Element indexCards = docPrices.select(".grid table th").first();

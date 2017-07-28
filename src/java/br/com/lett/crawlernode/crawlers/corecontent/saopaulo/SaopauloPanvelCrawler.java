@@ -156,8 +156,6 @@ public class SaopauloPanvelCrawler extends Crawler {
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
 
-			System.err.println(secondaryImages);
-
 			products.add(product);
 
 		} else {

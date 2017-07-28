@@ -96,7 +96,7 @@ public abstract class CrawlerRanking extends Task {
 			productsLimit = 2000;
 			pageLimit = 250;
 		} else if(session instanceof RankingSession || session instanceof TestRankingSession) {
-			productsLimit = 300;
+			productsLimit = 28;
 			pageLimit = 35;
 		}
 		
@@ -790,13 +790,11 @@ public abstract class CrawlerRanking extends Task {
 		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
 		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
 		
-		List<Long> yesterdayProcesseds = DatabaseDataFetcher.fetchProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO);
-		
-		Logging.printLogDebug(logger, session, "Yesterday products: " + yesterdayProcesseds.size());
-		
 		int countToday = this.arrayProducts.size();
-		int countYesterday = yesterdayProcesseds.size();
+		int countYesterday = DatabaseDataFetcher.fetchCountOfProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO).intValue();
 	
+		Logging.printLogDebug(logger, session, "Yesterday products: " + countYesterday);
+		
 		if(countYesterday > 0 && countToday == 0) {
 			SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie, yesterday in this location we"
 					+ " crawl " + countYesterday + " products and today we crawl 0 products.");

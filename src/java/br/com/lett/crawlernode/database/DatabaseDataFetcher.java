@@ -91,25 +91,22 @@ public class DatabaseDataFetcher {
 	 * @param date
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-	public static List<Long> fetchProcessedsFromCrawlerRanking(String location, int market, String today, String yesterday) {
-		List<Long> processeds = new ArrayList<>();
+	public static Long fetchCountOfProcessedsFromCrawlerRanking(String location, int market, String today, String yesterday) {
+		Long count = 0l;
 		
 		try {
-			String sql = "SELECT processed_id FROM crawler_ranking WHERE location = '"+ location +"' AND "
-					+ "processed_id IN (SELECT id FROM processed WHERE market = "+ market +") "
-					+ "AND date BETWEEN '"+ yesterday +"' AND '"+ today +"'";
+			String sql = "SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed "
+					+ "WHERE crawler_ranking.processed_id = processed_id "
+					+ "AND processed.market = " + market + " "
+					+ "AND crawler_ranking.location = '"+ location +"' "
+					+ "AND crawler_ranking.date BETWEEN '"+ yesterday +"' AND '"+ today +"'";
 			
-			Result<Record> records = (Result<Record>) Main.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql);
-			
-			for(Record r : records) {
-				processeds.add((Long) r.getValue("processed_id"));
-			}
-			
+			count = (Long) Main.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql).get(0).get("count");
+		
 		} catch(Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
 		}
 		
-		return processeds;
+		return count;
 	}
 }

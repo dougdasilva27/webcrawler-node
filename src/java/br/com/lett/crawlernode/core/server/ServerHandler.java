@@ -133,7 +133,14 @@ public class ServerHandler implements HttpHandler {
 
 		if(request instanceof CrawlerRankingKeywordsRequest) {
 			((CrawlerRankingKeywordsRequest) request).setLocation(body);
-			((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT) != null);
+			
+			if(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT) != null && Boolean.valueOf(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT))) {
+				((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(true);
+			} else {
+				((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(false);
+			}
+			
+			
 		}
 		
 		if(request instanceof CrawlerRankingCategoriesRequest) {

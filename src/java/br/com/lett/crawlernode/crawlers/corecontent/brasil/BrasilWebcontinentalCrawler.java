@@ -352,8 +352,6 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 			}
 		}
 
-		System.err.println(product);
-
 		return product;
 	}
 
