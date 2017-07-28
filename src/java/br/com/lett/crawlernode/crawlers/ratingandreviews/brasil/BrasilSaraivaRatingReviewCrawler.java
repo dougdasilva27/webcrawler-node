@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import java.util.List;
 
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,7 +15,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 
 /**
- * Date: 14/12/16
+ * Date: 28/07/17
  * @author gabriel
  *
  */
@@ -36,8 +38,11 @@ public class BrasilSaraivaRatingReviewCrawler extends RatingReviewCrawler {
 			String internalId = crawlInternalId(document);
 
 			if(internalId != null) {
-				Integer totalNumOfEvaluations = getTotalNumOfRatings(document);			
-				Double avgRating = getTotalAvgRating(document);
+				JSONObject ratingJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, 
+						"https://saraiva.mais.social/reviews/transit/get/products/srv/"+ internalId + "/reviews/offuser?data=VvV=", null, cookies);
+				
+				Integer totalNumOfEvaluations = getTotalNumOfRatings(ratingJson);			
+				Double avgRating = getTotalAvgRating(ratingJson);
 				
 				ratingReviews.setInternalId(internalId);
 				ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -68,39 +73,40 @@ public class BrasilSaraivaRatingReviewCrawler extends RatingReviewCrawler {
 	}
 
 	/**
-	 * Average is in html element
-	 * Example: 
-	 * Número de Avaliações : 24
-	 * Média das notas : 4.6 /5 
-	 * 
+
 	 * @param document
 	 * @return
 	 */
-	private Double getTotalAvgRating(Document doc) {
-		Double avgRating = null;
-		Element avg = doc.select("#product-rating .rating_top.group .avg strong").first();
+	private Double getTotalAvgRating(JSONObject ratingJson) {
+		Double avgRating = 0.0;
 		
-		if(avg != null && !avg.ownText().isEmpty()) {
-			avgRating = Double.parseDouble(avg.ownText().trim());
+		if(ratingJson.has("aggregateRating")) {
+			JSONObject aggregate = ratingJson.getJSONObject("aggregateRating");
+			
+			if(aggregate.has("ratingValue")) {
+				avgRating = aggregate.getDouble("ratingValue");
+			}
 		}
 
 		return avgRating;
 	}
 
 	/**
-	 * Number of ratings appear in html 
-	 * @param docRating
+	 * @param ratingJson
 	 * @return
 	 */
-	private Integer getTotalNumOfRatings(Document docRating) {
-		Integer totalRating = null;
-		Element totalRatingElement = docRating.select("#product-rating .ratings .amount").first();
-
-		if(totalRatingElement != null) {
-			String text = totalRatingElement.text().replaceAll("[^0-9]", "").trim();
+	private Integer getTotalNumOfRatings(JSONObject ratingJson) {
+		Integer totalRating = 0;
+		
+		if(ratingJson.has("aggregateRating")) {
+			JSONObject aggregate = ratingJson.getJSONObject("aggregateRating");
 			
-			if(!text.isEmpty()) {
-				totalRating = Integer.parseInt(text);
+			if(aggregate.has("ratingComposition")) {
+				JSONObject values = aggregate.getJSONObject("ratingComposition");
+				
+				for(int i = 1; i <= values.length(); i++) {
+					totalRating += values.getInt(Integer.toString(i));
+				}
 			}
 		}
 
