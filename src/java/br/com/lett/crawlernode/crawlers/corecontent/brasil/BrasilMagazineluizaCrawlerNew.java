@@ -269,20 +269,31 @@ public class BrasilMagazineluizaCrawlerNew extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 
 		Elements imageThumbs = doc.select(".showcase-product__container-thumbs .showcase-product__thumbs img");
+		Elements imageThumbsSpecial = doc.select("img.product-thumbs-carousel__thumb");
 
-		if(imageThumbs.size() < 1) {
-			imageThumbs = doc.select(".product-thumbs-carousel__column img");
-		}
-
-		for (int i = 1; i < imageThumbs.size(); i++) { //starts with index 1, because the first image is the primary image
-			Element e = imageThumbs.get(i);
-
-			String image = e.attr("src").replace("88x66", "618x463");
-
-			if(!image.equalsIgnoreCase(primaryImage)) {
-				secondaryImagesArray.put(image);
+		if(imageThumbs.size() >= imageThumbsSpecial.size()) {
+			for (int i = 1; i < imageThumbs.size(); i++) { //starts with index 1, because the first image is the primary image
+				Element e = imageThumbs.get(i);
+	
+				String image = e.attr("src").replace("88x66", "618x463");
+	
+				if(!image.equalsIgnoreCase(primaryImage)) {
+					secondaryImagesArray.put(image);
+				}
+	
 			}
-
+		} else {
+		
+			for (int i = 1; i < imageThumbsSpecial.size(); i++) { //starts with index 1, because the first image is the primary image
+				Element e = imageThumbsSpecial.get(i);
+	
+				String image = e.attr("src").replace("88x66", "618x463");
+	
+				if(!image.equalsIgnoreCase(primaryImage)) {
+					secondaryImagesArray.put(image);
+				}
+	
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
