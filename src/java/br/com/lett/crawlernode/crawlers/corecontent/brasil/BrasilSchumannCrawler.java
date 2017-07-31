@@ -497,8 +497,8 @@ public class BrasilSchumannCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select("#descricao").first();
-		Element specElement = document.select("#especificacao").first();
+		Element descriptionElement = document.select("#descriptionAnchor").first();
+		Element specElement = document.select("#specificationAnchor").first();
 
 		if (descriptionElement != null) description = description + descriptionElement.html();
 		if (specElement != null) description = description + specElement.html();

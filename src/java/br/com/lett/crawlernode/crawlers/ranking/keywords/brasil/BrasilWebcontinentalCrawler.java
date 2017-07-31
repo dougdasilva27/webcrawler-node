@@ -26,7 +26,7 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 		String url = "https://www.webcontinental.com.br/ccstoreui/v1/search?Ntt="+ keyword +"&No="+ this.arrayProducts.size() +"&Nrpp=24";
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
-		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
+		if(session instanceof RankingSession && ((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
 			String printUrl = "https://www.webcontinental.com.br/searchresults?Ntt=ar"+ keyword +"&Nty=1&No=0&Nrpp=12&Rdm=856&searchType=simple&type=search&page=" + this.currentPage;
 			takeAScreenshot(printUrl);
 		}

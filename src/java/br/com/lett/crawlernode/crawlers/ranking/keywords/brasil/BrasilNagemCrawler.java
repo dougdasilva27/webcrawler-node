@@ -105,7 +105,7 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 				String path = productUrl.getPath();
 				
 				if(path != null) {
-					internalPid = path.split("/")[4];
+					internalPid = path.split("/")[3];
 				}
 			} catch (MalformedURLException e) {
 				this.logError(CommonMethods.getStackTrace(e));
