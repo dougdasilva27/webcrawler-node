@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -57,15 +54,6 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/kabum.html"));
-			
-			out.write(currentDoc.toString());
-			out.close();
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-		
 		Elements products = this.currentDoc.select("#lista-produtos .product-item");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
