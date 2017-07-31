@@ -410,7 +410,7 @@ public abstract class CrawlerRanking extends Task {
 			ranking.setStatistics(statistics);
 			
 			//insere dados no postgres
-			Persistence.insertProductsRanking(ranking);
+			Persistence.insertProductsRanking(ranking, session);
 
 		} else {		
 			this.log("Não vou persistir nada pois não achei nada");

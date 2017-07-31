@@ -924,7 +924,7 @@ public class Persistence {
 		return processedIds;
 	}
 
-	public static void insertProductsRanking(Ranking ranking){
+	public static void insertProductsRanking(Ranking ranking, Session session){
 		try {
 			List<Query> queries = new ArrayList<>();
 
@@ -956,10 +956,12 @@ public class Persistence {
 
 			Main.dbManager.connectionPostgreSQL.runBatchInsert(queries);
 
-			Logging.printLogDebug(logger, "Produtos cadastrados no postgres.");
+			Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
 
 		} catch(Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+			session.registerError(error);
 		}
 	}
 
