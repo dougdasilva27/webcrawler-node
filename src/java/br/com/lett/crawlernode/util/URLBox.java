@@ -45,11 +45,11 @@ public class URLBox {
 		
 		LettProxy proxy = session.getRequestProxy(url);
 		
-		if(proxy != null) {
+		if(proxy != null && !proxy.getSource().contains("luminati")) {
 			if(proxy.getUser() != null) {
 				options.put("proxy", proxy.getUser() + "%3A" + proxy.getPass() + "%40"+ proxy.getAddress()+ "%3A" + proxy.getPort());
-			} else {
-				options.put("proxy", proxy.getAddress()+ "%3A" + proxy.getPort());
+			} else if( proxy.getAddress() != null &&  proxy.getPort() != null) {
+				options.put("proxy", proxy.getAddress() + "%3A" + proxy.getPort());
 			}
 		}	
 		
