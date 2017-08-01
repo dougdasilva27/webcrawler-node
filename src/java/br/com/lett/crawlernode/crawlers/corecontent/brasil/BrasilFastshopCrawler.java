@@ -130,7 +130,7 @@ public class BrasilFastshopCrawler extends Crawler {
 				Float price = crawlPrice(jsonPrices, availableForFastshop);
 
 				// Prices
-				Prices prices = crawlPrices(jsonPrices, price);
+				Prices prices = crawlPrices(jsonPrices, price, doc);
 
 				Product product = new Product();
 				product.setUrl(this.session.getOriginalURL());
@@ -212,7 +212,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
 				jsonStock = new JSONObject(json);
 			} catch(Exception e){
-				e.printStackTrace();
+				Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 			}
 
 			if (jsonStock.has("onlineInventory")) {
@@ -257,6 +257,8 @@ public class BrasilFastshopCrawler extends Crawler {
 				if (jsonAttributes.get("Voltagem_220V").equals("1")){
 					name += " 220V";
 				}
+			} else if(jsonAttributes.has("Voltagem") && !jsonAttributes.getString("Voltagem").trim().equalsIgnoreCase("bivolt")) {
+				name += " " + jsonAttributes.getString("Voltagem");
 			}
 		}
 
@@ -384,12 +386,29 @@ public class BrasilFastshopCrawler extends Crawler {
 		return price;
 	}
 
-	private Prices crawlPrices(JSONObject jsonPrices, Float price){
+	private Prices crawlPrices(JSONObject jsonPrices, Float price, Document doc){
 		Prices prices = new Prices();
 
 		if(price != null){
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
+			Elements pricesImgs = doc.select(".stamps img");
+			
+			boolean promotion = false;
+			for(Element e : pricesImgs) {
+				String img = e.attr("src");
+				
+				if(img.contains("boleto")) {
+					String[] tokens = img.split("/");
+					String priceBoleto = tokens[tokens.length-1].split("_")[0].replaceAll("[^0-9]", "");
+					
+					if(!priceBoleto.isEmpty()) {
+						promotion = true;
+						prices.setBankTicketPrice(Float.parseFloat(priceBoleto));
+					}
+				}
+			}
+			
 			if(jsonPrices.has("priceData")){
 				JSONObject priceData = jsonPrices.getJSONObject("priceData");
 
@@ -398,7 +417,10 @@ public class BrasilFastshopCrawler extends Crawler {
 
 					// Preço de boleto e 1 vez no cartão são iguais.
 					installmentPriceMap.put(1, offerPrice);
-					prices.setBankTicketPrice(offerPrice);
+					
+					if(!promotion) {
+						prices.setBankTicketPrice(offerPrice);
+					}
 				}
 
 				if(priceData.has("installmentPrice")){
@@ -433,7 +455,7 @@ public class BrasilFastshopCrawler extends Crawler {
 		if (mktElement != null) {
 			JSONObject sellerJSON = new JSONObject();
 			Float price = crawlPrice(jsonPrices, available);
-			Prices prices = crawlPrices(jsonPrices, price);
+			Prices prices = crawlPrices(jsonPrices, price, doc);
 
 			sellerJSON.put("name", mktElement.text().toLowerCase().trim());
 			sellerJSON.put("price", price);
