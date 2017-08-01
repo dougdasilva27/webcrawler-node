@@ -29,9 +29,7 @@ import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingDiscoverStats;
 import br.com.lett.crawlernode.core.models.RankingProducts;
-import br.com.lett.crawlernode.core.models.RankingProductsDiscover;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -178,9 +176,9 @@ public abstract class CrawlerRanking extends Task {
 				extractProductsFromCurrentPage();
 	
 				// mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-				if(			session instanceof RankingSession 
-						|| 	session instanceof RankingDiscoverSession
-						&& 	Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+				if(	session instanceof RankingSession 
+					|| 	session instanceof RankingDiscoverSession
+					&& 	Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 					
 					sendMessagesToAmazonAndMongo();
 				}
@@ -204,9 +202,9 @@ public abstract class CrawlerRanking extends Task {
 			// função para popular os dados no banco
 			if(session instanceof RankingSession) {
 				persistRankingData();
-				persistDiscoverData();
+//				persistDiscoverData();
 			} else if(session instanceof RankingDiscoverSession) {
-				persistDiscoverData();
+//				persistDiscoverData();
 			}
 
 		} catch (Exception e) {
@@ -220,7 +218,7 @@ public abstract class CrawlerRanking extends Task {
 	 * 
 	 * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit)
 	 * 2 - Se naquele market foi identificado se há proxima pagina (hasNextPage())
-	 * 3 - Se naquele market obteve resultado para aquela categorie (this.result)
+	 * 3 - Se naquele market obteve resultado para aquela location (this.result)
 	 * 4 - A variável doubleCheck armazena todos os produtos pegos até aquela página, caso na próxima página o número de produtos se manter,
 	 * é identificado que não há próxima página devido algum erro naquele market.
 	 * 
@@ -266,52 +264,8 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 */
 	protected void saveDataProduct(String internalId, String pid, String url) {
-		RankingProducts rankingProducts = new RankingProducts();
-
+		saveDataProduct(internalId, pid, url, position);
 		this.position++;
-		List<Long> processedIds = new ArrayList<>();
-		
-		rankingProducts.setInteranlPid(pid);
-		rankingProducts.setUrl(url);
-		rankingProducts.setPosition(position);
-
-		if(!screenshotsAddress.isEmpty()) {
-			switch (this.currentPage) {
-				case 1:
-					if(screenshotsAddress.containsKey(1)) {
-						rankingProducts.setScreenshot(screenshotsAddress.get(1));
-					}
-					break;
-					
-				case 2:
-					if(screenshotsAddress.containsKey(2)) {
-						rankingProducts.setScreenshot(screenshotsAddress.get(2));
-					}
-					break;
-					
-				default:
-					break;
-			}
-		}
-
-		if(!(session instanceof TestRankingSession)) {
-			if( internalId  != null ){
-				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
-			} else if(pid != null){
-				processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
-			} else if(url != null){
-				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
-			}
-			
-			rankingProducts.setProcessedIds(processedIds);
-			
-			if(url != null && processedIds.isEmpty()) {
-				saveProductUrlToQueue(url);
-			}
-			
-		}
-
-		this.arrayProducts.add(rankingProducts);
 	}
 	
 	/**
@@ -355,6 +309,7 @@ public abstract class CrawlerRanking extends Task {
 			} else if(pid != null){
 				processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
 			} else if(url != null){
+				Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
 				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
 			}
 			
@@ -417,43 +372,43 @@ public abstract class CrawlerRanking extends Task {
 		}
 	}
 	
-	/**
-	 * Insert all data on table Ranking in Postgres
-	 */
-	protected void persistDiscoverData(){
-		List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
-		
-		//se houver 1 ou mais produtos, eles serão cadastrados no banco
-		if(!products.isEmpty()) {
-			this.log(products.size() + " products will be persisted");
-
-			RankingDiscoverStats ranking = new RankingDiscoverStats();
-
-			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
-			Timestamp ts = Timestamp.valueOf(nowISO);
-
-			ranking.setMarketId(this.marketId);
-			ranking.setDate(ts);
-			ranking.setLmt(nowISO);
-			ranking.setLocation(location);
-			ranking.setProductsDiscover(products);
-			ranking.setRankType(rankType);
-			
-			RankingStatistics statistics = new RankingStatistics();
-
-			statistics.setPageSize(this.pageSize);
-			statistics.setTotalFetched(this.arrayProducts.size());
-			statistics.setTotalSearch(this.totalProducts);
-			
-			ranking.setStatistics(statistics);
-			
-			//insere dados no mongo
-			Persistence.persistDiscoverStats(ranking);
-
-		} else {		
-			this.log("No product was found.");
-		}
-	}
+//	/**
+//	 * Insert all data on table Ranking in Postgres
+//	 */
+//	protected void persistDiscoverData(){
+//		List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
+//		
+//		//se houver 1 ou mais produtos, eles serão cadastrados no banco
+//		if(!products.isEmpty()) {
+//			this.log(products.size() + " products will be persisted");
+//
+//			RankingDiscoverStats ranking = new RankingDiscoverStats();
+//
+//			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
+//			Timestamp ts = Timestamp.valueOf(nowISO);
+//
+//			ranking.setMarketId(this.marketId);
+//			ranking.setDate(ts);
+//			ranking.setLmt(nowISO);
+//			ranking.setLocation(location);
+//			ranking.setProductsDiscover(products);
+//			ranking.setRankType(rankType);
+//			
+//			RankingStatistics statistics = new RankingStatistics();
+//
+//			statistics.setPageSize(this.pageSize);
+//			statistics.setTotalFetched(this.arrayProducts.size());
+//			statistics.setTotalSearch(this.totalProducts);
+//			
+//			ranking.setStatistics(statistics);
+//			
+//			//insere dados no mongo
+//			//Persistence.persistDiscoverStats(ranking);
+//
+//		} else {		
+//			this.log("No product was found.");
+//		}
+//	}
 
 	/**
 	 * Create message and call function to send messages
@@ -514,35 +469,35 @@ public abstract class CrawlerRanking extends Task {
 
 	}
 
-	/**
-	 * 
-	 * @param mapUrlMessageId
-	 * @return
-	 */
-	private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String> mapUrlMessageId) {
-		List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
-		
-		for(RankingProducts product : this.arrayProducts) {
-			RankingProductsDiscover productDiscover = new RankingProductsDiscover();
-			
-			productDiscover.setPosition(product.getPosition());
-			productDiscover.setUrl(product.getUrl());
-			
-			List<Long> processedIds = product.getProcessedIds();
-			
-			if(processedIds.isEmpty()) {
-				productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
-				productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
-			} else {
-				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
-				productDiscover.setProcessedIds(processedIds);
-			}
-			
-			productsDiscover.add(productDiscover);
-		}
-		
-		return productsDiscover;
-	}
+//	/**
+//	 * 
+//	 * @param mapUrlMessageId
+//	 * @return
+//	 */
+//	private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String> mapUrlMessageId) {
+//		List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
+//		
+//		for(RankingProducts product : this.arrayProducts) {
+//			RankingProductsDiscover productDiscover = new RankingProductsDiscover();
+//			
+//			productDiscover.setPosition(product.getPosition());
+//			productDiscover.setUrl(product.getUrl());
+//			
+//			List<Long> processedIds = product.getProcessedIds();
+//			
+//			if(processedIds.isEmpty()) {
+//				productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
+//				productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
+//			} else {
+//				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
+//				productDiscover.setProcessedIds(processedIds);
+//			}
+//			
+//			productsDiscover.add(productDiscover);
+//		}
+//		
+//		return productsDiscover;
+//	}
 	
 	/**
 	 * Fetch Document
