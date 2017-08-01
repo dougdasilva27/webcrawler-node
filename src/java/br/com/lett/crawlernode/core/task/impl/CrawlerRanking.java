@@ -53,7 +53,7 @@ public abstract class CrawlerRanking extends Task {
 	private Logger logger;
 
 	protected List<RankingProducts> arrayProducts = new ArrayList<>();
-	
+
 	private Map<String,String> mapUrlMessageId = new HashMap<>();
 
 	private Map<String, Map<String, MessageAttributeValue>> messages = new HashMap<>(); 
@@ -69,14 +69,14 @@ public abstract class CrawlerRanking extends Task {
 
 	protected Document currentDoc;
 	protected int currentPage;
-	
+
 	protected int marketId;
 	protected String location;
 	private String rankType;
 	private String schedulerNameDiscoverProducts;
 
 	private Integer doubleCheck;
-	
+
 	private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
 	//variável que identifica se há resultados na página
@@ -84,12 +84,12 @@ public abstract class CrawlerRanking extends Task {
 
 	public CrawlerRanking(Session session, String rankType, String schedulerName, Logger logger) {
 		this.session = session;
-		
+
 		this.logger = logger;
 		this.schedulerNameDiscoverProducts = schedulerName;
 		this.marketId = session.getMarket().getNumber();
 		this.rankType = rankType;
-		
+
 		if(session instanceof RankingDiscoverSession){
 			productsLimit = 2000;
 			pageLimit = 250;
@@ -97,7 +97,7 @@ public abstract class CrawlerRanking extends Task {
 			productsLimit = 300;
 			pageLimit = 35;
 		}
-		
+
 		this.result = true;
 	}
 
@@ -109,7 +109,7 @@ public abstract class CrawlerRanking extends Task {
 	@Override 
 	public void processTask() {
 		extractProducts();
-		
+
 		this.log("Foram " + this.arrayProducts.size() + " lidos");
 	}
 
@@ -126,7 +126,7 @@ public abstract class CrawlerRanking extends Task {
 			// Identify anomalies
 			anomalyDetector(this.location, this.session.getMarket(), this.rankType);
 		}
-		
+
 		List<SessionError> errors = session.getErrors();
 
 		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
@@ -136,7 +136,7 @@ public abstract class CrawlerRanking extends Task {
 		// and are all gathered inside the session
 		if (!errors.isEmpty()) {
 			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
-			
+
 			for(SessionError error : errors) {
 				Logging.printLogError(logger, error.getErrorContent());
 			}
@@ -155,7 +155,7 @@ public abstract class CrawlerRanking extends Task {
 
 			session.setTaskStatus(Task.STATUS_COMPLETED);
 		}
-		
+
 		Logging.printLogDebug(logger, session, "END");
 	}
 
@@ -163,48 +163,48 @@ public abstract class CrawlerRanking extends Task {
 	//função para extrair produtos do market
 	public void extractProducts() {
 		try {
-			
+
 			Logging.printLogDebug(logger, "Initiate crawler ranking for this location: " + this.location);
-			
+
 			// Processe implementado pelas classes filhas para executar antes de rodar a categorie
 			this.processBeforeFetch();
-	
+
 			//É chamada a função que extrai os produtos da pagina atual enquanto os produtos não atingirem a 100 e houver próxima página
 			do {
 				this.currentPage = this.currentPage + 1;	
-	
+
 				extractProductsFromCurrentPage();
-	
+
 				// mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
 				if(	session instanceof RankingSession 
-					|| 	session instanceof RankingDiscoverSession
-					&& 	Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
-					
+						|| 	session instanceof RankingDiscoverSession
+						&& 	Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+
 					sendMessagesToAmazonAndMongo();
 				}
-	
+
 				// caso cehgue no limite de páginas pré estabelecido, é finalizada a categorie.
 				if(this.currentPage >= pageLimit) {
 					this.log("Page limit has been reached");
 					break;
 				}
-	
+
 				this.log("End of page.");
-				
+
 			} while (checkIfHasNextPage());
-	
+
 			if(this.position == productsLimit){
 				log(productsLimit + " reached products!");
 			} else if(this.result) {
 				log("End of pages!");
 			}
-	
+
 			// função para popular os dados no banco
 			if(session instanceof RankingSession) {
 				persistRankingData();
-//				persistDiscoverData();
+				//				persistDiscoverData();
 			} else if(session instanceof RankingDiscoverSession) {
-//				persistDiscoverData();
+				//				persistDiscoverData();
 			}
 
 		} catch (Exception e) {
@@ -212,7 +212,7 @@ public abstract class CrawlerRanking extends Task {
 			session.registerError(error);
 		}
 	}
-	
+
 	/**
 	 * Função checa de 4 formas se existe proxima pagina
 	 * 
@@ -267,7 +267,7 @@ public abstract class CrawlerRanking extends Task {
 		saveDataProduct(internalId, pid, url, position);
 		this.position++;
 	}
-	
+
 	/**
 	 * Salva os dados do produto e chama a função
 	 * que salva a url para mandar pra fila
@@ -279,30 +279,30 @@ public abstract class CrawlerRanking extends Task {
 		RankingProducts rankingProducts = new RankingProducts();
 
 		List<Long> processedIds = new ArrayList<>();
-		
+
 		rankingProducts.setInteranlPid(pid);
 		rankingProducts.setUrl(url);
 		rankingProducts.setPosition(position);
 
 		if(!screenshotsAddress.isEmpty()) {
 			switch (this.currentPage) {
-				case 1:
-					if(screenshotsAddress.containsKey(1)) {
-						rankingProducts.setScreenshot(screenshotsAddress.get(1));
-					}
-					break;
-					
-				case 2:
-					if(screenshotsAddress.containsKey(2)) {
-						rankingProducts.setScreenshot(screenshotsAddress.get(2));
-					}
-					break;
-					
-				default:
-					break;
+			case 1:
+				if(screenshotsAddress.containsKey(1)) {
+					rankingProducts.setScreenshot(screenshotsAddress.get(1));
+				}
+				break;
+
+			case 2:
+				if(screenshotsAddress.containsKey(2)) {
+					rankingProducts.setScreenshot(screenshotsAddress.get(2));
+				}
+				break;
+
+			default:
+				break;
 			}
 		}
-		
+
 		if(!(session instanceof TestRankingSession)) {
 			if( internalId  != null ){
 				processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
@@ -312,13 +312,13 @@ public abstract class CrawlerRanking extends Task {
 				Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
 				processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
 			}
-			
+
 			rankingProducts.setProcessedIds(processedIds);
-			
+
 			if(url != null && processedIds.isEmpty()) {
 				saveProductUrlToQueue(url);
 			}
-			
+
 		}
 
 		this.arrayProducts.add(rankingProducts);
@@ -335,7 +335,7 @@ public abstract class CrawlerRanking extends Task {
 		this.messages.put(url.trim(), attr);
 	}
 
-	
+
 	/**
 	 * Insert all data on table Ranking in Postgres
 	 */
@@ -345,7 +345,7 @@ public abstract class CrawlerRanking extends Task {
 			this.log("Vou persistir " + this.arrayProducts.size() + " posições de produtos...");
 
 			Ranking ranking = new Ranking();
-			
+
 			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
 			Timestamp ts = Timestamp.valueOf(nowISO);
 
@@ -355,15 +355,15 @@ public abstract class CrawlerRanking extends Task {
 			ranking.setRankType(this.rankType);
 			ranking.setLocation(this.location);
 			ranking.setProducts(this.arrayProducts);
-			
+
 			RankingStatistics statistics = new RankingStatistics();
 
 			statistics.setPageSize(this.pageSize);
 			statistics.setTotalFetched(this.arrayProducts.size());
 			statistics.setTotalSearch(this.totalProducts);
-			
+
 			ranking.setStatistics(statistics);
-			
+
 			//insere dados no postgres
 			Persistence.insertProductsRanking(ranking, session);
 
@@ -371,44 +371,44 @@ public abstract class CrawlerRanking extends Task {
 			this.log("Não vou persistir nada pois não achei nada");
 		}
 	}
-	
-//	/**
-//	 * Insert all data on table Ranking in Postgres
-//	 */
-//	protected void persistDiscoverData(){
-//		List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
-//		
-//		//se houver 1 ou mais produtos, eles serão cadastrados no banco
-//		if(!products.isEmpty()) {
-//			this.log(products.size() + " products will be persisted");
-//
-//			RankingDiscoverStats ranking = new RankingDiscoverStats();
-//
-//			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
-//			Timestamp ts = Timestamp.valueOf(nowISO);
-//
-//			ranking.setMarketId(this.marketId);
-//			ranking.setDate(ts);
-//			ranking.setLmt(nowISO);
-//			ranking.setLocation(location);
-//			ranking.setProductsDiscover(products);
-//			ranking.setRankType(rankType);
-//			
-//			RankingStatistics statistics = new RankingStatistics();
-//
-//			statistics.setPageSize(this.pageSize);
-//			statistics.setTotalFetched(this.arrayProducts.size());
-//			statistics.setTotalSearch(this.totalProducts);
-//			
-//			ranking.setStatistics(statistics);
-//			
-//			//insere dados no mongo
-//			//Persistence.persistDiscoverStats(ranking);
-//
-//		} else {		
-//			this.log("No product was found.");
-//		}
-//	}
+
+	//	/**
+	//	 * Insert all data on table Ranking in Postgres
+	//	 */
+	//	protected void persistDiscoverData(){
+	//		List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
+	//		
+	//		//se houver 1 ou mais produtos, eles serão cadastrados no banco
+	//		if(!products.isEmpty()) {
+	//			this.log(products.size() + " products will be persisted");
+	//
+	//			RankingDiscoverStats ranking = new RankingDiscoverStats();
+	//
+	//			String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
+	//			Timestamp ts = Timestamp.valueOf(nowISO);
+	//
+	//			ranking.setMarketId(this.marketId);
+	//			ranking.setDate(ts);
+	//			ranking.setLmt(nowISO);
+	//			ranking.setLocation(location);
+	//			ranking.setProductsDiscover(products);
+	//			ranking.setRankType(rankType);
+	//			
+	//			RankingStatistics statistics = new RankingStatistics();
+	//
+	//			statistics.setPageSize(this.pageSize);
+	//			statistics.setTotalFetched(this.arrayProducts.size());
+	//			statistics.setTotalSearch(this.totalProducts);
+	//			
+	//			ranking.setStatistics(statistics);
+	//			
+	//			//insere dados no mongo
+	//			//Persistence.persistDiscoverStats(ranking);
+	//
+	//		} else {		
+	//			this.log("No product was found.");
+	//		}
+	//	}
 
 	/**
 	 * Create message and call function to send messages
@@ -425,7 +425,7 @@ public abstract class CrawlerRanking extends Task {
 			entry.setId(String.valueOf(counter));	// the id must be unique in the batch
 			entry.setMessageAttributes(message.getValue());
 			entry.setMessageBody(message.getKey());
-			
+
 			entries.add(entry);
 			counter++;
 
@@ -451,7 +451,7 @@ public abstract class CrawlerRanking extends Task {
 		List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
 
 		this.log("Estou enviando " + successResultEntryList.size() + " mensagens para a Task e o SQS.");
-		
+
 		if(!successResultEntryList.isEmpty()){	
 			int count = 0;
 			for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully sent messages
@@ -459,7 +459,7 @@ public abstract class CrawlerRanking extends Task {
 				// the _id field in the document will be the message id, which is the session id in the crawler
 				String messageId = resultEntry.getMessageId();
 				this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
-				
+
 				Persistence.insertPanelTask(messageId, this.schedulerNameDiscoverProducts, this.marketId, entries.get(count).getMessageBody(), this.location);
 				count++;
 			}
@@ -469,36 +469,36 @@ public abstract class CrawlerRanking extends Task {
 
 	}
 
-//	/**
-//	 * 
-//	 * @param mapUrlMessageId
-//	 * @return
-//	 */
-//	private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String> mapUrlMessageId) {
-//		List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
-//		
-//		for(RankingProducts product : this.arrayProducts) {
-//			RankingProductsDiscover productDiscover = new RankingProductsDiscover();
-//			
-//			productDiscover.setPosition(product.getPosition());
-//			productDiscover.setUrl(product.getUrl());
-//			
-//			List<Long> processedIds = product.getProcessedIds();
-//			
-//			if(processedIds.isEmpty()) {
-//				productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
-//				productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
-//			} else {
-//				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
-//				productDiscover.setProcessedIds(processedIds);
-//			}
-//			
-//			productsDiscover.add(productDiscover);
-//		}
-//		
-//		return productsDiscover;
-//	}
-	
+	//	/**
+	//	 * 
+	//	 * @param mapUrlMessageId
+	//	 * @return
+	//	 */
+	//	private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String> mapUrlMessageId) {
+	//		List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
+	//		
+	//		for(RankingProducts product : this.arrayProducts) {
+	//			RankingProductsDiscover productDiscover = new RankingProductsDiscover();
+	//			
+	//			productDiscover.setPosition(product.getPosition());
+	//			productDiscover.setUrl(product.getUrl());
+	//			
+	//			List<Long> processedIds = product.getProcessedIds();
+	//			
+	//			if(processedIds.isEmpty()) {
+	//				productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
+	//				productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
+	//			} else {
+	//				productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
+	//				productDiscover.setProcessedIds(processedIds);
+	//			}
+	//			
+	//			productsDiscover.add(productDiscover);
+	//		}
+	//		
+	//		return productsDiscover;
+	//	}
+
 	/**
 	 * Fetch Document
 	 * @param url
@@ -507,7 +507,7 @@ public abstract class CrawlerRanking extends Task {
 	protected Document fetchDocument(String url) {
 		return fetchDocument(url, null);
 	}
-	
+
 	/**
 	 * Fetch Document eith cookies
 	 * @param url
@@ -520,23 +520,23 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		} 
-		
+
 		if(cookies != null){
 			StringBuilder string = new StringBuilder();
 			string.append("Cookies been used: ");
-			
+
 			for(Cookie cookie : cookies){
 				string.append("\nCookie: " + cookie.getName() + " Value: " + cookie.getValue());
 			}
-			
+
 			this.log(string.toString());
 		}
-		
+
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		
+
 		// Screenshot
 		takeAScreenshot(url);
-		
+
 		return doc;
 	}
 
@@ -563,10 +563,10 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		return fetchJSONObject(url, null);
 	}
-	
+
 	/**
 	 * Fetch jsonObject
 	 * @param url
@@ -578,7 +578,7 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -604,7 +604,7 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		//faz a conexão na url baixando o document html
 		String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -631,7 +631,7 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		return POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 	}
 
@@ -643,7 +643,7 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		this.log("Iniciando webdriver");
 		return DynamicDataFetcher.fetchPageWebdriver(url, session);
 	}
@@ -657,7 +657,7 @@ public abstract class CrawlerRanking extends Task {
 		if(this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
-		
+
 		// se o webdriver não estiver iniciado, inicio ele
 		if(this.webdriver == null){
 			Document doc = new Document(url);
@@ -684,23 +684,23 @@ public abstract class CrawlerRanking extends Task {
 		if(session instanceof RankingSession) {
 			if(this.currentPage <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
 				String printUrl = URLBox.takeAScreenShot(url, session, this.currentPage);
-				
+
 				switch (this.currentPage) {
-					case 1:
-						this.screenshotsAddress.put(1, printUrl);
-						break;
-					
-					case 2:
-						this.screenshotsAddress.put(2, printUrl);
-						break;
-		
-					default:
-						break;
+				case 1:
+					this.screenshotsAddress.put(1, printUrl);
+					break;
+
+				case 2:
+					this.screenshotsAddress.put(2, printUrl);
+					break;
+
+				default:
+					break;
 				}
 			}
 		}
 	}
-	
+
 	public void log(String message) {
 		Logging.printLogDebug(logger, session, message);
 	}
@@ -720,47 +720,52 @@ public abstract class CrawlerRanking extends Task {
 		Logging.printLogError(logger, session, message);
 	}	
 
-	
+
 	/***************************************************************************************************************************
-	* ANOMALIAS DE SHARE OF SEARCH
-	* 
-	* O crawler ranking roda todos os dias geralmente de 05:00 as 06:45 da manhã.
-	* 
-	* Em alguns casos em determinadas categories, o resultado pode vir diferente ou sequer nem vir caso o site mude
-	* ou ocorra algum erro nos crawlers.
-	* 
-	* Por isso foi desenvolvido essa funcionalidade para detectar alguns tipos de anomalias como:
-	* 
-	* 1- Caso o número de produtos capturados hoje seja 20% maior ou menor que ontem
-	* 2- Caso os produtos capturados ontem não estejam em pelo menos 50% do share de determinada categorie hoje.
-	* 
-	* Com essas duas regras conseguimos identificar se uma categorie em determinado market rodou ou mesmo se um site mudou.
-	* 
-	****************************************************************************************************************************/
+	 * ANOMALIAS DE SHARE OF SEARCH
+	 * 
+	 * O crawler ranking roda todos os dias geralmente de 05:00 as 06:45 da manhã.
+	 * 
+	 * Em alguns casos em determinadas categories, o resultado pode vir diferente ou sequer nem vir caso o site mude
+	 * ou ocorra algum erro nos crawlers.
+	 * 
+	 * Por isso foi desenvolvido essa funcionalidade para detectar alguns tipos de anomalias como:
+	 * 
+	 * 1- Caso o número de produtos capturados hoje seja 20% maior ou menor que ontem
+	 * 2- Caso os produtos capturados ontem não estejam em pelo menos 50% do share de determinada categorie hoje.
+	 * 
+	 * Com essas duas regras conseguimos identificar se uma categorie em determinado market rodou ou mesmo se um site mudou.
+	 * 
+	 ****************************************************************************************************************************/
 	private void anomalyDetector(String location, Market market, String rankType) {
 		Map<String,String> anomalies = new HashMap<>();
-		
-		Logging.printLogDebug(logger, session, "Searching for anomalies ...");
 
-		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
-		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
-		
-		int countToday = this.arrayProducts.size();
-		int countYesterday = DatabaseDataFetcher.fetchCountOfProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO).intValue();
-	
-		Logging.printLogDebug(logger, session, "Yesterday products: " + countYesterday);
-		
-		if(countYesterday > 0 && countToday == 0) {
-			SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie, yesterday in this location we"
-					+ " crawl " + countYesterday + " products and today we crawl 0 products.");
-			session.registerError(error);
-		}
-		
-		if(anomalies.size() > 0) {
-			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " + rankType + ".");
-		} else {
-			Logging.printLogDebug(logger, session, "No anomaly was identified.");
-		}
+		// Desativado por motivos de performance:
+		// Query de count estava efetuando muitos locks na tabela processed.
+		// Solução: Colocar coluna market dentro da tabela crawler_ranking também,
+		//          evitando assim o join com a tabela Processed.
+		//
+		//		Logging.printLogDebug(logger, session, "Searching for anomalies ...");
+		//
+		//		String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
+		//		String yesterdayISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
+		//		
+		//		int countToday = this.arrayProducts.size();
+		//		int countYesterday = DatabaseDataFetcher.fetchCountOfProcessedsFromCrawlerRanking(location, market.getNumber(), nowISO, yesterdayISO).intValue();
+		//	
+		//		Logging.printLogDebug(logger, session, "Yesterday products: " + countYesterday);
+		//		
+		//		if(countYesterday > 0 && countToday == 0) {
+		//			SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie, yesterday in this location we"
+		//					+ " crawl " + countYesterday + " products and today we crawl 0 products.");
+		//			session.registerError(error);
+		//		}
+		//		
+		//		if(anomalies.size() > 0) {
+		//			Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " + rankType + ".");
+		//		} else {
+		//			Logging.printLogDebug(logger, session, "No anomaly was identified.");
+		//		}
 	}
-	
+
 }
