@@ -112,7 +112,7 @@ public class BrasilLebesCrawler extends Crawler {
 				Float price = crawlPrice(jsonSku, available);
 				
 				// Prices
-				Prices prices = crawlPrices(doc, jsonSku);
+				Prices prices = crawlPrices(doc, jsonSku, price);
 
 				// Name
 				String name = crawlName(doc, jsonSku);
@@ -150,7 +150,9 @@ public class BrasilLebesCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document, String url) {
-		if ( document.select(".productName").first() != null && (url.endsWith("/p") || url.contains("/p?attempt="))) return true;
+		if ( document.select(".productName").first() != null && (url.contains("/p"))) {
+			return true;
+		}
 		return false;
 	}
 
@@ -218,13 +220,15 @@ public class BrasilLebesCrawler extends Crawler {
 	 * @param skuInformationJson
 	 * @return
 	 */
-	private Prices crawlPrices(Document document, JSONObject skuInformationJson) {
+	private Prices crawlPrices(Document document, JSONObject skuInformationJson, Float price) {
 		Prices prices = new Prices();
 		
 		// bank slip
 		Float bankSlipPrice = crawlBankSlipPrice(document, skuInformationJson);
 		if (bankSlipPrice != null) {
 			prices.setBankTicketPrice(bankSlipPrice);
+		} else {
+			prices.setBankTicketPrice(price);
 		}
 		
 		// installments
@@ -328,21 +332,13 @@ public class BrasilLebesCrawler extends Crawler {
 	private Float crawlBankSlipPrice(Document document, JSONObject skuInformationJson) {
 		Float bankSlipPrice = null;
 
-		// check availability
-		boolean available = false;
-		if(skuInformationJson.has("available")) {
-			available = skuInformationJson.getBoolean("available");
-		}
+		if (skuInformationJson.has("bestPriceFormated")) {
+			Float basePrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+			Float discountPercentage = crawlDiscountPercentage(document);
 
-		if (available) {
-			if (skuInformationJson.has("bestPriceFormated") && available) {
-				Float basePrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
-				Float discountPercentage = crawlDiscountPercentage(document);
-
-				// apply the discount on base price
-				if (discountPercentage != null) {
-					bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesDown(basePrice - (discountPercentage * basePrice));
-				}
+			// apply the discount on base price
+			if (discountPercentage != null) {
+				bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesDown(basePrice - (discountPercentage * basePrice));
 			}
 		}
 
@@ -361,31 +357,35 @@ public class BrasilLebesCrawler extends Crawler {
 	 */
 	private Float crawlDiscountPercentage(Document document) {
 		Float discountPercentage = null;
-		Element discountElement = document.select(".abaProduto .discount p[class$=--no-boleto]").first();
+		Element discountElement = document.select(".product__discount p.flag").last();
+		
 		if (discountElement != null) {
-			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(discountElement.attr("class"));
-			if (parsedNumbers.size() > 0) {
-				try {
-					Integer discount = Integer.parseInt(parsedNumbers.get(0));
-					Float discountFloat = new Float(discount);
-					discountPercentage = MathCommonsMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
-				} catch (NumberFormatException e) {
-					Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
+			String text = discountElement.ownText().replaceAll("[^0-9]", "").trim();
+			
+			if(!text.isEmpty()) {
+				discountPercentage = Float.parseFloat(text) / 100;
+				
+				// cases when html changes
+				if(discountPercentage > 1) {
+					discountPercentage = 0f;
 				}
 			}
 		}
+		
 		return discountPercentage;
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
 
-		if(json.has("available")) return json.getBoolean("available");
+		if(json.has("available")) {
+			return json.getBoolean("available");
+		}
 
 		return false;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
+		return new HashMap<>();
 	}
 
 	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
@@ -459,7 +459,9 @@ public class BrasilLebesCrawler extends Crawler {
 		String description = "";
 		Element specElement = document.select("#caracteristicas").first();
 
-		if (specElement != null) description = description + specElement.html();
+		if (specElement != null){
+			description = description + specElement.html();
+		}
 
 		return description;
 	}
