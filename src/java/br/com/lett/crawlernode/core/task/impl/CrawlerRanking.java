@@ -37,7 +37,6 @@ import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
-import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
@@ -264,8 +263,8 @@ public abstract class CrawlerRanking extends Task {
 	 * @param url
 	 */
 	protected void saveDataProduct(String internalId, String pid, String url) {
-		saveDataProduct(internalId, pid, url, position);
 		this.position++;
+		saveDataProduct(internalId, pid, url, position);
 	}
 
 	/**
@@ -738,8 +737,8 @@ public abstract class CrawlerRanking extends Task {
 	 * 
 	 ****************************************************************************************************************************/
 	private void anomalyDetector(String location, Market market, String rankType) {
-		Map<String,String> anomalies = new HashMap<>();
-
+//		Map<String,String> anomalies = new HashMap<>();
+//
 		// Desativado por motivos de performance:
 		// Query de count estava efetuando muitos locks na tabela processed.
 		// Solução: Colocar coluna market dentro da tabela crawler_ranking também,
