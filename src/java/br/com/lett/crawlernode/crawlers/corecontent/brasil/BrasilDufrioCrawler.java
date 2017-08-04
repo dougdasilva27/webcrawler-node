@@ -138,7 +138,7 @@ public class BrasilDufrioCrawler extends Crawler {
 			
 			if(script.contains("dataLayer")) {				
 				int x = script.indexOf('[') + 1;
-				int y = script.indexOf(']');
+				int y = script.indexOf("];", x)+1;
 				
 				JSONObject datalayer = new JSONObject(script.substring(x, y));
 				
