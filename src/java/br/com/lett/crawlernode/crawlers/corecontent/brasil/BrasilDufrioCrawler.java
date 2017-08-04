@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -140,14 +142,18 @@ public class BrasilDufrioCrawler extends Crawler {
 				int x = script.indexOf('[') + 1;
 				int y = script.indexOf("];", x)+1;
 				
-				JSONObject datalayer = new JSONObject(script.substring(x, y));
-				
-				if(datalayer.has("google_tag_params")) {
-					JSONObject google = datalayer.getJSONObject("google_tag_params");
+				try {
+					JSONObject datalayer = new JSONObject(script.substring(x, y));
 					
-					if(google.has("ecomm_prodid")) {
-						internalPid = google.getString("ecomm_prodid").trim();
+					if(datalayer.has("google_tag_params")) {
+						JSONObject google = datalayer.getJSONObject("google_tag_params");
+						
+						if(google.has("ecomm_prodid")) {
+							internalPid = google.getString("ecomm_prodid").trim();
+						}
 					}
+				} catch (JSONException e1) {
+					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
 				}
 				
 				break;
