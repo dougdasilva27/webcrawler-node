@@ -285,20 +285,20 @@ public abstract class CrawlerRanking extends Task {
 
 		if(!screenshotsAddress.isEmpty()) {
 			switch (this.currentPage) {
-			case 1:
-				if(screenshotsAddress.containsKey(1)) {
-					rankingProducts.setScreenshot(screenshotsAddress.get(1));
-				}
-				break;
-
-			case 2:
-				if(screenshotsAddress.containsKey(2)) {
-					rankingProducts.setScreenshot(screenshotsAddress.get(2));
-				}
-				break;
-
-			default:
-				break;
+				case 1:
+					if(screenshotsAddress.containsKey(1)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(1));
+					}
+					break;
+	
+				case 2:
+					if(screenshotsAddress.containsKey(2)) {
+						rankingProducts.setScreenshot(screenshotsAddress.get(2));
+					}
+					break;
+	
+				default:
+					break;
 			}
 		}
 
