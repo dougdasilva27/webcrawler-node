@@ -20,7 +20,7 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "http://www.ibyte.com.br/catalogsearch/result/index/?p="+ this.currentPage +"&q="+ this.keywordEncoded;
+		String url = "http://www.ibyte.com.br/catalogsearch/result/index/?p="+ this.currentPage +"&limit=60&q="+ this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar a url
@@ -49,10 +49,15 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 				}
 			}
 		} else {
+			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
 	
+		if(!hasNextPage()) {
+			setTotalProducts();
+		}
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
@@ -114,7 +119,7 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 	
 	private String crawlProductUrl(Element e){
 		String urlProduct = null;
-		Element urlElement = e.select("> a").first();
+		Element urlElement = e.select(".product-name a").first();
 		
 		if(urlElement != null){
 			urlProduct = urlElement.attr("href");
