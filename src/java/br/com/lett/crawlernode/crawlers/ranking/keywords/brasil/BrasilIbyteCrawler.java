@@ -69,27 +69,6 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 		
 		return true;
 	}
-	
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("div.mostrando").first();
-		
-		if(totalElement != null) {
-			try {
-				int x = totalElement.text().indexOf("de");
-				int y = totalElement.text().indexOf("para", x+2);
-				
-				String token = totalElement.text().substring(x+2, y).trim();
-				
-				this.totalProducts = Integer.parseInt(token);
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
 
 	private String crawlInternalId(Element e){
 		String internalId = null;
