@@ -15,25 +15,22 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 32;
+		this.pageSize = 12;
 	
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "http://busca.ibyte.com.br/?busca="+this.keywordEncoded+"&pagina="+this.currentPage;
+		String url = "http://www.ibyte.com.br/catalogsearch/result/index/?p="+ this.currentPage +"&q="+ this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products = this.currentDoc.select("div#spots ul.products-grid li.item");
+		Elements products = this.currentDoc.select("ul.products-grid li.item");
 		boolean noResults = this.currentDoc.select(".msg-naoencontrado").first() == null;
 
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1 && noResults) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			
 			for(Element e : products) {
 				// InternalPid
 				String internalPid 	= crawlInternalPid(e);
@@ -47,7 +44,9 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit){
+					break;
+				}
 			}
 		} else {
 			this.result = false;
@@ -59,11 +58,13 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		//se  o número de produtos pegos for menor que o resultado total da busca, existe proxima pagina
-		if(this.arrayProducts.size() < this.totalProducts) return true;
+		if(this.currentDoc.select(".next.disable").first() != null || this.arrayProducts.size() < 12) {
+			return false;
+		}
 		
-		return false;
+		return true;
 	}
+	
 	
 	@Override
 	protected void setTotalProducts() {
@@ -87,29 +88,13 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 
 	private String crawlInternalId(Element e){
 		String internalId = null;
-		Element idElement = e.select("> a img").first();
+		Element idElement = e.select(".sku").first();
 		
 		if(idElement != null) {
-			String text = idElement.attr("data-original");
+			String text = idElement.ownText().replaceAll("[^0-9]", "").trim();
 			
-			if(text.contains("/")) {
-				String[] tokens = text.split("/");
-				String text2 = tokens[tokens.length-1].trim();
-				
-				if(text2.contains("-")) {
-					String[] tokens2 = text2.split("-");
-					internalId = tokens2[0].replaceAll("[^0-9]", "");
-					
-					if(internalId.isEmpty()) {
-						internalId = tokens2[tokens2.length-2];
-					}
-				} else {
-					String possibleInternalId = text2.replaceAll("[^0-9]", "").trim();
-					
-					if(!possibleInternalId.isEmpty()) {
-						internalId = possibleInternalId;
-					}
-				}
+			if(!text.isEmpty()) {
+				internalId = text;
 			}
 		}
 		
@@ -118,15 +103,10 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 	
 	private String crawlInternalPid(Element e){
 		String internalPid = null;
-		
-		Element idElement = e.select("> a").first();
+		Element idElement = e.select(".trustvox-shelf-container").first();
 		
 		if(idElement != null){
-			String[] tokens = idElement.attr("href").split("=");
-			
-			if(tokens[tokens.length-1] != null){
-				internalPid = tokens[tokens.length-1].trim();
-			}
+			internalPid = idElement.attr("data-trustvox-product-code");
 		}
 		
 		return internalPid;
@@ -137,13 +117,7 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 		Element urlElement = e.select("> a").first();
 		
 		if(urlElement != null){
-			String urlBusca = urlElement.attr("href");
-			int x = urlBusca.indexOf("url=")+4;
-			int y = urlBusca.indexOf(".html", x)+5;
-			
-			String urlTemp = urlBusca.substring(x, y);
-			
-			urlProduct = urlTemp.replaceAll("%2f", "/").replaceAll("%3a", ":");
+			urlProduct = urlElement.attr("href");
 		}
 		
 		return urlProduct;
