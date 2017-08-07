@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -138,7 +137,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		for(Element e : scripts) {
 			String script = e.outerHtml();
 			
-			if(script.contains("dataLayer")) {				
+			if(script.contains("dataLayer =")) {				
 				int x = script.indexOf('[') + 1;
 				int y = script.indexOf("];", x)+1;
 				
@@ -152,7 +151,7 @@ public class BrasilDufrioCrawler extends Crawler {
 							internalPid = google.getString("ecomm_prodid").trim();
 						}
 					}
-				} catch (JSONException e1) {
+				} catch (Exception e1) {
 					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
 				}
 				
