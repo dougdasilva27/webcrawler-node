@@ -23,7 +23,13 @@ public class MathCommonsMethods {
 	 * @return
 	 */
 	public static Float parseFloat(String input) {
-		return Float.parseFloat( input.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+		String floatText =  input.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
+		
+		if(!floatText.isEmpty()) {
+			return Float.parseFloat(floatText);
+		}
+		
+		return null;
 	}
 	
 	/**

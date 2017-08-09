@@ -15,28 +15,31 @@ public class BrasilCentraltecCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 12;
+		this.pageSize = 9;
 	
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "http://www.centraltec.com.br/busca?p="+ this.keywordEncoded +"&page="+ this.currentPage +"&top=36";
+		String url = "http://www.centraltec.com.br/catalogsearch/result/index/?limit=30&p=" + this.currentPage + "&q=" + this.keywordEncoded;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".vitrine_nome > a");
+		Elements products =  this.currentDoc.select(".products-grid li.item .infobox");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
+			if(totalProducts == 0) {
+				setTotalProducts();
+			}
+			
 			for(Element e : products) {
-				
 				// InternalPid
-				String internalPid 	= crawlInternalPid(e);
+				String internalPid = null;
 				
 				// InternalId
-				String internalId 	= crawlInternalId(e);
+				String internalId = crawlInternalId(e);
 				
 				// Url do produto
 				String urlProduct = crawlProductUrl(e);
@@ -44,15 +47,16 @@ public class BrasilCentraltecCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 			}
 		} else {
-			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-	
-		if(!hasNextPage()) setTotalProducts();
+
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
@@ -69,32 +73,46 @@ public class BrasilCentraltecCrawler extends CrawlerRankingKeywords{
 		
 	}
 	
+	@Override
+	protected void setTotalProducts() {
+		Element total = this.currentDoc.select(".amount .caixa").first();
+		
+		if(total != null) {
+			String totalText = total.ownText().trim().split(" ")[0].replaceAll("[^0-9]", "");
+			
+			if(!totalText.isEmpty()) {
+				this.totalProducts = Integer.parseInt(totalText);
+			}
+		}
+		
+		this.log("Total products: " + this.totalProducts);
+	}
+	
 	private String crawlInternalId(Element e){
 		String internalId = null;
+		Element id = e.select(".set-btn .link-wishlist").first();
+
+		if(id != null) {
+			String[] urlTokens = id.attr("href").split("product/");
+			internalId = urlTokens[urlTokens.length-1].replaceAll("[^0-9]", "").trim();			
+		}
 		
 		return internalId;
 	}
 	
-	private String crawlInternalPid(Element e){
-		String internalPid = null;
-		
-		return internalPid;
-	}
 	
 	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		String tempUrl = e.attr("href");
+		String productUrl = null;
+		Element url = e.select(".product-name a").first();
 		
-		if(tempUrl.contains("centraltec.com.br")){
-			urlProduct = tempUrl;
-		} else {
-			if(tempUrl.startsWith("/")){
-				urlProduct = "http://www.centraltec.com.br" + tempUrl;
-			} else {
-				urlProduct = "http://www.centraltec.com.br/" + tempUrl;
+		if(url != null) {
+			productUrl = url.attr("href");
+			
+			if(!productUrl.startsWith("http://www.centraltec.com.br/")) {
+				productUrl = "http://www.centraltec.com.br/" + productUrl;
 			}
 		}
 		
-		return urlProduct;
+		return productUrl;
 	}
 }

@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,7 +11,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -20,42 +21,15 @@ import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
-
-/************************************************************************************************************************************************************************************
- * Crawling notes (08/07/2016):
+/**
+ * Date: 09/08/2017
  * 
- * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
- *  
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
- * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 
- * 4) The sku page identification is done by looking the URL format and if the html contains an specific element that identifies a sku.
- * 
- * 5) If a product is unavailable, it's price is not displayed. Still, the crawler tries to crawl the price of the sku.
- * 
- * 6) There are two cases that classifies a sku as unavailable: 
- * 	6.1) The html contains the element to notify the customer when the product becomes available
- * 	6.2) The html contains the button element to evaluate a product price. It's not available for immediate purchase.
- * 
- * 7) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
- * the variations of a given sku.
- * 
- * 8) We have one method for each type of information for a sku (please carry on with this pattern).
- * 
- * Examples:
- * ex1 (available): http://www.centraltec.com.br/hi-wall/7-000-a-9-000-btus/split-hi-wall-agratto-9000-btus-220v-frio-gas-r410
- * ex2 (unavailable - 6.2 case): http://www.centraltec.com.br/inverter/linha-lg/split-art-cool-inverter-22000-btus-220v---frio
- * ex3 (unavailable - 6.1 case): http://www.centraltec.com.br/inverter/linha-gree/split-gree-cozy-22000-btus-inverter-220v---frio 
+ * @author Gabriel Dornelas
  *
- * Optimizations notes:
- * No optimizations.
- *
- ************************************************************************************************************************************************************************************/
-
+ */
 public class BrasilCentraltecCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.centraltec.com.br/";
+	private final String HOME_PAGE = "http://www.centraltec.com.br";
 
 	public BrasilCentraltecCrawler(Session session) {
 		super(session);
@@ -63,247 +37,174 @@ public class BrasilCentraltecCrawler extends Crawler {
 
 	@Override
 	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
+		String href = session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
-
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
-
+		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-
-			// InternalId
 			String internalId = crawlInternalId(doc);
-
-			// Pid
 			String internalPid = crawlInternalPid(doc);
-
-			// Name
 			String name = crawlName(doc);
-
-			// Price
-			Float price = crawlMainPagePrice(doc);
-			
-			// prices
-			Prices prices = crawlPrices(doc);
-
-			// Availability
-			boolean available = crawlAvailability(doc);
-
-			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// Primary image
+			Float price = crawlPrice(doc, internalId);
+			Prices prices = crawlPrices(price, doc);
+			boolean available = crawlAvailability(doc, price);
+			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// Secondary images
-			String secondaryImages = crawlSecondaryImages(doc);
-
-			// Description
+			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 			String description = crawlDescription(doc);
-
-			// Stock
 			Integer stock = null;
-
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
-			// Marketplace
-			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+			Marketplace marketplace = crawlMarketplace();
 
 			// Creating the product
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setAvailable(available);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
-
 		} else {
-			Logging.printLogDebug(logger, "Not a product page" + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
 
 		return products;
+
 	}
 
-
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(String url, Document document) {
-		Element skuElement = document.select("#prod_padd").first();
-		if ( skuElement != null && !url.startsWith(HOME_PAGE + "p/") ) return true;
+	private boolean isProductPage(Document doc) {
+		if (doc.select(".product-name h1").first() != null) {
+			return true;
+		}
 		return false;
 	}
 
-
-	/*******************
-	 * General methods *
-	 *******************/
-
-	private String crawlInternalId(Document document) {
+	private String crawlInternalId(Document doc) {
 		String internalId = null;
-		Element internalIdElement = document.select("input[id=ProdutoId]").first();
 
+		Element internalIdElement = doc.select("input[name=product]").first();
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").toString().trim();			
+			internalId = internalIdElement.val();
 		}
 
 		return internalId;
 	}
-
-	private String crawlInternalPid(Document document) {
+	
+	private String crawlInternalPid(Document doc) {
 		String internalPid = null;
-
+		Element pdi = doc.select(".sku").first();
+		
+		if(pdi != null) {
+			internalPid = pdi.ownText().replaceAll("[^0-9]", "").trim();
+		}
+		
 		return internalPid;
 	}
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select("#prod_header .prod_tit span[itemprop=name]").first();
+		Element nameElement = document.select(".product-name h1").first();
 
 		if (nameElement != null) {
-			name = sanitizeName( nameElement.text() );
-		}
-
-		Element modelName = document.select(".prod_tit_ref > span[content]").first();
-
-		if(modelName != null) {
-			name = name + " " + modelName.ownText();
+			name = nameElement.ownText().trim();
 		}
 
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
-		Float price = null;
-		Elements mainPagePriceElements = document.select("div[itemprop=offers] .prod_valor_por span"); // the first <span> is the 'R$' and the other is the number itself
-
-		if (mainPagePriceElements.size() > 1) {
-			Element priceElement = mainPagePriceElements.get(1);
-			if (priceElement != null) {
-				price = Float.parseFloat( priceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+	private Float crawlPrice(Document document, String internalId) {
+		Float price = 0f;
+		Element normalPrice = document.select("#product-price-" + internalId).first();
+		
+		if(normalPrice != null) {
+			price = MathCommonsMethods.parseFloat(normalPrice.text());
+		}
+		
+		if(price == null || price <= 0) {
+			Elements optionsList = document.select(".options-list li .price-notice");
+			
+			for(Element e : optionsList) {
+				String operator = e.ownText().trim();
+				String priceText = e.text().replaceAll("[^0-9,]", "").replace(",", ".").trim();
+				
+				if(!operator.isEmpty() && !priceText.isEmpty()) {
+					Float priceFloat = Float.parseFloat(priceText);
+					
+					if("+".equals(operator)) {
+						price += priceFloat;
+					} else if("-".equals(operator)) {
+						price -= priceFloat;
+					} else if("/".equals(operator)) {
+						price /= priceFloat;
+					} else if("*".equals(operator)) {
+						price *= priceFloat;
+					}
+				}
 			}
+		}
+		
+		if(price <= 0) {
+			price = null;
 		}
 
 		return price;
 	}
-
-	private Prices crawlPrices(Document document) {
-		Prices prices = new Prices();
-		Float bankTicketPrice = null;
-		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
-
-		// bank ticket price
-		Element bankTicketPriceElement = document.select("div[itemprop=offers] .prod_valor_avista span[itemprop=price]").first();
-		if (bankTicketPriceElement != null) {
-			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
-		}
-
-		// installments prices
-		// for this ecommerce we have only two installment informations: 1x on card and 10x (sem juros)
-		// all the payment options are the same for all card brands
-		Element firstInstallmentElement = document.select("div[itemprop=offers] .prod_valor_por span").last(); // 1x
-		if (firstInstallmentElement != null) {
-			installments.put(1, MathCommonsMethods.parseFloat(firstInstallmentElement.text()));
-		}
-
-		Element lastInstallmentElement = document.select("div[itemprop=offers] .prod_valor_parc").first();
-		if (lastInstallmentElement != null) {
-			String line = lastInstallmentElement.text().trim(); // 10x de R$ 308,80 sem juros
-			Integer installmentNumber = null;
-			Float installmentPrice = null;
-
-			// parsing the installment number
-			int indexOfX = line.indexOf('x') + 1;
-			String installmentNumberString = line.substring(0, indexOfX); // "10x"
-			installmentNumber = Integer.parseInt( MathCommonsMethods.parseNumbers(installmentNumberString).get(0) );
-
-			// parsing the installment price
-			String installmentPriceString = line.substring(indexOfX, line.length()); // " de R$ 308,80 sem juros"
-			installmentPrice = MathCommonsMethods.parseFloat(installmentPriceString);
-
-			// the payment options are the same for all cards brands
-			installments.put(installmentNumber, installmentPrice);
-		}
-		
-		// insert the prices on the Prices object
-		prices.setBankTicketPrice(bankTicketPrice);
-		
-		// insert the installments, they are all the same across all the card brands
-		prices.insertCardInstallment(Card.VISA.toString(), installments);
-		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-		prices.insertCardInstallment(Card.AMEX.toString(), installments);
-
-		return prices;
-	}
-
-	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select("#prod_box_indisponivel").first();
-		Element toEvaluateElement = document.select("#orcar-btn").first();
-
-		if (notifyMeElement != null) return false;
-		if (toEvaluateElement != null) return false;		
-
-		return true;
-	}
-
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
-	}
-
-	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
+	
+	private Marketplace crawlMarketplace() {
 		return new Marketplace();
 	}
 
-	private String crawlPrimaryImage(Document document) {
+
+	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select("#produto-detalhe-imagem .zoomPad a img").first();
-
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("src").trim();
-		}
-
+		Element elementPrimaryImage = doc.select(".product-image > a").first();
+		
+		if(elementPrimaryImage != null ) {
+			primaryImage = elementPrimaryImage.attr("href").trim();
+		} 
+		
 		return primaryImage;
 	}
 
-	private String crawlSecondaryImages(Document document) {
+	/**
+	 * 
+	 * @param doc
+	 * @param primaryImage
+	 * @return
+	 */
+	private String crawlSecondaryImages(Document doc, String primaryImage) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("#produto-detalhe-imagem .zoomPad a img");
-
-		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			secondaryImagesArray.put( imagesElement.get(i).attr("src").trim() );
+		Elements images = doc.select("#galeria > a");
+		
+		for(Element e : images) {
+			String image = e.attr("href").trim();
+			
+			if(!image.equals(primaryImage)) {
+				secondaryImagesArray.put(image);
+			}
 		}
-
+		
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
@@ -311,37 +212,171 @@ public class BrasilCentraltecCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-		Elements elementCategories = document.select(".prod_nav ul li a");
-
-		for (int i = 0; i < elementCategories.size(); i++) {
-			String category = sanitizeName( elementCategories.get(i).text() );
-			categories.add(category);
+	/**
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".breadcrumbs li[class^=category] span");
+		
+		for (int i = 0; i < elementCategories.size(); i++) { 
+			String cat = elementCategories.get(i).ownText().trim();
+			
+			if(!cat.isEmpty()) {
+				categories.add( cat );
+			}
 		}
 
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
+	private String crawlDescription(Document doc) {
+		StringBuilder description = new StringBuilder();
+		
+		Element elementDescription = doc.select(".box-description").first();
+		
+		if (elementDescription != null) {
+			description.append(elementDescription.html());		
 		}
-
-		return "";
+		
+		return description.toString();
+	}
+	
+	private boolean crawlAvailability(Document doc, Float price) {
+		return doc.select(".alert-indisponivel").first() == null && price != null;		
 	}
 
-	private String crawlDescription(Document document) {
-		String description = "";
-		Element descriptionElement = document.select("#descricao-aba-produto").first();
+	/**
+	 * Installments in some cases, don't appear the values in html
+	 * for this we calculate based in price table, in html appear
+	 * 
+	 * data-juros = 2.5
+	 * data-maximo_parcelas_sem_juros = 10
+	 * data-maximo_parcelas = 12
+	 * 
+	 * We calculated when the installment value appear like this R$ 0,00
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price, Document doc) {
+		Prices prices = new Prices();
+		
+		if (price != null) {
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
+			installmentPriceMap.put(1, price);
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-
-		return description;
+			Element bank = doc.select(".box-central .price-box .boletoBox").first();
+			
+			if(bank != null) {
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(bank.text());
+				
+				if(bankTicketPrice == null || bankTicketPrice <= 0) {
+					bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(price - ( Float.parseFloat(bank.attr("data-desconto")) * price));
+				}
+				
+				prices.setBankTicketPrice(bankTicketPrice);
+			}
+			
+			Element installmentsElement = doc.select(".box-central .price-box .parcelaBloco").first();
+			
+			if(installmentsElement != null) {
+				Element semJuros = installmentsElement.select(".parcela-semjuros").first();
+				Element comJuros = installmentsElement.select(".parcela-comjuros").first();
+				
+				if(semJuros != null) {
+					Element parcela = semJuros.select(".parcela").first();
+					Element priceElement = semJuros.select(".price").first();
+					
+					if(parcela != null && priceElement != null) {
+						String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
+						Float value = MathCommonsMethods.parseFloat(priceElement.ownText());
+						
+						if(!text.isEmpty() && value != null && value > 0) {
+							installmentPriceMap.put(Integer.parseInt(text), value);
+						} else {
+							// this case we calculate the installments
+							String textParcela = installmentsElement.attr("data-maximo_parcelas_sem_juros").replaceAll("[^0-9]", "");
+							
+							if(!textParcela.isEmpty()) {
+								Integer parcelaNumber = Integer.parseInt(textParcela);
+								Float valueParcela = MathCommonsMethods.normalizeTwoDecimalPlaces(price / parcelaNumber);
+								
+								installmentPriceMap.put(parcelaNumber, valueParcela);
+							}
+							
+						}
+					}
+				}
+				
+				if(comJuros != null) {
+					Element parcela = comJuros.select(".parcela").first();
+					Element priceElement = comJuros.select(".price").first();
+					
+					if(parcela != null && priceElement != null) {
+						String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
+						Float value = MathCommonsMethods.parseFloat(priceElement.text());
+						
+						if(!text.isEmpty() && value != null && value > 0) {
+							installmentPriceMap.put(Integer.parseInt(text), value);
+						} else {
+							// this case we calculate the installments
+							String textParcela = installmentsElement.attr("data-maximo_parcelas").replaceAll("[^0-9]", "");
+							String textJuros = installmentsElement.attr("data-juros").replaceAll("[^0-9.]", "").trim();
+							
+							if(!textParcela.isEmpty() && !textJuros.isEmpty()) {
+								Integer parcelaNumber = Integer.parseInt(textParcela);
+								Float juros = Float.parseFloat(textJuros) / 100f;
+								
+								Float valueParcela = calcJuros(price, parcelaNumber, juros);
+								
+								installmentPriceMap.put(parcelaNumber, valueParcela);
+							}
+						}
+					}
+				} else {
+					// this case we calculate the installments
+					String textParcela = installmentsElement.attr("data-maximo_parcelas").replaceAll("[^0-9]", "");
+					String textJuros = installmentsElement.attr("data-juros").replaceAll("[^0-9.]", "").trim();
+					
+					if(!textParcela.isEmpty() && !textJuros.isEmpty()) {
+						Integer parcelaNumber = Integer.parseInt(textParcela);
+						Float juros = Float.parseFloat(textJuros) / 100f;
+						
+						Float valueParcela = calcJuros(price, parcelaNumber, juros);
+						
+						installmentPriceMap.put(parcelaNumber, valueParcela);
+					}
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+		}
+		
+		
+		return prices;
 	}
-
-	private String sanitizeName(String name) {
-		return name.replace("'","").replace("’","").trim();
+	
+	/**
+	 * This value is calculated based in price table,
+	 * I was found in this link: 
+	 * https://pt.wikipedia.org/wiki/Tabela_Price
+	 * 
+	 * @param price
+	 * @param installment
+	 * @param juros
+	 * @return
+	 */
+	private Float calcJuros(Float price, Integer installment, Float juros) {
+		Double value = price * (juros / (1 - Math.pow(1 + juros, installment * -1)));
+		
+		return MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue());
 	}
 
 }
