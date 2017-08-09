@@ -48,10 +48,10 @@ public class BrasilDrogariaspovaoCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(doc) ) {
+		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			String internalId = crawlInternalId(doc);
+			String internalId = crawlInternalId(doc, session.getOriginalURL());
 			String internalPid = null;
 			String name = crawlName(doc);
 			Float price = crawlPrice(doc);
@@ -93,14 +93,14 @@ public class BrasilDrogariaspovaoCrawler extends Crawler {
 
 	}
 
-	private boolean isProductPage(Document doc) {
-		if (doc.select(".arial24_666").first() != null) {
+	private boolean isProductPage(String url) {
+		if (url.contains("prod_key=")) {
 			return true;
 		}
 		return false;
 	}
 
-	private String crawlInternalId(Document doc) {
+	private String crawlInternalId(Document doc, String url) {
 		String internalId = null;
 
 		Elements scripts = doc.select("script");
@@ -129,6 +129,19 @@ public class BrasilDrogariaspovaoCrawler extends Crawler {
 				break;
 			}
 		}
+		
+		// Casos que o produto está sem estoque
+		if(internalId == null && url.contains("prod_key")) {
+			int x = url.indexOf("prod_key=") + "prod_key=".length();
+			
+			String id = url.substring(x);
+			
+			if(id.contains("&")) {
+				internalId = id.split("&")[0];
+			} else {
+				internalId = id;
+			}
+		}
 
 		return internalId;
 	}
@@ -136,9 +149,14 @@ public class BrasilDrogariaspovaoCrawler extends Crawler {
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select(".arial24_666").first();
+		Element unnavailableProduct = document.select(".arial12red").first();
 
 		if (nameElement != null) {
 			name = nameElement.ownText().trim();
+		} else if(unnavailableProduct != null) {
+			String[] tokens = unnavailableProduct.ownText().split("->");
+			
+			name = tokens[tokens.length-1];
 		}
 
 		return name;
