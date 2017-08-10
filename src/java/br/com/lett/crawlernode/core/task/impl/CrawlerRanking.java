@@ -194,7 +194,7 @@ public abstract class CrawlerRanking extends Task {
 
 			if(this.position == productsLimit){
 				log(productsLimit + " reached products!");
-			} else if(this.result) {
+			} else if(!this.result) {
 				log("End of pages!");
 			}
 
@@ -224,7 +224,7 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected boolean checkIfHasNextPage() {
-		if(this.position < productsLimit && hasNextPage() && this.result) {
+ 		if(this.position < productsLimit && hasNextPage() && this.result) {
 			if(doubleCheck == null || position >= doubleCheck) {
 				doubleCheck = this.position;
 			} else {

@@ -77,12 +77,15 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 				// Url do produto
 				String productUrl = crawlProductUrl(e);
 
-				saveDataProduct(internalId, internalPid, productUrl);
-
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
+				if(internalId != null || internalPid != null) {
+					saveDataProduct(internalId, internalPid, productUrl);
+					
+					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+							+ internalPid + " - Url: " + productUrl);
+					
+					if (this.arrayProducts.size() == productsLimit)
+						break;
+				}
 
 			}
 		} else {

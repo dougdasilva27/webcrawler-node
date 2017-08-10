@@ -36,7 +36,9 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(this.id.size() >= 1) {
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+			if(this.totalProducts == 0) {
+				setTotalProducts();
+			}
 			
 			for(Element e : this.id) {
 				// InternalPid
@@ -46,12 +48,17 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords{
 				String internalId 	= crawlInternalId(e);
 				
 				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+				String productUrl = crawlProductUrl(e);
 				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(internalId != null || internalPid != null) {
+					saveDataProduct(internalId, internalPid, productUrl);
+					
+					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+							+ internalPid + " - Url: " + productUrl);
+					
+					if (this.arrayProducts.size() == productsLimit)
+						break;
+				}				
 			}
 		} else {
 			this.result = false;

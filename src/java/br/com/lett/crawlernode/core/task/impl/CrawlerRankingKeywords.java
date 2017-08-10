@@ -25,9 +25,6 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
 	protected String keywordWithoutAccents;
 
 
-	//variável que identifica se há resultados na página
-	protected boolean result;
-
 	public CrawlerRankingKeywords(Session session) {
 		super(session, RANK_TYPE, SCHEDULER_NAME_DISCOVER_KEYWORDS, logger);
 		
