@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -329,11 +330,16 @@ public class POSTFetcher {
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
 		headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
 
+		// creating the redirect strategy
+		// so we can get the final redirected URL
+		DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+		
 		CloseableHttpClient httpclient = HttpClients.custom()
 				.setDefaultCookieStore(cookieStore)
 				.setUserAgent(randUserAgent)
 				.setDefaultRequestConfig(requestConfig)
 				.setDefaultCredentialsProvider(credentialsProvider)
+				.setRedirectStrategy(redirectStrategy)
 				.setDefaultHeaders(headers)
 				.build();
 
@@ -387,6 +393,11 @@ public class POSTFetcher {
 
 		CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
+		// record the redirected URL on the session
+		if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+			session.addRedirection(url, redirectStrategy.getFinalURL());
+		}
+		
 		DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
 		// analysing the status code
@@ -478,10 +489,15 @@ public class POSTFetcher {
 				reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, headers.get("Content-Type")));
 			}
 
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+			
 			CloseableHttpClient httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore)
 					.setUserAgent(randUserAgent)
 					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
 					.setDefaultCredentialsProvider(credentialsProvider)
 					.setDefaultHeaders(reqHeaders)
 					.build();
@@ -494,21 +510,6 @@ public class POSTFetcher {
 
 			HttpPost httpPost = new HttpPost(url);
 			httpPost.setEntity(input);
-
-			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpPost.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpPost.addHeader("X-Proxy-Country", "BR");
-//			}
-
-			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpPost.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
 
 			if(headers.containsKey("Content-Type")){
 				if(payload != null) {
@@ -525,6 +526,12 @@ public class POSTFetcher {
 			// do request
 			closeableHttpResponse = httpclient.execute(httpPost, localContext);
 
+			
+			// record the redirected URL on the session
+			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+				session.addRedirection(url, redirectStrategy.getFinalURL());
+			}
+			
 			// analysing the status code
 			// if there was some response code that indicates forbidden access or server error we want to try again
 			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();

@@ -19,6 +19,7 @@ import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -69,6 +70,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
      */
     private static final String[] REDIRECT_METHODS = new String[] {
         HttpGet.METHOD_NAME,
+        HttpPost.METHOD_NAME,
         HttpHead.METHOD_NAME
     };
 
