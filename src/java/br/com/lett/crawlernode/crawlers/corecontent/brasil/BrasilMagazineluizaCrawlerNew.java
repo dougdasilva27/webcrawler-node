@@ -271,7 +271,7 @@ public class BrasilMagazineluizaCrawlerNew extends Crawler {
 		Elements imageThumbs = doc.select(".showcase-product__container-thumbs .showcase-product__thumbs img");
 		Elements imageThumbsSpecial = doc.select("img.product-thumbs-carousel__thumb");
 
-		if(imageThumbs.size() >= imageThumbsSpecial.size()) {
+		if(imageThumbs.size() > imageThumbsSpecial.size()) {
 			for (int i = 1; i < imageThumbs.size(); i++) { //starts with index 1, because the first image is the primary image
 				Element e = imageThumbs.get(i);
 	
