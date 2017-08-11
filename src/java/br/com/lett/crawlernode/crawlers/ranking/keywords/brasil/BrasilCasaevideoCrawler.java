@@ -67,13 +67,8 @@ public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
 				}
 			}
 		} else {
-			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
-		}
-		
-		if(!hasNextPage()) {
-			setTotalProducts();
 		}
 		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");

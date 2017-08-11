@@ -49,7 +49,6 @@ public class BrasilBalarotiCrawler extends CrawlerRankingKeywords{
 				
 			}
 		} else {
-			setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}

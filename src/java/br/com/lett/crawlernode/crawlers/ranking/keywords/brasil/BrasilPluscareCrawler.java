@@ -6,32 +6,34 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords{
+public class BrasilPluscareCrawler extends CrawlerRankingKeywords{
 
-	public BrasilCallfarmaCrawler(Session session) {
+	public BrasilPluscareCrawler(Session session) {
 		super(session);
 	}
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 20;
+		this.pageSize = 12;
 	
 		this.log("Página "+ this.currentPage);
 		
+		String keyword = this.keywordWithoutAccents.replace(" ", "%20");
+		
 		//monta a url com a keyword e a página
-		String url = "https://www.callfarma.com.br/busca/" + this.keywordEncoded + "&limit=" + this.arrayProducts.size();
+		String url = "http://www.pluscare.com.br/busca.asp?idcategoria=&palavrachave=" + keyword + "&ordem=O"
+				+ "&filtros=&de=&ate=&nrrows=28&idpage=" + this.currentPage + "&idmarca=&ViewType=M";
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar o html
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select("#contentBoxProduto div[class^=boxProduto] .detalhes");
+		Elements products =  this.currentDoc.select(".prodListaMedios ul");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
+		if(products.size() >= 1) {
 			for(Element e : products) {
-				
 				// InternalPid
 				String internalPid = null;
 				
@@ -59,25 +61,15 @@ public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		Element finalPage = this.currentDoc.select(".linkAtual").first();
-		
-		if(finalPage != null) {
-			String page = finalPage.ownText().replaceAll("[^0-9]", "").trim();
-			
-			if(!page.isEmpty() && (this.currentPage < Integer.parseInt(page))) {
-				return true;
-			}
-		}
-			
-		return false;
+		 return this.currentDoc.select(".last").first() != null && !this.currentDoc.select(".last").first().hasClass("inactive");
 	}
 	
 	private String crawlInternalId(Element e){
 		String internalId = null;
-		Element id = e.select("#codigoInterno").first();
+		Element idElement = e.select(".comparador > input").first();
 		
-		if(id != null) {
-			internalId = id.ownText().trim();
+		if(idElement != null) {
+			internalId = idElement.val();
 		}
 		
 		return internalId;
@@ -85,13 +77,13 @@ public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords{
 	
 	private String crawlProductUrl(Element e){
 		String productUrl = null;
-		Element url = e.select("> a").first();
+		Element url = e.select(".nome > a").first();
 		
 		if(url != null) {
 			productUrl = url.attr("href");
 			
-			if(!productUrl.startsWith("https://www.callfarma.com.br")) {
-				productUrl = "https://www.callfarma.com.br" + productUrl;
+			if(!productUrl.startsWith("http://www.pluscare.com.br/")) {
+				productUrl = "http://www.pluscare.com.br/" + productUrl;
 			}
 		}
 		

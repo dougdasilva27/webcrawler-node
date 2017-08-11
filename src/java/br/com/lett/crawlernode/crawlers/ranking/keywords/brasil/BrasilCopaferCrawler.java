@@ -48,7 +48,6 @@ public class BrasilCopaferCrawler extends CrawlerRankingKeywords{
 				
 			}
 		} else {
-			this.setTotalProducts();
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}

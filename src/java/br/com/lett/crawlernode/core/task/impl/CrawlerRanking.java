@@ -192,6 +192,9 @@ public abstract class CrawlerRanking extends Task {
 
 			} while (checkIfHasNextPage());
 
+			// Total de produtos retornados pelo site
+			setTotalProducts();
+			
 			if(this.position == productsLimit){
 				log(productsLimit + " reached products!");
 			} else if(!this.result) {
@@ -248,7 +251,7 @@ public abstract class CrawlerRanking extends Task {
 
 	//função que seta o Total de busca de cada categoria
 	protected void setTotalProducts(){
-		if(this.arrayProducts.size() < productsLimit && !hasNextPage()){
+		if(this.totalProducts < 1 && this.arrayProducts.size() < productsLimit){
 			this.totalProducts = this.position;
 		}
 
