@@ -27,11 +27,11 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-public class BrasilNutriiCrawler extends Crawler {
+public class BrasilEnutriCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.nutrii.com.br/";
+	private final String HOME_PAGE = "https://www.enutri.com.br/";
 
-	public BrasilNutriiCrawler(Session session) {
+	public BrasilEnutriCrawler(Session session) {
 		super(session);
 	}
 
@@ -50,7 +50,7 @@ public class BrasilNutriiCrawler extends Crawler {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			String internalId = crawlInternalId(doc);
-			String internalPid = crawlInternalPid(doc);
+			String internalPid = null;
 			String name = crawlName(doc);
 			Float price = crawlPrice(doc);
 			Prices prices = crawlPrices(price, doc);
@@ -108,21 +108,10 @@ public class BrasilNutriiCrawler extends Crawler {
 
 		return internalId;
 	}
-	
-	private String crawlInternalPid(Document doc) {
-		String internalPid = null;
-		Element pdi = doc.select(".product-info p[itemprop=mpn]").first();
-		
-		if(pdi != null) {
-			internalPid = pdi.ownText().replaceAll("[^0-9]", "").trim();
-		}
-		
-		return internalPid;
-	}
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select(".product-info h1").first();
+		Element nameElement = document.select(".product-name h1").first();
 
 		if (nameElement != null) {
 			name = nameElement.ownText().trim();
@@ -133,11 +122,11 @@ public class BrasilNutriiCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element salePriceElement = document.select(".price-box .price").first();		
+		Element salePriceElement = document.select("#finalPriceStrong").first();		
 
 		if (salePriceElement != null) {
 			price = MathCommonsMethods.parseFloat(salePriceElement.text());
-		}
+		} 
 
 		return price;
 	}
@@ -149,7 +138,7 @@ public class BrasilNutriiCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element elementPrimaryImage = doc.select(".product-image >a").first();
+		Element elementPrimaryImage = doc.select(".product-image > a.cloud-zoom").first();
 		
 		if(elementPrimaryImage != null ) {
 			primaryImage = elementPrimaryImage.attr("href");
@@ -159,18 +148,14 @@ public class BrasilNutriiCrawler extends Crawler {
 	}
 
 	/**
+	 * Quando este crawler foi feito, nao tinha imagens secundarias
+	 * 
 	 * @param doc
 	 * @return
 	 */
 	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
-
-		Elements images = doc.select(".more-views li a");
-		
-		for(int i = 1; i < images.size(); i++) { // primeira imagem é a imagem primaria
-			secondaryImagesArray.put(images.get(i).attr("href"));
-		}
 		
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
@@ -201,7 +186,13 @@ public class BrasilNutriiCrawler extends Crawler {
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 		
-		Element elementDescription = doc.select(".description-new-prod").first();
+		Element elementShortdescription = doc.select(".short-description").first();
+		
+		if (elementShortdescription != null) {
+			description.append(elementShortdescription.html());		
+		}
+		
+		Element elementDescription = doc.select("#product_tabs_description_contents").first();
 		
 		if (elementDescription != null) {
 			description.append(elementDescription.html());		
@@ -227,13 +218,15 @@ public class BrasilNutriiCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 			
-			Element bank = doc.select("p[class=fs-14] span.bold").first();
+			Element bank = doc.select(".box-img .flag strong").first();
 			
 			if(bank != null) {
-				Float bankTicket = MathCommonsMethods.parseFloat(bank.ownText());
+				Float discount = MathCommonsMethods.parseFloat(bank.ownText());
 				
-				if(bankTicket != null) {
-					prices.setBankTicketPrice(bankTicket);
+				// O desconto aparece quando finalizamos a compra, com tudo a porcentagem aparece na page do produto
+				if(discount != null) {
+					Double value = price - (price * (discount / 100d));
+					prices.setBankTicketPrice(MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue()));
 				} else {
 					prices.setBankTicketPrice(price);
 				}
@@ -241,10 +234,10 @@ public class BrasilNutriiCrawler extends Crawler {
 				prices.setBankTicketPrice(price);
 			}
 			
-			Element installmentsElement = doc.select(".parcelamento-view-prod-page span.bold").first();
+			Element installmentsElement = doc.select("#qtyInstallments").first();
 			
 			if(installmentsElement != null) {
-				String text = installmentsElement.ownText().toLowerCase().trim();
+				String text = installmentsElement.text().toLowerCase().trim();
 				
 				if(text.contains("x")) {
 					int x = text.indexOf('x');
@@ -252,7 +245,7 @@ public class BrasilNutriiCrawler extends Crawler {
 					String installmentText = text.substring(0, x).replaceAll("[^0-9]", "");
 					Float value = MathCommonsMethods.parseFloat(text.substring(x).trim());
 					
-					if(!installmentText.isEmpty() && value != null) {
+					if(!installmentText.isEmpty() && installmentText != "1" && value != null) {
 						installmentPriceMap.put(Integer.parseInt(installmentText), value);
 					}
 				}
@@ -260,6 +253,10 @@ public class BrasilNutriiCrawler extends Crawler {
 			
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 		}
 		
 		return prices;
