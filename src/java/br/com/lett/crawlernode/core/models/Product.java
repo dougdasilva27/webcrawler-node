@@ -109,7 +109,7 @@ public class Product {
 	}
 	
 	public void setPrimaryImage(String primaryImage) {
-		if ( primaryImage != null && !primaryImage.isEmpty() ) {
+		if ( primaryImage != null && !primaryImage.isEmpty() && !primaryImage.contains("%20")) {
 			this.primaryImage = CommonMethods.sanitizeUrl(primaryImage);
 		} else {
 			this.primaryImage = primaryImage;
