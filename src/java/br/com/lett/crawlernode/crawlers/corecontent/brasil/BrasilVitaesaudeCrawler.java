@@ -61,47 +61,58 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
 
-			Elements variations = doc.select(".ProductOptionList li label");
+			Elements variationsRadio = doc.select(".ProductOptionList li label");
+			Elements variationsBox = doc.select(".ProductOptionList option");
 			
-			if(variations.size() > 1) {
+			boolean isRadio = variationsRadio.size() > 0;
+			Elements variations = isRadio ? variationsRadio : variationsBox;
+			
+			if(variationsRadio.size() > 0 || variationsBox.size() > 0) {
 				for(Element e : variations) {
 					//Id variation
-					String variationId = e.select("input").val();
+					String variationId = isRadio ? e.select("input").val() : e.val().trim();
 					
-					// Variation info
-					JSONObject variationInfo = crawlVariationsInfo(internalPid, variationId);
-					
-					String internalId = crawlVariationInternalId(variationInfo);
-					String variationName = name + " " + e.ownText().trim();
-					Float price = crawlVariationPrice(variationInfo);
-					Prices prices = crawlPrices(price, variationInfo);
-					boolean available = crawlAvailability(variationInfo);
-					
-					// Creating the product
-					Product product = ProductBuilder.create()
-							.setUrl(session.getOriginalURL())
-							.setInternalId(internalPid + "-" + internalId)
-							.setInternalPid(internalPid)
-							.setName(variationName)
-							.setPrice(price)
-							.setPrices(prices)
-							.setAvailable(available)
-							.setCategory1(categories.getCategory(0))
-							.setCategory2(categories.getCategory(1))
-							.setCategory3(categories.getCategory(2))
-							.setPrimaryImage(primaryImage)
-							.setSecondaryImages(secondaryImages)
-							.setDescription(description)
-							.setStock(stock)
-							.setMarketplace(marketplace)
-							.build();
-
-					products.add(product);
+					if(!variationId.isEmpty()) {
+						// Variation info
+						JSONObject variationInfo = crawlVariationsInfo(internalPid, variationId);
+						
+						String internalId = internalPid + "-" + variationId;
+						String variationName = name + " " + e.ownText().trim();
+						Float price = crawlVariationPrice(variationInfo);
+						Prices prices = crawlPrices(price, variationInfo);
+						boolean available = crawlAvailability(variationInfo);
+						
+						// Creating the product
+						Product product = ProductBuilder.create()
+								.setUrl(session.getOriginalURL())
+								.setInternalId(internalId)
+								.setInternalPid(internalPid)
+								.setName(variationName)
+								.setPrice(price)
+								.setPrices(prices)
+								.setAvailable(available)
+								.setCategory1(categories.getCategory(0))
+								.setCategory2(categories.getCategory(1))
+								.setCategory3(categories.getCategory(2))
+								.setPrimaryImage(primaryImage)
+								.setSecondaryImages(secondaryImages)
+								.setDescription(description)
+								.setStock(stock)
+								.setMarketplace(marketplace)
+								.build();
+	
+						products.add(product);
+					}
 				} 
 			} else {
-				name += variations.size() == 1 ? " " + variations.get(0).ownText().trim() : "";
-				
-				String internalId = crawlInternalId(doc);
+				/**
+				 * Por padrão estou colocando o id do produto como internalId pra prod sem variacao
+				 * pois um possivel id do sku, as vezes nao aparece e as vezes vem um nome,
+				 * o unico id confiavel e esse id do produto, que é o mesmo para as variações, 
+				 * contudo as mesmas possuem um segundo id que e um id da seleção, que com a combinação
+				 * com o id do produto deixa aquele produto único.
+				 */
+				String internalId = internalPid + "-" + internalPid;
 				Float price = crawlPrice(doc);
 				Prices prices = crawlPrices(price, doc);
 				boolean available = crawlAvailability(doc);
@@ -109,7 +120,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 				// Creating the product
 				Product product = ProductBuilder.create()
 						.setUrl(session.getOriginalURL())
-						.setInternalId(internalPid + "-" + internalId)
+						.setInternalId(internalId)
 						.setInternalPid(internalPid)
 						.setName(name)
 						.setPrice(price)
@@ -143,35 +154,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 		return false;
 	}
 
-	private String crawlInternalId(Document doc) {
-		String internalId = null;
-
-		Element internalIdElement = doc.select(".VariationProductSKU").first();
-		if (internalIdElement != null) {
-			internalId = internalIdElement.ownText().trim();
-		}
-		
-		if(internalId == null || internalId.isEmpty()) {
-			internalIdElement = doc.select(".CartVariationId").first();
-			
-			if (internalIdElement != null) {
-				internalId = internalIdElement.val();
-			}
-		}
-
-		return internalId;
-	}
-	
-	private String crawlVariationInternalId(JSONObject variationInfo) {
-		String internalId = null;
-		
-		if(variationInfo.has("sku")) {
-			internalId = variationInfo.getString("sku").trim();
-		}
-		
-		return internalId;
-	}
-	
 	private String crawlInternalPid(Document doc) {
 		String internalPid = null;
 		Element pdi = doc.select("input[name=product_id]").first();
