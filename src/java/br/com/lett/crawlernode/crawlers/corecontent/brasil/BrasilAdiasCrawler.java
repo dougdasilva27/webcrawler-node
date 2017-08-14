@@ -48,7 +48,7 @@ import models.prices.Prices;
 
 public class BrasilAdiasCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.adias.com.br/";
+	private final String HOME_PAGE = "https://www.adias.com.br/";
 
 	public BrasilAdiasCrawler(Session session) {
 		super(session);
@@ -81,7 +81,7 @@ public class BrasilAdiasCrawler extends Crawler {
 			Float price = crawlMainPagePrice(doc);
 			
 			// Price options
-			Prices prices = crawlPrices(doc);
+			Prices prices = crawlPrices(doc, internalId);
 			
 			// Availability
 			boolean available = crawlAvailability(doc);
@@ -192,7 +192,7 @@ public class BrasilAdiasCrawler extends Crawler {
 		return price;
 	}
 	
-	private Prices crawlPrices(Document doc) {
+	private Prices crawlPrices(Document doc, String internalId) {
 		Prices prices = new Prices();
 		
 		// crawl the bank ticket price
@@ -204,7 +204,7 @@ public class BrasilAdiasCrawler extends Crawler {
 		
 		// crawl the card payment options
 		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
-		Elements installmentsElements = doc.select(".colunaProduto.produto-info .fbits-parcelamento-padrao .details-content p");
+		Elements installmentsElements = doc.select("#produto-pagamentoparcelamento-" + internalId + " .details-content p");
 		if (installmentsElements.size() > 0) {
 			for (Element installmentElement : installmentsElements) {
 				Element installmentNumberElement = installmentElement.select("b").first();
