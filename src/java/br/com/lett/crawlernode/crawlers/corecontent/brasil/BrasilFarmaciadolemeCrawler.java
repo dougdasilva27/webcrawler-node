@@ -22,16 +22,16 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 14/08/2017
+ * Date: 15/08/2017
  * 
  * @author Gabriel Dornelas
  *
  */
-public class BrasilDrogariaprimusCrawler extends Crawler {
+public class BrasilFarmaciadolemeCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.drogariaprimus.com.br/";
+	private static final String HOME_PAGE = "https://www.farmaciadoleme.com.br/";
 
-	public BrasilDrogariaprimusCrawler(Session session) {
+	public BrasilFarmaciadolemeCrawler(Session session) {
 		super(session);
 	}
 
@@ -52,7 +52,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
-			Float price = crawlPrice(doc, internalId);
+			Float price = crawlPrice(doc);
 			Prices prices = crawlPrices(price, doc);
 			boolean available = crawlAvailability(doc);
 			CategoryCollection categories = crawlCategories(doc);
@@ -92,7 +92,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select("#detalhe_produto").first() != null) {
+		if (doc.select("#box-produto-detalhado h1 > p").first() != null) {
 			return true;
 		}
 		return false;
@@ -100,10 +100,14 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
 	private String crawlInternalId(Document doc) {
 		String internalId = null;
-
-		Element internalIdElement = doc.select(".corpo_conteudo article[itemid]").first();
+		Element internalIdElement = doc.select("#prod-pid").first();
+		
+		if (internalIdElement == null) {
+			internalIdElement = doc.select("input[name=ltb_unavailable_pid]").first();
+		}
+		
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("itemid");
+			internalId = internalIdElement.val();
 		}
 
 		return internalId;
@@ -111,18 +115,18 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	
 	private String crawlInternalPid(Document doc) {
 		String internalPid = null;
-		Element pdi = doc.select("#produto_cod_ref").first();
+		Element pdi = doc.select(".descricao-produto small").first();
 		
 		if(pdi != null) {
-			internalPid = pdi.ownText().trim();
-		}
+			internalPid = pdi.ownText().replaceAll("[^0-9]", "").trim();
+		} 
 		
 		return internalPid;
 	}
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select("h1[itemprop=name]").first();
+		Element nameElement = document.select("#box-produto-detalhado h1 > p").first();
 
 		if (nameElement != null) {
 			name = nameElement.ownText().trim();
@@ -131,12 +135,12 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlPrice(Document document, String internalId) {
+	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element salePriceElement = document.select("meta[itemprop=price]").first();		
+		Element salePriceElement = document.select(".preco .precoPor").first();		
 
 		if (salePriceElement != null) {
-			price = Float.parseFloat(salePriceElement.attr("content"));
+			price = MathCommonsMethods.parseFloat(salePriceElement.ownText());
 		}
 
 		return price;
@@ -149,13 +153,13 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element elementPrimaryImage = doc.select("#product_gallery li > a").first();
+		Element elementPrimaryImage = doc.select("#zoomImage01").first();
 		
 		if(elementPrimaryImage != null ) {
-			primaryImage = elementPrimaryImage.attr("href");
-			
-			if(!primaryImage.startsWith("http:")) {
-				primaryImage = "http:" + primaryImage;
+			primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
+
+			if (primaryImage.isEmpty()) {
+				primaryImage = elementPrimaryImage.attr("src").trim();
 			}
 		} 
 		
@@ -163,8 +167,6 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	}
 
 	/**
-	 * Quando este crawler foi feito não achei imagens secundarias
-	 * 
 	 * @param doc
 	 * @return
 	 */
@@ -172,6 +174,20 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
+		Elements images = doc.select(".carrosselMin li > a");
+
+		for (int i = 1; i < images.size(); i++) {
+			Element e = images.get(i);
+
+			String image = e.attr("data-zoom-image").trim();
+
+			if (image.isEmpty()) {
+				image = e.attr("data-image").trim();
+			}
+
+			secondaryImagesArray.put(image);
+		}
+		
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
@@ -185,10 +201,10 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	 */
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
-		Elements elementCategories = document.select(".ondeestou a > span");
+		Elements elementCategories = document.select(".breadcrumbCustomizado ul li > a");
 		
-		for (Element e : elementCategories) { 
-			String cat = e.ownText().trim();
+		for (int i  = 1; i < elementCategories.size(); i++) { 
+			String cat = elementCategories.get(i).ownText().trim();
 			
 			if(!cat.isEmpty()) {
 				categories.add( cat );
@@ -201,7 +217,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 		
-		Element elementDescription = doc.select(".texto11").last();
+		Element elementDescription = doc.select(".detalhe-produto").last();
 		
 		if (elementDescription != null) {
 			description.append(elementDescription.html());		
@@ -211,7 +227,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document doc) {
-		return doc.select("#produto_notificacao[style=display:block;]").first() == null;		
+		return doc.select(".comprar").first() != null;		
 	}
 
 	/**
@@ -228,30 +244,15 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 			installmentPriceMap.put(1, price);
 			prices.setBankTicketPrice(price);
 
-			Element aVista = doc.select(".forma_pagto #vl_avista b").first();
+			Element installmentsElement = doc.select(".precoEm").first();
+			Element valueElement = doc.select(".precoEm span").first();
 			
-			if(aVista != null) {
-				Float priceBankTicket = MathCommonsMethods.parseFloat(aVista.ownText());
+			if(installmentsElement != null && valueElement != null) {
+				String parcel = installmentsElement.ownText().replaceAll("[^0-9]", "").trim();
+				Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
 				
-				if(priceBankTicket != null) {
-					prices.setBankTicketPrice(priceBankTicket);
-				}
-			}
-			
-			Elements installmentsElement = doc.select(".forma_pagto span b");
-			
-			if(installmentsElement.size() > 1) {
-				String parcel = installmentsElement.get(0).ownText().replaceAll("[^0-9]", "").trim();
-				String value = installmentsElement.get(1).ownText();
-				
-				if(value.contains(".")) {
-					value = value.replaceAll("[^0-9.]", "").trim();
-				} else {
-					value = value.replaceAll("[^0-9,]", "").replace(",", ".").trim();
-				}
-				
-				if(!parcel.isEmpty() && !value.isEmpty()) {
-					installmentPriceMap.put(Integer.parseInt(parcel), Float.parseFloat(value));
+				if(!parcel.isEmpty() && value != null) {
+					installmentPriceMap.put(Integer.parseInt(parcel), value);
 				}
 			}
 			
@@ -259,8 +260,6 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 		}
 		
 		return prices;

@@ -728,6 +728,11 @@ public abstract class CrawlerRanking extends Task {
 		Logging.printLogError(logger, session, message);
 	}	
 
+	public void logError(String message, Throwable e) {
+		Logging.printLogError(logger, session, message);
+		SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+		session.registerError(error);
+	}
 
 	/***************************************************************************************************************************
 	 * ANOMALIAS DE SHARE OF SEARCH
