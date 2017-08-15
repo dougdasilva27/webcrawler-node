@@ -49,6 +49,7 @@ import models.prices.Prices;
 public class BrasilArcondicionadoCrawler extends Crawler {
 	
 	private final String HOME_PAGE = "https://www.arcondicionado.com.br/";
+	private final String HOME_PAGE_ADIAS = "https://www.adias.com.br/";
 
 	public BrasilArcondicionadoCrawler(Session session) {
 		super(session);
@@ -57,7 +58,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_ADIAS));
 	}
 
 
@@ -156,7 +157,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.startsWith(HOME_PAGE + "produto/") ){
+		if ( url.startsWith(HOME_PAGE + "produto/") || url.startsWith(HOME_PAGE_ADIAS + "produto/") ){
 			return true; 
 		}
 		return false;
