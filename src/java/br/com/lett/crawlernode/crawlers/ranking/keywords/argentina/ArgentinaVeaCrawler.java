@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -21,26 +22,22 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords{
 		super(session);
 	}
 
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+	private List<Cookie> cookies = new ArrayList<>();
 	
 	@Override
 	protected void processBeforeFetch() {
-		if(this.cookies.size() < 1){
-			Map<String,String> cookiesMap = fetchCookies("https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="+this.keywordEncoded);
+		Map<String,String> cookiesMap = fetchCookies("https://www.veadigital.com.ar/Comprar/Home.aspx?");
 
-			for(String cookieName : cookiesMap.keySet()){
-				if(cookieName.equals("ASP.NET_SessionId")){
-					BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
-					cookie.setDomain("www.veadigital.com.ar");
-					cookie.setPath("/");
-					this.cookies.add(cookie);
-				}
-			}
+		for(Entry<String, String> entry : cookiesMap.entrySet()){
+			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+			cookie.setDomain("www.veadigital.com.ar");
+			cookie.setPath("/");
+			this.cookies.add(cookie);
 		}
 	}
 	
 	@Override
-	protected void extractProductsFromCurrentPage() {	
+	protected void extractProductsFromCurrentPage() {
 		this.log("Página "+ this.currentPage);
 		
 		JSONObject jsonSearch = crawlProductsApi(this.keywordEncoded);
@@ -53,7 +50,9 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords{
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.length() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) this.totalProducts = products.length();
+			if(this.totalProducts == 0) {
+				this.totalProducts = products.length();
+			}
 			
 			for(int i = 0; i < products.length(); i++) {
 				JSONObject product = products.getJSONObject(i);
@@ -70,17 +69,19 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords{
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
+				if(this.arrayProducts.size() == productsLimit) {
+					break;
+				}
 				
 			}
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-		
+	
 		//número de produtos por página do market
 		this.pageSize = this.totalProducts;
-	
+		
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
 	}
 
