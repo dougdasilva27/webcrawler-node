@@ -1,71 +1,42 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
+import java.util.Map.Entry;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
-
-/*********************************************************************************************************************************************
- * Crawling notes (12/07/2016):
+/**
+ * Date: 15/08/2017
  * 
- * 1) For this crawler, we have one url per each sku
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made
- * 3) There is no marketplace in this ecommerce by the time this crawler was made
- * 4) The sku page identification is done simply looking for an specific html element
- * 5) if the sku is unavailable, it's price is not displayed.
- * 6) There is no internalPid for skus in this ecommerce. The internalPid must be a number that is the same for all
- * the variations of a given sku
- * 7) For the availability we crawl a script in the html. A script that has a variable named skuJson_0. It's been a common
- * script, that contains a jsonObject with certain informations about the sku. It's used only when the information needed
- * is too complicated to be crawled by normal means, or inexistent in other place. Although this json has other informations
- * about the sku, only the availability is crawled this way in this website.
- * 8) All the images are .png
- * 9) We have one method for each type of information for a sku (please carry on with this pattern).
  * 
- * Examples:
- * ex1 (available): http://www.poloar.com.br/ar-condicionado-multi-split-inverter-fujitsu-serie-g-14000-btu-h-1x-12000-e-1x-09000-quente-frio-220v/p
- * ex2 (unavailable): http://www.poloar.com.br/ar-condicionado-springer-duo-janela-10000-btu-h-frio-220v-eletronico-2/p
+ * @author Gabriel Dornelas
  *
- **********************************************************************************************************************************************/
-
+ */
 public class BrasilPoloarCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.poloar.com.br/";
-
-	private final String INTERNALID_SELECTOR 								= "#___rc-p-id";
-	private final String INTERNALID_SELECTOR_ATTRIBUTE						= "value";
-
-	private final String NAME_SELECTOR 										= ".fn.productName";
-	private final String PRICE_SELECTOR 									= ".plugin-preco .preco-a-vista .skuPrice";
-
-	private final String PRIMARY_IMAGE_SELECTOR 							= "#image a";
-	private final String PRIMARY_IMAGE_SELECTOR_ATTRIBUTE 					= "href";
-
-	private final String SECONDARY_IMAGES_SELECTOR 							= ".thumbs li a";
-	private final String SECONDARY_IMAGES_SELECTOR_ATTRIBUTE				= "zoom";
-
-	private final String CATEGORIES_SELECTOR 								= ".bread-crumb ul li a";
-	
-	private final String DESCRIPTION_SELECTOR 								= "#description";
-	private final String SPECS_SELECTOR										= "#specification";
 
 	public BrasilPoloarCrawler(Session session) {
 		super(session);
@@ -77,51 +48,28 @@ public class BrasilPoloarCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
-
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
+		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
-			/* ***********************************
-			 * crawling data of only one product *
-			 *************************************/
-			
-			// crawl the skuJson
-			JSONObject skuJson = crawlSkuJson(doc);
 
-			// InternalId
-			String internalId = crawlInternalId(doc);
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter("/home/gabriel/Desktop/poloar=.html"));
+
+				out.write(doc.toString());
+				out.close();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
 
 			// Pid
 			String internalPid = crawlInternalPid(doc);
 
-			// Name
-			String name = crawlName(doc);
-			
-			// Price
-			Float price = crawlMainPagePrice(doc);
-			
-			// Prices
-			Prices prices = crawlPrices(doc);
-
-			// Availability
-			boolean available = crawlAvailability(skuJson);
-
 			// Categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// Primary image
-			String primaryImage = crawlPrimaryImage(doc);
-
-			// Secondary images
-			String secondaryImages = crawlSecondaryImages(doc);
+			CategoryCollection categories = crawlCategories(doc);
 
 			// Description
 			String description = crawlDescription(doc);
@@ -129,60 +77,80 @@ public class BrasilPoloarCrawler extends Crawler {
 			// Stock
 			Integer stock = null;
 
-			// Marketplace
-			Marketplace marketplace = crawlMarketplace(doc);
+			// Marketplace map
+			Map<String, Float> marketplaceMap = crawlMarketplace();
 
-			// Creating the product
-			Product product = new Product();
-			
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setAvailable(available);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			
-			products.add(product);
+			// Marketplace
+			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+
+			JSONObject skuJson = CommonMethods.crawlSkuJsonVTEX(doc, session);
+
+			// sku data in json
+			JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus")
+					: new JSONArray();
+
+			if (arraySkus.length() > 0) {
+				JSONObject jsonSku = arraySkus.getJSONObject(0);
+
+				// InternalId
+				String internalId = internalPid;
+
+				// Primary image
+				String primaryImage = crawlPrimaryImage(doc);
+
+				// Name
+				String name = crawlName(doc, jsonSku);
+
+				// Secondary images
+				String secondaryImages = crawlSecondaryImages(doc);
+
+				// Prices
+				Prices prices = crawlPrices(crawlInternalId(jsonSku));
+
+				// Availability
+				boolean available = !prices.getInstallmentPrice().isEmpty();
+				
+				// Price
+				Float price = crawlMainPagePrice(prices, available);
+				
+				// Creating the product
+				Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
+						.setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+						.setAvailable(available).setCategory1(categories.getCategory(0))
+						.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+						.setStock(stock).setMarketplace(marketplace).build();
+
+				products.add(product);
+			}
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
-
 	}
-
-
 
 	/*******************************
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		if ( url.startsWith("http://www.poloar.com.br/") && url.endsWith("/p") ) return true;
+	private boolean isProductPage(Document document) {
+		if (document.select(".productName").first() != null) {
+			return true;
+		}
 		return false;
 	}
-
 
 	/*******************
 	 * General methods *
 	 *******************/
 
-	private String crawlInternalId(Document document) {
+	private String crawlInternalId(JSONObject json) {
 		String internalId = null;
-		Element internalIdElement = document.select(INTERNALID_SELECTOR).first();
 
-		if (internalIdElement != null) {
-			internalId = internalIdElement.attr(INTERNALID_SELECTOR_ATTRIBUTE).trim();
+		if (json.has("sku")) {
+			internalId = Integer.toString(json.getInt("sku")).trim();
 		}
 
 		return internalId;
@@ -190,117 +158,94 @@ public class BrasilPoloarCrawler extends Crawler {
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
+		Element internalPidElement = document.select("#___rc-p-id").first();
+
+		if (internalPidElement != null) {
+			internalPid = internalPidElement.attr("value").toString().trim();
+		}
+
 		return internalPid;
 	}
 
-	private String crawlName(Document document) {
+	private String crawlName(Document document, JSONObject jsonSku) {
 		String name = null;
-		Element nameElement = document.select(NAME_SELECTOR).first();
+		Element nameElement = document.select(".productName").first();
+
+		String nameVariation = jsonSku.getString("skuname");
 
 		if (nameElement != null) {
-			name = sanitizeName(nameElement.text());
+			name = nameElement.text().toString().trim();
+
+			if (name.length() > nameVariation.length()) {
+				name += " " + nameVariation;
+			} else {
+				name = nameVariation;
+			}
 		}
 
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlMainPagePrice(Prices prices, boolean available) {
 		Float price = null;
-		Element mainPagePriceElement = document.select(PRICE_SELECTOR).first();
-		
-		if (mainPagePriceElement != null) {
-			price = Float.parseFloat( mainPagePriceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+
+		if (available) {
+			for(Entry<String, Map<Integer, Double>> installment: prices.getInstallmentPrice().entrySet()) {
+				Map<Integer, Double> card = installment.getValue();
+				
+				if(card.containsKey(1)) {
+					price = MathCommonsMethods.normalizeTwoDecimalPlaces(card.get(1).floatValue());
+					break;
+				}
+			}
 		}
 
 		return price;
 	}
-	
-	/**
-	 * The bank slip price must be calculated. We can crawl the percentage of discount,
-	 * and then we must apply this discount on the best price. It was observed that the
-	 * final value is rounded up. So we use a method from CommonMethods class to round
-	 * this way.
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private Prices crawlPrices(Document document) {
-		Prices prices = new Prices();
-		
-		// bank slip
-		Element discountElement = document.select(".flag.desconto-de-5--no-boleto").first();
-		if (discountElement != null) {
-			Element bestPriceElement = document.select(".skuBestPrice").first();
-			if (bestPriceElement != null) {
-				Float bestPrice = MathCommonsMethods.parseFloat(bestPriceElement.text());
-				Float priceWithDiscount = bestPrice - (0.05f * bestPrice);
-				Float bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlacesUp(priceWithDiscount);
-				prices.setBankTicketPrice(bankSlipPrice);
-			}
-		}
-		
-		// installments
-		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
-		Element firstInstallmentPriceElement = document.select(".plugin-preco .skuBestPrice").first();
-		if (firstInstallmentPriceElement != null) { // 1x
-			installments.put(1, MathCommonsMethods.parseFloat(firstInstallmentPriceElement.text()));
-		}
-		
-		Element maxInstallmentNumberElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentNumber").first();
-		if (maxInstallmentNumberElement != null) {
-			Integer maxInstallmentNumber = Integer.parseInt(maxInstallmentNumberElement.text());
-			
-			Element maxInstallmentPriceElement = document.select(".plugin-preco .valor-dividido .skuBestInstallmentValue").first();
-			if (maxInstallmentPriceElement != null) {
-				installments.put(maxInstallmentNumber, MathCommonsMethods.parseFloat(maxInstallmentPriceElement.text()));
-				
-				prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-				prices.insertCardInstallment(Card.VISA.toString(), installments);
-				prices.insertCardInstallment(Card.DINERS.toString(), installments);
-				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-				prices.insertCardInstallment(Card.HIPER.toString(), installments);
-			}
-		}
-		
-		return prices;
+
+	private Map<String, Float> crawlMarketplace() {
+		return new HashMap<>();
 	}
 
-	private boolean crawlAvailability(JSONObject skuJson) {
-		if (skuJson != null && skuJson.has("skus")) {
-			JSONArray skus = skuJson.getJSONArray("skus");
-			if (skus.length() > 0) {
-				JSONObject sku = skus.getJSONObject(0);
-				if (sku.has("available")) {
-					return sku.getBoolean("available");
-				}
-			}
-		}
-		return false;
-	}
-
-	private Marketplace crawlMarketplace(Document document) {
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
 		return new Marketplace();
 	}
 
-	private String crawlPrimaryImage(Document document) {
+	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select(PRIMARY_IMAGE_SELECTOR).first();
 
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr(PRIMARY_IMAGE_SELECTOR_ATTRIBUTE);
+		Element image = doc.select("#botaoZoom").first();
+
+		if (image != null) {
+			primaryImage = image.attr("zoom").trim();
+
+			if (primaryImage == null || primaryImage.isEmpty()) {
+				primaryImage = image.attr("rel").trim();
+			}
 		}
 
 		return primaryImage;
 	}
 
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select(SECONDARY_IMAGES_SELECTOR);
-	
-		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
-			secondaryImagesArray.put(imagesElement.get(i).attr(SECONDARY_IMAGES_SELECTOR_ATTRIBUTE));
+		Elements imageThumbs = doc.select("#botaoZoom");
+
+		for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1,
+														// because the first
+														// image is the primary
+														// image
+			String url = imageThumbs.get(i).attr("zoom");
+
+			if (url == null || url.isEmpty()) {
+				url = imageThumbs.get(i).attr("rel");
+			}
+
+			if (url != null && !url.isEmpty()) {
+				secondaryImagesArray.put(url);
+			}
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -310,65 +255,125 @@ public class BrasilPoloarCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-		Elements elementCategories = document.select(CATEGORIES_SELECTOR);
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".bread-crumb > ul li a");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
+		for (int i = 1; i < elementCategories.size(); i++) { // starting from
+																// index 1,
+																// because the
+																// first is the
+																// market name
+			categories.add(elementCategories.get(i).text().trim());
 		}
 
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-		return "";
-	}
-
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select(DESCRIPTION_SELECTOR).first();
-		Element specsElement = document.select(SPECS_SELECTOR).first();
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specsElement != null) description = description + specsElement.html();
+
+		Element descElement = document.select("#detalhes-do-produto").first();
+		Element specElement = document.select("#especificacoes-tecnicas").first();
+
+		if (specElement != null) {
+			description = description + specElement.html();
+		}
+		if (descElement != null) {
+			description = description + descElement.html();
+		}
 
 		return description;
 	}
 
-	/**************************
-	 * Specific manipulations *
-	 **************************/
-
-	private String sanitizeName(String name) {
-		return name.replace("'","").replace("’","").trim();
-	}
-	
 	/**
-	 * Get the script having a json with the availability information
+	 * To crawl this prices is accessed a api Is removed all accents for crawl
+	 * price 1x like this: Visa à vista R$ 1.790,00
+	 * 
+	 * @param internalId
+	 * @param price
 	 * @return
 	 */
-	private JSONObject crawlSkuJson(Document document) {
-		Elements scriptTags = document.getElementsByTag("script");
-		JSONObject skuJson = null;
-		
-		for (Element tag : scriptTags){                
-			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
+	private Prices crawlPrices(String internalId) {
+		Prices prices = new Prices();
 
-					skuJson = new JSONObject
-							(
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-							node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-							);
+		String url = "http://www.poloar.com.br/productotherpaymentsystems/" + internalId;
 
-				}
-			}        
+		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+		Element bank = doc.select("#ltlPrecoWrapper em").first();
+		if (bank != null) {
+			prices.setBankTicketPrice(Float.parseFloat(
+					bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
 		}
-		
-		return skuJson;
+
+		Elements cardsElements = doc.select("#ddlCartao option");
+
+		for (Element e : cardsElements) {
+			String text = e.text().toLowerCase();
+
+			if (text.contains("visa")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+
+			} else if (text.contains("mastercard")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+
+			} else if (text.contains("diners")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+
+			} else if (text.contains("american") || text.contains("amex")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+
+			} else if (text.contains("hipercard") || text.contains("amex")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+
+			} else if (text.contains("credicard")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+
+			} else if (text.contains("elo")) {
+				Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+				prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+
+			}
+		}
+
+		return prices;
 	}
 
+	private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard) {
+		Map<Integer, Float> mapInstallments = new HashMap<>();
+
+		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+		for (Element i : installmentsCard) {
+			Element installmentElement = i.select("td.parcelas").first();
+
+			if (installmentElement != null) {
+				String textInstallment = installmentElement.text().toLowerCase();
+				Integer installment = null;
+
+				if (textInstallment.contains("vista")) {
+					installment = 1;
+				} else {
+					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+				}
+
+				Element valueElement = i.select("td:not(.parcelas)").first();
+
+				if (valueElement != null) {
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
+							.replaceAll(",", ".").trim());
+
+					mapInstallments.put(installment, value);
+				}
+			}
+		}
+
+		return mapInstallments;
+	}
 }
