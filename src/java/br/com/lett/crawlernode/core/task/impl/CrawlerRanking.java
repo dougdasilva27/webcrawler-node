@@ -679,15 +679,19 @@ public abstract class CrawlerRanking extends Task {
 		return DynamicDataFetcher.fetchPage(this.webdriver, url);
 	}
 
+	protected void takeAScreenshot(String url) {
+		takeAScreenshot(url, this.currentPage);
+	}
+	
 	/**
 	 * Take a screenshot for audit
 	 * only the first 2 pages
 	 * @param url
 	 */
-	protected void takeAScreenshot(String url) {
+	protected void takeAScreenshot(String url, int page) {
 		if(session instanceof RankingSession) {
-			if(this.currentPage <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
-				String printUrl = URLBox.takeAScreenShot(url, session, this.currentPage);
+			if(page <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
+				String printUrl = URLBox.takeAScreenShot(url, session, page);
 
 				switch (this.currentPage) {
 				case 1:
