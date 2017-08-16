@@ -230,7 +230,7 @@ public abstract class CrawlerRanking extends Task {
 	 */
 	protected boolean checkIfHasNextPage() {
  		if(this.position < productsLimit && hasNextPage() && this.result) {
-			if(doubleCheck == null || position >= doubleCheck) {
+			if(doubleCheck == null || position > doubleCheck) {
 				doubleCheck = this.position;
 			} else {
 				return false;

@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.util;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -532,5 +534,16 @@ public class CommonMethods {
 		
 		
 		return object;
+	}
+	
+	public static void saveStringInFile(String body, String path) {
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(path));
+			
+			out.write(body);
+			out.close();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 	}
 }
