@@ -72,7 +72,7 @@ public class MexicoLacomerCrawler extends Crawler {
 			boolean available = crawlAvailability(price);
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace(doc);
@@ -202,10 +202,24 @@ public class MexicoLacomerCrawler extends Crawler {
 		return primaryImage;
 	}
 
-	private String crawlSecondaryImages(Document document, String primaryImage) {
+	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
+		Elements images = doc.select("#gal1 .div-gal > a");
+		
+		for (int i = 1; i < images.size(); i++) { // first image is the primary Image
+			Element e = images.get(i);
+
+			String image = e.attr("data-zoom-image").trim();
+
+			if (image.isEmpty()) {
+				image = e.attr("data-image").trim();
+			}
+
+			secondaryImagesArray.put(image);
+		}
+		
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}

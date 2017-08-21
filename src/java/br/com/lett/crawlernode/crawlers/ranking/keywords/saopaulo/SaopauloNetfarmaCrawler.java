@@ -12,12 +12,6 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 		super(session);
 	}
 
-	private String crawlInternalId() {
-		String internalId = null;
-
-		return internalId;
-	}
-
 	private String crawlInternalPid(Element e) {
 		return e.attr("id").split("-")[1];
 	}
@@ -67,7 +61,7 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 				String internalPid = crawlInternalPid(e);
 
 				// InternalId
-				String internalId = crawlInternalId();
+				String internalId = internalPid;
 
 				saveDataProduct(internalId, internalPid, urlProduct);
 

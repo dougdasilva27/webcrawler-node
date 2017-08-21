@@ -3,7 +3,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class MexicoLacomerCrawler extends CrawlerRankingKeywords{
