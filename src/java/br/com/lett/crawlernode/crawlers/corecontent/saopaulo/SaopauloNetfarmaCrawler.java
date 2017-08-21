@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -56,7 +57,7 @@ import models.prices.Prices;
 
 public class SaopauloNetfarmaCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "https://www.netfarma.com.br/";
+	private static final String HOME_PAGE = "https://www.netfarma.com.br/";
 
 	public SaopauloNetfarmaCrawler(Session session) {
 		super(session);
@@ -75,71 +76,41 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 
 		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			// Json Product
-			JSONObject jsonProduct = crawlJSONProduct(doc);
 			
-			// ID interno
-			String internalID = crawlInternalId(jsonProduct);
-
-			// Pid
-			String internalPid = crawlInternalPid(jsonProduct);
-
-			// Nome
+			String internalId = crawlInternalId(doc);
+			String internalPid = internalId;
 			String name = crawlName(doc);
-
-			// Disponibilidade
-			boolean available = true;
-			Element elementOutOfStock = doc.select(".product-details__unavailable").first();
-			if(elementOutOfStock != null) {
-				available = false;
-			}
-			
-			// Preço
-			Float price = crawlPrice(jsonProduct, available);
-
-			// Categories
+			boolean available = doc.select(".product-details__unavailable").first() == null;
+			Float price = crawlPrice(doc);
 			CategoryCollection categories = crawlCategories(doc);
-			
-			String category1 = categories.getCategory(0); 
-			String category2 = categories.getCategory(1); 
-			String category3 = categories.getCategory(2);
-
-			// primary image
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// secondary images
 			String secondaryImages = crawlSecondaryImages(doc);
-
-			// description
 			String description = crawlDescription(doc);
-			
-			// stock
 			Integer stock = null;
-
-			// Marketplace
 			Marketplace marketplace = new Marketplace();
-			
-			// Prices
 			Prices prices = crawlPrices(doc, price);
 
-			Product product = new Product();
+			// The url of the products has changed, if one day to stop redirecting already we have the new one
+			String newUrl = crawlNewUrl(internalId);
 			
-			product.setUrl(session.getOriginalURL());
-			product.setInternalId(internalID);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(newUrl)
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
@@ -158,14 +129,16 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return (doc.select(".product-details__code").first() != null);
 	}
 	
-	private String crawlInternalPid(JSONObject jsonProduct){
-		String internalPid = null;
+	private String crawlNewUrl(String internalId) {
+		String url = session.getOriginalURL();
 		
-		if(jsonProduct.has("sku")){
-			internalPid = jsonProduct.getString("sku").trim();
+		if(internalId != null) {
+			String redirectUrl = session.getRedirectedToURL(url);
+			
+			url = redirectUrl != null ? redirectUrl : url;
 		}
 		
-		return internalPid;
+		return url;
 	}
 	
 	private CategoryCollection crawlCategories(Document doc) {
@@ -179,11 +152,25 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return categories;
 	}
 	
-	private String crawlInternalId(JSONObject jsonProduct){
+	private String crawlInternalId(Document doc){
 		String internalId = null;
 		
-		if(jsonProduct.has("pid")){
-			internalId = jsonProduct.getString("pid").trim();
+		Elements scriptTags = doc.getElementsByTag("script");
+		JSONObject skuJson = new JSONObject();
+
+		for (Element tag : scriptTags){    
+			String scrpit = tag.html().trim();
+			if(scrpit.startsWith("var google_tag_params = ")) {
+				String finalJson = scrpit.replaceAll("var google_tag_params = ", "").replace(";", "").trim();
+				
+				skuJson = new JSONObject(finalJson);
+
+			}
+
+		}
+		
+		if(skuJson.has("ecomm_prodid")){
+			internalId = skuJson.getString("ecomm_prodid");
 		}
 		
 		return internalId;
@@ -209,12 +196,12 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		return name;
 	}
 	
-	private Float crawlPrice(JSONObject jsonProduct, boolean available) {
+	private Float crawlPrice(Document doc) {
 		Float price = null;
-		
-		if(available && jsonProduct.has("price")){
-			Double priceDouble = jsonProduct.getDouble("price");
-			price = priceDouble.floatValue();
+		Element priceElement = doc.select(".product-details__price span[itemprop=price]").first();
+
+		if(priceElement != null) {
+			price = MathCommonsMethods.parseFloat(priceElement.ownText());
 		}
 		
 		return price;
@@ -255,25 +242,6 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		}
 		
 		return secondaryImages;
-	}
-	
-	private JSONObject crawlJSONProduct(Document doc){
-		JSONObject jsonProduct = new JSONObject();
-		Elements scripts = doc.select("script:not([src])");
-		
-		for(Element e : scripts){
-			String script = e.outerHtml();
-			
-			if(script.contains("chaordic_meta")){
-				int x = script.indexOf("meta =")+6;
-				int y = script.indexOf(";", x);
-				
-				String json = script.substring(x, y);
-				jsonProduct = new JSONObject(json);
-			}
-		}
-		
-		return jsonProduct;
 	}
 	
 	private String crawlDescription(Document document) {
