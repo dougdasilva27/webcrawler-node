@@ -246,13 +246,15 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 	
 	private String crawlDescription(Document document) {
 		String description = "";
+
 		Element elementWarning = document.select("#detalhes.product-description").first();
-		if (elementWarning != null) {
-			description = description + elementWarning.text();
+		if (elementWarning != null && elementWarning.select("#avaliacoes").first() == null) {
+			description = description + elementWarning.html();
 		}
+		
 		Element elementProductDetails = document.select("#product-tips.product-description").last();
 		if (elementProductDetails != null) {
-			description = description + elementProductDetails.text();
+			description = description + elementProductDetails.html();
 		}
 
 		return description;

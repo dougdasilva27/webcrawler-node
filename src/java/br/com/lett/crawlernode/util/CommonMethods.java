@@ -536,7 +536,7 @@ public class CommonMethods {
 		return object;
 	}
 	
-	public static void saveStringInFile(String body, String path) {
+	public static void saveStringToAFile(String body, String path) {
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(path));
 			
