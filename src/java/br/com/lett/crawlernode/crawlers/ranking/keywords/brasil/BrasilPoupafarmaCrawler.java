@@ -6,9 +6,9 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords{
+public class BrasilPoupafarmaCrawler extends CrawlerRankingKeywords{
 
-	public BrasilDrogarianisseiCrawler(Session session) {
+	public BrasilPoupafarmaCrawler(Session session) {
 		super(session);
 	}
 
@@ -20,7 +20,7 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "https://www.drogariasnissei.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?pagina=" + this.currentPage;
+		String url = "http://www.poupafarma.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?pagina=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar o html
@@ -69,7 +69,7 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords{
 	
 	@Override
 	protected void setTotalProducts() {
-		Element total = this.currentDoc.select(".row .columns .large-12 > p").last();
+		Element total = this.currentDoc.select(".row .columns .large-12 > p").first();
 		
 		if(total != null && total.ownText().contains("de")) {
 			String totalText = total.ownText().trim().split("de")[1].replaceAll("[^0-9]", "").trim();
@@ -99,8 +99,8 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords{
 	private String crawlProductUrl(Element e){
 		String productUrl = e.attr("href");
 			
-		if(!productUrl.startsWith("https://www.drogariasnissei.com.br/")) {
-			productUrl = ("https://www.drogariasnissei.com.br/" + productUrl).replace("br//", "br/");
+		if(!productUrl.startsWith("http://www.poupafarma.com.br/")) {
+			productUrl = ("http://www.poupafarma.com.br/" + productUrl).replace("br//", "br/");
 		}
 		
 		return productUrl;
