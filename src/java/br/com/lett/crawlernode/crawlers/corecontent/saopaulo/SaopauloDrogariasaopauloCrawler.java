@@ -50,30 +50,26 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 			Elements elementName = doc.select(".buy_box .productName");
 			String name = elementName.text().replace("'","").replace("’","").trim();
 
-			// Categorias
-			Elements elementCategories = doc.select(".bread-crumb li"); 
+			// categories
+			Elements elementCategories = doc.select(".bread-crumb li a");
+			ArrayList<String> categories = new ArrayList<>();
+			String category1 = "";
+			String category2 = "";
+			String category3 = "";
 
-			String category1 = null;
-			String category2 = null;
-			String category3 = null;
-			String[] cat = new String[4];
-			cat[0] = "";
-			cat[1] = "";
-			cat[2] = "";
-			cat[3] = "";
-			int j=0;
-
-			for(int i=0; i < elementCategories.size(); i++) {
-
-				Element e = elementCategories.get(i);
-				cat[j] = e.text().toString();
-				cat[j] = cat[j].replace(">", "").trim();
-				j++;
-
+			for (int i = 1; i < elementCategories.size(); i++) {
+				categories.add(elementCategories.get(i).text());
 			}
-			category1 = cat[1];
-			category2 = cat[2];
-			category3 = cat[3];
+
+			for (String category : categories) {
+				if (category1.isEmpty()) {
+					category1 = category;
+				} else if (category2.isEmpty()) {
+					category2 = category;
+				} else if (category3.isEmpty()) {
+					category3 = category;
+				}
+			}
 
 			// Imagem primária
 			String primaryImage = "";

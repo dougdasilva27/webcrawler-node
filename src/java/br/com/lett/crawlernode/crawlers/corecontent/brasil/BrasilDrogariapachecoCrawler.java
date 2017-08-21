@@ -69,15 +69,13 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
 			// categories
 			Elements elementCategories = doc.select(".bread-crumb li a");
-			ArrayList<String> categories = new ArrayList<String>();
+			ArrayList<String> categories = new ArrayList<>();
 			String category1 = "";
 			String category2 = "";
 			String category3 = "";
 
-			for (Element e : elementCategories) {
-				if (!e.text().equals("drogariaspacheco")) {
-					categories.add(e.text());
-				}
+			for (int i = 1; i < elementCategories.size(); i++) {
+				categories.add(elementCategories.get(i).text());
 			}
 
 			for (String category : categories) {
