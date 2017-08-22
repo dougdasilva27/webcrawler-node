@@ -11,6 +11,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import com.google.common.base.CharMatcher;
+
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -248,16 +250,22 @@ public class SaopauloNetfarmaCrawler extends Crawler {
 		String description = "";
 
 		Element elementWarning = document.select("#detalhes.product-description").first();
-		if (elementWarning != null && elementWarning.select("#avaliacoes").first() == null) {
-			description = description + elementWarning.html();
+		if (elementWarning != null) {
+			description = description + elementWarning.outerHtml();
 		}
 		
-		Element elementProductDetails = document.select("#product-tips.product-description").last();
+		Element elementProductDetails = document.select("#product-tips.product-description .nano-content").last();
 		if (elementProductDetails != null) {
-			description = description + elementProductDetails.html();
+			description = description + elementProductDetails.outerHtml();
 		}
 
-		return description;
+		// A character is considered to be an ISO control character if its code is in 
+		//the range '\u0000' through '\u001F' or in the range '\u007F' through '\u009F'
+		CharMatcher desired = CharMatcher.JAVA_ISO_CONTROL
+				  .negate(); 
+		
+		// This happen to remove illegal characters
+		return desired.retainFrom(description);		 
 	}
 	
 	/**
