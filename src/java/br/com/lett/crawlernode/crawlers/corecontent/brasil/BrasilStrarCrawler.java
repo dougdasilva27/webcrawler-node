@@ -279,13 +279,11 @@ public class BrasilStrarCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select("#product_tabs_description_contents .std").first();
-		Element specElement = document.select("#product_tabs_additional_contents table").first();
-		Element itemsElement = document.select("#product_tabs_upsell_products_content").first();
+		Element descriptionElement = document.select(".wrp-product-tabs").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specElement != null) description = description + specElement.html();
-		if (itemsElement != null) description = description + itemsElement.html();
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
 
 		return description;
 	}
