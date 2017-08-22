@@ -12,7 +12,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -83,29 +85,8 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 				}
 			}
 
-			// Categorias
-			String category1; 
-			String category2; 
-			String category3;
-
-			Elements elementCategories = doc.select("span.migalha a"); 
-
-			String[] category = new String[4];
-			category[0] = "";
-			category[1] = "";
-			category[2] = "";
-			category[3] = "";
-			int j=0;
-
-			for(int i=0; i < elementCategories.size(); i++) {
-				Element e = elementCategories.get(i);
-				category[j] = e.text().toString();
-				category[j] = category[j].replace(">", "");
-				j++;
-			}
-			category1 = category[1];
-			category2 = category[2];
-			category3 = null;
+			// Categoires
+			CategoryCollection categories = crawlCategories(doc);
 
 			String primaryImage = crawlPrimaryImage(doc);
 			String secondaryImages = crawlSecondaryImages(doc);
@@ -132,23 +113,24 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 			// Prices
 			Prices prices = crawlPrices(doc, price);
 			
-			Product product = new Product();
-			
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setAvailable(available);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 			
@@ -255,4 +237,20 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 		return prices;
 	}
 	
+	/**
+	 * No momento que o crawler foi feito não foi achado
+	 * produtos com categorias
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(Document doc) {
+		CategoryCollection categories = new CategoryCollection();
+		Element elementCategories = doc.select(".nomeComTopo h2").first();
+		
+		if(elementCategories != null) {
+			categories.add(elementCategories.ownText());
+		}
+
+		return categories;
+	}
 }
