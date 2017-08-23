@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -41,6 +42,16 @@ public class BrasilEnutriCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		BasicClientCookie cookie = new BasicClientCookie("loja", "base");
+		cookie.setDomain(".www.enutri.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
@@ -202,7 +213,7 @@ public class BrasilEnutriCrawler extends Crawler {
 	}
 	
 	private boolean crawlAvailability(Document doc) {
-		return doc.select(".bt-buy-nova").first() != null;		
+		return doc.select(".add-to-cart").first() != null;		
 	}
 
 	/**
