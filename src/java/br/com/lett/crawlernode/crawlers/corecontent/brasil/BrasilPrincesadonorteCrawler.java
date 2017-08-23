@@ -121,7 +121,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
-
+			
 			// Creating the product
 			Product product = ProductBuilder.create()
 					.setUrl(session.getOriginalURL())

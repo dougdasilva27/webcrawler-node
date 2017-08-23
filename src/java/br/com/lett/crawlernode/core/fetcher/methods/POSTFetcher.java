@@ -425,6 +425,172 @@ public class POSTFetcher {
 
 	}
 
+	public static Map<String,String> fetchCookiesPOSTWithHeaders(
+			String url, 
+			Session session, 
+			String payload, 
+			List<Cookie> cookies, 
+			int attempt, 
+			Map<String,String> headers) {
+
+		LettProxy randProxy = null;
+		String randUserAgent = null;
+		CloseableHttpResponse closeableHttpResponse = null;
+		Integer responseLength = 0;
+		String requestHash = DataFetcher.generateRequestHash(session);
+
+		try {
+
+			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
+			
+			randUserAgent = DataFetcher.randUserAgent();
+			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+
+			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			if (randProxy != null) {
+				if(randProxy.getUser() != null) {
+					credentialsProvider.setCredentials(
+							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
+							);
+				}
+			}
+
+			HttpHost proxy = null;
+			if (randProxy != null) {
+				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+			}
+
+			RequestConfig requestConfig = getRequestConfig(proxy);
+
+			List<Header> reqHeaders = new ArrayList<>();
+			reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+			if(headers.containsKey("Content-Type")){
+				reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, headers.get("Content-Type")));
+			}
+
+			// creating the redirect strategy
+			// so we can get the final redirected URL
+			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+			
+			CloseableHttpClient httpclient = HttpClients.custom()
+					.setDefaultCookieStore(cookieStore)
+					.setUserAgent(randUserAgent)
+					.setDefaultRequestConfig(requestConfig)
+					.setRedirectStrategy(redirectStrategy)
+					.setDefaultCredentialsProvider(credentialsProvider)
+					.setDefaultHeaders(reqHeaders)
+					.build();
+
+			HttpContext localContext = new BasicHttpContext();
+			localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+			StringEntity input = new StringEntity(payload);
+			input.setContentType(headers.get("Content-Type"));
+
+			HttpPost httpPost = new HttpPost(url);
+			httpPost.setEntity(input);
+
+			if(headers.containsKey("Content-Type")){
+				if(payload != null) {
+					httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get("Content-Type"))));
+				}
+			}
+
+			for(String key : headers.keySet()){
+				httpPost.addHeader(key, headers.get(key));
+			}
+
+			httpPost.setConfig(requestConfig);
+
+			// do request
+			closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+			
+			// record the redirected URL on the session
+			if (redirectStrategy.getFinalURL() != null && !redirectStrategy.getFinalURL().isEmpty()) {
+				session.addRedirection(url, redirectStrategy.getFinalURL());
+			}
+			
+			// analysing the status code
+			// if there was some response code that indicates forbidden access or server error we want to try again
+			int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+			if( Integer.toString(responseCode).charAt(0) != '2' && 
+					Integer.toString(responseCode).charAt(0) != '3' && 
+					responseCode != 404 ) { // errors
+				throw new ResponseCodeException(responseCode);
+			}
+
+			// creating the page content result from the http request
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
+			pageContent.setUrl(url); // setting url
+
+			responseLength = pageContent.getContentData().length;
+
+			// assembling request information log message
+			DataFetcher.sendRequestInfoLog(
+					url, 
+					DataFetcher.POST_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse, 
+					responseLength, 
+					requestHash);
+
+			Map<String,String> cookiesMap = new HashMap<>();
+
+			// get all cookie headers
+			Header[] headersC = closeableHttpResponse.getHeaders(DataFetcher.HTTP_COOKIE_HEADER);
+
+			for (Header header : headersC) {
+				String cookieHeader = header.getValue();
+				String cookieName = cookieHeader.split("=")[0].trim();
+
+				int x = cookieHeader.indexOf(cookieName+"=") + cookieName.length()+1;
+				int y = cookieHeader.indexOf(";", x);
+
+				String cookieValue = cookieHeader.substring(x, y).trim();
+
+				cookiesMap.put(cookieName, cookieValue);
+			}
+
+			return cookiesMap;
+
+		} catch (Exception e) {
+			DataFetcher.sendRequestInfoLog(
+					url, 
+					DataFetcher.POST_REQUEST, 
+					randProxy, 
+					randUserAgent, 
+					session, 
+					closeableHttpResponse, 
+					responseLength, 
+					requestHash);
+
+			if (e instanceof ResponseCodeException) {
+				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+			}
+			else {
+				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição POST: " + url);
+				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+			}
+
+			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
+				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+				return new HashMap<>();
+			} else {
+				return fetchCookiesPOSTWithHeaders(url, session, payload, cookies, attempt+1, headers);	
+			}
+
+		}
+	}
+	
 	public static String fetchPagePOSTWithHeaders(
 			String url, 
 			Session session, 
