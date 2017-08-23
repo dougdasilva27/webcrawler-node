@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilHomerefillCrawler extends CrawlerRankingKeywords{
 
@@ -12,6 +13,8 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords{
 		super(session);
 	}
 
+	private String redirectUrl;
+	
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
@@ -20,13 +23,21 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "https://www.homerefill.com.br/shopping/search?search="+ this.keywordEncoded +"&page=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	 
+		String url = "https://www.homerefill.com.br/shopping/search?search="+ this.keywordEncoded;
 		
-		//chama função de pegar o html
-		this.currentDoc = fetchDocument(url);
-
-		Elements products =  this.currentDoc.select(".molecule-product-card");
+		if(this.currentPage == 1) {
+			this.currentDoc = fetchDocument(url);
+			
+			this.redirectUrl = session.getRedirectedToURL(url) != null ?
+					session.getRedirectedToURL(url) :
+						url;
+		} else {
+			this.currentDoc = fetchDocument(this.redirectUrl + "&page=" + this.currentPage);
+		}
+		
+		this.log("Link onde são feitos os crawlers: "+ this.redirectUrl + "&page=" + this.currentPage);	
+		
+		Elements products =  this.currentDoc.select(".organism-product .column div[data-product-sku]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
@@ -82,7 +93,7 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords{
 			try	{				
 				this.totalProducts = Integer.parseInt(totalElement.ownText().replaceAll("[^0-9]", "").trim());
 			} catch(Exception e) {
-				this.logError(e.getMessage());
+				this.logError(CommonMethods.getStackTrace(e));
 			}
 			
 			this.log("Total da busca: "+this.totalProducts);
@@ -99,7 +110,7 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords{
 	
 	private String crawlProductUrl(Element e){
 		String productUrl = null;
-		Element eUrl = e.select(".molecule-product-card__url").first();
+		Element eUrl = e.select("a[href]").first();
 		
 		if(eUrl != null){
 			productUrl = eUrl.attr("href");

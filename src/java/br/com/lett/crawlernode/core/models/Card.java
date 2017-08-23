@@ -25,6 +25,7 @@ public enum Card {
 	MULTIEMPRESARIAL,
 	MULTICHEQUE,
 	MULTIBENEFICIOS,
+	SOROCRED,
 	
 	SHOP_CARD,
 	UNKNOWN_CARD;
@@ -56,6 +57,7 @@ public enum Card {
 			case MULTIEMPRESARIAL: return "multiempresarial";
 			case MULTICHEQUE: return "multicheque";
 			case MULTIBENEFICIOS: return "multibeneficios";
+			case SOROCRED: return "sorocred";
 			default: return "unkown_card";
 		}
 	}

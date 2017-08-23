@@ -210,6 +210,10 @@ public abstract class CrawlerRanking extends Task {
 			} else if(session instanceof RankingDiscoverSession) {
 				//				persistDiscoverData();
 			}
+			
+			if(this.webdriver != null) {
+				this.webdriver.terminate();
+			}
 
 		} catch (Exception e) {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));

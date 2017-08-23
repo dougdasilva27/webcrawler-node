@@ -4,26 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.Header;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
@@ -31,10 +11,9 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -45,13 +24,11 @@ public class DynamicDataFetcher {
 
 	protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
-	private static final String HA_PROXY = "191.235.90.114:3333";
-
-	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
-	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
-	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
-
-	private static final int MAX_ATTEMPTS_FOR_CONECTION_WITH_PROXY = 2;
+//	private static final String HA_PROXY = "191.235.90.114:3333";
+//
+//	private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
+//	private static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
+//	private static final int DEFAULT_SOCKET_TIMEOUT = 10000; // ms
 
 	/** 
 	 * Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
@@ -92,14 +69,14 @@ public class DynamicDataFetcher {
 		Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
 
 		String phantomjsPath = null;
-		if (session instanceof TestCrawlerSession) {
+		if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
 			phantomjsPath = Test.phantomjsPath;
 		} else {
 			phantomjsPath = Main.executionParameters.getPhantomjsPath();
 		}
 		
 		// choose a proxy randomly
-		LettProxy proxy = randomProxy(ProxyCollection.BONANZA);
+		LettProxy proxy = randomProxy(ProxyCollection.BONANZA, session);
 		
 		DesiredCapabilities caps = DesiredCapabilities.phantomjs();
 		caps.setJavascriptEnabled(true);                
@@ -139,7 +116,7 @@ public class DynamicDataFetcher {
 		
 		CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
 				
-		if (!(session instanceof TestCrawlerSession)) {
+		if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
 			Main.server.incrementWebdriverInstances();
 		}
 								
@@ -148,8 +125,15 @@ public class DynamicDataFetcher {
 		return webdriver;
 	}
 	
-	private static LettProxy randomProxy(String proxyService) {
-		List<LettProxy> proxies =  Main.proxies.getProxy(proxyService);  
+	private static LettProxy randomProxy(String proxyService, Session session) {
+		List<LettProxy> proxies;
+		
+		if(session instanceof TestRankingSession || session instanceof TestCrawlerSession) {  
+			proxies = Test.proxies.getProxy(proxyService);
+		} else {
+			proxies = Main.proxies.getProxy(proxyService);
+		}
+		
 		if ( !proxies.isEmpty() ) {
 			int i = MathCommonsMethods.randInt(0, proxies.size() - 1);
 			return proxies.get(i);
@@ -279,56 +263,56 @@ public class DynamicDataFetcher {
 //		}
 //	}
 
-	private static HttpContext createContext(CookieStore cookieStore) {
-		HttpContext localContext = new BasicHttpContext();
-		localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-		return localContext;
-	}
+//	private static HttpContext createContext(CookieStore cookieStore) {
+//		HttpContext localContext = new BasicHttpContext();
+//		localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+//		return localContext;
+//	}
+//
+//	private static CredentialsProvider createCredentialsProvider(LettProxy proxy) {
+//		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+//		if(proxy != null && proxy.getUser() != null) {
+//			credentialsProvider.setCredentials(
+//					new AuthScope(proxy.getAddress(), proxy.getPort()),
+//					new UsernamePasswordCredentials(proxy.getUser(), proxy.getPass())
+//					);
+//		}
+//		return credentialsProvider;
+//	}
+//
+//	private static RequestConfig createRequestConfig(HttpHost proxy) {
+//		return RequestConfig.custom()
+//				.setCookieSpec(CookieSpecs.STANDARD)
+//				.setRedirectsEnabled(true) // set redirect to true
+//				.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+//				.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+//				.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+//				.setProxy(proxy)
+//				.build();
+//	}
 
-	private static CredentialsProvider createCredentialsProvider(LettProxy proxy) {
-		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-		if(proxy != null && proxy.getUser() != null) {
-			credentialsProvider.setCredentials(
-					new AuthScope(proxy.getAddress(), proxy.getPort()),
-					new UsernamePasswordCredentials(proxy.getUser(), proxy.getPass())
-					);
-		}
-		return credentialsProvider;
-	}
-
-	private static RequestConfig createRequestConfig(HttpHost proxy) {
-		return RequestConfig.custom()
-				.setCookieSpec(CookieSpecs.STANDARD)
-				.setRedirectsEnabled(true) // set redirect to true
-				.setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-				.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-				.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-				.setProxy(proxy)
-				.build();
-	}
-
-	/**
-	 * Parse the page content, either to get a HTML or a plain text
-	 * In case we are expecting JSONObject or JSONArray response from an API, the content
-	 * will be parsed as a plain text. Otherwise it will be parsed as a HTML format.
-	 * 
-	 * @param pageContent
-	 * @param session
-	 * @return String with the request response, either in HTML or plain text format
-	 */
-	private static String processContent(PageContent pageContent, Session session) {		
-		Parser parser = new Parser(session);
-		parser.parse(pageContent);
-
-		if (pageContent.getHtmlParseData() != null) {
-			return pageContent.getHtmlParseData().getHtml();
-		}
-		if (pageContent.getTextParseData() != null) {
-			return pageContent.getTextParseData().getTextContent();
-		}
-
-		return "";
-	}
+//	/**
+//	 * Parse the page content, either to get a HTML or a plain text
+//	 * In case we are expecting JSONObject or JSONArray response from an API, the content
+//	 * will be parsed as a plain text. Otherwise it will be parsed as a HTML format.
+//	 * 
+//	 * @param pageContent
+//	 * @param session
+//	 * @return String with the request response, either in HTML or plain text format
+//	 */
+//	private static String processContent(PageContent pageContent, Session session) {		
+//		Parser parser = new Parser(session);
+//		parser.parse(pageContent);
+//
+//		if (pageContent.getHtmlParseData() != null) {
+//			return pageContent.getHtmlParseData().getHtml();
+//		}
+//		if (pageContent.getTextParseData() != null) {
+//			return pageContent.getTextParseData().getTextContent();
+//		}
+//
+//		return "";
+//	}
 
 	/**
 	 * Retrieve a random user agent from the user agents array.

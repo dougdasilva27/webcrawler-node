@@ -6,6 +6,8 @@ import java.util.regex.Pattern;
 
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -455,10 +457,11 @@ public class Crawler extends Task {
 		Document document = fetch();
 		List<Product> products;
 		products = extractInformation(document);
+		
 		if (products == null) {
 			products = new ArrayList<>();
 		}
-
+		
 		return products;
 	}
 
@@ -467,10 +470,32 @@ public class Crawler extends Task {
 	 * Contains all the logic to sku information extraction.
 	 * Must be implemented on subclasses.
 	 * 
-	 * @param document
+	 * @param Document
 	 * @return A product with all it's crawled informations
 	 */
 	public List<Product> extractInformation(Document document) throws Exception {
+		return new ArrayList<>();
+	}
+	
+	/**
+	 * Contains all the logic to sku information extraction.
+	 * Must be implemented on subclasses.
+	 * 
+	 * @param JSONObject
+	 * @return A product with all it's crawled informations
+	 */
+	public List<Product> extractInformation(JSONObject json) throws Exception {
+		return new ArrayList<>();
+	}
+	
+	/**
+	 * Contains all the logic to sku information extraction.
+	 * Must be implemented on subclasses.
+	 * 
+	 * @param JSONArray
+	 * @return A product with all it's crawled informations
+	 */
+	public List<Product> extractInformation(JSONArray array) throws Exception {
 		return new ArrayList<>();
 	}
 
@@ -480,9 +505,15 @@ public class Crawler extends Task {
 	 * If the fetcher is static, then we use de StaticDataFetcher, otherwise we use the
 	 * DynamicDataFetcher.
 	 * 
+	 * Subclasses can override this method for crawl another apis and pages.
+	 * In Princesadonorte the product page has nothing, but we need the url for 
+	 * crawl this market api.
+	 * 
+	 * Return only {@link Document}
+	 * 
 	 * @return Parsed HTML in form of a Document.
 	 */
-	private Document fetch() {
+	protected Document fetch() {
 		String html;
 		if (config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
