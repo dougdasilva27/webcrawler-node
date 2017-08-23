@@ -43,7 +43,7 @@ public class SaopauloB2WCrawlersUtils {
 		for (Element e : scripts) {
 			String json = e.outerHtml();
 
-			if (json.contains("__INITIAL_STATE__")) {
+			if (json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) {
 				int x = json.indexOf("_ =") + 3;
 				int y = json.indexOf("};", x);
 
