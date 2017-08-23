@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.core.models;
 
 import org.json.JSONObject;
 
+import com.google.common.base.CharMatcher;
+
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -109,7 +111,13 @@ public class Product {
 	}
 	
 	public void setPrimaryImage(String primaryImage) {
-		if ( primaryImage != null && !primaryImage.isEmpty() && !primaryImage.contains("%20")) {
+		// It was identified that the urls of images has some special characters, 
+		// the characters are the ones that are not in ASCII, tab and space
+		CharMatcher desired = CharMatcher.ASCII // match character in ASCII 
+				.and(CharMatcher.noneOf(" 	")) // no match of space and tab
+				.precomputed();
+		
+		if ( primaryImage != null && !primaryImage.isEmpty() && !desired.matchesAllOf(primaryImage)) {
 			this.primaryImage = CommonMethods.sanitizeUrl(primaryImage);
 		} else {
 			this.primaryImage = primaryImage;
