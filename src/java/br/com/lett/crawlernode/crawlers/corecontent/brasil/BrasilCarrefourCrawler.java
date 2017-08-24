@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -112,7 +113,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
 			// Prices
-			Prices prices = crawlPrices(price);
+			Prices prices = crawlPrices(price, internalId);
 			
 			// Creating the product
 			Product product = new Product();
@@ -282,13 +283,13 @@ public class BrasilCarrefourCrawler extends Crawler {
 		return description;
 	}
 	
-	private Prices crawlPrices(Float price){
+	private Prices crawlPrices(Float price, String internalId){
 		Prices prices = new Prices();
 		
 		if(price != null){
 			prices.setBankTicketPrice(price);
 			
-			String url = "https://www.carrefour.com.br/installment/creditCard?productPrice="+ price;
+			String url = "https://www.carrefour.com.br/installment/creditCard?productPrice="+ price + "&productCode=" + internalId;
 			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 			
 			JSONObject jsonPrices = new JSONObject();
@@ -296,7 +297,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 			try{
 				jsonPrices = new JSONObject(json);
 			}catch(Exception e){
-				
+				Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 			}
 			
 			if (jsonPrices.has("maestroInstallments")) {
