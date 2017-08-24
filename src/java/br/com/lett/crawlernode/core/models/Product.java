@@ -196,6 +196,15 @@ public class Product {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		
+		String images = this.secondaryImages != null ? this.secondaryImages.replace("[", "").replace("]", "").trim() : "";
+		int secondaryImagesNumber = 0;
+		
+		if(images.contains(",")) {
+			secondaryImagesNumber = images.split(",").length;
+		} else if(!images.isEmpty()) {
+			secondaryImagesNumber = 1;
+		}
+		
 		sb.append("\n" + "url: " + this.url + "\n");
 		sb.append("internalId: " + this.internalId + "\n");
 		sb.append("internalPid: " + this.internalPid + "\n");
@@ -208,7 +217,7 @@ public class Product {
 		sb.append("category2: " + this.category2 + "\n");
 		sb.append("category3: " + this.category3 + "\n");
 		sb.append("primary image: " + this.primaryImage + "\n");
-		sb.append("secondary images: " + (this.secondaryImages != null && this.secondaryImages.contains(",") ? this.secondaryImages.split(",").length : 0)  + "\n");
+		sb.append("secondary images: " + secondaryImagesNumber  + "\n");
 		sb.append("description: " + "html code with " + this.description.length() + " characters" + "\n");
 		sb.append("stock: " + this.stock + "\n");
 

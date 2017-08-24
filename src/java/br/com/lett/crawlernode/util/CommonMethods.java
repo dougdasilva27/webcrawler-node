@@ -56,6 +56,15 @@ public class CommonMethods {
 	private static final Logger logger = LoggerFactory.getLogger(CommonMethods.class);
 
 	/**
+	 * Get last position of array
+	 * @param array
+	 * @return
+	 */
+	public static <T> T getLast(T[] array) {
+	    return array[array.length - 1];
+	}
+	
+	/**
 	 * 
 	 * @return
 	 * @throws NullPointerException
