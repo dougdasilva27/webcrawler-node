@@ -35,7 +35,6 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
-import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
@@ -52,6 +51,7 @@ import generation.PostgresJSONGsonBinding;
 import models.Behavior;
 import models.Marketplace;
 import models.Processed;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class Persistence {

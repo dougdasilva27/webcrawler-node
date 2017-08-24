@@ -11,11 +11,11 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
-import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMagazineluizaCrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
 
 /**
  * Date: 14/12/16

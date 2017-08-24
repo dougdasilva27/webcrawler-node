@@ -3,12 +3,14 @@ package br.com.lett.crawlernode.core.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import models.RatingsReviews;
+
 public class RatingReviewsCollection {
 	
 	private List<RatingsReviews> ratingReviewsList;
 	
 	public RatingReviewsCollection() {
-		this.ratingReviewsList = new ArrayList<RatingsReviews>();
+		this.ratingReviewsList = new ArrayList<>();
 	}
 	
 	public void addRatingReviews(RatingsReviews ratingReviews) {

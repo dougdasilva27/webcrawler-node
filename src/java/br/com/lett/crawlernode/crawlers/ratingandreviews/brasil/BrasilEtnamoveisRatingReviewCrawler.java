@@ -4,10 +4,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
-import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
 
 /**
  * Date: 25/07/17

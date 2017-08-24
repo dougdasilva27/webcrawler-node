@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
-import br.com.lett.crawlernode.core.models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
@@ -23,6 +22,7 @@ import br.com.lett.crawlernode.core.task.config.RatingCrawlerConfig;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
 
 public class RatingReviewCrawler extends Task {
 
