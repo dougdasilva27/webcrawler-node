@@ -58,6 +58,7 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
 				
 				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
+				ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
 			
 				List<String> idList = crawlIdList(skuJson);
 				for (String internalId : idList) {

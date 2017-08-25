@@ -56,7 +56,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords{
 						String internalId = variationsList.next();
 						
 						// InternalPid
-						String internalPid 	= crawlInternalPid(product);
+						String internalPid 	= null;
 						
 						// Url do produto
 						String urlProduct = crawlProductUrl(e, internalId, internalPid);
@@ -121,16 +121,6 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords{
 			
 			this.log("Total da busca: "+this.totalProducts);
 		}
-	}
-	
-	private String crawlInternalPid(JSONObject product){
-		String internalPid = null;
-		
-		if(product.has("product")){
-			internalPid = product.getString("product");
-		}
-		
-		return internalPid;
 	}
 	
 	private String crawlProductUrl(Element e, String internalId, String internalPid){

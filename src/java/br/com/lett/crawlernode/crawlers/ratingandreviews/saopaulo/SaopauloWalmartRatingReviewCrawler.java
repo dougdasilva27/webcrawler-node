@@ -36,11 +36,13 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 			JSONArray products = crawlDataLayerJson(doc);
 
 			if (products.length() > 0) {
-				Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);			
+				Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);	
+				Integer reviews = getTotalNumOfReviews(doc);
 				Double avgRating = getTotalAvgRating(doc);
 
 				ratingReviews.setTotalRating(totalNumOfEvaluations);
 				ratingReviews.setAverageOverallRating(avgRating);
+				ratingReviews.setTotalWrittenReviews(reviews);
 
 				for(int i = 0; i < products.length(); i++) {					
 					RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
@@ -106,7 +108,25 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 		return totalRating;
 	}
 
+	/**
+	 * Number of ratings appear in html element 
+	 * @param docRating
+	 * @return
+	 */
+	private Integer getTotalNumOfReviews(Document docRating) {
+		Integer totalReviews = null;
+		Element totalRatingElement = docRating.select("#product-review h3").first();
 
+		if(totalRatingElement != null) {
+			String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
+			
+			if(!totalText.isEmpty()){
+				totalReviews = Integer.parseInt(totalText);
+			}
+		}
+
+		return totalReviews;
+	}
 
 	private boolean isProductPage(String url) {
 		if ( url.contains("walmart.com.br/produto/") || url.endsWith("/pr")) {
