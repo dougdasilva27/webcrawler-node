@@ -31,16 +31,16 @@ public class BrasilEfacilCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.efacil.com.br/");
+		return !FILTERS.matcher(href).matches() && href.startsWith("https://www.efacil.com.br/");
 	}
 
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
-		if (session.getOriginalURL().startsWith("http://www.efacil.com.br/loja/produto/")) {
+		if (session.getOriginalURL().startsWith("https://www.efacil.com.br/loja/produto/") || session.getOriginalURL().startsWith("http://www.efacil.com.br/loja/produto/")) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			Element variationSelector = doc.select(".options_attributes").first();

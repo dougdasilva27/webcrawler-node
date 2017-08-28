@@ -379,7 +379,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 		ArrayList<String> categories = new ArrayList<>();
 		if(infoProductJson.has("categories")){
 			JSONArray categoriesJson = infoProductJson.getJSONArray("categories");
-			for(int i = 0; i < categoriesJson.length(); i++) {
+			for(int i = categoriesJson.length()-1; i >= 0; i--) {
 				JSONObject categorie = categoriesJson.getJSONObject(i);
 
 				if(categorie.has("name")){

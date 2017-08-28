@@ -97,7 +97,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if( isProductPage(session.getOriginalURL(), doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -364,10 +364,10 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	}
 
 	private ArrayList<String> crawlCategories(JSONObject infoProductJson) {
-		ArrayList<String> categories = new ArrayList<String>();
+		ArrayList<String> categories = new ArrayList<>();
 		if(infoProductJson.has("categories")){
 			JSONArray categoriesJson = infoProductJson.getJSONArray("categories");
-			for(int i = 0; i < categoriesJson.length(); i++) {
+			for(int i = categoriesJson.length()-1; i >= 0; i--) {
 				JSONObject categorie = categoriesJson.getJSONObject(i);
 
 				if(categorie.has("name")){
