@@ -29,11 +29,11 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-public class BrasilDrogariaspovaoCrawler extends Crawler {
+public class BrasilDrogariapovaoCrawler extends Crawler {
 
 	private final String HOME_PAGE = "http://www.drogariaspovao.com.br";
 
-	public BrasilDrogariaspovaoCrawler(Session session) {
+	public BrasilDrogariapovaoCrawler(Session session) {
 		super(session);
 	}
 

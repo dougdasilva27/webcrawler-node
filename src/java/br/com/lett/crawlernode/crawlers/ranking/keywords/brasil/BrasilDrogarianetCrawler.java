@@ -107,8 +107,8 @@ public class BrasilDrogarianetCrawler extends CrawlerRankingKeywords{
 		if(url != null) {
 			productUrl = url.attr("href");
 			
-			if(!productUrl.startsWith("http://www.drogariaminasbrasil.com.br/")) {
-				productUrl = "http://www.drogariaminasbrasil.com.br/" + productUrl;
+			if(!productUrl.startsWith("http://www.drogarianet.com.br/")) {
+				productUrl = ("http://www.drogarianet.com.br/" + productUrl).replace("br//", "br/");
 			}
 		}
 		

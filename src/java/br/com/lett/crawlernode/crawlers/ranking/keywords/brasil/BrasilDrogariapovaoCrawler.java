@@ -6,9 +6,9 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilDrogariaspovaoCrawler extends CrawlerRankingKeywords{
+public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords{
 
-	public BrasilDrogariaspovaoCrawler(Session session) {
+	public BrasilDrogariapovaoCrawler(Session session) {
 		super(session);
 	}
 
