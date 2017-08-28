@@ -175,7 +175,7 @@ public class BrasilDufrioCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element salePriceElement = document.select(".boxValores .v1").first();
+		Element salePriceElement = document.select(".boxComprar .boxComprar-t1").first();
 
 		boolean oldPrice = false;
 		
@@ -192,7 +192,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		}
 		
 		if(oldPrice) {
-			salePriceElement = document.select(".boxValores .v2").first();
+			salePriceElement = document.select(".boxComprar .boxComprar-t2").first();
 			
 			if(salePriceElement != null) {
 				price = MathCommonsMethods.parseFloat(salePriceElement.text());
@@ -284,7 +284,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if (price != null) {
-			Element aVista = doc.select(".v3").first();
+			Element aVista = doc.select(".boxComprar-t3").first();
 			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
 			if (aVista != null) {
@@ -299,13 +299,13 @@ public class BrasilDufrioCrawler extends Crawler {
 				}
 			}
 
-			Elements parcels = doc.select(".parcelas span");
+			Elements parcels = doc.select(".baixoDetalhe-parcelamento span");
 			
 			for(Element e : parcels) {
 				String parcelText = e.text().toLowerCase();
 				
 				if(parcelText.contains("x")) {
-					Integer parcel = Integer.parseInt(parcelText.split("x")[0]);
+					Integer parcel = Integer.parseInt(parcelText.split("x")[0].replaceAll("[^0-9]", ""));
 					
 					if(parcelText.contains("(")) {
 						int x = parcelText.indexOf('x');

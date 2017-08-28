@@ -94,7 +94,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
 	 * @return
 	 */
 	private Integer getTotalNumOfRatings(Document docRating) {
-		Integer totalRating = null;
+		Integer totalRating = 0;
 		Element totalRatingElement = docRating.select(".star-rating-write-review").first();
 
 		if(totalRatingElement != null) {
