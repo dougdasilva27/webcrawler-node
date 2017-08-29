@@ -33,6 +33,7 @@ public class ProxyCollection {
 	public static final String BUY 						= "buy";
 	public static final String BONANZA 					= "bonanza";
 	public static final String STORM 					= "storm";
+	public static final String STORM_RESIDENTIAL_US		= "storm_residential_us";
 	public static final String NO_PROXY 				= "no_proxy";
 	public static final String LUMINATI_SERVER_BR 		= "luminati_server_br";
 	public static final String LUMINATI_RESIDENTIAL_BR 	= "luminati_residential_br";
@@ -50,6 +51,7 @@ public class ProxyCollection {
 	public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_AR 	= 2;
 	
 	public static final int MAX_ATTEMPTS_STORM					= 3;
+	public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_US	= 2;
 	public static final int MAX_ATTEMPTS_NO_PROXY 				= 1;
 
 	/** Intervals used to select proxy service when running normal information extraction */
@@ -73,6 +75,7 @@ public class ProxyCollection {
 		proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_MX, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_MX);
 		proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_AR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_AR);
 		proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
+		proxyMaxAttempts.put(STORM_RESIDENTIAL_US, MAX_ATTEMPTS_STORM_RESIDENTIAL_US);
 		proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 		proxyMaxAttempts.put(FETCHER, MAX_ATTEMPTS_FETCHER);
 
@@ -86,6 +89,7 @@ public class ProxyCollection {
 		setBonanzaProxies();
 		setBuyProxies();
 		setStormProxies();
+		setStormResidentialUSProxy();
 		setLuminatiServerBrProxy();
 		setLuminatiResidentialBrProxy();
 		setLuminatiResidentialMxProxy();
@@ -131,6 +135,22 @@ public class ProxyCollection {
 		List<LettProxy> storm = new ArrayList<>();
 		storm.add(new LettProxy("storm", "37.48.118.90", 13012, "worldwide", "lett", ""));
 		proxyMap.put(STORM, storm);
+	}
+	
+	private void setStormResidentialUSProxy() {
+		List<LettProxy> storm = new ArrayList<>();
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.241", 19008, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.168.141.147", 19014, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.193.9.41", 19006, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "142.54.179.98", 19006, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "198.204.229.194", 19007, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.241", 19017, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.255.66.35", 19001, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "69.30.199.122", 19012, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.105", 19016, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.168.141.132", 19011, "worldwide", "", ""));
+		
+		proxyMap.put(STORM_RESIDENTIAL_US, storm);
 	}
 
 	private void setBuyProxies() {
