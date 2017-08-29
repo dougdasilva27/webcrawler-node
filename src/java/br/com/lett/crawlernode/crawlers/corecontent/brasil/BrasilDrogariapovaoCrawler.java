@@ -1,16 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.JSONException;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -24,19 +29,72 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 08/08/2017
+ * Date: 29/08/2017
  * 
  * @author Gabriel Dornelas
  *
  */
 public class BrasilDrogariapovaoCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.drogariaspovao.com.br";
+	private static final String HOME_PAGE = "http://www.drogariaspovao.com.br/";
 
 	public BrasilDrogariapovaoCrawler(Session session) {
 		super(session);
 	}
 
+	@Override 
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		// performing request to get cookie
+		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
+		
+		BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
+		cookie.setDomain("www.drogariaspovao.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
+	@Override
+	protected Document fetch() {
+		StringBuilder str = new StringBuilder();
+		str.append("<html><body>");
+		String url = session.getOriginalURL();
+		
+		if(url.contains("detalhes_produto/")) {
+			String id = url.split("detalhes_produto/")[1].split("/")[0];
+			
+			String payload = "arrapara=[\"Carregar_Detalhes_Produto\",\"" + id + "\",\"\",\"detalhe_pagina\"]&origem=site&controle=navegacao";
+			
+			Map<String, String> headers = new HashMap<>();
+			headers.put("Content-Type", "application/x-www-form-urlencoded");
+			
+			String page = POSTFetcher.fetchPagePOSTWithHeaders("http://www.drogariaspovao.com.br/ct/atende_geral.php", session, payload, cookies, 1, headers).trim();
+			
+			if(page != null && page.startsWith("[") && page.endsWith("]")) {
+				try {
+					JSONArray infos = new JSONArray(page);
+					
+					if(infos.length() > 6) {
+						JSONArray productInfo = infos.getJSONArray(6); //6º position of array has product info
+						
+						if(productInfo.length() >= 3) {
+							str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
+							str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
+							str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
+						}
+					}
+				} catch (JSONException e) {
+					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+				}
+			}
+		}
+		
+		str.append("</body></html>");
+		
+		return Jsoup.parse(str.toString());
+	}
+	
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
@@ -51,19 +109,19 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			String internalId = crawlInternalId(doc, session.getOriginalURL());
+			String internalId = crawlInternalId(doc);
 			String internalPid = null;
 			String name = crawlName(doc);
 			Float price = crawlPrice(doc);
 			Prices prices = crawlPrices(price, doc);
-			boolean available = crawlAvailability(price);
+			boolean available = price != null;
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
-
+			
 			// Creating the product
 			Product product = ProductBuilder.create()
 					.setUrl(session.getOriginalURL())
@@ -94,53 +152,15 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(String url) {
-		if (url.contains("prod_key=")) {
-			return true;
-		}
-		return false;
+		return url.contains("detalhes_produto/");
 	}
 
-	private String crawlInternalId(Document doc, String url) {
+	private String crawlInternalId(Document doc) {
 		String internalId = null;
-
-		Elements scripts = doc.select("script");
+		Element internalIdElement = doc.select("h2.cod").first();
 		
-		for(Element e : scripts) {
-			String script = e.outerHtml();
-			
-			if(script.contains("dataLayer.push")) {				
-				int x = script.indexOf('(') + 1;
-				int y = script.indexOf(");", x)+1;
-				
-				try {
-					JSONObject datalayer = new JSONObject(script.substring(x, y));
-					
-					if(datalayer.has("google_tag_params")) {
-						JSONObject google = datalayer.getJSONObject("google_tag_params");
-						
-						if(google.has("ecomm_prodid")) {
-							internalId = google.getString("ecomm_prodid").trim();
-						}
-					}
-				} catch (Exception e1) {
-					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
-				}
-				
-				break;
-			}
-		}
-		
-		// Casos que o produto está sem estoque
-		if(internalId == null && url.contains("prod_key")) {
-			int x = url.indexOf("prod_key=") + "prod_key=".length();
-			
-			String id = url.substring(x);
-			
-			if(id.contains("&")) {
-				internalId = id.split("&")[0];
-			} else {
-				internalId = id;
-			}
+		if (internalIdElement != null) {
+			internalId = internalIdElement.ownText();
 		}
 
 		return internalId;
@@ -148,15 +168,10 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select(".arial24_666").first();
-		Element unnavailableProduct = document.select(".arial12red").first();
+		Element nameElement = document.select("h1.name").first();
 
 		if (nameElement != null) {
 			name = nameElement.ownText().trim();
-		} else if(unnavailableProduct != null) {
-			String[] tokens = unnavailableProduct.ownText().split("->");
-			
-			name = tokens[tokens.length-1];
 		}
 
 		return name;
@@ -164,13 +179,10 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-
-		String priceText = null;
-		Element salePriceElement = document.select(".arial24red").first();
+		Element salePriceElement = document.select(".product_price b font").first();		
 
 		if (salePriceElement != null) {
-			priceText = salePriceElement.text();
-			price = MathCommonsMethods.parseFloat(priceText);
+			price = MathCommonsMethods.parseFloat(salePriceElement.ownText());
 		}
 
 		return price;
@@ -183,24 +195,37 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element elementPrimaryImage = doc.select("td[width=\"26%\"] img").first();
+		Element elementPrimaryImage = doc.select("#img_zoom").first();
 		
 		if(elementPrimaryImage != null ) {
-			primaryImage = HOME_PAGE + "/" + elementPrimaryImage.attr("src");
+			String image = elementPrimaryImage.attr("data-zoom-image").trim();
+			
+			if (image.isEmpty()) {
+				image = elementPrimaryImage.attr("src").trim();
+			}
+			
+			if(image.contains("../")) {
+				primaryImage = HOME_PAGE + image.replace("../", "").trim();
+			} else if(image.startsWith(HOME_PAGE)) {
+				primaryImage = image;
+			} else {
+				primaryImage = HOME_PAGE + image;
+			}
 		} 
 		
 		return primaryImage;
 	}
 
 	/**
-	 * In the time when this crawler was made, this market hasn't secondary Images
+	 * No momento que o crawler foi feito não achei produto com imagens secundárias
+	 * 
 	 * @param doc
 	 * @return
 	 */
 	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
-
+		
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
@@ -214,9 +239,9 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 	 */
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
-		Elements elementCategories = document.select("a.bread");
+		Elements elementCategories = document.select(".breadcrumbCustomizado ul li > a");
 		
-		for (int i = 1; i < elementCategories.size(); i++) { 
+		for (int i  = 1; i < elementCategories.size(); i++) { 
 			String cat = elementCategories.get(i).ownText().trim();
 			
 			if(!cat.isEmpty()) {
@@ -230,22 +255,13 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 		
-		Element elementDescription = doc.select(".arial13black").first();
+		Element elementDescription = doc.select(".description_section").last();
 		
 		if (elementDescription != null) {
 			description.append(elementDescription.html());		
 		}
 		
 		return description.toString();
-	}
-	
-	/**
-	 * In the time this crawler was made, every product was available
-	 * @param doc
-	 * @return
-	 */
-	private boolean crawlAvailability(Float price) {
-		return price != null;		
 	}
 
 	/**
@@ -261,14 +277,34 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
 			prices.setBankTicketPrice(price);
+
+			Element installments = doc.select(".product_price > font").first();
+			
+			if(installments != null) {
+				String text = installments.ownText().toLowerCase();
+				
+				if(text.contains("x")) {
+					int x = text.indexOf('x');
+					
+					String parcel = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+					Float value = MathCommonsMethods.parseFloat(text.substring(x));
+					
+					if(!parcel.isEmpty() && value != null) {
+						installmentPriceMap.put(Integer.parseInt(parcel), value);
+					}
+				}
+			}
 			
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.SOROCRED.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
 		}
 		
 		return prices;
 	}
+
 
 }

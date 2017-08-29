@@ -1,10 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords{
 
@@ -12,45 +22,64 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords{
 		super(session);
 	}
 
+	private static final String HOME_PAGE = "http://www.drogariaspovao.com.br/";
+	private List<Cookie> cookies = new ArrayList<>();
+	
+	@Override
+	protected void processBeforeFetch() {
+		super.processBeforeFetch();
+		this.log("Adding cookie ...");		
+		
+		// Request para pegar o cookie
+		Map<String, String> cookiesMap = fetchCookies(HOME_PAGE);
+		
+		for(Entry<String, String> entry : cookiesMap.entrySet()) {
+			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+			cookie.setDomain("www.drogariaspovao.com.br");
+			cookie.setPath("/");
+			this.cookies.add(cookie);
+		}
+	
+		String payload = "origem=site&controle=navegacao&arrapara=[\"Carregar_Home\"]";
+		
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/x-www-form-urlencoded");
+		
+		// Request para validar o cookie para requests de busca 
+		fetchCookiesPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload, headers, cookies);
+	}
+	
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 24;
+		this.pageSize = 12;
 	
 		this.log("Página "+ this.currentPage);
 		
-		String keyword = this.keywordWithoutAccents.replace(" ", "%20");
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.drogariaspovao.com.br/index.php?controle=004_shopping_busca&cart_buscar="+ keyword +"&pagenum="+ this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-		
-		//chama função de pegar o html
-		this.currentDoc = fetchDocument(url);
-
-		Elements products =  this.currentDoc.select("table[bgcolor=\"#ffffff\"] tbody tr[align=center]");
+		JSONObject productsInfo = crawlProductInfo();
+		JSONArray products = productsInfo.has("products") ? productsInfo.getJSONArray("products") : new JSONArray();
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
+		if(products.length() > 0) {
 			if(totalProducts == 0) {
-				setTotalProducts();
+				this.totalProducts = productsInfo.has("total") ? productsInfo.getInt("total") : 0;
+				this.log("Total: " + this.totalProducts);
 			}
 			
-			for(Element e : products) {
-				// InternalPid
-				String internalPid = null;
+			for(int i = 0; i < products.length(); i++) {
+				JSONArray product = products.getJSONArray(i);
 				
-				// InternalId
-				String internalId = crawlInternalId(e);
-				
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
+				if(product.length() > 1) {
+					String internalPid = null;
+					String internalId = product.getString(0);
+					String productUrl = crawlProductUrl(product.getString(1).trim(), internalId);
+					
+					saveDataProduct(internalId, internalPid, productUrl);
+					
+					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+					if(this.arrayProducts.size() == productsLimit) {
+						break;
+					}
 				}
 				
 			}
@@ -64,62 +93,47 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		Element lastPageElement = this.currentDoc.select(".arial12_666").last();
-		
-		if(lastPageElement != null) {
-			String textPage = lastPageElement.text().replaceAll("[^0-9]", "").trim();
-			Integer lastPage = textPage.isEmpty() ? 0 : Integer.parseInt(textPage);
-			
-			if(lastPage > this.currentPage) {
-				return true;
-			}
+		if(this.arrayProducts.size() < this.totalProducts) {
+			return true;
 		}
-		
+			
 		return false;
-	}
+	}	
 	
-	@Override
-	protected void setTotalProducts() {
-		Element total = this.currentDoc.select("td[align=left] .arial12_666").first();
-		
-		if(total == null) {
-			total = this.currentDoc.select("td[align=left] .textmiddle").first();
-		}
-		
-		if(total != null) {
-			String totalText = total.ownText().trim().replaceAll("[^0-9]", "");
-			
-			if(!totalText.isEmpty()) {
-				this.totalProducts = Integer.parseInt(totalText);
-			}
-		}
-		
-		this.log("Total products: " + this.totalProducts);
-	}
-	
-	private String crawlInternalId(Element e){
-		String internalId = null;
-		Element idElement = e.select("input.qtytextbox[id]").first();
-		
-		if(idElement != null) {
-			internalId = idElement.attr("id");
-		}
-		
-		return internalId;
-	}
-	
-	private String crawlProductUrl(Element e){
+	private String crawlProductUrl(String name, String internalId){
 		String productUrl = null;
-		Element url = e.select("a").first();
 		
-		if(url != null) {
-			productUrl = url.attr("href");
-			
-			if(!productUrl.startsWith("http://www.drogariaspovao.com.br/")) {
-				productUrl = "http://www.drogariaspovao.com.br/" + productUrl;
-			}
+		if(!name.isEmpty()) {
+			productUrl = HOME_PAGE + "detalhes_produto/" + internalId + "/" + 
+					name.toLowerCase().replace(" ", "-").replace("%", "").replace("&", "") + ".html";
 		}
 		
 		return productUrl;
+	}
+	
+	private JSONObject crawlProductInfo() {
+		JSONObject products = new JSONObject();
+		String payload = "origem=site&controle=navegacao&arrapara=[\"Busca_Produtos\",\""+ this.location +"\",\"" + this.currentPage + "\",\"\",\"\",\"\",\"\",\"\"]";
+		
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/x-www-form-urlencoded");
+		headers.put("Referer", HOME_PAGE);
+		
+		String page = fetchStringPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload, headers, cookies).trim();
+		
+		if(page != null && page.startsWith("[") && page.endsWith("]")) {
+			try {
+				JSONArray infos = new JSONArray(page);
+				
+				if(infos.length() > 1) {
+					products.put("products", infos.getJSONArray(0)); //First position of array has products info
+					products.put("total", infos.getInt(1)); //First position of array has products info
+				}
+			} catch (JSONException e) {
+				logError(CommonMethods.getStackTrace(e));
+			}
+		}
+		
+		return products;
 	}
 }
