@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -12,78 +12,40 @@ public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 		super(session);
 	}
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
-
-		Element inidElement = e.select(".collection-content > div[data-trustvox-product-code]").first();
-
-		if (inidElement != null) {
-			internalId = inidElement.attr("data-trustvox-product-code");
-		}
-
-		return internalId;
-	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element urlElement = e.select(".collection-link > a").first();
-
-		if (urlElement != null) {
-			urlProduct = urlElement.attr("href");
-		}
-
-		return urlProduct;
-	}
-
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		this.log("Página " + this.currentPage);
-
-		// número de produtos por página do market
-		this.pageSize = 30;
+		this.pageSize = 24;
 
 		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-		// monta a url com a keyword e a página
 		String url = "http://busca.mambo.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + url);
+		takeAScreenshot(url);
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+		String apiUrl = "http://busca.mambo.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&ajaxSearch=1";
+		this.log("Link onde são feitos os crawlers: " + apiUrl);	
 
-		Elements products = this.currentDoc.select("#neemu-products li[layout]");
+		JSONObject search = fetchJSONObject(apiUrl);
+		JSONArray products = crawlProducts(search);
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (products.size() >= 1) {
-			// se o total de busca não foi setado ainda, chama a função para
-			// setar
-			if (this.totalProducts == 0)
-				setTotalProducts();
+		if (products.length() > 0) {
+			if (this.totalProducts == 0) {
+				setTotalProducts(search);
+			}
 
-			for (Element e : products) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
-
-				// InternalId
-				String internalId = crawlInternalId(e);
-
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+			for (int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
+				
+				String internalPid = crawlInternalPid(product);
+				String internalId = null;
+				String productUrl = crawlProductUrl(product);
 
 				saveDataProduct(internalId, internalPid, productUrl);
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
 						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit)
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
-
+				}
 			}
 		} else {
 			this.result = false;
@@ -96,25 +58,58 @@ public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if (arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-
-		return false;
+		return arrayProducts.size() < this.totalProducts;
 	}
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".neemu-total-products").first();
+	protected void setTotalProducts(JSONObject search) {
+		if(search.has("totalProducts")) {
+			JSONObject info = search.getJSONObject("totalProducts");
+			
+			if(info.has("totalResults")) {
+				this.totalProducts = info.getInt("totalResults");
+				
+				this.log("Total: " + this.totalProducts);
+			}
+		}
+	}
+	
+	private String crawlInternalPid(JSONObject product) {
+		String internalPid = null;
 
-		try {
-			if (totalElement != null)
-				this.totalProducts = Integer.parseInt(totalElement.text().trim());
-		} catch (Exception e) {
-			this.logError(e.getMessage());
+		if(product.has("originalId")) {
+			internalPid = product.get("originalId").toString();
+		}
+		
+		return internalPid;
+	}
+
+	private String crawlProductUrl(JSONObject product) {
+		String urlProduct = null;
+
+		if (product.has("productUrl")) {
+			urlProduct = product.getString("productUrl");
+			
+			if(!urlProduct.startsWith("http")) {
+				urlProduct = "https:" + urlProduct;
+			}
 		}
 
-		this.log("Total da busca: " + this.totalProducts);
+		return urlProduct;
+	}
+
+	
+	private JSONArray crawlProducts(JSONObject json) {
+		JSONArray products = new JSONArray();
+		
+		if(json.has("productsInfo")) {
+			JSONObject info = json.getJSONObject("productsInfo");
+			
+			if(info.has("products")) {
+				products = info.getJSONArray("products");
+			}
+		}
+		
+		return products;
 	}
 
 }
