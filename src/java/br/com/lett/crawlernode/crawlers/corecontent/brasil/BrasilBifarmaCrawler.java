@@ -227,12 +227,12 @@ public class BrasilBifarmaCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		StringBuilder description = new StringBuilder();
-		Element descriptionElement = document.select(".accordion-section").first();
+		Element descriptionElement = document.select(".accordion").first();
 
 		if (descriptionElement != null) {
 			description.append(descriptionElement.html());
 		}
-
+		
 		return description.toString();
 	}
 

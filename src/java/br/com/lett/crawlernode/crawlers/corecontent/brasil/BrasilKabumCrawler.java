@@ -14,7 +14,9 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -103,9 +105,7 @@ public class BrasilKabumCrawler extends Crawler {
 			boolean available = false;
 
 			// categories
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
+			CategoryCollection categories = crawlCategories(doc);
 
 			// Images
 			String primaryImage = null;
@@ -147,22 +147,6 @@ public class BrasilKabumCrawler extends Crawler {
 					available = true;
 				}
 
-				// Categories
-
-				Elements elementCategories = elementProduct.select(".boxs .links_det a");
-				for(Element e : elementCategories) {
-					if(category1.isEmpty()) {
-						category1 = e.text().replace(">", "").trim();
-					} 
-					else if(category2.isEmpty()) {
-						category2 = e.text().replace(">", "").trim();
-					} 
-					else if(category3.isEmpty()) {
-						category3 = e.text().replace(">", "").trim();
-					}
-				}
-
-
 				// images
 				Elements elementImages = elementProduct.select("#imagens-carrossel li img");
 				JSONArray secondaryImagesArray = new JSONArray();
@@ -193,22 +177,24 @@ public class BrasilKabumCrawler extends Crawler {
 			// marketplace
 			Marketplace marketplace = new Marketplace();
 
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalID);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalID)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
@@ -220,6 +206,22 @@ public class BrasilKabumCrawler extends Crawler {
 	}
 
 
+	/**
+	 * Crawl categories
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".links_det ol li > a");
+
+		for (int i = 0; i < elementCategories.size(); i++) {
+			categories.add( elementCategories.get(i).text().replace(">", "").trim() );
+		}
+
+		return categories;
+	}
+	
 	private Prices crawlPrices(Element product, Document doc){
 		Prices prices = new Prices();
 		Map<Integer,Float> installmentPriceMap = new HashMap<>();

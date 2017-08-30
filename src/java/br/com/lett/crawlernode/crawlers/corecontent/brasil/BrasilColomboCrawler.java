@@ -89,7 +89,7 @@ public class BrasilColomboCrawler extends Crawler {
 			String category2 = "";
 			String category3 = "";
 			Elements elementCategories = doc.select(".breadcrumb a");
-			for (int i = 0; i < elementCategories.size()-1; i++) {
+			for (int i = 1; i < elementCategories.size(); i++) {
 				if (category1.isEmpty()) {
 					category1 = elementCategories.get(i).text().trim();
 				} else if (category2.isEmpty()) {
