@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -14,11 +13,14 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -26,47 +28,22 @@ import models.prices.Prices;
 
 
 /************************************************************************************************************************************************************************************
- * Crawling notes (24/10/2016):
+ * Crawling notes (30/10/2016):
  * 
- * 1) For this crawler, we have one url for mutiples skus.
- *  
- * 2) There is stock information for skus in this ecommerce by the time this crawler was made.
+ * A b2w etá com uma lógica complexa de bloqueio, para os produtos não ficarem void,
+ * quando acesso sua pagina principal e nao consigo as informacoes, entro em uma api
+ * que possui os dados basicos de preço nome e marketplaces.
  * 
- * 3) There is marketplace for mutiple variations in this ecommerce accessed via the url to 
- *  mutiple variations "http://www.submarino.com.br/parceiros/" + internalID + "/?codItemFusion=" + variationID, 
- *  and for single product is a simply selector in htmlPage.
- *  
- * 4) The most important information of skus are in a json in html.
- *  
- * 5) The sku page identification is done simply looking the URL format.
- * 
- * 6) Even if a product is unavailable, its price is not displayed, then price is null.
- * 
- * 7) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same for all
- * the variations of a given sku.
- * 
- * 8) The first image in secondary images is the primary image.
- * 
- * 9) When the sku has variations, the variation name it is added to the name found in the main page. 
- * 
- * 10) When the market crawled not appear on the page of the partners, the sku is unavailable.
- * 
- * 11) The Id from the main Page is the internalPid.
- * 
- * 12) InternalPid from the main page is used to make internalId final.
- * 
- * Examples:
- * ex1 (available): http://www.submarino.com.br/produto/127115083/smartphone-moto-g-4-dual-chip-android-6.0-tela-5.5-16gb-camera-13mp-preto
- * ex2 (unavailable): http://www.submarino.com.br/produto/119936092/pneu-toyo-tires-aro-18-235-60r18-107v
- *
  * Optimizations notes:
  * No optimizations.
  *
  ************************************************************************************************************************************************************************************/
 
 public class SaopauloSubmarinoCrawler extends Crawler {
-	private final String HOME_PAGE = "http://www.submarino.com.br/";
-	private final String MAIN_SELLER_NAME_LOWER = "submarino";
+	private static final String HOME_PAGE = "https://www.submarino.com.br/";
+
+	private static final String MAIN_SELLER_NAME_LOWER = "submarino";
+	private static final String MAIN_B2W_NAME_LOWER = "b2w";
 
 	public SaopauloSubmarinoCrawler(Session session) {
 		super(session);
@@ -79,107 +56,70 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	}
 
 	@Override
-	public void handleCookiesBeforeFetch() {
-		Logging.printLogDebug(logger, session, "Adding cookie...");
-
-		/**
-		 * O cookie abaixo foi colocado pois no dia que foi feito
-		 * esse crawler, o site submarino.com estava fazendo um testeAB
-		 * e o termo new, seria de um suposto site novo.
-		 */
-
-		BasicClientCookie cookie = new BasicClientCookie("catalogTestAB", "new");
-		cookie.setDomain("www.submarino.com.br");
-		cookie.setPath("/");
-		this.cookies.add(cookie);
-	}
-
-	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-
-		if( isProductPage(session.getOriginalURL(), doc) ) {
+		
+		if( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// Api onde se consegue todos os preços
-			JSONObject initialJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
-
+			// Api onde tem os dados do produto
+			JSONObject jsonApi = SaopauloB2WCrawlersUtils.fetchAPIInformationsWithOldWay(session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
+			
 			// Pega só o que interessa do json da api
-			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(initialJson);
-
-			// Pid
+			JSONObject infoProductJsonAPi = SaopauloB2WCrawlersUtils.assembleJsonProductOldWay(jsonApi);
+			
+			// Json da pagina principal
+			JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
+			
+			// Pega só o que interessa do json da api
+			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+			
+			// se não conseguir acessar a pagina principal do produto
+			if(!frontPageJson.has("skus")) {
+				infoProductJson = infoProductJsonAPi;
+			}
+			
 			String internalPid = this.crawlInternalPid(infoProductJson);
-
-			// Name
-			String name = this.crawlMainPageName(doc);
-
-			// Categories
-			ArrayList<String> categories = this.crawlCategories(infoProductJson);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// Primary image
+			String name = this.crawlMainPageName(infoProductJson);
+			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = this.crawlPrimaryImage(infoProductJson);
-
-			// Secondary images
 			String secondaryImages = this.crawlSecondaryImages(infoProductJson);
-
-			// Description
-			String description = this.crawlDescription(doc, internalPid);
-
-			// sku data in json
+			String description = this.crawlDescription(internalPid, doc);
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
-			// JSON with stock Information
-			JSONObject jsonWithStock = fetchJSONWithStockInformation(internalPid);
-			
-			for (String internalId : skuOptions.keySet()) {
-
-				// InternalId
-				String variationInternalID = internalId;
-
-				//variation name
-				String variationName = (name + " " + skuOptions.get(internalId)).trim();
-
-				// Marketplace map
-				Map<String, Prices> marketplaceMap = this.crawlMarketplace(internalId, internalPid);
-
-				// Assemble marketplace from marketplace map
+			for (String internalId : skuOptions.keySet()) {	
+				String variationName = (name.trim() + " " + skuOptions.get(internalId).trim()).trim();
+				Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
 				Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
-
-				// Available
 				boolean available = this.crawlAvailability(marketplaceMap);
-
-				// Price
 				Float variationPrice = this.crawlPrice(marketplaceMap);
+				Prices prices = crawlPrices(marketplaceMap);
+				Integer stock = crawlStock(internalId, infoProductJsonAPi); // stock só tem na api
 
-				// Prices 
-				Prices prices = crawlPrices(infoProductJson, variationPrice, internalId);
+				// Creating the product
+				Product product = ProductBuilder.create()
+						.setUrl(session.getOriginalURL())
+						.setInternalId(internalId)
+						.setInternalPid(internalPid)
+						.setName(variationName)
+						.setPrice(variationPrice)
+						.setPrices(prices)
+						.setAvailable(available)
+						.setCategory1(categories.getCategory(0))
+						.setCategory2(categories.getCategory(1))
+						.setCategory3(categories.getCategory(2))
+						.setPrimaryImage(primaryImage)
+						.setSecondaryImages(secondaryImages)
+						.setDescription(description)
+						.setStock(stock)
+						.setMarketplace(variationMarketplace)
+						.build();
 
-				// Stock
-				Integer stock = crawlStock(infoProductJson, internalId, jsonWithStock);
-
-				Product product = new Product();
-				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(variationInternalID);
-				product.setInternalPid(internalPid);
-				product.setName(variationName);
-				product.setPrice(variationPrice);
-				product.setPrices(prices);
-				product.setCategory1(category1);
-				product.setCategory2(category2);
-				product.setCategory3(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(variationMarketplace);
-				product.setAvailable(available);
-				
 				products.add(product);
+
 			}
+
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -194,7 +134,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url, Document doc) {
+	private boolean isProductPage(String url) {
 
 		if (url.startsWith("https://www.submarino.com.br/produto/") || url.startsWith("http://www.submarino.com.br/produto/")) {
 			return true;
@@ -215,7 +155,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	private Map<String,String> crawlSkuOptions(JSONObject infoProductJson){
 		Map<String,String> skuMap = new HashMap<>();
 
-		if (infoProductJson.has("skus")) {
+		if(infoProductJson.has("skus")){
 			JSONArray skus = infoProductJson.getJSONArray("skus");
 
 			for(int i = 0; i < skus.length(); i++){
@@ -225,10 +165,10 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 					String internalId = sku.getString("internalId");
 					String name = "";
 
-					if(sku.has("variationName")){
+					if (sku.has("variationName")) {
 						name = sku.getString("variationName");
 					}
-
+					
 					skuMap.put(internalId, name);
 				}
 			}
@@ -237,50 +177,65 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return skuMap;
 	}
 
-	private Map<String,Prices> crawlMarketplace(String internalId, String pid) {
+	private Map<String,Prices> crawlMarketplace(JSONObject skus, String internalId) {
 		Map<String,Prices> marketplaces = new HashMap<>();
 
-		String url = "http://www.submarino.com.br/parceiros/" + pid + "/" + "?codItemFusion=" + internalId + "&productSku=" + internalId;
-		
-		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		Elements lines = doc.select(".more-offers-table-row");
-		
-		if(lines.size() < 1){
-			lines = doc.select(".card-seller-offer");
-		}
-
-		for(Element linePartner: lines) {
-			Prices prices = new Prices();
-			Map<Integer,Float> installmentMapPrice = new HashMap<>();
-
-			String partnerName = linePartner.select("img[title]").first().attr("title").trim().toLowerCase();
-			Float partnerPrice = Float.parseFloat(linePartner.select(".sales-price").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-
-			installmentMapPrice.put(1, partnerPrice);
-			prices.setBankTicketPrice(partnerPrice);
-
-			Element installmentElement = linePartner.select("span.payment-option").first();
-			if(installmentElement != null){
-				String text = installmentElement.text().toLowerCase().trim();
-
-				// when text is empty there is no installment for this marketplace
-				if(!text.isEmpty()) {
-					int x = text.indexOf("x");
-
-					Integer installment = Integer.parseInt(text.substring(0, x).trim());
-					Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-
-					installmentMapPrice.put(installment, value);
+		if(skus.has("prices")) {
+			JSONObject pricesJson = skus.getJSONObject("prices");
+			
+			if(pricesJson.has(internalId)) {
+				JSONArray marketArrays = pricesJson.getJSONArray(internalId);
+				
+				for(int i = 0; i < marketArrays.length(); i++) {
+					JSONObject seller = marketArrays.getJSONObject(i);
+					
+					if(seller.has("sellerName")) {
+						String sellerName = seller.getString("sellerName");
+						Prices prices = crawlMarketplacePrices(seller);
+						
+						marketplaces.put(sellerName, prices);
+					}
 				}
 			}
-
-			prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
-			marketplaces.put(partnerName, prices);
 		}
 
 		return marketplaces;
 	}
 
+	private Prices crawlMarketplacePrices(JSONObject seller) {
+		Prices prices = new Prices();
+		
+		if(seller.has("bankTicket")) {
+			prices.setBankTicketPrice(seller.getDouble("bankTicket"));
+		}
+		
+		if(seller.has("installments")) {
+			Map<Integer,Float> installmentMapPrice = new HashMap<>();
+			
+			JSONArray installments = seller.getJSONArray("installments");
+			
+			for(int i = 0; i < installments.length(); i++) {
+				JSONObject installment = installments.getJSONObject(i);
+				
+				if(installment.has("quantity") && installment.has("value")) {
+					Integer quantity = installment.getInt("quantity");
+					Double value = installment.getDouble("value");
+					
+					installmentMapPrice.put(quantity, MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue()));
+				}
+			}
+			
+			prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMapPrice);
+			prices.insertCardInstallment(Card.AURA.toString(), installmentMapPrice);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentMapPrice);
+			prices.insertCardInstallment(Card.HIPER.toString(), installmentMapPrice);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentMapPrice);
+		}
+		
+		return prices;
+	}
+	
 	/*******************
 	 * General methods *
 	 *******************/
@@ -288,25 +243,28 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 	private Float crawlPrice(Map<String, Prices> marketplaces) {
 		Float price = null;
 
-		for (String seller : marketplaces.keySet()) {
-			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-				if ( marketplaces.get(MAIN_SELLER_NAME_LOWER).getCardPaymentOptions(Card.VISA.toString()).containsKey(1) ) {
-					Double priceDouble = marketplaces.get(MAIN_SELLER_NAME_LOWER).getCardPaymentOptions(Card.VISA.toString()).get(1);
-					price = priceDouble.floatValue(); 
-				}
-
-				break;
-			}
-		}		
+		Prices prices = null;
+		
+		if (marketplaces.containsKey(MAIN_SELLER_NAME_LOWER)) {
+			prices = marketplaces.get(MAIN_SELLER_NAME_LOWER);
+		} else if (marketplaces.containsKey(MAIN_B2W_NAME_LOWER)) {
+			prices = marketplaces.get(MAIN_B2W_NAME_LOWER);
+		}
+		
+		if(prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+			Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+			price = priceDouble.floatValue();
+		}
+		
 		return price;
 	}
-
 	private boolean crawlAvailability(Map<String, Prices> marketplaces) {
 		boolean available = false;
 
 		for (String seller : marketplaces.keySet()) {
-			if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
+			if (seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) || seller.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
 				available = true;
+				break;
 			}
 		}
 
@@ -347,59 +305,50 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return secondaryImages;
 	}	
 
-	private String crawlMainPageName(Document document) {
+	private String crawlMainPageName(JSONObject json) {
 		String name = null;
-		Element elementName = document.select(".product-name").first();
-		if(elementName != null) {
-			name = elementName.text().replace("'","").replace("’","").trim();
-		} else {
-			elementName = document.select(".card-title h3").first();
-
-			if(elementName != null) {
-				name = elementName.text().replace("'","").replace("’","").trim();
-			}
+		
+		if(json.has("name")) {
+			name = json.getString("name");
 		}
-
+		
 		return name;
 	}
 
-	private ArrayList<String> crawlCategories(JSONObject infoProductJson) {
-		ArrayList<String> categories = new ArrayList<>();
-		if(infoProductJson.has("categories")){
-			JSONArray categoriesJson = infoProductJson.getJSONArray("categories");
-			for(int i = categoriesJson.length()-1; i >= 0; i--) {
-				JSONObject categorie = categoriesJson.getJSONObject(i);
-
-				if(categorie.has("name")){
-					categories.add(categorie.getString("name"));
-				}
+	/**
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".breadcrumb > li > a");
+		
+		for (int i = 1; i < elementCategories.size(); i++) { // primeiro item é a home
+			String cat = elementCategories.get(i).attr("name").trim();
+			
+			if(!cat.isEmpty()) {
+				categories.add( cat );
 			}
 		}
 
 		return categories;
 	}
 
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-
-		return "";
-	}
-
 	private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
 		Marketplace marketplace = new Marketplace();
 
 		for (String sellerName : marketplaceMap.keySet()) {
-			if ( !sellerName.equals(MAIN_SELLER_NAME_LOWER) ) {
+			if ( !sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) && !sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
 				JSONObject sellerJSON = new JSONObject();
 				sellerJSON.put("name", sellerName);
-
-				if (marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+				
+				Prices prices = marketplaceMap.get(sellerName);
+				
+				if ( prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1) ) {
 					// Pegando o preço de uma vez no cartão
-					Double price = marketplaceMap.get(sellerName).getCardPaymentOptions(Card.VISA.toString()).get(1);
+					Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
 					Float priceFloat = price.floatValue();				
-
+					
 					sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
 				}
 				sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
@@ -412,101 +361,73 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				}
 			}
 		}
-
+		
 		return marketplace;
 	}
 
-	private String crawlDescription(Document document, String internalPid) {
+	private String crawlDescription(String internalPid, Document doc) {
 		String description = "";
 		
 		if(internalPid != null) {
-			String url = HOME_PAGE + "product-description/shop/" + internalPid;
-			Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-			if(docDescription != null){
-				description = description + docDescription.html();
+//			String url = HOME_PAGE + "product-description/shop/" + internalPid;
+//			Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+//			if(docDescription != null){
+//				description = description + docDescription.html();
+//			}
+			
+			Element desc2 = doc.select(".info-description-frame-inside").first();
+			
+			if(desc2 != null) {
+				String urlDesc2 = HOME_PAGE + "product-description/acom/" + internalPid;
+				Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
+				if(docDescriptionFrame != null){
+					description = description + docDescriptionFrame.html();
+				}
 			}
 			
-			Element elementProductDetails = document.select(".info-section").last();
+			Element elementProductDetails = doc.select(".info-section").last();
 			if(elementProductDetails != null){
 				description = description + elementProductDetails.html();
 			}
 		}
 		
 		return description;
-	}		
+	}	
 
-	private Integer crawlStock(JSONObject jsonProduct, String internalId, JSONObject jsonWithStock){
+	private Integer crawlStock(String internalId, JSONObject jsonProduct){
 		Integer stock = null;
 		
 		if(jsonProduct.has("prices")){
 			if(jsonProduct.getJSONObject("prices").has(internalId)){
-				JSONObject product = jsonProduct.getJSONObject("prices").getJSONObject(internalId);
+				JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
 				
-				if(product.has("stock")){
-					stock = product.getInt("stock");
+				for(int i = 0; i < offers.length(); i++) {
+					JSONObject seller = offers.getJSONObject(i);
+					
+					if(seller.has("sellerName") && seller.has("stock")) {
+						String sellerName = seller.getString("sellerName");
+						
+						if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) || sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
+							stock = seller.getInt("stock");
+							break;
+						}
+					}
 				}
-			}
-		}
-		
-		if(stock == null && jsonWithStock.has(internalId)){
-			JSONObject product = jsonWithStock.getJSONObject(internalId);
-
-			if(product.has("stock")){
-				stock = product.getInt("stock");
 			}
 		}
 		
 		return stock;
 	}
 
-	private JSONObject fetchJSONWithStockInformation(String internalPid) {
-		JSONObject apiWithStock = SaopauloB2WCrawlersUtils.fetchAPIInformationsWithOldWay(internalPid, session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
-		
-		return SaopauloB2WCrawlersUtils.assembleJsonProductWithOldWay(apiWithStock, internalPid, session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
-	}
-
-	private Prices crawlPrices(JSONObject infoProductJson, Float priceBase, String id){
+	private Prices crawlPrices(Map<String, Prices> marketplaceMap){
 		Prices prices = new Prices();
 
-		if(priceBase != null){
-			if(infoProductJson.has("prices")){
-				JSONObject pricesJson = infoProductJson.getJSONObject("prices");
-
-				if(pricesJson.has(id)){
-					JSONObject pricesJsonProduct = pricesJson.getJSONObject(id);
-
-					if(pricesJsonProduct.has("bankTicket")){
-						Double price = pricesJsonProduct.getDouble("bankTicket");
-
-						prices.setBankTicketPrice(price.floatValue());
-					}
-
-					if(pricesJsonProduct.has("installments")){
-						Map<Integer,Float> installmentPriceMap = new HashMap<>();
-						JSONArray installmentsArray = pricesJsonProduct.getJSONArray("installments");
-
-						for(int i = 0; i < installmentsArray.length(); i++){
-							JSONObject installmentJson = installmentsArray.getJSONObject(i);
-
-							if(installmentJson.has("quantity")){
-								Integer installment = installmentJson.getInt("quantity");
-
-								if(installmentJson.has("value")){
-									Double valueDouble = installmentJson.getDouble("value");
-									Float value = valueDouble.floatValue();
-
-									installmentPriceMap.put(installment, value);
-								}
-							}
-						}
-
-						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-					}
-				}
-			}
+		if(marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)) {
+			prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
+		} else if(marketplaceMap.containsKey(MAIN_B2W_NAME_LOWER)) {
+			prices = marketplaceMap.get(MAIN_B2W_NAME_LOWER);
 		}
 
 		return prices;
 	}
-
 }
