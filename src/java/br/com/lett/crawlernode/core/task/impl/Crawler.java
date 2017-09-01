@@ -454,12 +454,15 @@ public class Crawler extends Task {
 		String url = handleURLBeforeFetch(session.getOriginalURL());
 		session.setOriginalURL(url);
 
-		Document document = fetch();
-		List<Product> products;
-		products = extractInformation(document);
+		Object obj = fetch();
+		List<Product> products = new ArrayList<>();
 		
-		if (products == null) {
-			products = new ArrayList<>();
+		if(obj instanceof Document) {
+			products = extractInformation((Document) obj);
+		} else if(obj instanceof JSONObject) {
+			products = extractInformation((JSONObject) obj);
+		} else if(obj instanceof JSONArray) {
+			products = extractInformation((JSONArray) obj);
 		}
 		
 		return products;
@@ -513,7 +516,7 @@ public class Crawler extends Task {
 	 * 
 	 * @return Parsed HTML in form of a Document.
 	 */
-	protected Document fetch() {
+	protected Object fetch() {
 		String html;
 		if (config.getFetcher() == Fetcher.STATIC) {
 			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);

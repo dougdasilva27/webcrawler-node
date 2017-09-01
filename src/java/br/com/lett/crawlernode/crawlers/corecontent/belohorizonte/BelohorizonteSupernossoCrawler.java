@@ -5,335 +5,250 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
+/**
+ * Date: 01/09/2017
+ * 
+ * @author Gabriel Dornelas
+ *
+ */
 public class BelohorizonteSupernossoCrawler extends Crawler {
-	
+
+	private static final String HOME_PAGE = "https://www.supernossoemcasa.com.br/e-commerce/";
+
 	public BelohorizonteSupernossoCrawler(Session session) {
 		super(session);
 	}
 
+	@Override 
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		// performing request to get cookie
+		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
+		
+		BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
+		cookie.setDomain("www.princesadonorteonline.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
 	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+	protected JSONObject fetch() {
+		JSONObject api = new JSONObject();
+		
+		String url = session.getOriginalURL();
+		
+		if(url.contains("/p/")) {
+			String id = url.split("/p/")[1].split("/")[0];
+			String apiUrl = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + id;
+			
+			String page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+			
+			if(page != null && page.startsWith("{") && page.endsWith("}")) {
+				try {
+					api = new JSONObject(page);
+					
+				} catch (JSONException e) {
+					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+				}
+			}
+		}
+		
+		return api;
+	}
+	
+	@Override
+	public boolean shouldVisit() {
+		String href = session.getOriginalURL().toLowerCase();
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+	}
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
+	@Override
+	public List<Product> extractInformation(JSONObject json) throws Exception {
+		super.extractInformation(json);
+		List<Product> products = new ArrayList<>();
+
+		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+			String internalId = crawlInternalId(json);
+			String internalPid = crawlInternalPid(json);
+			String name = crawlName(json);
+			Float price = crawlPrice(json);
+			Prices prices = crawlPrices(price);
+			Integer stock = crawlStock(json);
+			boolean available = stock != null && stock > 0;
+			CategoryCollection categories = crawlCategories(json);
+			String primaryImage = crawlPrimaryImage(json);
+			String secondaryImages = crawlSecondaryImages(json);
+			String description = crawlDescription(json);
+			Marketplace marketplace = crawlMarketplace();
 			
-			Product product = crawlUsingEndpoint();
-			//Product product = crawlUsingWebDriver(doc);
-			
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
+
 			products.add(product);
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
-	}
-	
-	private Product crawlUsingWebDriver(Document document) {
-		Product product = new Product();
-		
-		String internalId = crawlInternalId(document);
-		String internalPid = null;
-		String name = crawlName(document);
-		boolean available = crawlAvailability(document);
-		Float price = crawlPrice(document);
-		Prices prices = crawlPrices(document);
-		String primaryImage = crawlPrimaryImage(document);
-		String secondaryImages = crawlSecondaryImages(document);
-		CategoryCollection categories = crawlCategories(document);
-		String description = crawlDescription(document);
-		Integer stock = null;
-		Marketplace marketplace = crawlMarketplace(document);
-		
-		product.setUrl(session.getOriginalURL());
-		product.setInternalId(internalId);
-		product.setInternalPid(internalPid);
-		product.setName(name);
-		product.setAvailable(available);
-		product.setPrice(price);
-		product.setPrices(prices);
-		product.setCategory1(categories.getCategory(0));
-		product.setCategory2(categories.getCategory(1));
-		product.setCategory3(categories.getCategory(2));
-		product.setPrimaryImage(primaryImage);
-		product.setSecondaryImages(secondaryImages);
-		product.setMarketplace(marketplace);
-		product.setStock(stock);
-		product.setDescription(description);
-		
-		return product;
+
 	}
 
 	private boolean isProductPage(String url) {
-		return url.startsWith("https://www.supernossoemcasa.com.br/e-commerce/p/");
+		return url.startsWith(HOME_PAGE + "p/");
 	}
-	
-	private Product crawlUsingEndpoint() {
-		Product product = new Product();
-		
-		// get the sku id from the URL
-		String[] tokens = session.getOriginalURL().split("\\/");
-		String skuId = null;
-		if (tokens.length >= 5) skuId = tokens[5];
-		
-		if (skuId != null) {
-			
-			// endpoint request
-			String requestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + skuId;
-						
-			JSONObject endpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, requestURL, null, null);
-						
-			String internalId = null;
-			if (endpointResponse.has("sku")) {
-				internalId = endpointResponse.getString("sku");
-			}
-			
-			String internalPid = null;
-			
-			String name = null;
-			if (endpointResponse.has("name")) {
-				name = endpointResponse.getString("name");
-			}
-			
-			boolean available = false;
-			if (endpointResponse.has("stockQuantity")) {
-				if (endpointResponse.getInt("stockQuantity") > 0) available = true;
-			}
-			
-			Float price = null;
-			if (endpointResponse.has("price")) {
-				price = new Float(endpointResponse.getDouble("price"));
-			}
-			
-			Prices prices = crawlPricesUsingAPI(price);
-			
-			CategoryCollection categories = crawlCategoriesUsingAPI(endpointResponse);
-			
-			String primaryImage = null;
-			if (endpointResponse.has("mainImageUrl")) {
-				primaryImage = endpointResponse.getString("mainImageUrl");
-			}
-			
-			String secondaryImages = null;
-			if (endpointResponse.has("additionalImagesUrl")) {
-				JSONArray secondaryImagesArray = endpointResponse.getJSONArray("additionalImagesUrl");
-				if (secondaryImagesArray.length() > 0) {
-					secondaryImages = secondaryImagesArray.toString();
-				} 
-			}
-			
-			String description = "";
-			
-			Integer stock = null;
-			if (endpointResponse.has("stockQuantity")) {
-				stock = endpointResponse.getInt("stockQuantity");
-			}
-			
-			Marketplace marketplace = new Marketplace();
-			
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setAvailable(available);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(categories.getCategory(0));
-			product.setCategory2(categories.getCategory(1));
-			product.setCategory3(categories.getCategory(2));
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			
-			
-		} else {
-			Logging.printLogDebug(logger, session, "Error parsing sku id from URL.");
-		}
-		
-		return product;
-	}
-	
-	private String crawlInternalId(Document document) {
+
+	private String crawlInternalId(JSONObject json) {
 		String internalId = null;
-		Element internalIdElement = document.select("div.snc-product-code span[itemprop=sku]").first();
-		if (internalIdElement != null) {
-			internalId = internalIdElement.text().trim();
+		
+		if (json.has("sku")) {
+			internalId = json.getString("sku");
 		}
+
 		return internalId;
 	}
 	
-	private String crawlName(Document document) {
-		String name = null;
-		Element nameElement = document.select("div.snc-product-info h1.snc-product-name").first();
-		if (nameElement != null) {
-			name = nameElement.text().trim();
+	private String crawlInternalPid(JSONObject json) {
+		String internalPid = null;
+		
+		if (json.has("id")) {
+			internalPid = json.getString("id");
 		}
+
+		return internalPid;
+	}
+
+	private String crawlName(JSONObject json) {
+		String name = null;
+
+		if (json.has("name")) {
+			name = json.getString("name");
+		}
+
 		return name;
 	}
-	
-	private boolean crawlAvailability(Document document) {
-		boolean available = true;
-		Element buyButtonElement = document.select("div.snc-product-actions-btn.ng-scope").first();
-		if (buyButtonElement == null) {
-			available = false;
+
+	private Integer crawlStock(JSONObject json) {
+		Integer stock = null;
+		
+		if(json.has("stockQuantity")) {
+			Object stc = json.get("stockQuantity");
+			
+			if(stc instanceof Integer) {
+				stock = (Integer) stc;
+			}
 		}
-		return available;
+		
+		return stock;
 	}
 	
-	private Float crawlPrice(Document document) {
+	private Float crawlPrice(JSONObject json) {
 		Float price = null;
-		
-		Element priceElement = document.select("meta[itemprop=price]").first();
-		if (priceElement != null) {
-			price = Float.parseFloat(priceElement.attr("content").trim());
+
+		if (json.has("price")) {
+			Object priceO = json.get("price");
+			
+			if(priceO instanceof Double) {
+				Double priceD = json.getDouble("price");
+				price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceD.floatValue());
+			}
 		}
-		
+
 		return price;
 	}
-	
-	/**
-	 * There is no bankSlip price.
-	 * 
-	 * For installments, we will have only one installment for each
-	 * card brand, and it will be equals to the price crawled on the sku
-	 * main page.
-	 * 
-	 * @param doc
-	 * @param price
-	 * @return
-	 */
-	private Prices crawlPrices(Document document) {
-		Prices prices = new Prices();
-		
-		Float price = crawlPrice(document);
-		
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
-			installmentPriceMap.put(1, price);
-	
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-		}
-		
-		return prices;
-	}
-	
-	private Prices crawlPricesUsingAPI(Float price) {
-		Prices prices = new Prices();
-		
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
-			installmentPriceMap.put(1, price);
-	
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-		}
-		
-		return prices;
-	}
-	
-	private String crawlPrimaryImage(Document document) {
-		String primaryImage = null;
-		Element primaryImageElement = document.select("div.snc-product-image.zoom-img-block img").first();
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("data-zoom-image").trim();
-		}
-		return primaryImage;
-	}
-	
-	private String crawlSecondaryImages(Document document) {
-		String secondaryImages = null;
-		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("#zoom-gallery li a");
-
-		for (int i = 1; i < imagesElement.size(); i++) { // the first is the primary image
-			String image = imagesElement.get(i).attr("data-zoom-image").trim();
-			secondaryImagesArray.put( image );
-		}
-
-		if (secondaryImagesArray.length() > 0) {
-			secondaryImages = secondaryImagesArray.toString();
-		}
-
-		return secondaryImages;
-	}
-	
-	private CategoryCollection crawlCategories(Document document) {
-		CategoryCollection categories = new CategoryCollection();
-
-		Elements elementCategories = document.select("ol.snc-breadcrumb.breadcrumb li a span");
-		for (int i = 0; i < elementCategories.size(); i++) { 
-			categories.add( elementCategories.get(i).text().trim() );
-		}
-
-		return categories;
-	}
-	
-	private String crawlDescription(Document document) {
-		StringBuilder description = new StringBuilder();
-		
-		Element productInfoElement = document.select("section.snc-product-info").first();
-		if (productInfoElement != null) {
-			description.append(productInfoElement.html());
-		}
-		
-		return description.toString();
-	}
-	
-	private Marketplace crawlMarketplace(Document document) {
+	private Marketplace crawlMarketplace() {
 		return new Marketplace();
 	}
-	
-	
+
+
+	private String crawlPrimaryImage(JSONObject json) {
+		String primaryImage = null;
+		
+		if(json.has("mainImageUrl")) {
+			Object img = json.get("mainImageUrl");
+			
+			if(img instanceof String) {
+				primaryImage = img.toString();
+			}
+		}
+		
+		return primaryImage;
+	}
+
 	/**
-	 * The main category can be found inside the endpointResponse.
-	 * 
-	 * To get subcategories first we must request for the mainCategory information, using
-	 * an endpoint with the following format:
-	 * "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + categoryId
-	 * 
-	 * With the response of the above request, we get the parentId of this category, and
-	 * perform another request for the parentCategory, so we can get it's name.
-	 * 
-	 * @param endpointResponse
+	 * @param doc
 	 * @return
 	 */
-	private CategoryCollection crawlCategoriesUsingAPI(JSONObject endpointResponse) {
-		CategoryCollection categories = new CategoryCollection();
-
-		String mainCategoryId = endpointResponse.getString("mainCategoryId");
-		String mainCategoryName = endpointResponse.getString("mainCategoryName");
+	private String crawlSecondaryImages(JSONObject json) {
+		String secondaryImages = null;
 		
-		if (endpointResponse.has("categories")) {
-			JSONArray categoriesIds = endpointResponse.getJSONArray("categories");
+		if(json.has("additionalImagesUrl")) {
+			JSONArray images = json.getJSONArray("additionalImagesUrl");
+			
+			if (images.length() > 0) {
+				secondaryImages = images.toString();
+			} 
+		}
+		
+		return secondaryImages;
+	}
+
+	/**
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(JSONObject json) {
+		CategoryCollection categories = new CategoryCollection();
+		
+		String mainCategoryId = json.getString("mainCategoryId");
+		String mainCategoryName = json.getString("mainCategoryName");
+		categories.add(mainCategoryName);
+		
+		if (json.has("categories")) {
+			JSONArray categoriesIds = json.getJSONArray("categories");
 						
 			for (int i = 0; i < categoriesIds.length(); i++) {
 				String categoryId = categoriesIds.getString(i);
 				
-				if (mainCategoryId.equals(categoryId)) {
+				if (!mainCategoryId.equals(categoryId)) {
 					String categoryRequestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + categoryId;
 										
 					JSONObject categoryRequestResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, categoryRequestURL, null, null);
@@ -356,4 +271,42 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
 		return categories;
 	}
+
+	private String crawlDescription(JSONObject json) {
+		StringBuilder description = new StringBuilder();
+		
+		if (json.has("description")) {
+			Object desc = json.get("description");
+			
+			if(desc instanceof String) {
+				description.append(desc.toString());	
+			}
+		}
+		
+		return description.toString();
+	}
+
+	/**
+	 * 
+	 * @param doc
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price) {
+		Prices prices = new Prices();
+		
+		if (price != null) {
+			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
+			installmentPriceMap.put(1, price);
+			prices.setBankTicketPrice(price);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
+		}
+		
+		return prices;
+	}
+
 }

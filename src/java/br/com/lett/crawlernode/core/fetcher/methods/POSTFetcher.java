@@ -95,23 +95,7 @@ public class POSTFetcher {
 
 			// Request via fetcher on first attempt
 			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
-				Map<String,String> headers = new HashMap<>();
-				
-				if(cookies != null && !cookies.isEmpty()) {
-					StringBuilder cookiesHeader = new StringBuilder();
-					for(Cookie c : cookies) {
-						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
-					}
-					
-					headers.put("Cookie", cookiesHeader.toString());
-				}
-				
-				JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, urlParameters, headers, null);
-				JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
-				
-				DataFetcher.setRequestProxyForFetcher(session, response, url);
-				
-				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+				JSONObject response = postFetcherRequest(url, cookies, null, urlParameters, session);
 				
 				String content = response.getJSONObject("response").getString("body");
 				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
@@ -278,23 +262,7 @@ public class POSTFetcher {
 		
 		// Request via fetcher on first attempt
 		if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
-			Map<String,String> headers = new HashMap<>();
-			
-			if(cookies != null && !cookies.isEmpty()) {
-				StringBuilder cookiesHeader = new StringBuilder();
-				for(Cookie c : cookies) {
-					cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
-				}
-				
-				headers.put("Cookie", cookiesHeader.toString());
-			}
-			
-			JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
-			JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
-			
-			DataFetcher.setRequestProxyForFetcher(session, response, url);
-			
-			session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+			JSONObject response = postFetcherRequest(url, cookies, null, payload, session);
 			
 			String content = response.getJSONObject("response").getString("body");
 			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
@@ -611,19 +579,12 @@ public class POSTFetcher {
 			
 			// Request via fetcher on first attempt
 			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
-				if(cookies != null && !cookies.isEmpty()) {
-					StringBuilder cookiesHeader = new StringBuilder();
-					for(Cookie c : cookies) {
-						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
-					}
-					
-					headers.put("Cookie", cookiesHeader.toString());
-				}
+				JSONObject response = postFetcherRequest(url, cookies, headers, payload, session);
 				
-				JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
-				JSONObject response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
+				String content = response.getJSONObject("response").getString("body");
+				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 				
-				return response.getJSONObject("response").getString("body");
+				return content;
 			}
 			
 			randUserAgent = DataFetcher.randUserAgent();
@@ -775,6 +736,30 @@ public class POSTFetcher {
 			}
 
 		}
+	}
+	
+	public static JSONObject postFetcherRequest(String url, List<Cookie> cookies, Map<String,String> headers, String payload, Session session) {
+		if(cookies != null && !cookies.isEmpty()) {
+			StringBuilder cookiesHeader = new StringBuilder();
+			for(Cookie c : cookies) {
+				cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+			}
+			
+			headers.put("Cookie", cookiesHeader.toString());
+		}
+		
+		JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", false, payload, headers, null);
+		JSONObject response = new JSONObject();
+		try {
+			response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
+		} catch (Exception e) {
+			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+		}
+		
+		DataFetcher.setRequestProxyForFetcher(session, response, url);
+		session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+		
+		return response;
 	}
 
 	/**
