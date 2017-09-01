@@ -100,11 +100,14 @@ public class BrasilDolcegustoCrawler extends Crawler {
 			// description
 			String description = "";
 			Element elementDescription = doc.select(".tabs-content .tab.description-.active").first();
+			Element elementIngredientes = doc.select(".tabs-content .tab.local-").first();
 			Element elementSpecs = doc.select(".tabs-content #specs").first();
 			if (elementDescription != null)
 				description = description + elementDescription.html();
 			if (elementSpecs != null)
 				description = description + elementSpecs.html();
+			if (elementIngredientes != null)
+				description = description + elementIngredientes.html();
 
 			// availability
 			boolean available = true;
