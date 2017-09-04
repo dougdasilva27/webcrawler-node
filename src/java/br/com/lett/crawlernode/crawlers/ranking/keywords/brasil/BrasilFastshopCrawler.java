@@ -161,7 +161,7 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 	 * @param internalPìd
 	 * @return
 	 */
-	private String crawlProductUrl(Element e, String internalpid){
+	private String crawlProductUrl(Element e, String pid){
 		String urlProduct = null;
 //		Element urlElement = e.select("div.product_name > a").first();
 //		
@@ -171,7 +171,7 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords{
 //		
 //		if(urlProduct.contains("ProductDisplay")){	
 			
-			urlProduct = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId=" + internalpid + "&storeId=10151";
+			urlProduct = "http://www.fastshop.com.br/webapp/wcs/stores/servlet/ProductDisplay?productId=" + pid + "&storeId=10151";
 			
 //		} else if(urlProduct.contains("?")){
 //						
