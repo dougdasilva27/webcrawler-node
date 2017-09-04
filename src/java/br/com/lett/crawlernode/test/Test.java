@@ -59,6 +59,7 @@ public class Test {
 		options.addOption("city", true, "City name");
 		options.addOption("pathwrite", true, "Path that product html goes");
 		options.addOption("testType", true, "Test type [insights, rating, images]");
+		options.addOption("phantomjsPath", true, "phantonjs");
 
 		// parsing command line options
 		CommandLineParser parser = new DefaultParser();
@@ -74,6 +75,7 @@ public class Test {
 		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
 		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
 		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
+		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath");
 
 		// setting database credentials
 		DBCredentials dbCredentials = new DBCredentials();
@@ -107,11 +109,11 @@ public class Test {
 			Session session;
 
 			if(testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingKeywordsSession("cerveja", market);
+				session = SessionFactory.createTestRankingKeywordsSession("shampoo antiqueda", market);
 			} else if(testType.equals(CATEGORIES_TEST)) { 
 				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
 			} else {
-				session = SessionFactory.createTestSession("http://www.extra.com.br/tvseacessorios/Televisores/TVLED/TV-LED-32-AOC-HD-LE32H1465-com-Conversor-Digital-Integrado-Entradas-HDMI-e-Entrada-USB-8442637.html", market);
+				session = SessionFactory.createTestSession("http://www.lojasrede.com.br/produto/kit-salon-line-sos-cachos-calcio-e-oil-141699", market);
 			}
 
 
