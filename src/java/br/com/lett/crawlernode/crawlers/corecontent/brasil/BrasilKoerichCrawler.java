@@ -306,8 +306,8 @@ public class BrasilKoerichCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select("#informacoes").first();
-		Element specElement = document.select("#especificacoes").first();
+		Element descriptionElement = document.select(".box-description").first();
+		Element specElement = document.select(".box-specification").first();
 
 		if (descriptionElement != null) description = description + descriptionElement.html();
 		if (specElement != null) description = description + specElement.html();

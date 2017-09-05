@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.guarapiranga;
+package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,12 +35,12 @@ import models.prices.Prices;
  *
  */
 
-public class GuarapirangaTendadriveCrawler extends Crawler {
+public class SaopauloTendadriveCrawler extends Crawler {
 
 	private static final String HOME_PAGE = "http://www.tendadrive.com.br/";
 	private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
 
-	public GuarapirangaTendadriveCrawler(Session session) {
+	public SaopauloTendadriveCrawler(Session session) {
 		super(session);
 	}
 
@@ -55,7 +55,7 @@ public class GuarapirangaTendadriveCrawler extends Crawler {
 	public void handleCookiesBeforeFetch() {
 		Logging.printLogDebug(logger, session, "Adding cookie...");
 		
-		//city 
+		//shop id (AV guarapiranga)
 		BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=10");
 		cookie.setDomain(".www.tendadrive.com.br");
 		cookie.setPath("/");

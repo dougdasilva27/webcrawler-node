@@ -61,8 +61,10 @@ public class SaopauloMamboCrawler extends Crawler {
 			JSONObject skuJson = CommonMethods.crawlSkuJsonVTEX(doc, session);
 			
 			String internalPid = crawlInternalPid(skuJson);
+			
+			JSONObject skusInfo = crawlSKusInfo(internalPid);
 			CategoryCollection categories = crawlCategories(doc);
-			String description = crawlDescription(doc);
+			String description = crawlDescription(skusInfo);
 			Integer stock = null;
 
 			// sku data in json
@@ -279,16 +281,27 @@ public class SaopauloMamboCrawler extends Crawler {
 		return categories;
 	}
 
-	private String crawlDescription(Document document) {
-		String description = "";
+	private String crawlDescription(JSONObject skuInfo) {
+		StringBuilder description = new StringBuilder();
 
-		Element descElement = document.select(".product-description").first();
-
-		if (descElement != null) {
-			description = description + descElement.html();
+		if(skuInfo.has("description")) {
+			description.append(skuInfo.getString("description") + "<br><br>");
+		}
+		
+		if(skuInfo.has("allSpecifications")) {
+			JSONArray spec = skuInfo.getJSONArray("allSpecifications");
+			
+			for (int i = 0; i < spec.length(); i++) {
+				String key = spec.getString(i);
+				
+				if(skuInfo.has(key)) {
+					description.append((key + ": ").replace("::", ":") + skuInfo.getJSONArray(key).toString()
+							.replace("[", "").replace("]", "").replace("\",", "\", ").replace("\"", "").trim() + "<br>");
+				}
+			}
 		}
 
-		return description;
+		return description.toString();
 	}
 
 	/**
@@ -382,4 +395,16 @@ public class SaopauloMamboCrawler extends Crawler {
 		return mapInstallments;
 	}
 
+	private JSONObject crawlSKusInfo(String internalPid) {
+		JSONObject info = new JSONObject();
+		
+		String url = "https://www.mambo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+		JSONArray skus = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(skus.length() > 0) {
+			info = skus.getJSONObject(0);
+		}
+		
+		return info;
+	}
 }

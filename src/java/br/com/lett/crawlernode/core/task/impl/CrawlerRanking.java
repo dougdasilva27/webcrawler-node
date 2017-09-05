@@ -554,10 +554,20 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected Map<String,String> fetchCookies(String url) {
+		return fetchCookies(url, null);
+	}
+	
+	/**
+	 * Fetch Map of Cookies
+	 * @param url
+	 * @param cookies
+	 * @return
+	 */
+	protected Map<String,String> fetchCookies(String url, List<Cookie> cookies) {
 		this.currentDoc = new Document(url);		
 
 		//faz a conexão na url baixando o document html
-		return DataFetcher.fetchCookies(session, url, null, 1);
+		return DataFetcher.fetchCookies(session, url, cookies, 1);
 	}
 
 	/**

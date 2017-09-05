@@ -260,6 +260,11 @@ public class SaopauloOnofreCrawler extends Crawler {
 		if(elementDescription != null) {
 			description.append(elementDescription.html());
 		}	
+		
+		Element elementWarning = doc.select("#cphConteudo_lblMsg").first(); 
+		if(elementWarning != null) {
+			description.append(elementWarning.html());
+		}
 
 		return description.toString();
 	}
