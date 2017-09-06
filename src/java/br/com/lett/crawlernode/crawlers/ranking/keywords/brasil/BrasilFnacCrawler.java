@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -15,42 +15,40 @@ public class BrasilFnacCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 24;
-
-		this.log("Página "+ this.currentPage);
+		this.log("Página " + this.currentPage);
+		this.pageSize = 40;
 
 		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+		String url = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
+		takeAScreenshot(url);
 
-		//monta a url com a keyword e a página
-		String url = "http://www.fnac.com.br/"+ keyword +"?PageNumber="+ this.currentPage +"&PS=50";
-		this.log("Link onde são feitos os crawlers: "+url);	
+		String apiUrl = "http://search.oppuz.com/opz/api/search?page=" + this.currentPage + "&limit=" + this.productsLimit
+				+ "&sort=score.desc&sortingOrMoreItemsEvent=true&store=fnac"
+				+ "&text=&typedText=&hashBangQuery=termos--" + this.keywordEncoded
+				+ "&fallbackSubstantives&callback=Opz.SearchPage.callback";
+		
+		this.log("Link onde são feitos os crawlers: " + apiUrl);	
 
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+		JSONObject search = fetchAPI(apiUrl);
+		JSONArray products = crawlProducts(search);
 
-		Elements products =  this.currentDoc.select("div.prateleira ul > li[layout]");
-
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
-				setTotalProducts();
+		if (products.length() > 0) {
+			if (this.totalProducts == 0) {
+				setTotalProducts(search);
 			}
 
-			for(Element e: products) {
-				//seta o id com o seletor
-				String internalPid = crawlInternalPid(e);
+			for (int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
 				
-				String internalId = null;
-
-				//monta a url
-				String productUrl = crawlProductUrl(e);
+				String internalPid = null;
+				String internalId = crawlInternalId(product);
+				String productUrl = crawlProductUrl(product);
 
 				saveDataProduct(internalId, internalPid, productUrl);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+						+ internalPid + " - Url: " + productUrl);
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
 				}
 			}
@@ -59,54 +57,76 @@ public class BrasilFnacCrawler extends CrawlerRankingKeywords {
 			this.log("Keyword sem resultado!");
 		}
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
+		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+				+ this.arrayProducts.size() + " produtos crawleados");
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-
-		return false;
-
+		return arrayProducts.size() < this.totalProducts;
 	}
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span.resultado-busca-numero > span.value").first();
-
-		if(totalElement != null) { 	
-			try	{				
-				this.totalProducts = Integer.parseInt(totalElement.text().trim());
-			} catch(Exception e) {
-				this.logError(CommonMethods.getStackTraceString(e));
+	protected void setTotalProducts(JSONObject search) {
+		if(search.has("total")) {
+			Object total = search.get("total");
+			
+			if(total instanceof Integer) {
+				this.totalProducts = (Integer) total;
+				
+				this.log("Total: " + this.totalProducts);
 			}
+		}
+	}
+	
+	private String crawlInternalId(JSONObject product) {
+		String internalId = null;
 
-			this.log("Total da busca: "+this.totalProducts);
+		if(product.has("sku")) {
+			internalId = product.get("sku").toString();
 		}
+		
+		return internalId;
+	}
+
+	private String crawlProductUrl(JSONObject product) {
+		String productUrl = null;
+
+		if (product.has("url")) {
+			productUrl = CommonMethods.sanitizeUrl(product.getString("url"));
+		}
+
+		return productUrl;
+	}
+
+	
+	private JSONArray crawlProducts(JSONObject json) {
+		JSONArray products = new JSONArray();
+		
+		if(json.has("results")) {
+			products = json.getJSONArray("results");
+		}
+		
+		return products;
 	}
 	
-	private String crawlInternalPid(Element e){
-		String internalPid = null;
-		Element pid = e.select(".x-id-produto-input").first();
+	private JSONObject fetchAPI(String url) {
+		JSONObject api = new JSONObject();
 		
-		if(pid != null){
-			internalPid = pid.val();
+		String body = fetchGETString(url, null);
+		
+		if(body.contains("({")) {
+			int x = body.indexOf("({") + 1;
+			int y = body.indexOf("})", x) + 1;
+			
+			String json = body.substring(x, y);
+			
+			try {
+				api = new JSONObject(json);
+			} catch (Exception e) {
+				this.logError("Erro ao parsear json.", e);
+			}
 		}
 		
-		return internalPid;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		Element urlElement = e.select(".x-url-produto-input").first();
-		
-		if(urlElement != null){
-			urlProduct = urlElement.val();
-		}
-		
-		return urlProduct;
+		return api;
 	}
 }

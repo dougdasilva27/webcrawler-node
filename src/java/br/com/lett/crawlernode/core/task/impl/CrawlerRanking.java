@@ -586,6 +586,16 @@ public abstract class CrawlerRanking extends Task {
 	}
 
 	/**
+	 * Fetch String with Get Request
+	 * @param url
+	 * @param cookies
+	 * @return
+	 */
+	protected String fetchGETString(String url, List<Cookie> cookies) {
+		return DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+	}
+	
+	/**
 	 * Fetch jsonObject
 	 * @param url
 	 * @return

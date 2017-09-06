@@ -1,5 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -12,6 +17,17 @@ public class BrasilEnutriCrawler extends CrawlerRankingKeywords{
 		super(session);
 	}
 
+	private List<Cookie> cookies = new ArrayList<>();
+	
+	@Override 
+	public void processBeforeFetch() {
+		this.log("Adding cookie...");
+		BasicClientCookie cookie = new BasicClientCookie("loja", "base");
+		cookie.setDomain("www.enutri.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
@@ -25,8 +41,8 @@ public class BrasilEnutriCrawler extends CrawlerRankingKeywords{
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar o html
-		this.currentDoc = fetchDocument(url);
-
+		this.currentDoc = fetchDocument(url, cookies);
+		
 		Elements products =  this.currentDoc.select(".products-grid li .ma-box-content");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
