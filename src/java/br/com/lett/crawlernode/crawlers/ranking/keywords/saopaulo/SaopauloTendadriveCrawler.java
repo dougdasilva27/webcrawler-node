@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -24,21 +22,16 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 	@Override 
 	public void processBeforeFetch() {
 		this.log("Adding cookie...");
-		BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=10");
+		BasicClientCookie cookie = new BasicClientCookie("lx_sales_channel", "%5B%2210%22%5D");
 		cookie.setDomain("busca.tendadrive.com.br");
 		cookie.setPath("/");
 		this.cookies.add(cookie);
 		
-		String url = "http://busca.tendadrive.com.br/Site/Track.aspx?q=sadia&page=1&results_per_page=300&sc=10&referrer=";
-		
-		Map<String, String> cookiesMap = fetchCookies(url, cookies);
-		
-		for(Entry<String, String> entry : cookiesMap.entrySet()) {
-			BasicClientCookie cookie2 = new BasicClientCookie(entry.getKey(), entry.getValue());
-			cookie2.setDomain("busca.tendadrive.com.br");
-			cookie2.setPath("/");
-			this.cookies.add(cookie2);
-		}
+		this.log("Adding cookie...");
+		BasicClientCookie cookieSC = new BasicClientCookie("VTEXSX", "sc=10");
+		cookieSC.setDomain("busca.tendadrive.com.br");
+		cookieSC.setPath("/");
+		this.cookies.add(cookieSC);
 	}
 	
 	@Override
@@ -47,15 +40,15 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 		this.pageSize = 24;
 
 		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-		String url = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
-		takeAScreenshot(url);
-
+		String url = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&sc=10";
+		takeAScreenshot(url, cookies);
+		
 		String apiUrl = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&ajaxSearch=1&sc=10";
 		this.log("Link onde são feitos os crawlers: " + apiUrl);	
 
 		JSONObject search = fetchJSONObject(apiUrl, cookies);
 		JSONArray products = crawlProducts(search);
-
+		
 		if (products.length() > 0) {
 			if (this.totalProducts == 0) {
 				setTotalProducts(search);

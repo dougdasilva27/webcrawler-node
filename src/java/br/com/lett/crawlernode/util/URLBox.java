@@ -6,6 +6,7 @@ import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -31,7 +33,7 @@ public class URLBox {
 	
 	private static final Logger logger = LoggerFactory.getLogger(URLBox.class);
 	
-	public static String takeAScreenShot(String url, Session session, int page) {
+	public static String takeAScreenShot(String url, Session session, int page, List<Cookie> cookies) {
 		String s3Link = null;
 		
 		String urlboxKey = "2hXKGlSeR95wCDVl";
@@ -82,7 +84,7 @@ public class URLBox {
 			Logging.printLogDebug(logger, session, "Take a screenshot for url: " + url);
 			
 			// Call generateUrl function of urlbox object
-			String apiUrl = generateUrl(url , options, urlboxKey, urlboxSecret, session);
+			String apiUrl = generateUrl(url , options, urlboxKey, urlboxSecret, cookies, session);
 			
 			Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 			
@@ -97,7 +99,7 @@ public class URLBox {
 		return s3Link;
 	}
 
-	public static String generateUrl(String url, Map<String,Object> options, String key, String secret, Session session) throws UnsupportedEncodingException {
+	public static String generateUrl(String url, Map<String,Object> options, String key, String secret, List<Cookie> cookies, Session session) throws UnsupportedEncodingException {
 
 		String encodedUrl = URLEncoder.encode(url, "UTF-8");
 		StringBuilder queryString = new StringBuilder();
@@ -106,6 +108,12 @@ public class URLBox {
 		for (Map.Entry<String, Object> entry : options.entrySet()) {
 			String queryParam = "&"+entry.getKey()+"="+entry.getValue(); 
 			queryString.append(queryParam);
+		}
+		
+		if(cookies != null) {
+			for(Cookie c : cookies) {
+				queryString.append("&cookie=" + c.getName() + "%3D" + c.getValue());
+			}
 		}
 
 		String token = generateToken(queryString.toString(), secret, session);

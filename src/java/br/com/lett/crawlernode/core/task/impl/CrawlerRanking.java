@@ -543,7 +543,7 @@ public abstract class CrawlerRanking extends Task {
 		Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
 		// Screenshot
-		takeAScreenshot(url);
+		takeAScreenshot(url, cookies);
 
 		return doc;
 	}
@@ -728,7 +728,11 @@ public abstract class CrawlerRanking extends Task {
 	}
 
 	protected void takeAScreenshot(String url) {
-		takeAScreenshot(url, this.currentPage);
+		takeAScreenshot(url, this.currentPage, null);
+	}
+	
+	protected void takeAScreenshot(String url, List<Cookie> cookies) {
+		takeAScreenshot(url, this.currentPage, cookies);
 	}
 	
 	/**
@@ -736,10 +740,10 @@ public abstract class CrawlerRanking extends Task {
 	 * only the first 2 pages
 	 * @param url
 	 */
-	protected void takeAScreenshot(String url, int page) {
+	protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {
 		if(session instanceof RankingSession) {
 			if(page <= 2 && ((RankingSession)session).mustTakeAScreenshot()) {
-				String printUrl = URLBox.takeAScreenShot(url, session, page);
+				String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
 
 				switch (this.currentPage) {
 				case 1:

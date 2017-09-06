@@ -41,7 +41,7 @@ public class BrasilNanacareCrawler extends CrawlerRankingKeywords{
 			this.currentDoc = Jsoup.parse(page);
 			
 			this.log("Link onde são feitos os crawlers: "+ session.getRedirectedToURL(url));
-			takeAScreenshot(session.getRedirectedToURL(url), 1);
+			takeAScreenshot(session.getRedirectedToURL(url), 1, null);
 			
 		} else {
 			this.currentDoc = fetchDocument(this.nextUrl);
