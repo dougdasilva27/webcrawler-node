@@ -110,47 +110,50 @@ public class ResultManager {
 		this.unitsList = new ArrayList<>();
 		this.classModelList = new ArrayList<>();
 		this.brandModelList = new ArrayList<>();
-
+		
+		// removendo na bduf de gestão de marcas e fornecedores
+		// estamos interrompendo a extração de brand
+		
 		// create model for brand manipulation for identification and substitution
-		try {
-			ResultSet rs = db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettBrandProducts);
-			while(rs.next()) {
-
-				// verify if the brand should be ignored
-				// e.g: papel higiênico leve 3 pague 2 PAMPERS
-				// LEVE is also a brand, but we want PAMPERS
-				// so LEVE is not included on our brand list
-				if(!rs.getBoolean("ignored")) {		
-					BrandModel aux = null;
-
-					// see if this brand already exists on the brand list
-					for(BrandModel bm: brandModelList) {
-						if(bm.getBrand().equals(rs.getString("denomination"))) {
-							aux = bm;
-							break;
-						}
-					}
-
-					// if it doesn't exists yet, we create a new Brand Model and add it on the brandsModelList
-					if(aux == null) {
-						aux = new BrandModel(rs.getString("denomination"), rs.getString("lett_supplier"));
-						aux.putOnList(rs.getString("mistake"));
-						brandModelList.add(aux);
-					}
-
-					// if an occurrence exists, only add this error on the map
-					else {
-						aux.putOnList(rs.getString("mistake"));
-					}
-				}
-			}
-
-			// close the result set
-			rs.close();
-
-		} catch (Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
+//		try {
+//			ResultSet rs = db.connectionPostgreSQL.runSqlConsult(Queries.queryForLettBrandProducts);
+//			while(rs.next()) {
+//
+//				// verify if the brand should be ignored
+//				// e.g: papel higiênico leve 3 pague 2 PAMPERS
+//				// LEVE is also a brand, but we want PAMPERS
+//				// so LEVE is not included on our brand list
+//				if(!rs.getBoolean("ignored")) {		
+//					BrandModel aux = null;
+//
+//					// see if this brand already exists on the brand list
+//					for(BrandModel bm: brandModelList) {
+//						if(bm.getBrand().equals(rs.getString("denomination"))) {
+//							aux = bm;
+//							break;
+//						}
+//					}
+//
+//					// if it doesn't exists yet, we create a new Brand Model and add it on the brandsModelList
+//					if(aux == null) {
+//						aux = new BrandModel(rs.getString("denomination"), rs.getString("lett_supplier"));
+//						aux.putOnList(rs.getString("mistake"));
+//						brandModelList.add(aux);
+//					}
+//
+//					// if an occurrence exists, only add this error on the map
+//					else {
+//						aux.putOnList(rs.getString("mistake"));
+//					}
+//				}
+//			}
+//
+//			// close the result set
+//			rs.close();
+//
+//		} catch (Exception e) {
+//			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+//		}
 
 		// completion or correction of brands through brands list
 		for(BrandModel bm : brandModelList) {
