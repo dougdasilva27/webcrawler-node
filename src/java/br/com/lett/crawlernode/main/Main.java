@@ -96,9 +96,6 @@ public class Main {
 		// fetching proxies
 		proxies = new ProxyCollection(markets);
 
-		// initialize global resources
-		//initGlobalResources();
-
 		// create a queue handler that will contain an Amazon SQS instance
 		queueHandler = new QueueHandler();
 
