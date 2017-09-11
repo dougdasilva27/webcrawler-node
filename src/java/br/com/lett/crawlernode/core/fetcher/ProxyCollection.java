@@ -60,7 +60,7 @@ public class ProxyCollection {
 	/** Intervals used to select proxy service when downloading images */
 	public Map<Integer, List<Interval<Integer>>> intervalsMarketsMapImages; // global information
 	
-	private Map<String, Integer> proxyMaxAttempts; // global information
+	public static Map<String, Integer> proxyMaxAttempts; // global information
 	public Map<String, List<LettProxy>> proxyMap; // global information
 
 

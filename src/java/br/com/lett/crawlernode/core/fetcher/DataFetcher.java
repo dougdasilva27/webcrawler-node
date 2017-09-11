@@ -5,13 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
 import java.net.SocketTimeoutException;
-import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -233,39 +227,6 @@ public class DataFetcher {
 		} catch(JSONException e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 			return new JSONArray();
-		}
-	}
-
-	/**
-	 * Get the http response code of a URL
-	 * 
-	 * @param url 
-	 * @param session
-	 * @return The integer code. Null if we have an exception.
-	 */
-	public static Integer getUrlResponseCode(String url, Session session) {
-		return getUrlResponseCode(url, session, 1);
-	}
-
-	public static Integer getUrlResponseCode(String url, Session session, int attempt) {
-		try {
-			URL urlObject = new URL(url);
-			HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection(randProxy(attempt, session, new ArrayList<String>()));
-			connection.setRequestMethod("GET");
-			connection.connect();
-
-			return connection.getResponseCode();
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de status code: " + url + " [" + e.getMessage() + "]");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
-			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
-				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
-			} else {
-				return getUrlResponseCode(url, session, attempt+1);	
-			}
-
-			return null;
 		}
 	}
 
@@ -1073,66 +1034,10 @@ public class DataFetcher {
 	 * @return
 	 */
 	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
-		LettProxy nextProxy = null;
-		String serviceName = getProxyService(attempt, session, proxyServices);
-
-		if (serviceName != null) {
-//			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
-//				serviceName = ProxyCollection.BONANZA;
-//			}
-			nextProxy = getNextProxy(serviceName, session);
-			session.addRequestProxy(url, nextProxy);
-		}
-
-		// request using no proxy
-		if (nextProxy == null) {
-			return null;
-		}
+		LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
+		session.addRequestProxy(url, nextProxy);
 
 		return nextProxy;
-	}
-
-	/**
-	 * 
-	 * @param attempt
-	 * @param session
-	 * @param proxyServices
-	 * @return
-	 */
-	public static Proxy randProxy(int attempt, Session session, List<String> proxyServices) {		
-		LettProxy nextProxy = null;
-		String serviceName = getProxyService(attempt, session, proxyServices);
-
-		if (serviceName != null) {
-//			if (serviceName.equals(ProxyCollection.LUMINATI_SERVER_BR)) {
-//				serviceName = ProxyCollection.BONANZA;
-//			}
-			nextProxy = getNextProxy(serviceName, session);
-		}
-
-		// request using no proxy
-		if (nextProxy == null) {
-			return null;
-		}
-
-		final String nextProxyHost = nextProxy.getAddress();
-		final int nextProxyPort = nextProxy.getPort();
-		final String nextProxyUser = nextProxy.getUser();
-		final String nextProxyPass = nextProxy.getPass();
-
-		if (nextProxyUser != null) {
-			Authenticator a = new Authenticator() {
-				
-				@Override
-				public PasswordAuthentication getPasswordAuthentication() {
-					return new PasswordAuthentication(nextProxyUser, nextProxyPass.toCharArray());
-				}
-			};
-
-			Authenticator.setDefault(a);
-		}
-
-		return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(nextProxyHost, nextProxyPort));
 	}
 
 	/**
@@ -1141,24 +1046,35 @@ public class DataFetcher {
 	 * @param session
 	 * @return
 	 */
-	public static LettProxy getNextProxy(String serviceName, Session session) {
+	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
 		LettProxy nextProxy = null;
-
-		if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
-			List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-			if (!proxies.isEmpty()) {
-				nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-			} else {
-				Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-			}
-		}
-		else {
-			if (Main.proxies != null) { // production
-				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+		
+		List<String> proxiesTemp = proxyServices;
+		int attemptTemp = attempt;
+		
+		while(!proxiesTemp.isEmpty() && nextProxy == null) {
+			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
+			proxiesTemp.remove(serviceName);
+			
+			if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
+				List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+				
 				if (!proxies.isEmpty()) {
 					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 				} else {
 					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+					attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+				}
+			}
+			
+			else if (Main.proxies != null) { // production
+				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+				
+				if (!proxies.isEmpty()) {
+					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+				} else {
+					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+					attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
 				}
 			}
 		}

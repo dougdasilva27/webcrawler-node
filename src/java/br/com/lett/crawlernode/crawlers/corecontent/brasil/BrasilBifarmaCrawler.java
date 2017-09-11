@@ -24,7 +24,7 @@ import models.prices.Prices;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.bifarma.com.br/";
+	private static final String HOME_PAGE = "http://www.bifarma.com.br/";
 
 	public BrasilBifarmaCrawler(Session session) {
 		super(session);
