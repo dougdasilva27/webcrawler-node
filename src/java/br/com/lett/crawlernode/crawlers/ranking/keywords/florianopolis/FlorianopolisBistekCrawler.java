@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.florianopolis;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,53 +11,26 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class SaopauloPaguemenosCrawler extends CrawlerRankingKeywords {
+public class FlorianopolisBistekCrawler extends CrawlerRankingKeywords {
 
-	public SaopauloPaguemenosCrawler(Session session) {
+	public FlorianopolisBistekCrawler(Session session) {
 		super(session);
 	}
 
-	private static final String COOKIE_ESTADO = "StoreCodePagueMenos";
-	private static final String COOKIE_VALUE = "437";
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+	private static final String COOKIE_ESTADO = "StoreCodeBistek";
+	private static final String COOKIE_VALUE = "12";
+	private static List<Cookie> cookies = new ArrayList<>();
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
+	@Override
+	protected void processBeforeFetch() {
+		// Criando cookie da loja 437 = São Paulo capital
+		BasicClientCookie cookie = new BasicClientCookie(COOKIE_ESTADO, COOKIE_VALUE);
+		cookie.setDomain("loja.paguemenos.com.br");
+		cookie.setPath("/");
 
-		Element inid = e.select("div.figure a > img.photo").first();
-
-		if (inid != null) {
-			if (!inid.attr("src").contains("indisponivel")) {
-				String[] tokens2 = inid.attr("src").split("/");
-				internalId = tokens2[tokens2.length - 2];
-			}
-		}
-
-		return internalId;
+		cookies.add(cookie);
 	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-		Element pid = e.select("input").first();
-
-		if (pid != null) {
-			internalPid = pid.attr("value");
-		}
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element eUrl = e.select(" a.link.url[title]").first();
-
-		if (eUrl != null) {
-			urlProduct = eUrl.attr("href");
-		}
-
-		return urlProduct;
-	}
-
+	
 	@Override
 	public void extractProductsFromCurrentPage() {
 		// número de produtos por página do market
@@ -65,11 +38,12 @@ public class SaopauloPaguemenosCrawler extends CrawlerRankingKeywords {
 
 		this.log("Página " + this.currentPage);
 
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+		String key = this.keywordWithoutAccents.replace(" ", "%20");
 
 		// monta a url com a keyword e a página
-		String url = "http://loja.paguemenos.com.br/busca/3/0/0/Nome/Crescente/20/" + this.currentPage + "////" + key
+		String url = "http://www.bistekonline.com.br/busca/3/0/0/MaisVendidos/Decrescente/24/" + this.currentPage + "////" + key
 				+ ".aspx";
+		
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
@@ -119,14 +93,41 @@ public class SaopauloPaguemenosCrawler extends CrawlerRankingKeywords {
 		return true;
 
 	}
+	
+	private String crawlInternalId(Element e) {
+		String internalId = null;
 
-	@Override
-	protected void processBeforeFetch() {
-		// Criando cookie da loja 437 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie(COOKIE_ESTADO, COOKIE_VALUE);
-		cookie.setDomain("loja.paguemenos.com.br");
-		cookie.setPath("/");
+		Element inid = e.select("div.figure a > img.photo").first();
 
-		this.cookies.add(cookie);
+		if (inid != null) {
+			if (!inid.attr("src").contains("indisponivel")) {
+				String[] tokens2 = inid.attr("src").split("/");
+				internalId = tokens2[tokens2.length - 2];
+			}
+		}
+
+		return internalId;
+	}
+
+	private String crawlInternalPid(Element e) {
+		String internalPid = null;
+		Element pid = e.select("input").first();
+
+		if (pid != null) {
+			internalPid = pid.attr("value");
+		}
+
+		return internalPid;
+	}
+
+	private String crawlProductUrl(Element e) {
+		String urlProduct = null;
+		Element eUrl = e.select(" a.link.url[title]").first();
+
+		if (eUrl != null) {
+			urlProduct = eUrl.attr("href");
+		}
+
+		return urlProduct;
 	}
 }

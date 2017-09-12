@@ -545,11 +545,11 @@ public class CommonMethods {
 		return object;
 	}
 	
-	public static void saveStringToAFile(String body, String path) {
+	public static void saveStringToAFile(Object body, String path) {
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(path));
 			
-			out.write(body);
+			out.write(body.toString());
 			out.close();
 		} catch (Exception e1) {
 			e1.printStackTrace();
