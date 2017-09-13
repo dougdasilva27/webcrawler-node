@@ -1062,6 +1062,7 @@ public class DataFetcher {
 					
 					if (!proxies.isEmpty()) {
 						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+						break;
 					} else {
 						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
@@ -1073,12 +1074,14 @@ public class DataFetcher {
 					
 					if (!proxies.isEmpty()) {
 						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+						break;
 					} else {
 						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
 					}
 				}
 			} else {
+				Logging.printLogError(logger, session, "Error: using no proxy, because there is a proxy on this list that the crawler has no knowledge.");
 				return null;
 			}
 		}
