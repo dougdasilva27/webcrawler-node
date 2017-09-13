@@ -1054,28 +1054,32 @@ public class DataFetcher {
 		
 		while(!proxiesTemp.isEmpty() && nextProxy == null) {
 			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
-			proxiesTemp.remove(serviceName);
-			
-			if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
-				List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+			if(serviceName != null) {
+				proxiesTemp.remove(serviceName);
 				
-				if (!proxies.isEmpty()) {
-					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-					attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
+					List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+					
+					if (!proxies.isEmpty()) {
+						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+					} else {
+						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+					}
 				}
-			}
-			
-			else if (Main.proxies != null) { // production
-				List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
 				
-				if (!proxies.isEmpty()) {
-					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-				} else {
-					Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-					attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+				else if (Main.proxies != null) { // production
+					List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+					
+					if (!proxies.isEmpty()) {
+						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+					} else {
+						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+					}
 				}
+			} else {
+				return null;
 			}
 		}
 
