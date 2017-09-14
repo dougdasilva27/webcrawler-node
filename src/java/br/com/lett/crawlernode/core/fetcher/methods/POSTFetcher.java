@@ -111,6 +111,7 @@ public class POSTFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
@@ -118,6 +119,8 @@ public class POSTFetcher {
 							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 							);
 				}
+			}  else {
+				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
 			}
 
 			HttpHost proxy = null;
@@ -278,6 +281,7 @@ public class POSTFetcher {
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 		if (randProxy != null) {
+			Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 			session.addRequestProxy(url, randProxy);
 			if(randProxy.getUser() != null) {
 				credentialsProvider.setCredentials(
@@ -285,7 +289,9 @@ public class POSTFetcher {
 						new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 						);
 			}
-		}
+		} else {
+			Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+		} 
 
 		HttpHost proxy = null;
 		if (randProxy != null) {
@@ -419,12 +425,15 @@ public class POSTFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
 							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 							);
 				}
+			} else {
+				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
 			}
 
 			HttpHost proxy = null;
@@ -595,12 +604,15 @@ public class POSTFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
 							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
 							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 							);
 				}
+			} else {
+				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
 			}
 
 			HttpHost proxy = null;

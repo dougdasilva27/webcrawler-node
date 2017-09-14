@@ -74,7 +74,7 @@ public class GETFetcher {
 		String requestHash = DataFetcher.generateRequestHash(session);
 
 		try {
-			Logging.printLogDebug(logger, session, "Performing GET request: " + url);
+			Logging.printLogDebug(logger, session, "Performing GET request: " + url );
 			
 			// Request via fetcher on first attempt
 			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
@@ -110,6 +110,7 @@ public class GETFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
@@ -117,6 +118,8 @@ public class GETFetcher {
 							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 							);
 				}
+			} else {
+				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
 			}
 
 			HttpHost proxy = null;
@@ -344,6 +347,7 @@ public class GETFetcher {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				session.addRequestProxy(url, randProxy);
 				if(randProxy.getUser() != null) {
 					credentialsProvider.setCredentials(
@@ -351,6 +355,8 @@ public class GETFetcher {
 							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass())
 							);
 				}
+			} else {
+				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
 			}
 
 			HttpHost proxy = null;

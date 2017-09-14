@@ -1026,6 +1026,69 @@ public class DataFetcher {
 
 	}
 
+//	/**
+//	 * 
+//	 * @param attempt
+//	 * @param session
+//	 * @param proxyServices
+//	 * @return
+//	 */
+//	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
+//		LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
+//		session.addRequestProxy(url, nextProxy);
+//
+//		return nextProxy;
+//	}
+//
+//	/**
+//	 * 
+//	 * @param serviceName
+//	 * @param session
+//	 * @return
+//	 */
+//	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
+//		LettProxy nextProxy = null;
+//		
+//		List<String> proxiesTemp = proxyServices;
+//		int attemptTemp = attempt;
+//		
+//		while(!proxiesTemp.isEmpty()) {
+//			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
+//			if(serviceName != null) {
+//				proxiesTemp.remove(serviceName);
+//				
+//				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
+//					List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+//					
+//					if (!proxies.isEmpty()) {
+//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+//						break;
+//					} else {
+//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+//					}
+//				}
+//				
+//				else if (Main.proxies != null) { // production
+//					List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+//					
+//					if (!proxies.isEmpty()) {
+//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+//						break;
+//					} else {
+//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+//					}
+//				}
+//			} else {
+//				Logging.printLogError(logger, session, "Error: using no proxy, because there is a proxy on this list that the crawler has no knowledge.");
+//				return null;
+//			}
+//		}
+//
+//		return nextProxy;
+//	}
+
 	/**
 	 * 
 	 * @param attempt
@@ -1049,43 +1112,46 @@ public class DataFetcher {
 	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
 		LettProxy nextProxy = null;
 		
-		List<String> proxiesTemp = proxyServices;
-		int attemptTemp = attempt;
+		List<LettProxy> proxies = new ArrayList<>();
+		Integer attemptTemp = Integer.valueOf(attempt);
+		Integer maxAttempts;
 		
-		while(!proxiesTemp.isEmpty() && nextProxy == null) {
-			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
-			if(serviceName != null) {
-				proxiesTemp.remove(serviceName);
-				
-				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
-					List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-					
-					if (!proxies.isEmpty()) {
-						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-					} else {
-						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
-					}
+		if(session instanceof ImageCrawlerSession) {
+			maxAttempts = session.getMaxConnectionAttemptsImages();
+		} else {
+			maxAttempts = session.getMaxConnectionAttemptsCrawler();
+		}
+		
+		String serviceName = null;
+		
+		while(proxies.isEmpty() && attemptTemp <= maxAttempts) {
+			serviceName = getProxyService(attemptTemp, session, proxyServices);
+			
+			if (serviceName != null) {
+				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
+					proxies = Test.proxies.getProxy(serviceName);
+				} else if(Main.proxies != null) {
+					proxies = Main.proxies.getProxy(serviceName);
 				}
 				
-				else if (Main.proxies != null) { // production
-					List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+				if (!proxies.isEmpty()) {
+					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+				} else {
+					attemptTemp += 1;
 					
-					if (!proxies.isEmpty()) {
-						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-					} else {
-						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+					if(!ProxyCollection.NO_PROXY.equals(serviceName)) {
+						Logging.printLogError(logger, session, "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 					}
 				}
 			} else {
-				return null;
+				attemptTemp += 1;
+				Logging.printLogError(logger, session, "Error: trying to use an unknown proxy service. I'll try the next one.");
 			}
 		}
-
+		
 		return nextProxy;
 	}
-
+	
 	/**
 	 * Retrieve a random user agent from the user agents array.
 	 * @return
@@ -1109,13 +1175,10 @@ public class DataFetcher {
 
 		if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
 			service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
+		} else if (session instanceof ImageCrawlerSession) {
+			service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
 		} else {
-			if (session instanceof ImageCrawlerSession) {
-				service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
-			} else {
-				service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
-			}
-
+			service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
 		}
 
 		Logging.printLogDebug(logger, session, "Selected proxy: " + service);

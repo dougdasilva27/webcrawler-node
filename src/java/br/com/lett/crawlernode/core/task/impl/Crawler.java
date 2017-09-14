@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
@@ -165,6 +166,12 @@ public class Crawler extends Task {
 	}
 
 	private void productionRun() {
+		if(session instanceof InsightsCrawlerSession) {	
+			Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
+		} else if(session instanceof ImageCrawlerSession) {
+			Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
+		}
+		
 		// crawl informations and create a list of products
 		List<Product> products = null;
 		try {
