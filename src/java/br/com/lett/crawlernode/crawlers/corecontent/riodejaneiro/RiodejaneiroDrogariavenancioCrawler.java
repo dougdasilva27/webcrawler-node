@@ -225,7 +225,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 					// Imagens
 
 					// Requisição POST para conseguir dados da imagem
-					String requestURL = "http://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp";
+					String requestURL = "https://www.drogariavenancio.com.br/ajax/gradesku_imagem_ajax.asp";
 					String requestParameters = assembleUrlParameters(session.getOriginalURL().split("/")[4], posInternalId);
 
 					String response = DataFetcher.fetchString(
