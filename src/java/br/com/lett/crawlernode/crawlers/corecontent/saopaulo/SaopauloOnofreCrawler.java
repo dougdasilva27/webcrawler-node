@@ -205,9 +205,9 @@ public class SaopauloOnofreCrawler extends Crawler {
 		}
 		
 		if (primaryImage.startsWith("https://www.onofre.com.br") || primaryImage.startsWith("http://www.onofre.com.br")) {
-			primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super");
+			/*primaryImage = primaryImage.replace("Produto/Normal", "Produto/Super")*/;
 		} else {
-			primaryImage = HOME_PAGE + primaryImage.replace("Produto/Normal", "Produto/Super");
+			primaryImage = HOME_PAGE + primaryImage/*.replace("Produto/Normal", "Produto/Super")*/;
 		}
 
 		if(primaryImage.contains("imagem_prescricao")) { // only for meds
@@ -224,10 +224,10 @@ public class SaopauloOnofreCrawler extends Crawler {
 		Elements elementSecondaryImages = document.select(".main-product-image .img-thumbs ul li img");
 
 		for(Element e : elementSecondaryImages) {
-			String image = e.attr("src").replace("Produto/Normal", "Produto/Super");
+			String image = e.attr("src")/*.replace("Produto/Normal", "Produto/Super")*/;
 			
 			if(!image.equals(primaryImage)) {
-				secondaryImagesArray.put(e.attr("src").replace("Produto/Normal", "Produto/Super"));
+				secondaryImagesArray.put(e.attr("src")/*.replace("Produto/Normal", "Produto/Super")*/);
 			}
 		}
 

@@ -106,15 +106,28 @@ public class SaopauloB2WCrawlersUtils {
 		if(initialJson.has("product")){
 			JSONObject productJson = initialJson.getJSONObject("product");
 
+			JSONArray skus = getJSONSkus(initialJson);
+			jsonProduct.put("skus", skus);
+			
+			String internalPid = null;
+			
 			if(productJson.has("id")){
-				jsonProduct.put("internalPid", productJson.getString("id"));
+				internalPid = productJson.getString("id");
+				jsonProduct.put("internalPid", internalPid);
 			}
 
 			if(productJson.has("name")) {
 				jsonProduct.put("name", productJson.get("name"));
 			}
+
+			JSONObject jsonForPrices;
+			if(productJson.has("offers")) {
+				jsonForPrices = productJson;
+			} else {
+				jsonForPrices = initialJson;
+			}
 			
-			JSONObject jsonPrices = getJsonPrices(initialJson);
+			JSONObject jsonPrices = getJsonPrices(jsonForPrices, internalPid);
 			jsonProduct.put("prices", jsonPrices);
 
 			JSONObject jsonImages = getJSONImages(productJson);
@@ -122,9 +135,6 @@ public class SaopauloB2WCrawlersUtils {
 
 			JSONArray jsonCategories = getJSONCategories(productJson);
 			jsonProduct.put("categories", jsonCategories);
-
-			JSONArray skus = getJSONSkus(initialJson);
-			jsonProduct.put("skus", skus);
 		}
 
 		return jsonProduct;
@@ -179,15 +189,21 @@ public class SaopauloB2WCrawlersUtils {
 		if(initialJson.has("products") && initialJson.getJSONArray("products").length() > 0){
 			JSONObject productJson = initialJson.getJSONArray("products").getJSONObject(0);
 
+			JSONArray skus = getJSONSkus(productJson);
+			jsonProduct.put("skus", skus);
+			
+			String internalPid = null;
+			
 			if(productJson.has("id")){
-				jsonProduct.put("internalPid", productJson.getString("id"));
+				internalPid = productJson.getString("id");
+				jsonProduct.put("internalPid", internalPid);
 			}
 
 			if(productJson.has("name")) {
 				jsonProduct.put("name", productJson.get("name"));
 			}
 
-			JSONObject jsonPrices = getJsonPrices(productJson);
+			JSONObject jsonPrices = getJsonPrices(productJson, internalPid);
 			jsonProduct.put("prices", jsonPrices);
 
 			JSONObject jsonImages = getJSONImages(productJson);
@@ -195,9 +211,6 @@ public class SaopauloB2WCrawlersUtils {
 
 			JSONArray jsonCategories = getJSONCategories(productJson);
 			jsonProduct.put("categories", jsonCategories);
-
-			JSONArray skus = getJSONSkus(productJson);
-			jsonProduct.put("skus", skus);
 		}
 
 		return jsonProduct;
@@ -290,15 +303,30 @@ public class SaopauloB2WCrawlersUtils {
 		return jsonImages;
 	}
 
-	private static JSONObject getJsonPrices(JSONObject initialJson){
+	private static JSONObject getJsonPrices(JSONObject initialJson, String internalPid){
 		JSONObject jsonPrices = new JSONObject();
 
-		if(initialJson.has("offers")){
-			JSONArray offersJson = initialJson.getJSONArray("offers");
+		JSONArray offersJsonArray = new JSONArray();
+		
+		if(initialJson.has("offers")) {
+			offersJsonArray = initialJson.getJSONArray("offers");
+		} else if(initialJson.has("entities")) {
+			JSONObject entities = initialJson.getJSONObject("entities");
+			
+			if(entities.has("offers")) {
+				JSONObject offerObject = entities.getJSONObject("offers"); 
+				
+				if(offerObject.has(internalPid)) {
+					offersJsonArray = offerObject.getJSONArray(internalPid);
+				}
+			}
+		}
+		
+		if(offersJsonArray.length() > 0){
 			JSONArray moreQuantityOfInstallments = new JSONArray();
 
-			for(int i = 0; i < offersJson.length(); i++){
-				JSONObject jsonOffer = offersJson.getJSONObject(i);
+			for(int i = 0; i < offersJsonArray.length(); i++){
+				JSONObject jsonOffer = offersJsonArray.getJSONObject(i);
 				JSONObject jsonSeller = new JSONObject();
 				
 				String idProduct = crawlIdProduct(jsonOffer);

@@ -76,9 +76,9 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 			
 			// se não conseguir acessar a pagina principal do produto
-//			if(!frontPageJson.has("skus")) {
+			if(!frontPageJson.has("skus")) {
 				infoProductJson = infoProductJsonAPi;
-//			}
+			}
 			
 			String internalPid = this.crawlInternalPid(infoProductJson);
 			String name = this.crawlMainPageName(infoProductJson);
@@ -88,8 +88,6 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			String description = this.crawlDescription(internalPid, doc);
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
-			System.err.println(frontPageJson);
-			
 			for (String internalId : skuOptions.keySet()) {	
 				String variationName = (name.trim() + " " + skuOptions.get(internalId).trim()).trim();
 				Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
