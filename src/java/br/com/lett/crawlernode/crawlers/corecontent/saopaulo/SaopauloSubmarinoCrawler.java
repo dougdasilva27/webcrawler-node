@@ -76,7 +76,8 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 			
 			// se não conseguir acessar a pagina principal do produto
-			if(!frontPageJson.has("skus")) {
+			if(!frontPageJson.has("skus") || infoProductJson.getJSONObject("prices").keySet().size() < 1) {
+				Logging.printLogWarn(logger, session, "We will get information from old api, because the newest one do not have all the informations. ");
 				infoProductJson = infoProductJsonAPi;
 			}
 			

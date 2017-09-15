@@ -1,13 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
@@ -42,11 +46,11 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		Logging.printLogDebug(logger, session, "Adding cookie...");
 		
 		// performing request to get cookie
-		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
+		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
 		
 		BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
-		cookie.setDomain("www.princesadonorteonline.com.br");
-		cookie.setPath("/");
+		cookie.setDomain("www.supernossoemcasa.com.br");
+		cookie.setPath("/e-commerce/");
 		this.cookies.add(cookie);
 	}
 	
@@ -59,14 +63,15 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		if(url.contains("/p/")) {
 			String id = url.split("/p/")[1].split("/")[0];
 			String apiUrl = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + id;
-			
 			String page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
 			
 			if(page != null && page.startsWith("{") && page.endsWith("}")) {
 				try {
-					api = new JSONObject(page);
+					InputStream in = IOUtils.toInputStream(page, "UTF-8");
+					page = getRequestBody(in);
 					
-				} catch (JSONException e) {
+					api = new JSONObject(page);
+				} catch (Exception e) {
 					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 				}
 			}
@@ -309,4 +314,19 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		return prices;
 	}
 
+	protected String getRequestBody(InputStream t) throws IOException {
+		InputStreamReader isr =  new InputStreamReader(t, "utf-8");
+		BufferedReader br = new BufferedReader(isr);
+
+		int b;
+		StringBuilder buf = new StringBuilder(512);
+		while ((b = br.read()) != -1) {
+			buf.append((char) b);
+		}
+
+		br.close();
+		isr.close();
+
+		return buf.toString();
+	}
 }
