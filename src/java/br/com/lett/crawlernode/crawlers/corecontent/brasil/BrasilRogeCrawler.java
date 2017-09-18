@@ -8,7 +8,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -33,66 +35,42 @@ public class BrasilRogeCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(session.getOriginalURL()) ) {
+		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// InternalId
 			String internalId = crawlInternalId(doc);
-
-			// internalPid
 			String internalPid = crawlInternalPid(doc);
-
-			// availability
-			boolean available = crawlAvailability(doc);
-
-			// name
+			boolean available = false;
 			String name = crawlName(doc);
-
-			// price
-			Float price = crawlPrice(doc);
-
-			// prices
-			Prices prices = crawlPrices(doc);
-
-			// categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// primary image
+			Float price = null;
+			Prices prices = new Prices();
+			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// secondary images
 			String secondaryImages = crawlSecondaryImages(doc);
-
-			// description
 			String description = crawlDescription(doc);
-
-			// stock
 			Integer stock = null;
-
-			// marketplace
 			Marketplace marketplace = new Marketplace();
 
-			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setAvailable(available);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(marketplace)
+					.build();
 
 			products.add(product);
 
@@ -103,22 +81,25 @@ public class BrasilRogeCrawler extends Crawler {
 		return products;
 	}
 
-	private boolean isProductPage(String originalURL) {
-		return (originalURL.startsWith("https://www.roge.com.br/Produtos/ProdutosDetalhe"));
+	private boolean isProductPage(Document doc) {
+		return doc.select(".product-essential").first() != null;
 	}
-
+	
 	private String crawlInternalPid(Document doc) {
-		return null;
-	}
-
-	private Prices crawlPrices(Document doc) {
-		return new Prices();
+		String internalPid = null;
+		Element pid = doc.select(".short-description strong").last();
+		
+		if(pid != null) {
+			internalPid = pid.ownText().trim();
+		}
+		
+		return internalPid;
 	}
 
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 		
-		Element skuInformation = doc.select("div.informacoes-produto").first();
+		Element skuInformation = doc.select(".short-description").first();
 		if (skuInformation != null) {
 			description.append(skuInformation.html());
 		}
@@ -126,23 +107,30 @@ public class BrasilRogeCrawler extends Crawler {
 		return description.toString();
 	}
 
+	/**
+	 * @param doc
+	 * @return
+	 */
 	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 		
-		Elements secondaryImagesElements = doc.select("#thumblist li a");
-		for (int i = 1; i < secondaryImagesElements.size(); i++) { // the first is the same as the primary image
-			String relAttr = secondaryImagesElements.get(i).attr("rel").trim();
+		Elements images = doc.select(".picture-thumbs > div img");
+		
+		for(int i = 1; i < images.size(); i++) { //first item is the primaryImage
+			Element img = images.get(i);
 			
-			int beginIndex = relAttr.indexOf("largeimage:");
-			String largeImageSubstring = relAttr.substring(beginIndex, relAttr.length());
+			String image = img.attr("data-fullsize").trim();
 			
-			int srcIndex = largeImageSubstring.indexOf("src=") + 4; // remove the 'src='
-			int endIndex = largeImageSubstring.indexOf(".jpg"); // must append the extension on the final url
+			if(image.isEmpty()) {
+				image = img.attr("data-defaultsize").trim();
+			}
 			
-			String imageURL = largeImageSubstring.substring(srcIndex, endIndex).replaceAll("'", "") + ".jpg";
+			if(image.isEmpty()) {
+				image = img.attr("src").trim();
+			}
 			
-			secondaryImagesArray.put(imageURL);
+			secondaryImagesArray.put(image);
 		}
 		
 		if (secondaryImagesArray.length() > 0) {
@@ -154,52 +142,50 @@ public class BrasilRogeCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element primaryImageElement = doc.select(".detalhe-foto .foto-grande a").first();
+		Element primaryImageElement = doc.select(".gallery .picture img").first();
 		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("href").trim();
+			primaryImage = primaryImageElement.attr("src").trim();
 		}
 		return primaryImage;
 	}
 
-	private ArrayList<String> crawlCategories(Document doc) {
-		ArrayList<String> categories = new ArrayList<String>();		
+	/**
+	 * @param document
+	 * @return
+	 */
+	private CategoryCollection crawlCategories(Document document) {
+		CategoryCollection categories = new CategoryCollection();
+		Elements elementCategories = document.select(".breadcrumb ul li a span");
+		
+		for (int i  = 1; i < elementCategories.size(); i++) { 
+			String cat = elementCategories.get(i).ownText().trim();
+			
+			if(!cat.isEmpty()) {
+				categories.add( cat );
+			}
+		}
+
 		return categories;
 	}
 
-	private Float crawlPrice(Document doc) {
-		return null;
-	}
 
 	private String crawlName(Document doc) {
 		String name = null;
-		Element nameElement = doc.select("#lblProduto").first();
+		Element nameElement = doc.select(".product-name > h1").first();
+		
 		if (nameElement != null) {
-			String nameText = nameElement.text().trim();
-			int endIndex = nameText.indexOf("(");
-			name = nameText.substring(0, endIndex).trim();
+			name = nameElement.ownText().trim();
 		}
 		return name;
 	}
 
-	private boolean crawlAvailability(Document doc) {
-		return false;
-	}
-
 	private String crawlInternalId(Document doc) {
 		String internalId = null;
-		Element internalIdElement = doc.select("#hCodProduto").first();
+		Element internalIdElement = doc.select("#product-details-form > div[data-productid]").first();
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").trim();
+			internalId = internalIdElement.attr("data-productid").trim();
 		}
 		return internalId;
-	}
-	
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-
-		return "";
 	}
 
 }

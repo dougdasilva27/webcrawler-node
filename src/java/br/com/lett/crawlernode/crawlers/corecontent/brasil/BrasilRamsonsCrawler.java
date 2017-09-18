@@ -46,7 +46,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(session.getOriginalURL()) ) {
+		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 			String internalId = crawlInternalId(doc);
@@ -91,11 +91,8 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 	}
 
-	private boolean isProductPage(String url) {
-		if (url.endsWith("/p")) {
-			return true;
-		}
-		return false;
+	private boolean isProductPage(Document doc) {
+		return doc.select("#ProdutoCodigo").first() != null;
 	}
 
 	private String crawlInternalId(Document document) {
@@ -134,8 +131,8 @@ public class BrasilRamsonsCrawler extends Crawler {
 	private Float crawlPrice(Document document) {
 		Float price = null;
 
-		String priceText = null;
-		Element salePriceElement = document.select(".price.sale strong").first();		
+		String priceText;
+		Element salePriceElement = document.select(".price.sale strong[itemprop=price]").first();		
 
 		if (salePriceElement != null) {
 			priceText = salePriceElement.ownText();
@@ -164,7 +161,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 			primaryImage = elementPrimaryImage.attr("href");
 		} 
 
-		if (primaryImage == null || primaryImage.isEmpty() && (elementPrimaryImage != null)) {
+		if ((primaryImage == null || primaryImage.isEmpty()) && elementPrimaryImage != null) {
 			Element elementPrimaryImage2 = elementPrimaryImage.select("img").first();
 			
 			if (elementPrimaryImage2 != null) {
