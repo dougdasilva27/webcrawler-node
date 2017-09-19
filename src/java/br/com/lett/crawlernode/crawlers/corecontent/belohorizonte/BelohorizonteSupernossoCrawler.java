@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -63,13 +63,24 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		if(url.contains("/p/")) {
 			String id = url.split("/p/")[1].split("/")[0];
 			String apiUrl = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + id;
-			String page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+			
+			// request with fetcher
+			JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, null, null, DataFetcher.GET_REQUEST, session);
+			String page = null;
+			
+			if(fetcherResponse.has("response")) {
+				JSONObject response = fetcherResponse.getJSONObject("response");
+				
+				if(response.has("body")) {
+					page = response.getString("body");
+				}
+			} else {
+				//normal request
+				page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+			}
 			
 			if(page != null && page.startsWith("{") && page.endsWith("}")) {
 				try {
-					InputStream in = IOUtils.toInputStream(page, "UTF-8");
-					page = getRequestBody(in);
-					
 					api = new JSONObject(page);
 				} catch (Exception e) {
 					Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));

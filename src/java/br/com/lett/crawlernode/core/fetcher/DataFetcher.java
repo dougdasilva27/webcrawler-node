@@ -80,7 +80,7 @@ public class DataFetcher {
 
 	public static final String GET_REQUEST = "GET";
 	public static final String POST_REQUEST = "POST";
-	
+
 	public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
 	public static final String HTTP_HEADER_ACCEPT = "Accept";
 
@@ -95,7 +95,7 @@ public class DataFetcher {
 	public static final int DEFAULT_SOCKET_TIMEOUT_IMG = 20000; // ms
 
 	public static final int THIRTY_SECONDS_TIMEOUT = 30000;
-	
+
 	public static final String CONTENT_ENCODING = "compress, gzip";
 
 
@@ -103,7 +103,7 @@ public class DataFetcher {
 	public static List<String> userAgents;
 
 	public static List<String> errorCodes;
-	
+
 	public static List<String> highTimeoutMarkets;
 
 	/**
@@ -135,7 +135,7 @@ public class DataFetcher {
 				);
 
 		errorCodes = Arrays.asList("403");
-		
+
 		highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao");
 	}
 
@@ -271,7 +271,7 @@ public class DataFetcher {
 		return new JSONObject().toString();
 
 	}
-	
+
 	public static CookieStore createCookieStore(List<Cookie> cookies) {
 		CookieStore cookieStore = new BasicCookieStore();
 		if (cookies != null) {
@@ -281,7 +281,7 @@ public class DataFetcher {
 		}
 		return cookieStore;
 	}
-	
+
 	public static RequestConfig createRequestConfig(HttpHost proxy) {
 		RequestConfig requestConfig;
 		if (proxy != null) {
@@ -302,7 +302,7 @@ public class DataFetcher {
 					.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
 					.build();
 		}
-		
+
 		return requestConfig;
 	}
 
@@ -355,12 +355,12 @@ public class DataFetcher {
 		}
 
 	}
-	
+
 	public static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
 		TrustManager trustManager = new TrustManager();
 		SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(null, new TrustManager[]{trustManager}, null);
-		
+
 		return new SSLConnectionSocketFactory(sslContext);
 	}
 
@@ -433,19 +433,19 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpGet.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpGet.addHeader("X-Proxy-Country", "BR");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+			//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+			//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+			//				httpGet.addHeader("Proxy-Authorization", headerValue);
+			//
+			//				// setting header for proxy country
+			//				httpGet.addHeader("X-Proxy-Country", "BR");
+			//			}
 
 			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+			//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			//			}
 
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -463,7 +463,7 @@ public class DataFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
-			
+
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
@@ -628,19 +628,19 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpGet.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpGet.addHeader("X-Proxy-Country", "BR");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+			//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+			//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+			//				httpGet.addHeader("Proxy-Authorization", headerValue);
+			//
+			//				// setting header for proxy country
+			//				httpGet.addHeader("X-Proxy-Country", "BR");
+			//			}
 
 			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+			//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			//			}
 
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -658,7 +658,7 @@ public class DataFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
-			
+
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
@@ -748,7 +748,7 @@ public class DataFetcher {
 			Logging.printLogDebug(logger, "Performing GET request: " + url);
 
 			randUserAgent = DataFetcher.randUserAgent();
-			
+
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 
@@ -763,7 +763,7 @@ public class DataFetcher {
 			// creating the redirect strategy
 			// so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-			
+
 			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
 
@@ -782,14 +782,14 @@ public class DataFetcher {
 
 			// do request
 			httpclient.execute(httpGet);
-			
+
 		} catch (SocketTimeoutException e) {
 			// do nothing
 		} catch(Exception e) {
 			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param url
@@ -822,7 +822,7 @@ public class DataFetcher {
 		Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
 
 	}
-	
+
 	public static void sendRequestInfoLog(
 			String url, 
 			String requestType, 
@@ -937,19 +937,19 @@ public class DataFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpGet.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpGet.addHeader("X-Proxy-Country", "BR");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+			//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+			//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+			//				httpGet.addHeader("Proxy-Authorization", headerValue);
+			//
+			//				// setting header for proxy country
+			//				httpGet.addHeader("X-Proxy-Country", "BR");
+			//			}
 
 			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+			//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			//			}
 
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -977,7 +977,7 @@ public class DataFetcher {
 			bout.flush();  
 			bout.close();
 			is.close();
-			
+
 			// assembling request information log message
 			sendRequestInfoLog(
 					session.getOriginalURL(), 
@@ -1026,68 +1026,68 @@ public class DataFetcher {
 
 	}
 
-//	/**
-//	 * 
-//	 * @param attempt
-//	 * @param session
-//	 * @param proxyServices
-//	 * @return
-//	 */
-//	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
-//		LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
-//		session.addRequestProxy(url, nextProxy);
-//
-//		return nextProxy;
-//	}
-//
-//	/**
-//	 * 
-//	 * @param serviceName
-//	 * @param session
-//	 * @return
-//	 */
-//	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
-//		LettProxy nextProxy = null;
-//		
-//		List<String> proxiesTemp = proxyServices;
-//		int attemptTemp = attempt;
-//		
-//		while(!proxiesTemp.isEmpty()) {
-//			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
-//			if(serviceName != null) {
-//				proxiesTemp.remove(serviceName);
-//				
-//				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
-//					List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-//					
-//					if (!proxies.isEmpty()) {
-//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-//						break;
-//					} else {
-//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
-//					}
-//				}
-//				
-//				else if (Main.proxies != null) { // production
-//					List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
-//					
-//					if (!proxies.isEmpty()) {
-//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-//						break;
-//					} else {
-//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
-//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
-//					}
-//				}
-//			} else {
-//				Logging.printLogError(logger, session, "Error: using no proxy, because there is a proxy on this list that the crawler has no knowledge.");
-//				return null;
-//			}
-//		}
-//
-//		return nextProxy;
-//	}
+	//	/**
+	//	 * 
+	//	 * @param attempt
+	//	 * @param session
+	//	 * @param proxyServices
+	//	 * @return
+	//	 */
+	//	public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
+	//		LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
+	//		session.addRequestProxy(url, nextProxy);
+	//
+	//		return nextProxy;
+	//	}
+	//
+	//	/**
+	//	 * 
+	//	 * @param serviceName
+	//	 * @param session
+	//	 * @return
+	//	 */
+	//	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
+	//		LettProxy nextProxy = null;
+	//		
+	//		List<String> proxiesTemp = proxyServices;
+	//		int attemptTemp = attempt;
+	//		
+	//		while(!proxiesTemp.isEmpty()) {
+	//			String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
+	//			if(serviceName != null) {
+	//				proxiesTemp.remove(serviceName);
+	//				
+	//				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) { // testing
+	//					List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
+	//					
+	//					if (!proxies.isEmpty()) {
+	//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+	//						break;
+	//					} else {
+	//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+	//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+	//					}
+	//				}
+	//				
+	//				else if (Main.proxies != null) { // production
+	//					List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
+	//					
+	//					if (!proxies.isEmpty()) {
+	//						nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
+	//						break;
+	//					} else {
+	//						Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+	//						attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
+	//					}
+	//				}
+	//			} else {
+	//				Logging.printLogError(logger, session, "Error: using no proxy, because there is a proxy on this list that the crawler has no knowledge.");
+	//				return null;
+	//			}
+	//		}
+	//
+	//		return nextProxy;
+	//	}
 
 	/**
 	 * 
@@ -1111,34 +1111,34 @@ public class DataFetcher {
 	 */
 	public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
 		LettProxy nextProxy = null;
-		
+
 		List<LettProxy> proxies = new ArrayList<>();
 		Integer attemptTemp = Integer.valueOf(attempt);
 		Integer maxAttempts;
-		
+
 		if(session instanceof ImageCrawlerSession) {
 			maxAttempts = session.getMaxConnectionAttemptsImages();
 		} else {
 			maxAttempts = session.getMaxConnectionAttemptsCrawler();
 		}
-		
+
 		String serviceName = null;
-		
+
 		while(proxies.isEmpty() && attemptTemp <= maxAttempts) {
 			serviceName = getProxyService(attemptTemp, session, proxyServices);
-			
+
 			if (serviceName != null) {
 				if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
 					proxies = Test.proxies.getProxy(serviceName);
 				} else if(Main.proxies != null) {
 					proxies = Main.proxies.getProxy(serviceName);
 				}
-				
+
 				if (!proxies.isEmpty()) {
 					nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
 				} else {
 					attemptTemp += 1;
-					
+
 					if(!ProxyCollection.NO_PROXY.equals(serviceName)) {
 						Logging.printLogError(logger, session, "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
 					}
@@ -1148,10 +1148,10 @@ public class DataFetcher {
 				Logging.printLogError(logger, session, "Error: trying to use an unknown proxy service. I'll try the next one.");
 			}
 		}
-		
+
 		return nextProxy;
 	}
-	
+
 	/**
 	 * Retrieve a random user agent from the user agents array.
 	 * @return
@@ -1213,22 +1213,24 @@ public class DataFetcher {
 	 * @param url
 	 */
 	public static void setRequestProxyForFetcher(Session session, JSONObject response, String url) {
-		JSONObject statistics = response.getJSONObject("statistics");
-		
-		if(statistics.has("requests")) {
-			JSONArray requests = statistics.getJSONArray("requests");
-			
-			if(requests.length() > 0) {
-				JSONObject succesRequest = requests.getJSONObject(requests.length()-1);
-				
-				if(succesRequest.has("proxy")) {
-					JSONObject proxyObj = succesRequest.getJSONObject("proxy");
-					
-					if(proxyObj.length() > 0 && proxyObj.has("source")) {
-						LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), 
-								null, proxyObj.getString("location"), null, null);
-						
-						session.addRequestProxy(url, lettProxy);
+		if(response.has("statistics")) {
+			JSONObject statistics = response.getJSONObject("statistics");
+
+			if(statistics.has("requests")) {
+				JSONArray requests = statistics.getJSONArray("requests");
+
+				if(requests.length() > 0) {
+					JSONObject succesRequest = requests.getJSONObject(requests.length()-1);
+
+					if(succesRequest.has("proxy")) {
+						JSONObject proxyObj = succesRequest.getJSONObject("proxy");
+
+						if(proxyObj.length() > 0 && proxyObj.has("source")) {
+							LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), 
+									null, proxyObj.getString("location"), null, null);
+
+							session.addRequestProxy(url, lettProxy);
+						}
 					}
 				}
 			}

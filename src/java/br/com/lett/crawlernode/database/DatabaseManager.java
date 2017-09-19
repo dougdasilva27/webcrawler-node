@@ -19,14 +19,12 @@ public class DatabaseManager {
 	private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
 	public MongoDB connectionPanel;
-	public MongoDB connectionInsights; 
 	public MongoDB connectionImages;
 	public MongoDB connectionFrozen;
 	public PostgresSQL connectionPostgreSQL;
 
 	public DatabaseManager(DBCredentials credentials) {
 		
-		setMongoInsights(credentials);
 		setMongoPanel(credentials);
 		setMongoFrozen(credentials);
 		setMongoImages(credentials);
@@ -42,31 +40,7 @@ public class DatabaseManager {
 			System.exit(0);
 		}
 	}
-	
-	private void setMongoInsights(DBCredentials credentials) {
-		MongoCredentials credentialsInsights = credentials.getMongoInsightsCredentials();
-		connectionInsights = new MongoDB();
 
-		try {
-			connectionInsights.openConnection(credentialsInsights);
-			Logging.printLogDebug(logger, "Connection with database Mongo Insights performed successfully!");
-			
-			ReplicaSetStatus replicaSetStatus = connectionInsights.getReplicaSetStatus();
-			if ( replicaSetStatus != null ) {
-				Logging.printLogDebug(logger, "Connection mode: multiple");
-				Logging.printLogDebug(logger, replicaSetStatus.toString());
-			} else {
-				Logging.printLogDebug(logger, "Connection mode: single");
-				ServerAddress masterServerAddress = connectionInsights.getServerAddress();
-				Logging.printLogDebug(logger, masterServerAddress.toString());
-			}
-			
-		} catch (Exception e) {
-			Logging.printLogError(logger, "Erro ao conectar com o Mongo Insights.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-	}
-	
 	private void setMongoPanel(DBCredentials credentials) {
 		MongoCredentials credentialsPanel = credentials.getMongoPanelCredentials();
 		connectionPanel = new MongoDB();
