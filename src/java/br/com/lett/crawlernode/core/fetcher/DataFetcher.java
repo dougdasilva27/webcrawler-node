@@ -136,7 +136,13 @@ public class DataFetcher {
 
 		errorCodes = Arrays.asList("403");
 
-		highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao");
+		highTimeoutMarkets = Arrays.asList(
+				"bemol", 
+				"abxclimatizacao", 
+				"drogariapovao", 
+				"webcontinental",
+				"drogarianissei"
+				);
 	}
 
 	/**
