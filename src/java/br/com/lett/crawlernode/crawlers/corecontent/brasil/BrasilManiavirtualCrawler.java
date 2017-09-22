@@ -50,7 +50,7 @@ import models.prices.Prices;
 
 public class BrasilManiavirtualCrawler extends Crawler {
 	
-	private final String HOME_PAGE = "http://www.maniavirtual.com.br/";
+	private final String HOME_PAGE = "https://www.maniavirtual.com.br/";
 
 	public BrasilManiavirtualCrawler(Session session) {
 		super(session);
@@ -66,52 +66,27 @@ public class BrasilManiavirtualCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(session.getOriginalURL()) ) {
+		if ( isProductPage(doc) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// InternalId
 			String internalId = crawlInternalId(doc);
-
-			// Pid
-			String internalPid = crawlInternalPid(doc);
-
-			// Name
+			String internalPid = internalId;
 			String name = crawlName(doc);
-
-			// Price
 			Float price = crawlMainPagePrice(doc);
-			
-			// Prices
 			Prices prices = crawlPrices(doc, price);
+			boolean available = price != null;
 			
-			// Availability
-			boolean available = crawlAvailability(doc);
-
-			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
 			String category1 = getCategory(categories, 0);
 			String category2 = getCategory(categories, 1);
 			String category3 = getCategory(categories, 2);
 
-			// Primary image
 			String primaryImage = crawlPrimaryImage(doc);
-
-			// Secondary images
 			String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-
-			// Description
 			String description = crawlDescription(doc);
-
-			// Stock
 			Integer stock = null;
-
-			// Marketplace map
-			Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
-			// Marketplace
-			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
 			// Creating the product
 			Product product = new Product();
@@ -129,7 +104,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			product.setSecondaryImages(secondaryImages);
 			product.setDescription(description);
 			product.setStock(stock);
-			product.setMarketplace(marketplace);
+			product.setMarketplace(new Marketplace());
 
 			products.add(product);
 
@@ -146,9 +121,8 @@ public class BrasilManiavirtualCrawler extends Crawler {
 	 * Product page identification *
 	 *******************************/
 
-	private boolean isProductPage(String url) {
-		if ( url.startsWith(HOME_PAGE + "produto/") ) return true;
-		return false;
+	private boolean isProductPage(Document doc) {
+		return doc.select(".product-essential").first() != null;
 	}
 	
 	
@@ -158,35 +132,21 @@ public class BrasilManiavirtualCrawler extends Crawler {
 	
 	private String crawlInternalId(Document document) {
 		String internalId = null;
-		Element internalIdElement = document.select("#codigoProduto").first();
+		Element internalIdElement = document.select(".sku .value").first();
 
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").toString().trim();			
+			internalId = internalIdElement.ownText().trim();			
 		}
 
 		return internalId;
 	}
 
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
-
-		Element pidElement = document.select("#codigoProduto").first();
-
-		if (pidElement != null) {
-			String[] tokens = pidElement.attr("value").split("-");
-			
-			internalPid = tokens[0].trim();
-		}
-		
-		return internalPid;
-	}
-	
 	private String crawlName(Document document) {
 		String name = null;
-		Element nameElement = document.select(".produto-titulo").first();
+		Element nameElement = document.select(".product-name h1").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+			name = nameElement.text().trim();
 		}
 
 		return name;
@@ -194,43 +154,22 @@ public class BrasilManiavirtualCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
-		Element specialPrice = document.select(".descricao-preco > em").last();		
+		Element specialPrice = document.select(".product-price span").first();		
 		
 		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.ownText().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			String priceString = specialPrice.attr("content").trim();
+			price = priceString.isEmpty() ? null : Float.parseFloat( priceString );
 		} 
 
 		return price;
 	}
 	
-	private boolean crawlAvailability(Document document) {
-		Element notifyMeElement = document.select(".Aviseme").first();
-		
-		if (notifyMeElement != null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-	private Map<String, Float> crawlMarketplace(Document document) {
-		return new HashMap<String, Float>();
-	}
-	
-	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-		return new Marketplace();
-	}
-
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select(".produto-imagem a").first();
+		Element primaryImageElement = document.select(".gallery .picture a").first();
 
 		if (primaryImageElement != null) {
-			String image = primaryImageElement.attr("href").trim();
-			
-			if(verifyAvailabilityOfImage(image)){
-				primaryImage = image;
-			}
+			primaryImage = primaryImageElement.attr("href").trim();
 		}
 
 		return primaryImage;
@@ -240,12 +179,12 @@ public class BrasilManiavirtualCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select(".produto-thumb-slider li a");
+		Elements imagesElement = document.select(".picture-thumbs-item a");
 
 		for (int i = 0; i < imagesElement.size(); i++) { 
-			String image = imagesElement.get(i).attr("href").trim();
+			String image = imagesElement.get(i).attr("data-full-image-url").trim();
 			
-			if(!image.equals(primaryImage) && verifyAvailabilityOfImage(image)){
+			if(!image.equals(primaryImage)){
 				secondaryImagesArray.put(image);
 			}
 		}
@@ -257,19 +196,9 @@ public class BrasilManiavirtualCrawler extends Crawler {
 		return secondaryImages;
 	}
 
-	private boolean verifyAvailabilityOfImage(String image){
-		
-		if(image.endsWith(".jpg") || image.endsWith(".png") || image.endsWith(".jpeg")){
-			return true;
-		}
-		
-		return false;
-		
-	}
-	
 	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<String>();
-		Elements elementCategories = document.select("#breadcrumb li a");
+		ArrayList<String> categories = new ArrayList<>();
+		Elements elementCategories = document.select(".breadcrumb li span a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
 			categories.add( elementCategories.get(i).text().trim() );
@@ -288,10 +217,10 @@ public class BrasilManiavirtualCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Elements descriptionElements = document.select(".abaDescricao");
+		Element descriptionElements = document.select("#quickTab-description").first();
 		
-		for(Element e : descriptionElements){
-			description += e.html();
+		if(descriptionElements != null) {
+			description += descriptionElements.html();
 		}
 		
 		return description;
@@ -301,7 +230,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 		Prices prices = new Prices();
 		
 		if(price != null){
-			Element vistaPrice = doc.select(".skuBestPrice").first();
+			Element vistaPrice = doc.select(".overview div strong[style=font-size: 16px; color: #139100]").first();
 			
 			if(vistaPrice != null){
 				Float bankTicketPrice = MathCommonsMethods.parseFloat(vistaPrice.ownText());
@@ -309,20 +238,19 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			}
 			
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
-			Elements installments = doc.select(".produto-container-parcelamento > ul li");
+			Elements installments = doc.select("#Parcelas span");
 			
 			for(Element e : installments){
-				Element installmentElement = e.select("span").first();
+				String text = e.ownText().toLowerCase();
 				
-				if(installmentElement != null){
-					Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", ""));
+				if(text.contains("de")) {
+					int x = text.indexOf("de") + 2;
 					
-					Element installmentValue = e.select("strong").first();
+					String installment = text.substring(0, x).replaceAll("[^0-9]", "");
+					Float value = MathCommonsMethods.parseFloat(text.substring(x));
 					
-					if(installmentValue != null){
-						Float value = MathCommonsMethods.parseFloat(installmentValue.text());
-						
-						installmentPriceMap.put(installment, value);
+					if(!installment.isEmpty() && value != null) {
+						installmentPriceMap.put(Integer.parseInt(installment), value);
 					}
 				}
 			}
