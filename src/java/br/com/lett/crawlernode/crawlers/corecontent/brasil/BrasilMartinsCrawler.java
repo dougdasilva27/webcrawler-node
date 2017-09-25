@@ -120,6 +120,11 @@ public class BrasilMartinsCrawler extends Crawler {
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 		
+		Element infoProd = doc.select("#ctnCodProduto").first();
+		if(infoProd != null) {
+			description.append(infoProd.html());
+		}
+		
 		Element saleArgumentElement = doc.select("#lblArgumentoVenda").first();
 		if (saleArgumentElement != null) {
 			description.append(saleArgumentElement.html());
