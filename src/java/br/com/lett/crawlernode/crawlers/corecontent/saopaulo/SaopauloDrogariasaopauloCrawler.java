@@ -280,9 +280,14 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 			description.append(shortDescription.html());
 		}
 		
-		Element elementInformation = doc.select(".flt_left.productSpecification #caracteristicas").first();
+		Element elementInformation = doc.select(".productSpecification").first();
 		if(elementInformation != null) {
 			description.append(elementInformation.html());
+		}
+		
+		Element advert = doc.select(".advertencia").first();
+		if(advert != null) {
+			description.append(advert.html());
 		}
 
 		return description.toString();

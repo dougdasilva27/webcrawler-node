@@ -184,7 +184,7 @@ public class SaopauloSondaCrawler extends Crawler {
 
 		Elements elementCategories = document.select(".breadcrumb li > a");
 		for (int i = 0; i < elementCategories.size(); i++) { 
-			categories.add( elementCategories.get(i).ownText().trim() );
+			categories.add( elementCategories.get(i).text().trim() );
 		}
 
 		return categories;
