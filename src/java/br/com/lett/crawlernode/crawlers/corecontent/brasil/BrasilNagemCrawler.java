@@ -7,11 +7,14 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -19,6 +22,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -155,7 +159,7 @@ public class BrasilNagemCrawler extends Crawler {
 			primaryImage = primaryImageElement.attr("src").trim();
 			
 			if(!primaryImage.startsWith(HOME_PAGE)){
-				primaryImage = HOME_PAGE + primaryImage;
+				primaryImage = (HOME_PAGE + primaryImage).replace("br//", "br/");
 			}
 		}
 
@@ -172,7 +176,7 @@ public class BrasilNagemCrawler extends Crawler {
 			String image = e.attr("src").trim();
 			
 			if(!image.startsWith(HOME_PAGE)) {
-				image = HOME_PAGE + image;
+				image = (HOME_PAGE + image).replace("br//", "br/");
 			}
 			
 			secondaryImagesArray.put( image );	
@@ -202,7 +206,63 @@ public class BrasilNagemCrawler extends Crawler {
 		Element especificationElement = document.select("#especificacoes0").first();
 
 		if(descriptionElement != null) {
-			description.append(descriptionElement.html());
+			Element detalheNagem = document.select("#detalhe-nagem").first();
+			Element eanE = document.select("script[data-flix-inpage=flix-inpage][data-flix-ean]").first();
+			
+			if(eanE != null && detalheNagem != null && !detalheNagem.html().trim().isEmpty()) {
+				String ean = eanE.attr("data-flix-ean");
+				String url = "https://media.flixcar.com/delivery/js/inpage/4154/br/ean/" + ean + 
+						"?&=4154&=br&ean=" + ean + "&ssl=1&ext=.js";
+				
+				String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+				final String token = "$(\"#flixinpage_\"+i).inPage";
+				
+				JSONObject productInfo = new JSONObject();
+				
+				if(script.contains(token)) {
+					int x = script.indexOf(token + " (") + token.length()+2;
+					int y = script.indexOf(");", x);
+					
+					String json = script.substring(x, y);
+					
+					try {
+						productInfo = new JSONObject(json);
+					} catch (JSONException e) {
+						Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+					}
+				}
+				
+				if(productInfo.has("product")) {
+					String id = productInfo.getString("product");
+					
+					String urlDesc = "https://media.flixcar.com/delivery/inpage/show/4154/br/" + id + "/json?c=jsonpcar4154br" + id + 
+							"&complimentary=0&type=.html";
+					String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, cookies);
+					
+					if(scriptDesc.contains("({")) {
+						int x = scriptDesc.indexOf("({") + 1;
+						int y = scriptDesc.indexOf("})", x) + 1;
+
+						String json = scriptDesc.substring(x, y);
+						
+						try {
+							JSONObject jsonInfo = new JSONObject(json);
+							
+							if(jsonInfo.has("html")) {
+								if(jsonInfo.has("css")) {
+									description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
+								}
+								
+								description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
+							}
+						} catch (JSONException e) {
+							Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+						}
+					}
+				}
+			} else if(!descriptionElement.text().trim().isEmpty()) {
+				description.append(descriptionElement.html());
+			}
 		}
 		
 		if(especificationElement != null) {

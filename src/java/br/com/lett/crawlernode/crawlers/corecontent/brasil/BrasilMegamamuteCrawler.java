@@ -42,7 +42,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc, this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -77,11 +77,11 @@ public class BrasilMegamamuteCrawler extends Crawler {
 				String category1 = "";
 				String category2 = "";
 				String category3 = "";
-				Elements elementCategories = doc.select(".x-breadcrumb .bread-crumb ul li a");
-				ArrayList<String> categories = new ArrayList<String>();
+				Elements elementCategories = doc.select(".bread-crumb ul li:not(.last) a");
+				List<String> categories = new ArrayList<>();
 				for(Element e : elementCategories) {
 					String tmp = e.text().trim();
-					if( !tmp.equals("megamamute") ) {
+					if( !tmp.equalsIgnoreCase("megamamute") ) {
 						categories.add(tmp);
 					}
 				}
@@ -116,7 +116,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
 				// Descrição
 				String description = "";
-				Element elementDescription = doc.select(".x-description-group .x-item .productDescription").first();
+				Element elementDescription = doc.select(".productDescription").first();
 				Element elementEspecification = doc.select("#caracteristicas").first();
 				if(elementDescription != null) {
 					description = description + elementDescription.html();
