@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -64,8 +65,11 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 			String id = url.split("/p/")[1].split("/")[0];
 			String apiUrl = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + id;
 			
+			Map<String,String> headers = new HashMap<>();
+			headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
+			
 			// request with fetcher
-			JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, null, null, DataFetcher.GET_REQUEST, session);
+			JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session);
 			String page = null;
 			
 			if(fetcherResponse.has("response")) {

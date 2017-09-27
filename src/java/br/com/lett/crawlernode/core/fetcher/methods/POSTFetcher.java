@@ -952,10 +952,13 @@ public class POSTFetcher {
 			// Proxies sequencie to be used for requests (1x per proxy service)
 			JSONArray any = new JSONArray();
 			any.put(ProxyCollection.BUY);
-			//any.put(ProxyCollection.AZURE);
-			any.put(ProxyCollection.STORM);
+//			any.put(ProxyCollection.AZURE);
+//			any.put(ProxyCollection.STORM);
 			any.put(ProxyCollection.LUMINATI_SERVER_BR);
 			any.put(ProxyCollection.BONANZA);
+			any.put(ProxyCollection.STORM_RESIDENTIAL_US);
+			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_AR);
+			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_MX);
 			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
 			any.put(ProxyCollection.NO_PROXY);
 
