@@ -5,12 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -36,6 +38,19 @@ public class BrasilBifarmaCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
 	}
 
+	@Override 
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		// performing request to get cookie
+		String cookieValue = DataFetcher.fetchCookie(session, "https://www.bifarma.com.br//content.incapsula.com/jsTest.html", "JSESSIONID", null, 1);
+		
+		BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
+		cookie.setDomain("www.bifarma.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+	}
+	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);

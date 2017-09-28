@@ -49,7 +49,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 		// performing request to get cookie
 		String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
 		
-		BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
+		BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
 		cookie.setDomain("www.supernossoemcasa.com.br");
 		cookie.setPath("/e-commerce/");
 		this.cookies.add(cookie);
