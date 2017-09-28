@@ -5,20 +5,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import com.google.common.collect.ImmutableMap;
+
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -37,25 +40,20 @@ public class BrasilBifarmaCrawler extends Crawler {
 		String href = this.session.getOriginalURL().toLowerCase();
 		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
 	}
-
-	@Override 
-	public void handleCookiesBeforeFetch() {
-		Logging.printLogDebug(logger, session, "Adding cookie...");
-		
-		// performing request to get cookie
-		String cookieValue = DataFetcher.fetchCookie(session, "https://www.bifarma.com.br//content.incapsula.com/jsTest.html", "JSESSIONID", null, 1);
-		
-		BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
-		cookie.setDomain("www.bifarma.com.br");
-		cookie.setPath("/");
-		this.cookies.add(cookie);
-	}
 	
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
+		if(!isProductPage(doc)) {
+			Logging.printLogWarn(logger, session, "Tentando acessar pela segunda vez, porem com header accept.");
+			doc = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, 
+					ImmutableMap.of("accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"), 1));
+		}
+		
+		CommonMethods.saveStringToAFile(doc, "/home/gabriel/Desktop/bifarma.html");
+		
 		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 			

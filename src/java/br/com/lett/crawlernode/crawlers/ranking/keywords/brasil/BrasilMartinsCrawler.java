@@ -27,7 +27,7 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select("div.ctnItemMiniatura");
+		Elements products =  this.currentDoc.select(".product-search .quick-view");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:	
 		if(products.size() >= 1) {
@@ -37,13 +37,9 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 			}
 			
 			for(Element e: products) {
-				//seta o id da classe pai com o id retirado do elements
 				String internalPid 	= null;
-				String internalId 	= e.attr("codmer");
-				
-				//monta a url
-				Element eUrl = e.select("div > a.desproduto").first();
-				String urlProduct  = "https://b.martins.com.br/"+eUrl.attr("href");
+				String internalId = crawlInternalId(e);
+				String urlProduct  = crawlProductUrl(e);
 				
 				saveDataProduct(internalId, internalPid, urlProduct);
 				
@@ -91,4 +87,23 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords{
 		this.log("Total da busca: "+this.totalProducts);
 	}
 
+	private String crawlInternalId(Element e){
+		String internalId = e.attr("data-codigo");
+		
+		if(internalId.isEmpty()) {
+			return null;
+		}
+		
+		return internalId;
+	}
+	
+	private String crawlProductUrl(Element e){
+		String productUrl = e.attr("data-url");
+		
+		if(!productUrl.startsWith("https://b.martins.com.br/")) {
+			productUrl = ("https://b.martins.com.br/" + productUrl).replace("br//", "br/");
+		}
+		
+		return productUrl;
+	}
 }
