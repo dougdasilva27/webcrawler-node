@@ -140,7 +140,9 @@ public abstract class CrawlerRanking extends Task {
 				Logging.printLogError(logger, error.getErrorContent());
 			}
 
-			Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+			if(!(session instanceof TestRankingSession)) {
+				Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+			}
 
 			session.setTaskStatus(Task.STATUS_FAILED);
 		}
@@ -672,7 +674,13 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected String fetchPostFetcher(String url, String payload, Map<String,String> headers, List<Cookie> cookies) {
-		return POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session).getJSONObject("response").getString("body");
+		JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
+		
+		if(res != null && res.has("response")) {
+			return res.getJSONObject("response").getString("body");
+		}
+		
+		return null;
 	}
 	
 	/**

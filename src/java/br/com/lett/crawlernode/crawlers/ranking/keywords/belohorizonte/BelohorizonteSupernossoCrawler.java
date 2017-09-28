@@ -105,9 +105,10 @@ public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords{
 		
 		Map<String, String> headers = new HashMap<>();
 		headers.put("Content-Type", "application/json");
-		headers.put("referer", "https://www.supernossoemcasa.com.br/e-commerce/search?query=nestle");
+		headers.put("referer", "https://www.supernossoemcasa.com.br/e-commerce/search?query=" + this.keywordEncoded);
+		headers.put("accept", "application/json");
 
-		String page = fetchPostFetcher("https://www.supernossoemcasa.com.br/e-commerce/api/products/autocomplete", payload, headers, null).trim();
+		String page = fetchPostFetcher("https://www.supernossoemcasa.com.br/e-commerce/api/products/autocomplete", payload, headers, null);
 		
 		if(page != null && page.startsWith("{") && page.endsWith("}")) {
 			try {

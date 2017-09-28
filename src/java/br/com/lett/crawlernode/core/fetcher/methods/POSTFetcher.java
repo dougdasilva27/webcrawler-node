@@ -816,9 +816,9 @@ public class POSTFetcher {
 
 		RequestConfig requestConfig = RequestConfig.custom()
 				.setRedirectsEnabled(true)
-				.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 2)
-				.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT * 2)
-				.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT * 2)
+				.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 4)
+				.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT * 4)
+				.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT * 4)
 				.build();
 
 		List<Header> reqHeaders = new ArrayList<>();
@@ -956,10 +956,10 @@ public class POSTFetcher {
 //			any.put(ProxyCollection.STORM);
 			any.put(ProxyCollection.LUMINATI_SERVER_BR);
 			any.put(ProxyCollection.BONANZA);
-			any.put(ProxyCollection.STORM_RESIDENTIAL_US);
-			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_AR);
-			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_MX);
-			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
+//			any.put(ProxyCollection.STORM_RESIDENTIAL_US);
+//			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_AR);
+//			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_MX);
+//			any.put(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
 			any.put(ProxyCollection.NO_PROXY);
 
 			proxies.put("any", any);

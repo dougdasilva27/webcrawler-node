@@ -7,21 +7,17 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import com.google.common.collect.ImmutableMap;
-
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -33,6 +29,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
 	public BrasilBifarmaCrawler(Session session) {
 		super(session);
+		super.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override
@@ -46,14 +43,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if(!isProductPage(doc)) {
-			Logging.printLogWarn(logger, session, "Tentando acessar pela segunda vez, porem com header accept.");
-			doc = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, 
-					ImmutableMap.of("accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"), 1));
-		}
-		
-		CommonMethods.saveStringToAFile(doc, "/home/gabriel/Desktop/bifarma.html");
-		
 		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 			
