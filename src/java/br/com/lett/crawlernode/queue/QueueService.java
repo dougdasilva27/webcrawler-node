@@ -30,15 +30,15 @@ public class QueueService {
 
 	private static final Map<String, String> queueURLMap;
 
-	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-seed";
-	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights";
-	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-insights-development";
-	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover";
-	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-images";
-	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-rating";
-	private static final String RANKING_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-ranking-keywords";
-	private static final String DISCOVER_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/354284365376/crawler-discover-keywords";
-	private static final String INTEREST_PROCESSED_URL 					= "https://sqs.us-east-1.amazonaws.com/354284365376/interest-processed";
+	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-seed";
+	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights";
+	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights-development";
+	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover";
+	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-images";
+	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-rating";
+	private static final String RANKING_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-ranking-keywords";
+	private static final String DISCOVER_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover-keywords";
+	private static final String INTEREST_PROCESSED_URL 					= "https://sqs.us-east-1.amazonaws.com/127229910321/interest-processed";
 
 	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
