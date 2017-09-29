@@ -44,6 +44,9 @@ import com.amazonaws.services.s3.model.S3Object;
 public class S3Service {
 
 	protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+	
+	private static final String MASTER_ACCES_KEY = "AKIAIDRH2ZRKWAZCYSMA";
+	private static final String MASTER_SECRET_KEY = "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";
 
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
 	public static final String HTML_UPLOAD_TYPE = "html";
@@ -54,22 +57,18 @@ public class S3Service {
 	private static AWSCredentials credentialsImages;
 	private static AmazonS3 s3clientImages;
 	private static final String IMAGES_BUCKET_NAME   = "lett-media";
-	private static final String ACCES_KEY_IMAGES     = "AKIAJEDMKADEFVS4ISQQ";
-	private static final String SECRET_KEY_IMAGES    = "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";
 
 	// Amazon crawler-session
 	private static AWSCredentials credentialsCrawlerSessions;
 	private static AmazonS3 s3clientCrawlerSessions;
-	private static String crawlerLogsBucketName  		= "lett-logs";
+	private static String crawlerLogsBucketName  		= "placeholder-logs";
 	private static String crawlerSessionsPrefix  		= "crawler-sessions";
-	private static String accessKeyCrawlerSessions      = "AKIAIB4EBBCHAGRUFJLA";
-	private static String secretKeyCrawlerSessions      = "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";
 
 	static {
-		credentialsImages = new BasicAWSCredentials(ACCES_KEY_IMAGES, SECRET_KEY_IMAGES);
+		credentialsImages = new BasicAWSCredentials(MASTER_ACCES_KEY, MASTER_SECRET_KEY);
 		s3clientImages = new AmazonS3Client(credentialsImages);
 
-		credentialsCrawlerSessions = new BasicAWSCredentials(accessKeyCrawlerSessions, secretKeyCrawlerSessions);
+		credentialsCrawlerSessions = new BasicAWSCredentials(MASTER_ACCES_KEY, MASTER_SECRET_KEY);
 		s3clientCrawlerSessions = new AmazonS3Client(credentialsCrawlerSessions);
 	}
 

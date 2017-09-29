@@ -18,20 +18,18 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
  * creates the queue instance.
  * When running in development environment, only the development queue is created.
  * Analogous for modes insights and discovery in production environment.
- * @author Samir Leao
+ * 
+ * @author Samir Leão
  *
  */
 public class QueueHandler {
 
-	protected static final Logger logger = LoggerFactory.getLogger(QueueHandler.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(QueueHandler.class);
 	
-	private static String AWS_ACCESS_KEY  = "AKIAIB4EBBCHAGRUFJLA";
-	private static String SECRET_KEY      = "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";
+	private static final String MASTER_ACCES_KEY = "AKIAIDRH2ZRKWAZCYSMA";
+	private static final String MASTER_SECRET_KEY = "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";
 
-//	private final String AWS_ACCESS_KEY = "AKIAJ73Z3NTUDN2IF7AA";
-//	private final String SECRET_KEY = "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";
-
-	private AmazonSQS sqs;
+	private AmazonSQS sqsClient;
 
 	/**
 	 * Default constructor for QueueHandler.
@@ -41,20 +39,21 @@ public class QueueHandler {
 	public QueueHandler() {
 		AWSCredentials credentials = null;
 		try {
-			credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, SECRET_KEY);
+			credentials = new BasicAWSCredentials(MASTER_ACCES_KEY, MASTER_SECRET_KEY);
 		} catch (Exception e) {
 			throw new AmazonClientException("Cannot create credentials", e);
 		}
 
 		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 
-		Logging.printLogDebug(logger, "Authenticating on Amazon SQS service...");
-		sqs = new AmazonSQSClient(credentials);
-		sqs.setRegion(usEast1);
+		Logging.printLogDebug(LOGGER, "Authenticating on Amazon SQS service...");
+		
+		sqsClient = new AmazonSQSClient(credentials);
+		sqsClient.setRegion(usEast1);
 	}
 
 	public AmazonSQS getSqs() {
-		return sqs;
+		return sqsClient;
 	}
 
 }
