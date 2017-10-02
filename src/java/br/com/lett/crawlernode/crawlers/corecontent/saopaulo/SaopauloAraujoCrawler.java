@@ -74,20 +74,7 @@ public class SaopauloAraujoCrawler extends Crawler {
 			category2 = cat[2];
 			category3 = "";
 
-			// Descrição
-			String description = "";
-
-			try {
-
-				Element[] sections = new Element[]{
-						doc.select(".product-sku-info-wrapper .row").first(),
-						doc.select("td.Informe-Ministerio-Saude-01").first(),
-						doc.select(".product-tabs").first(),
-				};
-				for(Element e: sections) {if(e != null) description = description + e.html(); }
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+			String description = crawlDescription(doc);
 
 			// Pegar produtos dentro da url
 			Elements elementProduct = doc.select(".skuList");
@@ -333,6 +320,24 @@ public class SaopauloAraujoCrawler extends Crawler {
 		}
 
 		return mapInstallments;
+	}
+	
+	private String crawlDescription(Document doc) {
+		StringBuilder description = new StringBuilder();
+		
+		Elements rows = doc.select("#caracteristicas table.Caracteristica");
+		
+		for(Element e : rows) {
+			description.append(e.outerHtml() + " \n");
+		}
+		
+		Element elementDescriptionMais = doc.select("#caracteristicas table.Saiba-Mais").first();
+		
+		if (elementDescriptionMais != null) {
+			description.append(elementDescriptionMais.outerHtml());		
+		}
+		
+		return description.toString();
 	}
 
 }
