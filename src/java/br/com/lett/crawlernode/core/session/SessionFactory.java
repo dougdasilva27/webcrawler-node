@@ -42,16 +42,16 @@ public class SessionFactory {
 		else if (queueName.equals(QueueName.DISCOVER)) {
 			return new DiscoveryCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.RATING)) {
+		else if (queueName.equals(QueueName.RATING) || queueName.equals(QueueName.RATING_WEBDRIVER)) {
 			return new RatingReviewsCrawlerSession(request, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.IMAGES)) {
 			return new ImageCrawlerSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.RANKING_KEYWORDS)) {
+		else if (queueName.equals(QueueName.RANKING_KEYWORDS) || queueName.equals(QueueName.RANKING_KEYWORDS_WEBDRIVER)) {
 			return new RankingKeywordsSession(request, queueName, markets);
 		}
-		else if (queueName.equals(QueueName.DISCOVER_KEYWORDS)) {
+		else if (queueName.equals(QueueName.DISCOVER_KEYWORDS) || queueName.equals(QueueName.DISCOVER_KEYWORDS_WEBDRIVER)) {
 			return new RankingDiscoverKeywordsSession(request, queueName, markets);
 		}
 		else if (queueName.equals(QueueName.RANKING_CATEGORIES)) {

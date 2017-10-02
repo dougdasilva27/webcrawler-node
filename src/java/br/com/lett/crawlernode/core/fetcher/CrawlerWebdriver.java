@@ -1,15 +1,10 @@
 package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.File;
-import java.net.URI;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
-
 import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -24,8 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -163,7 +158,7 @@ public class CrawlerWebdriver {
 	public void terminate() {
 		driver.close();
 		driver.quit();
-		if (!(session instanceof TestCrawlerSession)) {
+		if (!(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession)) {
 			Main.server.decrementWebdriverInstances();
 		}
 	}

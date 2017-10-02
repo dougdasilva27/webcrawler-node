@@ -98,7 +98,10 @@ public class ServerHandler implements HttpHandler {
 		
 		if (QueueName.IMAGES.equals(queueName)) {
 			request = new ImageCrawlerRequest();
-		} else if(QueueName.RANKING_KEYWORDS.equals(queueName) || QueueName.DISCOVER_KEYWORDS.equals(queueName)) {
+		} else if(QueueName.RANKING_KEYWORDS.equals(queueName) 
+				|| QueueName.RANKING_KEYWORDS_WEBDRIVER.equals(queueName)
+				|| QueueName.DISCOVER_KEYWORDS.equals(queueName)
+				|| QueueName.DISCOVER_KEYWORDS_WEBDRIVER.equals(queueName)) {
 			request = new CrawlerRankingKeywordsRequest();
 		} else if(QueueName.RANKING_CATEGORIES.equals(queueName) || QueueName.DISCOVER_CATEGORIES.equals(queueName)) {
 			request = new CrawlerRankingCategoriesRequest();

@@ -20,8 +20,10 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 		String url = "https://www.bifarma.com.br/busca_Loja.html?q=" + this.keywordWithoutAccents.replace(" ", "+");
 		this.log("Link onde são feitos os crawlers: " + url);
 
-		// chama função de pegar o html
-		this.currentDoc = fetchDocument(url);
+		
+		//url = URLBox.getUrlForHtmlUrlBox(url, session, 1, null);
+		//CommonMethods.delay(15);
+		this.currentDoc = fetchDocumentWithWebDriver(url);
 
 		Elements products = this.currentDoc.select("#gridProdutos .product");
 

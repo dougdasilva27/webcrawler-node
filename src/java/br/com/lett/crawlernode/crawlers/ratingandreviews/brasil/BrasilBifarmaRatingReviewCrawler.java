@@ -4,6 +4,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -21,6 +22,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
 
 	public BrasilBifarmaRatingReviewCrawler(Session session) {
 		super(session);
+		super.config.setFetcher(Fetcher.WEBDRIVER);
 	}
 
 	@Override

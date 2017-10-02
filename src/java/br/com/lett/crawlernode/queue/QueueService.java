@@ -31,14 +31,23 @@ public class QueueService {
 	private static final Map<String, String> queueURLMap;
 
 	private static final String SEED_QUEUE_URL 							= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-seed";
-	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights";
 	private static final String INSIGHTS_DEVELOPMENT_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights-development";
 	private static final String DISCOVERY_QUEUE_URL 					= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover";
+	private static final String DISCOVERY_WEBDRIVER_QUEUE_URL 			= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover-webdriver";
+	private static final String INSIGHTS_QUEUE_URL 						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights";
+	private static final String WEBDRIVER_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-insights-webdriver";
 	private static final String IMAGES_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-images";
 	private static final String RATING_QUEUE_URL						= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-rating";
-	private static final String RANKING_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-ranking-keywords";
+	private static final String RATING_QUEUE_WEBDRIVER_URL				= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-rating-webdriver";
+	private static final String LAMBDA_URL								= "https://sqs.us-east-1.amazonaws.com/127229910321/lambda-test";
+	private static final String RANKING_KEYWORDS_URL					= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-ranking-keywords";
 	private static final String DISCOVER_KEYWORDS_QUEUE_URL				= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover-keywords";
-	private static final String INTEREST_PROCESSED_URL 					= "https://sqs.us-east-1.amazonaws.com/127229910321/interest-processed";
+	private static final String RANKING_KEYWORDS_WEBDRIVER_URL			= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-ranking-keywords-webdriver";
+	private static final String DISCOVER_KEYWORDS_WEBDRIVER_QUEUE_URL 	= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover-keywords-webdriver";
+	private static final String RANKING_CATEGORIES_URL					= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-ranking-categories";
+	private static final String DISCOVER_CATEGORIES_QUEUE_URL			= "https://sqs.us-east-1.amazonaws.com/127229910321/crawler-discover-categories";
+	private static final String INTEREST_PROCESSED_URL 					= "https://sqs.us-east-1.amazonaws.com/127229910321/interest-processed"; 
+	
 
 	public static final String MARKET_ID_MESSAGE_ATTR 			= "marketId";
 	public static final String PROCESSED_ID_MESSAGE_ATTR 		= "processedId";
@@ -52,14 +61,23 @@ public class QueueService {
 	static {
 		queueURLMap = new HashMap<>();
 		queueURLMap.put(QueueName.DISCOVER, DISCOVERY_QUEUE_URL);
+		queueURLMap.put(QueueName.DISCOVER_KEYWORDS_WEBDRIVER, DISCOVERY_WEBDRIVER_QUEUE_URL);
 		queueURLMap.put(QueueName.IMAGES, IMAGES_QUEUE_URL);
 		queueURLMap.put(QueueName.INSIGHTS, INSIGHTS_QUEUE_URL);
 		queueURLMap.put(QueueName.INSIGHTS_DEVELOPMENT, INSIGHTS_DEVELOPMENT_QUEUE_URL);
 		queueURLMap.put(QueueName.RATING, RATING_QUEUE_URL);
 		queueURLMap.put(QueueName.SEED, SEED_QUEUE_URL);
-		queueURLMap.put(QueueName.RANKING_KEYWORDS, RANKING_KEYWORDS_QUEUE_URL);
+		queueURLMap.put(QueueName.RANKING_KEYWORDS, RANKING_KEYWORDS_URL);
 		queueURLMap.put(QueueName.DISCOVER_KEYWORDS, DISCOVER_KEYWORDS_QUEUE_URL);
 		queueURLMap.put(QueueName.INTEREST_PROCESSED, INTEREST_PROCESSED_URL);
+		
+		queueURLMap.put(QueueName.RATING_WEBDRIVER, RATING_QUEUE_WEBDRIVER_URL);
+		queueURLMap.put(QueueName.LAMBDA, LAMBDA_URL);
+		queueURLMap.put(QueueName.RANKING_KEYWORDS_WEBDRIVER, RANKING_KEYWORDS_WEBDRIVER_URL);
+		queueURLMap.put(QueueName.RANKING_CATEGORIES, RANKING_CATEGORIES_URL);
+		queueURLMap.put(QueueName.DISCOVER_KEYWORDS_WEBDRIVER, DISCOVER_KEYWORDS_WEBDRIVER_QUEUE_URL);
+		queueURLMap.put(QueueName.DISCOVER_CATEGORIES, DISCOVER_CATEGORIES_QUEUE_URL);
+		queueURLMap.put(QueueName.WEBDRIVER, WEBDRIVER_QUEUE_URL);
 	}
 
 	/**
