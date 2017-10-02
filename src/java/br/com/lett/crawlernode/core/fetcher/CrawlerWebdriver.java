@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -157,7 +158,7 @@ public class CrawlerWebdriver {
 	public void terminate() {
 		driver.close();
 		driver.quit();
-		if (!(session instanceof TestCrawlerSession)) {
+		if (!(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession)) {
 			Main.server.decrementWebdriverInstances();
 		}
 	}
