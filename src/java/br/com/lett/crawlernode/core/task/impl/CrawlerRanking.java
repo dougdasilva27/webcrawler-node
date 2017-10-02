@@ -125,6 +125,12 @@ public abstract class CrawlerRanking extends Task {
 			// Identify anomalies
 			anomalyDetector(this.location, this.session.getMarket(), this.rankType);
 		}
+		
+		// close the webdriver
+		if (webdriver != null ) {
+			Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
+			webdriver.terminate();
+		}
 
 		List<SessionError> errors = session.getErrors();
 
@@ -212,11 +218,6 @@ public abstract class CrawlerRanking extends Task {
 			} else if(session instanceof RankingDiscoverSession) {
 				//				persistDiscoverData();
 			}
-			
-			if(this.webdriver != null) {
-				this.webdriver.terminate();
-			}
-
 		} catch (Exception e) {
 			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
 			session.registerError(error);

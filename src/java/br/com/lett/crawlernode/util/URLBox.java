@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 
 public class URLBox {
 
@@ -45,18 +46,19 @@ public class URLBox {
 		Map<String, Object> options = new HashMap<>();
 		options.put("full_page", "true");
 		
-		LettProxy proxy = session.getRequestProxy(url);
+		//LettProxy proxy = session.getRequestProxy(url);
 		
-		if(proxy != null && !proxy.getSource().contains("luminati")) {
+		/*if(proxy != null && !proxy.getSource().contains("luminati")) {
 			if(proxy.getUser() != null) {
 				options.put("proxy", proxy.getUser() + "%3A" + proxy.getPass() + "%40"+ proxy.getAddress()+ "%3A" + proxy.getPort());
 			} else if( proxy.getAddress() != null &&  proxy.getPort() != null) {
 				options.put("proxy", proxy.getAddress() + "%3A" + proxy.getPort());
 			}
-		}	
+		}*/	
 		
 		options.put("use_s3", true);
 		options.put("force", true);
+		options.put("save_html", true);
 		
 		String date = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
 		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
@@ -70,6 +72,12 @@ public class URLBox {
 			
 			urlBuilder.append(path);
 			options.put("s3_path", path);
+		} else if(session instanceof TestRankingSession) {
+			String path = "%2F" + pathRanking + "%2F" + ((TestRankingSession)session).getLocation().replace(" ", "_") +
+					"%2F" + session.getMarket().getName() + "%2F" + date + "%2F" + page + "-" + hash;
+			
+			urlBuilder.append(path);
+			options.put("s3_path", path);
 		} else {
 			String path = "%2Fteste%2F" + session.getProcessedId() + "%2F" + date;
 			
@@ -78,6 +86,79 @@ public class URLBox {
 		}
 		
 		urlBuilder.append(".jpeg");
+		s3Link = urlBuilder.toString().replace("%2F", "/");
+		
+		try {
+			Logging.printLogDebug(logger, session, "Take a screenshot for url: " + url);
+			
+			// Call generateUrl function of urlbox object
+			String apiUrl = generateUrl(url , options, urlboxKey, urlboxSecret, cookies, session);
+			
+			Logging.printLogDebug(logger, session, "Api url " + apiUrl);
+			
+			DataFetcher.fetchPageAPIUrlBox(apiUrl);
+		} catch (UnsupportedEncodingException ex) {
+			Logging.printLogError(logger, session, "Problem with url encoding");
+			Logging.printLogError(logger, CommonMethods.getStackTrace(ex));
+		}
+		
+		Logging.printLogDebug(logger, session, "Screenshot was send to s3.");
+		
+		return s3Link;
+	}
+	
+	public static String getUrlForHtmlUrlBox(String url, Session session, int page, List<Cookie> cookies) {
+		String s3Link = null;
+		
+		String urlboxKey = "2hXKGlSeR95wCDVl";
+		String urlboxSecret = "98108a7bb45240f3b18ed1ea75906d6f";
+		
+		String pathRanking = "ranking";
+
+		// Set request options
+		Map<String, Object> options = new HashMap<>();
+		options.put("full_page", "true");
+		
+		//LettProxy proxy = session.getRequestProxy(url);
+		
+		/*if(proxy != null && !proxy.getSource().contains("luminati")) {
+			if(proxy.getUser() != null) {
+				options.put("proxy", proxy.getUser() + "%3A" + proxy.getPass() + "%40"+ proxy.getAddress()+ "%3A" + proxy.getPort());
+			} else if( proxy.getAddress() != null &&  proxy.getPort() != null) {
+				options.put("proxy", proxy.getAddress() + "%3A" + proxy.getPort());
+			}
+		}*/	
+		
+		options.put("use_s3", true);
+		options.put("force", true);
+		options.put("save_html", true);
+		
+		String date = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
+		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
+		
+		StringBuilder urlBuilder = new StringBuilder();
+		urlBuilder.append("https://s3.amazonaws.com/lett-screenshot");
+		
+		if(session instanceof RankingSession) {
+			String path = "%2F" + pathRanking + "%2F" + ((RankingSession)session).getLocation().replace(" ", "_") +
+					"%2F" + session.getMarket().getName() + "%2F" + date + "%2F" + page + "-" + hash;
+			
+			urlBuilder.append(path);
+			options.put("s3_path", path);
+		} else if(session instanceof TestRankingSession) {
+			String path = "%2F" + pathRanking + "%2F" + ((TestRankingSession)session).getLocation().replace(" ", "_") +
+					"%2F" + session.getMarket().getName() + "%2F" + date + "%2F" + page + "-" + hash;
+			
+			urlBuilder.append(path);
+			options.put("s3_path", path);
+		} else {
+			String path = "%2Fteste%2F" + session.getProcessedId() + "%2F" + date;
+			
+			urlBuilder.append(path);
+			options.put("s3_path", path);
+		}
+		
+		urlBuilder.append(".html");
 		s3Link = urlBuilder.toString().replace("%2F", "/");
 		
 		try {
