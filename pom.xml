@@ -326,8 +326,8 @@
 		</repository>
 
 		<repository>
-			<id>maven.lett.com.br</id>
-			<url>s3://maven.lett.com.br</url>
+			<id>maven-placeholder</id>
+			<url>s3://maven-placeholder</url>
 		</repository>
 
 	</repositories>
