@@ -56,7 +56,7 @@ public class S3Service {
 	// Amazon images
 	private static AWSCredentials credentialsImages;
 	private static AmazonS3 s3clientImages;
-	private static final String IMAGES_BUCKET_NAME   = "lett-media";
+	private static final String IMAGES_BUCKET_NAME   = "placeholder-media";
 
 	// Amazon crawler-session
 	private static AWSCredentials credentialsCrawlerSessions;
