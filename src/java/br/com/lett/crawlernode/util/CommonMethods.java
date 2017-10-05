@@ -53,7 +53,7 @@ public class CommonMethods {
 	
 	private static String version = "1"; //TODO
 	
-	private static final Logger logger = LoggerFactory.getLogger(CommonMethods.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommonMethods.class);
 
 	/**
 	 * Get last position of array
@@ -320,7 +320,7 @@ public class CommonMethods {
 			// replace porque tem casos que a url tem um – e o apache não interpreta esse caracter
 			return replaceSpecialCharacterDash(uriBuilder.build().toString());
 		} catch (MalformedURLException | URISyntaxException e) {
-			Logging.printLogError(logger, getStackTraceString(e));
+			Logging.printLogError(LOGGER, getStackTraceString(e));
 			return url;
 		}
     }
@@ -501,8 +501,8 @@ public class CommonMethods {
 			skuJson = new JSONObject(skuJsonString);
 			
 		} catch (JSONException e) {
-			Logging.printLogError(logger, session, "Error creating JSONObject from var skuJson_0");
-			Logging.printLogError(logger, session, getStackTraceString(e));
+			Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
+			Logging.printLogError(LOGGER, session, getStackTraceString(e));
 			
 			skuJson = new JSONObject();
 		}
