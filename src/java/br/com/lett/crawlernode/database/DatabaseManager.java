@@ -16,27 +16,24 @@ import credentials.models.MongoCredentials;
 
 public class DatabaseManager {
 
-	private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseManager.class);
 
 	public MongoDB connectionPanel;
-	public MongoDB connectionImages;
 	public MongoDB connectionFrozen;
 	public PostgresSQL connectionPostgreSQL;
 
 	public DatabaseManager(DBCredentials credentials) {
-		
 		setMongoPanel(credentials);
 		setMongoFrozen(credentials);
-		setMongoImages(credentials);
 		
 		connectionPostgreSQL = new PostgresSQL();
 		
 		try {
 			connectionPostgreSQL.openConnection(credentials.getPostgresCredentials());
-			Logging.printLogDebug(logger, "Connection with database PostgreSQL performed successfully!");
+			Logging.printLogDebug(LOGGER, "Connection with database PostgreSQL performed successfully!");
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Error establishing connection with PostgreSQL.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(LOGGER, "Error establishing connection with PostgreSQL.");
+			Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
 			System.exit(0);
 		}
 	}
@@ -47,21 +44,21 @@ public class DatabaseManager {
 
 		try {
 			connectionPanel.openConnection(credentialsPanel);
-			Logging.printLogDebug(logger, "Connection with database Mongo Panel performed successfully!");
+			Logging.printLogDebug(LOGGER, "Connection with database Mongo Panel performed successfully!");
 			
 			ReplicaSetStatus replicaSetStatus = connectionPanel.getReplicaSetStatus();
 			if ( replicaSetStatus != null ) {
-				Logging.printLogDebug(logger, "Connection mode: multiple");
-				Logging.printLogDebug(logger, replicaSetStatus.toString());
+				Logging.printLogDebug(LOGGER, "Connection mode: multiple");
+				Logging.printLogDebug(LOGGER, replicaSetStatus.toString());
 			} else {
-				Logging.printLogDebug(logger, "Connection mode: single");
+				Logging.printLogDebug(LOGGER, "Connection mode: single");
 				ServerAddress masterServerAddress = connectionPanel.getServerAddress();
-				Logging.printLogDebug(logger, masterServerAddress.toString());
+				Logging.printLogDebug(LOGGER, masterServerAddress.toString());
 			}
 			
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Erro ao conectar com o Mongo Panel.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(LOGGER, "Erro ao conectar com o Mongo Panel.");
+			Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
 		}
 	}
 	
@@ -71,45 +68,21 @@ public class DatabaseManager {
 
 		try {
 			connectionFrozen.openConnection(credentialsFrozen);
-			Logging.printLogDebug(logger, "Connection with database Mongo Frozen performed successfully!");
+			Logging.printLogDebug(LOGGER, "Connection with database Mongo Frozen performed successfully!");
 			
 			ReplicaSetStatus replicaSetStatus = connectionFrozen.getReplicaSetStatus();
 			if ( replicaSetStatus != null ) {
-				Logging.printLogDebug(logger, "Connection mode: multiple");
-				Logging.printLogDebug(logger, replicaSetStatus.toString());
+				Logging.printLogDebug(LOGGER, "Connection mode: multiple");
+				Logging.printLogDebug(LOGGER, replicaSetStatus.toString());
 			} else {
-				Logging.printLogDebug(logger, "Connection mode: single");
+				Logging.printLogDebug(LOGGER, "Connection mode: single");
 				ServerAddress masterServerAddress = connectionFrozen.getServerAddress();
-				Logging.printLogDebug(logger, masterServerAddress.toString());
+				Logging.printLogDebug(LOGGER, masterServerAddress.toString());
 			}
 			
 		} catch (Exception e) {
-			Logging.printLogError(logger, "Erro ao conectar com o Mongo Frozen.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-		}
-	}
-	
-	private void setMongoImages(DBCredentials credentials) {
-		MongoCredentials credentialsImages = credentials.getMongoImagesCredentials();
-		connectionImages = new MongoDB();
-
-		try {
-			connectionImages.openConnection(credentialsImages);
-			Logging.printLogDebug(logger, "Connection with database Mongo Images performed successfully!");
-			
-			ReplicaSetStatus replicaSetStatus = connectionImages.getReplicaSetStatus();
-			if ( replicaSetStatus != null ) {
-				Logging.printLogDebug(logger, "Connection mode: multiple");
-				Logging.printLogDebug(logger, replicaSetStatus.toString());
-			} else {
-				Logging.printLogDebug(logger, "Connection mode: single");
-				ServerAddress masterServerAddress = connectionImages.getServerAddress();
-				Logging.printLogDebug(logger, masterServerAddress.toString());
-			}
-			
-		} catch (Exception e) {
-			Logging.printLogError(logger, "Erro ao conectar com o Mongo Images.");
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(LOGGER, "Erro ao conectar com o Mongo Frozen.");
+			Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
 		}
 	}
 
