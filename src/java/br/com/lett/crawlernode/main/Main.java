@@ -74,6 +74,7 @@ public class Main {
 
 		// setting database credentials
 		DBCredentials dbCredentials = new DBCredentials();
+		
 
 		try {
 			dbCredentials = DatabaseCredentialsSetter.setCredentials();
