@@ -97,6 +97,7 @@ public class DataFetcher {
 	public static final int THIRTY_SECONDS_TIMEOUT = 30000;
 
 	public static final String CONTENT_ENCODING = "compress, gzip";
+	
 
 
 	/** Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/ */
