@@ -287,11 +287,16 @@ public class BrasilShopfatoCrawler extends Crawler {
 
 	private String crawlDescription(Document doc) {
 		String description = "";
-		Element elementDescription = doc.select(".x-description-group .x-item .productDescription").first();
+		Element elementDescription = doc.select(".prd-accordion-description-holder").first();
 		Element elementEspecification = doc.select("#caracteristicas").first();
 
-		if(elementDescription != null) 	description = description + elementDescription.html();
-		if(elementEspecification != null) 	description = description + elementEspecification.html();
+		if(elementDescription != null)	{
+			description = description + elementDescription.html();
+		}
+		
+		if(elementEspecification != null) {
+			description = description + elementEspecification.html();
+		}
 
 
 		return description;

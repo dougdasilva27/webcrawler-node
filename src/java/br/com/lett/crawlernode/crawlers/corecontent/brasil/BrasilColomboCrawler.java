@@ -1,10 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -113,12 +117,12 @@ public class BrasilColomboCrawler extends Crawler {
 			Element elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=0]").first();
 			String primaryImage = null;
 			if(elementPrimaryImage != null){				
-				primaryImage = sanitizeImageURL("http:" + elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
+				primaryImage = sanitizeImageURL(elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
 			} else {
 				elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=1]").first();
 				
 				if(elementPrimaryImage != null){
-					primaryImage = sanitizeImageURL("http:" + elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
+					primaryImage = sanitizeImageURL(elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
 				}
 			}
 			
@@ -128,7 +132,7 @@ public class BrasilColomboCrawler extends Crawler {
 			JSONArray secondaryImagesArray = new JSONArray();
 			
 			for (Element el : elementSecondaryImages) {
-				String image = "http:" + el.attr("src").trim().replace("400x400", "800x800");
+				String image = el.attr("src").trim().replace("400x400", "800x800");
 				if (!image.equals(primaryImage)) { // imagem primária 
 					secondaryImagesArray.put( sanitizeImageURL( image ) );
 				}
@@ -245,13 +249,30 @@ public class BrasilColomboCrawler extends Crawler {
 		
 		if(imageURL != null){
 			if (imageURL.contains("?")) { // removendo parâmetros da url da imagem, senão não passa no crawler de imagens
-				int index = imageURL.indexOf("?");
+				int index = imageURL.indexOf('?');
 				sanitizedURL = imageURL.substring(0, index);
 			} else {
 				sanitizedURL = imageURL;
 			}
 		}
 
+		try {
+			URI rawUri = new URI(sanitizedURL);
+			if ( rawUri.getScheme() == null ) {
+				return new URIBuilder()
+						.setScheme("https")
+						.setHost(rawUri.getHost())
+						.setPath(rawUri.getPath())
+						.build()
+						.toString();
+			}
+
+			return rawUri.toString();
+
+		} catch (URISyntaxException uriSyntaxException) {
+			Logging.printLogDebug(logger, session, "Not a valid image URL " + CommonMethods.getStackTrace(uriSyntaxException));
+		}
+		
 		return sanitizedURL;		
 	}
 	

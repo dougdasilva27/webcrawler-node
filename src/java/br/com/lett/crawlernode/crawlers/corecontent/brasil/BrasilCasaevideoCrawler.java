@@ -268,6 +268,12 @@ public class BrasilCasaevideoCrawler extends Crawler {
 		if (descElement != null) {
 			description = description + descElement.html();
 		}
+		
+		Element spec = document.select("#specification").first();
+		
+		if(spec != null) {
+			description += spec.outerHtml();
+		}
 
 		return description;
 	}
