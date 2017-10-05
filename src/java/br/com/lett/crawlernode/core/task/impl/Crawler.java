@@ -32,7 +32,7 @@ import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.processor.base.Processor;
+import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;

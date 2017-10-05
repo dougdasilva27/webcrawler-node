@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.queue.QueueHandler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;

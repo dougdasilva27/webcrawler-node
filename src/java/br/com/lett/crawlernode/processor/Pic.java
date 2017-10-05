@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.processor.digitalcontent;
+package br.com.lett.crawlernode.processor;
 
 import org.json.JSONException;
 import org.json.JSONObject;
