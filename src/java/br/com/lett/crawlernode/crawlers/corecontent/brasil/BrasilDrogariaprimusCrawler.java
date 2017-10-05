@@ -1,15 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.json.JSONArray;
+import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,12 +26,12 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
 /**
  * Date: 14/08/2017
+ * Refeito por Samir Leão na data: 04/10/2017 (Site mudou)
  * 
  * @author Gabriel Dornelas
  *
@@ -52,8 +61,8 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(doc);
 			String name = crawlName(doc);
-			Float price = crawlPrice(doc, internalId);
-			Prices prices = crawlPrices(price, doc);
+			Prices prices = crawlPrices(doc);
+			Float price = getPrice(prices);
 			boolean available = crawlAvailability(doc);
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
@@ -92,126 +101,206 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select("#detalhe_produto").first() != null) {
+		if (doc.select("div.product-contents").first() != null) {
 			return true;
 		}
 		return false;
 	}
-
-	private String crawlInternalId(Document doc) {
-		String internalId = null;
-
-		Element internalIdElement = doc.select(".corpo_conteudo article[itemid]").first();
-		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("itemid");
-		}
-
-		return internalId;
-	}
 	
-	private String crawlInternalPid(Document doc) {
-		String internalPid = null;
-		Element pdi = doc.select("#produto_cod_ref").first();
-		
-		if(pdi != null) {
-			internalPid = pdi.ownText().trim();
+	private Float getPrice(Prices prices) {
+		if ( prices.getBankTicketPrice() != null ) {
+			return prices.getBankTicketPrice().floatValue();
 		}
-		
-		return internalPid;
+		Double installmentValue = prices.getCardInstallmentValue(Card.VISA.toString(), 1);
+		if ( installmentValue != null ) {
+			return installmentValue.floatValue();
+		}
+		return null;
 	}
 
+	/**
+	 * Crawl the internalId trying two different approaches.
+	 * 
+	 * @param doc
+	 * @return the internalId or null if it wasn't found
+	 */
+	private String crawlInternalId(Document document) {
+		// two possible options here
+		// #produtoid -> is a simple html tag with the id as a value attribute
+		// #productdata -> is a json
+
+		// we try to get the data from the json before, because
+		// it's less prone to format changes, as it is probably 
+		// an API response.
+		// In case of any error we try to get the id from the
+		// attribute 'value' in the #produtoid tag
+
+		Element productDataElement = document.select("#productdata").first();
+		if ( productDataElement != null ) {
+			String jsonText = productDataElement.attr("value");
+			if ( jsonText != null && !jsonText.isEmpty() ) {
+				try {
+					JSONObject productData = new JSONObject(jsonText);
+					return productData.getString("id");
+				} catch (JSONException jsonException) {
+					Logging.printLogDebug(logger, session, "InternalId error [" + jsonException.getMessage() + "]");
+					Logging.printLogDebug(logger, "Trying backup approach ... ");
+				}
+			}
+		}
+
+		Element productIdElement = document.select("#produtoid").first();
+		if ( productIdElement != null ) {
+			String attrValue = productDataElement.attr("value");
+			if ( attrValue == null || attrValue.isEmpty() ) {
+				Logging.printLogDebug(logger, session, "Backup approach also failed [attrValue = " + attrValue + "]");
+			} else {
+				return attrValue;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Crawl the internalPid which is the EAN on the
+	 * retailer website.
+	 * 
+	 * @param document
+	 * @return the internalPid or null if it wasn't found
+	 */
+	private String crawlInternalPid(Document document) {		
+		Element internalPidElement = document.select(".sku span[itemprop='sku']").first();
+		if( internalPidElement != null ) {
+			return internalPidElement.text().trim();
+		}
+		return null;
+	}
+
+	/**
+	 * Crawl the name using two different approaches.
+	 * 
+	 * @param document
+	 * @return the product name or null if it wasn't found
+	 */
 	private String crawlName(Document document) {
-		String name = null;
-		Element nameElement = document.select("h1[itemprop=name]").first();
+		// two possible options here
+		// .item[itemprop='name'] span.fn -> is a simple html tag with the id as a value attribute
+		// #productdata -> is a json
 
-		if (nameElement != null) {
-			name = nameElement.ownText().trim();
+		// we try to get the data from the json before, because
+		// it's less prone to format changes, as it is probably 
+		// an API response.
+		// In case of any error we try to get the name from the
+		// itemprop name tag
+
+		Element productDataElement = document.select("#productdata").first();
+		if ( productDataElement != null ) {
+			String jsonText = productDataElement.attr("value");
+			if ( jsonText != null && !jsonText.isEmpty() ) {
+				try {
+					JSONObject productData = new JSONObject(jsonText);
+					return productData.getString("name");
+				} catch (JSONException jsonException) {
+					Logging.printLogDebug(logger, session, "Name error [" + jsonException.getMessage() + "]");
+					Logging.printLogDebug(logger, "Trying backup approach ... ");
+				}
+			}
 		}
 
-		return name;
-	}
-
-	private Float crawlPrice(Document document, String internalId) {
-		Float price = null;
-		Element salePriceElement = document.select("meta[itemprop=price]").first();		
-
-		if (salePriceElement != null) {
-			price = Float.parseFloat(salePriceElement.attr("content"));
+		Element nameElement = document.select(".item[itemprop='name'] span.fn").first();
+		if ( nameElement != null ) {
+			String name = nameElement.text().trim();
+			if ( name == null || name.isEmpty() ) {
+				Logging.printLogDebug(logger, session, "Backup approach also failed [name=" + name + "]");
+			} else {
+				return name;
+			}
 		}
 
-		return price;
+		return null;
 	}
 
+	/**
+	 * Always get an empty Marketplace. No
+	 * SKU was found with a marketplace on
+	 * the retailer website.
+	 * 
+	 * @return an empty marketplace object
+	 */
 	private Marketplace crawlMarketplace() {
 		return new Marketplace();
 	}
 
-
+	/**
+	 * Crawl the primary image url.
+	 * 
+	 * @param doc
+	 * @return the primary image url or null if it wasn't found
+	 */
 	private String crawlPrimaryImage(Document doc) {
-		String primaryImage = null;
-		Element elementPrimaryImage = doc.select("#product_gallery li > a").first();
-		
-		if(elementPrimaryImage != null ) {
-			primaryImage = elementPrimaryImage.attr("href");
-			
-			if(!primaryImage.startsWith("http:")) {
-				primaryImage = "http:" + primaryImage;
+		Element elementPrimaryImage = doc.select("div.img-wrapper #a-zoom").first();
+		if ( elementPrimaryImage != null ) {
+			String href = elementPrimaryImage.attr("href").trim();
+			try {
+				URI rawUri = new URI(href);
+				if ( rawUri.getScheme() == null ) {
+					return new URIBuilder()
+							.setScheme("https")
+							.setHost(rawUri.getHost())
+							.setPath(rawUri.getPath())
+							.build()
+							.toString();
+				}
+
+				return rawUri.toString();
+
+			} catch (URISyntaxException uriSyntaxException) {
+				Logging.printLogDebug(logger, session, "Not a valid image URL");
 			}
 		} 
-		
-		return primaryImage;
+
+		return null;
 	}
 
 	/**
-	 * Quando este crawler foi feito não achei imagens secundarias
+	 * No SKU with secondary images found.
 	 * 
 	 * @param doc
 	 * @return
 	 */
 	private String crawlSecondaryImages(Document doc) {
-		String secondaryImages = null;
-		JSONArray secondaryImagesArray = new JSONArray();
-
-		if (secondaryImagesArray.length() > 0) {
-			secondaryImages = secondaryImagesArray.toString();
-		}
-
-		return secondaryImages;
+		return null;
 	}
 
 	/**
+	 * 
 	 * @param document
 	 * @return
 	 */
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
-		Elements elementCategories = document.select(".ondeestou a > span");
-		
-		for (Element e : elementCategories) { 
-			String cat = e.ownText().trim();
-			
-			if(!cat.isEmpty()) {
-				categories.add( cat );
+		Elements categoryElementsCollection = document.select("div.top div.breadcrumb span[itemprop=breadcrumb] span[itemscope] span[itemprop=title]");
+		for (int i = 1; i < categoryElementsCollection.size(); i++) {
+			String categoryText = categoryElementsCollection.get(i).text().trim();
+			if ( !categoryText.isEmpty() ) {
+				categories.add( categoryText );
 			}
 		}
-
 		return categories;
 	}
 
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
-		
-		Element elementDescription = doc.select(".texto11").last();
-		
-		if (elementDescription != null) {
-			description.append(elementDescription.html());		
+		Element descriptionElement = doc.select("div.informations-wrapper #informations").first();
+		if ( descriptionElement != null ) {
+			description.append( descriptionElement.text().trim() );
 		}
-		
 		return description.toString();
 	}
-	
+
 	private boolean crawlAvailability(Document doc) {
-		return doc.select("#produto_notificacao[style=display:block;]").first() == null;		
+		return doc.select("#btn-notify.disponibility-di.hide").first() != null;		
 	}
 
 	/**
@@ -220,50 +309,89 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Float price, Document doc) {
+	private Prices crawlPrices(Document doc) {
 		Prices prices = new Prices();
-		
-		if (price != null) {
-			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
-			installmentPriceMap.put(1, price);
-			prices.setBankTicketPrice(price);
 
-			Element aVista = doc.select(".forma_pagto #vl_avista b").first();
+		Document paymentPage = retrievePaymentWebpage(doc);
+
+		if ( paymentPage != null ) {
 			
-			if(aVista != null) {
-				Float priceBankTicket = MathCommonsMethods.parseFloat(aVista.ownText());
-				
-				if(priceBankTicket != null) {
-					prices.setBankTicketPrice(priceBankTicket);
+			// get the bank slip price
+			Element tdElement = paymentPage.select("td nobr").first();
+			if ( tdElement != null ) {
+				Pattern regex = Pattern.compile("(\\b)r\\$\\s*\\d*,\\d*", Pattern.CASE_INSENSITIVE);
+				Matcher matcher = regex.matcher(tdElement.text());
+				if ( matcher.find() ) {
+					Float price = Float.parseFloat( matcher.group().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+					prices.setBankTicketPrice(price);
 				}
 			}
 			
-			Elements installmentsElement = doc.select(".forma_pagto span b");
-			
-			if(installmentsElement.size() > 1) {
-				String parcel = installmentsElement.get(0).ownText().replaceAll("[^0-9]", "").trim();
-				String value = installmentsElement.get(1).ownText();
-				
-				if(value.contains(".")) {
-					value = value.replaceAll("[^0-9.]", "").trim();
-				} else {
-					value = value.replaceAll("[^0-9,]", "").replace(",", ".").trim();
-				}
-				
-				if(!parcel.isEmpty() && !value.isEmpty()) {
-					installmentPriceMap.put(Integer.parseInt(parcel), Float.parseFloat(value));
+			// get the other payment options
+			Elements tableElementsCollection = paymentPage.select("table"); // each table line
+			if ( tableElementsCollection.size() >= 3 ) {
+				Element tableElement = tableElementsCollection.get(2);
+				Elements trElements = tableElement.select("tr");
+				if ( trElements.size() >= 3 ) {
+					Element trElement = trElements.get(2);
+					Element cardPriceElement = trElement.select("td div").first();
+					if ( cardPriceElement != null ) {
+						String text = cardPriceElement.text();
+						if ( !text.isEmpty() ) {
+							Float cardPrice = Float.parseFloat(text.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+							Map<Integer,Float> installmentPriceMap = new TreeMap<>();
+							installmentPriceMap.put(1, cardPrice);
+							prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+							prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+						}
+					}
 				}
 			}
-			
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
+	}
+
+	private Document retrievePaymentWebpage(Document document) {
+		Element paymenstPopup = document.select("#payments").first();
+		if ( paymenstPopup != null ) {
+			String href = paymenstPopup.attr("href");
+			try {
+				URL rawUrl = new URL(
+						"https",
+						"www.drogariaprimus.com.br",
+						href
+						);
+
+				String[] query = rawUrl.getQuery().split(Pattern.quote("="));
+				String name = query[0]; 
+				String value = null; 
+				if(query.length > 1) {
+					value = query[1];
+				}
+
+				URI uri = new URIBuilder()
+						.setScheme("https")
+						.setHost(rawUrl.getHost())
+						.setPath(rawUrl.getPath())
+						.setParameter(name, value)
+						.build();
+
+				return DataFetcher.fetchDocument("GET", session, uri.toString(), null, null);
+
+			} catch (MalformedURLException malformedUrlException) {
+				Logging.printLogDebug(logger, session, "Not a valid payment popup url");
+			} catch (URISyntaxException uriSyntaxException) {
+				Logging.printLogDebug(logger, session, "Not a valid payment popup url");
+			}
+		}
+
+		return null;		
 	}
 
 }
