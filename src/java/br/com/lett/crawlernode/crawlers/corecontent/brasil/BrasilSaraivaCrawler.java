@@ -381,7 +381,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select(".breadcrumbs ol li");
 
-		for (int i = 2; i < elementCategories.size(); i++) { // start with index 1 because the first item is the home page
+		for (int i = 1; i < elementCategories.size(); i++) { // start with index 1 because the first item is the home page
 			categories.add( elementCategories.get(i).text().trim() );
 		}
 

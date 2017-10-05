@@ -20,14 +20,14 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 		this.log("Página "+ this.currentPage);
 
 		//monta a url com a keyword e a página
-		String url = "http://www.unicaarcondicionado.com.br/catalogsearch/result/index/?q="+ this.keywordEncoded +"&p="+ this.currentPage; 
+		String url = "http://www.unicaarcondicionado.com.br/catalogsearch/result/?q="+ this.keywordEncoded +"&p="+ this.currentPage; 
 
 		this.log("Link onde são feitos os crawlers: "+url);	
 
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select("ul.products-grid > li.item > span");		
+		Elements products =  this.currentDoc.select("#products-list > li.item > span");		
 		Element emptySearch = this.currentDoc.select(".suggest").first();
 		Element suggestSearch = this.currentDoc.select(".note-msg").first();
 		
@@ -35,7 +35,7 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 			for(Element e : products) {
 
 				// InternalPid
-				String internalPid = crawlInternalPid(e);
+				String internalPid = null;
 
 				// InternalId
 				String internalId = crawlInternalId(e);
@@ -54,14 +54,9 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
-			setTotalProducts();
 		}
 
 		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-
-		if(!hasNextPage()) {
-			setTotalProducts();
-		}
 	}
 
 	@Override
@@ -78,16 +73,6 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 	}
 
 	private String crawlInternalId(Element e){
-		Element price = e.select("div.price-box span[id]").first();
-
-		if(price != null && !price.attr("id").isEmpty()) {
-			String[] tokens = price.attr("id").split("-");
-
-			if(!tokens[tokens.length-1].trim().isEmpty()) {
-				return tokens[tokens.length-1];
-			}
-		}
-
 		Element img = e.select("img[id^=product-collection-image-]").first();
 		
 		if(img != null) {
@@ -98,10 +83,6 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
 			}
 		}
 		
-		return null;
-	}
-
-	private String crawlInternalPid(Element e) {
 		return null;
 	}
 

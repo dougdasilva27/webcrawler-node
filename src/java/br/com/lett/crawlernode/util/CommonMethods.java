@@ -545,7 +545,12 @@ public class CommonMethods {
 		return object;
 	}
 	
-	public static void saveStringToAFile(Object body, String path) {
+	/**
+	 *
+	 * @param body
+	 * @param path
+	 */
+	public static void saveDataToAFile(Object body, String path) {
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(path));
 			
@@ -555,4 +560,6 @@ public class CommonMethods {
 			e1.printStackTrace();
 		}
 	}
+	
+	
 }

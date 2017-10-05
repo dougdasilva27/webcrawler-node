@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -60,8 +59,8 @@ public class BrasilFriopecasCrawler extends Crawler {
 
 	private final String CATEGORIES_SELECTOR 								= ".bread-crumb ul li a";
 	
-	private final String DESCRIPTION_SELECTOR 								= ".about-product";
-	private final String SPECS_SELECTOR										= ".characteristics";
+	private final String DESCRIPTION_SELECTOR 								= ".product-description";
+	private final String SPECS_SELECTOR										= ".product-specification";
 
 	public BrasilFriopecasCrawler(Session session) {
 		super(session);
@@ -78,8 +77,6 @@ public class BrasilFriopecasCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
-		
-		CommonMethods.printStringToFile(doc.toString(), "/home/samirleao/Documents/climario.html");
 		
 		if ( isProductPage(this.session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -284,8 +281,14 @@ public class BrasilFriopecasCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select(DESCRIPTION_SELECTOR).first();
 		Element specsElement = document.select(SPECS_SELECTOR).first();
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (specsElement != null) description = description + specsElement.html();
+		
+		if (descriptionElement != null) {
+			description = description + descriptionElement.html();
+		}
+		
+		if (specsElement != null) {
+			description = description + specsElement.html();
+		}
 
 		return description;
 	}
@@ -301,15 +304,36 @@ public class BrasilFriopecasCrawler extends Crawler {
 
 			// O preço no boleto não aparece com javascript desligado, mas aparece a porcentagem de desconto
 			// Assim é calculado o preço no boleto de acordo com o preço principal.
-			Element bankDiscount = doc.select("#desconto-avista").first();
+			Element bankDiscount = doc.select(".discount-highlights > p").first();
 			if(bankDiscount != null){
-				Integer discount = Integer.parseInt(bankDiscount.text().trim());
+				Integer discount = 0;
+				String text = bankDiscount.text().replaceAll("[^0-9]", "").trim();
+				
+				if(!text.isEmpty()) {
+					discount = Integer.parseInt(text);
+				}
+				
 				Float result = (float) (price - (price * (discount.floatValue()/100.0)));
 				
 				Float bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
 				prices.setBankTicketPrice(bankTicketPrice);
+			} else {
+				prices.setBankTicketPrice(price);
 			}
 
+			Element cardDiscountElement = doc.select(".discount-highlights > p").last();
+			Integer cardDiscount = 0;
+			
+			if(cardDiscountElement != null) {
+				String text = cardDiscountElement.text().replaceAll("[^0-9]", "").trim();
+				
+				if(!text.isEmpty()) {
+					cardDiscount = Integer.parseInt(text);
+				}
+			}
+			
+			Float cardFirstInstallment = MathCommonsMethods.normalizeTwoDecimalPlaces((float) (price - (price * (cardDiscount.floatValue()/100.0))));
+			
 			Elements cardsElements = docPrices.select("#ddlCartao option");
 
 			for(Element e : cardsElements){
@@ -317,38 +341,56 @@ public class BrasilFriopecasCrawler extends Crawler {
 
 				if (text.contains("visa")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 					
 				} else if (text.contains("mastercard")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 					
 				} else if (text.contains("diners")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 					
 				} else if (text.contains("american") || text.contains("amex")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
 					
 				} else if (text.contains("hipercard")) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
 					
 				} else if (text.contains("credicard") ) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 					
 				} else if (text.contains("elo") ) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 					
 				} else if (text.contains("aura") ) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 					
 				} else if (text.contains("discover") ) {
 					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+					installmentPriceMap.put(1,cardFirstInstallment);
+					
 					prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
 					
 				}
@@ -372,7 +414,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 				Integer installment = null;
 
 				if(textInstallment.contains("vista")){
-					installment = 1;					
+					continue;				
 				} else {
 					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
 				}
