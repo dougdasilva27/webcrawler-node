@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
+import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;

@@ -13,7 +13,7 @@ import credentials.models.DBCredentials;
 
 public class DatabaseCredentialsSetter {
 	
-	private static final Logger logger = LoggerFactory.getLogger(DatabaseCredentialsSetter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseCredentialsSetter.class);
 	
 	private DatabaseCredentialsSetter() {
 		super();
@@ -25,7 +25,6 @@ public class DatabaseCredentialsSetter {
 		List<String> databases = new ArrayList<>();
 		databases.add(DBCredentials.MONGO_PANEL);
 		databases.add(DBCredentials.MONGO_INSIGHTS);
-		databases.add(DBCredentials.MONGO_IMAGES);
 		databases.add(DBCredentials.MONGO_FROZEN);
 		databases.add(DBCredentials.POSTGRES);
 		
@@ -36,7 +35,7 @@ public class DatabaseCredentialsSetter {
 			
 			if(!logErrorsList.isEmpty()) {
 				for(String log : logErrorsList) {
-					Logging.printLogError(logger, log);
+					Logging.printLogError(LOGGER, log);
 				}
 				
 				System.exit(0);
@@ -45,7 +44,7 @@ public class DatabaseCredentialsSetter {
 			}
 			
 		} catch (Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
 			System.exit(0);
 		}
 		

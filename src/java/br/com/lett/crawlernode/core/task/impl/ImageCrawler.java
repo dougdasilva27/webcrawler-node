@@ -1,28 +1,16 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
-import org.bson.Document;
-import org.openimaj.feature.local.list.LocalFeatureList;
-import org.openimaj.image.feature.local.keypoints.Keypoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 
-import com.google.gson.Gson;
-
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.model.Filters;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.imgprocessing.FeatureExtractor;
 import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
-import br.com.lett.crawlernode.core.imgprocessing.ImageFeatures;
 import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -32,7 +20,6 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.queue.S3Service;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import comunication.MongoDB;
 
 public class ImageCrawler extends Task {
 
@@ -40,11 +27,8 @@ public class ImageCrawler extends Task {
 
 	private final int IMAGE_CHECKING_TRY = 5;
 
-	private FeatureExtractor imageFeatureExtractor;
-
 	public ImageCrawler(Session session) {
 		this.session = session;
-		this.imageFeatureExtractor = new FeatureExtractor();
 	}
 
 	@Override
@@ -246,62 +230,6 @@ public class ImageCrawler extends Task {
 		Logging.printLogDebug(logger, session, "Downloading image from market...");
 		return DataFetcher.fetchImage(session);
 	}
-
-	/**
-	 * 
-	 * @param image
-	 * @return
-	 * @throws NullPointerException
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 */
-	private void storeImageMetaData(BufferedImage image, String md5) throws NullPointerException, FileNotFoundException, IOException {
-		if (image == null || md5 == null) {
-			Logging.printLogError(logger, session, "Image or md5 is null...returning...");
-			return;
-		}
-
-		Logging.printLogDebug(logger, session, "Loking for image features on Mongo...");
-
-		// Só extraio as features e insiro no mongo, se elas já não estiverem presentes
-		MongoDB imagesDatabase = Main.dbManager.connectionImages;
-		try {
-			FindIterable<Document> iterable = imagesDatabase.runFind(Filters.eq("md5", md5), "ImageFeatures");
-			Document document = iterable.first();
-
-			if(document == null) {
-
-				Logging.printLogDebug(logger, session, "Image features are not on Mongo yet.");
-				Logging.printLogDebug(logger, session, "Extraindo descritores da imagem...");
-
-				// extract sift descriptors from image
-				LocalFeatureList<Keypoint> features = this.imageFeatureExtractor.extractFeatures(image);
-
-				// create serializable container class to store the image features
-				ImageFeatures imageFeatures = new ImageFeatures(features, md5);
-
-				// convert the object to json
-				Gson gson = new Gson();
-				Document doc = Document.parse(gson.toJson(imageFeatures));
-
-				// store on mongo
-				if (imagesDatabase != null) {
-					Logging.printLogDebug(logger, session, "Storing image descriptors on Mongo...");
-					imagesDatabase.insertOne(doc, "ImageFeatures");
-				}
-
-			} else {
-				Logging.printLogDebug(logger, session, "md5 desta imagem já está no mongo");
-			}
-		} catch (Exception e) {
-			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
-			SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e));
-			session.registerError(error);
-		}
-
-		Logging.printLogDebug(logger, session, "Descritores inseridos com sucesso.");
-	} 
-
 
 	/**
 	 * 

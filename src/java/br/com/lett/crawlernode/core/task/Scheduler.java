@@ -25,7 +25,7 @@ import models.Processed;
 
 public class Scheduler {
 
-	protected static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
 
 	public static void scheduleImages(
@@ -33,7 +33,7 @@ public class Scheduler {
 			QueueHandler queueHandler,
 			Processed processed,
 			Long processedId) {
-		Logging.printLogDebug(logger, session, "Scheduling images to be downloaded...");
+		Logging.printLogDebug(LOGGER, session, "Scheduling images to be downloaded...");
 
 		List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
 		//List<TaskDocumentModel> tasksDocuments = new ArrayList<TaskDocumentModel>();
@@ -73,7 +73,7 @@ public class Scheduler {
 
 			// when the batch reaches size 10, we send them all to sqs and empty the list
 			if (entries.size() == 10) {
-				Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
+				Logging.printLogDebug(LOGGER, session, "Sending batch of " + entries.size() + " messages...");
 
 				// send the batch
 				SendMessageBatchResult result;
@@ -128,7 +128,7 @@ public class Scheduler {
 //		}
 
 		if (entries.size() > 0) { // the left over
-			Logging.printLogDebug(logger, session, "Sending remaining batch of " + entries.size() + " messages...");
+			Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
 
 			SendMessageBatchResult result = null;
 			result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES, entries);
@@ -138,7 +138,7 @@ public class Scheduler {
 			entries.clear();
 		}
 
-		Logging.printLogInfo(logger, session, counter + " tasks scheduled.");
+		Logging.printLogInfo(LOGGER, session, counter + " tasks scheduled.");
 
 	}
 

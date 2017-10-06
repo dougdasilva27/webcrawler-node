@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.processor.base;
+package br.com.lett.crawlernode.processor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.processor.controller.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
