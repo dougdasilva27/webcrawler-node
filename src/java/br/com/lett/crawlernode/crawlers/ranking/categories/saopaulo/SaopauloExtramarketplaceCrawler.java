@@ -38,7 +38,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		JSONObject shareInfo = CommonMethods.getSpecificJsonFromHtml(this.currentDoc, "script[type=\"text/javascript\"]", "varsiteMetadata=", ";");
+		JSONObject shareInfo = CommonMethods.selectJsonFromHtml(this.currentDoc, "script[type=\"text/javascript\"]", "varsiteMetadata=", ";");
 		List<String> products = crawlShareJSON(shareInfo);
 		Elements result = this.currentDoc.select(".naoEncontrado");
 

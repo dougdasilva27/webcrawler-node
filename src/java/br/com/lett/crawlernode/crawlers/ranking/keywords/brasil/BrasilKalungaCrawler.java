@@ -29,7 +29,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords{
 
 		JSONObject apiSearch = fetchJsonApi();
 		
-		if(apiSearch.has("html") && CommonMethods.isString(apiSearch.get("html"))) {
+		if(apiSearch.has("html") && apiSearch.get("html") instanceof String) {
 			this.currentDoc = Jsoup.parse(apiSearch.getString("html"));
 		} else {
 			this.currentDoc = new Document("");

@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.util;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,21 +20,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,19 +172,6 @@ public class CommonMethods {
 		return stringWriter.toString();
 	}
 	
-	public static void printStringToFile(String data, String path) {
-		try {
-			extracted(path).println(data);
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static PrintWriter extracted(String path) throws FileNotFoundException {
-		return new PrintWriter(path);
-	}
-	
 	/**
 	 * Fetch the current package version
 	 * @return the string containing the version
@@ -210,14 +191,6 @@ public class CommonMethods {
 		return version;
 	}
 	
-	public static boolean isString(Object object) {
-		return object instanceof String;
-	}
-
-	public static boolean isInteger(Object object) {
-		return object instanceof Integer;
-	}
-
 	/**
 	 * 
 	 * @param str
@@ -229,50 +202,6 @@ public class CommonMethods {
 		return str;
 	}
 
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
-	public static String removeParentheses(String str){
-
-		if(str.contains("(")) {
-			int x = str.indexOf("(");
-			str = str.substring(0, x).replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "");
-		} else {
-			return str.replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "");
-		}
-
-		return str;
-	}
-
-	/**
-	 * Delay in thread
-	 */
-	public static void delay() {
-		int count = randInt(4, 9) * 1000;
-
-		try {
-			Thread.sleep(count);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Delay in thread with specific time
-	 * @param delay
-	 */
-	public static void delay(int delay) {
-		int count =  delay * 1000;
-
-		try {
-			Thread.sleep(count);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	/**
 	 * Generates a random integer in the interval between min and max
 	 * @param min
@@ -399,82 +328,6 @@ public class CommonMethods {
 	}
 
 	/**
-	 *
-	 * @param driver
-	 * @param path
-	 * @param logger
-	 */
-	public static void takeAScreenShot(WebDriver driver, String path, Logger logger){
-		CommonMethods.delay();
-		
-		File scrFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-		// Now you can do whatever you need to do with it, for example copy somewhere
-		try {
-			FileUtils.copyFile(scrFile, new File(path + ".png"));
-		} catch (IOException e) {
-			Logging.printLogError(logger, getStackTrace(e));
-		}
-	}
-	
-	/**
-	 * Convert jsonarray ro ArrayList<String>
-	 * @param json
-	 * @return
-	 */
-	public static ArrayList<String> convertJSONArrayToArrayListString(JSONArray json, Logger logger) {
-		ArrayList<String> list = new ArrayList<>();
-		
-		for(int i = 0; i < json.length(); i++) {
-			try {
-				list.add(json.getString(i));
-			} catch (JSONException e) {
-				Logging.printLogError(logger, getStackTrace(e));
-			}
-		}
-		
-		return list;
-	}
-	
-	/**
-	 * Convert jsonarray to List<String>
-	 * @param json
-	 * @return
-	 */
-	public static List<String> convertJSONArrayToListString(JSONArray json, Logger logger) {
-		List<String> list = new ArrayList<>();
-		
-		for(int i = 0; i < json.length(); i++) {
-			try {
-				list.add(json.getString(i));
-			} catch (JSONException e) {
-				Logging.printLogError(logger, getStackTrace(e));
-			}
-		}
-		
-		return list;
-	}
-	
-	/**
-	 * Get Intersection of two arrays
-	 * @param a1
-	 * @param a2
-	 * @return
-	 */
-	public static List<?> getIntersectionOfTwoArrays(List<?> a1, List<?> a2) {
-		List<Object> list = new ArrayList<>();
-		
-		for(int i = 0; i < a1.size(); i++) {
-			Object obj = a1.get(i);
-			
-			if(a2.contains(obj) && !list.contains(obj)) {
-				list.add(obj);
-			}
-		}
-		
-		return list;
-	}
-	
-	/**
 	 * Crawl skuJson from html in VTEX Sites
 	 * @param document
 	 * @param session
@@ -512,20 +365,42 @@ public class CommonMethods {
 	
 	/**
 	 * Crawl json inside element html
+	 *
+	 *	e.g:
+	 *	vtxctx = {
+	 *		skus:"825484",
+	 *		searchTerm:"",
+	 *		categoryId:"38",
+	 *		categoryName:"Leite infantil",
+	 *		departmentyId:"4",
+	 *		departmentName:"Infantil",
+	 *		url:"www.araujo.com.br"
+	 *	};
+	 *
+	 *	token = "vtxctx="
+	 *	finalIndex = ";"
 	 * 
 	 * @param doc
-	 * @param cssElement
+	 * @param cssElement selector used to get the desired json element
 	 * @param token whithout spaces
 	 * @param finalIndex
-	 * @return
+	 * @return JSONObject
+	 * 
+	 * @throws JSONException
+	 * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate 
+	 * @throws IllegalArgumentException if doc is null
 	 */
-	public static JSONObject getSpecificJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) {
+	public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) 
+			throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException{
+		
+		if(doc == null) throw new IllegalArgumentException("Argument doc cannot be null");
+		
 		JSONObject object = new JSONObject();
 		
 		Elements scripts = doc.select(cssElement);
 		
 		for(Element e : scripts) {
-			String script = e.outerHtml().replaceAll(" ", "");
+			String script = e.outerHtml().replace(" ", "");
 			
 			if(script.contains(token)) {
 				int x = script.indexOf(token) + token.length();

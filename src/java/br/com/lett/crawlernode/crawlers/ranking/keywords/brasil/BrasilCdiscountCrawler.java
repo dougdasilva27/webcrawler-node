@@ -5,7 +5,6 @@ import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 
@@ -120,7 +119,7 @@ public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 					this.totalProducts = Integer.parseInt(totalElement.text());
 					
 				} else {
-					String token = CommonMethods.removeParentheses(totalElement.text()).trim();
+					String token = removeSpecialCharacteres(totalElement.text()).trim();
 					
 					this.totalProducts = Integer.parseInt(token);
 				}
@@ -132,6 +131,23 @@ public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 			
 			this.log("Total da busca: "+this.totalProducts);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static String removeSpecialCharacteres(String str){
+
+		if(str.contains("(")) {
+			int x = str.indexOf("(");
+			str = str.substring(0, x).replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "").replace(")", "");
+		} else {
+			return str.replaceAll("'", "''").replaceAll("<", "").replaceAll(">", "");
+		}
+
+		return str;
 	}
 	
 	private boolean nextPageFromCategory(){
