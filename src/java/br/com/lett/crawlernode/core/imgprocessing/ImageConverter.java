@@ -27,7 +27,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class ImageConverter {
 
-	private static final Logger logger = LoggerFactory.getLogger(ImageConverter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageConverter.class);
 
 	private static final float ORIGINAL_IMAGE_COMPRESSION_QUALITY = 1.0f;
 
@@ -45,12 +45,9 @@ public class ImageConverter {
 	 * 			<br>null if no file was created
 	 * @throws IOException
 	 */
-	public static File createTransformedImageFile(
-			File localOriginalFile,
-			Session session) throws IOException {
-
+	public static File createTransformedImageFile(File localOriginalFile, Session session) throws IOException {
 		if (localOriginalFile == null) {
-			Logging.printLogError(logger, session, "Image downloaded is null...returning...");
+			Logging.printLogError(LOGGER, session, "Image downloaded is null...returning...");
 			return null;
 		}
 
@@ -58,32 +55,36 @@ public class ImageConverter {
 
 		String imageFormatName = getImageFormatName(localOriginalFile, session);
 
-		Logging.printLogDebug(logger, imageCrawlerSession, "Image format: " + imageFormatName);
+		Logging.printLogDebug(LOGGER, imageCrawlerSession, "Image format: " + imageFormatName);
 
 		File convertedToJPEG = null;
-		
+
 		boolean converted = false;
 
-		if ( !imageFormatName.isEmpty() ) {
-			if ( imageFormatName.equals("png") ) {
-				Logging.printLogDebug(logger, imageCrawlerSession, "Converting to jpeg...");
-				convertedToJPEG = pngToJPEG(localOriginalFile, session);
-				converted = true;
-			}
+		if ( ("png").equals(imageFormatName) ) {
+			Logging.printLogWarn(LOGGER, imageCrawlerSession, "Image is png .. converting to jpeg ...");
+			convertedToJPEG = pngToJPEG(localOriginalFile, session);
+			converted = true;
+			Logging.printLogWarn(LOGGER, imageCrawlerSession, "Done converting");
 		}
-
+		
 		BufferedImage originalBufferedImage;
 		if (convertedToJPEG == null) {
 			originalBufferedImage = ImageIO.read(localOriginalFile);
 		} else {
 			originalBufferedImage = ImageIO.read(convertedToJPEG);
 		}
-
+		
+		if ( originalBufferedImage == null ) {
+			Logging.printLogWarn(LOGGER, imageCrawlerSession, "Buffered image of the downloaded image is null. Probably it's not an image.");
+			return null;
+		}
+		
 		// compute dimensions
 		Dimension originalDimension = new Dimension(originalBufferedImage.getWidth(), originalBufferedImage.getHeight());
-
+		
 		BufferedImage transformedBufferedImage = new BufferedImage(originalDimension.width, originalDimension.height, originalBufferedImage.getType());
-
+		
 		Graphics2D graphics2dOriginal = transformedBufferedImage.createGraphics();
 
 		if (!converted) {
@@ -160,7 +161,7 @@ public class ImageConverter {
 		try {
 
 			ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession)session;
-			
+
 			File jpgImageFile = new File(imageCrawlerSession.getLocalTransformedFileDir());
 
 			//read image file
@@ -176,16 +177,16 @@ public class ImageConverter {
 
 			// write to jpeg file
 			ImageIO.write(newBufferedImage, "jpg", jpgImageFile);
-			
+
 			return jpgImageFile;
 
 		} catch (IOException e) {
 
 			e.printStackTrace();
-			
+
 			return null;
 		}
-		
+
 	}
 
 	/**
@@ -211,10 +212,10 @@ public class ImageConverter {
 			}
 
 		} catch (IOException e) {
-			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogDebug(LOGGER, session, CommonMethods.getStackTraceString(e));
 		} catch (IllegalArgumentException e) {
-			Logging.printLogDebug(logger, session, "Image file is null.");
-			Logging.printLogDebug(logger, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogDebug(LOGGER, session, "Image file is null.");
+			Logging.printLogDebug(LOGGER, session, CommonMethods.getStackTraceString(e));
 		}
 
 		return "";
