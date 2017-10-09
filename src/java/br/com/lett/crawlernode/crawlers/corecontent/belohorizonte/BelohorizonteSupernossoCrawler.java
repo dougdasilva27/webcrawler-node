@@ -274,13 +274,20 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 					JSONObject categoryRequestResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, categoryRequestURL, null, null);
 					
 					if (categoryRequestResponse.has("parentId")) {
-						String parentId = categoryRequestResponse.getString("parentId");
-						String parentCategoryRequestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + parentId;
-												
-						JSONObject parentCategoryRequestResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, parentCategoryRequestURL, null, null);
-												
-						if (parentCategoryRequestResponse.has("name")) {
-							categories.add(parentCategoryRequestResponse.getString("name"));
+						Object parentId = categoryRequestResponse.get("parentId");
+						
+						if(parentId instanceof String) {
+							String parentCategoryRequestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + parentId.toString();
+													
+							JSONObject parentCategoryRequestResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, parentCategoryRequestURL, null, null);
+													
+							if (parentCategoryRequestResponse.has("name")) {
+								Object cat2 = parentCategoryRequestResponse.get("name");
+								
+								if(cat2 instanceof String) {
+									categories.add(cat2.toString());
+								}
+							}
 						}
 					}
 				}
