@@ -183,8 +183,11 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
 		Float price = null;
 
 		if (json.has("currentPrice")) {
-			Double pDouble = json.getDouble("currentPrice");
-			price = MathCommonsMethods.normalizeTwoDecimalPlaces(pDouble.floatValue());
+			Object pObj = json.get("currentPrice");
+			
+			if(pObj instanceof Double) {
+				price = MathCommonsMethods.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+			}
 		}
 
 		return price;

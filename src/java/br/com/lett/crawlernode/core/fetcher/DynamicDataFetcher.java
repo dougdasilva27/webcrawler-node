@@ -76,7 +76,7 @@ public class DynamicDataFetcher {
 		}
 		
 		// choose a proxy randomly
-		LettProxy proxy = randomProxy(ProxyCollection.BONANZA, session);
+		LettProxy proxy = randomProxy(ProxyCollection.LUMINATI_SERVER_BR, session);
 		
 		DesiredCapabilities caps = DesiredCapabilities.phantomjs();
 		caps.setJavascriptEnabled(true);                

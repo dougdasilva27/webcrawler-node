@@ -1,24 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -28,91 +28,98 @@ public class SaopauloExtraCrawler extends Crawler {
 		super(session);
 	}
 
-	@Override
-	public void handleCookiesBeforeFetch() {
 
-		// Criando cookie da loja 21 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "241");
-		cookie.setDomain("busca.deliveryextra.com.br");
-		cookie.setPath("/");
-		this.cookies.add(cookie);
-
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie2 = new BasicClientCookie("ep.store_name_241", "S%26%23xe3%3Bo%20Paulo");
-		cookie2.setDomain("busca.deliveryextra.com.br");
-		cookie2.setPath("/");
-		this.cookies.add(cookie2);
-
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie3 = new BasicClientCookie("ep.currency_code_241", "BRL");
-		cookie3.setDomain("busca.deliveryextra.com.br");
-		cookie3.setPath("/");
-		this.cookies.add(cookie3);
-
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie4 = new BasicClientCookie("ep.language_code_241", "pt-BR");
-		cookie4.setDomain("busca.deliveryextra.com.br");
-		cookie4.setPath("/");
-		this.cookies.add(cookie4);
-	}
+	private final String HOME_PAGE = "https://www.deliveryextra.com";
+	private final String HOME_PAGE_HTTP = "http://www.deliveryextra.com";
 
 
 	@Override
 	public boolean shouldVisit() {
-		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && href.startsWith("http://www.deliveryextra.com.br/");
+		String href = this.session.getOriginalURL().toLowerCase();
+		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+	}
+	
+	// Loja 241 sp
+	private static final String STORE_ID = "241";
+	
+	@Override
+	public void handleCookiesBeforeFetch() {
+
+		// Criando cookie da loja 501 = São Paulo capital
+		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", STORE_ID);
+		cookie.setDomain(".deliveryextra.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+
 	}
 
 
 	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
+	protected Object fetch() {
+		JSONObject productsInfo = new JSONObject();
+		
+		String productUrl = session.getOriginalURL();
+		
+		String id;
+		if(productUrl.startsWith(HOME_PAGE)) {
+			id = productUrl.replace(HOME_PAGE, "").split("/")[2];
+		} else {
+			id = productUrl.replace(HOME_PAGE_HTTP, "").split("/")[2];
+		}
+		
+		String url = "https://api.gpa.digital/ex/products/"+ id +"?storeId="+ STORE_ID +"&isClienteMais=false";
+		
+		JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		
+		if(apiGPA.has("content")) {
+			productsInfo = apiGPA.getJSONObject("content");
+		}
+		
+		return productsInfo;
+	}
+	
+	@Override
+	public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
+		super.extractInformation(jsonSku);
 		List<Product> products = new ArrayList<>();
 
-		if(session.getOriginalURL().contains("/produto/")) {
+		if ( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			JSONObject chaordicSKUJson = crawlChaordicSKUJson(doc);
-
-			String internalId = crawlInternalId(doc);
-			String internalPid = internalId;
-			String name = crawlName(doc);
-			Float price = crawlPrice(doc);
-			boolean available = crawlAvailability(chaordicSKUJson);
-
-			// categories
-			ArrayList<String> categories = crawlCategories(doc);
-			String category1 = getCategory(categories, 0);
-			String category2 = getCategory(categories, 1);
-			String category3 = getCategory(categories, 2);
-
-			// primary image
-			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);			
-			String description = crawlDescription(doc);
+			
+			String internalId = crawlInternalId(jsonSku);
+			String internalPid = crawlInternalPid(jsonSku);
+			CategoryCollection categories = crawlCategories(jsonSku);
+			String description = crawlDescription(jsonSku);
+			boolean available = crawlAvailability(jsonSku);
+			Float price = crawlPrice(jsonSku);
+			String primaryImage = crawlPrimaryImage(jsonSku);
+			String name = crawlName(jsonSku);
+			String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+			Prices prices = crawlPrices(price);
 			Integer stock = null;
-			Marketplace marketplace = new Marketplace();
-			Prices prices = crawlPrices(doc, price);
 
-			Product product = new Product();
-			product.setUrl(session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setInternalPid(internalPid);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setInternalPid(internalPid)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setStock(stock)
+					.setMarketplace(new Marketplace())
+					.build();
 
 			products.add(product);
-			
+		
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
@@ -120,83 +127,107 @@ public class SaopauloExtraCrawler extends Crawler {
 		return products;
 	}
 
-	private String crawlInternalId(Document document) {
-		return Integer.toString(Integer.parseInt(session.getOriginalURL().split("/")[4]));
+	/*******************************
+	 * Product page identification *
+	 *******************************/
+
+	private boolean isProductPage(String url) {
+		if (url.contains("deliveryextra.com.br/produto/")) {
+			return true;
+		}
+		return false;
 	}
 
-	private String crawlName(Document document) {
-		String name = null;
-		Element elementName = document.select(".product-header h1.product-header__heading").first();
-		if (elementName != null) {
-			name = elementName.text().replace("'", "").trim();
+	/*******************
+	 * General methods *
+	 *******************/
+
+	private String crawlInternalId(JSONObject json) {
+		String internalId = null;
+
+		if (json.has("id")) {
+			internalId = json.get("id").toString();			
 		}
+
+		return internalId;
+	}	
+
+
+	private String crawlInternalPid(JSONObject json) {
+		String internalPid = null;
+
+		if (json.has("id")) {
+			internalPid = json.getString("sku");			
+		}
+
+		return internalPid;
+	}
+
+	private String crawlName(JSONObject json) {
+		String name = null;
+		
+		if (json.has("name")) {
+			name = json.getString("name");			
+		}
+
 		return name;
 	}
-	
-	private String crawlDescription(Document document) {
-		Element skuInfo = document.select("#nutritionalChart").first();
-		if (skuInfo != null) {
-			return skuInfo.html();
-		}
-		return "";
-	}
 
-	private Float crawlPrice(Document document) {
+	private Float crawlPrice(JSONObject json) {
 		Float price = null;
 
-		// treating two cases: preco de / preco por
-		Element elementPrice = document.select("#productForm .product-control__price.product-control__container.price_per .value.inline--middle").first();
-		if (elementPrice == null) {
-			elementPrice = document.select("#productForm .product-control__price.product-control__container .value.inline--middle").first();
-			if (elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		if (json.has("currentPrice")) {
+			Object pObj = json.get("currentPrice");
+			
+			if(pObj instanceof Double) {
+				price = MathCommonsMethods.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
 			}
-		} else {
-			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 		}
+
 		return price;
 	}
 
-	private boolean crawlAvailability(JSONObject chaordicSKUJson) {
-		boolean available = false;
-		if (chaordicSKUJson.has("status")) {
-			if (chaordicSKUJson.getString("status").equals("available")) {
-				available = true;
-			}
+	private boolean crawlAvailability(JSONObject json) {
+		if(json.has("stock") && json.getBoolean("stock")) {
+			return true;
 		}
-		return available;
-	}
-
-	private ArrayList<String> crawlCategories(Document document) {
-		ArrayList<String> categories = new ArrayList<>();
-
-		Elements elementsCategories = document.select("#breadCrumbArea .breadcrumbs.group ul li a");
-
-		for (int i = 1; i < elementsCategories.size(); i++) {
-			categories.add(elementsCategories.get(i).text().trim());
-		}
-
-		return categories;
-	}
-
-	private String getCategory(ArrayList<String> categories, int n) {
-		if (n < categories.size()) {
-			return categories.get(n);
-		}
-
-		return "";
-	}
-
-	private String crawlPrimaryImage(Document doc) {
-		String primaryImage = null;
-		Element primaryImageElement = doc.select("#product-image a.zoomImage img").first();
 		
-		if (primaryImageElement != null) {
-			String img = primaryImageElement.attr("src");
+		return false;
+	}
+
+	private String crawlPrimaryImage(JSONObject json) {
+		String primaryImage = null;
+
+		if(json.has("mapOfImages")) {
+			JSONObject images = json.getJSONObject("mapOfImages");
 			
-			if (!img.isEmpty()) {
-				if (!img.startsWith("http://www.deliveryextra.com.br")) {
-					primaryImage = "http://www.deliveryextra.com.br" + img;
+			for(int i = 0; i < images.length(); i++) {
+				if(images.length() > 0 && images.has(Integer.toString(i))) {
+					JSONObject imageObj = images.getJSONObject(Integer.toString(i));
+					
+					if(imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("BIG");
+						
+						if(image.contains("img")) {
+							primaryImage = HOME_PAGE + imageObj.getString("BIG");
+						}
+					} else if(imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("MEDIUM");;
+						
+						if(image.contains("img")) {
+							primaryImage = HOME_PAGE + imageObj.getString("MEDIUM");
+						}
+					} else if(imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("SMALL");;
+						
+						if(image.contains("img")) {
+							primaryImage = HOME_PAGE + imageObj.getString("SMALL");
+						}
+					}
+				}
+				
+				if(primaryImage != null) {
+					break;
 				}
 			}
 		}
@@ -204,127 +235,193 @@ public class SaopauloExtraCrawler extends Crawler {
 		return primaryImage;
 	}
 
-	private String crawlSecondaryImages(Document document) {
+	private String crawlSecondaryImages(JSONObject json, String primaryImage) {
 		String secondaryImages = null;
-
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements secondaryImagesElements = document.select("#product-image__gallery a");
-
-		for (int i = 1; i < secondaryImagesElements.size(); i++) { //starts with index 1 because de primary image is the first image
-			Element e = secondaryImagesElements.get(i);
-
-			if (e != null) {
-				String dataZoomAttr = e.attr("data-zoom");
-
-				if (!dataZoomAttr.isEmpty() && !"#".equals(dataZoomAttr)) {
-					if (!dataZoomAttr.startsWith("http://www.deliveryextra.com.br")) {
-						dataZoomAttr = "http://www.deliveryextra.com.br" + dataZoomAttr;
+		String primaryImageId = getImageId(primaryImage);
+		
+		if(json.has("mapOfImages")) {
+			JSONObject images = json.getJSONObject("mapOfImages");
+			
+			for(int i = 1; i < images.length(); i++) { // index 0 may be a primary Image
+				if(images.length() > 0 && images.has(Integer.toString(i))) {
+					JSONObject imageObj = images.getJSONObject(Integer.toString(i));
+					
+					if(imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("BIG");
+						String imageId = getImageId(image);
+						
+						if(image.contains("img") && !imageId.equals(primaryImageId)) {
+							secondaryImagesArray.put(HOME_PAGE + imageObj.getString("BIG"));
+						}
+					} else if(imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("MEDIUM");
+						String imageId = getImageId(image);
+						
+						if(image.contains("img") && !imageId.equals(primaryImageId)) {
+							secondaryImagesArray.put(HOME_PAGE + imageObj.getString("MEDIUM"));
+						}
+					} else if(imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
+						String image = HOME_PAGE + imageObj.getString("SMALL");
+						String imageId = getImageId(image);
+						
+						if(image.contains("img") && !imageId.equals(primaryImageId)) {
+							secondaryImagesArray.put(HOME_PAGE + imageObj.getString("SMALL"));
+						}
 					}
-					secondaryImagesArray.put(dataZoomAttr);
-				} else {
-					String hrefAttr = e.attr("href");
-					if (!hrefAttr.startsWith("http://www.deliveryextra.com.br")) {
-						hrefAttr = "http://www.deliveryextra.com.br" + hrefAttr;
-					}
-					secondaryImagesArray.put(hrefAttr);
 				}
 			}
 		}
 
-		if (secondaryImagesArray.length() > 0) {
+		if(secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
-
+		
 		return secondaryImages;
-	}	
+	}
+	
+	private String getImageId(String imageUrl) {
+		if(imageUrl != null) {
+			return imageUrl.replace(HOME_PAGE, "").split("/")[4];
+		}
+		
+		return null;
+	}
+
+	private CategoryCollection crawlCategories(JSONObject json) {
+		CategoryCollection categories = new CategoryCollection();
+		
+		if(json.has("shelfList")) {
+			JSONArray shelfList = json.getJSONArray("shelfList");
+			
+			List<String> listCategories = new ArrayList<>(); // It is a "set" because it has been noticed that there are repeated categories
+			
+			for(int i = shelfList.length() - 1; i >= 0; i--) { // the last item is the first category and the first item is the last category
+				JSONObject cat = shelfList.getJSONObject(i);
+				
+				if(cat.has("name") && !listCategories.contains(cat.getString("name"))) {
+					listCategories.add(cat.getString("name"));
+				}
+			}
+			
+			for(String category : listCategories) {
+				categories.add(category);
+			}
+		}		
+
+		return categories;
+	}
+
+
+	private String crawlDescription(JSONObject json) {
+		String description = "";
+		
+		if (json.has("shortDescription")) {
+			if (json.get("shortDescription") instanceof String) {
+				description += json.getString("shortDescription");
+			}
+		}
+		
+		// This key in json has a map of attributes -> {label: "", value = ""} , For crawl niutritional table we make the html and put the values in html
+		if(json.has("nutritionalMap") && json.getJSONObject("nutritionalMap").length() > 0) {
+			JSONObject nutritionalJson = json.getJSONObject("nutritionalMap");
+			
+			StringBuilder  str = new StringBuilder();
+			
+			str.append (
+				"<div class=\"product-nutritional-table\">\n" +
+				"	<p class=\"title\">Tabela nutricional</p>\n" +
+				"	<!-- ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->" +
+						"<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n" +
+				"			<p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho || " +
+								"productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\"></p>\n" +
+				"		</div><!-- end ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->\n" +
+				"		<table class=\"table table-responsive\">\n" +
+				"			<thead>\n" +
+				"				<tr>\n" +
+				"					<th>Item</th>\n" +
+				"					<th>Quantidade por porção</th>\n" +
+				"					<th>Valores diários</th>\n" +
+				"				</tr>\n" +
+				"			</thead>\n"
+			);
+			str.append(crawlNutritionalTableAttributes(nutritionalJson));
+			str.append("</table>\n</div>");
+			
+			description += str.toString();
+		}
+
+		return description;
+	}
+	
+	private String crawlNutritionalTableAttributes(JSONObject nutritionalMap) {
+		StringBuilder str = new StringBuilder();
+		str.append("<tbody>");
+		
+		List<String> attributesList = Arrays.asList("valor_energetico", "carboidratos", "acucares", 
+													"proteinas", "gorduras_totais", "gorduras_saturadas",
+													"gorduras_trans", "fibra_alimentar", "sodio", "rodape");
+		
+		for(String attribute : attributesList){
+			if(nutritionalMap.has(attribute)) {
+				JSONObject attributeJson = nutritionalMap.getJSONObject(attribute);
+				
+				if(attributeJson.has("value") && attributeJson.has("label")) {
+					str.append(putAttribute(attributeJson.getString("value"), attributeJson.getString("label")));
+				}
+			}
+		}
+		
+		str.append("</tbody");
+		return str.toString();
+	}
+	
+	private String putAttribute(String value, String label) {
+		if(label != null) {
+			if(label.equalsIgnoreCase("rodape")) {
+				return
+						"<tfoot>\n" +
+						"	<tr>\n" +
+						"		<td colspan=\"3\" ng-bind-html=\"productDetailCtrl.product.nutritionalMap.rodape.value\"" +
+									"class=\"last ng-binding\">"+ value + "</td>\n" +
+						"	</tr>\n" +
+						"</tfoot>\n";
+			} else {
+				return
+				"	<tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 \" class=\"ng-scope\">\n" +
+				"		<td class=\"ng-binding\">"+ label +"</td>\n" +
+				"		<td class=\"ng-binding\">"+ value +"</td>\n" +
+				"		<td class=\"ng-binding\"></td>\n" +
+				"	</tr><!-- end ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 --><!-- end ngRepeat: "
+						+ "(key, item) in productDetailCtrl.product.nutritionalMap --><!-- ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 -->"
+						+ "<tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 "
+						+ "\" class=\"ng-scope\">\n";
+			}
+		}
+		
+		return "";
+	}
 
 	/**
-	 * In this market, installments not appear in product page
-	 * 
-	 * @param doc
+	 * In this site has no information of installments
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
-		Prices prices = new Prices();
+	private Prices crawlPrices(Float price){
+		Prices p = new Prices();
 
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();
-
+		if(price != null) {
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 			installmentPriceMap.put(1, price);
-			prices.setBankTicketPrice(price);
+			
+			p.setBankTicketPrice(price);
+			
+			p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+			p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-		}
+		}	
 
-		return prices;
+		return p;
 	}
-
-	/**
-	 * e.g:
-	 * 
-	 * "product":{
-	 *		"images":{
-	 *			"1200x1200":"/img/uploads/1/607/507607.jpg",
-	 *			"80x80":"/img/uploads/1/607/507607x80x80.jpg",
-	 *			"200x200":"/img/uploads/1/607/507607x200x200.jpg"
-	 *		},
-	 * 		"skus":[
-	 *			{
-	 *			"sku":"1051366",
-	 *			"status":"available"
-	 *			}
-	 *		],
-	 *		"price":8.85,
-	 *		"old_price":8.85,
-	 *		"name":"Sabonete Líquido Antibacteriano PROTEX Omega 3 250ml",
-	 *		"description":"Sabonete Liquido protex omega 3 250ML Características e Benefícios: Protex OMEGA 3 combina a proteção antibacteriana prolongada de Protex com o OMEGA 3. Sua formula ajuda a manter a pele saudável, protegida e com sensação hidratante. Elimina 99,9% das bactérias. Ingredientes Ativos: Triclocarban. Instruções de Uso: Molhar o corpo ou a região desejada, ensaboar normalmente e enxaguar.",
-	 *		"id":"329106",
-	 *		"categories":[
-	 *			{
-	 *			"name":"Higiene e cuidados diários",
-	 *			"id":"127"
-	 *			},
-	 *			{
-	 *			"name":"Sabonetes",
-	 *			"id":"2258",
-	 *			"parents":[
-	 *				"127"
-	 *			]
-	 *			}
-	 *		],
-	 *		"url":"deliveryextra.com.br/produto/329106/sabonete-liquido-antibacteriano-protex-omega-3-250ml",
-	 *		"status":"available"
-	 *	}
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private JSONObject crawlChaordicSKUJson(Document document) {
-		Elements scriptTags = document.getElementsByTag("script");
-		JSONObject skuJson = null;
-
-		for (Element tag : scriptTags){                
-			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("window.chaordic_meta")) {
-					skuJson = new JSONObject
-							(node.getWholeData().split(Pattern.quote("window.chaordic_meta= "))[1] +
-									node.getWholeData().split(Pattern.quote("window.chaordic_meta= "))[1].split(Pattern.quote("}]}"))[0]
-									);
-
-				}
-			}        
-		}
-
-		if (skuJson != null && skuJson.has("product")) {
-			return skuJson.getJSONObject("product");
-		}
-
-		return new JSONObject();
-	}
-
 }
