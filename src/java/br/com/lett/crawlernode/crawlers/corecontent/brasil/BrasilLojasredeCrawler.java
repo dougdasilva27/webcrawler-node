@@ -29,12 +29,12 @@ import models.prices.Prices;
  */
 public class BrasilLojasredeCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.lojasrede.com.br/";
+	private final String HOME_PAGE = "https://www.lojasrede.com.br/";
 
 	public BrasilLojasredeCrawler(Session session) {
 		super(session);
 	}
-
+	
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
