@@ -727,25 +727,25 @@ public class Persistence {
 	 * @param markets
 	 */
 	public static void initializeImagesDirectories(Markets markets) {
-		Logging.printLogDebug(logger, "Initializing temp directory at:" + Main.executionParameters.getTmpImageFolder() + "...");
+		Logging.printLogDebug(logger, "Initializing temp images directory at:" + Main.executionParameters.getTmpImageFolder() + "...");
 
 		List<Market> marketsList = markets.getMarkets();
 
 		String[] subdirectories = new String[]{"images"};
 
+		int counter = 0;
+		
 		// create folder for each market
 		for(Market m: marketsList) {
-			Logging.printLogInfo(logger, "Processing " + m.getCity());
 			processDirectory(m.getCity(), null, null);
-
-			Logging.printLogInfo(logger, "Processing " + m.getCity() + " -> " + m.getName());
 			processDirectory(m.getCity(), m.getName(), null);
-
 			for(String folder: subdirectories) {
 				processDirectory(m.getCity(), m.getName(), folder);
 			}
-
+			counter++;
 		}
+		
+		Logging.printLogDebug(logger, "Initialized directory for " + counter + " markets.");
 	}
 
 	/**
@@ -768,15 +768,9 @@ public class Persistence {
 
 		if (!file.exists()) {
 			boolean fileWasCreated = file.mkdir();
-
-			if (fileWasCreated) {
-				Logging.printLogInfo(logger, "Directory " + file.getAbsolutePath() + " created!");
-			} else {
+			if ( !fileWasCreated ) {
 				Logging.printLogError(logger, "Failed to create " + file.getAbsolutePath() + " directory!");
 			}
-
-		} else {
-			Logging.printLogDebug(logger, "Directory " + file.getAbsolutePath() + " already exists.");
 		}
 	}
 
