@@ -266,7 +266,7 @@
 		</dependency>
 
 		<!-- Image processing -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.openimaj</groupId>
 			<artifactId>core-image</artifactId>
 			<version>1.3.1</version>
@@ -277,7 +277,7 @@
 			<artifactId>image-local-features</artifactId>
 			<version>1.3.1</version>
 			<scope>compile</scope>
-		</dependency>
+		</dependency> -->
 
 		<!-- Commom model to store image descriptors of Mongo -->
 		<dependency>
@@ -315,15 +315,15 @@
 			<url>https://jitpack.io</url>
 		</repository>
 
-		<repository>
+		<!-- <repository>
 			<id>OpenIMAJ maven releases repository</id>
 			<url>http://maven.openimaj.org</url>
-		</repository>
+		</repository> -->
 
-		<repository>
+		<!-- <repository>
 			<id>OpenIMAJ maven snapshots repository</id>
 			<url>http://snapshots.openimaj.org</url>
-		</repository>
+		</repository> -->
 
 		<repository>
 			<id>maven-placeholder</id>

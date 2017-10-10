@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.categories.brasil;
 
 import java.util.Iterator;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

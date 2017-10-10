@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.curitiba;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
