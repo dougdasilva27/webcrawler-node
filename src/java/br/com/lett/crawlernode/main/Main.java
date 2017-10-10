@@ -43,7 +43,7 @@ import credentials.models.DBCredentials;
 
 public class Main {
 
-	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
 	public static ExecutionParameters 		executionParameters;
 	public static ProxyCollection 			proxies;
@@ -59,14 +59,14 @@ public class Main {
 	public static final boolean USING_FETCHER = false;
 	
 	public static void main(String args[]) {
-		Logging.printLogDebug(logger, "Starting webcrawler-node...");	
+		Logging.printLogDebug(LOGGER, "Starting webcrawler-node...");	
 
 		// setting execution parameters
 		executionParameters = new ExecutionParameters();
 		executionParameters.setUpExecutionParameters();
 
 		// check resources
-		Logging.printLogDebug(logger, "Checking files...");
+		Logging.printLogDebug(LOGGER, "Checking files...");
 		checkFiles();
 
 		// setting MDC for logging messages
@@ -79,7 +79,7 @@ public class Main {
 		try {
 			dbCredentials = DatabaseCredentialsSetter.setCredentials();
 		} catch (Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+			Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
 		}
 
 		// creating the database manager
@@ -112,7 +112,7 @@ public class Main {
 	private static void checkFiles() {
 		File phantom = new File(executionParameters.getPhantomjsPath());
 		if (!phantom.exists() && !phantom.isDirectory()) {
-			Logging.printLogError(logger, "Phantom webdriver binary not found.");
+			Logging.printLogError(LOGGER, "Phantom webdriver binary not found.");
 			System.exit(1);
 		}
 	}
