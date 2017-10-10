@@ -15,8 +15,6 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.aws.Credentials;
-import br.com.lett.crawlernode.aws.CustomCredentialsProvider;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,6 +23,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -64,13 +63,13 @@ public class S3Service {
 		s3clientImages = AmazonS3ClientBuilder
 		.standard()
 		.withRegion(Regions.US_EAST_1)
-		.withCredentials(new CustomCredentialsProvider(Credentials.ACCESS_KEY, Credentials.SECRET_KEY))
+		.withCredentials(new EnvironmentVariableCredentialsProvider())
 		.build();
 
 		s3clientCrawlerSessions = AmazonS3ClientBuilder
 				.standard()
 				.withRegion(Regions.US_EAST_1)
-				.withCredentials(new CustomCredentialsProvider(Credentials.ACCESS_KEY, Credentials.SECRET_KEY))
+				.withCredentials(new EnvironmentVariableCredentialsProvider())
 				.build();
 	}
 
