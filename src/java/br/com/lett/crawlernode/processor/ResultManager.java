@@ -7,6 +7,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -38,8 +39,7 @@ public class ResultManager {
 	private DateFormat isoDateFormat;
 	private Map<Integer, String> cityNameInfo;
 	private Map<Integer, String> marketNameInfo;
-
-	private ArrayList<Integer> marketid;
+	private List<Integer> marketid;
 
 	/**
 	 * Called on crawler main method.
@@ -55,7 +55,6 @@ public class ResultManager {
 			) throws NullPointerException {
 
 		this.db = db;
-
 		this.init(activateLogging);
 	}
 
