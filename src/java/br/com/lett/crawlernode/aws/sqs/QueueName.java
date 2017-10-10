@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.queue;
+package br.com.lett.crawlernode.aws.sqs;
 
 public class QueueName {
 		

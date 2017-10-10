@@ -42,32 +42,6 @@
 
 		<plugins>
 
-			<!-- <plugin> <artifactId>maven-assembly-plugin</artifactId> <executions> 
-				<execution> <phase>package</phase> <goals> <goal>single</goal> </goals> </execution> 
-				</executions> <configuration> <source>1.7</source> <target>1.7</target> <descriptorRefs> 
-				<descriptorRef>jar-with-dependencies</descriptorRef> </descriptorRefs> <archive> 
-				<manifest> <addClasspath>true</addClasspath> <classpathPrefix>src/</classpathPrefix> 
-				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> </archive> 
-				<outputDirectory>target/deployment</outputDirectory> </configuration> </plugin> -->
-
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> 
-				<version>2.4</version> <configuration> <source>1.7</source> <target>1.7</target> 
-				<archive> <manifest> <addClasspath>true</addClasspath> <classpathPrefix>lib/</classpathPrefix> 
-				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> </archive> 
-				<outputDirectory>target/deployment</outputDirectory> </configuration> </plugin> -->
-
-			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
-				<configuration> <source>1.7</source> <target>1.7</target> <archive> <manifest> 
-				<addClasspath>true</addClasspath> <classpathPrefix>lib/</classpathPrefix> 
-				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> </archive> 
-				</configuration> </plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> 
-				<artifactId>maven-dependency-plugin</artifactId> <version>2.1</version> <executions> 
-				<execution> <id>copy-dependencies</id> <phase>package</phase> <goals> <goal>copy-dependencies</goal> 
-				</goals> <configuration> <outputDirectory>${project.build.directory}/lib</outputDirectory> 
-				<overWriteReleases>false</overWriteReleases> <overWriteSnapshots>false</overWriteSnapshots> 
-				<overWriteIfNewer>true</overWriteIfNewer> </configuration> </execution> </executions> 
-				</plugin> -->
-
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
@@ -108,27 +82,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
-			<!-- <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.3</version> 
-				<configuration> <source>1.7</source> <target>1.7</target> </configuration> 
-				</plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
-				<executions> <execution> <phase>package</phase> <goals> <goal>single</goal> 
-				</goals> <configuration> <archive> <manifest> <mainClass>br.com.lett.crawlernode.main.Main</mainClass> 
-				</manifest> </archive> <descriptorRefs> <descriptorRef>jar-with-dependencies</descriptorRef> 
-				</descriptorRefs> </configuration> </execution> </executions> </plugin> -->
-
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> 
-				<version>3.0.2</version> <configuration> <archive> <index>true</index> <manifest> 
-				<addClasspath>true</addClasspath> <classpathPrefix>lib/</classpathPrefix> 
-				<mainClass>br.com.lett.crawlernode.main.Main</mainClass> </manifest> <manifestEntries> 
-				<mode>production</mode> <url>http://www.lett.com.br</url> </manifestEntries> 
-				</archive> <outputDirectory>target/deployment</outputDirectory> </configuration> 
-				</plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-dependency-plugin</artifactId> 
-				<version>2.8</version> <executions> <execution> <id>copy-dependencies</id> 
-				<phase>prepare-package</phase> <goals> <goal>copy-dependencies</goal> </goals> 
-				<configuration> <outputDirectory>${project.build.directory}/classes/lib</outputDirectory> 
-				<includeScope>runtime</includeScope> </configuration> </execution> </executions> 
-				</plugin> -->
 
 		</plugins>
 
@@ -245,17 +198,12 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-s3</artifactId>
-			<version>1.10.69</version>
+			<version>1.11.194</version>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>amazon-sqs-java-extended-client-lib</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-core</artifactId>
-			<version>1.10.77</version>
+			<artifactId>aws-java-sdk-sqs</artifactId>
+			<version>1.11.194</version>
 		</dependency>
 
 		<!-- Joda time required for Amazon -->
@@ -264,20 +212,6 @@
 			<artifactId>joda-time</artifactId>
 			<version>2.9.4</version>
 		</dependency>
-
-		<!-- Image processing -->
-		<!-- <dependency>
-			<groupId>org.openimaj</groupId>
-			<artifactId>core-image</artifactId>
-			<version>1.3.1</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.openimaj</groupId>
-			<artifactId>image-local-features</artifactId>
-			<version>1.3.1</version>
-			<scope>compile</scope>
-		</dependency> -->
 
 		<!-- Commom model to store image descriptors of Mongo -->
 		<dependency>
@@ -314,16 +248,6 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
-
-		<!-- <repository>
-			<id>OpenIMAJ maven releases repository</id>
-			<url>http://maven.openimaj.org</url>
-		</repository> -->
-
-		<!-- <repository>
-			<id>OpenIMAJ maven snapshots repository</id>
-			<url>http://snapshots.openimaj.org</url>
-		</repository> -->
 
 		<repository>
 			<id>maven-placeholder</id>

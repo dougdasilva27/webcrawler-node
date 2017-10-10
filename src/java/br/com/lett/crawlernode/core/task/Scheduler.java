@@ -14,11 +14,10 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 
+import br.com.lett.crawlernode.aws.sqs.QueueHandler;
+import br.com.lett.crawlernode.aws.sqs.QueueName;
+import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.session.Session;
-
-import br.com.lett.crawlernode.queue.QueueHandler;
-import br.com.lett.crawlernode.queue.QueueName;
-import br.com.lett.crawlernode.queue.QueueService;
 import br.com.lett.crawlernode.util.Logging;
 import models.Processed;
 

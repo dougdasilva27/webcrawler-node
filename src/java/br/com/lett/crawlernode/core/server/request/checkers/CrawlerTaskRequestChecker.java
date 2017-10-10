@@ -3,13 +3,13 @@ package br.com.lett.crawlernode.core.server.request.checkers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.queue.QueueName;
 import br.com.lett.crawlernode.util.Logging;
 
 public class CrawlerTaskRequestChecker {

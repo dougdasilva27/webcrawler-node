@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.queue;
+package br.com.lett.crawlernode.aws.s3;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -15,6 +15,8 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.aws.Credentials;
+import br.com.lett.crawlernode.aws.CustomCredentialsProvider;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -23,10 +25,9 @@ import br.com.lett.crawlernode.util.Logging;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -44,9 +45,6 @@ import com.amazonaws.services.s3.model.S3Object;
 public class S3Service {
 
 	protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
-	
-	private static final String MASTER_ACCES_KEY = "AKIAIDRH2ZRKWAZCYSMA";
-	private static final String MASTER_SECRET_KEY = "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";
 
 	public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
 	public static final String HTML_UPLOAD_TYPE = "html";
@@ -54,22 +52,26 @@ public class S3Service {
 	public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
 
 	// Amazon images
-	private static AWSCredentials credentialsImages;
 	private static AmazonS3 s3clientImages;
 	private static final String IMAGES_BUCKET_NAME   = "placeholder-media";
 
 	// Amazon crawler-session
-	private static AWSCredentials credentialsCrawlerSessions;
 	private static AmazonS3 s3clientCrawlerSessions;
-	private static String crawlerLogsBucketName  		= "placeholder-logs";
-	private static String crawlerSessionsPrefix  		= "crawler-sessions";
+	private static String LOGS_BUCKET_NAME  = "placeholder-logs";
+	private static String crawlerSessionsPrefix  = "crawler-sessions";
 
-	static {
-		credentialsImages = new BasicAWSCredentials(MASTER_ACCES_KEY, MASTER_SECRET_KEY);
-		s3clientImages = new AmazonS3Client(credentialsImages);
+	static {		
+		s3clientImages = AmazonS3ClientBuilder
+		.standard()
+		.withRegion(Regions.US_EAST_1)
+		.withCredentials(new CustomCredentialsProvider(Credentials.ACCESS_KEY, Credentials.SECRET_KEY))
+		.build();
 
-		credentialsCrawlerSessions = new BasicAWSCredentials(MASTER_ACCES_KEY, MASTER_SECRET_KEY);
-		s3clientCrawlerSessions = new AmazonS3Client(credentialsCrawlerSessions);
+		s3clientCrawlerSessions = AmazonS3ClientBuilder
+				.standard()
+				.withRegion(Regions.US_EAST_1)
+				.withCredentials(new CustomCredentialsProvider(Credentials.ACCESS_KEY, Credentials.SECRET_KEY))
+				.build();
 	}
 
 	/**
@@ -172,7 +174,7 @@ public class S3Service {
 
 		try {
 			Logging.printLogDebug(logger, session, "Uploading file to Amazon");
-			s3clientCrawlerSessions.putObject(new PutObjectRequest(crawlerLogsBucketName, amazonLocation, file));
+			s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, file));
 			Logging.printLogDebug(logger, session, "Screenshot uploaded with success!");
 
 		} catch (AmazonServiceException ase) {
@@ -218,7 +220,7 @@ public class S3Service {
 			Logging.printLogDebug(logger, session, "Uploading content to Amazon");
 			htmlFile = new File(requestHash + ".html");			
 			FileUtils.writeStringToFile(htmlFile, html);
-			s3clientCrawlerSessions.putObject(new PutObjectRequest(crawlerLogsBucketName, amazonLocation, htmlFile));
+			s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, htmlFile));
 			Logging.printLogDebug(logger, session, "Content uploaded with success!");
 
 		} catch (AmazonServiceException ase) {

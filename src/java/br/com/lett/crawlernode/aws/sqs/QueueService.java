@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.queue;
+package br.com.lett.crawlernode.aws.sqs;
 
 import java.util.HashMap;
 import java.util.List;
