@@ -47,7 +47,7 @@ import models.prices.Prices;
 
 public class BrasilLebesCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.lebes.com.br/";
+	private static final String HOME_PAGE = "https://www.lebes.com.br/";
 
 	public BrasilLebesCrawler(Session session) {
 		super(session);
@@ -63,7 +63,7 @@ public class BrasilLebesCrawler extends Crawler {
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = new ArrayList<>();
 
 		if ( isProductPage(doc, session.getOriginalURL()) ) {
 
