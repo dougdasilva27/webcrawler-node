@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -26,10 +28,10 @@ import models.prices.Prices;
  * 1) Only one sku per page.
  * 
  * Price crawling notes:
- * 1) In time crawler was made, there no product unnavailable.
+ * 1) We couldn't find any sku with status available when writing this crawler.
  * 2) There is no bank slip (boleto bancario) payment option.
  * 3) There is no installments for card payment. So we only have 
- * 1x payment, and to this value we use the cash price crawled from
+ * 1x payment, and for this value we use the cash price crawled from
  * the sku page. (nao existe divisao no cartao de credito).
  * 4) In this market has two others possibles markets, City Market = 305 and Fresko = 14
  * 5) In page of product, has all physicals stores when it is available.
@@ -76,7 +78,7 @@ public class MexicoLacomerCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace(doc);
-
+			
 			// Creating the product
 			Product product = ProductBuilder.create()
 					.setUrl(session.getOriginalURL())
@@ -107,21 +109,18 @@ public class MexicoLacomerCrawler extends Crawler {
 	}
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-title").first() != null) {
+		if (doc.select("div.product-detail-content").first() != null) {
 			return true;
 		}
 		return false;
 	}
 
 	private String crawlInternalId(Document document) {
-		String internalId = null;
-
 		Element internalIdElement = document.select("input[name=artEan]").first();
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").trim();
+			return internalIdElement.attr("value").trim();
 		}
-
-		return internalId;
+		return null;
 	}
 
 	/**
@@ -137,34 +136,48 @@ public class MexicoLacomerCrawler extends Crawler {
 	}
 
 	private String crawlName(Document document) {
-		String name = null;
-		Element nameElement = document.select("h1.product-title").first();
-
+		Element nameElement = document.select(".txt-product-name[itemprop=name]").first();
 		if (nameElement != null) {
-			name = nameElement.text().trim();
+			return nameElement.text().trim();
 		}
-
-		return name;
+		return null;
 	}
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
+		Element skuPriceOffersElement = document.select("div.product-detail-content div[itemprop=offers]").first();
+		if (skuPriceOffersElement != null) {
+			Element priceElement = skuPriceOffersElement.select("span").first();
 
-		String priceText = null;
-		Element salePriceElement = document.select(".price-sales").last();		
+			if ( priceElement != null ) {
+				String text = priceElement.text();
+				if ( !text.isEmpty() ) {
+					Pattern regex = Pattern.compile("(\\$)(\\s*\\d+[\\.]\\d+)", Pattern.CASE_INSENSITIVE);
+					Matcher matcher = regex.matcher(text);
+					if ( matcher.find() ) {
+						try {
+							price = Float.parseFloat( matcher.group(2) );
+						} catch (NullPointerException | NumberFormatException ex) {
+							price = null;
+						}
+					}
+				}
 
-		if (salePriceElement != null) {
-			priceText = salePriceElement.ownText().trim().toLowerCase();
-			
-			if(priceText.contains("$")) {
-				int x = priceText.indexOf("$") + 1;
-				int y = priceText.indexOf(" ", x);
-				
-				price = Float.parseFloat(priceText.substring(x, y));
+				//				if( priceText.contains("$") ) {
+				//					int x = priceText.indexOf("$") + 1;
+				//					int y = priceText.indexOf(" ", x);
+				//					
+				//					price = Float.parseFloat(priceText.substring(x, y));
+				//				}
 			}
+
+
 		}
-		
-		if(price == 0f){
+
+		//		if (price == 0f) {
+		//			price = null;
+		//		}
+		if ( price.compareTo(0.0f) == 0 ) {
 			price = null;
 		}
 
@@ -172,54 +185,52 @@ public class MexicoLacomerCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(Float price) {
-		boolean available = false;
-
 		if (price != null) {
-			available = true;
+			return true;
 		}
-
-		return available;
+		return false;
 	}
 
 	private Marketplace crawlMarketplace(Document document) {
 		return new Marketplace();
 	}
 
-
 	private String crawlPrimaryImage(Document document) {
-		String primaryImage = null;
-		Element primaryImageElement = document.select(".main-image img").first();
-
+		Element primaryImageElement = document.select(".img-product-detail.centerImg").first();
 		if (primaryImageElement != null) {
-			String image = primaryImageElement.attr("src").trim();
-			
-			if(!image.contains("empty")){
-				primaryImage = image;
+			String dataZoomImageUrl = primaryImageElement.attr("data-zoom-image").trim();
+			if ( !dataZoomImageUrl.isEmpty() ) {
+				if ( !dataZoomImageUrl.contains("empty") ){
+					return dataZoomImageUrl;
+				}
+			} else {
+				String srcUrl = primaryImageElement.attr("src").trim();
+				if ( !srcUrl.isEmpty() ) {
+					return srcUrl;
+				}
 			}
 		}
-		
 
-		return primaryImage;
+		return null;
 	}
 
 	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements images = doc.select("#gal1 .div-gal > a");
-		
+		Elements images = doc.select("ul.imageslist .td-product-image a .img-product-detail");
+
 		for (int i = 1; i < images.size(); i++) { // first image is the primary Image
 			Element e = images.get(i);
-
 			String image = e.attr("data-zoom-image").trim();
 
-			if (image.isEmpty()) {
-				image = e.attr("data-image").trim();
+			if ( image.isEmpty() || image.equals("#") ) {
+				image = e.attr("src").trim();
 			}
 
 			secondaryImagesArray.put(image);
 		}
-		
+
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
@@ -240,12 +251,14 @@ public class MexicoLacomerCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		StringBuilder description = new StringBuilder();
-		Element descriptionElement = document.select(".product-tab").first();
 
-		if(descriptionElement != null) {
-			description.append(descriptionElement.html());
+		Element descriptionContentElement = document.select("[itemprop=description]").first();		
+		if ( descriptionContentElement != null ) {
+			Element descriptionSectionTitleElement = descriptionContentElement.parent();
+			if ( descriptionSectionTitleElement != null ) description.append(descriptionSectionTitleElement.html());
+			description.append( descriptionContentElement.html() );
 		}
-		
+
 		return description.toString();
 	}
 
@@ -263,16 +276,16 @@ public class MexicoLacomerCrawler extends Crawler {
 	 */
 	private Prices crawlPrices(Float price) {
 		Prices prices = new Prices();
-		
-		if(price != null){
+
+		if (price != null) {
 			Map<Integer,Float> installmentPriceMap = new TreeMap<>();
 			installmentPriceMap.put(1, price);
-	
+
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 		}
-		
+
 		return prices;
 	}
 

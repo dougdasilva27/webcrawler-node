@@ -43,13 +43,13 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class GETFetcher {
-	
+
 	protected static final Logger logger = LoggerFactory.getLogger(GETFetcher.class);
-	
+
 	private GETFetcher() {
 		super();
 	}
-	
+
 	/**
 	 * Fetch a page
 	 * By default the redirects are enabled in the RequestConfig
@@ -65,8 +65,8 @@ public class GETFetcher {
 			String url, 
 			List<Cookie> cookies, 
 			int attempt) {
-		
-		
+
+
 		LettProxy randProxy = null;
 		String randUserAgent = null;
 		CloseableHttpResponse closeableHttpResponse = null;
@@ -75,36 +75,36 @@ public class GETFetcher {
 
 		try {
 			Logging.printLogDebug(logger, session, "Performing GET request: " + url );
-			
+
 			// Request via fetcher on first attempt
 			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
 				Map<String,String> headers = new HashMap<>();
-				
+
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
-					
+
 					for(Cookie c : cookies) {
 						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
 					}
-					
+
 					headers.put("Cookie", cookiesHeader.toString());
 				}
-				
+
 				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
-				
+
 				DataFetcher.setRequestProxyForFetcher(session, response, url);
 				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
-				
+
 				String content = response.getJSONObject("response").getString("body");
 				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
-				
+
 				return content;
 			}
-			
+
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
-			
+
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -126,10 +126,10 @@ public class GETFetcher {
 			if (randProxy != null) {
 				proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
 			}
-			
+
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
-				
+
 
 				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig = RequestConfig.custom()
@@ -175,7 +175,7 @@ public class GETFetcher {
 			// creating the redirect strategy
 			// so we can get the final redirected URL
 			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-			
+
 			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
 
@@ -196,21 +196,6 @@ public class GETFetcher {
 			HttpGet httpGet = new HttpGet(url);
 			httpGet.setConfig(requestConfig);
 
-			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpGet.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpGet.addHeader("X-Proxy-Country", "BR");
-//			}
-
-			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
-
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -227,7 +212,7 @@ public class GETFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
-			
+
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
@@ -279,16 +264,10 @@ public class GETFetcher {
 					responseLength,
 					requestHash);
 
-			if (e instanceof ResponseCodeException) {
-				Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
-				Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
-			}
-			else {
-				Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET: " + session.getOriginalURL());
-				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-			}
+			Logging.printLogError(logger, session, "Error performing GET request [url: " + session.getOriginalURL() + " , attempt: " + attempt + "]");
+			Logging.printLogError(logger, session, e.getMessage());
 
-			if(attempt >= session.getMaxConnectionAttemptsCrawler()) {
+			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -297,7 +276,7 @@ public class GETFetcher {
 
 		}
 	}
-	
+
 	public static String fetchPageGETWithHeaders(
 			Session session, 
 			String url, 
@@ -318,27 +297,27 @@ public class GETFetcher {
 			if ( attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0) ) {				
 				if(cookies != null && !cookies.isEmpty()) {
 					StringBuilder cookiesHeader = new StringBuilder();
-					
+
 					for(Cookie c : cookies) {
 						cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
 					}
-					
+
 					headers.put("Cookie", cookiesHeader.toString());
 				}
-				
+
 				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
-				
+
 				DataFetcher.setRequestProxyForFetcher(session, response, url);
-				
+
 				session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
-				
+
 				String content = response.getJSONObject("response").getString("body");
 				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
-				
+
 				return content;
 			}
-			
+
 			randUserAgent = DataFetcher.randUserAgent();
 			randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
@@ -437,19 +416,19 @@ public class GETFetcher {
 			httpGet.setConfig(requestConfig);
 
 			// if we are using charity engine, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-//				httpGet.addHeader("Proxy-Authorization", headerValue);
-//
-//				// setting header for proxy country
-//				httpGet.addHeader("X-Proxy-Country", "BR");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
+			//				String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
+			//				String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
+			//				httpGet.addHeader("Proxy-Authorization", headerValue);
+			//
+			//				// setting header for proxy country
+			//				httpGet.addHeader("X-Proxy-Country", "BR");
+			//			}
 
 			// if we are using azure, we must set header for authentication
-//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-//			}
+			//			if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
+			//				httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
+			//			}
 
 			// do request
 			closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -467,7 +446,7 @@ public class GETFetcher {
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());		// loading information from http entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());	// geting the status code
 			pageContent.setUrl(url); // setting url
-			
+
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
