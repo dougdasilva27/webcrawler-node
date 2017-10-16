@@ -336,7 +336,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document document) {
 		String primaryImage = null;
-		Element primaryImageElement = document.select("#foto #produto img").first();
+		Element primaryImageElement = document.select("#foto #produto img[data-zoom-image]").first();
 
 		if (primaryImageElement != null) {
 			primaryImage = PROTOCOL + "www.ambientair.com.br" + primaryImageElement.attr("data-zoom-image").trim();
@@ -349,7 +349,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements imagesElement = document.select("#foto #extras ul li a");
+		Elements imagesElement = document.select("#foto #extras ul li a[data-zoom-image]");
 
 		for (int i = 1; i < imagesElement.size(); i++) { // starting from index 1, because the first is the primary image
 			secondaryImagesArray.put( PROTOCOL + "www.ambientair.com.br" + imagesElement.get(i).attr("data-zoom-image").trim() );
