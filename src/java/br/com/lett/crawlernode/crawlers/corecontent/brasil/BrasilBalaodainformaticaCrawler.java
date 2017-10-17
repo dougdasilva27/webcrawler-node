@@ -323,52 +323,55 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 					Float bankTicket = MathCommonsMethods.normalizeTwoDecimalPlaces((float)(price.doubleValue() - (price.doubleValue() * (discount/100.0))));
 					prices.setBankTicketPrice(bankTicket);
 				}
+			} else {
+				prices.setBankTicketPrice(price);
 			}
 			
 			String url = "http://www.balaodainformatica.com.br/productotherpaymentsystems/" + internalId;
-
 			Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
 			Elements cardsElements = docPrices.select("#ddlCartao option");
+			
+			if(cardsElements.size() > 0) {
 
-			for(Element e : cardsElements){
-				String text = e.text().toLowerCase();
-
-				if (text.contains("visa")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-
-				} else if (text.contains("mastercard")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-
-				} else if (text.contains("diners")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-
-				} else if (text.contains("american") || text.contains("amex")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
-
-				} else if (text.contains("hipercard")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
-
-				} else if (text.contains("credicard") ) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
-
-				} else if (text.contains("elo") ) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-
-				} else if (text.contains("aura") ) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
-					prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-
-				}
-			}  
-
+				for(Element e : cardsElements){
+					String text = e.text().toLowerCase();
+	
+					if (text.contains("visa")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+	
+					} else if (text.contains("mastercard")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+	
+					} else if (text.contains("diners")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+	
+					} else if (text.contains("american") || text.contains("amex")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
+	
+					} else if (text.contains("hipercard")) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);	
+	
+					} else if (text.contains("credicard") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+	
+					} else if (text.contains("elo") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+	
+					} else if (text.contains("aura") ) {
+						Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
+						prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+	
+					}
+				}  
+			} 
 
 		}
 
