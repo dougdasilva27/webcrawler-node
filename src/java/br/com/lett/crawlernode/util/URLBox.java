@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
@@ -34,8 +33,10 @@ public class URLBox {
 	
 	private static final Logger logger = LoggerFactory.getLogger(URLBox.class);
 	
+	private static final String ACCOUNT = "placeholder";
+	
 	public static String takeAScreenShot(String url, Session session, int page, List<Cookie> cookies) {
-		String s3Link = null;
+		String s3Link;
 		
 		String urlboxKey = "2hXKGlSeR95wCDVl";
 		String urlboxSecret = "98108a7bb45240f3b18ed1ea75906d6f";
@@ -64,7 +65,7 @@ public class URLBox {
 		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
 		
 		StringBuilder urlBuilder = new StringBuilder();
-		urlBuilder.append("https://s3.amazonaws.com/lett-screenshot");
+		urlBuilder.append("https://s3.amazonaws.com/" + ACCOUNT + "-screenshot");
 		
 		if(session instanceof RankingSession) {
 			String path = "%2F" + pathRanking + "%2F" + ((RankingSession)session).getLocation().replace(" ", "_") +
