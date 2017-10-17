@@ -20,6 +20,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
@@ -32,8 +33,6 @@ public class URLBox {
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(URLBox.class);
-	
-	private static final String ACCOUNT = "placeholder";
 	
 	public static String takeAScreenShot(String url, Session session, int page, List<Cookie> cookies) {
 		String s3Link;
@@ -65,7 +64,7 @@ public class URLBox {
 		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
 		
 		StringBuilder urlBuilder = new StringBuilder();
-		urlBuilder.append("https://s3.amazonaws.com/" + ACCOUNT + "-screenshot");
+		urlBuilder.append("https://s3.amazonaws.com/" + S3Service.SCREENSHOT_BUCKET_NAME);
 		
 		if(session instanceof RankingSession) {
 			String path = "%2F" + pathRanking + "%2F" + ((RankingSession)session).getLocation().replace(" ", "_") +
@@ -138,7 +137,7 @@ public class URLBox {
 		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
 		
 		StringBuilder urlBuilder = new StringBuilder();
-		urlBuilder.append("https://s3.amazonaws.com/lett-screenshot");
+		urlBuilder.append("https://s3.amazonaws.com/" + S3Service.SCREENSHOT_BUCKET_NAME);
 		
 		if(session instanceof RankingSession) {
 			String path = "%2F" + pathRanking + "%2F" + ((RankingSession)session).getLocation().replace(" ", "_") +

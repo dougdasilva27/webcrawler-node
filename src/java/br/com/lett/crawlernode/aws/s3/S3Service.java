@@ -53,6 +53,7 @@ public class S3Service {
 	// Amazon images
 	private static AmazonS3 s3clientImages;
 	private static final String IMAGES_BUCKET_NAME   = "placeholder-media";
+	public static final String SCREENSHOT_BUCKET_NAME   = "placeholder-screenshot";
 
 	// Amazon crawler-session
 	private static AmazonS3 s3clientCrawlerSessions;
