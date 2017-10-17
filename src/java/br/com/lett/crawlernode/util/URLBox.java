@@ -59,7 +59,7 @@ public class URLBox {
 		
 		options.put("use_s3", true);
 		options.put("force", true);
-		options.put("save_html", true);
+//		options.put("save_html", true);
 		
 		String date = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
 		String hash = DigestUtils.md5Hex(UUID.randomUUID().toString() + new DateTime().toString());
