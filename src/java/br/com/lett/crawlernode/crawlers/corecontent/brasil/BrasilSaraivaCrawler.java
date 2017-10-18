@@ -36,6 +36,13 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private static final String HOME_PAGE_HTTP = "http://www.saraiva.com.br";
 	private static final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
 
+	private static final String SELECTOR_PRICE_CARD_1X = ".price-val";
+	private static final String SELECTOR_PRICE_CARD_INSTALLMENT = ".card-info";
+	
+	private static final String SELECTOR_PRICE_NORMAL_CARDS = ".product-credit-cart-price";
+	private static final String SELECTOR_PRICE_BANK_SLIP = ".product-slip-price";
+	private static final String SELECTOR_PRICE_SHOP_CARD = ".product-saraiva-credit-card-price";
+	
 	private static final int LARGER_IMAGE_DIMENSION = 550;
 
 
@@ -167,7 +174,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 		Float price = null;
 
 		if(available) {
-			Element elementPrice = document.select("div.product-price-block div.simple-price span.final-price ").first();
+			Element elementPrice = document.select(".main-price-infos .price-val").first();
 			if (elementPrice != null) {
 				price = MathCommonsMethods.parseFloat(elementPrice.ownText());
 			}
@@ -184,7 +191,6 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 			Map<Integer, Float> installments = crawlInstallmentsNormalCard(document);
 			Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(document);
-
 
 			if (installments.size() > 0) {
 				prices.insertCardInstallment(Card.VISA.toString(), installments);
@@ -216,7 +222,12 @@ public class BrasilSaraivaCrawler extends Crawler {
 		Map<Integer, Float> installments = new HashMap<>();
 
 		// max installments
-		Element maxInstallmentsElement = doc.select("div.product-price-block div.simple-price span.installments").first();
+		Element maxInstallmentsElement = doc.select(SELECTOR_PRICE_NORMAL_CARDS + " " + SELECTOR_PRICE_CARD_INSTALLMENT).first();
+		
+		if(maxInstallmentsElement == null) {
+			maxInstallmentsElement = doc.select("div.product-price-block div.simple-price span.installments").first();
+		}
+		
 		if (maxInstallmentsElement != null) {
 			String installmentText = maxInstallmentsElement.text().trim();
 			
@@ -234,7 +245,12 @@ public class BrasilSaraivaCrawler extends Crawler {
 		}
 
 		// 1x
-		Element cashPriceOnCardElement = doc.select("div.extra-discount.price-block span.special-price strong").first();
+		Element cashPriceOnCardElement = doc.select(SELECTOR_PRICE_BANK_SLIP + " " + SELECTOR_PRICE_CARD_1X).first();
+		
+		if(cashPriceOnCardElement == null) {
+			cashPriceOnCardElement = doc.select("div.extra-discount.price-block span.special-price strong").first();
+		}
+		
 		if (cashPriceOnCardElement != null) {
 			String cashPriceText = cashPriceOnCardElement.text();
 			if (!cashPriceText.isEmpty()) {
@@ -253,19 +269,31 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private Map<Integer, Float> crawlInstallmentsShopCard(Document doc){
 		Map<Integer, Float> installmentsShopcardMap = new HashMap<>();
 
-		Element shopCard = doc.select(".saraiva-card-price").first();
+		Element shopCard = doc.select(SELECTOR_PRICE_SHOP_CARD).first();
 
+		if(shopCard == null) {
+			shopCard = doc.select(".saraiva-card-price").first();
+		}
+		
 		if(shopCard != null){
-			Element shopCardOneParcel = shopCard.select(".one-parcel .price").first();
+			Element shopCardOneParcel = shopCard.select(SELECTOR_PRICE_CARD_1X).first();
 
+			if(shopCardOneParcel == null) {
+				shopCardOneParcel = doc.select(".one-parcel .price").first();
+			}
+			
 			if(shopCardOneParcel != null) {
 				Float priceShop = MathCommonsMethods.parseFloat(shopCardOneParcel.text());
 
 				installmentsShopcardMap.put(1, priceShop);
 			}
 
-			Element installmentsShopCard = shopCard.select(".installments").first();
+			Element installmentsShopCard = shopCard.select(SELECTOR_PRICE_CARD_INSTALLMENT).first();
 
+			if(installmentsShopCard == null) {
+				installmentsShopCard = doc.select(".installments").first();
+			}
+			
 			if(installmentsShopCard != null) {
 				String text = installmentsShopCard.text().trim().toLowerCase();
 
