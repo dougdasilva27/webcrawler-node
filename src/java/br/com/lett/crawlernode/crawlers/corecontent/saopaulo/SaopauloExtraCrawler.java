@@ -29,8 +29,8 @@ public class SaopauloExtraCrawler extends Crawler {
 	}
 
 
-	private final String HOME_PAGE = "https://www.deliveryextra.com";
-	private final String HOME_PAGE_HTTP = "http://www.deliveryextra.com";
+	private static final String HOME_PAGE = "https://www.deliveryextra.com.br";
+	private static final String HOME_PAGE_HTTP = "http://www.deliveryextra.com.br";
 
 
 	@Override

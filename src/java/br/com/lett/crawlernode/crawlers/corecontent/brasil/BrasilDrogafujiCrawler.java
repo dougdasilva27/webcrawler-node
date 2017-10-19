@@ -152,10 +152,18 @@ public class BrasilDrogafujiCrawler extends Crawler {
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		Element elementPrimaryImage = doc.select(".product-img-box >a").first();
+		Element elementPrimaryImage = doc.select(".product-img-box > a").first();
+		
+		if(elementPrimaryImage == null) {
+			elementPrimaryImage = doc.select(".product-img-box > img").first();
+		}
 		
 		if(elementPrimaryImage != null ) {
-			primaryImage = elementPrimaryImage.attr("href");
+			primaryImage = elementPrimaryImage.attr("href").trim();
+			
+			if(primaryImage.isEmpty()) {
+				primaryImage = elementPrimaryImage.attr("src").trim();
+			}
 		} 
 		
 		return primaryImage;
