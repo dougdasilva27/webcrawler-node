@@ -108,7 +108,6 @@
 			<version>1.5</version>
 		</dependency>
 
-		<!-- HTTP request -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
