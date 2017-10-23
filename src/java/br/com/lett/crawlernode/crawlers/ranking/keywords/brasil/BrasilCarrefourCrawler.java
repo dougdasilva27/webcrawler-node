@@ -27,10 +27,10 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar o html
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".infoProduct a[title]");
+		Elements products =  this.currentDoc.select("li.product > a[title]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
+		if(!products.isEmpty()) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
 			if(this.totalProducts == 0) {
 				setTotalProducts();
