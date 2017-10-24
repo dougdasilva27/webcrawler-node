@@ -64,6 +64,7 @@ public class POSTFetcher {
 	//private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
+	private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
 	private static final String FETCHER_PARAMETER_RETRIEVE_STATISTICS = "retrieve_statistics";
 	private static final String FETCHER_PARAMETER_PROXIES = "forced_proxies";
@@ -765,6 +766,7 @@ public class POSTFetcher {
 			String payload,
 			String resquestType,
 			Session session) {
+		
 		if(headers == null) {
 			headers = new HashMap<>();
 		}
@@ -918,6 +920,7 @@ public class POSTFetcher {
 		JSONObject payload = new JSONObject();
 
 		payload.put(FETCHER_PARAMETER_URL, url);
+		payload.put(FETCHER_PARAMETER_USE_PROXY_TREE, true);
 		payload.put(FETCHER_PARAMETER_METHOD, method);
 		payload.put(FETCHER_PARAMETER_RETRIEVE_STATISTICS, retrieveStatistics);
 
@@ -952,8 +955,6 @@ public class POSTFetcher {
 			// Proxies sequencie to be used for requests (1x per proxy service)
 			JSONArray any = new JSONArray();
 			any.put(ProxyCollection.BUY);
-//			any.put(ProxyCollection.AZURE);
-//			any.put(ProxyCollection.STORM);
 			any.put(ProxyCollection.LUMINATI_SERVER_BR);
 			any.put(ProxyCollection.BONANZA);
 //			any.put(ProxyCollection.STORM_RESIDENTIAL_US);
