@@ -1243,4 +1243,16 @@ public class DataFetcher {
 			}
 		}
 	}
+	
+	/**
+	 * Determine if the request will be use fetcher api
+	 * @param attempt
+	 * @return boolean
+	 */
+	public static boolean mustUseFetcher(int attempt) { 
+		int nowHour = new DateTime().getHourOfDay();
+		
+		// Request via fetcher on first attempt
+		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 06) && Main.USING_FETCHER);
+	}
 }

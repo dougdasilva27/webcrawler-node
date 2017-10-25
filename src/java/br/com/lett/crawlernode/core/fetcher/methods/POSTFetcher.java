@@ -35,7 +35,6 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -49,7 +48,6 @@ import br.com.lett.crawlernode.core.fetcher.PageContent;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -95,7 +93,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
+			if(DataFetcher.mustUseFetcher(attempt)) {
 				JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session);
 				
 				String content = response.getJSONObject("response").getString("body");
@@ -265,7 +263,7 @@ public class POSTFetcher {
 		String requestHash = DataFetcher.generateRequestHash(session);
 		
 		// Request via fetcher on first attempt
-		if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
+		if(DataFetcher.mustUseFetcher(attempt)) {
 			JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session);
 			
 			String content = response.getJSONObject("response").getString("body");
@@ -588,7 +586,7 @@ public class POSTFetcher {
 			Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 			
 			// Request via fetcher on first attempt
-			if(attempt == 1 && Main.USING_FETCHER && (new DateTime().getHourOfDay() % 4 == 0)) {
+			if(DataFetcher.mustUseFetcher(attempt)) {
 				JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
 				
 				String content = response.getJSONObject("response").getString("body");
