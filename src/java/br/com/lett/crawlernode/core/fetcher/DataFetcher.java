@@ -1253,6 +1253,6 @@ public class DataFetcher {
 		int nowHour = new DateTime().getHourOfDay();
 		
 		// Request via fetcher on first attempt
-		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 06) && Main.USING_FETCHER);
+		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 6) && Main.USING_FETCHER);
 	}
 }
