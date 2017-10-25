@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.net.ssl.SSLContext;
 
@@ -1250,7 +1251,7 @@ public class DataFetcher {
 	 * @return boolean
 	 */
 	public static boolean mustUseFetcher(int attempt) { 
-		int nowHour = new DateTime().getHourOfDay();
+		int nowHour = new DateTime(TimeZone.getTimeZone("America/Sao_Paulo")).getHourOfDay();
 		
 		// Request via fetcher on first attempt
 		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 6) && Main.USING_FETCHER);
