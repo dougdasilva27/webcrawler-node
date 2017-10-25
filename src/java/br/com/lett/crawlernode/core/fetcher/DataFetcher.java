@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.net.ssl.SSLContext;
 
@@ -1251,7 +1252,9 @@ public class DataFetcher {
 	 * @return boolean
 	 */
 	public static boolean mustUseFetcher(int attempt) { 
-		int nowHour = new DateTime(TimeZone.getTimeZone("America/Sao_Paulo")).getHourOfDay();
+		ZoneId utc = ZoneId.of("America/Sao_Paulo");
+        ZonedDateTime zonedDate = ZonedDateTime.now(utc);
+		int nowHour = zonedDate.getHour();
 		
 		// Request via fetcher on first attempt
 		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 6) && Main.USING_FETCHER);
