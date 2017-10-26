@@ -99,6 +99,15 @@ public class POSTFetcher {
 				String content = response.getJSONObject("response").getString("body");
 				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 				
+				if(response.has("request_status_code")) {
+					int responseCode = response.getInt("request_status_code");
+					if( Integer.toString(responseCode).charAt(0) != '2' && 
+							Integer.toString(responseCode).charAt(0) != '3' && 
+							responseCode != 404 ) { // errors
+						throw new ResponseCodeException(responseCode);
+					}
+				}
+				
 				return content;
 			}
 			
@@ -268,6 +277,15 @@ public class POSTFetcher {
 			
 			String content = response.getJSONObject("response").getString("body");
 			S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+			
+			if(response.has("request_status_code")) {
+				int responseCode = response.getInt("request_status_code");
+				if( Integer.toString(responseCode).charAt(0) != '2' && 
+						Integer.toString(responseCode).charAt(0) != '3' && 
+						responseCode != 404 ) { // errors
+					throw new ResponseCodeException(responseCode);
+				}
+			}
 			
 			return content;
 		}
@@ -591,6 +609,15 @@ public class POSTFetcher {
 				
 				String content = response.getJSONObject("response").getString("body");
 				S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+				
+				if(response.has("request_status_code")) {
+					int responseCode = response.getInt("request_status_code");
+					if( Integer.toString(responseCode).charAt(0) != '2' && 
+							Integer.toString(responseCode).charAt(0) != '3' && 
+							responseCode != 404 ) { // errors
+						throw new ResponseCodeException(responseCode);
+					}
+				}
 				
 				return content;
 			}
