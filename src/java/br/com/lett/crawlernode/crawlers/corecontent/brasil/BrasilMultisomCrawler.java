@@ -411,9 +411,11 @@ public class BrasilMultisomCrawler extends Crawler {
 		String description = "";
 		Element descriptionElement = document.select("#descricao .boxDescricao").first();
 		Element specElement = document.select("#especificacao .boxDescricao").first();
+		Element grantiaElement = document.select("#garantia .boxDescricao").first();
 
 		if (descriptionElement != null) description = description + descriptionElement.html();
 		if (specElement != null) description = description + specElement.html();
+		if (grantiaElement != null) description = description + grantiaElement.html();
 
 		return description;
 	}

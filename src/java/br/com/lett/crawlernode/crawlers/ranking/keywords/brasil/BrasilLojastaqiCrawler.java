@@ -109,7 +109,7 @@ public class BrasilLojastaqiCrawler extends CrawlerRankingKeywords{
 			productUrl = url.attr("href");
 			
 			if(!productUrl.startsWith("http")) {
-				productUrl = "http" + productUrl;
+				productUrl = "http:" + productUrl;
 			}
 		}
 		
