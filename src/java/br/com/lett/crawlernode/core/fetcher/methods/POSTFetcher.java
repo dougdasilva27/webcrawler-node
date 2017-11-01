@@ -64,6 +64,7 @@ public class POSTFetcher {
 
 	private static final String FETCHER_PARAMETER_URL = "url";
 	private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
+	private static final String FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE = "use_proxy_by_moving_average";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
 	private static final String FETCHER_PARAMETER_RETRIEVE_STATISTICS = "retrieve_statistics";
 	private static final String FETCHER_PARAMETER_PROXIES = "forced_proxies";
@@ -946,7 +947,7 @@ public class POSTFetcher {
 		JSONObject payload = new JSONObject();
 
 		payload.put(FETCHER_PARAMETER_URL, url);
-		payload.put(FETCHER_PARAMETER_USE_PROXY_TREE, true);
+		payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, true);
 		payload.put(FETCHER_PARAMETER_METHOD, method);
 		payload.put(FETCHER_PARAMETER_RETRIEVE_STATISTICS, retrieveStatistics);
 

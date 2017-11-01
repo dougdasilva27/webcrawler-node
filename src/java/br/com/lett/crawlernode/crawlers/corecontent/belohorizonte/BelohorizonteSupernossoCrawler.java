@@ -72,7 +72,8 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 			JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session);
 			String page = null;
 			
-			if(fetcherResponse.has("response")) {
+			if(fetcherResponse.has("response") && fetcherResponse.has("request_status_code") 
+					&& fetcherResponse.getInt("request_status_code") >= 200 && fetcherResponse.getInt("request_status_code") < 400) {
 				JSONObject response = fetcherResponse.getJSONObject("response");
 				
 				if(response.has("body")) {
