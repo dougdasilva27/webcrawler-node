@@ -280,6 +280,12 @@ public class BrasilCarrefourCrawler extends Crawler {
 			description = description + descriptionElements.html();
 		}
 
+		Element desc = document.select(".productDetailsPageDescription").first();
+		
+		if(desc != null) {
+			description += desc.outerHtml();
+		}
+		
 		return description;
 	}
 	
