@@ -302,10 +302,10 @@ public class BrasilSpicyCrawler extends Crawler {
 
 	private String crawlDescription(Document document) {
 		String description = "";
-		Element descriptionElement = document.select(".box_descricao").first();
+		Element descriptionElement = document.select(".productDetails#information").first();
 
 		if (descriptionElement != null) {
-			description = description + descriptionElement.html();
+			description = description + descriptionElement.html().replace("display: none", "");
 		}
 	
 		return description;
