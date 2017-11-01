@@ -58,7 +58,8 @@ public class POSTFetcher {
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
 	private static final String FETCHER_USER = "fetcher";
 	private static final String FETCHER_PASSWORD = "lettNasc";
-	private static final String FETCHER_HOST = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	//private static final String FETCHER_HOST_OLD_ACCOUNT = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+	private static final String FETCHER_HOST = "http://development.mtmmvt7w2k.us-east-1.elasticbeanstalk.com/";
 	//private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";

@@ -464,12 +464,16 @@ public class Crawler extends Task {
 		Object obj = fetch();
 		List<Product> products = new ArrayList<>();
 		
-		if(obj instanceof Document) {
-			products = extractInformation((Document) obj);
-		} else if(obj instanceof JSONObject) {
-			products = extractInformation((JSONObject) obj);
-		} else if(obj instanceof JSONArray) {
-			products = extractInformation((JSONArray) obj);
+		try {
+			if(obj instanceof Document) {
+				products = extractInformation((Document) obj);
+			} else if(obj instanceof JSONObject) {
+				products = extractInformation((JSONObject) obj);
+			} else if(obj instanceof JSONArray) {
+				products = extractInformation((JSONArray) obj);
+			}
+		} catch(Exception e) {
+			Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
 		}
 		
 		return products;
