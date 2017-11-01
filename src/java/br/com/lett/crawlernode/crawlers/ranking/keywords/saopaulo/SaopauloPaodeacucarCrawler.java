@@ -28,8 +28,10 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = "https://paodeacucar.resultspage.com/search?&cnt=36&ep.selected_store=501&lot=json&p=Q"
-				+ "&srt="+ this.arrayProducts.size() +"&ts=json-full&w=" + this.keywordEncoded;
+		String url = "https://paodeacucar.resultspage.com/search?af=&cnt=36&ep.selected_store=501&isort=&lot=json&p=Q&"
+				+ "ref=www.paodeacucar.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
+						+ "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36"
+						+ "&w=" + this.keywordEncoded;
 		
 		this.log("Link onde são feitos os crawlers: " + url);
 
