@@ -58,12 +58,12 @@ public class POSTFetcher {
 	private static final String FETCHER_CONTENT_TYPE = "application/json";
 	private static final String FETCHER_USER = "fetcher";
 	private static final String FETCHER_PASSWORD = "lettNasc";
-	//private static final String FETCHER_HOST_OLD_ACCOUNT = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
-	private static final String FETCHER_HOST = "http://development.mtmmvt7w2k.us-east-1.elasticbeanstalk.com/";
+	private static final String FETCHER_HOST_OLD_ACCOUNT = "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
+//	private static final String FETCHER_HOST = "http://development.mtmmvt7w2k.us-east-1.elasticbeanstalk.com/";
 	//private static final String FETCHER_HOST = "http://localhost:3000/";
 
 	private static final String FETCHER_PARAMETER_URL = "url";
-	private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
+//	private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
 	private static final String FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE = "use_proxy_by_moving_average";
 	private static final String FETCHER_PARAMETER_METHOD = "request_type";
 	private static final String FETCHER_PARAMETER_RETRIEVE_STATISTICS = "retrieve_statistics";
@@ -838,7 +838,7 @@ public class POSTFetcher {
 												payload.getString(FETCHER_PARAMETER_METHOD) +" request in: " + payload.getString(FETCHER_PARAMETER_URL));
 
 		//Authentication
-		URL requestURL = new URI(FETCHER_HOST).toURL();
+		URL requestURL = new URI(FETCHER_HOST_OLD_ACCOUNT).toURL();
 		String fetcherUrl = requestURL.getProtocol() + "://" + FETCHER_USER + ":" + FETCHER_PASSWORD + "@" + requestURL.getHost();
 		
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -890,7 +890,7 @@ public class POSTFetcher {
 
 		// assembling request information log message
 		DataFetcher.sendRequestInfoLog(
-				FETCHER_HOST, 
+				FETCHER_HOST_OLD_ACCOUNT, 
 				DataFetcher.POST_REQUEST, 
 				null, 
 				null, 
