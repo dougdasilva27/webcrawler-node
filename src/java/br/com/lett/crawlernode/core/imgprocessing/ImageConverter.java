@@ -53,13 +53,6 @@ public class ImageConverter {
 			Logging.printLogError(LOGGER, session, "Image downloaded is null...returning...");
 			return null;
 		}
-		
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession)session;
 
