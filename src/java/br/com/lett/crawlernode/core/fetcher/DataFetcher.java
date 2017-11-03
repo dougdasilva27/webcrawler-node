@@ -1252,12 +1252,11 @@ public class DataFetcher {
 	 * @return boolean
 	 */
 	public static boolean mustUseFetcher(int attempt) { 
-//		ZoneId utc = ZoneId.of("America/Sao_Paulo");
-//        ZonedDateTime zonedDate = ZonedDateTime.now(utc);
-//		int nowHour = zonedDate.getHour();
-//		
-//		// Request via fetcher on first attempt
-//		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 6) && Main.USING_FETCHER);
-		return true;
+		ZoneId utc = ZoneId.of("America/Sao_Paulo");
+        ZonedDateTime zonedDate = ZonedDateTime.now(utc);
+		int nowHour = zonedDate.getHour();
+	
+		// Request via fetcher on first attempt
+		return (attempt == 1 && ((nowHour % 4 == 0 && nowHour != 20) || nowHour == 6) && Main.USING_FETCHER);
 	}
 }
