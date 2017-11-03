@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
 import java.util.Iterator;
 
 import javax.imageio.IIOImage;
@@ -14,6 +16,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageInputStream;
 
@@ -70,9 +73,9 @@ public class ImageConverter {
 		
 		BufferedImage originalBufferedImage;
 		if (convertedToJPEG == null) {
-			originalBufferedImage = ImageIO.read(localOriginalFile);
+			originalBufferedImage = createBufferedImage(localOriginalFile);
 		} else {
-			originalBufferedImage = ImageIO.read(convertedToJPEG);
+			originalBufferedImage = createBufferedImage(convertedToJPEG);
 		}
 		
 		if ( originalBufferedImage == null ) {
@@ -187,6 +190,40 @@ public class ImageConverter {
 			return null;
 		}
 
+	}
+	
+	/**
+	 * This method iterates through all the image readers
+	 * available for a particular format, and tries to
+	 * generate a BufferedImage.
+	 * 
+	 * For png images we are using two image readers. 
+	 * The default plugin from the Java API and the
+	 * TwelveMonkeys plugin, that deals with CYMK color
+	 * space encoding. The default JPEGReader from Java
+	 * API does not read images encoded with color spaces
+	 * other than RGB.
+	 * 
+	 * @param imageFile
+	 * @return a BufferedImage instance or null if there was no Reader for this image format
+	 * @throws IOException
+	 */
+	private static BufferedImage createBufferedImage(File imageFile) throws IOException {
+		BufferedImage img = null;
+		ImageInputStream iis = new FileImageInputStream(imageFile);
+		try {
+		    for (Iterator<ImageReader> i = ImageIO.getImageReaders(iis); 
+		         img == null && i.hasNext(); ) {
+		        ImageReader r = i.next();
+		        try {
+		            r.setInput(iis);
+		            img = r.read(0);
+		        } catch (IOException e) {}
+		    }
+		} finally {
+		    iis.close();
+		}
+		return img;
 	}
 
 	/**

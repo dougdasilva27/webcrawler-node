@@ -94,6 +94,17 @@
 			<artifactId>http</artifactId>
 			<version>20070405</version>
 		</dependency>
+		
+		<!-- 
+			A JPEG reader plugin for Java ImageIO
+			This plugin will deal with cases where we have
+			Images encoded in CYMK color space 
+		-->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>3.3.2</version>
+		</dependency>
 
 		<!-- HTML parser -->
 		<dependency>
