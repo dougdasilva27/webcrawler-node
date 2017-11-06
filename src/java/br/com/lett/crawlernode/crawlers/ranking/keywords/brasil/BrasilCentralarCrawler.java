@@ -42,7 +42,7 @@ public class BrasilCentralarCrawler extends CrawlerRankingKeywords{
 				String internalId 	= tokens2[tokens2.length-3].replaceAll("[^0-9]", "");
 				
 				//monta a url
-				String productUrl= e.attr("href");
+				String productUrl = crawlProductUrl(e);
 				
 				saveDataProduct(internalId, internalPid, productUrl);
 				
@@ -87,5 +87,23 @@ public class BrasilCentralarCrawler extends CrawlerRankingKeywords{
 			
 			this.log("Total da busca: "+this.totalProducts);
 		}
+	}
+	
+
+	private String crawlProductUrl(Element e){
+		String productUrl;
+		
+		productUrl = e.attr("href");
+			
+		if(!productUrl.contains("centralar")){
+			productUrl = "http://www.centralar.com.br" + productUrl;
+		}
+		
+		if(!productUrl.contains("http")){
+			productUrl = "http:" + productUrl;
+		}
+		
+		
+		return productUrl;
 	}
 }
