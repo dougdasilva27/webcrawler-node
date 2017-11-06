@@ -1,16 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.List;
-
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.session.Session;
 
 public class SaopauloB2WCrawlersUtils {
 	
@@ -463,21 +457,5 @@ public class SaopauloB2WCrawlersUtils {
 		}
 
 		return internalID;
-	}
-
-	public static JSONObject fetchAPIInformationsWithOldWay(Session session, List<Cookie> cookies, String market){
-		JSONObject json = new JSONObject();
-		String urlProduct = session.getOriginalURL();
-		
-		if(urlProduct.contains("produto/")) {
-			String id = urlProduct.split("produto/")[1].split("/")[0];
-			
-			String url = "http://product-v3." + market + ".com.br/product?q=itemId:("+ id +")"
-					+ "&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO";
-			
-			json = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
-		}
-		
-		return json;
 	}
 }

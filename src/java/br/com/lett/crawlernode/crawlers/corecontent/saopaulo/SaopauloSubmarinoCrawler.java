@@ -63,23 +63,11 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		if( isProductPage(session.getOriginalURL()) ) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// Api onde tem os dados do produto
-			JSONObject jsonApi = SaopauloB2WCrawlersUtils.fetchAPIInformationsWithOldWay(session, cookies, SaopauloB2WCrawlersUtils.SUBMARINO);
-			
-			// Pega só o que interessa do json da api
-			JSONObject infoProductJsonAPi = SaopauloB2WCrawlersUtils.assembleJsonProductOldWay(jsonApi);
-			
 			// Json da pagina principal
 			JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
 			
 			// Pega só o que interessa do json da api
 			JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
-			
-			// se não conseguir acessar a pagina principal do produto
-			if(!frontPageJson.has("skus") || infoProductJson.getJSONObject("prices").keySet().size() < 1) {
-				Logging.printLogWarn(logger, session, "We will get information from old api, because the newest one do not have all the informations. ");
-				infoProductJson = infoProductJsonAPi;
-			}
 			
 			String internalPid = this.crawlInternalPid(infoProductJson);
 			String name = this.crawlMainPageName(infoProductJson);
@@ -96,7 +84,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 				boolean available = this.crawlAvailability(marketplaceMap);
 				Float variationPrice = this.crawlPrice(marketplaceMap);
 				Prices prices = crawlPrices(marketplaceMap);
-				Integer stock = crawlStock(internalId, infoProductJsonAPi); // stock só tem na api
+				Integer stock = null; // stock só tem na api
 
 				// Creating the product
 				Product product = ProductBuilder.create()
@@ -395,30 +383,30 @@ public class SaopauloSubmarinoCrawler extends Crawler {
 		return description;
 	}	
 
-	private Integer crawlStock(String internalId, JSONObject jsonProduct){
-		Integer stock = null;
-		
-		if(jsonProduct.has("prices")){
-			if(jsonProduct.getJSONObject("prices").has(internalId)){
-				JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
-				
-				for(int i = 0; i < offers.length(); i++) {
-					JSONObject seller = offers.getJSONObject(i);
-					
-					if(seller.has("sellerName") && seller.has("stock")) {
-						String sellerName = seller.getString("sellerName");
-						
-						if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) || sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
-							stock = seller.getInt("stock");
-							break;
-						}
-					}
-				}
-			}
-		}
-		
-		return stock;
-	}
+//	private Integer crawlStock(String internalId, JSONObject jsonProduct){
+//		Integer stock = null;
+//		
+//		if(jsonProduct.has("prices")){
+//			if(jsonProduct.getJSONObject("prices").has(internalId)){
+//				JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
+//				
+//				for(int i = 0; i < offers.length(); i++) {
+//					JSONObject seller = offers.getJSONObject(i);
+//					
+//					if(seller.has("sellerName") && seller.has("stock")) {
+//						String sellerName = seller.getString("sellerName");
+//						
+//						if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) || sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
+//							stock = seller.getInt("stock");
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//		
+//		return stock;
+//	}
 
 	private Prices crawlPrices(Map<String, Prices> marketplaceMap){
 		Prices prices = new Prices();
