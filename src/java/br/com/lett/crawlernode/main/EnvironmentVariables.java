@@ -9,5 +9,6 @@ public class EnvironmentVariables {
 	public static final String ENV_ENVIRONMENT		= "ENVIRONMENT";
 	public static final String ENV_FORCE_IMG_UPDATE	= "FORCE_IMG_UPDATE";
 	public static final String ENV_PHANTOMJS_PATH	= "PHANTOMJS_PATH";
+	public static final String USE_FETCHER	= "USE_FETCHER";
 	
 }

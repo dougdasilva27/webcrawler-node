@@ -30,6 +30,7 @@ public class ExecutionParameters {
 	private String environment;
 	private String version;
 	private Boolean debug;
+	private Boolean useFetcher;
 
 	public ExecutionParameters() {
 		debug = null;
@@ -43,6 +44,7 @@ public class ExecutionParameters {
 		environment = getEnvEnvironment();
 		tmpImageFolder = getEnvTmpImagesFolder();
 		setPhantomjsPath(getEnvPhantomjsPath());
+		setUseFetcher(getEnvUseFetcher());
 		version = DEFAULT_CRAWLER_VERSION;
 
 		Logging.printLogDebug(logger, this.toString());
@@ -68,6 +70,8 @@ public class ExecutionParameters {
 		sb.append("Force image update: " + this.forceImageUpdate);
 		sb.append("\n");
 		sb.append("PhantomjsPath: " + this.phantomjsPath);
+		sb.append("\n");
+		sb.append("Use Fetcher: " + this.useFetcher);
 		sb.append("\n");
 		sb.append("Version: " + this.version);
 		sb.append("\n");
@@ -106,6 +110,14 @@ public class ExecutionParameters {
 	private boolean getEnvForceImgUpdate() {
 		String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
 		if (forceImgUpdate != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean getEnvUseFetcher() {
+		String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
+		if (useFetcher != null && useFetcher.equals("true")) {
 			return true;
 		}
 		return false;
@@ -157,5 +169,13 @@ public class ExecutionParameters {
 
 	public void setPhantomjsPath(String phantomjsPath) {
 		this.phantomjsPath = phantomjsPath;
+	}
+
+	public Boolean getUseFetcher() {
+		return useFetcher;
+	}
+
+	public void setUseFetcher(Boolean useFetcher) {
+		this.useFetcher = useFetcher;
 	}
 }
