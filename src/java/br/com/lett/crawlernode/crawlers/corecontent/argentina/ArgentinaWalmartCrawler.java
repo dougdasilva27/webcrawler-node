@@ -312,11 +312,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
 		String description = "";
 
 		Element descElement = document.select(".prod-desc .productDescription").first();
-		Element specElement = document.select(".prod-specs").first();
-
-		if (specElement != null) {
-			description = description + specElement.html();
-		}
 		if (descElement != null) {
 			description = description + descElement.html();
 		}

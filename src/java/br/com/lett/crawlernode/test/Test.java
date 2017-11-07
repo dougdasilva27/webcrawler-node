@@ -8,7 +8,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
@@ -31,109 +30,131 @@ import credentials.models.DBCredentials;
  */
 public class Test {
 
-	public static final String INSIGHTS_TEST = "insights";
-	public static final String RATING_TEST = "rating";
-	public static final String IMAGES_TEST = "images";
-	public static final String KEYWORDS_TEST = "keywords";
-	public static final String CATEGORIES_TEST = "categories";
+  public static final String INSIGHTS_TEST = "insights";
+  public static final String RATING_TEST = "rating";
+  public static final String IMAGES_TEST = "images";
+  public static final String KEYWORDS_TEST = "keywords";
+  public static final String CATEGORIES_TEST = "categories";
 
-	public static 	DatabaseManager 	dbManager;
-	public static 	ProxyCollection 	proxies;
-	public static 	ResultManager 		processorResultManager;
-	private static 	Options 			options;
-	public static 	Markets				markets;
+  public static DatabaseManager dbManager;
+  public static ProxyCollection proxies;
+  public static ResultManager processorResultManager;
+  private static Options options;
+  public static Markets markets;
 
-	private static String market;
-	private static String city;
-	public static String pathWrite;
-	public static String testType;
-	public static String phantomjsPath;
+  private static String market;
+  private static String city;
+  public static String pathWrite;
+  public static String testType;
+  public static String phantomjsPath;
 
-	private static final Logger logger = LoggerFactory.getLogger(Test.class);
-	
-	public static void main(String args[]) {
+  private static final Logger logger = LoggerFactory.getLogger(Test.class);
 
-		// adding command line options
-		options = new Options();
-		options.addOption("market", true, "Market name");
-		options.addOption("city", true, "City name");
-		options.addOption("pathwrite", true, "Path that product html goes");
-		options.addOption("testType", true, "Test type [insights, rating, images]");
-		options.addOption("phantomjsPath", true, "phantonjs");
+  public static void main(String args[]) {
 
-		// parsing command line options
-		CommandLineParser parser = new DefaultParser();
-		CommandLine cmd = null;
-		try {
-			cmd = parser.parse(options, args);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
+    // adding command line options
+    options = new Options();
+    options.addOption("market", true, "Market name");
+    options.addOption("city", true, "City name");
+    options.addOption("pathwrite", true, "Path that product html goes");
+    options.addOption("testType", true, "Test type [insights, rating, images]");
+    options.addOption("phantomjsPath", true, "phantonjs");
 
-		// getting command line options
-		if (cmd.hasOption("city")) city = cmd.getOptionValue("city"); else { help(); }
-		if (cmd.hasOption("market")) market = cmd.getOptionValue("market"); else { help(); }
-		if (cmd.hasOption("pathwrite")) pathWrite = cmd.getOptionValue("pathwrite"); else { pathWrite = null; }
-		if (cmd.hasOption("testType")) testType = cmd.getOptionValue("testType"); else { help(); }
-		if (cmd.hasOption("phantomjsPath")) phantomjsPath = cmd.getOptionValue("phantomjsPath");
+    // parsing command line options
+    CommandLineParser parser = new DefaultParser();
+    CommandLine cmd = null;
+    try {
+      cmd = parser.parse(options, args);
+    } catch (ParseException e) {
+      e.printStackTrace();
+    }
 
-		// setting database credentials
-		DBCredentials dbCredentials = new DBCredentials();
+    // getting command line options
+    if (cmd.hasOption("city"))
+      city = cmd.getOptionValue("city");
+    else {
+      help();
+    }
 
-		try {
-			dbCredentials = DatabaseCredentialsSetter.setCredentials();
-		} catch (Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-		}
+    if (cmd.hasOption("market"))
+      market = cmd.getOptionValue("market");
+    else {
+      help();
+    }
 
-		// creating the database manager
-		dbManager = new DatabaseManager(dbCredentials);
+    if (cmd.hasOption("pathwrite"))
+      pathWrite = cmd.getOptionValue("pathwrite");
+    else {
+      pathWrite = null;
+    }
 
-		// create result manager for processor stage
-		processorResultManager = new ResultManager(false, dbManager);
+    if (cmd.hasOption("testType"))
+      testType = cmd.getOptionValue("testType");
+    else {
+      help();
+    }
 
-		// fetch market information
-		Market market = fetchMarket();
+    if (cmd.hasOption("phantomjsPath"))
+      phantomjsPath = cmd.getOptionValue("phantomjsPath");
 
-		markets = new Markets(dbManager);
+    // setting database credentials
+    DBCredentials dbCredentials = new DBCredentials();
 
-		if (market != null) {
+    try {
+      dbCredentials = DatabaseCredentialsSetter.setCredentials();
+    } catch (Exception e) {
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    }
 
-			// fetching proxies
-			proxies = new ProxyCollection(markets);
+    // creating the database manager
+    dbManager = new DatabaseManager(dbCredentials);
 
-			// create a task executor
-			// for testing we use 1 thread, there is no need for more
-			//taskExecutor = new TaskExecutor(1, 1);
+    // create result manager for processor stage
+    processorResultManager = new ResultManager(false, dbManager);
 
-			Session session;
+    // fetch market information
+    Market market = fetchMarket();
 
-			if(testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingKeywordsSession("shampoo antiqueda", market);
-			} else if(testType.equals(CATEGORIES_TEST)) { 
-				session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
-			} else {
-				session = SessionFactory.createTestSession("http://www.lojasrede.com.br/produto/kit-salon-line-sos-cachos-calcio-e-oil-141699", market);
-			}
+    markets = new Markets(dbManager);
+
+    if (market != null) {
+
+      // fetching proxies
+      proxies = new ProxyCollection(markets);
+
+      // create a task executor
+      // for testing we use 1 thread, there is no need for more
+      // taskExecutor = new TaskExecutor(1, 1);
+
+      Session session;
+
+      if (testType.equals(KEYWORDS_TEST)) {
+        session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
+      } else if (testType.equals(CATEGORIES_TEST)) {
+        session = SessionFactory.createTestRankingCategoriesSession(
+            "https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
+      } else {
+        session =
+            SessionFactory.createTestSession("https://www.shoptime.com.br/produto/7389718", market);
+      }
 
 
-			Task task = TaskFactory.createTask(session);
+      Task task = TaskFactory.createTask(session);
 
-			task.process();
-		}
-		else {
-			System.err.println("Market não encontrado no banco!");
-		}
-	}
+      task.process();
+    } else {
+      System.err.println("Market não encontrado no banco!");
+    }
+  }
 
-	private static Market fetchMarket() {
-		DatabaseDataFetcher fetcher = new DatabaseDataFetcher(dbManager);
-		return fetcher.fetchMarket(city, market);
-	}
+  private static Market fetchMarket() {
+    DatabaseDataFetcher fetcher = new DatabaseDataFetcher(dbManager);
+    return fetcher.fetchMarket(city, market);
+  }
 
-	private static void help() {
-		new HelpFormatter().printHelp("Main", options);
-		System.exit(0);
-	}
+  private static void help() {
+    new HelpFormatter().printHelp("Main", options);
+    System.exit(0);
+  }
 
 }

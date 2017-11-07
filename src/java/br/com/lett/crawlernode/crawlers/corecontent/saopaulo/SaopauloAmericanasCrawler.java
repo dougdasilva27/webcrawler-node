@@ -215,6 +215,15 @@ public class SaopauloAmericanasCrawler extends Crawler {
 				}
 			}
 			
+			// Isso acontece quando o seller principal não é a b2w, com isso não aparecem as parcelas
+			// Na maioria dos casos a primeira parcela tem desconto e as demais não
+			// O preço default seria o preço sem desconto.
+			// Para pegar esse preço, dividimos ele por 2 e adicionamos nas parcelas como 2x esse preço
+			if(installments.length() == 1 && seller.has("defaultPrice")) {
+				Double priceD = seller.getDouble("defaultPrice") / 2d;
+				installmentMapPrice.put(2, MathCommonsMethods.normalizeTwoDecimalPlaces(priceD.floatValue()));
+			}
+			
 			prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMapPrice);
 			prices.insertCardInstallment(Card.AURA.toString(), installmentMapPrice);

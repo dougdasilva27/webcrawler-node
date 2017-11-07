@@ -427,6 +427,10 @@ public class SaopauloB2WCrawlersUtils {
 					moreQuantityOfInstallments = installments;
 				}
 			}
+			
+			if(visa.has("price")) {
+				jsonSeller.put("defaultPrice", visa.get("price"));
+			}
 		}
 	}
 	

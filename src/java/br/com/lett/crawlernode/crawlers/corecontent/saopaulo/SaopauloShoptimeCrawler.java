@@ -77,7 +77,7 @@ public class SaopauloShoptimeCrawler extends Crawler {
 			Map<String,String> skuOptions = this.crawlSkuOptions(infoProductJson);		
 
 			for (String internalId : skuOptions.keySet()) {	
-				String variationName = (name.trim() + " " + skuOptions.get(internalId).trim()).trim();
+				String variationName = ((name != null ? name.trim() : "") + " " + skuOptions.get(internalId).trim()).trim();
 				Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
 				Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
 				boolean available = this.crawlAvailability(marketplaceMap);
@@ -211,6 +211,15 @@ public class SaopauloShoptimeCrawler extends Crawler {
 					
 					installmentMapPrice.put(quantity, MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue()));
 				}
+			}
+			
+			// Isso acontece quando o seller principal não é a b2w, com isso não aparecem as parcelas
+			// Na maioria dos casos a primeira parcela tem desconto e as demais não
+			// O preço default seria o preço sem desconto.
+			// Para pegar esse preço, dividimos ele por 2 e adicionamos nas parcelas como 2x esse preço
+			if(installments.length() == 1 && seller.has("defaultPrice")) {
+				Double priceD = seller.getDouble("defaultPrice") / 2d;
+				installmentMapPrice.put(2, MathCommonsMethods.normalizeTwoDecimalPlaces(priceD.floatValue()));
 			}
 			
 			prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
