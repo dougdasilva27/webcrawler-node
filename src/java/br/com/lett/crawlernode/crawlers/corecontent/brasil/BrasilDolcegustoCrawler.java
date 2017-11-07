@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -20,188 +18,200 @@ import models.prices.Prices;
 
 public class BrasilDolcegustoCrawler extends Crawler {
 
-	private final String HOME_PAGE = "https://www.nescafe-dolcegusto.com.br/";
+  private final String HOME_PAGE = "https://www.nescafe-dolcegusto.com.br/";
 
-	public BrasilDolcegustoCrawler(Session session) {
-		super(session);
-	}
+  public BrasilDolcegustoCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
 
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<>();
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(this.session.getOriginalURL(), doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    if (isProductPage(this.session.getOriginalURL(), doc)) {
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
-			// internalId
-			Element elementInternalID = doc.select(".no-display [name=product]").first();
-			String internalID = null;
-			if (elementInternalID != null) {
-				internalID = elementInternalID.attr("value");
-			}
+      // internalId
+      Element elementInternalID = doc.select(".no-display [name=product]").first();
+      String internalID = null;
+      if (elementInternalID != null) {
+        internalID = elementInternalID.attr("value");
+      }
 
-			// name
-			Element elementName = doc.select(".product-main-info .product-name [itemprop=name]").first();
-			String name = elementName.text().trim();
+      // name
+      Element elementName = doc.select(".product-main-info .product-name [itemprop=name]").first();
+      String name = elementName.text().trim();
 
-			// price
-			Float price = crawlPrice(doc);
+      // price
+      Float price = crawlPrice(doc);
 
-			// categories
-			Elements elementsCategories = doc.select(".breadcrumbs ul li");
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
-			ArrayList<String> categories = new ArrayList<>();
+      // categories
+      Elements elementsCategories = doc.select(".breadcrumbs ul li");
+      String category1 = "";
+      String category2 = "";
+      String category3 = "";
+      ArrayList<String> categories = new ArrayList<>();
 
-			for (Element e : elementsCategories) {
-				if (!e.attr("class").equals("product-back") && !e.attr("class").equals("home")
-						&& !e.attr("class").equals("product")) {
-					categories.add(e.select("a").text());
-				}
-			}
-			for (String category : categories) {
-				if (category1.isEmpty()) {
-					category1 = category;
-				} else if (category2.isEmpty()) {
-					category2 = category;
-				} else if (category3.isEmpty()) {
-					category3 = category;
-				}
-			}
+      for (Element e : elementsCategories) {
+        if (!e.attr("class").equals("product-back") && !e.attr("class").equals("home")
+            && !e.attr("class").equals("product")) {
+          categories.add(e.select("a").text());
+        }
+      }
+      for (String category : categories) {
+        if (category1.isEmpty()) {
+          category1 = category;
+        } else if (category2.isEmpty()) {
+          category2 = category;
+        } else if (category3.isEmpty()) {
+          category3 = category;
+        }
+      }
 
-			// images
-			Elements elementImages = doc.select(".more-views ul li a");
-			String primaryImage = parseImage(elementImages.first().attr("rel"));
-			String secondaryImages = null;
-			JSONArray secundaryImagesArray = new JSONArray();
+      // images
+      Elements elementImages = doc.select(".more-views ul li a");
+      String primaryImage = parseImage(elementImages.first().attr("rel"));
+      String secondaryImages = null;
+      JSONArray secundaryImagesArray = new JSONArray();
 
-			if (elementImages.size() > 1) {
-				for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
-					Element e = elementImages.get(i);
-					if (!e.attr("class").equals("show-video")) { // nao pegar se for video
-						String attrRel = e.attr("rel").toString();
-						secundaryImagesArray.put(parseImage(attrRel));
-					}
-				}
-			}
-			if (secundaryImagesArray.length() > 0) {
-				secondaryImages = secundaryImagesArray.toString();
-			}
+      if (elementImages.size() > 1) {
+        for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
+          Element e = elementImages.get(i);
+          if (!e.attr("class").equals("show-video")) { // nao pegar se for video
+            String attrRel = e.attr("rel").toString();
+            secundaryImagesArray.put(parseImage(attrRel));
+          }
+        }
+      }
+      if (secundaryImagesArray.length() > 0) {
+        secondaryImages = secundaryImagesArray.toString();
+      }
 
-			// description
-			String description = "";
-			Element elementDescription = doc.select(".tabs-content .tab.description-.active").first();
-			Element elementIngredientes = doc.select(".tabs-content .tab.local-").first();
-			Element elementSpecs = doc.select(".tabs-content #specs").first();
-			if (elementDescription != null)
-				description = description + elementDescription.html();
-			if (elementSpecs != null)
-				description = description + elementSpecs.html();
-			if (elementIngredientes != null)
-				description = description + elementIngredientes.html();
+      // description
+      String description = "";
+      Element elementDescription = doc.select(".tabs-content .tab.description-.active").first();
+      Element elementIngredientes = doc.select(".tabs-content .tab.local-").first();
+      Element elementSpecs = doc.select(".tabs-content #specs").first();
+      if (elementDescription != null)
+        description = description + elementDescription.html();
+      if (elementSpecs != null)
+        description = description + elementSpecs.html();
+      if (elementIngredientes != null)
+        description = description + elementIngredientes.html();
 
-			// availability
-			boolean available = true;
-			Element elementOutOfStock = doc.select(".pdp-actions .out-of-stock-label").first();
-			if (elementOutOfStock != null) {
-				available = false;
-			}
+      // special description
 
-			// stock
-			Integer stock = null;
+      Element customPageDetail = doc.select(".product-custom-page.product-custom-detail").first();
+      Element customPageCompare = doc.select(".product-custom-page.product-custom-compare").first();
+      if (customPageDetail != null)
+        description = description + customPageDetail.html();
+      if (customPageCompare != null)
+        description = description + customPageCompare.html();
 
-			// marketplace
-			Marketplace marketplace = new Marketplace();
-			
-			// Prices
-			Prices prices = crawlPrices(price);
+      // availability
+      boolean available = true;
+      Element elementOutOfStock = doc.select(".pdp-actions .out-of-stock-label").first();
+      if (elementOutOfStock != null) {
+        available = false;
+      }
 
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalID);
-			product.setName(name);
-			product.setPrice(price);
-			product.setPrices(prices);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
+      // stock
+      Integer stock = null;
 
-			products.add(product);
+      // marketplace
+      Marketplace marketplace = new Marketplace();
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
-		
-		return products;
-	}
+      // Prices
+      Prices prices = crawlPrices(price);
 
-	private String parseImage(String text) {
-		int begin = text.indexOf("largeimage:") + 11;
-		String img = text.substring(begin);
-		img = img.replace("\'", " ").replace('}', ' ').trim();
+      Product product = new Product();
+      product.setUrl(this.session.getOriginalURL());
+      product.setInternalId(internalID);
+      product.setName(name);
+      product.setPrice(price);
+      product.setPrices(prices);
+      product.setCategory1(category1);
+      product.setCategory2(category2);
+      product.setCategory3(category3);
+      product.setPrimaryImage(primaryImage);
+      product.setSecondaryImages(secondaryImages);
+      product.setDescription(description);
+      product.setStock(stock);
+      product.setMarketplace(marketplace);
+      product.setAvailable(available);
 
-		return img;
-	}
-	
-	/*******************************
-	 * Product page identification *
-	 *******************************/
+      products.add(product);
 
-	private boolean isProductPage(String url, Document document) {
-		String[] tokens = url.split("/");
-		return !document.select(".product-essential").isEmpty() && tokens.length == 4 && !url.endsWith("/");
-	}
-	
-	private Float crawlPrice(Document doc) {
-		Float price = null;
-		Element elementPrice = doc.select(".product-shop .price-box .regular-price .price").first();
-		if (elementPrice == null) {
-			elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
-		}
-		if (elementPrice != null) {
-			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-		}
-		
-		return price;
-	}
-	
-	/**
-	 * In this market, installments not appear in product page
-	 * 
-	 * @param doc
-	 * @param price
-	 * @return
-	 */
-	private Prices crawlPrices(Float price) {
-		Prices prices = new Prices();
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+    }
 
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+    return products;
+  }
 
-			installmentPriceMap.put(1, price);
-			prices.setBankTicketPrice(price);
+  private String parseImage(String text) {
+    int begin = text.indexOf("largeimage:") + 11;
+    String img = text.substring(begin);
+    img = img.replace("\'", " ").replace('}', ' ').trim();
 
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-		}
+    return img;
+  }
 
-		return prices;
-	}
+  /*******************************
+   * Product page identification *
+   *******************************/
+
+  private boolean isProductPage(String url, Document document) {
+    String[] tokens = url.split("/");
+    return !document.select(".product-essential").isEmpty() && tokens.length == 4
+        && !url.endsWith("/");
+  }
+
+  private Float crawlPrice(Document doc) {
+    Float price = null;
+    Element elementPrice = doc.select(".product-shop .price-box .regular-price .price").first();
+    if (elementPrice == null) {
+      elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
+    }
+    if (elementPrice != null) {
+      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
+          .replaceAll(",", "."));
+    }
+
+    return price;
+  }
+
+  /**
+   * In this market, installments not appear in product page
+   * 
+   * @param doc
+   * @param price
+   * @return
+   */
+  private Prices crawlPrices(Float price) {
+    Prices prices = new Prices();
+
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+      installmentPriceMap.put(1, price);
+      prices.setBankTicketPrice(price);
+
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+    }
+
+    return prices;
+  }
 
 }
