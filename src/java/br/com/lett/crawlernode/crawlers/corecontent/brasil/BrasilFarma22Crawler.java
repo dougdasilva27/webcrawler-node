@@ -4,13 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -18,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -50,17 +48,19 @@ public class BrasilFarma22Crawler extends Crawler {
 		List<Product> products = new ArrayList<>();
 
 		if (isProductPage(doc)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			String internalPid = crawlInternalPid(doc);
 			CategoryCollection categories = crawlCategories(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = new Marketplace();
-			JSONObject skuJson = CommonMethods.crawlSkuJsonVTEX(doc, session);
+			JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
 			// sku data in json
-			JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+			JSONArray arraySkus =
+					skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
 			for (int i = 0; i < arraySkus.length(); i++) {
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -74,12 +74,12 @@ public class BrasilFarma22Crawler extends Crawler {
 				Prices prices = crawlPrices(internalId, price);
 
 				// Creating the product
-				Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-						.setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-						.setAvailable(available).setCategory1(categories.getCategory(0))
+				Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+						.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+						.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
 						.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-						.setStock(stock).setMarketplace(marketplace).build();
+						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+						.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
 				products.add(product);
 			}
@@ -157,7 +157,7 @@ public class BrasilFarma22Crawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
-		if(json.has("available")) {
+		if (json.has("available")) {
 			return json.getBoolean("available");
 		}
 		return false;
@@ -185,7 +185,8 @@ public class BrasilFarma22Crawler extends Crawler {
 
 		Elements imageThumbs = doc.select("#botaoZoom");
 
-		for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image is the primary image
+		for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image
+																										// is the primary image
 			String url = imageThumbs.get(i).attr("zoom");
 
 			if (url == null || url.isEmpty()) {
@@ -228,8 +229,8 @@ public class BrasilFarma22Crawler extends Crawler {
 	}
 
 	/**
-	 * To crawl this prices is accessed a api Is removed all accents for crawl
-	 * price 1x like this: Visa à vista R$ 1.790,00
+	 * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
+	 * Visa à vista R$ 1.790,00
 	 * 
 	 * @param internalId
 	 * @param price
@@ -238,48 +239,49 @@ public class BrasilFarma22Crawler extends Crawler {
 	private Prices crawlPrices(String internalId, Float price) {
 		Prices prices = new Prices();
 
-		if(price != null) {
+		if (price != null) {
 			String url = "http://www.farma22.com.br/productotherpaymentsystems/" + internalId;
-			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-	
+			Document doc =
+					DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
 			Element bank = doc.select("#ltlPrecoWrapper em").first();
 			if (bank != null) {
 				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bank.text()));
 			}
-	
+
 			Elements cardsElements = doc.select("#ddlCartao option");
-	
+
 			for (Element e : cardsElements) {
 				String text = e.text().toLowerCase();
-	
+
 				if (text.contains("visa")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("mastercard")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("diners")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("american") || text.contains("amex")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("hipercard") || text.contains("amex")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("credicard")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
-	
+
 				} else if (text.contains("elo")) {
 					Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 					prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-	
+
 				}
 			}
 		}
@@ -307,8 +309,8 @@ public class BrasilFarma22Crawler extends Crawler {
 				Element valueElement = i.select("td:not(.parcelas)").first();
 
 				if (valueElement != null) {
-					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-							.replaceAll(",", ".").trim());
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
+							.replaceAll("\\.", "").replaceAll(",", ".").trim());
 
 					mapInstallments.put(installment, value);
 				}

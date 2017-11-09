@@ -5,16 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -22,7 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -47,8 +42,9 @@ public class BrasilNagemCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(doc)) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			String internalId = crawlInternalId(doc);
 			String internalPid = internalId;
@@ -64,23 +60,12 @@ public class BrasilNagemCrawler extends Crawler {
 			Marketplace marketplace = crawlMarketplace();
 
 			// Creating the product
-			Product product = ProductBuilder.create()
-					.setUrl(session.getOriginalURL())
-					.setInternalId(internalId)
-					.setInternalPid(internalPid)
-					.setName(name)
-					.setPrice(price)
-					.setPrices(prices)
-					.setAvailable(available)
-					.setCategory1(categories.getCategory(0))
-					.setCategory2(categories.getCategory(1))
-					.setCategory3(categories.getCategory(2))
-					.setPrimaryImage(primaryImage)
-					.setSecondaryImages(secondaryImages)
-					.setDescription(description)
-					.setStock(stock)
-					.setMarketplace(marketplace)
-					.build();
+			Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+					.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+					.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+					.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
 			products.add(product);
 
@@ -123,12 +108,12 @@ public class BrasilNagemCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element salePriceElement = document.select(".precoPOR-detalhe").first();		
+		Element salePriceElement = document.select(".precoPOR-detalhe").first();
 
 		if (salePriceElement != null) {
 			String priceText = salePriceElement.ownText();
-			
-			if(!priceText.isEmpty()) {
+
+			if (!priceText.isEmpty()) {
 				price = MathCommonsMethods.parseFloat(priceText);
 			}
 		}
@@ -155,10 +140,10 @@ public class BrasilNagemCrawler extends Crawler {
 		String primaryImage = null;
 		Element primaryImageElement = document.select(".active.carousel-item img").first();
 
-		if (primaryImageElement != null) {			
+		if (primaryImageElement != null) {
 			primaryImage = primaryImageElement.attr("src").trim();
-			
-			if(!primaryImage.startsWith(HOME_PAGE)){
+
+			if (!primaryImage.startsWith(HOME_PAGE)) {
 				primaryImage = (HOME_PAGE + primaryImage).replace("br//", "br/");
 			}
 		}
@@ -174,12 +159,12 @@ public class BrasilNagemCrawler extends Crawler {
 
 		for (Element e : imagesElement) { // first index is the primary image
 			String image = e.attr("src").trim();
-			
-			if(!image.startsWith(HOME_PAGE)) {
+
+			if (!image.startsWith(HOME_PAGE)) {
 				image = (HOME_PAGE + image).replace("br//", "br/");
 			}
-			
-			secondaryImagesArray.put( image );	
+
+			secondaryImagesArray.put(image);
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -193,8 +178,8 @@ public class BrasilNagemCrawler extends Crawler {
 		CategoryCollection categories = new CategoryCollection();
 
 		Elements elementCategories = document.select(".breadcrumb > a");
-		for (Element e : elementCategories) { 
-			categories.add(e.ownText().trim() );
+		for (Element e : elementCategories) {
+			categories.add(e.ownText().trim());
 		}
 
 		return categories;
@@ -205,70 +190,24 @@ public class BrasilNagemCrawler extends Crawler {
 		Element descriptionElement = document.select("#detalhe0").first();
 		Element especificationElement = document.select("#especificacoes0").first();
 
-		if(descriptionElement != null) {
+		if (descriptionElement != null) {
 			Element detalheNagem = document.select("#detalhe-nagem").first();
 			Element eanE = document.select("script[data-flix-inpage=flix-inpage][data-flix-ean]").first();
-			
-			if(eanE != null && detalheNagem != null && !detalheNagem.html().trim().isEmpty()) {
-				String ean = eanE.attr("data-flix-ean");
-				String url = "https://media.flixcar.com/delivery/js/inpage/4154/br/ean/" + ean + 
-						"?&=4154&=br&ean=" + ean + "&ssl=1&ext=.js";
-				
-				String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
-				final String token = "$(\"#flixinpage_\"+i).inPage";
-				
-				JSONObject productInfo = new JSONObject();
-				
-				if(script.contains(token)) {
-					int x = script.indexOf(token + " (") + token.length()+2;
-					int y = script.indexOf(");", x);
-					
-					String json = script.substring(x, y);
-					
-					try {
-						productInfo = new JSONObject(json);
-					} catch (JSONException e) {
-						Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-					}
-				}
-				
-				if(productInfo.has("product")) {
-					String id = productInfo.getString("product");
-					
-					String urlDesc = "https://media.flixcar.com/delivery/inpage/show/4154/br/" + id + "/json?c=jsonpcar4154br" + id + 
-							"&complimentary=0&type=.html";
-					String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, cookies);
-					
-					if(scriptDesc.contains("({")) {
-						int x = scriptDesc.indexOf("({") + 1;
-						int y = scriptDesc.indexOf("})", x) + 1;
 
-						String json = scriptDesc.substring(x, y);
-						
-						try {
-							JSONObject jsonInfo = new JSONObject(json);
-							
-							if(jsonInfo.has("html")) {
-								if(jsonInfo.has("css")) {
-									description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
-								}
-								
-								description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
-							}
-						} catch (JSONException e) {
-							Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-						}
-					}
-				}
-			} else if(!descriptionElement.text().trim().isEmpty()) {
+			if (eanE != null && detalheNagem != null && !detalheNagem.html().trim().isEmpty()) {
+				String ean = eanE.attr("data-flix-ean");
+				String flixMediaDesc = CrawlerUtils.crawlDescriptionFromFlixMedia("4154", ean, session);
+
+				description.append(flixMediaDesc);
+			} else if (!descriptionElement.text().trim().isEmpty()) {
 				description.append(descriptionElement.html());
 			}
 		}
-		
-		if(especificationElement != null) {
+
+		if (especificationElement != null) {
 			description.append(especificationElement.html());
 		}
-		
+
 		return description.toString();
 	}
 
@@ -283,73 +222,76 @@ public class BrasilNagemCrawler extends Crawler {
 	 */
 	private Prices crawlPrices(Float price, String internalId) {
 		Prices prices = new Prices();
-		
+
 		if (price != null) {
 			String urlParameters = "codigoProduto=" + internalId;
-			
-			Map<String,String> headers = new HashMap<>();
+
+			Map<String, String> headers = new HashMap<>();
 			headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-			
-			Document doc = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders
-					("http://www.nagem.com.br/produto/pagamentoproduto", session, urlParameters, cookies, 1, headers));
-			
+
+			Document doc = Jsoup.parse(
+					POSTFetcher.fetchPagePOSTWithHeaders("http://www.nagem.com.br/produto/pagamentoproduto",
+							session, urlParameters, cookies, 1, headers));
+
 			Elements cards = doc.select(".modal-body > ul.nav-tabs > li > a");
-			
-			for(Element e : cards) {
-				Map<Integer,Float> installmentPriceMap = new TreeMap<>();
-				
+
+			for (Element e : cards) {
+				Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+
 				String card = e.ownText().toLowerCase().trim();
 				String element = e.attr("href");
-				
-				switch(card) {
-					case "visa": 
+
+				switch (card) {
+					case "visa":
 						card = Card.VISA.toString();
 						break;
-					
-					case "mastercard": 
+
+					case "mastercard":
 						card = Card.MASTERCARD.toString();
 						break;
-					
-					case "diners": 
+
+					case "diners":
 						card = Card.DINERS.toString();
 						break;
-					
-					case "american express": 
+
+					case "american express":
 						card = Card.AMEX.toString();
 						break;
-					
-					case "hipercard": 
+
+					case "hipercard":
 						card = Card.HIPERCARD.toString();
 						break;
-					
-					case "elo": 
+
+					case "elo":
 						card = Card.ELO.toString();
 						break;
-					
-					default: break;
+
+					default:
+						break;
 				}
-				
-				Elements installments = doc.select(element + " tr"); 
-				
-				for(Element installment : installments) {
+
+				Elements installments = doc.select(element + " tr");
+
+				for (Element installment : installments) {
 					Element firstValue = installment.select("td").first();
-					
-					if(firstValue != null) {
+
+					if (firstValue != null) {
 						String text = firstValue.ownText().toLowerCase();
-						
-						if(text.contains("x")) {
-							Integer installmentNumber = Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
+
+						if (text.contains("x")) {
+							Integer installmentNumber =
+									Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
 							Float installmentValue = MathCommonsMethods.parseFloat(text.split("x")[1]);
-							
+
 							installmentPriceMap.put(installmentNumber, installmentValue);
 						}
 					}
 				}
-				
+
 				prices.insertCardInstallment(card, installmentPriceMap);
 			}
 		}
-		
+
 		return prices;
 	}
 }

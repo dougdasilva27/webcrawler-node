@@ -2,15 +2,13 @@ package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 
@@ -23,13 +21,13 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 	}
 
 	private static final String HOME_PAGE = "http://www.extra.com.br/";
-	
+
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		this.log("Página " + this.currentPage);
 
 		this.pageSize = 21;
-		
+
 		// monta a url com a catehoria e a página
 		String url = this.categoryUrl + "&paginaAtual=" + this.currentPage;
 
@@ -37,24 +35,25 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 
 		// chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
-		
-		JSONObject shareInfo = CommonMethods.selectJsonFromHtml(this.currentDoc, "script[type=\"text/javascript\"]", "varsiteMetadata=", ";");
+
+		JSONObject shareInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc,
+				"script[type=\"text/javascript\"]", "varsiteMetadata=", ";");
 		List<String> products = crawlShareJSON(shareInfo);
 		Elements result = this.currentDoc.select(".naoEncontrado");
 
-		if(!isThePrincipalCategorie(url)) {
+		if (!isThePrincipalCategorie(url)) {
 			this.pageSize = 21;
 		} else {
 			this.pageSize = products.size();
 		}
-		
+
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		if (!products.isEmpty() && result.size() < 1) {
 			// se o total de busca não foi setado ainda, chama a função para
 			if (this.totalProducts == 0) {
 				setTotalProducts();
 			}
-			
+
 			for (String internalPid : products) {
 				// InternalId
 				String internalId = null;
@@ -66,7 +65,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 
 				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
 						+ internalPid + " - Url: " + urlProduct);
-				
+
 				if (this.arrayProducts.size() == productsLimit) {
 					break;
 				}
@@ -97,10 +96,10 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 	@Override
 	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select(".resultadoBusca .resultado strong").first();
-		
-		if(totalElement != null) {
+
+		if (totalElement != null) {
 			this.totalProducts = Integer.parseInt(totalElement.ownText().trim());
-			
+
 			this.log("Total Products: " + this.totalProducts);
 		}
 	}
@@ -108,25 +107,25 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 	private boolean isThePrincipalCategorie(String url) {
 		return url.replace(HOME_PAGE, "").split("/").length == 1 ? true : false;
 	}
-	
+
 	private List<String> crawlShareJSON(JSONObject shareInfo) {
 		List<String> products = new ArrayList<>();
-		
-		if(shareInfo.has("page")) {
+
+		if (shareInfo.has("page")) {
 			JSONObject page = shareInfo.getJSONObject("page");
-			
-			if(page.has("listItems")) {
+
+			if (page.has("listItems")) {
 				JSONArray list = page.getJSONArray("listItems");
-				for(int i = 0; i < list.length(); i++) {
+				for (int i = 0; i < list.length(); i++) {
 					JSONObject product = list.getJSONObject(i);
-					
-					if(product.has("idProduct")) {
+
+					if (product.has("idProduct")) {
 						products.add(product.getString("idProduct"));
 					}
 				}
 			}
 		}
-		
+
 		return products;
 	}
 }

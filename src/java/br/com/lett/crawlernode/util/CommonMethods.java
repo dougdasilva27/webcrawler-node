@@ -18,46 +18,37 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.com.lett.crawlernode.core.session.Session;
-
 
 /**
- * This class contains common methods that can be used in any class within
- * crawler-node project.
+ * This class contains common methods that can be used in any class within crawler-node project.
  * 
  * @author Samir Leao
  *
  */
 public class CommonMethods {
-	
-	private static String version = "1"; //TODO
-	
+
+	private static String version = "1"; // TODO
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommonMethods.class);
 
 	/**
 	 * Get last position of array
+	 * 
 	 * @param array
 	 * @return
 	 */
 	public static <T> T getLast(T[] array) {
-	    return array[array.length - 1];
+		return array[array.length - 1];
 	}
-	
+
 	/**
 	 * 
 	 * @return
@@ -73,24 +64,26 @@ public class CommonMethods {
 		}
 		return md5;
 	}
-	
+
 	/**
-	 * Check wether the string contentType contains identifiers of binary content.
-	 * This method is mainly used by the Parser, when fetching web pages content.
+	 * Check wether the string contentType contains identifiers of binary content. This method is
+	 * mainly used by the Parser, when fetching web pages content.
+	 * 
 	 * @param contentType
 	 * @return
 	 */
 	public static boolean hasBinaryContent(String contentType) {
 		String typeStr = (contentType != null) ? contentType.toLowerCase() : "";
 
-		return typeStr.contains("image") || typeStr.contains("audio") || typeStr.contains("video") ||
-				typeStr.contains("application");
+		return typeStr.contains("image") || typeStr.contains("audio") || typeStr.contains("video")
+				|| typeStr.contains("application");
 	}
-	
+
 	/**
-	 * Check wether the string contentType contains identifiers of text content.
-	 * This method is mainly used by the Parser, when fetching web pages content.
-	 * Can be used to parse only the text of a web page, for example.
+	 * Check wether the string contentType contains identifiers of text content. This method is mainly
+	 * used by the Parser, when fetching web pages content. Can be used to parse only the text of a
+	 * web page, for example.
+	 * 
 	 * @param contentType
 	 * @return
 	 */
@@ -99,7 +92,7 @@ public class CommonMethods {
 
 		return typeStr.contains("text") && !typeStr.contains("html");
 	}
-	
+
 	/**
 	 * Modify an URL parameter with a new value.
 	 * 
@@ -121,11 +114,10 @@ public class CommonMethods {
 				List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
 
 				for (NameValuePair param : paramsOriginal) {
-					if ( param.getName().equals(parameter) ) {
+					if (param.getName().equals(parameter)) {
 						NameValuePair newParameter = new BasicNameValuePair(parameter, value);
 						paramsNew.add(newParameter);
-					}
-					else {
+					} else {
 						paramsNew.add(param);
 					}
 				}
@@ -136,7 +128,7 @@ public class CommonMethods {
 				builder.setParameters(paramsNew);
 
 				url = builder.build().toString();
-				
+
 				if (paramsNew.size() == 0) {
 					url = url.replace("?", "").trim();
 				}
@@ -150,9 +142,10 @@ public class CommonMethods {
 
 		return null;
 	}
-	
+
 	/**
 	 * Print the stack trace of an exception on a String
+	 * 
 	 * @param e the exception we want the stack trace from
 	 * @return the string containing the stack trace
 	 */
@@ -160,37 +153,40 @@ public class CommonMethods {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
 		e.printStackTrace(printWriter);
-		
-		return stringWriter.toString(); 
+
+		return stringWriter.toString();
 	}
-	
+
 	public static String getStackTrace(Throwable t) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
 		t.printStackTrace(printWriter);
-		
+
 		return stringWriter.toString();
 	}
-	
+
 	/**
 	 * Fetch the current package version
+	 * 
 	 * @return the string containing the version
 	 */
 	public static String getVersion() {
-		
-		if(version == null) {
+
+		if (version == null) {
 
 			try {
 				Properties properties = new Properties();
-				properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("project.properties"));
+				properties.load(Thread.currentThread().getContextClassLoader()
+						.getResourceAsStream("project.properties"));
 				version = properties.getProperty("version");
-			} catch (Exception e) { }
-			
-		} 
-		
+			} catch (Exception e) {
+			}
+
+		}
+
 		return version;
 	}
-	
+
 	/**
 	 * 
 	 * @param str
@@ -204,6 +200,7 @@ public class CommonMethods {
 
 	/**
 	 * Generates a random integer in the interval between min and max
+	 * 
 	 * @param min
 	 * @param max
 	 * @return
@@ -220,206 +217,112 @@ public class CommonMethods {
 
 		return randomNum;
 	}
-	
-    
-    /**
-     * Rebuild a string as an URI and remove all
-     * illegal characters.
-     * 
-     * @param url the url string
-     * @return	<br>the rebuilded URL as a string
-     * 			<br>the original string if any problem occurred during rebuild
-     */
-    public static String sanitizeUrl(String url) {
+
+
+	/**
+	 * Rebuild a string as an URI and remove all illegal characters.
+	 * 
+	 * @param url the url string
+	 * @return <br>
+	 * 				the rebuilded URL as a string <br>
+	 * 				the original string if any problem occurred during rebuild
+	 */
+	public static String sanitizeUrl(String url) {
 		try {
 			URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
-						
-			URIBuilder uriBuilder = new URIBuilder()
-					.setHost(urlObject.getHost())
-					.setPath(urlObject.getPath())
-					.setScheme(urlObject.getProtocol())
-					.setPort(urlObject.getPort());					
-			
+
+			URIBuilder uriBuilder =
+					new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath())
+							.setScheme(urlObject.getProtocol()).setPort(urlObject.getPort());
+
 			List<NameValuePair> params = getQueryMap(urlObject);
-						
+
 			if (params != null && !params.isEmpty()) {
 				uriBuilder.setParameters(params);
 			}
-			
+
 			// replace porque tem casos que a url tem um – e o apache não interpreta esse caracter
 			return replaceSpecialCharacterDash(uriBuilder.build().toString());
 		} catch (MalformedURLException | URISyntaxException e) {
 			Logging.printLogError(LOGGER, getStackTraceString(e));
 			return url;
 		}
-    }
-    
-    /**
-     * In some cases, url has this character –
-     * So then when we encode this url, this character become like this %C3%A2%C2%80%C2%93 or this %25E2%2580%2593,
-     * for resolve this problem, we replace this encode for %E2%80%93
-     * @param str
-     * @return
-     */
-    private static String replaceSpecialCharacterDash(String str) {
-    	String finalStr = str;
-    	
-    	if(finalStr.contains("–")) {
-    		finalStr = finalStr.replaceAll("–", "%E2%80%93");
-    	}
-    	
-    	if(finalStr.contains("%C3%A2%C2%80%C2%93")) {
-    		finalStr = finalStr.replaceAll("%C3%A2%C2%80%C2%93", "%E2%80%93");
-    	}
-    	
-    	if(finalStr.contains("%25E2%2580%2593")) {
-    		finalStr = finalStr.replaceAll("%25E2%2580%2593", "%E2%80%93");
-    	}
-    	
-    	return finalStr;
-    }
-    
-    /**
-     * Parse all the parameters inside the url.
-     * 
-     * @param url a java.net.URL instance
-     * @return  <br>an array list with NameValuePairs
-     * 			<br>an empty array list if the url doesn't have any parameter
-     */
-    public static List<NameValuePair> getQueryMap(URL url) {  
-		List<NameValuePair> queryMap = new ArrayList<>();	    
+	}
+
+	/**
+	 * In some cases, url has this character – So then when we encode this url, this character become
+	 * like this %C3%A2%C2%80%C2%93 or this %25E2%2580%2593, for resolve this problem, we replace this
+	 * encode for %E2%80%93
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static String replaceSpecialCharacterDash(String str) {
+		String finalStr = str;
+
+		if (finalStr.contains("–")) {
+			finalStr = finalStr.replaceAll("–", "%E2%80%93");
+		}
+
+		if (finalStr.contains("%C3%A2%C2%80%C2%93")) {
+			finalStr = finalStr.replaceAll("%C3%A2%C2%80%C2%93", "%E2%80%93");
+		}
+
+		if (finalStr.contains("%25E2%2580%2593")) {
+			finalStr = finalStr.replaceAll("%25E2%2580%2593", "%E2%80%93");
+		}
+
+		return finalStr;
+	}
+
+	/**
+	 * Parse all the parameters inside the url.
+	 * 
+	 * @param url a java.net.URL instance
+	 * @return <br>
+	 * 				an array list with NameValuePairs <br>
+	 * 				an empty array list if the url doesn't have any parameter
+	 */
+	public static List<NameValuePair> getQueryMap(URL url) {
+		List<NameValuePair> queryMap = new ArrayList<>();
 		String query = url.getQuery();
 
 		if (query != null) {
-			String[] params = query.split(Pattern.quote("&"));  
+			String[] params = query.split(Pattern.quote("&"));
 			for (String param : params) {
 				String[] chunks = param.split(Pattern.quote("="));
-				
-				String name = chunks[0]; 
-				String value = null;  
-				
-				if(chunks.length > 1) {
+
+				String name = chunks[0];
+				String value = null;
+
+				if (chunks.length > 1) {
 					value = chunks[1];
 				}
 				queryMap.add(new BasicNameValuePair(name, value));
 			}
 		}
-		
+
 		return queryMap;
-	}
-    
-    /**
-     * Check if the url contains a valid start with a valid protocol.
-     * A valid start could be http:// or https://
-     * If the url contains anything like http:/// for example, it won't
-     * be a valid url string.
-     * 
-     * @param urlString
-     * @return 	true if it's a valid url string
-     * 			<br>false otherwise
-     */
-    public static boolean checkUrlStart(String urlString) {
-		String protocolRegex = "(^https?://[^/])";  // -> the '?' tells we want s to be optional
-													// -> the [^//] tells that the next character after the two slashes '//' cannot be another slash
-		Pattern pattern = Pattern.compile(protocolRegex);
-		Matcher matcher = pattern.matcher(urlString);
-		
-		return matcher.find();
 	}
 
 	/**
-	 * Crawl skuJson from html in VTEX Sites
-	 * @param document
-	 * @param session
-	 * @return
-	 */
-	public static JSONObject crawlSkuJsonVTEX(Document document, Session session) {
-		Elements scriptTags = document.getElementsByTag("script");
-		String scriptVariableName = "var skuJson_0 = ";
-		JSONObject skuJson;
-		String skuJsonString = null;
-		
-		for (Element tag : scriptTags){                
-			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith(scriptVariableName)) {
-					skuJsonString =
-							node.getWholeData().split(Pattern.quote(scriptVariableName))[1] +
-							node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
-					break;
-				}
-			}        
-		}
-		
-		try {
-			skuJson = new JSONObject(skuJsonString);
-			
-		} catch (JSONException e) {
-			Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
-			Logging.printLogError(LOGGER, session, getStackTraceString(e));
-			
-			skuJson = new JSONObject();
-		}
-		
-		return skuJson;
-	}
-	
-	/**
-	 * Crawl json inside element html
-	 *
-	 *	e.g:
-	 *	vtxctx = {
-	 *		skus:"825484",
-	 *		searchTerm:"",
-	 *		categoryId:"38",
-	 *		categoryName:"Leite infantil",
-	 *		departmentyId:"4",
-	 *		departmentName:"Infantil",
-	 *		url:"www.araujo.com.br"
-	 *	};
-	 *
-	 *	token = "vtxctx="
-	 *	finalIndex = ";"
+	 * Check if the url contains a valid start with a valid protocol. A valid start could be http://
+	 * or https:// If the url contains anything like http:/// for example, it won't be a valid url
+	 * string.
 	 * 
-	 * @param doc
-	 * @param cssElement selector used to get the desired json element
-	 * @param token whithout spaces
-	 * @param finalIndex
-	 * @return JSONObject
-	 * 
-	 * @throws JSONException
-	 * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate 
-	 * @throws IllegalArgumentException if doc is null
+	 * @param urlString
+	 * @return true if it's a valid url string <br>
+	 * 				false otherwise
 	 */
-	public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) 
-			throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException{
-		
-		if(doc == null) throw new IllegalArgumentException("Argument doc cannot be null");
-		
-		JSONObject object = new JSONObject();
-		
-		Elements scripts = doc.select(cssElement);
-		
-		for(Element e : scripts) {
-			String script = e.outerHtml().replace(" ", "");
-			
-			if(script.contains(token)) {
-				int x = script.indexOf(token) + token.length();
-				int y = script.indexOf(finalIndex, x);
-				
-				String json = script.substring(x, y);
-				
-				if(json.startsWith("{") && json.endsWith("}")) {
-					object = new JSONObject(json);
-				}
-				
-				break;
-			}
-		}
-		
-		
-		return object;
+	public static boolean checkUrlStart(String urlString) {
+		String protocolRegex = "(^https?://[^/])"; // -> the '?' tells we want s to be optional
+		// -> the [^//] tells that the next character after the two slashes '//' cannot be another slash
+		Pattern pattern = Pattern.compile(protocolRegex);
+		Matcher matcher = pattern.matcher(urlString);
+
+		return matcher.find();
 	}
-	
+
 	/**
 	 *
 	 * @param body
@@ -428,13 +331,13 @@ public class CommonMethods {
 	public static void saveDataToAFile(Object body, String path) {
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(path));
-			
+
 			out.write(body.toString());
 			out.close();
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 	}
-	
-	
+
+
 }

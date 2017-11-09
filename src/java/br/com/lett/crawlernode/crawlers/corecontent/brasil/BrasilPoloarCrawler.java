@@ -5,13 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -19,7 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -52,7 +50,8 @@ public class BrasilPoloarCrawler extends Crawler {
 		List<Product> products = new ArrayList<>();
 
 		if (isProductPage(doc)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			// Pid
 			String internalPid = crawlInternalPid(doc);
@@ -72,11 +71,11 @@ public class BrasilPoloarCrawler extends Crawler {
 			// Marketplace
 			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
-			JSONObject skuJson = CommonMethods.crawlSkuJsonVTEX(doc, session);
+			JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
 			// sku data in json
-			JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus")
-					: new JSONArray();
+			JSONArray arraySkus =
+					skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
 			if (arraySkus.length() > 0) {
 				JSONObject jsonSku = arraySkus.getJSONObject(0);
@@ -98,17 +97,17 @@ public class BrasilPoloarCrawler extends Crawler {
 
 				// Availability
 				boolean available = !prices.getInstallmentPrice().isEmpty();
-				
+
 				// Price
 				Float price = crawlMainPagePrice(prices, available);
-				
+
 				// Creating the product
-				Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-						.setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-						.setAvailable(available).setCategory1(categories.getCategory(0))
+				Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+						.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+						.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
 						.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-						.setStock(stock).setMarketplace(marketplace).build();
+						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+						.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
 				products.add(product);
 			}
@@ -179,10 +178,11 @@ public class BrasilPoloarCrawler extends Crawler {
 		Float price = null;
 
 		if (available) {
-			for(Entry<String, Map<Integer, Double>> installment: prices.getInstallmentPrice().entrySet()) {
+			for (Entry<String, Map<Integer, Double>> installment : prices.getInstallmentPrice()
+					.entrySet()) {
 				Map<Integer, Double> card = installment.getValue();
-				
-				if(card.containsKey(1)) {
+
+				if (card.containsKey(1)) {
 					price = MathCommonsMethods.normalizeTwoDecimalPlaces(card.get(1).floatValue());
 					break;
 				}
@@ -223,9 +223,9 @@ public class BrasilPoloarCrawler extends Crawler {
 		Elements imageThumbs = doc.select("#botaoZoom");
 
 		for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1,
-														// because the first
-														// image is the primary
-														// image
+			// because the first
+			// image is the primary
+			// image
 			String url = imageThumbs.get(i).attr("zoom");
 
 			if (url == null || url.isEmpty()) {
@@ -249,10 +249,10 @@ public class BrasilPoloarCrawler extends Crawler {
 		Elements elementCategories = document.select(".bread-crumb > ul li a");
 
 		for (int i = 1; i < elementCategories.size(); i++) { // starting from
-																// index 1,
-																// because the
-																// first is the
-																// market name
+			// index 1,
+			// because the
+			// first is the
+			// market name
 			categories.add(elementCategories.get(i).text().trim());
 		}
 
@@ -276,8 +276,8 @@ public class BrasilPoloarCrawler extends Crawler {
 	}
 
 	/**
-	 * To crawl this prices is accessed a api Is removed all accents for crawl
-	 * price 1x like this: Visa à vista R$ 1.790,00
+	 * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
+	 * Visa à vista R$ 1.790,00
 	 * 
 	 * @param internalId
 	 * @param price
@@ -292,8 +292,8 @@ public class BrasilPoloarCrawler extends Crawler {
 
 		Element bank = doc.select("#ltlPrecoWrapper em").first();
 		if (bank != null) {
-			prices.setBankTicketPrice(Float.parseFloat(
-					bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
+			prices.setBankTicketPrice(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "")
+					.replaceAll("\\.", "").replaceAll(",", ".").trim()));
 		}
 
 		Elements cardsElements = doc.select("#ddlCartao option");
@@ -355,8 +355,8 @@ public class BrasilPoloarCrawler extends Crawler {
 				Element valueElement = i.select("td:not(.parcelas)").first();
 
 				if (valueElement != null) {
-					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-							.replaceAll(",", ".").trim());
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
+							.replaceAll("\\.", "").replaceAll(",", ".").trim());
 
 					mapInstallments.put(installment, value);
 				}

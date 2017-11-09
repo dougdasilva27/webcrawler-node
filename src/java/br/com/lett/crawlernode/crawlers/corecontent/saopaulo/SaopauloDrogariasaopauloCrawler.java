@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -20,6 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -28,7 +27,7 @@ import models.Util;
 import models.prices.Prices;
 
 public class SaopauloDrogariasaopauloCrawler extends Crawler {
-	
+
 	private static final String HOME_PAGE = "http://www.drogariasaopaulo.com.br/";
 	private static final String MAIN_SELLER_NAME_LOWER = "drogaria são paulo";
 
@@ -49,17 +48,19 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		List<Product> products = new ArrayList<>();
 
 		if (isProductPage(doc)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
-			JSONObject skuJson = CommonMethods.crawlSkuJsonVTEX(doc, session);
-			
+			JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+
 			String internalPid = crawlInternalPid(skuJson);
 			CategoryCollection categories = crawlCategories(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
 
 			// sku data in json
-			JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+			JSONArray arraySkus =
+					skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
 			for (int i = 0; i < arraySkus.length(); i++) {
 				JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -75,22 +76,12 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 				Prices prices = crawlPrices(internalId, price);
 
 				// Creating the product
-				Product product = ProductBuilder.create()
-						.setUrl(session.getOriginalURL())
-						.setInternalId(internalId)
-						.setInternalPid(internalPid)
-						.setName(name)
-						.setPrice(price)
-						.setPrices(prices)
-						.setAvailable(available)
-						.setCategory1(categories.getCategory(0))
-						.setCategory2(categories.getCategory(1))
-						.setCategory3(categories.getCategory(2))
-						.setPrimaryImage(primaryImage)
-						.setSecondaryImages(secondaryImages)
-						.setDescription(description)
-						.setStock(stock).setMarketplace(marketplace)
-						.build();
+				Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+						.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+						.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+						.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+						.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+						.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
 				products.add(product);
 			}
@@ -157,7 +148,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
 	private Float crawlMainPagePrice(Map<String, Float> marketplace) {
 		Float price = null;
-		
+
 		if (marketplace.containsKey(MAIN_SELLER_NAME_LOWER)) {
 			price = marketplace.get(MAIN_SELLER_NAME_LOWER);
 		}
@@ -179,69 +170,75 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 	private String crawlSecondaryImages(String internalId) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
-	
+
 		String url = "http://www.drogariasaopaulo.com.br/produto/sku/" + internalId;
-		String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); //GET request to get secondary images
-		
+		String stringJsonImages =
+				DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
+																																										// to get
+																																										// secondary
+																																										// images
+
 		JSONObject jsonObjectImages = new JSONObject();
 		try {
 			jsonObjectImages = new JSONArray(stringJsonImages).getJSONObject(0);
 		} catch (JSONException e) {
 			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 		}
-		
+
 		if (jsonObjectImages.has("Images")) {
 			JSONArray jsonArrayImages = jsonObjectImages.getJSONArray("Images");
-			
-			for (int i = 1; i < jsonArrayImages.length(); i++) {				//starts with index 1, because the first image is the primary image
+
+			for (int i = 1; i < jsonArrayImages.length(); i++) { // starts with index 1, because the first
+																														// image is the primary image
 				JSONArray arrayImage = jsonArrayImages.getJSONArray(i);
 				JSONObject jsonImage = arrayImage.getJSONObject(0);
-				
-				if(jsonImage.has("Path")){
+
+				if (jsonImage.has("Path")) {
 					String urlImage = modifyImageURL(jsonImage.getString("Path"));
 					secondaryImagesArray.put(urlImage);
 				}
-				
+
 			}
 		}
-		
+
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
-		
+
 		return secondaryImages;
 	}
 
 	private String modifyImageURL(String url) {
 		String[] tokens = url.trim().split("/");
-		String dimensionImage = tokens[tokens.length-2]; //to get dimension image and the image id
-		
-		String[] tokens2 = dimensionImage.split("-"); //to get the image-id
+		String dimensionImage = tokens[tokens.length - 2]; // to get dimension image and the image id
+
+		String[] tokens2 = dimensionImage.split("-"); // to get the image-id
 		String dimensionImageFinal = tokens2[0] + "-1000-1000";
-		
-		return url.replace(dimensionImage, dimensionImageFinal); //The image size is changed
+
+		return url.replace(dimensionImage, dimensionImageFinal); // The image size is changed
 	}
-	
+
 	private Map<String, Float> crawlMarketplace(JSONObject json) {
 		Map<String, Float> marketplace = new HashMap<>();
-		
-		if(json.has("seller")){
+
+		if (json.has("seller")) {
 			String nameSeller = json.getString("seller").toLowerCase().trim();
-			
+
 			if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
 				Float price = MathCommonsMethods.parseFloat(json.getString("bestPriceFormated"));
 				marketplace.put(nameSeller, price);
 			}
 		}
-		
+
 		return marketplace;
 	}
-	
-	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+
+	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
+			String internalId) {
 		Marketplace marketplace = new Marketplace();
 
 		for (String seller : marketplaceMap.keySet()) {
-			if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) { 
+			if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) {
 				Float price = marketplaceMap.get(seller);
 
 				JSONObject sellerJSON = new JSONObject();
@@ -260,7 +257,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
 		return marketplace;
 	}
-	
+
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select(".bread-crumb li > a");
@@ -276,17 +273,17 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		StringBuilder description = new StringBuilder();
 
 		Element shortDescription = doc.select(".productDescription").first();
-		if(shortDescription != null) {
+		if (shortDescription != null) {
 			description.append(shortDescription.html());
 		}
-		
+
 		Element elementInformation = doc.select(".productSpecification").first();
-		if(elementInformation != null) {
+		if (elementInformation != null) {
 			description.append(elementInformation.html());
 		}
-		
+
 		Element advert = doc.select(".advertencia").first();
-		if(advert != null) {
+		if (advert != null) {
 			description.append(advert.html());
 		}
 
@@ -294,8 +291,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 	}
 
 	/**
-	 * To crawl this prices is accessed a api Is removed all accents for crawl
-	 * price 1x like this: Visa à vista R$ 1.790,00
+	 * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
+	 * Visa à vista R$ 1.790,00
 	 * 
 	 * @param internalId
 	 * @param price
@@ -304,57 +301,58 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 	private Prices crawlPrices(String internalId, Float price) {
 		Prices prices = new Prices();
 
-		if(price != null) {
+		if (price != null) {
 			String url = "http://www.drogariasaopaulo.com.br/productotherpaymentsystems/" + internalId;
-			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-	
+			Document doc =
+					DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
 			Element bank = doc.select("#ltlPrecoWrapper em").first();
 			if (bank != null) {
 				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bank.text()));
 			} else {
 				prices.setBankTicketPrice(price);
 			}
-	
+
 			Elements cardsElements = doc.select("#ddlCartao option");
-	
-			if(cardsElements.size() > 0) {
+
+			if (cardsElements.size() > 0) {
 				for (Element e : cardsElements) {
 					String text = e.text().toLowerCase();
-		
+
 					if (text.contains("visa")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("mastercard")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("diners")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("american") || text.contains("amex")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("hipercard") || text.contains("amex")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("credicard")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
-		
+
 					} else if (text.contains("elo")) {
 						Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
 						prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-		
+
 					}
 				}
 			} else {
 				Map<Integer, Float> installmentPriceMap = new HashMap<>();
 				installmentPriceMap.put(1, price);
-				
+
 				prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 				prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 				prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
@@ -387,8 +385,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 				Element valueElement = i.select("td:not(.parcelas)").first();
 
 				if (valueElement != null) {
-					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-							.replaceAll(",", ".").trim());
+					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
+							.replaceAll("\\.", "").replaceAll(",", ".").trim());
 
 					mapInstallments.put(installment, value);
 				}
