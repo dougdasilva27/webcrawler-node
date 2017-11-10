@@ -1,8 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -14,30 +13,40 @@ public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
+		// número de produtos por página do market
 		this.pageSize = 24;
 
-		this.log("Página "+ this.currentPage);
+		this.log("Página " + this.currentPage);
 
-		//monta a url com a keyword e a página
-		String url = "https://www.submarino.com.br/busca/?conteudo="+ this.keywordEncoded +"&limite=24&offset=" + this.arrayProducts.size();
-		this.log("Link onde são feitos os crawlers: "+url);
+		String keyword = location.replaceAll(" ", "+");
 
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url, null);
+		// monta a url com a keyword e a página
+		String url = "https://www.submarino.com.br/busca/?conteudo=" + this.keywordEncoded
+				+ "&limite=24&offset=" + this.arrayProducts.size();
+		this.log("Link onde são feitos os crawlers: " + url);
 
-		Elements products = this.currentDoc.select(".card-product .card-product-url");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1)	{
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0){
-				setTotalProducts();
+		String urlAPi = "https://mystique-v1-submarino.b2w.io/mystique/search?content=" + keyword
+				+ "&offset=" + +this.arrayProducts.size() + "&sortBy=moreRelevant&source=nanook";
+
+		JSONObject api = fetchJSONObject(urlAPi);
+		JSONArray products = new JSONArray();
+
+		if (api.has("products")) {
+			products = api.getJSONArray("products");
+		}
+
+		// se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+		if (products.length() >= 1) {
+			// se o total de busca não foi setado ainda, chama a função para setar
+			if (this.totalProducts == 0) {
+				setTotalBusca(api);
 			}
 
-			for(Element e : products) {
+			for (int i = 0; i < products.length(); i++) {
+				JSONObject product = products.getJSONObject(i);
+
 				// InternalPid
-				String internalPid = crawlInternalPid(e);
+				String internalPid = crawlInternalPid(product);
 
 				// Url do produto
 				String productUrl = crawlProductUrl(internalPid);
@@ -45,10 +54,11 @@ public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 				// InternalId
 				String internalId = crawlInternalId();
 
-				saveDataProduct(internalId, internalPid,productUrl);
+				saveDataProduct(internalId, internalPid, productUrl);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit){
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+						+ internalPid + " - Url: " + productUrl);
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
 				}
 			}
@@ -57,60 +67,48 @@ public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 			this.log("Keyword sem resultado!");
 		}
 
-		this.log("Finalizando Crawler de produtos da página "+ this.currentPage +" - até agora "+this.arrayProducts.size()+" produtos crawleados");
+		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+				+ this.arrayProducts.size() + " produtos crawleados");
 
 	}
 
 	@Override
 	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < totalProducts) {
+		if (this.arrayProducts.size() < totalProducts) {
 			return true;
-		} else {
-			Element nextPage = this.currentDoc.select(".card.card-pagination svg.pagination-icon").first();
-			
-			if(nextPage != null) {
-				return true;
-			}
 		}
 
 		return false;
 	}
 
-	@Override
-	protected void setTotalProducts() {
-		Element e = this.currentDoc.select(".form-group.display-sm-inline-block span[data-reactid]").first();
-		
-		if(e != null) {
-			String total = e.ownText().replaceAll("[^0-9]", "").trim();
-			
-			if(!total.isEmpty()) {
-				this.totalProducts = Integer.parseInt(total);
-				this.log("Total Seacrh: " + this.totalProducts);
+
+	protected void setTotalBusca(JSONObject api) {
+		if (api.has("_result")) {
+			JSONObject result = api.getJSONObject("_result");
+
+			if (result.has("total")) {
+				this.totalProducts = result.getInt("total");
+
+				this.log("Total da busca: " + this.totalProducts);
 			}
 		}
 	}
 
-	private String crawlInternalId(){
+	private String crawlInternalId() {
 		return null;
 	}
 
-	private String crawlInternalPid(Element e){
+	private String crawlInternalPid(JSONObject product) {
 		String internalPid = null;
-		String href = e.attr("href");
-		
-		if(href.contains("?")) {
-			href = href.split("[?]")[0];
-		} 
-		
-		if(!href.isEmpty()) {
-			String[] tokens = href.split("/");
-			internalPid = tokens[tokens.length-1];
+
+		if (product.has("id")) {
+			internalPid = Integer.toString(product.getInt("id"));
 		}
 
 		return internalPid;
 	}
 
-	private String crawlProductUrl(String internalPid){
+	private String crawlProductUrl(String internalPid) {
 		return "https://www.submarino.com.br/produto/" + internalPid;
 	}
 
