@@ -67,9 +67,11 @@ public class BrasilAmazonCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 
-			Document docMarketPlace = fetchDocumentMarketPlace(internalId);
-			CommonMethods.saveDataToAFile(docMarketPlace, "/home/gabriel/htmls/c.html");
-			Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketPlace, doc);
+			List<Document> docMarketPlaces = fetchDocumentMarketPlace(doc);
+			CommonMethods.saveDataToAFile(
+					docMarketPlaces.get(0) == null ? "ERROU" : docMarketPlaces.get(0),
+					"/home/gabriel/htmls/c.html");
+			Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketPlaces, doc);
 			Marketplace marketplace = crawlMarketplace(marketplaceMap);
 
 			Float price = crawlPrice(marketplaceMap);
@@ -197,22 +199,61 @@ public class BrasilAmazonCrawler extends Crawler {
 	}
 
 	/**
-	 * Fetch page when have marketplace info
+	 * Fetch pages when have marketplace info
 	 * 
 	 * @param id
-	 * @return document
+	 * @return documents
 	 */
-	private Document fetchDocumentMarketPlace(String id) {
-		Document doc = new Document("");
+	private List<Document> fetchDocumentMarketPlace(Document doc) {
+		List<Document> docs = new ArrayList<>();
 
-		if (id != null) {
+		Element marketplaceUrl =
+				doc.select("#moreBuyingChoices_feature_div .a-box .a-padding-base .a-size-small a[href]")
+						.first();
+
+		if (marketplaceUrl != null) {
 			String urlMarketPlace =
-					"https://www.amazon.com.br/gp/offer-listing/" + id + "?ie=UTF8&condition=new";
-			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null,
-					cookies);
+					"https://www.amazon.com.br/gp/offer-listing/8594540248/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=0";
+
+			if (!urlMarketPlace.contains("amazon.com")) {
+				urlMarketPlace = "https://www.amazon.com.br" + urlMarketPlace;
+			}
+
+			Document docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+					urlMarketPlace, null, cookies);
+			docs.add(docMarketplace);
+
+			if (urlMarketPlace.contains("ref")) {
+				int x = urlMarketPlace.indexOf("ref=") + 4;
+
+				if (urlMarketPlace.contains("?")) {
+					int y = urlMarketPlace.indexOf('?', x);
+					urlMarketPlace = urlMarketPlace.replace(urlMarketPlace.substring(x, y), "olp_page_1");
+				} else {
+					urlMarketPlace = urlMarketPlace.replace(urlMarketPlace.substring(x), "olp_page_1");
+				}
+			}
+
+			Element nextPage = docMarketplace.select(".a-last:not(.a-disabled)").first();
+			int page = 1;
+
+			while (nextPage != null && page < 3) {
+				String nextUrl =
+						"https://www.amazon.com.br/gp/offer-listing/8594540248/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex="
+								+ page * 10;
+
+				Document nextDocMarketPlace =
+						DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, nextUrl, null, cookies);
+				docs.add(nextDocMarketPlace);
+				nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
+
+				page++;
+			}
+
 		}
 
-		return doc;
+
+		return docs;
 	}
 
 	private String crawlPrincipalSeller(Document doc) {
@@ -247,27 +288,29 @@ public class BrasilAmazonCrawler extends Crawler {
 		return principalSeller;
 	}
 
-	private Map<String, Prices> crawlMarketplaces(Document docMarketplaceInfo, Document doc) {
+	private Map<String, Prices> crawlMarketplaces(List<Document> docsMarketplaceInfo, Document doc) {
 		Map<String, Prices> marketplace = new HashMap<>();
-
-		Elements lines = docMarketplaceInfo.select(".a-row.olpOffer");
 
 		String principalSellerFrontPage = crawlPrincipalSeller(doc);
 
-		for (Element linePartner : lines) {
-			Element name = linePartner.select(".olpSellerName a").first();
-			Element nameImg = linePartner.select(".olpSellerName img").first();
-			Element priceS = linePartner.select(".olpOfferPrice").first();
+		for (Document docMarketplaceInfo : docsMarketplaceInfo) {
+			Elements lines = docMarketplaceInfo.select(".a-row.olpOffer");
 
-			if ((name != null || nameImg != null) && priceS != null) {
-				String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase()
-						: name.text().trim().toLowerCase();
-				Float partnerPrice = MathCommonsMethods.parseFloat(priceS.ownText());
+			for (Element linePartner : lines) {
+				Element name = linePartner.select(".olpSellerName a").first();
+				Element nameImg = linePartner.select(".olpSellerName img").first();
+				Element priceS = linePartner.select(".olpOfferPrice").first();
 
-				if (partnerName.equals(principalSellerFrontPage)) {
-					marketplace.put(partnerName, crawlPrices(doc, null));
-				} else {
-					marketplace.put(partnerName, crawlPrices(doc, partnerPrice));
+				if ((name != null || nameImg != null) && priceS != null) {
+					String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase()
+							: name.text().trim().toLowerCase();
+					Float partnerPrice = MathCommonsMethods.parseFloat(priceS.ownText());
+
+					if (partnerName.equals(principalSellerFrontPage)) {
+						marketplace.put(partnerName, crawlPrices(doc, null));
+					} else {
+						marketplace.put(partnerName, crawlPrices(doc, partnerPrice));
+					}
 				}
 			}
 		}
