@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Map.Entry;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -16,13 +17,16 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
+import models.Seller;
 import models.prices.Prices;
 
 /**
- * Date: 19/10/2017
+ * Date: 15/11/2017
  * 
  * @author Gabriel Dornelas
  *
@@ -54,16 +58,23 @@ public class BrasilAmazonCrawler extends Crawler {
 			String internalId = crawlInternalId(doc);
 			String internalPid = internalId;
 			String name = crawlName(doc);
-			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(price, doc);
-			boolean available = crawlAvailability(doc);
 			CategoryCollection categories = crawlCategories(doc);
-			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);
+
+			JSONArray images = crawlImages(doc);
+			String primaryImage = crawlPrimaryImage(images, doc);
+			String secondaryImages = crawlSecondaryImages(images);
+
 			String description = crawlDescription(doc);
 			Integer stock = null;
+
 			Document docMarketPlace = fetchDocumentMarketPlace(internalId);
-			Marketplace marketplace = crawlMarketplace();
+			CommonMethods.saveDataToAFile(docMarketPlace, "/home/gabriel/htmls/c.html");
+			Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketPlace, doc);
+			Marketplace marketplace = crawlMarketplace(marketplaceMap);
+
+			Float price = crawlPrice(marketplaceMap);
+			Prices prices = crawlPrices(marketplaceMap);
+			boolean available = crawlAvailability(marketplaceMap);
 
 			// Creating the product
 			Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -112,13 +123,74 @@ public class BrasilAmazonCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlPrice(Document document) {
+	/**
+	 * Get json of images inside html
+	 * 
+	 * @param doc
+	 * @return
+	 */
+	private JSONArray crawlImages(Document doc) {
+		JSONArray images = new JSONArray();
+
+		JSONObject data =
+				CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";");
+
+		if (data.has("imageGalleryData")) {
+			images = data.getJSONArray("imageGalleryData");
+		} else if (data.has("colorImages")) {
+			JSONObject colorImages = data.getJSONObject("colorImages");
+
+			if (colorImages.has("initial")) {
+				images = colorImages.getJSONArray("initial");
+			}
+		}
+
+		return images;
+	}
+
+	private Float crawlPrice(Map<String, Prices> marketplaces) {
+		Float price = null;
+
+		Prices prices = null;
+
+		if (marketplaces.containsKey(SELLER_NAME_LOWER)) {
+			prices = marketplaces.get(SELLER_NAME_LOWER);
+		}
+
+		if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+			Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+			price = priceDouble.floatValue();
+		}
+
+		return price;
+	}
+
+	private boolean crawlAvailability(Map<String, Prices> marketplaces) {
+		boolean available = false;
+
+		for (String seller : marketplaces.keySet()) {
+			if (seller.equalsIgnoreCase(SELLER_NAME_LOWER)) {
+				available = true;
+				break;
+			}
+		}
+
+		return available;
+	}
+
+	private Float crawlPriceForPrincipalSeller(Document document) {
 		Float price = null;
 		Element salePriceElement =
 				document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
 
 		if (salePriceElement != null) {
 			price = MathCommonsMethods.parseFloat(salePriceElement.text().trim());
+		} else {
+			salePriceElement = document.select("#buybox .a-color-price").first();
+
+			if (salePriceElement != null) {
+				price = MathCommonsMethods.parseFloat(salePriceElement.ownText().trim());
+			}
 		}
 
 		return price;
@@ -135,77 +207,135 @@ public class BrasilAmazonCrawler extends Crawler {
 
 		if (id != null) {
 			String urlMarketPlace =
-					"https://www.amazon.com.br/gp/offer-listing/" + id + "/ref=dp_olp_new";
-			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null, null);
+					"https://www.amazon.com.br/gp/offer-listing/" + id + "?ie=UTF8&condition=new";
+			doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null,
+					cookies);
 		}
 
 		return doc;
 	}
 
+	private String crawlPrincipalSeller(Document doc) {
+		String principalSeller = SELLER_NAME_LOWER;
+
+		Element name = doc.select("#merchant-info").first();
+		Element nameSpecial = doc.select("#merchant-info > a").first();
+
+		if (nameSpecial != null) {
+			principalSeller = nameSpecial.ownText().toLowerCase().trim();
+		} else if (name != null) {
+			String text = name.ownText().toLowerCase().trim();
+
+			if (text.contains("por")) {
+				int x = text.indexOf("por") + 3;
+
+				if (text.contains("embalagem")) {
+					int y = text.indexOf("embalagem", x);
+
+					principalSeller = text.substring(x, y).trim();
+				} else {
+					principalSeller = text.substring(x).trim();
+				}
+
+
+				if (principalSeller.endsWith(".")) {
+					principalSeller = principalSeller.substring(0, principalSeller.length() - 1);
+				}
+			}
+		}
+
+		return principalSeller;
+	}
+
 	private Map<String, Prices> crawlMarketplaces(Document docMarketplaceInfo, Document doc) {
 		Map<String, Prices> marketplace = new HashMap<>();
 
-		String principalSeller = SELLER_NAME_LOWER;
-
 		Elements lines = docMarketplaceInfo.select(".a-row.olpOffer");
 
+		String principalSellerFrontPage = crawlPrincipalSeller(doc);
+
 		for (Element linePartner : lines) {
-			String partnerName =
-					linePartner.select(".a-color-price.olpSellerName").first().text().trim().toLowerCase();
-			Float partnerPrice = Float.parseFloat(linePartner.select(".olpOfferPrice").first().text()
-					.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			Element name = linePartner.select(".olpSellerName a").first();
+			Element nameImg = linePartner.select(".olpSellerName img").first();
+			Element priceS = linePartner.select(".olpOfferPrice").first();
 
-			Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+			if ((name != null || nameImg != null) && priceS != null) {
+				String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase()
+						: name.text().trim().toLowerCase();
+				Float partnerPrice = MathCommonsMethods.parseFloat(priceS.ownText());
 
-			Prices prices = new Prices();
-
-			if (!principalSeller.equals(partnerName)) {
-				prices.setBankTicketPrice(partnerPrice);
-
-				Map<Integer, Float> installmentPriceMap = new HashMap<>();
-				installmentPriceMap.put(1, partnerPrice);
-
-				Elements installments = doc.select(".a-horizontal-stripes .a-text-lef");
-
-				if (installments.size() > 1) {
-					Integer installment = Integer.parseInt(installments.get(0).text().trim());
-					Float value = Float.parseFloat(installments.get(1).text().replaceAll("[^0-9,]+", "")
-							.replaceAll("\\.", "").replaceAll(",", "."));
-
-					installmentPriceMap.put(installment, value);
-
+				if (partnerName.equals(principalSellerFrontPage)) {
+					marketplace.put(partnerName, crawlPrices(doc, null));
+				} else {
+					marketplace.put(partnerName, crawlPrices(doc, partnerPrice));
 				}
-
-				prices.insertCardInstallment("visa", installmentPriceMap);
-			} else {
-				prices = crawlPrices(partnerPrice, doc);
 			}
+		}
 
-
-			if (comprar == null)
-				marketplace.put(partnerName, prices);
+		if (!marketplace.containsKey(principalSellerFrontPage)) {
+			marketplace.put(principalSellerFrontPage, crawlPrices(doc, null));
 		}
 
 		return marketplace;
 	}
 
-	private Marketplace crawlMarketplace() {
-		return new Marketplace();
+	private Marketplace crawlMarketplace(Map<String, Prices> marketplacesMap) {
+		Marketplace marketplaces = new Marketplace();
+
+		for (Entry<String, Prices> marketplaceEntry : marketplacesMap.entrySet()) {
+			String sellerName = marketplaceEntry.getKey();
+
+			if (!sellerName.equals(SELLER_NAME_LOWER)) {
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName);
+
+				Prices prices = marketplaceEntry.getValue();
+
+				if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+					// Pegando o preço de uma vez no cartão
+					Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+					Float priceFloat = price.floatValue();
+
+					sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
+				}
+
+				sellerJSON.put("prices", prices.toJSON());
+
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplaces.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+				}
+			}
+		}
+
+		return marketplaces;
 	}
 
-	private String crawlPrimaryImage(Document doc) {
+	private String crawlPrimaryImage(JSONArray images, Document doc) {
 		String primaryImage = null;
-		Element elementPrimaryImage = doc.select(".zoom-img-index > img").first();
 
-		if (elementPrimaryImage != null) {
-			primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
+		if (images.length() > 0) {
+			JSONObject image = images.getJSONObject(0);
 
-			if (primaryImage.isEmpty()) {
-				primaryImage = elementPrimaryImage.attr("src").trim();
+			if (image.has("mainUrl")) {
+				primaryImage = image.get("mainUrl").toString().trim();
+			} else if (image.has("thumbUrl")) {
+				primaryImage = image.get("thumbUrl").toString().trim();
+			} else if (image.has("hiRes")) {
+				primaryImage = image.get("hiRes").toString().trim();
+			} else if (image.has("large")) {
+				primaryImage = image.get("large").toString().trim();
+			} else if (image.has("thumb")) {
+				primaryImage = image.get("thumb").toString().trim();
 			}
 
-			if (!primaryImage.startsWith(HOME_PAGE)) {
-				primaryImage = HOME_PAGE + primaryImage;
+		} else {
+			Element img = doc.select("#ebooksImageBlockContainer img").first();
+
+			if (img != null) {
+				primaryImage = img.attr("src").trim();
 			}
 		}
 
@@ -218,26 +348,32 @@ public class BrasilAmazonCrawler extends Crawler {
 	 * @param doc
 	 * @return
 	 */
-	private String crawlSecondaryImages(Document doc) {
+	private String crawlSecondaryImages(JSONArray images) {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		Elements images = doc.select("#gallery li > a");
 
-		for (int i = 1; i < images.size(); i++) {
-			Element e = images.get(i);
+		for (int i = 1; i < images.length(); i++) { // first index is the primary Image
+			JSONObject imageJson = images.getJSONObject(i);
 
-			String image = e.attr("data-zoom-image").trim();
+			String image = null;
 
-			if (image.isEmpty()) {
-				image = e.attr("data-image").trim();
+			if (imageJson.has("mainUrl")) {
+				image = imageJson.get("mainUrl").toString().trim();
+			} else if (imageJson.has("thumbUrl")) {
+				image = imageJson.get("thumbUrl").toString().trim();
+			} else if (imageJson.has("hiRes")) {
+				image = imageJson.get("hiRes").toString().trim();
+			} else if (imageJson.has("large")) {
+				image = imageJson.get("large").toString().trim();
+			} else if (imageJson.has("thumb")) {
+				image = imageJson.get("thumb").toString().trim();
 			}
 
-			if (!image.startsWith(HOME_PAGE)) {
-				image = HOME_PAGE + image;
+			if (image != null) {
+				secondaryImagesArray.put(image);
 			}
 
-			secondaryImagesArray.put(image);
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -254,7 +390,7 @@ public class BrasilAmazonCrawler extends Crawler {
 	private CategoryCollection crawlCategories(Document document) {
 		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories =
-				document.select(".breadcrumbs li.show-for-large-up:not(.current) a");
+				document.select("#wayfinding-breadcrumbs_feature_div ul li:not([class]) a");
 
 		for (Element e : elementCategories) {
 			String cat = e.ownText().trim();
@@ -270,17 +406,41 @@ public class BrasilAmazonCrawler extends Crawler {
 	private String crawlDescription(Document doc) {
 		StringBuilder description = new StringBuilder();
 
-		Element elementDescription = doc.select("#corpo-detalhe .prod-descr .descricao").first();
+		Element elementDescription = doc.select("#bookDescription_feature_div").first();
 
 		if (elementDescription != null) {
 			description.append(elementDescription.html());
 		}
 
+		Element elementDescription2 = doc.select("#product-description-iframe").first();
+
+		if (elementDescription2 != null) {
+			description.append(elementDescription2.html());
+		}
+
+		Element elementDetails = doc.select("#detail_bullets_id").first();
+
+		if (elementDetails != null) {
+			description.append(elementDetails.html());
+		}
+
 		return description.toString();
 	}
 
-	private boolean crawlAvailability(Document doc) {
-		return doc.select(".button-comprar").first() != null;
+
+	/**
+	 * 
+	 * @param marketplaceMap
+	 * @return
+	 */
+	private Prices crawlPrices(Map<String, Prices> marketplaceMap) {
+		Prices prices = new Prices();
+
+		if (marketplaceMap.containsKey(SELLER_NAME_LOWER)) {
+			prices = marketplaceMap.get(SELLER_NAME_LOWER);
+		}
+
+		return prices;
 	}
 
 	/**
@@ -289,29 +449,39 @@ public class BrasilAmazonCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Float price, Document doc) {
+	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
 
+		Map<Integer, Float> installments = new HashMap<>();
+
 		if (price != null) {
-			Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-			installmentPriceMap.put(1, price);
-			prices.setBankTicketPrice(price);
+			installments.put(1, price);
+		} else {
+			Elements pricesElement =
+					doc.select("#installmentCalculator_feature_div #a-popover-preLoad table tr");
 
-			Elements installmentsElement = doc.select("#side-prod .preco-parcela strong");
+			Float frontPagePrice = crawlPriceForPrincipalSeller(doc);
+			installments.put(1, frontPagePrice);
 
-			if (installmentsElement.size() > 1) {
-				String textInstallment = installmentsElement.get(0).ownText().replaceAll("[^0-9]", "");
-				Float value = MathCommonsMethods.parseFloat(installmentsElement.get(1).ownText());
+			for (Element e : pricesElement) {
+				Elements info = e.select("td");
 
-				if (!textInstallment.isEmpty() && value != null) {
-					installmentPriceMap.put(Integer.parseInt(textInstallment), value);
+				if (info.size() > 1) {
+					String installment = info.get(0).ownText().replaceAll("[^0-9]", "").trim();
+					Float value = MathCommonsMethods.parseFloat(info.get(1).ownText());
+
+					if (!installment.isEmpty() && value != null) {
+						installments.put(Integer.parseInt(installment), value);
+					}
 				}
 			}
+		}
 
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		if (!installments.isEmpty()) {
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
 		}
 
 		return prices;
