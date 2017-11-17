@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -38,15 +38,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if( isProductPage(this.session.getOriginalURL(), doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(this.session.getOriginalURL(), doc)) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
-			Element elementInternalID = doc.select("#details .col-2 .data-table tr .data").first();
-			String internalID = null;
-			if(elementInternalID != null) {
-				internalID = elementInternalID.text();
-			}
+			String internalID = crawlInternalId(doc);
 
 			// Pid
 			String internalPid = null;
@@ -59,48 +56,52 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			boolean available = true;
 			Element buyButton = doc.select(".add-to-cart button").first();
 
-			if(buyButton == null) {
+			if (buyButton == null) {
 				available = false;
 			}
 
 			// Nome
 			String name = null;
-			Element elementName = doc.select(".limit.columns .col-1 .product-info .product-name h1").first();
-			Element elementBrand = doc.select(".limit.columns .col-1 .product-info .product-attributes .marca.show-hover").first();
-			Element elementQuantity = doc.select(".limit.columns .col-1 .product-info .product-attributes .quantidade.show-hover").first();
-			if(elementName != null) {
+			Element elementName =
+					doc.select(".limit.columns .col-1 .product-info .product-name h1").first();
+			Element elementBrand =
+					doc.select(".limit.columns .col-1 .product-info .product-attributes .marca.show-hover")
+							.first();
+			Element elementQuantity = doc
+					.select(".limit.columns .col-1 .product-info .product-attributes .quantidade.show-hover")
+					.first();
+			if (elementName != null) {
 				name = elementName.text().trim() + " - ";
 			}
-			if(name != null && elementBrand != null) {
+			if (name != null && elementBrand != null) {
 				name += elementBrand.text().trim() + " - ";
 			}
-			if(name != null && elementQuantity != null) {
+			if (name != null && elementQuantity != null) {
 				name += elementQuantity.text().trim();
 			}
 
 			// Preço
 			Float price = null;
 			Element elementPrice = doc.select(".product-shop .regular-price").first();
-			if(elementPrice == null) {
+			if (elementPrice == null) {
 				elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
 			}
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
 			// Categorias
 			Elements elementsCategories = doc.select(".breadcrumbs ul li:not(.home):not(.product) a");
-			String category1 = ""; 
-			String category2 = ""; 
+			String category1 = "";
+			String category2 = "";
 			String category3 = "";
-			for(Element category : elementsCategories) {
-				if(category1.isEmpty()) {
+			for (Element category : elementsCategories) {
+				if (category1.isEmpty()) {
 					category1 = category.text();
-				} 
-				else if(category2.isEmpty()) {
+				} else if (category2.isEmpty()) {
 					category2 = category.text();
-				} 
-				else if(category3.isEmpty()) {
+				} else if (category3.isEmpty()) {
 					category3 = category.text();
 				}
 			}
@@ -112,12 +113,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			String description = "";
 			Element shortDescription = doc.select(".product-short-description").first();
 			Element elementDescription = doc.select("#details").first();
-			
-			if(shortDescription != null) {
+
+			if (shortDescription != null) {
 				description += shortDescription.html().trim();
 			}
-			
-			if(elementDescription != null) {
+
+			if (elementDescription != null) {
 				description += elementDescription.html().trim();
 			}
 
@@ -126,7 +127,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
 			// Marketplace
 			Marketplace marketplace = new Marketplace();
-			
+
 			// Prices
 			Prices prices = crawlPrices(doc, price);
 
@@ -149,7 +150,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			product.setAvailable(available);
 
 			products.add(product);
-			
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
@@ -166,18 +167,45 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 		Element elementInternalID = document.select("#details .col-2 .data-table tr .data").first();
 		return elementInternalID != null;
 	}
-	
+
+	private String crawlInternalId(Document doc) {
+		String internalId = null;
+		JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");");
+
+		if (json.has("ecommerce")) {
+			JSONObject ecommerce = json.getJSONObject("ecommerce");
+
+			if (ecommerce.has("detail")) {
+				JSONObject detail = ecommerce.getJSONObject("detail");
+
+				if (detail.has("products")) {
+					JSONArray products = detail.getJSONArray("products");
+
+					if (products.length() > 0) {
+						JSONObject product = products.getJSONObject(0);
+
+						if (product.has("id")) {
+							internalId = product.getString("id");
+						}
+					}
+				}
+			}
+		}
+
+		return internalId;
+	}
+
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
-		
+
 		Element elementPrimaryImage = doc.select(".product-image-gallery img#image-main").first();
 		if (elementPrimaryImage != null) {
 			primaryImage = elementPrimaryImage.attr("data-zoom-image");
 		}
-		
+
 		return primaryImage;
 	}
-	
+
 	private String crawlSecondaryImages(Document doc) {
 		String secondaryImages = null;
 		JSONArray secundaryImagesArray = new JSONArray();
@@ -188,10 +216,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 			secundaryImagesArray.put(elementImage.attr("data-zoom-image"));
 		}
 
-		if(secundaryImagesArray.length() > 0) {
+		if (secundaryImagesArray.length() > 0) {
 			secondaryImages = secundaryImagesArray.toString();
 		}
-		
+
 		return secondaryImages;
 	}
 
@@ -202,11 +230,11 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 	 * @param price
 	 * @return
 	 */
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
 
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		if (price != null) {
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
 			installmentPriceMap.put(1, price);
 			prices.setBankTicketPrice(price);

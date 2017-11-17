@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -51,7 +50,8 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
 		// monta a url com a keyword e a página
-		String url = "http://www.drogariasaopaulo.com.br/" + keyword + "?PS=50&PageNumber=" + this.currentPage;
+		String url =
+				"https://www.drogariasaopaulo.com.br/" + keyword + "?PS=50&PageNumber=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
@@ -77,12 +77,12 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 				// Url do produto
 				String productUrl = crawlProductUrl(e);
 
-				if(internalId != null || internalPid != null) {
+				if (internalId != null || internalPid != null) {
 					saveDataProduct(internalId, internalPid, productUrl);
-					
-					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-							+ internalPid + " - Url: " + productUrl);
-					
+
+					this.log("Position: " + this.position + " - InternalId: " + internalId
+							+ " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
 					if (this.arrayProducts.size() == productsLimit)
 						break;
 				}

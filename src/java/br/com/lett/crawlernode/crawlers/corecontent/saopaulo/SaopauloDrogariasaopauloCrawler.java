@@ -28,7 +28,7 @@ import models.prices.Prices;
 
 public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
-	private static final String HOME_PAGE = "http://www.drogariasaopaulo.com.br/";
+	private static final String HOME_PAGE = "https://www.drogariasaopaulo.com.br/";
 	private static final String MAIN_SELLER_NAME_LOWER = "drogaria são paulo";
 
 
@@ -171,7 +171,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		String url = "http://www.drogariasaopaulo.com.br/produto/sku/" + internalId;
+		String url = "https://www.drogariasaopaulo.com.br/produto/sku/" + internalId;
 		String stringJsonImages =
 				DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
 																																										// to get
@@ -302,7 +302,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if (price != null) {
-			String url = "http://www.drogariasaopaulo.com.br/productotherpaymentsystems/" + internalId;
+			String url = "https://www.drogariasaopaulo.com.br/productotherpaymentsystems/" + internalId;
 			Document doc =
 					DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 

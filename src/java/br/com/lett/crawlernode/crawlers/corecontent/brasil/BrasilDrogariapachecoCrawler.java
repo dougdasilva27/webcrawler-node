@@ -29,7 +29,7 @@ import models.prices.Prices;
 
 public class BrasilDrogariapachecoCrawler extends Crawler {
 
-	private static final String HOME_PAGE = "http://www.drogariaspacheco.com.br/";
+	private static final String HOME_PAGE = "https://www.drogariaspacheco.com.br/";
 	private static final String MAIN_SELLER_NAME_LOWER = "drogarias pacheco";
 
 	public BrasilDrogariapachecoCrawler(Session session) {
@@ -172,7 +172,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		String url = "http://www.drogariaspacheco.com.br/produto/sku/" + internalId;
+		String url = "https://www.drogariaspacheco.com.br/produto/sku/" + internalId;
 		String stringJsonImages =
 				DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
 																																										// to get
@@ -299,7 +299,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if (price != null) {
-			String url = "http://www.drogariaspacheco.com.br/productotherpaymentsystems/" + internalId;
+			String url = "https://www.drogariaspacheco.com.br/productotherpaymentsystems/" + internalId;
 			Document doc =
 					DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
