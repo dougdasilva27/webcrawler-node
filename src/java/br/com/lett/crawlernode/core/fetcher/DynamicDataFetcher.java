@@ -74,7 +74,14 @@ public class DynamicDataFetcher {
 		}
 
 		// choose a proxy randomly
-		LettProxy proxy = randomProxy(ProxyCollection.LUMINATI_SERVER_BR, session);
+		String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
+
+		// Bifarma block luminati_server
+		if (session.getMarket().getName().equals("bifarma")) {
+			proxyString = ProxyCollection.BONANZA;
+		}
+
+		LettProxy proxy = randomProxy(proxyString, session);
 
 		DesiredCapabilities caps = DesiredCapabilities.phantomjs();
 		caps.setJavascriptEnabled(true);
