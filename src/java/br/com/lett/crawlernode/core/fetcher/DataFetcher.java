@@ -716,44 +716,15 @@ public class DataFetcher {
 	 * @param attempt
 	 * @return
 	 */
-	public static void fetchPageAPIUrlBox(String url) {
-		String randUserAgent = null;
-
+	public static void fetchPageAPIUrlBox(String url, Session session) {
 		try {
-			Logging.printLogDebug(logger, "Performing GET request: " + url);
-
-			randUserAgent = DataFetcher.randUserAgent();
-
-			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-
-
-			RequestConfig requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
-					.setRedirectsEnabled(true) // set redirect to true
-					.setConnectionRequestTimeout(500).setConnectTimeout(500).setSocketTimeout(500).build();
-
-			// creating the redirect strategy
-			// so we can get the final redirected URL
-			DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-
-			List<Header> headers = new ArrayList<>();
-			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
-
-			CloseableHttpClient httpclient = HttpClients.custom().setUserAgent(randUserAgent)
-					.setDefaultRequestConfig(requestConfig).setRedirectStrategy(redirectStrategy)
-					.setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(headers)
-					.setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory())
-					.setSSLHostnameVerifier(new HostNameVerifier()).build();
-
-			HttpGet httpGet = new HttpGet(url);
-			httpGet.setConfig(requestConfig);
-
-			// do request
-			httpclient.execute(httpGet);
+			POSTFetcher.requestWithFetcher(session,
+					POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000);
 
 		} catch (SocketTimeoutException e) {
 			// do nothing
 		} catch (Exception e) {
-			Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+			Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 		}
 	}
 
