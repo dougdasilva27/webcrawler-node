@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -33,12 +32,13 @@ public class BrasilIbyteCrawler extends Crawler {
 	}
 
 	@Override
-	public List<Product>  extractInformation(Document doc) throws Exception {
+	public List<Product> extractInformation(Document doc) throws Exception {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(doc)) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			String internalId = null;
@@ -50,14 +50,14 @@ public class BrasilIbyteCrawler extends Crawler {
 			// Pid
 			String internalPid = null;
 			Element elementPid = doc.select("input[name=product]").first();
-			if(elementPid != null) {
+			if (elementPid != null) {
 				internalPid = elementPid.attr("value").trim();
 			}
-			
+
 			// Nome
 			String name = null;
 			Element elementName = doc.select(".product-name h1").first();
-			if(elementName != null) {
+			if (elementName != null) {
 				name = elementName.text().trim();
 			}
 
@@ -71,8 +71,14 @@ public class BrasilIbyteCrawler extends Crawler {
 			// Preço
 			Float price = null;
 			Element elementPrice = doc.select(".regular-price .price").first();
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+			Element specialPrice = doc.select(".special-price .price").first();
+
+			if (elementPrice != null) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", "."));
+			} else if (specialPrice != null) {
+				price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
 			// Categoria
@@ -80,7 +86,7 @@ public class BrasilIbyteCrawler extends Crawler {
 			String category2 = "";
 			String category3 = "";
 			Elements elementCategories = doc.select(".breadcrumbs li a");
-			for (int i = 1; i < elementCategories.size()-1; i++) {
+			for (int i = 1; i < elementCategories.size() - 1; i++) {
 				String c = elementCategories.get(i).text().trim();
 				if (category1.isEmpty()) {
 					category1 = c;
@@ -94,7 +100,7 @@ public class BrasilIbyteCrawler extends Crawler {
 			// Imagem primária
 			String primaryImage = null;
 			Element elementPrimaryImage = doc.select(".product-image .cloud-zoom").first();
-			if(elementPrimaryImage != null) {
+			if (elementPrimaryImage != null) {
 				primaryImage = elementPrimaryImage.attr("href");
 			}
 
@@ -103,11 +109,11 @@ public class BrasilIbyteCrawler extends Crawler {
 			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 
-			for(Element image : elementImages) {
-				if( !image.attr("href").equals(primaryImage) ) {
+			for (Element image : elementImages) {
+				if (!image.attr("href").equals(primaryImage)) {
 					secondaryImagesArray.put(image.attr("href"));
 				}
-			}			
+			}
 			if (secondaryImagesArray.length() > 0) {
 				secondaryImages = secondaryImagesArray.toString();
 			}
@@ -128,10 +134,10 @@ public class BrasilIbyteCrawler extends Crawler {
 
 			// Marketplace
 			Marketplace marketplace = new Marketplace();
-			
-			// Prices 
+
+			// Prices
 			Prices prices = crawlPrices(doc, price);
-			
+
 			Product product = new Product();
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
@@ -148,39 +154,76 @@ public class BrasilIbyteCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
-			
+
 			products.add(product);
-			
+
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
 
 
-	private Prices crawlPrices(Document doc, Float price){
+	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
-		Map<Integer,Float> installmentPriceMap = new HashMap<>();
-		
-		if(price != null) {
+		Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+		if (price != null) {
+			installmentPriceMap.put(1, price);
+
+			Element boleto = doc.select(".boletoBox .price").last();
+
+			if (boleto != null) {
+				Float value = MathCommonsMethods.parseFloat(boleto.ownText());
+
+				if (value != null) {
+					prices.setBankTicketPrice(value);
+				} else {
+					prices.setBankTicketPrice(price);
+				}
+			} else {
+				prices.setBankTicketPrice(price);
+			}
+
 			Elements installments = doc.select(".formas li #simularParcelamento tr");
-			
-			for(Element e : installments){
-				Elements values = e.select("td");
-				
-				if(values.size() > 1) {				
-					Integer installment = Integer.parseInt(values.first().ownText().replaceAll("[^0-9]", ""));
-					Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-					
-					installmentPriceMap.put(installment, value);
+
+			if (!installments.isEmpty()) {
+				for (Element e : installments) {
+					Elements values = e.select("td");
+
+					if (values.size() > 1) {
+						Integer installment =
+								Integer.parseInt(values.first().ownText().replaceAll("[^0-9]", ""));
+						Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "")
+								.replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+						installmentPriceMap.put(installment, value);
+					}
+				}
+			} else {
+				installments = doc.select(".parcelaBloco div[class^=parcela-]");
+
+				for (Element e : installments) {
+					Element installmentElement = e.select(".parcela").last();
+					Element valueElement = e.select(".price").last();
+
+					if (valueElement != null && installmentElement != null) {
+						String installment = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
+						Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
+
+						if (!installment.isEmpty() && value != null) {
+							installmentPriceMap.put(Integer.parseInt(installment), value);
+						}
+					}
 				}
 			}
-			
-			if(installmentPriceMap.size() < 1){
+
+
+			if (installmentPriceMap.size() < 1) {
 				installmentPriceMap.put(1, price);
 			}
-			
+
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -188,13 +231,14 @@ public class BrasilIbyteCrawler extends Crawler {
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-			
+
 			Element priceBoleto = doc.select(".boletoBox .price").first();
-			
-			if(priceBoleto != null){
-				Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-				
-				if(bankTicketPrice > 0){
+
+			if (priceBoleto != null) {
+				Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+				if (bankTicketPrice > 0) {
 					prices.setBankTicketPrice(bankTicketPrice);
 				} else {
 					prices.setBankTicketPrice(price);
@@ -203,10 +247,10 @@ public class BrasilIbyteCrawler extends Crawler {
 				prices.setBankTicketPrice(price);
 			}
 		}
-		
+
 		return prices;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
