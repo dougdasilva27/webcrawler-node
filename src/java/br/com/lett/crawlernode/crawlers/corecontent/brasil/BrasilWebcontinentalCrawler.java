@@ -302,7 +302,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 				p.setBankTicketPrice(boleto);
 
 				Map<Integer, Float> installments = new HashMap<>();
-				installments.put(1, price);
+				installments.put(1, MathCommonsMethods.normalizeTwoDecimalPlaces(boleto.floatValue()));
+				installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
 
 				p.insertCardInstallment(Card.AMEX.toString(), installments);
 				p.insertCardInstallment(Card.VISA.toString(), installments);
