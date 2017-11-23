@@ -142,17 +142,36 @@ public class ProxyCollection {
 
 	private void setStormResidentialUSProxy() {
 		List<LettProxy> storm = new ArrayList<>();
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.241", 19008, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.168.141.147", 19014, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.193.9.41", 19006, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "142.54.179.98", 19006, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "198.204.229.194", 19007, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.241", 19017, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.255.66.35", 19001, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "69.30.199.122", 19012, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.105", 19016, "worldwide", "", ""));
-		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.168.141.132", 19011, "worldwide", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "51.15.2.163", 19009, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.161.185", 19002, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.25.188", 19019, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.147.219", 19007, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "51.15.139.73", 19016, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "51.15.139.73", 19009, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.25.103", 19010, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.25.103", 19006, "europe", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "163.172.213.177", 19006, "europe", "", ""));
 
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "173.208.211.82", 19016, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "192.151.156.66", 19010, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "192.187.126.98", 19003, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.193.9.41", 19012, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.255.66.35", 19010, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "192.151.156.90", 19001, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "198.204.229.194", 19007, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "173.208.232.98", 19006, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.105", 19013, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "69.30.217.114", 19004, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "204.12.211.114", 19011, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "69.197.182.218", 19007, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "198.204.229.114", 19016, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "173.208.211.82", 19004, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "51.15.56.139", 19004, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "104.245.96.105", 19004, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.168.141.147", 19001, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "199.180.119.131", 19007, "usa", "", ""));
+		storm.add(new LettProxy(STORM_RESIDENTIAL_US, "192.151.156.66", 19020, "usa", "", ""));
+		
 		proxyMap.put(STORM_RESIDENTIAL_US, storm);
 	}
 
