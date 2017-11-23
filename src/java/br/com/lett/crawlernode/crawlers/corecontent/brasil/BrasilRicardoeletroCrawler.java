@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -194,7 +195,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				int x = dataLayer.indexOf("= [") + 3;
 				int y = dataLayer.indexOf("];", x);
 				
-				jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+				try {
+					jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+				} catch (JSONException jsonException) {
+					Logging.printLogWarn(logger, session, "Data layer is not a Json");
+				}
 			}
 		}
 		
