@@ -253,7 +253,7 @@ public class BrasilSchumannCrawler extends Crawler {
 			if (discountElement != null) {
 				Float discount = MathCommonsMethods.parseFloat(discountElement.ownText());
 
-				if (discount != null) {
+				if (discount != null && price != null) {
 					bankSlipPrice =
 							MathCommonsMethods.normalizeTwoDecimalPlaces(price - (price * (discount / 100f)));
 				}
