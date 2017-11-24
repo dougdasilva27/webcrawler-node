@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -18,7 +17,6 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -37,7 +35,8 @@ import models.prices.Prices;
  * 
  * 2) There is no marketplace in this ecommerce by the time this crawler was made.
  * 
- * 3) The sku page identification is done simply looking the URL format combined with some html element.
+ * 3) The sku page identification is done simply looking the URL format combined with some html
+ * element.
  * 
  * 4) Availability is crawled from the sku json extracted from a script in the html.
  * 
@@ -45,11 +44,10 @@ import models.prices.Prices;
  * 
  * 6) We have one method for each type of information for a sku (please carry on with this pattern).
  * 
- * Examples:
- * ex1 (available): http://delivery.supermuffato.com.br/leite-em-po-nestle-nan-soy-400g-97756/p?sc=10
+ * Examples: ex1 (available):
+ * http://delivery.supermuffato.com.br/leite-em-po-nestle-nan-soy-400g-97756/p?sc=10
  *
- * Optimizations notes:
- * No optimizations.
+ * Optimizations notes: No optimizations.
  *
  ************************************************************************************************************************************************************************************/
 
@@ -70,7 +68,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	@Override
 	public String handleURLBeforeFetch(String curURL) {
 
-		if(curURL.endsWith("/p")) {
+		if (curURL.split("\\?")[0].endsWith("/p")) {
 
 			try {
 				String url = curURL;
@@ -108,7 +106,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if( isProductPage(this.session.getOriginalURL(), doc) ) {
+		if (isProductPage(this.session.getOriginalURL(), doc)) {
 			Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
 			// InternalId
@@ -163,7 +161,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
-			
+
 			products.add(product);
 
 		} else {
@@ -179,24 +177,26 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
 		JSONArray apiResponse = new JSONArray();
 		try {
-			String apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
-			
-			if(apiString.isEmpty()) {
-				apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=10", null, null).trim();
+			String apiString =
+					DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
+
+			if (apiString.isEmpty()) {
+				apiString = DataFetcher
+						.fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=10", null, null).trim();
 			}
-			
+
 			apiResponse = new JSONArray(apiString);
 		} catch (Exception e) {
 			Logging.printLogError(logger, session, "Error trying to fetch sku JSON from Catalog API.");
 			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			apiResponse = new JSONArray();
 		}
-		
+
 		for (int i = 0; i < apiResponse.length(); i++) {
 			JSONObject sku = apiResponse.getJSONObject(i);
-			if ( sku.has("Id") ) {
+			if (sku.has("Id")) {
 				String skuId = String.valueOf(sku.getInt("Id"));
-				if ( internalId != null && internalId.equals(skuId) ) {
+				if (internalId != null && internalId.equals(skuId)) {
 					return sku;
 				}
 			}
@@ -210,7 +210,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 	private boolean isProductPage(String url, Document document) {
 		Element prdElement = document.select(".container.prd-info-container").first();
-		if( url.startsWith("http://delivery.supermuffato.com.br/") && url.split("\\?")[0].endsWith("/p") && prdElement != null) return true;
+		if (url.startsWith("http://delivery.supermuffato.com.br/") && url.split("\\?")[0].endsWith("/p")
+				&& prdElement != null)
+			return true;
 		return false;
 	}
 
@@ -222,8 +224,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private String crawlInternalId(Document document) {
 		String internalId = null;
 		Element elementInternalID = document.select(".prd-references .prd-code .skuReference").first();
-		if(elementInternalID != null) {
-			internalId = elementInternalID.text(); 
+		if (elementInternalID != null) {
+			internalId = elementInternalID.text();
 		}
 
 		return internalId;
@@ -232,8 +234,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
 		Element elementInternalID = document.select(".prd-references .prd-code .skuReference").first();
-		if(elementInternalID != null) {
-			internalPid = elementInternalID.text(); 
+		if (elementInternalID != null) {
+			internalPid = elementInternalID.text();
 		}
 
 		return internalPid;
@@ -253,8 +255,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private Float crawlMainPagePrice(Document document) {
 		Float price = null;
 		Element elementPrice = document.select(".plugin-preco .preco-a-vista .skuPrice").first();
-		if(elementPrice != null) {
-			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+		if (elementPrice != null) {
+			price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
+					.replaceAll(",", "."));
 		}
 
 		return price;
@@ -288,17 +291,17 @@ public class CuritibaMuffatoCrawler extends Crawler {
 		String secondaryImages = null;
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		if ( skuJsonFromCatalogAPI.has("Images") ) {
+		if (skuJsonFromCatalogAPI.has("Images")) {
 			JSONArray images = skuJsonFromCatalogAPI.getJSONArray("Images");
 
 			for (int i = 0; i < images.length(); i++) {
 				JSONArray imageVersions = images.getJSONArray(i);
-				
+
 				for (int j = 0; j < imageVersions.length(); j++) {
 					JSONObject version = imageVersions.getJSONObject(j);
-					
-					if ( !version.getBoolean("IsMain") && version.getString("Path").contains("-1000-1000") ) {
-						secondaryImagesArray.put( version.getString("Path") );
+
+					if (!version.getBoolean("IsMain") && version.getString("Path").contains("-1000-1000")) {
+						secondaryImagesArray.put(version.getString("Path"));
 					}
 				}
 			}
@@ -313,10 +316,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 	private ArrayList<String> crawlCategories(Document document) {
 		ArrayList<String> categories = new ArrayList<>();
-		Elements elementCategories = document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
+		Elements elementCategories =
+				document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
+		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
+																													// is the market name
+			categories.add(elementCategories.get(i).text().trim());
 		}
 
 		return categories;
@@ -333,7 +338,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private String crawlDescription(Document document) {
 		String description = "";
 		Element elementDescription = document.select("#prd-description").first();
-		if(elementDescription != null) {
+		if (elementDescription != null) {
 			description = description + elementDescription.html();
 		}
 
@@ -350,18 +355,18 @@ public class CuritibaMuffatoCrawler extends Crawler {
 	private Prices crawlPrices(Document doc, Float price) {
 		Prices prices = new Prices();
 
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new HashMap<>();	
+		if (price != null) {
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
 			installmentPriceMap.put(1, price);
 
 			Element installmentElement = doc.select(".skuBestInstallmentNumber").first();
 
-			if(installmentElement != null) {
+			if (installmentElement != null) {
 				Integer installment = Integer.parseInt(installmentElement.text());
 
 				Element valueElement = doc.select(".skuBestInstallmentValue").first();
 
-				if(valueElement != null) {
+				if (valueElement != null) {
 					Float value = MathCommonsMethods.parseFloat(valueElement.text());
 
 					installmentPriceMap.put(installment, value);
@@ -384,24 +389,23 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
 	/**
 	 * Get the script having a json variable with the image in it
+	 * 
 	 * @return
 	 */
 	private JSONObject crawlSkuJson(Document document) {
 		Elements scriptTags = document.getElementsByTag("script");
 		JSONObject skuJson = null;
 
-		for (Element tag : scriptTags){                
+		for (Element tag : scriptTags) {
 			for (DataNode node : tag.dataNodes()) {
-				if(tag.html().trim().startsWith("var skuJson_0 = ")) {
+				if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 
-					skuJson = new JSONObject
-							(
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1] +
-									node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]
-									);
+					skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
+							+ node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
+									.split(Pattern.quote("}]};"))[0]);
 
 				}
-			}        
+			}
 		}
 
 		return skuJson;
