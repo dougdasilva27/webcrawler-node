@@ -6,12 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -25,7 +23,7 @@ import models.prices.Prices;
  * Crawling notes (25/08/2016):
  * 
  * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
- *  
+ * 
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
  * 
  * 3) There is no marketplace in this ecommerce by the time this crawler was made.
@@ -34,20 +32,20 @@ import models.prices.Prices;
  * 
  * 5) Even if a product is unavailable, its price is displayed.
  * 
- * 6) There is internalPid for skus in this ecommerce. 
+ * 6) There is internalPid for skus in this ecommerce.
  * 
  * 7) The primary image is the first image in the secondary images selector.
  * 
- * Examples:
- * ex1 (available): http://www.arcondicionado.com.br/produto/ar-condicionado-split-9000-btus-frio-220v-lg-smile-ts-c092tnw6-68635
- * ex2 (unavailable): http://www.arcondicionado.com.br/produto/cortina-de-ar-90-cm-220v-springer-acs09s5-68690
+ * Examples: ex1 (available):
+ * http://www.arcondicionado.com.br/produto/ar-condicionado-split-9000-btus-frio-220v-lg-smile-ts-c092tnw6-68635
+ * ex2 (unavailable):
+ * http://www.arcondicionado.com.br/produto/cortina-de-ar-90-cm-220v-springer-acs09s5-68690
  *
- * Optimizations notes:
- * No optimizations.
+ * Optimizations notes: No optimizations.
  *
  ************************************************************************************************************************************************************************************/
 public class BrasilArcondicionadoCrawler extends Crawler {
-	
+
 	private final String HOME_PAGE = "https://www.arcondicionado.com.br/";
 	private final String HOME_PAGE_ADIAS = "https://www.adias.com.br/";
 
@@ -58,7 +56,8 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_ADIAS));
+		return !FILTERS.matcher(href).matches()
+				&& (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_ADIAS));
 	}
 
 
@@ -67,11 +66,12 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(session.getOriginalURL()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(session.getOriginalURL())) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
-			/* ***********************************
-			 * crawling data of only one product *
+			/*
+			 * *********************************** crawling data of only one product *
 			 *************************************/
 
 			// InternalId
@@ -83,14 +83,14 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 			// Name
 			String name = crawlName(doc);
 
-			// Price
-			Float price = crawlMainPagePrice(doc);
-			
-			// prices
-			Prices prices = crawlPrices(doc);
-			
 			// Availability
 			boolean available = crawlAvailability(doc);
+
+			// Price
+			Float price = crawlMainPagePrice(doc, available);
+
+			// prices
+			Prices prices = crawlPrices(doc, available);
 
 			// Categories
 			ArrayList<String> categories = crawlCategories(doc);
@@ -115,13 +115,13 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 
 			// Marketplace
 			Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
-			
-			
+
+
 			String url = session.getOriginalURL();
-			if(this.session.getRedirectedToURL(url) != null && name != null) {
+			if (this.session.getRedirectedToURL(url) != null && name != null) {
 				url = this.session.getRedirectedToURL(url);
 			}
-			
+
 			// Creating the product
 			Product product = new Product();
 			product.setUrl(url);
@@ -145,7 +145,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 
 	}
@@ -157,23 +157,23 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(String url) {
-		if ( url.startsWith(HOME_PAGE + "produto/") || url.startsWith(HOME_PAGE_ADIAS + "produto/") ){
-			return true; 
+		if (url.startsWith(HOME_PAGE + "produto/") || url.startsWith(HOME_PAGE_ADIAS + "produto/")) {
+			return true;
 		}
 		return false;
 	}
-	
-	
+
+
 	/*******************
 	 * General methods *
 	 *******************/
-	
+
 	private String crawlInternalId(Document document) {
 		String internalId = null;
 		Element internalIdElement = document.select("#hdnProdutoVarianteId").first();
 
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").toString().trim();			
+			internalId = internalIdElement.attr("value").toString().trim();
 		}
 
 		return internalId;
@@ -185,12 +185,12 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		Element internalPidElement = document.select("#hdnProdutoId").first();
 
 		if (internalPidElement != null) {
-			internalPid = internalPidElement.attr("value").toString().trim();			
+			internalPid = internalPidElement.attr("value").toString().trim();
 		}
-		
+
 		return internalPid;
 	}
-	
+
 	private String crawlName(Document document) {
 		String name = null;
 		Element nameElement = document.select(".prodTitle").first();
@@ -202,89 +202,98 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		return name;
 	}
 
-	private Float crawlMainPagePrice(Document document) {
+	private Float crawlMainPagePrice(Document document, boolean available) {
 		Float price = null;
-		Element specialPrice = document.select(".produtoInfo .precoPor").first();		
-		
-		if (specialPrice == null) {
-			specialPrice = document.select("#fbits-forma-pagamento .precoPor").first();
-		} 
-				
-		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+
+		if (available) {
+			Element specialPrice = document.select(".produtoInfo .precoPor").first();
+
+			if (specialPrice == null) {
+				specialPrice = document.select("#fbits-forma-pagamento .precoPor").first();
+			}
+
+			if (specialPrice != null) {
+				price = Float.parseFloat(specialPrice.text().toString().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", "."));
+			}
 		}
-		
+
 		return price;
 	}
-	
-	private Prices crawlPrices(Document document) {
+
+	private Prices crawlPrices(Document document, boolean available) {
 		Prices prices = new Prices();
-		Float bankTicketPrice = null;
-		Map<Integer, Float> installments = new TreeMap<Integer, Float>();
-		
-		// bank ticket
-		Element bankTicketPriceElement = document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
-		if (bankTicketPriceElement != null) {
-			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
-		}
-		
-		// card payment options
-		// the payment options are the same across all the card brands
-		Elements installmentsElements = document.select(".fbits-parcelamento-padrao .details .details-content p");
-		for (Element installmentElement : installmentsElements) {
-			Integer installmentNumber = null;
-			Float installmentPrice = null;
-			
-			// installmentElement is the <p></p> html element
-			// <p> 
-			// 	<b>1</b> 
-			//		x sem juros de 
-			// 	<b>R$ 1.931,58</b> 
-			// </p>
-			
-			// installment number is the first <b></b> child element
-			Element installmentNumberElement = installmentElement.select("b").first();
-			if (installmentNumberElement != null) {
-				installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
+
+		if (available) {
+			Float bankTicketPrice = null;
+			Map<Integer, Float> installments = new TreeMap<>();
+
+			// bank ticket
+			Element bankTicketPriceElement =
+					document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
+			if (bankTicketPriceElement != null) {
+				bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
 			}
-			
-			// installment price is the last <b></b> child element
-			Element installmentPriceElement = installmentElement.select("b").last();
-			if (installmentPriceElement != null) {
-				installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+
+			// card payment options
+			// the payment options are the same across all the card brands
+			Elements installmentsElements =
+					document.select(".fbits-parcelamento-padrao .details .details-content p");
+			for (Element installmentElement : installmentsElements) {
+				Integer installmentNumber = null;
+				Float installmentPrice = null;
+
+				// installmentElement is the <p></p> html element
+				// <p>
+				// <b>1</b>
+				// x sem juros de
+				// <b>R$ 1.931,58</b>
+				// </p>
+
+				// installment number is the first <b></b> child element
+				Element installmentNumberElement = installmentElement.select("b").first();
+				if (installmentNumberElement != null) {
+					installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
+				}
+
+				// installment price is the last <b></b> child element
+				Element installmentPriceElement = installmentElement.select("b").last();
+				if (installmentPriceElement != null) {
+					installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+				}
+
+				installments.put(installmentNumber, installmentPrice);
 			}
-			
-			installments.put(installmentNumber, installmentPrice);			
+
+			// insert the prices on the Prices object
+			prices.setBankTicketPrice(bankTicketPrice);
+
+			prices.insertCardInstallment(Card.VISA.toString(), installments);
+			prices.insertCardInstallment(Card.AMEX.toString(), installments);
+			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+			prices.insertCardInstallment(Card.DINERS.toString(), installments);
+			prices.insertCardInstallment(Card.ELO.toString(), installments);
+			prices.insertCardInstallment(Card.DISCOVER.toString(), installments);
+			prices.insertCardInstallment(Card.BNDES.toString(), installments);
 		}
-		
-		// insert the prices on the Prices object
-		prices.setBankTicketPrice(bankTicketPrice);
-		
-		prices.insertCardInstallment(Card.VISA.toString(), installments);
-		prices.insertCardInstallment(Card.AMEX.toString(), installments);
-		prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-		prices.insertCardInstallment(Card.DINERS.toString(), installments);
-		prices.insertCardInstallment(Card.ELO.toString(), installments);
-		prices.insertCardInstallment(Card.DISCOVER.toString(), installments);
-		prices.insertCardInstallment(Card.BNDES.toString(), installments);
-		
+
 		return prices;
 	}
-	
+
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".avisoIndisponivel:not([style])").first();
-		
+
 		if (notifyMeElement != null) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {
 		return new HashMap<>();
 	}
-	
+
 	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
 		return new Marketplace();
 	}
@@ -295,15 +304,15 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 
 		if (primaryImageElement != null) {
 			String image = primaryImageElement.attr("data-zoom-image").trim();
-			
-			if(!image.startsWith("http")){
+
+			if (!image.startsWith("http")) {
 				image = primaryImageElement.attr("src").trim();
 			}
-			
-			if(image.contains("?")){
+
+			if (image.contains("?")) {
 				image = image.split("\\?")[0];
 			}
-			
+
 			primaryImage = image;
 		}
 
@@ -316,19 +325,20 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 
 		Elements imagesElement = document.select(".fbits-produto-imagens a");
 
-		for (int i = 1; i < imagesElement.size(); i++) { // start with index 1 because the first image is the primary image
+		for (int i = 1; i < imagesElement.size(); i++) { // start with index 1 because the first image
+																											// is the primary image
 			String image = imagesElement.get(i).attr("data-zoom-image").trim();
-			
-			if(image.startsWith("http")){
+
+			if (image.startsWith("http")) {
 				image = imagesElement.get(i).attr("data-image").trim();
 			}
-			
-			if(image.contains("?")){
+
+			if (image.contains("?")) {
 				image = image.split("\\?")[0];
 			}
-				
-			secondaryImagesArray.put( image );	
-			
+
+			secondaryImagesArray.put(image);
+
 		}
 
 		if (secondaryImagesArray.length() > 0) {
@@ -342,8 +352,9 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		ArrayList<String> categories = new ArrayList<String>();
 		Elements elementCategories = document.select("#fbits-breadcrumb span[itemprop=name]");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
+		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
+																													// is the market name
+			categories.add(elementCategories.get(i).text().trim());
 		}
 
 		return categories;
@@ -364,10 +375,14 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 		Element specElement = document.select("#carac-tecnicas").first();
 		Element dimensionsElement = document.select("#dimensoes").first();
 
-		if (descriptionElement != null) description = description + descriptionElement.html();
-		if (princElement != null) description = description + princElement.html();
-		if (specElement != null) description = description + specElement.html();
-		if (dimensionsElement != null) description = description + dimensionsElement.html();
+		if (descriptionElement != null)
+			description = description + descriptionElement.html();
+		if (princElement != null)
+			description = description + princElement.html();
+		if (specElement != null)
+			description = description + specElement.html();
+		if (dimensionsElement != null)
+			description = description + dimensionsElement.html();
 
 		return description;
 	}
