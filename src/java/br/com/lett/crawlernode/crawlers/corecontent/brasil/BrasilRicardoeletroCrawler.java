@@ -1,28 +1,31 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.ricardoeletro.com.br/";
+	private static final String HOME_PAGE = "http://www.ricardoeletro.com.br/";
+	private static final String SELLER_NAME = "ricardo eletro";
 
 	public BrasilRicardoeletroCrawler(Session session) {
 		super(session);
@@ -39,32 +42,33 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<Product>();
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(this.session.getOriginalURL())) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			// ID interno
 			String internalId = null;
 			Element elementInternalID = doc.select("#ProdutoDetalhesCodigoProduto").first();
 			if (elementInternalID != null) {
-				internalId = elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
+				internalId =
+						elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
 			}
 
 			// Pid
-			// está igual o internalId porque o internalId mudará depois
-			String internalPid = internalId;
+			String internalPid = crawlInternalPid(doc);
 
 			// Nome
 			String name = null;
 			Element elementName = doc.select("#ProdutoDetalhesNomeProduto h1").first();
 			if (elementName != null) {
-				name = elementName.text().replace("'","").replace("’","").trim();
-				
+				name = elementName.text().replace("'", "").replace("’", "").trim();
+
 				Element nameVariation = doc.select(".selectAtributo option[selected]").first();
-				
-				if(nameVariation != null){
+
+				if (nameVariation != null) {
 					String textName = nameVariation.text();
-					
-					if(textName.contains("|")){						
+
+					if (textName.contains("|")) {
 						name = name + " " + textName.split("\\|")[0].trim();;
 					} else {
 						name = name + " " + textName.trim();
@@ -72,84 +76,81 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				}
 			}
 
+			// Marketplace
+			Map<String, Prices> marketplaceMap = crawlMarketplaces(internalId, doc);
+			Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+					Arrays.asList(SELLER_NAME), session);
+
+			// Prices
+			Prices prices = crawlPricesPrinciaplSeller(marketplaceMap);
+
+			// Disponibilidade
+			boolean available = marketplaceMap.containsKey(SELLER_NAME);
+
 			// Preço
 			Float price = null;
 			Element elementPrice = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
-
-			// Disponibilidade
-			boolean available = true;
-			Element elementBuyButton = doc.select("#btnComprar").first();
-			if(elementBuyButton == null) {
-				available = false;
+			if (elementPrice != null && available) {
+				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+						.replaceAll("\\.", "").replaceAll(",", "."));
 			}
 
 			// Categorias
 			String category1 = "";
 			String category2 = "";
-			String category3 = "";				
+			String category3 = "";
 			Elements elementCategories = doc.select("#Breadcrumbs .breadcrumbs-itens").select("a");
 
-			for(Element e : elementCategories) {
-				if(category1.isEmpty()) {
+			for (Element e : elementCategories) {
+				if (category1.isEmpty()) {
 					category1 = e.text();
-				} 
-				else if(category2.isEmpty()) {
+				} else if (category2.isEmpty()) {
 					category2 = e.text();
-				} 
-				else if(category3.isEmpty()) {
+				} else if (category3.isEmpty()) {
 					category3 = e.text();
 				}
 			}
 
 			// Imagens
-			Elements elementPrimaryImages = doc.select("#ProdutoDetalhesFotosFotosPequenas").select("a.zoom-gallery img");
+			Elements elementPrimaryImages =
+					doc.select("#ProdutoDetalhesFotosFotosPequenas").select("a.zoom-gallery img");
 			String primaryImage = null;
 			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
 
-			for(Element e : elementPrimaryImages) {
+			for (Element e : elementPrimaryImages) {
 
 				// Tirando o 87x87 para pegar imagem original
-				if(primaryImage == null) {
+				if (primaryImage == null) {
 					primaryImage = e.attr("src").replace("/87x87", "");
-				} 
-				else {
+				} else {
 					secondaryImagesArray.put(e.attr("src").replace("/87x87", ""));
 				}
 
 			}
 
-			if(secondaryImagesArray.length() > 0) {
+			if (secondaryImagesArray.length() > 0) {
 				secondaryImages = secondaryImagesArray.toString();
 			}
 
 			// Descrição
-			String description = "";   
+			String description = "";
 			Element elementDescription = doc.select("#aba-descricao").first();
 			Element elementDescription2 = doc.select("#aba-caracteristicas").first();
-			
-			if(elementDescription != null) {
-				description += elementDescription.html().replace("’","").trim();
+
+			if (elementDescription != null) {
+				description += elementDescription.html().replace("’", "").trim();
 			}
-			
-			if(elementDescription2 != null) {
-				description += elementDescription2.html().replace("’","").trim();
+
+			if (elementDescription2 != null) {
+				description += elementDescription2.html().replace("’", "").trim();
 			}
 
 			// Estoque
 			Integer stock = crawlStock(doc);
 
-			// Marketplace
-			Marketplace marketplace = new Marketplace();
-			
-			// Prices
-			Prices prices = crawlPrices(doc, price);
-
 			Product product = new Product();
-			
+
 			product.setUrl(this.session.getOriginalURL());
 			product.setInternalId(internalId);
 			product.setInternalPid(internalPid);
@@ -165,16 +166,16 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			product.setStock(stock);
 			product.setMarketplace(marketplace);
 			product.setAvailable(available);
-			
+
 			products.add(product);
 
 		} else {
 			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
 		}
-		
+
 		return products;
 	}
-	
+
 	/*******************************
 	 * Product page identification *
 	 *******************************/
@@ -182,19 +183,82 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 	private boolean isProductPage(String url) {
 		return url.startsWith("http://www.ricardoeletro.com.br/Produto/");
 	}
-	
-	private Integer crawlStock(Document doc){
+
+	private Document crawlDocMarketplaces(Document doc) {
+		Document docMarketplace = new Document("");
+		Element urlE = doc.select(".info-parceiro > a").first();
+
+		if (urlE != null) {
+			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+					urlE.attr("href"), null, cookies);
+		}
+
+		return docMarketplace;
+	}
+
+	private String crawlInternalPid(Document doc) {
+		String internalPid = null;
+		Element pid = doc.select("input[idproduto]").first();
+
+		if (pid != null) {
+			internalPid = pid.attr("idproduto");
+		}
+
+		return internalPid;
+	}
+
+	private String crawlPrincipalSeller(Document doc) {
+		String principalSeller = null;
+
+		Element seller = doc.select(".info-parceiro strong").first();
+
+		if (seller != null) {
+			principalSeller = seller.ownText().trim().toLowerCase();
+		}
+
+		return principalSeller;
+	}
+
+
+	private Map<String, Prices> crawlMarketplaces(String internalId, Document doc) {
+
+		Document docMarketplaceInfo = crawlDocMarketplaces(doc);
+		String principalSeller = crawlPrincipalSeller(doc);
+
+		Map<String, Prices> marketplace = new HashMap<>();
+
+		Elements lines = docMarketplaceInfo.select(".modal-linha-parceiro");
+
+		for (Element linePartner : lines) {
+			Element priceElement = linePartner.select(".valor-unitario").first();
+			Element nameElement = linePartner.select(".nome-loja > a").first();
+
+			if (priceElement != null && nameElement != null) {
+				String partnerName = nameElement.text().trim().toLowerCase();
+				Float partnerPrice = MathCommonsMethods.parseFloat(priceElement.ownText());
+
+				if (!partnerName.isEmpty() && partnerPrice != null) {
+					marketplace.put(partnerName,
+							crawlPrices(doc, partnerPrice, principalSeller.equals(partnerName)));
+				}
+			}
+		}
+
+		return marketplace;
+	}
+
+	private Integer crawlStock(Document doc) {
 		Integer stock = null;
 		Elements scripts = doc.select("script");
 		JSONObject jsonDataLayer = new JSONObject();
-		
-		for(Element e : scripts){
+
+		for (Element e : scripts) {
 			String dataLayer = e.outerHtml().trim();
-			
-			if(dataLayer.contains("var dataLayer = [")){
+
+			if (dataLayer.contains("var dataLayer = [")) {
 				int x = dataLayer.indexOf("= [") + 3;
 				int y = dataLayer.indexOf("];", x);
-				
+
 				try {
 					jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
 				} catch (JSONException jsonException) {
@@ -202,21 +266,21 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				}
 			}
 		}
-		
-		if(jsonDataLayer.has("productID")){
+
+		if (jsonDataLayer.has("productID")) {
 			String productId = jsonDataLayer.getString("productID");
-			
-			if(jsonDataLayer.has("productSKUList")){
+
+			if (jsonDataLayer.has("productSKUList")) {
 				JSONArray skus = jsonDataLayer.getJSONArray("productSKUList");
-				
-				for(int i = 0; i < skus.length(); i++){
+
+				for (int i = 0; i < skus.length(); i++) {
 					JSONObject sku = skus.getJSONObject(i);
-					
-					if(sku.has("id")){
+
+					if (sku.has("id")) {
 						String id = sku.getString("id").trim();
-						
-						if(id.equals(productId)){
-							if(sku.has("stock")){
+
+						if (id.equals(productId)) {
+							if (sku.has("stock")) {
 								stock = sku.getInt("stock");
 							}
 							break;
@@ -225,26 +289,28 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 				}
 			}
 		}
-		
+
 		return stock;
 	}
-	
-	private Prices crawlPrices(Document doc, Float price){
+
+	private Prices crawlPrices(Document doc, Float price, boolean principalSeller) {
 		Prices prices = new Prices();
-		
-		if(price != null){
-			Map<Integer,Float> installmentsPriceMap = new HashMap<>();
+
+		if (price != null) {
+			Map<Integer, Float> installmentsPriceMap = new HashMap<>();
 			installmentsPriceMap.put(1, price);
 			prices.setBankTicketPrice(price);
-			
-			Element parcel1 = doc.select(".produto-detalhes-preco-parcelado-parcelas").first();
-			setParcels(parcel1, installmentsPriceMap);
-			
-			Elements parcels = doc.select(".produto-detalhes-preco-parcelado");
-			if(parcels.size() > 1) {
-				setParcels(parcels.get(1), installmentsPriceMap);
+
+			if (principalSeller) {
+				Element parcel1 = doc.select(".produto-detalhes-preco-parcelado-parcelas").first();
+				setParcels(parcel1, installmentsPriceMap);
+
+				Elements parcels = doc.select(".produto-detalhes-preco-parcelado");
+				if (parcels.size() > 1) {
+					setParcels(parcels.get(1), installmentsPriceMap);
+				}
 			}
-			
+
 			prices.setBankTicketPrice(installmentsPriceMap.get(1));
 			prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
 			prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
@@ -252,20 +318,30 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentsPriceMap);
 			prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
 		}
-		
+
 		return prices;
 	}
-	
-	private void setParcels(Element e, Map<Integer,Float> installmentsPriceMap) {
-		if(e != null){
+
+	private Prices crawlPricesPrinciaplSeller(Map<String, Prices> marketplaceMap) {
+		if (marketplaceMap.containsKey(SELLER_NAME)) {
+			return marketplaceMap.get(SELLER_NAME);
+		}
+
+		return new Prices();
+	}
+
+	private void setParcels(Element e, Map<Integer, Float> installmentsPriceMap) {
+		if (e != null) {
 			String parcela = e.text().toLowerCase();
-			
+
 			int x = parcela.indexOf("x");
 			int y = parcela.indexOf("r$");
-			
-			Integer installment = Integer.parseInt(parcela.substring(0, x).replaceAll("[^0-9]", "").trim());
-			Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-			
+
+			Integer installment =
+					Integer.parseInt(parcela.substring(0, x).replaceAll("[^0-9]", "").trim());
+			Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "")
+					.replaceAll("\\.", "").replaceAll(",", ".").trim());
+
 			installmentsPriceMap.put(installment, priceInstallment);
 		}
 	}

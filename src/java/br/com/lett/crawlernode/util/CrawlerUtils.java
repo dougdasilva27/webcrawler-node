@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.util;
 
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,7 +12,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
+import models.Marketplace;
+import models.Seller;
+import models.Util;
+import models.prices.Prices;
 
 public class CrawlerUtils {
 
@@ -171,5 +178,49 @@ public class CrawlerUtils {
 		}
 
 		return description.toString();
+	}
+
+	/**
+	 * AssembleMarketplaceFromMap
+	 * 
+	 * Return object Marketplaces only with sellers of the market
+	 * 
+	 * @param marketplaceMap -> map of sellerName - Prices
+	 * @param sellerNameLowerList -> list of principal sellers
+	 * @param session -> session of crawler
+	 * 
+	 * @return Marketplace
+	 */
+	public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap,
+			List<String> sellerNameLowerList, Session session) {
+		Marketplace marketplace = new Marketplace();
+
+		for (String sellerName : marketplaceMap.keySet()) {
+			if (!sellerNameLowerList.contains(sellerName)) {
+				JSONObject sellerJSON = new JSONObject();
+				sellerJSON.put("name", sellerName);
+
+				Prices prices = marketplaceMap.get(sellerName);
+
+				if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+					// Pegando o preço de uma vez no cartão
+					Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+					Float priceFloat = price.floatValue();
+
+					sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
+				}
+
+				sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
+
+				try {
+					Seller seller = new Seller(sellerJSON);
+					marketplace.add(seller);
+				} catch (Exception e) {
+					Logging.printLogError(LOGGER, session, Util.getStackTraceString(e));
+				}
+			}
+		}
+
+		return marketplace;
 	}
 }
