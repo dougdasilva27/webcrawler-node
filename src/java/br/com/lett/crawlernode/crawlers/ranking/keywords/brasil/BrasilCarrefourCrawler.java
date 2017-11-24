@@ -2,12 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
+public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
 	public BrasilCarrefourCrawler(Session session) {
 		super(session);
@@ -15,111 +14,122 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
+		// número de produtos por página do market
 		this.pageSize = 20;
-	
-		this.log("Página "+ this.currentPage);
-		
-		//monta a url com a keyword e a página
-		String url = "https://www.carrefour.com.br/busca/?termo="+ this.keywordEncoded +"&page=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-		
-		//chama função de pegar o html
+
+		this.log("Página " + this.currentPage);
+
+		// monta a url com a keyword e a página
+		String url = "https://www.carrefour.com.br/busca/?termo=" + this.keywordEncoded + "&page="
+				+ this.currentPage;
+		this.log("Link onde são feitos os crawlers: " + url);
+
+		// chama função de pegar o html
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select("li.product > a[title]");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(!products.isEmpty()) {			
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
+		Elements products = this.currentDoc.select("li.product > a[title]");
+
+		// se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+		if (!products.isEmpty()) {
+			// se o total de busca não foi setado ainda, chama a função para setar
+			if (this.totalProducts == 0) {
 				setTotalProducts();
 			}
-			
-			for(Element e : products) {
-				
+
+			for (Element e : products) {
+
 				// InternalPid
 				String internalPid = crawlInternalPid(e);
-				
+
 				// InternalId
 				String internalId = crawlInternalId(e);
-				
+
 				// Url do produto
 				String productUrl = crawlProductUrl(e);
-				
+
 				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
+
+				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+						+ internalPid + " - Url: " + productUrl);
+				if (this.arrayProducts.size() == productsLimit) {
 					break;
 				}
-				
+
 			}
 		} else {
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
+
+		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+				+ this.arrayProducts.size() + " produtos crawleados");
 	}
 
 	@Override
 	protected boolean hasNextPage() {
 		Element finalPage = this.currentDoc.select("#loadNextPage").first();
-		
-		//if href on id loadNextPage is nor Empty there are more pages.
-		if(finalPage != null) {
+
+		// if href on id loadNextPage is nor Empty there are more pages.
+		if (finalPage != null) {
 			String href = finalPage.attr("href").trim();
-			
-			if(!href.isEmpty()) {
+
+			if (!href.isEmpty()) {
 				return true;
 			}
 		}
-			
+
 		return false;
 	}
-	
+
 	@Override
-	protected void setTotalProducts()	{
+	protected void setTotalProducts() {
 		Element totalElement = this.currentDoc.select(".result-count strong span").first();
-		
-		if(totalElement != null) { 	
-			try	{				
+
+		if (totalElement != null) {
+			try {
 				this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-			} catch(Exception e) {
+			} catch (Exception e) {
 				this.logError(CommonMethods.getStackTrace(e));
 			}
-			
-			this.log("Total da busca: "+this.totalProducts);
+
+			this.log("Total da busca: " + this.totalProducts);
 		}
 	}
-	
-	private String crawlInternalId(Element e){
+
+	private String crawlInternalId(Element e) {
 		String internalId = null;
-		
-		String url = e.attr("href");
-		if(url.contains("/p/")){
-			String[] tokens = url.split("/");
-			internalId = tokens[tokens.length-1].replaceAll("[^0-9]", "");
+
+		Element id = e.select("input[name=productCodePost]").first();
+
+		if (id != null) {
+			internalId = id.val();
 		}
-		
+
 		return internalId;
 	}
-	
+
 	private String crawlInternalPid(Element e) {
-		return null;
+		String internalPid = null;
+		String url = e.attr("href");
+
+		if (url.contains("/p/")) {
+			String[] tokens = url.split("/");
+			internalPid = tokens[tokens.length - 1].replaceAll("[^0-9]", "");
+		}
+
+		return internalPid;
 	}
-	
-	private String crawlProductUrl(Element e){
+
+	private String crawlProductUrl(Element e) {
 		String productUrl;
-		
+
 		productUrl = e.attr("href");
-			
-		if(!productUrl.contains("carrefour")){
+
+		if (!productUrl.contains("carrefour")) {
 			productUrl = "https://www.carrefour.com.br" + e.attr("href");
 		}
-		
-		
+
+
 		return productUrl;
 	}
 }
