@@ -148,7 +148,7 @@ public class BrasilKabumCrawler extends Crawler {
 				Element availablePromo = doc.select(".box_comprar-cm .textocomprar").first();
 				if ((elementAvailability == null
 						|| elementAvailability.attr("alt").equalsIgnoreCase("produto_disponivel"))
-						&& availablePromo == null) {
+						|| availablePromo != null) {
 					available = true;
 				}
 
