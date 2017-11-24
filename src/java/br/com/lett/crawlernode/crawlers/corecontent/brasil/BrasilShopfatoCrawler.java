@@ -116,17 +116,19 @@ public class BrasilShopfatoCrawler extends Crawler {
 				String primaryImage = crawlPrimaryImage(productJsonAPI);
 				String secondaryImages = crawlSecondaryImages(productJsonAPI, primaryImage);
 
-				// Marketplace map
-				Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
-
 				// Availability
-				boolean available = crawlAvailability(marketplaceMap);
+				boolean available = productJsonAPI.getBoolean("Availability");
+				
+				Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
+				Marketplace marketplace = new Marketplace();
+				
+				if (available) {
+					available = crawlAvailability(marketplaceMap);
+					marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				}
 
 				// Price
-				Float price = crawlPrice(marketplaceMap);
-
-				// Marketplace
-				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+				Float price = crawlPrice(marketplaceMap);				
 
 				// Prices
 				Prices prices = crawlPrices(internalId, price);
