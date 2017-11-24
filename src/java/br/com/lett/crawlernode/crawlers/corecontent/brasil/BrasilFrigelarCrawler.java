@@ -13,6 +13,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -111,7 +112,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 				Float price = crawlMainPagePrice(jsonSku, available);
 				
 				// Prices
-				Prices prices = new Prices();
+				Prices prices = crawlPrices(jsonSku, doc, available);
 
 				// Primary image
 				String primaryImage = crawlPrimaryImage(doc);
@@ -159,10 +160,6 @@ public class BrasilFrigelarCrawler extends Crawler {
 		if ( document.select(".product-main").first() != null ) return true;
 		return false;
 	}
-
-	/*******************
-	 * General methods *
-	 *******************/
 
 	/*******************
 	 * General methods *
@@ -219,6 +216,47 @@ public class BrasilFrigelarCrawler extends Crawler {
 		}
 
 		return price;
+	}
+	
+	private Prices crawlPrices(JSONObject json, Document doc, boolean available) {
+		Prices prices = new Prices();
+		Float bestPriceFormated = crawlMainPagePrice(json, available);
+		
+		if (bestPriceFormated == null) {
+			return prices;
+		}
+		
+		// apply discount for bank slip
+		Float bankSlipPrice = null;
+		Element discount = doc.select("#desconto-boleto").first();
+		if (discount != null) {
+			try {
+				Integer discountRate = Integer.parseInt(discount.text().trim());
+				bankSlipPrice = bestPriceFormated - ((discountRate/100.0f) * bestPriceFormated);
+			} catch (NumberFormatException numberFormatException) {
+				Logging.printLogWarn(logger, "Could not get discount rate.");
+			}
+		}
+		
+		prices.setBankTicketPrice(bankSlipPrice);
+		
+		// other price conditions
+		Map<Integer,Float> installmentPriceMap = new HashMap<>();
+		
+		if (bankSlipPrice != null) {
+			installmentPriceMap.put(1, bankSlipPrice);
+		} else {
+			installmentPriceMap.put(1, bestPriceFormated);
+		}
+		
+		prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+		prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+		prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+		prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+		prices.insertCardInstallment(Card.MAESTRO.toString(), installmentPriceMap);
+		prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+		
+		return prices;
 	}
 
 	private boolean crawlAvailability(JSONObject json) {
