@@ -60,7 +60,7 @@ public class BrasilColomboCrawler extends Crawler {
 				}
 				
 			}
-
+			
 			// Pid
 			String internalPid = null;
 			Element elementInternalPid = doc.select(".codigo-produto").first();
@@ -70,24 +70,27 @@ public class BrasilColomboCrawler extends Crawler {
 					internalPid = elementInternalPid.text().replaceAll("[^0-9]", "").trim();
 				}
 			}
-
+			
 			// Nome
 			String name = null;
 			Element elementName = doc.select("h1.nome-produto").first();
 			if (elementName != null) {
 				name = elementName.ownText().trim();
 			}
-
+			
 			// Preço
 			Float price = null;
 			Element elementPrice = doc.select(".dados-condicao--texto b span").first();
 			if (elementPrice != null) {
-			    price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				String priceText = elementPrice.text().trim();
+				if (!priceText.isEmpty()) {
+					price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+				}
 			}
-			
+						
 			// Prices
 			Prices prices = crawlPrices(doc, price);
-
+			
 			// Categoria
 			String category1 = "";
 			String category2 = "";
