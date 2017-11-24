@@ -5,14 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -38,11 +36,11 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 	private static final String SELECTOR_PRICE_CARD_1X = ".price-val";
 	private static final String SELECTOR_PRICE_CARD_INSTALLMENT = ".card-info";
-	
+
 	private static final String SELECTOR_PRICE_NORMAL_CARDS = ".product-credit-cart-price";
 	private static final String SELECTOR_PRICE_BANK_SLIP = ".product-slip-price";
 	private static final String SELECTOR_PRICE_SHOP_CARD = ".product-saraiva-credit-card-price";
-	
+
 	private static final int LARGER_IMAGE_DIMENSION = 550;
 
 
@@ -53,7 +51,8 @@ public class BrasilSaraivaCrawler extends Crawler {
 	@Override
 	public boolean shouldVisit() {
 		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
+		return !FILTERS.matcher(href).matches()
+				&& (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
 	}
 
 
@@ -62,8 +61,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 		super.extractInformation(doc);
 		List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(doc)) {
+			Logging.printLogDebug(logger, session,
+					"Product page identified: " + this.session.getOriginalURL());
 
 			JSONObject productJSON = crawlChaordicMeta(doc);
 
@@ -85,23 +85,12 @@ public class BrasilSaraivaCrawler extends Crawler {
 			CategoryCollection categories = crawlCategories(doc);
 
 			// Creating the product
-			Product product = ProductBuilder.create()
-					.setUrl(session.getOriginalURL())
-					.setInternalId(internalId)
-					.setInternalPid(internalPid)
-					.setName(name)
-					.setPrice(price)
-					.setPrices(prices)
-					.setAvailable(available)
-					.setCategory1(categories.getCategory(0))
-					.setCategory2(categories.getCategory(1))
-					.setCategory3(categories.getCategory(2))
-					.setPrimaryImage(primaryImage)
-					.setSecondaryImages(secondaryImages)
-					.setDescription(description)
-					.setStock(stock)
-					.setMarketplace(marketplace)
-					.build();
+			Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+					.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+					.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+					.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
 			products.add(product);
 
@@ -120,8 +109,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 	/**
 	 * Crawl the code from the displayed number on the main page.
 	 * 
-	 * e.g:
-	 * Cafeteira Espresso Electrolux Chef Crema Silver Em400 - 220 Volts (Cód: 4054233)
+	 * e.g: Cafeteira Espresso Electrolux Chef Crema Silver Em400 - 220 Volts (Cód: 4054233)
 	 * 
 	 * internalId = 4054233
 	 * 
@@ -163,7 +151,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 		String name = null;
 
 		Element elementName = document.select("section.product-info h1").first();
-		if(elementName != null) {
+		if (elementName != null) {
 			name = elementName.ownText().trim();
 		}
 
@@ -173,7 +161,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private Float crawlPrice(Document document, boolean available) {
 		Float price = null;
 
-		if(available) {
+		if (available) {
 			Element elementPrice = document.select(".main-price-infos .price-val").first();
 			if (elementPrice != null) {
 				price = MathCommonsMethods.parseFloat(elementPrice.ownText());
@@ -185,11 +173,11 @@ public class BrasilSaraivaCrawler extends Crawler {
 	private Prices crawlPrices(Document document, Float price) {
 		Prices prices = new Prices();
 
-		if(price != null) {
+		if (price != null) {
 			Float bankSlipPrice = price;
 			prices.setBankTicketPrice(bankSlipPrice);
 
-			Map<Integer, Float> installments = crawlInstallmentsNormalCard(document);
+			Map<Integer, Float> installments = crawlInstallmentsNormalCard(document, price);
 			Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(document);
 
 			if (installments.size() > 0) {
@@ -201,7 +189,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 				prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
 				prices.insertCardInstallment(Card.AMEX.toString(), installments);
 
-				if(installmentsShopcardMap.isEmpty()) {
+				if (installmentsShopcardMap.isEmpty()) {
 					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installments);
 				} else {
 					prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentsShopcardMap);
@@ -215,42 +203,49 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 	/**
 	 * Normal cards installments
+	 * 
 	 * @param doc
 	 * @return
 	 */
-	private Map<Integer, Float> crawlInstallmentsNormalCard(Document doc){
+	private Map<Integer, Float> crawlInstallmentsNormalCard(Document doc, Float price) {
 		Map<Integer, Float> installments = new HashMap<>();
 
 		// max installments
-		Element maxInstallmentsElement = doc.select(SELECTOR_PRICE_NORMAL_CARDS + " " + SELECTOR_PRICE_CARD_INSTALLMENT).first();
-		
-		if(maxInstallmentsElement == null) {
-			maxInstallmentsElement = doc.select("div.product-price-block div.simple-price span.installments").first();
+		Element maxInstallmentsElement =
+				doc.select(SELECTOR_PRICE_NORMAL_CARDS + " " + SELECTOR_PRICE_CARD_INSTALLMENT).first();
+
+		if (maxInstallmentsElement == null) {
+			maxInstallmentsElement =
+					doc.select("div.product-price-block div.simple-price span.installments").first();
 		}
-		
+
 		if (maxInstallmentsElement != null) {
 			String installmentText = maxInstallmentsElement.text().trim();
-			
-			if(!installmentText.isEmpty() && installmentText.contains("x")) {
+
+			if (!installmentText.isEmpty() && installmentText.contains("x")) {
 				int endIndexInstallmentNumber = installmentText.indexOf('x');
-	
+
 				String installmentNumberText = installmentText.substring(0, endIndexInstallmentNumber);
-				String installmentPriceText = installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
-	
+				String installmentPriceText =
+						installmentText.substring(endIndexInstallmentNumber + 1, installmentText.length());
+
 				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
 				if (!parsedNumbers.isEmpty()) {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)),
+							MathCommonsMethods.parseFloat(installmentPriceText));
 				}
 			}
 		}
 
 		// 1x
-		Element cashPriceOnCardElement = doc.select(SELECTOR_PRICE_BANK_SLIP + " " + SELECTOR_PRICE_CARD_1X).first();
-		
-		if(cashPriceOnCardElement == null) {
-			cashPriceOnCardElement = doc.select("div.extra-discount.price-block span.special-price strong").first();
+		Element cashPriceOnCardElement =
+				doc.select(SELECTOR_PRICE_BANK_SLIP + " " + SELECTOR_PRICE_CARD_1X).first();
+
+		if (cashPriceOnCardElement == null) {
+			cashPriceOnCardElement =
+					doc.select("div.extra-discount.price-block span.special-price strong").first();
 		}
-		
+
 		if (cashPriceOnCardElement != null) {
 			String cashPriceText = cashPriceOnCardElement.text();
 			if (!cashPriceText.isEmpty()) {
@@ -258,43 +253,54 @@ public class BrasilSaraivaCrawler extends Crawler {
 			}
 		}
 
+		if (!installments.containsKey(1)) {
+			installments.put(1, price);
+		}
+
 		return installments;
 	}
 
 	/**
 	 * Shop card installments
+	 * 
 	 * @param doc
 	 * @return
 	 */
-	private Map<Integer, Float> crawlInstallmentsShopCard(Document doc){
+	private Map<Integer, Float> crawlInstallmentsShopCard(Document doc) {
 		Map<Integer, Float> installmentsShopcardMap = new HashMap<>();
 
 		Element shopCard = doc.select(SELECTOR_PRICE_SHOP_CARD).first();
 
-		if(shopCard == null) {
+		if (shopCard == null) {
 			shopCard = doc.select(".saraiva-card-price").first();
 		}
-		
-		if(shopCard != null){
+
+		if (shopCard != null) {
 			Element shopCardOneParcel = shopCard.select(SELECTOR_PRICE_CARD_1X).first();
 
-			if(shopCardOneParcel == null) {
+			if (shopCardOneParcel == null) {
 				shopCardOneParcel = doc.select(".one-parcel .price").first();
 			}
-			
-			if(shopCardOneParcel != null) {
-				Float priceShop = MathCommonsMethods.parseFloat(shopCardOneParcel.text());
+
+			if (shopCardOneParcel != null) {
+				String shopPrice = shopCardOneParcel.text().toLowerCase();
+
+				if (shopPrice.contains("x")) {
+					shopPrice = shopPrice.split("x")[1];
+				}
+
+				Float priceShop = MathCommonsMethods.parseFloat(shopPrice);
 
 				installmentsShopcardMap.put(1, priceShop);
 			}
 
 			Element installmentsShopCard = shopCard.select(SELECTOR_PRICE_CARD_INSTALLMENT).first();
 
-			if(installmentsShopCard == null) {
+			if (installmentsShopCard == null) {
 				installmentsShopCard = doc.select(".installments").first();
 			}
-			
-			if(installmentsShopCard != null) {
+
+			if (installmentsShopCard != null) {
 				String text = installmentsShopCard.text().trim().toLowerCase();
 
 				int x = text.indexOf('x');
@@ -328,16 +334,16 @@ public class BrasilSaraivaCrawler extends Crawler {
 	}
 
 	/**
-	 * Crawl an image with a default dimension of 430.
-	 * There is a larger image with dimension of 550, but with javascript off
-	 * this link disappear. So we modify the image URL and set the dimension parameter
-	 * to the desired larger size.
+	 * Crawl an image with a default dimension of 430. There is a larger image with dimension of 550,
+	 * but with javascript off this link disappear. So we modify the image URL and set the dimension
+	 * parameter to the desired larger size.
 	 * 
 	 * Parameter to mody: &l
 	 * 
-	 * e.g:
-	 * original: http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=430&a=-1
-	 * larger: http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=550&a=-1
+	 * e.g: original:
+	 * http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=430&a=-1
+	 * larger:
+	 * http://images.livrariasaraiva.com.br/imagemnet/imagem.aspx/?pro_id=9220079&qld=90&l=550&a=-1
 	 * 
 	 * @param document
 	 * @return
@@ -347,19 +353,21 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 		// get original image URL
 		Element elementPrimaryImage = document.select("div.product-image-center a img").first();
-		if(elementPrimaryImage != null) {
+		if (elementPrimaryImage != null) {
 			primaryImage = elementPrimaryImage.attr("src");
 		}
 
-		if(primaryImage != null) {
+		if (primaryImage != null) {
 			if (primaryImage.contains(".gif")) {
 				Elements elementImages = document.select("section.product-image #thumbs-images a img");
 
-				for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the primary image.gif
+				for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as
+																													// the primary image.gif
 					String imageURL = elementImages.get(i).attr("src").trim();
 
 					if (!imageURL.contains(".gif")) {
-						primaryImage = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+						primaryImage = CommonMethods.modifyParameter(imageURL, "l",
+								String.valueOf(LARGER_IMAGE_DIMENSION));
 						break;
 					}
 				}
@@ -370,17 +378,17 @@ public class BrasilSaraivaCrawler extends Crawler {
 			}
 
 			// modify the dimension parameter
-			return CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+			return CommonMethods.modifyParameter(primaryImage, "l",
+					String.valueOf(LARGER_IMAGE_DIMENSION));
 		}
 
 		return null;
 	}
 
 	/**
-	 * Get all the secondary images URL from thumbs container.
-	 * Analogous treatment to that performed on primary image URL must be applied,
-	 * so we can get the largest images URL.
-	 *  
+	 * Get all the secondary images URL from thumbs container. Analogous treatment to that performed
+	 * on primary image URL must be applied, so we can get the largest images URL.
+	 * 
 	 * @param document
 	 * @return
 	 */
@@ -390,14 +398,16 @@ public class BrasilSaraivaCrawler extends Crawler {
 		Elements elementImages = document.select("section.product-image #thumbs-images a img");
 		JSONArray secondaryImagesArray = new JSONArray();
 
-		for(int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the primary image
+		for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the
+																											// primary image
 			String imageURL = elementImages.get(i).attr("src").trim();
-			String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+			String biggerImageURL =
+					CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
 
-			if(!biggerImageURL.equals(primaryImage) && !biggerImageURL.contains(".gif")) {
+			if (!biggerImageURL.equals(primaryImage) && !biggerImageURL.contains(".gif")) {
 				secondaryImagesArray.put(biggerImageURL);
 			}
-		}			
+		}
 		if (secondaryImagesArray.length() > 0) {
 			secondaryImages = secondaryImagesArray.toString();
 		}
@@ -409,8 +419,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 		CategoryCollection categories = new CategoryCollection();
 		Elements elementCategories = document.select(".breadcrumbs ol li");
 
-		for (int i = 1; i < elementCategories.size(); i++) { // start with index 1 because the first item is the home page
-			categories.add( elementCategories.get(i).text().trim() );
+		for (int i = 1; i < elementCategories.size(); i++) { // start with index 1 because the first
+																													// item is the home page
+			categories.add(elementCategories.get(i).text().trim());
 		}
 
 		return categories;
@@ -433,30 +444,18 @@ public class BrasilSaraivaCrawler extends Crawler {
 	}
 
 	/**
-	 * {
-	 * "page":
-	 * 	{
-	 * 		"name":"product",
-	 * 		"timestamp":new Date(),
-	 * 		"tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras - Expresso"}]
-	 * 	},
-	 * 	"product":
-	 * 	{	
-	 * 		"id":2496308,
-	 * 		"skus":[{"sku":"4054233"}],
-	 * 		"name":"Cafeteira Espresso Electrolux Chef Crema Silver Em400 - 220 Volts",
-	 * 		"url":"www.saraiva.com.br\/cafeteira-espresso-electrolux-chef-crema-silver-em400-220-volts-4054233.html",
-	 * 		"images":{"default":"images.livrariasaraiva.com.br\/imagemnet\/imagem.aspx\/?pro_id=4054233"},
-	 * 		"status":"unavailable",
-	 * 		"price":299,
-	 * 		"description":"sku_description",
-	 * 		"ean_code":"7896347127608",
-	 * 		"isbn":null,
-	 * 		"tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras - Expresso"}],
-	 * 		"brand":"ELECTROLUX - Eletroport\u00e1teis",
-	 * 		"details":{"product_free":"no","type":"simple"}
-	 * 	}
-	 * }
+	 * { "page": { "name":"product", "timestamp":new Date(),
+	 * "tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras - Expresso"}]
+	 * }, "product": { "id":2496308, "skus":[{"sku":"4054233"}], "name":"Cafeteira Espresso Electrolux
+	 * Chef Crema Silver Em400 - 220 Volts",
+	 * "url":"www.saraiva.com.br\/cafeteira-espresso-electrolux-chef-crema-silver-em400-220-volts-4054233.html",
+	 * "images":{"default":"images.livrariasaraiva.com.br\/imagemnet\/imagem.aspx\/?pro_id=4054233"},
+	 * "status":"unavailable", "price":299, "description":"sku_description",
+	 * "ean_code":"7896347127608", "isbn":null,
+	 * "tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras -
+	 * Expresso"}], "brand":"ELECTROLUX - Eletroport\u00e1teis",
+	 * "details":{"product_free":"no","type":"simple"} } }
+	 * 
 	 * @param document
 	 * @return
 	 */
@@ -467,13 +466,12 @@ public class BrasilSaraivaCrawler extends Crawler {
 
 		String chaordic = "window.chaordic_meta = ";
 
-		for (Element tag : scriptTags) {                
+		for (Element tag : scriptTags) {
 			for (DataNode node : tag.dataNodes()) {
 				if (tag.html().trim().startsWith(chaordic)) {
-					chaordicMeta = new JSONObject
-							(node.getWholeData().split(Pattern.quote(chaordic))[1] +
-									node.getWholeData().split(Pattern.quote(chaordic))[1].split(Pattern.quote("}}}"))[0]
-									);
+					chaordicMeta = new JSONObject(node.getWholeData().split(Pattern.quote(chaordic))[1]
+							+ node.getWholeData().split(Pattern.quote(chaordic))[1]
+									.split(Pattern.quote("}}}"))[0]);
 				}
 			}
 		}
