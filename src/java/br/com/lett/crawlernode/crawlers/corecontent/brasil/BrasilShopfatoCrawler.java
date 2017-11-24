@@ -53,7 +53,12 @@ import models.prices.Prices;
  * 10) We have one method for each type of information for a sku (please carry on with this pattern).
  * 
  * Examples:
- * ...
+ * Caso particular: possui marketplace na resposta da API, porém o mesmo não é exibido na página principal do sku
+ * e este é dado como indisponível. Neste caso o crawler precisa usar o atribute Availability da repsosta da API
+ * para determinar se o sku está realmente disponível ou não.
+ * A url abaixo apresenta este caso:
+ * http://www.shopfato.com.br/ar-condicionado-split-liva-18000-btus-sistema-ar-puro-frio-220v-midea-30807/p
+ * 
  * 
  * Optimizations notes:
  * ...
