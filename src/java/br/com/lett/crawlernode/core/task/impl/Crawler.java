@@ -36,6 +36,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
+import br.com.lett.crawlernode.util.URLBox;
 import containers.ProcessedComparison;
 import models.Processed;
 import models.prices.Prices;
@@ -725,7 +726,7 @@ public class Crawler extends Task {
 
 						// take a screenshot if price was change
 						if (next.getChanges().has("price")) {
-							// URLBox.takeAScreenShot(next.getUrl(), session, 1, null);
+							URLBox.takeAScreenShot(next.getUrl(), session, 1, null);
 						}
 
 						return;
