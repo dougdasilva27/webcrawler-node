@@ -77,7 +77,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			}
 
 			// Marketplace
-			Map<String, Prices> marketplaceMap = crawlMarketplaces(internalId, doc);
+			Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, doc);
 			Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
 					Arrays.asList(SELLER_NAME), session);
 
@@ -184,13 +184,18 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 		return url.startsWith("http://www.ricardoeletro.com.br/Produto/");
 	}
 
-	private Document crawlDocMarketplaces(Document doc) {
+	private Document crawlDocMarketplaces(Document doc, String internalPid) {
 		Document docMarketplace = new Document("");
 		Element urlE = doc.select(".info-parceiro > a").first();
 
 		if (urlE != null) {
 			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
 					urlE.attr("href"), null, cookies);
+		} else if(internalPid != null) {
+			String url = "http://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
+			
+			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+					url, null, cookies);
 		}
 
 		return docMarketplace;
@@ -220,9 +225,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 	}
 
 
-	private Map<String, Prices> crawlMarketplaces(String internalId, Document doc) {
+	private Map<String, Prices> crawlMarketplaces(String internalPid, Document doc) {
 
-		Document docMarketplaceInfo = crawlDocMarketplaces(doc);
+		Document docMarketplaceInfo = crawlDocMarketplaces(doc, internalPid);
 		String principalSeller = crawlPrincipalSeller(doc);
 
 		Map<String, Prices> marketplace = new HashMap<>();
