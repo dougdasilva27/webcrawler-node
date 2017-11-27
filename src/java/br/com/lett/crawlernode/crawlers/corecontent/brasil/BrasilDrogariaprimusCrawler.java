@@ -362,11 +362,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 		if ( paymenstPopup != null ) {
 			String href = paymenstPopup.attr("href");
 			try {
-				URL rawUrl = new URL(
-						"https",
-						"www.drogariaprimus.com.br",
-						href
-						);
+				URL rawUrl = new URL(href);
 
 				String[] query = rawUrl.getQuery().split(Pattern.quote("="));
 				String name = query[0]; 
