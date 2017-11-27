@@ -184,14 +184,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 		return url.startsWith("http://www.ricardoeletro.com.br/Produto/");
 	}
 
-	private Document crawlDocMarketplaces(Document doc, String internalPid) {
+	private Document crawlDocMarketplaces(String internalPid) {
 		Document docMarketplace = new Document("");
-		Element urlE = doc.select(".info-parceiro > a").first();
 
-		if (urlE != null) {
-			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-					urlE.attr("href"), null, cookies);
-		} else if(internalPid != null) {
+		if(internalPid != null) {
 			String url = "http://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
 			
 			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
@@ -227,7 +223,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 	private Map<String, Prices> crawlMarketplaces(String internalPid, Document doc) {
 
-		Document docMarketplaceInfo = crawlDocMarketplaces(doc, internalPid);
+		Document docMarketplaceInfo = crawlDocMarketplaces(internalPid);
 		String principalSeller = crawlPrincipalSeller(doc);
 
 		Map<String, Prices> marketplace = new HashMap<>();
@@ -249,6 +245,18 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			}
 		}
 
+		if(marketplace.isEmpty()) {
+			Element priceElement = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
+			
+			if(priceElement != null) {
+				Float price = MathCommonsMethods.parseFloat(priceElement.ownText());
+				
+				if(price != null) {
+					marketplace.put(principalSeller, crawlPrices(doc, price, true));
+				}
+			}
+		}
+		
 		return marketplace;
 	}
 
