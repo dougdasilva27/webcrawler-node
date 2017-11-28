@@ -12,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -24,12 +25,15 @@ public class BrasilDufrioCrawler extends CrawlerRankingKeywords {
 	}
 
 	private static final String USER_AGENT = DataFetcher.randUserAgent();
+	private LettProxy proxyToBeUsed = null;
 	private List<Cookie> cookies = new ArrayList<>();
 
 	@Override
 	protected void processBeforeFetch() {
-		Document doc = Jsoup.parse(
-				GETFetcher.fetchPageGET(session, "https://www.dufrio.com.br/", cookies, USER_AGENT, 1));
+		Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, "https://www.dufrio.com.br/",
+				cookies, USER_AGENT, null, 1));
+
+		this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
 
 		Element script = doc.select("script").first();
 
@@ -98,7 +102,8 @@ public class BrasilDufrioCrawler extends CrawlerRankingKeywords {
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		// chama função de pegar a url
-		this.currentDoc = Jsoup.parse(GETFetcher.fetchPageGET(session, url, cookies, USER_AGENT, 1));
+		this.currentDoc = Jsoup
+				.parse(GETFetcher.fetchPageGET(session, url, cookies, USER_AGENT, this.proxyToBeUsed, 1));
 
 		Elements products =
 				this.currentDoc.select(".produtosCategoria > div.column .flex-child-auto .boxProduto");

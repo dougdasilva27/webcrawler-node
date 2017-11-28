@@ -53,13 +53,45 @@ public class GETFetcher {
 	 * @param session
 	 * @param url
 	 * @param cookies
+	 * @param userAgent
+	 * @param attempt
+	 * @return
+	 */
+	public static String fetchPageGET(Session session, String url, List<Cookie> cookies,
+			String userAgent, int attempt) {
+
+		return fetchPageGET(session, url, cookies, userAgent, null, attempt);
+	}
+
+	/**
+	 * Fetch a page By default the redirects are enabled in the RequestConfig
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookies
+	 * @param lettProxy
+	 * @param attempt
+	 * @return
+	 */
+	public static String fetchPageGET(Session session, String url, List<Cookie> cookies,
+			LettProxy proxy, int attempt) {
+
+		return fetchPageGET(session, url, cookies, DataFetcher.randUserAgent(), proxy, attempt);
+	}
+
+	/**
+	 * Fetch a page By default the redirects are enabled in the RequestConfig
+	 * 
+	 * @param session
+	 * @param url
+	 * @param cookies
 	 * @param attempt
 	 * @return
 	 */
 	public static String fetchPageGET(Session session, String url, List<Cookie> cookies,
 			int attempt) {
 
-		return fetchPageGET(session, url, cookies, DataFetcher.randUserAgent(), attempt);
+		return fetchPageGET(session, url, cookies, DataFetcher.randUserAgent(), null, attempt);
 	}
 
 	/**
@@ -69,11 +101,12 @@ public class GETFetcher {
 	 * @param url
 	 * @param cookies
 	 * @param userAgent
+	 * @param lettProxy
 	 * @param attempt
 	 * @return
 	 */
 	public static String fetchPageGET(Session session, String url, List<Cookie> cookies,
-			String userAgent, int attempt) {
+			String userAgent, LettProxy lettProxy, int attempt) {
 
 
 		LettProxy randProxy = null;
@@ -119,8 +152,8 @@ public class GETFetcher {
 				return content;
 			}
 
-			randProxy =
-					DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+			randProxy = lettProxy != null ? lettProxy
+					: DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
@@ -281,7 +314,7 @@ public class GETFetcher {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
-				return fetchPageGET(session, url, cookies, attempt + 1);
+				return fetchPageGET(session, url, cookies, userAgent, lettProxy, attempt + 1);
 			}
 
 		}
