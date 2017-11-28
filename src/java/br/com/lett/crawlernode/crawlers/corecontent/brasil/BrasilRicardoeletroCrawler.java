@@ -187,11 +187,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 	private Document crawlDocMarketplaces(String internalPid) {
 		Document docMarketplace = new Document("");
 
-		if(internalPid != null) {
+		if (internalPid != null) {
 			String url = "http://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
-			
-			docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-					url, null, cookies);
+
+			docMarketplace =
+					DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 		}
 
 		return docMarketplace;
@@ -240,23 +240,23 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 				if (!partnerName.isEmpty() && partnerPrice != null) {
 					marketplace.put(partnerName,
-							crawlPrices(doc, partnerPrice, principalSeller.equals(partnerName)));
+							crawlPrices(doc, partnerPrice, principalSeller.equals(partnerName), internalPid));
 				}
 			}
 		}
 
-		if(marketplace.isEmpty()) {
+		if (marketplace.isEmpty()) {
 			Element priceElement = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
-			
-			if(priceElement != null) {
+
+			if (priceElement != null) {
 				Float price = MathCommonsMethods.parseFloat(priceElement.ownText());
-				
-				if(price != null) {
-					marketplace.put(principalSeller, crawlPrices(doc, price, true));
+
+				if (price != null) {
+					marketplace.put(principalSeller, crawlPrices(doc, price, true, internalPid));
 				}
 			}
 		}
-		
+
 		return marketplace;
 	}
 
@@ -306,7 +306,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 		return stock;
 	}
 
-	private Prices crawlPrices(Document doc, Float price, boolean principalSeller) {
+	private Prices crawlPrices(Document doc, Float price, boolean principalSeller,
+			String internalPid) {
 		Prices prices = new Prices();
 
 		if (price != null) {
@@ -315,12 +316,34 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			prices.setBankTicketPrice(price);
 
 			if (principalSeller) {
-				Element parcel1 = doc.select(".produto-detalhes-preco-parcelado-parcelas").first();
-				setParcels(parcel1, installmentsPriceMap);
+				String url =
+						"http://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
+				Document docPrices =
+						DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-				Elements parcels = doc.select(".produto-detalhes-preco-parcelado");
-				if (parcels.size() > 1) {
-					setParcels(parcels.get(1), installmentsPriceMap);
+				Elements installmentsElements = docPrices.select(".lista-parcelas tr");
+
+				if (!installmentsElements.isEmpty()) {
+					for (Element e : installmentsElements) {
+						Elements values = e.select("td");
+
+						if (values.size() > 2) {
+							String installment = values.get(0).ownText().replaceAll("[^0-9]", "").trim();
+							Float value = MathCommonsMethods.parseFloat(values.get(2).ownText());
+
+							if (!installment.isEmpty() && value != null) {
+								installmentsPriceMap.put(Integer.parseInt(installment), value);
+							}
+						}
+					}
+				} else {
+					Element parcel1 = doc.select(".produto-detalhes-preco-parcelado-parcelas").first();
+					setParcels(parcel1, installmentsPriceMap);
+
+					Elements parcels = doc.select(".produto-detalhes-preco-parcelado");
+					if (parcels.size() > 1) {
+						setParcels(parcels.get(1), installmentsPriceMap);
+					}
 				}
 			}
 
