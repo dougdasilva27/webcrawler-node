@@ -199,13 +199,13 @@ public class POSTFetcher {
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																										// information
-																																										// from http
-																																										// entity
+			// information
+			// from http
+			// entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-																																												// the
-																																												// status
-																																												// code
+			// the
+			// status
+			// code
 			pageContent.setUrl(url); // setting url
 
 			responseLength = pageContent.getContentData().length;
@@ -250,7 +250,7 @@ public class POSTFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
+			if (attempt >= 3) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -509,13 +509,13 @@ public class POSTFetcher {
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																										// information
-																																										// from http
-																																										// entity
+			// information
+			// from http
+			// entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-																																												// the
-																																												// status
-																																												// code
+			// the
+			// status
+			// code
 			pageContent.setUrl(url); // setting url
 
 			responseLength = pageContent.getContentData().length;
@@ -557,7 +557,7 @@ public class POSTFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
+			if (attempt >= 3) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return new HashMap<>();
 			} else {
@@ -683,13 +683,13 @@ public class POSTFetcher {
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																										// information
-																																										// from http
-																																										// entity
+			// information
+			// from http
+			// entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-																																												// the
-																																												// status
-																																												// code
+			// the
+			// status
+			// code
 			pageContent.setUrl(url); // setting url
 
 			responseLength = pageContent.getContentData().length;
@@ -734,7 +734,7 @@ public class POSTFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
+			if (attempt >= 3) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -827,7 +827,7 @@ public class POSTFetcher {
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 		Integer defaultTimeout =
-				timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 4 : timeout;
+				timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 6 : timeout;
 
 		RequestConfig requestConfig =
 				RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
@@ -864,11 +864,11 @@ public class POSTFetcher {
 
 		// creating the page content result from the http request
 		PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																									// information
-																																									// from http
-																																									// entity
+		// information
+		// from http
+		// entity
 		pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting the
-																																											// status code
+		// status code
 		pageContent.setUrl(fetcherUrl); // setting url
 
 		Integer responseLength = pageContent.getContentData().length;

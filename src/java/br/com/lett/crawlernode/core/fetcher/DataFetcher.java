@@ -1179,7 +1179,6 @@ public class DataFetcher {
 		int nowHour = zonedDate.getHour();
 
 		// Request via fetcher on first attempt
-		return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20)
-				&& Main.executionParameters.getUseFetcher());
+		return ((nowHour % 4 == 0 && nowHour != 20) && Main.executionParameters.getUseFetcher());
 	}
 }
