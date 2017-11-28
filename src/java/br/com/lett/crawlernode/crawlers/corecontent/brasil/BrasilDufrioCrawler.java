@@ -15,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -52,6 +53,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	private static final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
 
 	private static final String USER_AGENT = DataFetcher.randUserAgent();
+	private LettProxy proxyToBeUsed = null;
 
 	public BrasilDufrioCrawler(Session session) {
 		super(session);
@@ -59,8 +61,8 @@ public class BrasilDufrioCrawler extends Crawler {
 
 	@Override
 	protected Object fetch() {
-		return Jsoup
-				.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, 1));
+		return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
+				USER_AGENT, this.proxyToBeUsed, 1));
 	}
 
 	/**
@@ -72,8 +74,10 @@ public class BrasilDufrioCrawler extends Crawler {
 	 */
 	@Override
 	public void handleCookiesBeforeFetch() {
-		Document doc = Jsoup
-				.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, 1));
+		Document doc = Jsoup.parse(
+				GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
+
+		this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
 
 		Element script = doc.select("script").first();
 
