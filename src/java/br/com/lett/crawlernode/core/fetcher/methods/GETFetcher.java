@@ -310,7 +310,7 @@ public class GETFetcher {
 					+ session.getOriginalURL() + " , attempt: " + attempt + "]");
 			Logging.printLogError(logger, session, e.getMessage());
 
-			if (attempt >= 3) {
+			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {
@@ -547,7 +547,7 @@ public class GETFetcher {
 				Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 			}
 
-			if (attempt >= 3) {
+			if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
 				Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
 				return "";
 			} else {

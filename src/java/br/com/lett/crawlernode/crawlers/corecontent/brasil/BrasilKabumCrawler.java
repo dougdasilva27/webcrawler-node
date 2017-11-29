@@ -173,7 +173,8 @@ public class BrasilKabumCrawler extends Crawler {
 
 			// description
 			String description = "";
-			Element elementDescription = doc.select(".tab_").first();
+			Element elementDescription = doc.select(".tab_").size() > 1 ? doc.select(".tab_").get(1)
+					: doc.select(".MsoNormal").first();
 			if (elementDescription != null)
 				description = elementDescription.html().replace("’", "").trim();
 

@@ -42,7 +42,10 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 			// Integer totalNumOfEvaluations = ratings.length();
 			// Double avgRating = getTotalAvgRating(ratings, totalNumOfEvaluations);
 
-			ratingReviews.setTotalRating(getTotalRating(document));
+			Integer total = getTotalRating(document);
+
+			ratingReviews.setTotalRating(total);
+			ratingReviews.setTotalWrittenReviews(total);
 			ratingReviews.setAverageOverallRating(getTotalAvgRating(document));
 
 			List<String> idList = crawlInternalIds(document, internalPid);
