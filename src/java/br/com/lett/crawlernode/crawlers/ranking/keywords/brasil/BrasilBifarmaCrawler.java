@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -17,19 +16,21 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 		this.log("Página " + this.currentPage);
 
 		// monta a url com a keyword e a página
-		String url = "https://www.bifarma.com.br/busca_Loja.html?q=" + this.keywordWithoutAccents.replace(" ", "+");
+		String url = "https://www.bifarma.com.br/busca_Loja.html?q="
+				+ this.keywordWithoutAccents.replace(" ", "+");
 		this.log("Link onde são feitos os crawlers: " + url);
 
-		
-		//url = URLBox.getUrlForHtmlUrlBox(url, session, 1, null);
-		//CommonMethods.delay(15);
-		this.currentDoc = fetchDocumentWithWebDriver(url);
+		if (this.currentPage == 1) {
+			this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
+		} else {
+			this.currentDoc = fetchDocumentWithWebDriver(url);
+		}
 
 		Elements products = this.currentDoc.select("#gridProdutos .product");
 
 		// se obter 1 ou mais links de produtos e essa página tiver resultado
 		// faça:
-		if (products.size() >= 1) {
+		if (!products.isEmpty()) {
 			for (Element e : products) {
 
 				// InternalPid
@@ -54,7 +55,7 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 			this.result = false;
 			this.log("Keyword sem resultado!");
 		}
-		
+
 		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
 				+ this.arrayProducts.size() + " produtos crawleados");
 	}
@@ -67,19 +68,19 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 
 	private String crawlInternalId(Element e) {
 		String internalId = null;
-		
+
 		return internalId;
 	}
 
 	private String crawlInternalPid(Element e) {
 		String internalPid = null;
-		
+
 		Element id = e.select("#produto_id").first();
-		
-		if(id != null) {
+
+		if (id != null) {
 			internalPid = id.val();
 		}
-		
+
 		return internalPid;
 	}
 
@@ -87,13 +88,13 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 		String productUrl = null;
 
 		Element url = e.select("meta[itemprop=url]").first();
-		
-		if(url != null) {
+
+		if (url != null) {
 			productUrl = url.attr("content");
-	
+
 			if (!productUrl.contains("bifarma")) {
 				productUrl = "https://www.bifarma.com.br/" + productUrl;
-			} else if(!productUrl.contains("http")) {
+			} else if (!productUrl.contains("http")) {
 				productUrl = "https://" + productUrl;
 			}
 		}

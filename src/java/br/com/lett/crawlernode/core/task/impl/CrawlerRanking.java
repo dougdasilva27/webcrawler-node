@@ -745,6 +745,17 @@ public abstract class CrawlerRanking extends Task {
 	 * @return
 	 */
 	protected Document fetchDocumentWithWebDriver(String url) {
+		return fetchDocumentWithWebDriver(url, null);
+	}
+
+	/**
+	 * Conecta url com webdriver
+	 * 
+	 * @param url
+	 * @param timeout
+	 * @return
+	 */
+	protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
 		if (this.currentPage == 1) {
 			this.session.setOriginalURL(url);
 		}
@@ -753,6 +764,10 @@ public abstract class CrawlerRanking extends Task {
 		if (this.webdriver == null) {
 			Document doc = new Document(url);
 			this.webdriver = startWebDriver(url);
+
+			if (timeout != null) {
+				this.webdriver.waitLoad(timeout);
+			}
 
 			String html = this.webdriver.getCurrentPageSource();
 			session.addRedirection(url, webdriver.getCurURL());

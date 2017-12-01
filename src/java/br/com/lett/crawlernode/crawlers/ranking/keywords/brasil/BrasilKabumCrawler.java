@@ -62,8 +62,11 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 		// número de produtos or página
 		this.pageSize = 30;
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocumentWithWebDriver(url);
+		if (this.currentPage == 1) {
+			this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
+		} else {
+			this.currentDoc = fetchDocumentWithWebDriver(url);
+		}
 
 		if (this.currentPage == 1) {
 			this.baseUrl = this.session.getRedirectedToURL(url);
