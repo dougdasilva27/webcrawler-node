@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -38,17 +38,25 @@ public class BrasilKabumCrawler extends Crawler {
 	}
 
 	@Override
-	public void handleCookiesBeforeFetch() {
-		Logging.printLogDebug(logger, session, "Adding cookie...");
+	protected Object fetch() {
+		this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+		Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-		Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
+		Element script = doc.select("script").first();
+		Element robots = doc.select("meta[name=robots]").first();
 
-		for (Entry<String, String> entry : cookiesMap.entrySet()) {
-			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-			cookie.setDomain(".kabum.com.br");
-			cookie.setPath("/");
-			this.cookies.add(cookie);
+		if (script != null && robots != null) {
+			String eval = script.html().trim();
+			if (!eval.isEmpty()) {
+				Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
+				this.webdriver.executeJavascript(eval);
+			}
+
+			this.webdriver.waitLoad(9000);
+			return Jsoup.parse(this.webdriver.getCurrentPageSource());
 		}
+
+		return doc;
 	}
 
 	@Override

@@ -76,10 +76,10 @@ public class DynamicDataFetcher {
 		// choose a proxy randomly
 		String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
 
-		// Bifarma block luminati_server
-		if (session.getMarket().getName().equals("bifarma")) {
-			proxyString = ProxyCollection.BONANZA;
-		}
+		// // Bifarma block luminati_server
+		// if (session.getMarket().getName().equals("bifarma")) {
+		// proxyString = ProxyCollection.LUMINATI_RESIDENTIAL_BR;
+		// }
 
 		LettProxy proxy = randomProxy(proxyString, session);
 
@@ -113,7 +113,7 @@ public class DynamicDataFetcher {
 		// Set a random user agent
 		//
 		caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent",
-				"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+				DataFetcher.randUserAgent());
 
 		//
 		// Tell the HAProxy which proxy service we want to use
