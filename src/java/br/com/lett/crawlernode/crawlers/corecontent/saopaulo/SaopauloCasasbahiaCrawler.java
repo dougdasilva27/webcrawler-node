@@ -124,7 +124,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 			String primaryImage = this.crawlPrimaryImage(doc);
 
 			// Secondary images
-			String secondaryImages = this.crawlSecondaryImages(doc, false);
+			String secondaryImages = this.crawlSecondaryImages(doc, doc.select(".textoIndisponivel").first() != null);
 
 			// Description
 			String description = this.crawlDescription(doc);

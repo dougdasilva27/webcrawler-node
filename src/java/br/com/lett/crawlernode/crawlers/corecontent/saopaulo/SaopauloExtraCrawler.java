@@ -407,6 +407,10 @@ public class SaopauloExtraCrawler extends Crawler {
 
 			p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 			p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+			p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+			p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+			p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+			p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
 
 		}
 

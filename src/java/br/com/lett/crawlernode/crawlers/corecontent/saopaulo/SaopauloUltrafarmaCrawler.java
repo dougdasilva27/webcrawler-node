@@ -3,13 +3,16 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,6 +20,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -34,6 +38,25 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
 	}
 
+	@Override
+	public void handleCookiesBeforeFetch() {
+		Logging.printLogDebug(logger, session, "Adding cookie...");
+		
+		BasicClientCookie cookie = new BasicClientCookie("ultrafarma_uf", "SP");
+		cookie.setDomain(".ultrafarma.com.br");
+		cookie.setPath("/");
+		this.cookies.add(cookie);
+		
+		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
+		
+		for(Entry<String, String> entry : cookiesMap.entrySet()) {
+			BasicClientCookie cookie2 = new BasicClientCookie(entry.getKey(), entry.getValue());
+			cookie2.setDomain(".ultrafarma.com.br");
+			cookie2.setPath("/");
+			this.cookies.add(cookie2);
+		}
+	}
+	
 
 	@Override
 	public List<Product> extractInformation(Document doc) throws Exception {
@@ -76,11 +99,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 			Float price = null;
 			Element elementPrice = doc.select(".txt_preco_por").first();
 			if(elementPrice != null) {
-				String priceText = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".");
-				
-				if(!priceText.isEmpty()) {
-					price = Float.parseFloat(priceText);
-				}
+				price = MathCommonsMethods.parseFloat(elementPrice.text());
 			}
 
 			// Categorias
