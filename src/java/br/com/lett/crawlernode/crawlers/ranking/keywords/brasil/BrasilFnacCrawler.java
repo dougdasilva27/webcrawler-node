@@ -2,131 +2,131 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilFnacCrawler extends CrawlerRankingKeywords {
 
-	public BrasilFnacCrawler(Session session) {
-		super(session);
-	}
+  public BrasilFnacCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		this.log("Página " + this.currentPage);
-		this.pageSize = 40;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.log("Página " + this.currentPage);
+    this.pageSize = 40;
 
-		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-		String url = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
-		takeAScreenshot(url);
+    String url = "https://www.fnac.com.br/#!Popup_opzSearch=termos--"
+        + this.location.trim().replace(" ", "--e--");
 
-		String apiUrl = "http://search.oppuz.com/opz/api/search?page=" + this.currentPage + "&limit=" + this.productsLimit
-				+ "&sort=score.desc&sortingOrMoreItemsEvent=true&store=fnac"
-				+ "&text=&typedText=&hashBangQuery=termos--" + this.keywordEncoded
-				+ "&fallbackSubstantives&callback=Opz.SearchPage.callback";
-		
-		this.log("Link onde são feitos os crawlers: " + apiUrl);	
+    takeAScreenshot(url);
 
-		JSONObject search = fetchAPI(apiUrl);
-		JSONArray products = crawlProducts(search);
+    String apiUrl = "http://search.oppuz.com/opz/api/search?page=" + this.currentPage + "&limit="
+        + this.productsLimit + "&sort=score.desc&sortingOrMoreItemsEvent=true&store=fnac"
+        + "&text=&typedText=&hashBangQuery=termos--" + this.keywordEncoded
+        + "&fallbackSubstantives&callback=Opz.SearchPage.callback";
 
-		if (products.length() > 0) {
-			if (this.totalProducts == 0) {
-				setTotalProducts(search);
-			}
+    this.log("Link onde são feitos os crawlers: " + apiUrl);
 
-			for (int i = 0; i < products.length(); i++) {
-				JSONObject product = products.getJSONObject(i);
-				
-				String internalPid = null;
-				String internalId = crawlInternalId(product);
-				String productUrl = crawlProductUrl(product);
+    JSONObject search = fetchAPI(apiUrl);
+    JSONArray products = crawlProducts(search);
 
-				saveDataProduct(internalId, internalPid, productUrl);
+    if (products.length() > 0) {
+      if (this.totalProducts == 0) {
+        setTotalProducts(search);
+      }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+      for (int i = 0; i < products.length(); i++) {
+        JSONObject product = products.getJSONObject(i);
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-	}
+        String internalPid = null;
+        String internalId = crawlInternalId(product);
+        String productUrl = crawlProductUrl(product);
 
-	@Override
-	protected boolean hasNextPage() {
-		return arrayProducts.size() < this.totalProducts;
-	}
+        saveDataProduct(internalId, internalPid, productUrl);
 
-	protected void setTotalProducts(JSONObject search) {
-		if(search.has("total")) {
-			Object total = search.get("total");
-			
-			if(total instanceof Integer) {
-				this.totalProducts = (Integer) total;
-				
-				this.log("Total: " + this.totalProducts);
-			}
-		}
-	}
-	
-	private String crawlInternalId(JSONObject product) {
-		String internalId = null;
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-		if(product.has("sku")) {
-			internalId = product.get("sku").toString();
-		}
-		
-		return internalId;
-	}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-	private String crawlProductUrl(JSONObject product) {
-		String productUrl = null;
+  @Override
+  protected boolean hasNextPage() {
+    return arrayProducts.size() < this.totalProducts;
+  }
 
-		if (product.has("url")) {
-			productUrl = CommonMethods.sanitizeUrl(product.getString("url"));
-		}
+  protected void setTotalProducts(JSONObject search) {
+    if (search.has("total")) {
+      Object total = search.get("total");
 
-		return productUrl;
-	}
+      if (total instanceof Integer) {
+        this.totalProducts = (Integer) total;
 
-	
-	private JSONArray crawlProducts(JSONObject json) {
-		JSONArray products = new JSONArray();
-		
-		if(json.has("results")) {
-			products = json.getJSONArray("results");
-		}
-		
-		return products;
-	}
-	
-	private JSONObject fetchAPI(String url) {
-		JSONObject api = new JSONObject();
-		
-		String body = fetchGETString(url, null);
-		
-		if(body.contains("({")) {
-			int x = body.indexOf("({") + 1;
-			int y = body.indexOf("})", x) + 1;
-			
-			String json = body.substring(x, y);
-			
-			try {
-				api = new JSONObject(json);
-			} catch (Exception e) {
-				this.logError("Erro ao parsear json.", e);
-			}
-		}
-		
-		return api;
-	}
+        this.log("Total: " + this.totalProducts);
+      }
+    }
+  }
+
+  private String crawlInternalId(JSONObject product) {
+    String internalId = null;
+
+    if (product.has("sku")) {
+      internalId = product.get("sku").toString();
+    }
+
+    return internalId;
+  }
+
+  private String crawlProductUrl(JSONObject product) {
+    String productUrl = null;
+
+    if (product.has("url")) {
+      productUrl = CommonMethods.sanitizeUrl(product.getString("url"));
+    }
+
+    return productUrl;
+  }
+
+
+  private JSONArray crawlProducts(JSONObject json) {
+    JSONArray products = new JSONArray();
+
+    if (json.has("results")) {
+      products = json.getJSONArray("results");
+    }
+
+    return products;
+  }
+
+  private JSONObject fetchAPI(String url) {
+    JSONObject api = new JSONObject();
+
+    String body = fetchGETString(url, null);
+
+    if (body.contains("({")) {
+      int x = body.indexOf("({") + 1;
+      int y = body.indexOf("})", x) + 1;
+
+      String json = body.substring(x, y);
+
+      try {
+        api = new JSONObject(json);
+      } catch (Exception e) {
+        this.logError("Erro ao parsear json.", e);
+      }
+    }
+
+    return api;
+  }
 }
