@@ -2,126 +2,123 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilEfacilCrawler extends CrawlerRankingKeywords{
+public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
-	public BrasilEfacilCrawler(Session session) {
-		super(session);
-	}
+  public BrasilEfacilCrawler(Session session) {
+    super(session);
+  }
 
-	private boolean isCategory;
-	private String codCat;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 12;
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
-	
-		this.log("Página "+ this.currentPage);
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.efacil.com.br/loja/busca?searchTerm="+this.keywordEncoded+"&pageSize=50&beginIndex="+this.arrayProducts.size();
-		
-		if(this.currentPage == 1) {
-			//chama função de pegar a url
-			this.currentDoc = fetchDocument(url);
-			makeCodCat(url);
-		}
-		
-		//monta a url de uma possível categoria
-		String urlCat = "http://www.efacil.com.br/webapp/wcs/stores/servlet/CategoryNavigationResultsView?pageSize=50&beginIndex="+this.arrayProducts.size()
-				+ "&manufacturer=&searchType=&resultCatEntryType=&catalogId=10051"
-				+ "&categoryId="+this.codCat+"&langId=-6&storeId=10154&sType=SimpleSearch&filterFacet=&metaData=";
+    this.log("Página " + this.currentPage);
 
-		//se for categoria deverá entrar em outra url;
-		if(this.currentPage > 1){
-			if(this.isCategory) {
-				this.currentDoc = fetchDocument(urlCat);	
-			} else {
-				this.currentDoc = fetchDocument(url);
-			}
-		}
-		
-		this.log("Link onde são feitos os crawlers: "+ url);	
-				
-		Elements id =  this.currentDoc.select("div.products-list div.product");
-	
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(id.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			
-			for(Element e : id) {
-				//seta o id da classe pai com o id retirado do elements
-				Element ids 		= e.select("div.block-product").first();
-				String[] tokens 	= ids.attr("id").split("_");
-				String internalPid 	= tokens[tokens.length-1];
-				String internalId 	= null;
-				
-				//monta a url
-				Element urlElement = ids.select("a").first();
-				String urlProduct = urlElement.attr("href");
-				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
-				
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+    // monta a url com a keyword e a página
+    String url = "https://busca.efacil.com.br/busca?q=" + this.keywordEncoded + "&page="
+        + this.currentPage + "&results_per_page=48";
+    this.log("Link onde são feitos os crawlers: " + url);
 
-	@Override
-	protected boolean hasNextPage() {
-		//se  elemeno page obtiver 50 resultados
-		if(this.arrayProducts.size() < this.totalProducts)
-		{
-			//tem próxima página
-			return true;
-		}
-		else
-		{
-			//não tem próxima página
-			return false;
-		}
-	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span#totalCountSpan").first();
-		
-		if(totalElement != null) {
-			try {			
-				this.totalProducts = Integer.parseInt(totalElement.text());
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
-	
-	private void makeCodCat(String url) {
-		if(this.currentDoc.baseUri().equals(url)) {
-			isCategory = false;
-		} else {
-			Element code  = this.currentDoc.select("input#categoryId").first();
-			if(code != null) {
-				this.codCat = code.attr("value");
-	
-				isCategory = true;
-			} else {
-				isCategory = false;
-			}
-		}	
-	}
+    // chama função de pegar o html
+    this.currentDoc = fetchDocument(url);
+
+    Elements products = this.currentDoc.select(".nm-product-item");
+
+    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+    if (products.size() >= 1) {
+      // se o total de busca não foi setado ainda, chama a função para setar
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+
+        // InternalPid
+        String internalPid = crawlInternalPid(e);
+
+        // InternalId
+        String internalId = crawlInternalId(e);
+
+        // Url do produto
+        String productUrl = crawlProductUrl(e);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  @Override
+  protected boolean hasNextPage() {
+    // se elemeno page obtiver algum resultado
+    if (this.arrayProducts.size() < this.totalProducts) {
+      // tem próxima página
+      return true;
+    }
+
+    return false;
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
+
+    if (totalElement != null) {
+      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
+
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
+
+  private String crawlInternalId(Element e) {
+    return null;
+  }
+
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
+    Element pid = e.select("div[id^=block_product_]").first();
+
+    if (pid != null) {
+      String[] tokens = pid.attr("id").split("_");
+      internalPid = tokens[tokens.length - 1];
+    }
+
+    return internalPid;
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+    Element eUrl = e.select(".nm-product-name a").first();
+
+    if (eUrl != null) {
+      productUrl = eUrl.attr("href").trim();
+
+      if (!productUrl.startsWith("http")) {
+        productUrl = "https:" + productUrl;
+      }
+    }
+
+    return productUrl;
+  }
 
 }
