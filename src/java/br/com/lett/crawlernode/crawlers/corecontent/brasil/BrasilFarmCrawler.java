@@ -154,13 +154,13 @@ public class BrasilFarmCrawler extends Crawler {
     if (nameElement != null) {
       name.append(nameElement.text().trim());
 
-      if (skuJson.has("spec")) {
-        JSONObject spec = skuJson.getJSONObject("spec");
+      if (skuJson.has("specs")) {
+        JSONObject spec = skuJson.getJSONObject("specs");
 
         Iterator<?> i = spec.keys();
 
         while (i.hasNext()) {
-          name.append(" " + i.next());
+          name.append(" " + spec.get(i.next().toString()).toString().toLowerCase());
         }
       }
 
