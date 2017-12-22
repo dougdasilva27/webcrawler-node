@@ -103,6 +103,36 @@ public class BrasilFarmCrawler extends Crawler {
    * General methods *
    *******************/
 
+  /**
+   * Ex:
+   * {
+   *    "page":{
+   *        "name":"product",
+   *        "tags":["categorias","acessórios","bijoux","calçados","havaianas"]
+   *     },
+   *     "product":{
+   *        "id":"229789_44",
+   *        "name":"colar makalu",
+   *        "price":68.7,
+   *        "specs":{
+   *            "size":["U"],
+   *            "color":["COLORIDO"]
+   *        },
+   *        "skus":[
+   *            {
+   *                "sku":"229789_44_1",
+   *                "specs":{"color":"COLORIDO","size":"U"},
+   *                "stock":0,
+   *                "status":"unavailable"
+   *            }
+   *        ],
+   *        "status":"unavailable",
+   *        "tags":["categorias","acessórios","bijoux","calçados","havaianas"]
+   *    }
+   *}
+   * @param doc
+   * @return
+   */
   private JSONObject crawlProductJson(Document doc) {
     JSONObject productJson = new JSONObject();
     JSONObject skusInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=text/javascript]",
