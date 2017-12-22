@@ -282,7 +282,7 @@ public class Processor {
 		DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
 		String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-		// get the previous behavior object
+		// Get the previous behavior object
 		Behavior oldBehaviour;
 		if (newProcessedProduct.getBehaviour() == null) {
 			oldBehaviour = new Behavior();
@@ -292,16 +292,14 @@ public class Processor {
 
 		Behavior newBehavior = new Behavior();
 
-		// order the old behavior by date asc
+		// Order the old behavior by date ascending
 		oldBehaviour.orderByDateAsc();
 
-		//
-		// adding the first behavior element of this day
+		// Add the first behavior element of this day
 		// which is the last behavior element from yesterday
-		//
 		addFirstBehaviorElementOfDay(oldBehaviour, newBehavior, startOfDay, startOfDayISO, session);
 
-		// create the new BehaviorElement
+		// Create the new BehaviorElement
 		try {
 			BehaviorElement behaviorElement = createNewBehaviorElement(
 					nowISO, 
@@ -356,39 +354,44 @@ public class Processor {
 
 			BehaviorElementBuilder builder = new BehaviorElement.BehaviorElementBuilder();
 
-			// date
+			// Date
 			builder.setDate(startDayBehaviorElementDate);
 
-			// status
+			// Status
 			if (lastBehaviorBeforeToday.getStatus() == null) {
 				builder.setStatus("void");
 			} else {
 				builder.setStatus(lastBehaviorBeforeToday.getStatus());
 			}			
 
-			// price
+			// Price
 			if (lastBehaviorBeforeToday.getPrice() != null && Double.compare(lastBehaviorBeforeToday.getPrice(), 0.0) <= 0) {
 				builder.setPrice(null);
 			} else {
 				builder.setPrice(lastBehaviorBeforeToday.getPrice());
 			}
 
-			// prices
+			// Prices
 			builder.setPrices(lastBehaviorBeforeToday.getPrices());
 
-			// available
+			// Available
 			if ( "available".equals(lastBehaviorBeforeToday.getStatus()) ) {
 				builder.setAvailable(true);
 			} else {
 				builder.setAvailable(false);
 			}
 
-			// marketplace
+			// Marketplace
 			if ( lastBehaviorBeforeToday.getMarketplace() != null ) {
-				builder.setMarketplace( lastBehaviorBeforeToday.getMarketplace().clone() );
+				builder.setMarketplace(lastBehaviorBeforeToday.getMarketplace().clone());
+			}
+			
+			// Stock
+			if (lastBehaviorBeforeToday.getStock() != null) {
+				builder.setStock(lastBehaviorBeforeToday.getStock());
 			}
 
-			// add the first behavior of this day
+			// Add the first behavior of this day
 			try {
 				BehaviorElement be = builder.build();
 				newBehavior.add(be);
