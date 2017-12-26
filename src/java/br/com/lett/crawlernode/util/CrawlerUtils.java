@@ -156,7 +156,7 @@ public class CrawlerUtils {
 
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
-        int y = scriptDesc.indexOf("})", x) + 1;
+        int y = scriptDesc.lastIndexOf("})") + 1;
 
         String json = scriptDesc.substring(x, y);
 
