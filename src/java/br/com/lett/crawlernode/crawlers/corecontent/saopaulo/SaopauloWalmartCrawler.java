@@ -141,6 +141,8 @@ public class SaopauloWalmartCrawler extends Crawler {
 
     if (json.has("skuId")) {
       internalId = json.get("skuId").toString();
+    } else if (json.has("options")) {
+      internalId = json.get("productSku").toString();
     }
 
     return internalId;
@@ -512,15 +514,35 @@ public class SaopauloWalmartCrawler extends Crawler {
           productsListInfo = dataLayer.getJSONArray("trees").getJSONObject(0)
               .getJSONObject("skuTree").getJSONArray("options");
 
-          if (productsListInfo.length() == 0) {
-            productsListInfo.put(new JSONObject("{\"name\":\"\",\"skuId\":"
-                + dataLayer.getJSONArray("trees").getJSONObject(0).get("standardSku") + "}"));
-          }
-
+          assembleSkuJsonForSingleProduct(productsListInfo, dataLayer);
         }
       }
     }
 
     return productsListInfo;
+  }
+
+  private void assembleSkuJsonForSingleProduct(JSONArray productsListInfo, JSONObject dataLayer) {
+    if (productsListInfo.length() > 0) {
+      for (int i = 0; i < productsListInfo.length(); i++) {
+        JSONObject product = productsListInfo.getJSONObject(i);
+
+        if (!product.has("skuId") && dataLayer.has("trees")) {
+          JSONArray trees = dataLayer.getJSONArray("trees");
+
+          if (trees.length() >= i) {
+            JSONObject sku = trees.getJSONObject(i);
+
+            if (sku.has("standardSku")) {
+              productsListInfo.getJSONObject(i).put("skuId", sku.get("standardSku"));
+            }
+          }
+        }
+      }
+
+    } else {
+      productsListInfo.put(new JSONObject("{\"name\":\"\",\"skuId\":"
+          + dataLayer.getJSONArray("trees").getJSONObject(0).get("standardSku") + "}"));
+    }
   }
 }
