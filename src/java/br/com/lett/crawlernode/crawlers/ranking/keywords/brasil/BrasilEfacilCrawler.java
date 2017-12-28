@@ -29,7 +29,7 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
     Elements products = this.currentDoc.select(".nm-product-item");
 
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (products.size() >= 1) {
+    if (!products.isEmpty()) {
       // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
         setTotalProducts();
@@ -96,11 +96,11 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
   private String crawlInternalPid(Element e) {
     String internalPid = null;
-    Element pid = e.select("div[id^=block_product_]").first();
+    Element pid = e.select(".nm-box-product").first();
 
     if (pid != null) {
-      String[] tokens = pid.attr("id").split("_");
-      internalPid = tokens[tokens.length - 1];
+      String[] tokens = pid.attr("class").split("block_product_");
+      internalPid = tokens[tokens.length - 1].trim().split(" ")[0].trim();
     }
 
     return internalPid;
