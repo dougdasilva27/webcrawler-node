@@ -25,7 +25,7 @@ public class BrasilFnacCrawler extends CrawlerRankingKeywords {
     String apiUrl = "http://search.oppuz.com/opz/api/search?page=" + this.currentPage + "&limit="
         + this.productsLimit + "&sort=score.desc&sortingOrMoreItemsEvent=true&store=fnac"
         + "&text=&typedText=&hashBangQuery=termos--" + this.keywordEncoded
-        + "&fallbackSubstantives&callback=Opz.SearchPage.callback";
+        + "&fallbackSubstantives";
 
     this.log("Link onde são feitos os crawlers: " + apiUrl);
 
