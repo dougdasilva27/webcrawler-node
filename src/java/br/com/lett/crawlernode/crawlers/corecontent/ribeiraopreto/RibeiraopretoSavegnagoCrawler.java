@@ -29,8 +29,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
    * Bebedouro - 9 Monte Alto - 12 Araraquara - 4 São carlos - 5 Matão - 8
    */
 
-  private final String HOME_PAGE = "http://www.savegnagoonline.com.br/";
-  private final String HOME_PAGE_SPECIAL = "http://www.savegnago.com.br/";
+  private static final String HOME_PAGE = "https://www.savegnago.com.br/";
 
   public RibeiraopretoSavegnagoCrawler(Session session) {
     super(session);
@@ -200,7 +199,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return ((url.startsWith(HOME_PAGE_SPECIAL) || url.startsWith(HOME_PAGE)) && url.contains("/p"));
+    return (url.contains("/p"));
   }
 
   /**
