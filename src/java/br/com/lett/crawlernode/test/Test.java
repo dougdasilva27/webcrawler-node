@@ -129,13 +129,13 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
+        session = SessionFactory.createTestRankingKeywordsSession("All in one", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session = SessionFactory.createTestRankingCategoriesSession(
             "https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
       } else {
         session =
-            SessionFactory.createTestSession("https://www.shoptime.com.br/produto/7389718", market);
+            SessionFactory.createTestSession("https://www.shoptime.com.br/produto/131157761", market);
       }
 
 
