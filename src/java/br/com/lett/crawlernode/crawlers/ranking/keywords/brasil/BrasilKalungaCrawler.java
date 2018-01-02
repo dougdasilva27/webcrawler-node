@@ -97,7 +97,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
     String internalPid;
 
     String[] tokens = e.attr("href").split("/");
-    internalPid = tokens[tokens.length - 1].replaceAll("[^0-9]", "");
+    internalPid = tokens[tokens.length - 1].split("?")[0].replaceAll("[^0-9]", "");
 
     return internalPid;
   }
