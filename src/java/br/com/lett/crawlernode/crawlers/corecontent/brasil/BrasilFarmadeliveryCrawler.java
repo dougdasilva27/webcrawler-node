@@ -118,7 +118,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
 			String secondaryImages = null;
 			JSONArray secondaryImagesArray = new JSONArray();
-			Elements elementSecondaryImages = doc.select("ul.more-views-list li a");
+			Elements elementSecondaryImages = doc.select(".product-img-box .more-views li a");
 
 			if(elementSecondaryImages.size() > 1){
 				for(int i = 1; i < elementSecondaryImages.size();i++){
@@ -130,6 +130,8 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 			if(secondaryImagesArray.length() > 0) {
 				secondaryImages = secondaryImagesArray.toString();
 			}
+			
+			System.out.println(secondaryImages);
 
 			// Descrição
 			Elements elementDescription = doc.select("div.product-collateral");

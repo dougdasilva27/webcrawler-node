@@ -94,12 +94,9 @@
 			<artifactId>http</artifactId>
 			<version>20070405</version>
 		</dependency>
-		
-		<!-- 
-			A JPEG reader plugin for Java ImageIO
-			This plugin will deal with cases where we have
-			Images encoded in CYMK color space 
-		-->
+
+		<!-- A JPEG reader plugin for Java ImageIO This plugin will deal with cases 
+			where we have Images encoded in CYMK color space -->
 		<dependency>
 			<groupId>com.twelvemonkeys.imageio</groupId>
 			<artifactId>imageio-jpeg</artifactId>
@@ -138,8 +135,8 @@
 			<artifactId>db</artifactId>
 			<version>2.3.3</version>
 		</dependency>
-		
-		<!-- Lett models  -->
+
+		<!-- Lett models -->
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>lett-models</artifactId>
