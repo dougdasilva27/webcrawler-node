@@ -51,6 +51,7 @@ public class Test {
   private static final Logger logger = LoggerFactory.getLogger(Test.class);
 
   public static void main(String args[]) {
+	  
 
     // adding command line options
     options = new Options();
