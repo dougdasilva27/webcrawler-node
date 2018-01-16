@@ -26,7 +26,7 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select("div.product_box"); 
+		Elements products =  this.currentDoc.select("div .products-grid"); 
 
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
