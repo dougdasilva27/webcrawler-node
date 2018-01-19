@@ -74,8 +74,7 @@ public class BrasilDufrioCrawler extends Crawler {
 	 */
 	@Override
 	public void handleCookiesBeforeFetch() {
-		Document doc = Jsoup.parse(
-				GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
+		Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
 
 		this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
 
@@ -109,20 +108,20 @@ public class BrasilDufrioCrawler extends Crawler {
 					String cookieValues =
 							cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
 
-					String[] tokens = cookieValues.split("=");
+							String[] tokens = cookieValues.split("=");
 
-					if (tokens.length > 1) {
+							if (tokens.length > 1) {
 
-						BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-						cookie.setDomain("www.dufrio.com.br");
-						cookie.setPath("/");
-						this.cookies.add(cookie);
+								BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
+								cookie.setDomain("www.dufrio.com.br");
+								cookie.setPath("/");
+								this.cookies.add(cookie);
 
-						BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-						cookie2.setDomain("www.dufrio.com.br");
-						cookie2.setPath("/");
-						this.cookies.add(cookie2);
-					}
+								BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
+								cookie2.setDomain("www.dufrio.com.br");
+								cookie2.setPath("/");
+								this.cookies.add(cookie2);
+							}
 				}
 
 			} catch (ScriptException e) {
@@ -246,7 +245,7 @@ public class BrasilDufrioCrawler extends Crawler {
 
 	private Float crawlPrice(Document document) {
 		Float price = null;
-		Element salePriceElement = document.select(".boxComprar .boxComprar-t1").first();
+		Element salePriceElement = document.select(".boxComprarNew .boxComprarNew-t1").first();
 
 		boolean oldPrice = false;
 
@@ -263,7 +262,7 @@ public class BrasilDufrioCrawler extends Crawler {
 		}
 
 		if (oldPrice) {
-			salePriceElement = document.select(".boxComprar .boxComprar-t2").first();
+			salePriceElement = document.select(".boxComprarNew .boxComprarNew-t2").first();
 
 			if (salePriceElement != null) {
 				price = MathCommonsMethods.parseFloat(salePriceElement.text());
@@ -355,12 +354,9 @@ public class BrasilDufrioCrawler extends Crawler {
 		Prices prices = new Prices();
 
 		if (price != null) {
-			Element aVista = doc.select(".boxComprar-t3").first();
-			Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
+			Element aVista = doc.select(".precos1x .precos1x-t2").first();
 			if (aVista != null) {
 				String text = aVista.text().trim();
-
 				if (text.contains("boleto")) {
 					int x = text.indexOf("ou") + 2;
 					int y = text.indexOf("no", x);
@@ -370,7 +366,24 @@ public class BrasilDufrioCrawler extends Crawler {
 				}
 			}
 
-			Elements parcels = doc.select(".baixoDetalhe-parcelamento span");
+			if (aVista == null) {
+				aVista = doc.select(".boxComprarNew-t3").first();
+
+				if (aVista != null) {
+					String text = aVista.text().trim();
+
+					if (text.contains("boleto")) {
+						int x = text.indexOf("ou") + 2;
+						int y = text.indexOf("no", x);
+
+						Float bankTicketPrice = MathCommonsMethods.parseFloat(text.substring(x, y));
+						prices.setBankTicketPrice(bankTicketPrice);
+					}
+				}
+			}
+
+			Map<Integer, Float> installmentPriceMap = new HashMap<>();
+			Elements parcels = doc.select(".baixoDetalhe-parcelamentoNew span");
 
 			for (Element e : parcels) {
 				String parcelText = e.text().toLowerCase();
