@@ -108,7 +108,6 @@ public class GETFetcher {
 	public static String fetchPageGET(Session session, String url, List<Cookie> cookies,
 			String userAgent, LettProxy lettProxy, int attempt) {
 
-
 		LettProxy randProxy = null;
 		CloseableHttpResponse closeableHttpResponse = null;
 		int responseLength = 0;
@@ -131,8 +130,7 @@ public class GETFetcher {
 					headers.put("Cookie", cookiesHeader.toString());
 				}
 
-				JSONObject payload =
-						POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
+				JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
 				JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 
 				DataFetcher.setRequestProxyForFetcher(session, response, url);
@@ -152,21 +150,17 @@ public class GETFetcher {
 				return content;
 			}
 
-			randProxy = lettProxy != null ? lettProxy
-					: DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+			randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
 			CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 			if (randProxy != null) {
-				Logging.printLogDebug(logger, session,
-						"Using " + randProxy.getSource() + "(proxy) for this request.");
+				Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
 				session.addRequestProxy(url, randProxy);
 				if (randProxy.getUser() != null) {
-					credentialsProvider.setCredentials(
-							new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-							new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
+					credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()), new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
 				}
 			} else {
 				Logging.printLogWarn(logger, session, "Using no proxy for this request.");
@@ -180,46 +174,26 @@ public class GETFetcher {
 			RequestConfig requestConfig = null;
 			if (proxy != null) {
 
-
-				if (session.getMarket().getName() != null
-						&& DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
-					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
+					requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																			// true
 									.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 									.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 									.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT).setProxy(proxy).build();
 				} else {
-					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+					requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																			// true
 									.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
 									.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
 									.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
 				}
 
 			} else {
-
-				if (session.getMarket().getName() != null
-						&& DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
-					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+				if (session.getMarket().getName() != null && DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
+					requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																				// true
 									.setConnectionRequestTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 									.setConnectTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT)
 									.setSocketTimeout(DataFetcher.THIRTY_SECONDS_TIMEOUT).build();
-				} else {
-					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+				} else { 
+					requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																					// true
 									.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
 									.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
 									.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).build();
@@ -233,8 +207,7 @@ public class GETFetcher {
 			List<Header> headers = new ArrayList<>();
 			headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
 
-			CloseableHttpClient httpclient =
-					HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(userAgent)
+			CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(userAgent)
 							.setDefaultRequestConfig(requestConfig).setRedirectStrategy(redirectStrategy)
 							.setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(headers)
 							.setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory())
@@ -259,21 +232,14 @@ public class GETFetcher {
 			}
 
 			// creating the page content result from the http request
-			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																										// information
-																																										// from http
-																																										// entity
-			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-																																												// the
-																																												// status
-																																												// code
+			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading																																			
+			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting																																								
 			pageContent.setUrl(url); // setting url
 
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
-			DataFetcher.sendRequestInfoLog(url, DataFetcher.GET_REQUEST, randProxy, userAgent, session,
-					closeableHttpResponse, responseLength, requestHash);
+			DataFetcher.sendRequestInfoLog(url, DataFetcher.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
@@ -399,17 +365,11 @@ public class GETFetcher {
 						&& DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig =
 							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
 									.setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000)
 									.setProxy(proxy).build();
 				} else {
 					requestConfig =
 							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
 									.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
 									.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
 									.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
@@ -420,18 +380,12 @@ public class GETFetcher {
 				if (session.getMarket().getName() != null
 						&& DataFetcher.highTimeoutMarkets.contains(session.getMarket().getName())) {
 					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																			
 									.setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000)
 									.build();
 				} else {
 					requestConfig =
-							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-																																																		// redirect
-																																																		// to
-																																																		// true
+							RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set																				
 									.setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT)
 									.setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
 									.setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).build();
@@ -491,20 +445,13 @@ public class GETFetcher {
 
 			// creating the page content result from the http request
 			PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-																																										// information
-																																										// from http
-																																										// entity
 			pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-																																												// the
-																																												// status
-																																												// code
 			pageContent.setUrl(url); // setting url
 
 			responseLength = pageContent.getContentData().length;
 
 			// assembling request information log message
-			DataFetcher.sendRequestInfoLog(url, DataFetcher.GET_REQUEST, randProxy, randUserAgent,
-					session, closeableHttpResponse, responseLength, requestHash);
+			DataFetcher.sendRequestInfoLog(url, DataFetcher.GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
 			// saving request content result on Amazon
 			String content = "";
