@@ -1,132 +1,90 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class SaopauloPaguemenosCrawler extends CrawlerRankingKeywords {
 
-	public SaopauloPaguemenosCrawler(Session session) {
-		super(session);
-	}
+  public SaopauloPaguemenosCrawler(Session session) {
+    super(session);
+  }
 
-	private static final String COOKIE_ESTADO = "StoreCodePagueMenos";
-	private static final String COOKIE_VALUE = "437";
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 48;
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
+    this.log("Página " + this.currentPage);
 
-		Element inid = e.select("div.figure a > img.photo").first();
+    // se a key contiver o +, substitui por %20, pois nesse market a pesquisa na url é assim
+    String url = "https://www.paguemenos.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PS=50&PageNumber=" + this.currentPage;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		if (inid != null) {
-			if (!inid.attr("src").contains("indisponivel")) {
-				String[] tokens2 = inid.attr("src").split("/");
-				internalId = tokens2[tokens2.length - 2];
-			}
-		}
+    this.currentDoc = fetchDocument(url);
 
-		return internalId;
-	}
+    Elements products = this.currentDoc.select("div.vitrine.resultItemsWrapper div.prateleira > ul > li[layout]");
+    Elements ids = this.currentDoc.select("div.vitrine.resultItemsWrapper div.prateleira > ul > li[id].helperComplement");
 
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-		Element pid = e.select("input").first();
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-		if (pid != null) {
-			internalPid = pid.attr("value");
-		}
+      for (int i = 0; i < products.size(); i++) {
+        String internalPid = crawlInternalPid(ids.get(i));
+        String productUrl = crawlProductUrl(products.get(i));
 
-		return internalPid;
-	}
+        saveDataProduct(null, internalPid, productUrl);
 
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element eUrl = e.select(" a.link.url[title]").first();
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
-		if (eUrl != null) {
-			urlProduct = eUrl.attr("href");
-		}
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-		return urlProduct;
-	}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-	@Override
-	public void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 20;
+  }
 
-		this.log("Página " + this.currentPage);
+  @Override
+  protected boolean hasNextPage() {
+    return this.arrayProducts.size() < this.totalProducts;
+  }
 
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
 
-		// monta a url com a keyword e a página
-		String url = "http://loja.paguemenos.com.br/busca/3/0/0/Nome/Crescente/20/" + this.currentPage + "////" + key
-				+ ".aspx";
-		this.log("Link onde são feitos os crawlers: " + url);
+    if (totalElement != null) {
+      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url, cookies);
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
+    }
 
-		Elements products = this.currentDoc.select("#listProduct > li");
+    this.log("Total da busca: " + this.totalProducts);
+  }
 
-		// se essa página tiver resultado faça:
-		if (products.size() >= 1) {
-			for (Element e : products) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+  private String crawlInternalPid(Element e) {
+    return e.attr("id").split("_")[1];
+  }
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+  private String crawlProductUrl(Element e) {
+    String urlProduct = null;
+    Element urlElement = e.select(".product-content > a").first();
 
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+    if (urlElement != null) {
+      urlProduct = urlElement.attr("href");
+    }
 
-				saveDataProduct(internalId, internalPid, urlProduct);
-
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-			}
-		} else {
-			setTotalProducts();
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-		if (!(hasNextPage()))
-			setTotalProducts();
-	}
-
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select(".set-next.off").first();
-
-		if (page != null) {
-			return false;
-		}
-
-		return true;
-
-	}
-
-	@Override
-	protected void processBeforeFetch() {
-		// Criando cookie da loja 437 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie(COOKIE_ESTADO, COOKIE_VALUE);
-		cookie.setDomain("loja.paguemenos.com.br");
-		cookie.setPath("/");
-
-		this.cookies.add(cookie);
-	}
+    return urlProduct;
+  }
 }
