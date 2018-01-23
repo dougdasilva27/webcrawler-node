@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -77,8 +78,7 @@ public class BrasilFriopecasCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(this.session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       /*
        * *********************************** crawling data of only one product *
@@ -198,8 +198,7 @@ public class BrasilFriopecasCrawler extends Crawler {
     Element mainPagePriceElement = document.select(PRICE_SELECTOR).first();
 
     if (mainPagePriceElement != null) {
-      price = Float.parseFloat(mainPagePriceElement.text().trim().replaceAll("[^0-9,]+", "")
-          .replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(mainPagePriceElement.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -236,7 +235,7 @@ public class BrasilFriopecasCrawler extends Crawler {
       }
     }
 
-    return primaryImage;
+    return CommonMethods.sanitizeUrl(primaryImage);
   }
 
   private String crawlSecondaryImages(Document document) {
@@ -251,7 +250,7 @@ public class BrasilFriopecasCrawler extends Crawler {
       if (imageUrl.isEmpty())
         imageUrl = imagesElement.get(i).attr("rel");
       if (!imageUrl.isEmpty())
-        secondaryImagesArray.put(imageUrl);
+        secondaryImagesArray.put(CommonMethods.sanitizeUrl(imageUrl));
     }
 
     if (secondaryImagesArray.length() > 0) {
@@ -303,8 +302,7 @@ public class BrasilFriopecasCrawler extends Crawler {
     if (price != null) {
       String url = "http://www.friopecas.com.br/productotherpaymentsystems/" + internalId;
 
-      Document docPrices =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       // O preço no boleto não aparece com javascript desligado, mas aparece a porcentagem de
       // desconto
@@ -337,8 +335,7 @@ public class BrasilFriopecasCrawler extends Crawler {
         }
       }
 
-      Float cardFirstInstallment = MathCommonsMethods.normalizeTwoDecimalPlaces(
-          (float) (price - (price * (cardDiscount.floatValue() / 100.0))));
+      Float cardFirstInstallment = MathCommonsMethods.normalizeTwoDecimalPlaces((float) (price - (price * (cardDiscount.floatValue() / 100.0))));
 
       Elements cardsElements = docPrices.select("#ddlCartao option");
 
@@ -346,64 +343,55 @@ public class BrasilFriopecasCrawler extends Crawler {
         String text = e.text().toLowerCase();
 
         if (text.contains("visa")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
         } else if (text.contains("mastercard")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
         } else if (text.contains("diners")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
         } else if (text.contains("american") || text.contains("amex")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
         } else if (text.contains("hipercard")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
         } else if (text.contains("credicard")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 
         } else if (text.contains("elo")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
         } else if (text.contains("aura")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
 
         } else if (text.contains("discover")) {
-          Map<Integer, Float> installmentPriceMap =
-              getInstallmentsForCard(docPrices, e.attr("value"));
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(docPrices, e.attr("value"));
           installmentPriceMap.put(1, cardFirstInstallment);
 
           prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
@@ -437,8 +425,7 @@ public class BrasilFriopecasCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-              .replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -478,8 +465,7 @@ public class BrasilFriopecasCrawler extends Crawler {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-                  .split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
 
         }
       }
