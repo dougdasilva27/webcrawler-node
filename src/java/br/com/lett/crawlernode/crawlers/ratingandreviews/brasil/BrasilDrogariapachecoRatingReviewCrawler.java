@@ -1,25 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
 /**
@@ -32,203 +24,137 @@ import models.RatingsReviews;
  */
 public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawler {
 
-	public BrasilDrogariapachecoRatingReviewCrawler(Session session) {
-		super(session);
-	}
+  public BrasilDrogariapachecoRatingReviewCrawler(Session session) {
+    super(session);
+  }
 
 
-	@Override
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-		if (isProductPage(document)) {
-			RatingsReviews ratingReviews = new RatingsReviews();
-			ratingReviews.setDate(session.getDate());
+    if (isProductPage(document)) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
 
-			JSONObject skuJson = crawlSkuJson(document);
+      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
-			if (skuJson.has("productId")) {
-				String internalPid = Integer.toString(skuJson.getInt("productId"));
+      if (skuJson.has("productId")) {
+        String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-				Document docRating = crawlPageRatings(session.getOriginalURL(), internalPid);
+        Document docRating = crawlPageRatings(internalPid);
 
-				Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
-				Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
+        Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
+        Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
 
-				ratingReviews.setTotalRating(totalNumOfEvaluations);
-				ratingReviews.setAverageOverallRating(avgRating);
+        ratingReviews.setTotalRating(totalNumOfEvaluations);
+        ratingReviews.setAverageOverallRating(avgRating);
 
-				List<String> idList = crawlIdList(skuJson);
-				for (String internalId : idList) {
-					RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
-					clonedRatingReviews.setInternalId(internalId);
-					ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
-				}
+        List<String> idList = crawlIdList(skuJson);
+        for (String internalId : idList) {
+          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          clonedRatingReviews.setInternalId(internalId);
+          ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+        }
 
-			}
+      }
 
-		}
+    }
 
-		return ratingReviewsCollection;
+    return ratingReviewsCollection;
 
-	}
+  }
 
-	/**
-	 * Api Ratings Url: http://www.drogariaspacheco.com.br/userreview Ex payload:
-	 * productId=542865&productLinkId=fralda-descartavel-pampers-premium-care-xxg-32-unidades Required
-	 * headers to crawl this api Ex: Média de avaliações: 5 votos
-	 *
-	 * 3 Votos nenhum voto 1 Voto 1 Voto nenhum voto
-	 * 
-	 * 
-	 * @param url
-	 * @param internalPid
-	 * @return document
-	 */
-	private Document crawlPageRatings(String url, String internalPid) {
-		Document doc = new Document(url);
+  /**
+   * Api Ratings Url: https://service.yourviews.com.br/review/GetReview? Ex payload:
+   * storeKey=f36ed866-d7ee-41b9-ad61-2d4ad29da507&productStoreId=85286&extendedField=&callback=_jqjsp&_1516980244481=
+   *
+   * @param internalPid
+   * @return document
+   */
+  private Document crawlPageRatings(String internalPid) {
+    Document doc = new Document("");
 
-		// Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL
-		// "http://www.walmart.com.ar/led-32-ilo-hd-smart-d300032-/p"
-		String[] tokens = url.split("/");
-		String productLinkId = tokens[tokens.length - 2];
+    String url = "https://service.yourviews.com.br/review/GetReview?storeKey=f36ed866-d7ee-41b9-ad61-2d4ad29da507&" + "productStoreId=" + internalPid
+        + "&extendedField=&callback=_jqjsp&_1516980244481=";
 
-		String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
+    String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-		Map<String, String> headers = new HashMap<>();
-		headers.put("Content-Type", "application/x-www-form-urlencoded");
-		headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
+    if (response != null && response.contains("({")) {
+      int x = response.indexOf('(') + 1;
+      int y = response.indexOf(");", x);
 
-		String response = POSTFetcher.fetchPagePOSTWithHeaders(
-				"https://www.drogariaspacheco.com.br/userreview", session, payload, cookies, 1, headers);
+      JSONObject json = new JSONObject(response.substring(x, y));
 
-		if (response != null) {
-			doc = Jsoup.parse(response);
-		}
+      if (json.has("html")) {
+        doc = Jsoup.parse(json.get("html").toString());
+      }
+    }
 
-		return doc;
-	}
+    return doc;
+  }
 
-	/**
-	 * Average is calculate
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-		Double avgRating = null;
-		Elements rating = docRating.select("ul.rating li");
+  /**
+   * Average is calculate
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document docRating, Integer totalRating) {
+    Double avgRating = null;
+    Element rating = docRating.select("meta[itemprop=ratingValue]").first();
 
-		if (totalRating != null) {
-			Double total = 0.0;
+    if (rating != null) {
+      avgRating = Double.parseDouble(rating.attr("content"));
+    }
 
-			for (Element e : rating) {
-				Element star = e.select("strong.rating-demonstrativo").first();
-				Element totalStar = e.select("> span:not([class])").first();
+    return avgRating;
+  }
 
-				if (totalStar != null) {
-					String votes = totalStar.text().replaceAll("[^0-9]", "").trim();
+  /**
+   * Number of ratings appear in rating page
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer totalRating = null;
+    Element totalRatingElement = doc.select("strong[itemprop=ratingCount]").first();
 
-					if (!votes.isEmpty()) {
-						Integer totalVotes = Integer.parseInt(votes);
-						if (star != null) {
-							if (star.hasClass("avaliacao50")) {
-								total += totalVotes * 5;
-							} else if (star.hasClass("avaliacao40")) {
-								total += totalVotes * 4;
-							} else if (star.hasClass("avaliacao30")) {
-								total += totalVotes * 3;
-							} else if (star.hasClass("avaliacao20")) {
-								total += totalVotes * 2;
-							} else if (star.hasClass("avaliacao10")) {
-								total += totalVotes * 1;
-							}
-						}
-					}
-				}
-			}
+    if (totalRatingElement != null) {
+      String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
 
-			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(total / totalRating);
-		}
+      if (!totalText.isEmpty()) {
+        totalRating = Integer.parseInt(totalText);
+      }
+    }
 
-		return avgRating;
-	}
-
-	/**
-	 * Number of ratings appear in rating page
-	 * 
-	 * @param docRating
-	 * @return
-	 */
-	private Integer getTotalNumOfRatings(Document docRating) {
-		Integer totalRating = null;
-		Element totalRatingElement = docRating.select(".media em > span").first();
-
-		if (totalRatingElement != null) {
-			String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
-
-			if (!totalText.isEmpty()) {
-				totalRating = Integer.parseInt(totalText);
-			}
-		}
-
-		return totalRating;
-	}
+    return totalRating;
+  }
 
 
-	private List<String> crawlIdList(JSONObject skuJson) {
-		List<String> idList = new ArrayList<>();
+  private List<String> crawlIdList(JSONObject skuJson) {
+    List<String> idList = new ArrayList<>();
 
-		if (skuJson.has("skus")) {
-			JSONArray skus = skuJson.getJSONArray("skus");
+    if (skuJson.has("skus")) {
+      JSONArray skus = skuJson.getJSONArray("skus");
 
-			for (int i = 0; i < skus.length(); i++) {
-				JSONObject sku = skus.getJSONObject(i);
+      for (int i = 0; i < skus.length(); i++) {
+        JSONObject sku = skus.getJSONObject(i);
 
-				if (sku.has("sku")) {
-					idList.add(Integer.toString(sku.getInt("sku")));
-				}
-			}
-		}
+        if (sku.has("sku")) {
+          idList.add(Integer.toString(sku.getInt("sku")));
+        }
+      }
+    }
 
-		return idList;
-	}
+    return idList;
+  }
 
-	private boolean isProductPage(Document document) {
-		Element body = document.select("body").first();
-		Element elementId = document.select("div.productReference").first();
+  private boolean isProductPage(Document document) {
+    Element body = document.select("body").first();
+    Element elementId = document.select("div.productReference").first();
 
-		return body.hasClass("produto") && elementId != null;
-	}
-
-	private JSONObject crawlSkuJson(Document document) {
-		Elements scriptTags = document.getElementsByTag("script");
-		String scriptVariableName = "var skuJson_0 = ";
-		JSONObject skuJson;
-		String skuJsonString = null;
-
-		for (Element tag : scriptTags) {
-			for (DataNode node : tag.dataNodes()) {
-				if (tag.html().trim().startsWith(scriptVariableName)) {
-					skuJsonString = node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-							+ node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-									.split(Pattern.quote("};"))[0];
-					break;
-				}
-			}
-		}
-
-		try {
-			skuJson = new JSONObject(skuJsonString);
-
-		} catch (JSONException e) {
-			Logging.printLogError(logger, session, "Error creating JSONObject from var skuJson_0");
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
-			skuJson = new JSONObject();
-		}
-
-		return skuJson;
-	}
-
+    return body.hasClass("produto") && elementId != null;
+  }
 }
