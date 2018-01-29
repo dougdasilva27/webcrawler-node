@@ -33,28 +33,27 @@ public class CrawlerUtils {
   public static JSONObject crawlSkuJsonVTEX(Document document, Session session) {
     Elements scriptTags = document.getElementsByTag("script");
     String scriptVariableName = "var skuJson_0 = ";
-    JSONObject skuJson;
+    JSONObject skuJson = new JSONObject();
     String skuJsonString = null;
 
     for (Element tag : scriptTags) {
       for (DataNode node : tag.dataNodes()) {
         if (tag.html().trim().startsWith(scriptVariableName)) {
           skuJsonString = node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-              + node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-                  .split(Pattern.quote("};"))[0];
+              + node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
           break;
         }
       }
     }
 
-    try {
-      skuJson = new JSONObject(skuJsonString);
+    if (skuJsonString != null) {
+      try {
+        skuJson = new JSONObject(skuJsonString);
 
-    } catch (JSONException e) {
-      Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
-      Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
-
-      skuJson = new JSONObject();
+      } catch (JSONException e) {
+        Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
+        Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
+      }
     }
 
     return skuJson;
@@ -78,8 +77,7 @@ public class CrawlerUtils {
    * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
    * @throws IllegalArgumentException if doc is null
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token,
-      String finalIndex)
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)
@@ -125,8 +123,8 @@ public class CrawlerUtils {
   public static String crawlDescriptionFromFlixMedia(String storeId, String ean, Session session) {
     StringBuilder description = new StringBuilder();
 
-    String url = "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean
-        + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
+    String url =
+        "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
 
     String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
     final String token = "$(\"#flixinpage_\"+i).inPage";
@@ -149,10 +147,9 @@ public class CrawlerUtils {
     if (productInfo.has("product")) {
       String id = productInfo.getString("product");
 
-      String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id
-          + "/json?c=jsonpcar" + storeId + "r" + id + "&complimentary=0&type=.html";
-      String scriptDesc =
-          DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+      String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
+          + "&complimentary=0&type=.html";
+      String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
 
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
@@ -165,8 +162,7 @@ public class CrawlerUtils {
 
           if (jsonInfo.has("html")) {
             if (jsonInfo.has("css")) {
-              description.append("<link href=\"" + jsonInfo.getString("css")
-                  + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
+              description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
             }
 
             description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
@@ -191,8 +187,7 @@ public class CrawlerUtils {
    * 
    * @return Marketplace
    */
-  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap,
-      List<String> sellerNameLowerList, Session session) {
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Session session) {
     Marketplace marketplace = new Marketplace();
 
     for (String sellerName : marketplaceMap.keySet()) {
