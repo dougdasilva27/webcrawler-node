@@ -28,9 +28,10 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords {
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".listItems li > a:not(.unavailable)");
+    Element noResult = this.currentDoc.select(".searchAgain").first();
 
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (products.size() >= 1) {
+    if (!products.isEmpty() && noResult == null) {
       // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0)
         setTotalProducts();
@@ -47,8 +48,7 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, internalPid, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
@@ -58,8 +58,7 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override

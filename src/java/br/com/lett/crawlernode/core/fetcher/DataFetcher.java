@@ -118,8 +118,7 @@ public class DataFetcher {
    * 
    */
   static {
-    userAgents = Arrays.asList(
-        "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
+    userAgents = Arrays.asList("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
         "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
@@ -138,14 +137,8 @@ public class DataFetcher {
 
     errorCodes = Arrays.asList("403");
 
-    highTimeoutMarkets = Arrays.asList(
-    		"bemol", 
-    		"abxclimatizacao", 
-    		"drogariapovao",
-        "webcontinental", 
-        "drogarianissei", 
-        "lacomer",
-        "poupafarma");
+    highTimeoutMarkets =
+        Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma", "multisom");
   }
 
   /**
@@ -159,8 +152,7 @@ public class DataFetcher {
    * @param cookies
    * @return A string containing the page html content
    */
-  public static String fetchString(String reqType, Session session, String url,
-      String urlParameters, List<Cookie> cookies) {
+  public static String fetchString(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
     return fetchPage(reqType, session, url, urlParameters, cookies, 1);
   }
 
@@ -186,8 +178,7 @@ public class DataFetcher {
    * @param cookies
    * @return A Document with the data from the url passed, or null if something went wrong.
    */
-  public static Document fetchDocument(String reqType, Session session, String url,
-      String urlParameters, List<Cookie> cookies) {
+  public static Document fetchDocument(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
     return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1));
   }
 
@@ -202,10 +193,8 @@ public class DataFetcher {
    * @param cookies
    * @return A Document with the data from the url passed, or null if something went wrong.
    */
-  public static Document fetchDocumentXml(String reqType, Session session, String url,
-      String urlParameters, List<Cookie> cookies) {
-    return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1), "",
-        org.jsoup.parser.Parser.xmlParser());
+  public static Document fetchDocumentXml(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies) {
+    return Jsoup.parse(fetchPage(reqType, session, url, urlParameters, cookies, 1), "", org.jsoup.parser.Parser.xmlParser());
   }
 
   /**
@@ -214,13 +203,12 @@ public class DataFetcher {
    * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
    * @param session
    * @param url The url from which we will fetch the data.
-   * @param payload The payload, or parameter field of the request, in case of a POST request. null
-   *        if we have a GET request.
+   * @param payload The payload, or parameter field of the request, in case of a POST request. null if
+   *        we have a GET request.
    * @param cookies
    * @return A JSONObject with the data from the url passed, or null if something went wrong.
    */
-  public static JSONObject fetchJSONObject(String reqType, Session session, String url,
-      String payload, List<Cookie> cookies) {
+  public static JSONObject fetchJSONObject(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
     try {
       return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
@@ -235,13 +223,12 @@ public class DataFetcher {
    * @param reqType The type of the http request. GET_REQUEST or POST_REQUEST.
    * @param session
    * @param url The url from which we will fetch the data.
-   * @param payload The payload, or parameter field of the request, in case of a POST request. null
-   *        if we have a GET request.
+   * @param payload The payload, or parameter field of the request, in case of a POST request. null if
+   *        we have a GET request.
    * @param cookies
    * @return A JSONArray with the data from the url passed, or null if something went wrong.
    */
-  public static JSONArray fetchJSONArray(String reqType, Session session, String url,
-      String payload, List<Cookie> cookies) {
+  public static JSONArray fetchJSONArray(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
     try {
       return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
@@ -261,8 +248,7 @@ public class DataFetcher {
    * @param attempt
    * @return a json object string, even if it is an empty json object
    */
-  private static String fetchJson(String reqType, Session session, String url, String payload,
-      List<Cookie> cookies, int attempt) {
+  private static String fetchJson(String reqType, Session session, String url, String payload, List<Cookie> cookies, int attempt) {
     try {
 
       if (reqType.equals(GET_REQUEST)) {
@@ -278,8 +264,7 @@ public class DataFetcher {
       }
 
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Tentativa " + attempt
-          + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
+      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
 
@@ -308,15 +293,13 @@ public class DataFetcher {
   public static RequestConfig createRequestConfig(HttpHost proxy) {
     RequestConfig requestConfig;
     if (proxy != null) {
-      requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
-          .setRedirectsEnabled(true).setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-          .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT).setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-          .setProxy(proxy).build();
+      requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
+          .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+          .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
     } else {
-      requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
-          .setRedirectsEnabled(true).setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-          .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT).setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-          .build();
+      requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
+          .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+          .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
     }
 
     return requestConfig;
@@ -332,8 +315,7 @@ public class DataFetcher {
    * @param attempt
    * @return
    */
-  private static String fetchPage(String reqType, Session session, String url, String urlParameters,
-      List<Cookie> cookies, int attempt) {
+  private static String fetchPage(String reqType, Session session, String url, String urlParameters, List<Cookie> cookies, int attempt) {
 
     try {
 
@@ -352,8 +334,7 @@ public class DataFetcher {
       }
 
     } catch (Exception e) {
-      Logging.printLogError(logger, session,
-          "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
+      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -368,8 +349,7 @@ public class DataFetcher {
 
   }
 
-  public static SSLConnectionSocketFactory createSSLConnectionSocketFactory()
-      throws NoSuchAlgorithmException, KeyManagementException {
+  public static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
     TrustManager trustManager = new TrustManager();
     SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
     sslContext.init(null, new TrustManager[] {trustManager}, null);
@@ -388,8 +368,7 @@ public class DataFetcher {
    * @param attempt
    * @return the header value. Will return an empty string if the cookie wasn't found.
    */
-  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies,
-      int attempt) {
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, int attempt) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -410,8 +389,7 @@ public class DataFetcher {
       if (randProxy != null) {
         session.addRequestProxy(url, randProxy);
         if (randProxy.getUser() != null) {
-          credentialsProvider.setCredentials(
-              new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+          credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
               new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
         }
       }
@@ -426,9 +404,8 @@ public class DataFetcher {
       List<Header> reqHeaders = new ArrayList<>();
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
-      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore)
-          .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-          .setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
+          .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -458,8 +435,7 @@ public class DataFetcher {
       // if there was some response code that indicates forbidden access or server error we want to
       // try again
       int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-      if (Integer.toString(responseCode).charAt(0) != '2'
-          && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+      if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
         throw new ResponseCodeException(responseCode);
       }
 
@@ -477,8 +453,7 @@ public class DataFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse,
-          responseLength, requestHash);
+      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
       // saving request content result on Amazon
       String content = "";
@@ -520,11 +495,9 @@ public class DataFetcher {
 
 
     } catch (Exception e) {
-      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse,
-          responseLength, requestHash);
+      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session,
-          "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
+      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -547,8 +520,7 @@ public class DataFetcher {
    * @param attempt
    * @return the header value. Will return an empty string if the cookie wasn't found.
    */
-  public static String fetchCookie(Session session, String url, String cookieName,
-      List<Cookie> cookies, int attempt) {
+  public static String fetchCookie(Session session, String url, String cookieName, List<Cookie> cookies, int attempt) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -569,8 +541,7 @@ public class DataFetcher {
       if (randProxy != null) {
         session.addRequestProxy(url, randProxy);
         if (randProxy.getUser() != null) {
-          credentialsProvider.setCredentials(
-              new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+          credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
               new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
         }
       }
@@ -582,32 +553,27 @@ public class DataFetcher {
 
       RequestConfig requestConfig = null;
       if (proxy != null) {
-        requestConfig =
-            RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-                                                                                                 // redirect
-                                                                                                 // to
-                                                                                                 // true
-                .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-                .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT).setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-                .setProxy(proxy).build();
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
+                                                                                                             // redirect
+                                                                                                             // to
+                                                                                                             // true
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+            .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
       } else {
-        requestConfig =
-            RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-                                                                                                 // redirect
-                                                                                                 // to
-                                                                                                 // true
-                .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-                .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT).setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-                .build();
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
+                                                                                                             // redirect
+                                                                                                             // to
+                                                                                                             // true
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+            .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
       }
 
 
       List<Header> reqHeaders = new ArrayList<>();
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
-      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore)
-          .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-          .setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
+          .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -637,8 +603,7 @@ public class DataFetcher {
       // if there was some response code that indicates forbidden access or server error we want to
       // try again
       int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-      if (Integer.toString(responseCode).charAt(0) != '2'
-          && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+      if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
         throw new ResponseCodeException(responseCode);
       }
 
@@ -656,8 +621,7 @@ public class DataFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse,
-          responseLength, requestHash);
+      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
       // saving request content result on Amazon
       String content = "";
@@ -696,11 +660,9 @@ public class DataFetcher {
       return "";
 
     } catch (Exception e) {
-      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse,
-          responseLength, requestHash);
+      sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session,
-          "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
+      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -724,8 +686,7 @@ public class DataFetcher {
    */
   public static void fetchPageAPIUrlBox(String url, Session session) {
     try {
-      POSTFetcher.requestWithFetcher(session,
-          POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000);
+      POSTFetcher.requestWithFetcher(session, POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000);
 
     } catch (SocketTimeoutException e) {
       // do nothing
@@ -743,42 +704,36 @@ public class DataFetcher {
    * @param responseCode
    * @return
    */
-  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy,
-      String userAgent, Session session, CloseableHttpResponse response, String requestHash) {
+  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy, String userAgent, Session session,
+      CloseableHttpResponse response, String requestHash) {
 
     JSONObject requestMetadata = new JSONObject();
 
     requestMetadata.put("req_hash", requestHash);
-    requestMetadata.put("proxy_name",
-        (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
+    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
     requestMetadata.put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()));
     requestMetadata.put("user_agent", userAgent);
     requestMetadata.put("req_method", requestType);
     requestMetadata.put("req_location", url);
-    requestMetadata.put("res_http_code",
-        (response == null) ? 0 : response.getStatusLine().getStatusCode());
-    requestMetadata.put("res_length",
-        (response == null) ? 0 : response.getEntity().getContentLength());
+    requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
+    requestMetadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
 
     Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
 
   }
 
-  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy,
-      String userAgent, Session session, CloseableHttpResponse response, Integer responseLength,
-      String requestHash) {
+  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy, String userAgent, Session session,
+      CloseableHttpResponse response, Integer responseLength, String requestHash) {
 
     JSONObject requestMetadata = new JSONObject();
 
     requestMetadata.put("req_hash", requestHash);
-    requestMetadata.put("proxy_name",
-        (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
+    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
     requestMetadata.put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()));
     requestMetadata.put("user_agent", userAgent);
     requestMetadata.put("req_method", requestType);
     requestMetadata.put("req_location", url);
-    requestMetadata.put("res_http_code",
-        (response == null) ? 0 : response.getStatusLine().getStatusCode());
+    requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
     requestMetadata.put("res_length", responseLength);
 
     Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
@@ -786,9 +741,9 @@ public class DataFetcher {
   }
 
   /**
-   * Parse the page content, either to get a html or a plain text In case we are expecting
-   * JSONObject or JSONArray response from an API, the content will be parsed as a plain text.
-   * Otherwise it will be parsed as a htlm format.
+   * Parse the page content, either to get a html or a plain text In case we are expecting JSONObject
+   * or JSONArray response from an API, the content will be parsed as a plain text. Otherwise it will
+   * be parsed as a htlm format.
    * 
    * @param pageContent
    * @param session
@@ -829,11 +784,9 @@ public class DataFetcher {
       // choosing the preferred proxy service
       randUserAgent = randUserAgent();
       if (session instanceof ImageCrawlerSession) {
-        randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies(),
-            session.getOriginalURL());
+        randProxy = randLettProxy(attempt, session, session.getMarket().getImageProxies(), session.getOriginalURL());
       } else {
-        randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(),
-            session.getOriginalURL());
+        randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), session.getOriginalURL());
       }
 
       CookieStore cookieStore = new BasicCookieStore();
@@ -842,8 +795,7 @@ public class DataFetcher {
 
       if (randProxy != null) {
         if (randProxy.getUser() != null) {
-          credentialsProvider.setCredentials(
-              new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+          credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
               new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
         }
       }
@@ -858,9 +810,8 @@ public class DataFetcher {
       List<Header> headers = new ArrayList<>();
       headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
-      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore)
-          .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-          .setDefaultHeaders(headers).setDefaultCredentialsProvider(credentialsProvider).build();
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
+          .setDefaultRequestConfig(requestConfig).setDefaultHeaders(headers).setDefaultCredentialsProvider(credentialsProvider).build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -890,16 +841,14 @@ public class DataFetcher {
       // if there was some response code that indicates forbidden access or server error we want to
       // try again
       int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-      if (Integer.toString(responseCode).charAt(0) != '2'
-          && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+      if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
         throw new ResponseCodeException(responseCode);
       }
 
       localFile = new File(((ImageCrawlerSession) session).getLocalOriginalFileDir());
 
       // get image bytes
-      BufferedInputStream is =
-          new BufferedInputStream(closeableHttpResponse.getEntity().getContent());
+      BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());
       BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(localFile));
       byte[] b = new byte[8 * 1024]; // reading each 8kb
       int read = 0;
@@ -912,15 +861,15 @@ public class DataFetcher {
       is.close();
 
       // assembling request information log message
-      sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session,
-          closeableHttpResponse, responseLength, requestHash);
+      sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+          requestHash);
 
       return localFile;
 
     } catch (Exception e) {
 
-      sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session,
-          closeableHttpResponse, responseLength, requestHash);
+      sendRequestInfoLog(session.getOriginalURL(), GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+          requestHash);
 
       if (localFile != null && localFile.exists()) {
         localFile.delete();
@@ -928,19 +877,16 @@ public class DataFetcher {
 
       if (e instanceof ResponseCodeException) {
         Logging.printLogWarn(logger, session,
-            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: "
-                + session.getOriginalURL());
+            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
         Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
       } else {
         Logging.printLogError(logger, session,
-            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: "
-                + session.getOriginalURL());
+            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
         Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session,
-            "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
+        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
         return null;
       } else {
         return downloadImageFromMarket(attempt + 1, session);
@@ -1025,8 +971,7 @@ public class DataFetcher {
    * @param proxyServices
    * @return
    */
-  public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices,
-      String url) {
+  public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices, String url) {
     LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
     session.addRequestProxy(url, nextProxy);
 
@@ -1058,8 +1003,7 @@ public class DataFetcher {
       serviceName = getProxyService(attemptTemp, session, proxyServices);
 
       if (serviceName != null) {
-        if (session instanceof TestCrawlerSession
-            || session instanceof TestRankingKeywordsSession) {
+        if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
           proxies = Test.proxies.getProxy(serviceName);
         } else if (Main.proxies != null) {
           proxies = Main.proxies.getProxy(serviceName);
@@ -1071,14 +1015,13 @@ public class DataFetcher {
           attemptTemp += 1;
 
           if (!ProxyCollection.NO_PROXY.equals(serviceName)) {
-            Logging.printLogError(logger, session, "Error: trying use proxy service " + serviceName
-                + ", but there was no proxy fetched for this service.");
+            Logging.printLogError(logger, session,
+                "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
           }
         }
       } else {
         attemptTemp += 1;
-        Logging.printLogError(logger, session,
-            "Error: trying to use an unknown proxy service. I'll try the next one.");
+        Logging.printLogError(logger, session, "Error: trying to use an unknown proxy service. I'll try the next one.");
       }
     }
 
@@ -1105,12 +1048,10 @@ public class DataFetcher {
   public static String getProxyService(int attempt, Session session, List<String> proxyServices) {
     String service = null;
 
-    Logging.printLogDebug(logger, session,
-        "Selecting a proxy service...connection attempt " + attempt);
+    Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 
     if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
-      service =
-          br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
+      service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
     } else if (session instanceof ImageCrawlerSession) {
       service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
     } else {
@@ -1136,8 +1077,7 @@ public class DataFetcher {
   }
 
   public static String generateRequestHash(Session session) {
-    String s = session.getSessionId()
-        + new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String s = session.getSessionId() + new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
     return DigestUtils.md5Hex(s);
   }
 
@@ -1162,8 +1102,8 @@ public class DataFetcher {
             JSONObject proxyObj = succesRequest.getJSONObject("proxy");
 
             if (proxyObj.length() > 0 && proxyObj.has("source")) {
-              LettProxy lettProxy = new LettProxy(proxyObj.getString("source"),
-                  proxyObj.getString("host"), null, proxyObj.getString("location"), null, null);
+              LettProxy lettProxy =
+                  new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), null, proxyObj.getString("location"), null, null);
 
               session.addRequestProxy(url, lettProxy);
             }
@@ -1185,7 +1125,6 @@ public class DataFetcher {
     int nowHour = zonedDate.getHour();
 
     // Request via fetcher on first attempt
-    return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20)
-        && Main.executionParameters.getUseFetcher());
+    return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) && Main.executionParameters.getUseFetcher());
   }
 }
