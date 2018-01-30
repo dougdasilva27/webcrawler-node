@@ -14,13 +14,12 @@ public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
   @Override
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
-    this.pageSize = 12;
+    this.pageSize = 24;
 
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.nutrii.com.br/catalogsearch/result/index/?p=" + this.currentPage
-        + "&q=" + this.keywordEncoded;
+    String url = "https://www.nutrii.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
     this.log("Link onde são feitos os crawlers: " + url);
 
     // chama função de pegar o html
@@ -42,8 +41,7 @@ public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -54,8 +52,7 @@ public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override

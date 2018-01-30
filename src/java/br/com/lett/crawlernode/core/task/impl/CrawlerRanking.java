@@ -130,8 +130,7 @@ public abstract class CrawlerRanking extends Task {
 
     List<SessionError> errors = session.getErrors();
 
-    Logging.printLogDebug(logger, session,
-        "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+    Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
     // errors collected manually
     // they can be exceptions or business logic errors
@@ -144,8 +143,7 @@ public abstract class CrawlerRanking extends Task {
       }
 
       if (!(session instanceof TestRankingSession)) {
-        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session,
-            Main.dbManager.connectionPanel);
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
       }
 
       session.setTaskStatus(Task.STATUS_FAILED);
@@ -156,8 +154,7 @@ public abstract class CrawlerRanking extends Task {
     else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
       Logging.printLogDebug(logger, session, "Task completed.");
 
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session,
-          Main.dbManager.connectionPanel);
+      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
 
       session.setTaskStatus(Task.STATUS_COMPLETED);
     }
@@ -183,9 +180,8 @@ public abstract class CrawlerRanking extends Task {
         extractProductsFromCurrentPage();
 
         // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-        if (session instanceof RankingSession
-            || session instanceof RankingDiscoverSession && Main.executionParameters
-                .getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+        if (session instanceof RankingSession || session instanceof RankingDiscoverSession
+            && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
           sendMessagesToAmazonAndMongo();
         }
@@ -228,9 +224,9 @@ public abstract class CrawlerRanking extends Task {
    * Função checa de 4 formas se existe proxima pagina
    * 
    * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se
-   * naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market
-   * obteve resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos
-   * os produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
+   * naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
+   * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os
+   * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
    * identificado que não há próxima página devido algum erro naquele market.
    * 
    * @return
@@ -255,8 +251,15 @@ public abstract class CrawlerRanking extends Task {
   // função que extrai os produtos da página atual
   protected abstract void extractProductsFromCurrentPage();
 
-  // função que retorna se há ou não uma próxima página
-  protected abstract boolean hasNextPage();
+  /**
+   * função que retorna se há ou não uma próxima página default: total de produtos maior que os
+   * produtos pegos até agora
+   * 
+   * @return
+   */
+  protected boolean hasNextPage() {
+    return this.totalProducts > this.arrayProducts.size();
+  }
 
   // função que seta o Total de busca de cada categoria
   protected void setTotalProducts() {
@@ -316,8 +319,7 @@ public abstract class CrawlerRanking extends Task {
 
     if (!(session instanceof TestRankingSession)) {
       if (internalId != null) {
-        processedIds
-            .addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
+        processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
       } else if (pid != null) {
         processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
       } else if (url != null) {
@@ -342,8 +344,7 @@ public abstract class CrawlerRanking extends Task {
    */
   protected void saveProductUrlToQueue(String url) {
     Map<String, MessageAttributeValue> attr = new HashMap<>();
-    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String")
-        .withStringValue(String.valueOf(this.marketId)));
+    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(this.marketId)));
 
     this.messages.put(url.trim(), attr);
   }
@@ -359,8 +360,7 @@ public abstract class CrawlerRanking extends Task {
 
       Ranking ranking = new Ranking();
 
-      String nowISO =
-          new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
+      String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
       Timestamp ts = Timestamp.valueOf(nowISO);
 
       ranking.setMarketId(this.marketId);
@@ -460,17 +460,14 @@ public abstract class CrawlerRanking extends Task {
    * @param entries
    */
   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
-    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVER_WEBDRIVER
-        : QueueName.DISCOVER;
+    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVER_WEBDRIVER : QueueName.DISCOVER;
 
-    SendMessageBatchResult messagesResult =
-        QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
+    SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
     // get send request results
     List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
 
-    this.log("Estou enviando " + successResultEntryList.size() + " mensagens para a fila "
-        + queueName + ".");
+    this.log("Estou enviando " + successResultEntryList.size() + " mensagens para a fila " + queueName + ".");
 
     if (!successResultEntryList.isEmpty()) {
       int count = 0;
@@ -482,8 +479,7 @@ public abstract class CrawlerRanking extends Task {
         String messageId = resultEntry.getMessageId();
         this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
 
-        Persistence.insertPanelTask(messageId, this.schedulerNameDiscoverProducts, this.marketId,
-            entries.get(count).getMessageBody(), this.location);
+        Persistence.insertPanelTask(messageId, this.schedulerNameDiscoverProducts, this.marketId, entries.get(count).getMessageBody(), this.location);
         count++;
       }
 
@@ -680,8 +676,7 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected String fetchStringPOST(String url, String payload, Map<String, String> headers,
-      List<Cookie> cookies) {
+  protected String fetchStringPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
     if (this.currentPage == 1) {
       this.session.setOriginalURL(url);
     }
@@ -698,10 +693,8 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected String fetchPostFetcher(String url, String payload, Map<String, String> headers,
-      List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload,
-        DataFetcher.POST_REQUEST, session);
+  protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").getString("body");
@@ -719,10 +712,8 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected String fetchGetFetcher(String url, String payload, Map<String, String> headers,
-      List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload,
-        DataFetcher.GET_REQUEST, session);
+  protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.GET_REQUEST, session);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").getString("body");
@@ -740,8 +731,7 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected Map<String, String> fetchCookiesPOST(String url, String payload,
-      Map<String, String> headers, List<Cookie> cookies) {
+  protected Map<String, String> fetchCookiesPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
     return POSTFetcher.fetchCookiesPOSTWithHeaders(url, session, payload, cookies, 1, headers);
   }
 
@@ -848,8 +838,7 @@ public abstract class CrawlerRanking extends Task {
    * @param url Url of page
    */
   public void logFetch(String requestType, String method, String url) {
-    Logging.printLogDebug(logger, session,
-        "Fetching url with " + requestType + " request using method " + method + ": " + url);
+    Logging.printLogDebug(logger, session, "Fetching url with " + requestType + " request using method " + method + ": " + url);
   }
 
   public void logError(String message) {
@@ -867,8 +856,8 @@ public abstract class CrawlerRanking extends Task {
    * 
    * O crawler ranking roda todos os dias geralmente de 05:00 as 06:45 da manhã.
    * 
-   * Em alguns casos em determinadas categories, o resultado pode vir diferente ou sequer nem vir
-   * caso o site mude ou ocorra algum erro nos crawlers.
+   * Em alguns casos em determinadas categories, o resultado pode vir diferente ou sequer nem vir caso
+   * o site mude ou ocorra algum erro nos crawlers.
    * 
    * Por isso foi desenvolvido essa funcionalidade para detectar alguns tipos de anomalias como:
    * 
