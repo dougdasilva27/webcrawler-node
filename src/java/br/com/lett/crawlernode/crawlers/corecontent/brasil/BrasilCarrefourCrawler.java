@@ -177,7 +177,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
         if (text.contains("por") && text.contains(".")) {
           int x = text.indexOf("por") + 3;
-          int y = text.indexOf('.', x);
+          int y = text.indexOf(". entrega", x);
 
           String sellerName = text.substring(x, y).trim();
 
