@@ -105,6 +105,8 @@ public class DataFetcher {
    */
   public static List<String> userAgents;
 
+  public static List<String> mobileUserAgents;
+
   public static List<String> errorCodes;
 
   public static List<String> highTimeoutMarkets;
@@ -134,6 +136,14 @@ public class DataFetcher {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
         "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
+
+    mobileUserAgents = Arrays.asList(
+        "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
+        "Mozilla/5.0 (Linux; Android 7.0; SM-A310F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36 OPR/42.7.2246.114996",
+        "Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10",
+        "Mozilla/5.0 (Linux; Android 5.1.1; Nexus 5 Build/LMY48B; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.65 Mobile Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/603.1.23 (KHTML, like Gecko) Version/10.0 Mobile/14E5239e Safari/602.1",
+        "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19");
 
     errorCodes = Arrays.asList("403");
 
@@ -1035,6 +1045,15 @@ public class DataFetcher {
    */
   public static String randUserAgent() {
     return userAgents.get(MathCommonsMethods.randInt(0, userAgents.size() - 1));
+  }
+
+  /**
+   * Retrieve a random user agent from the user agents array.
+   * 
+   * @return
+   */
+  public static String randMobileUserAgent() {
+    return mobileUserAgents.get(MathCommonsMethods.randInt(0, mobileUserAgents.size() - 1));
   }
 
   /**
