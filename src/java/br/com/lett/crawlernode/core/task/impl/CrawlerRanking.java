@@ -26,7 +26,6 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
-import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
@@ -43,6 +42,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.URLBox;
+import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
 
@@ -117,10 +117,10 @@ public abstract class CrawlerRanking extends Task {
   @Override
   protected void onFinish() {
     super.onFinish();
-    if (session instanceof RankingSession) {
-      // Identify anomalies
-      anomalyDetector(this.location, this.session.getMarket(), this.rankType);
-    }
+    // if (session instanceof RankingSession) {
+    // // Identify anomalies
+    // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
+    // }
 
     // close the webdriver
     if (webdriver != null) {
@@ -318,25 +318,38 @@ public abstract class CrawlerRanking extends Task {
     }
 
     if (!(session instanceof TestRankingSession)) {
+      List<Processed> processeds = new ArrayList<>();
       if (internalId != null) {
-        processedIds.addAll(Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId));
+        processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId);
       } else if (pid != null) {
-        processedIds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
+        processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
       } else if (url != null) {
         Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
         processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
       }
 
-      rankingProducts.setProcessedIds(processedIds);
+
+      if (!processeds.isEmpty()) {
+        for (Processed p : processeds) {
+          processedIds.add(p.getId());
+
+          if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
+            saveProductUrlToQueue(url);
+            Logging.printLogWarn(logger, session, "Suspected of changing url: " + p.getId());
+          }
+        }
+      }
 
       if (url != null && processedIds.isEmpty()) {
         saveProductUrlToQueue(url);
       }
 
+      rankingProducts.setProcessedIds(processedIds);
     }
 
     this.arrayProducts.add(rankingProducts);
   }
+
 
   /**
    *
@@ -807,22 +820,20 @@ public abstract class CrawlerRanking extends Task {
    * @param url
    */
   protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {
-    if (session instanceof RankingSession) {
-      if (page <= 2 && ((RankingSession) session).mustTakeAScreenshot()) {
-        String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
+    if (session instanceof RankingSession && page <= 2 && ((RankingSession) session).mustTakeAScreenshot()) {
+      String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
 
-        switch (this.currentPage) {
-          case 1:
-            this.screenshotsAddress.put(1, printUrl);
-            break;
+      switch (this.currentPage) {
+        case 1:
+          this.screenshotsAddress.put(1, printUrl);
+          break;
 
-          case 2:
-            this.screenshotsAddress.put(2, printUrl);
-            break;
+        case 2:
+          this.screenshotsAddress.put(2, printUrl);
+          break;
 
-          default:
-            break;
-        }
+        default:
+          break;
       }
     }
   }
@@ -850,57 +861,4 @@ public abstract class CrawlerRanking extends Task {
     SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
     session.registerError(error);
   }
-
-  /***************************************************************************************************************************
-   * ANOMALIAS DE SHARE OF SEARCH
-   * 
-   * O crawler ranking roda todos os dias geralmente de 05:00 as 06:45 da manhã.
-   * 
-   * Em alguns casos em determinadas categories, o resultado pode vir diferente ou sequer nem vir caso
-   * o site mude ou ocorra algum erro nos crawlers.
-   * 
-   * Por isso foi desenvolvido essa funcionalidade para detectar alguns tipos de anomalias como:
-   * 
-   * 1- Caso o número de produtos capturados hoje seja 20% maior ou menor que ontem 2- Caso os
-   * produtos capturados ontem não estejam em pelo menos 50% do share de determinada categorie hoje.
-   * 
-   * Com essas duas regras conseguimos identificar se uma categorie em determinado market rodou ou
-   * mesmo se um site mudou.
-   * 
-   ****************************************************************************************************************************/
-  private void anomalyDetector(String location, Market market, String rankType) {
-    // Map<String,String> anomalies = new HashMap<>();
-    //
-    // Desativado por motivos de performance:
-    // Query de count estava efetuando muitos locks na tabela processed.
-    // Solução: Colocar coluna market dentro da tabela crawler_ranking também,
-    // evitando assim o join com a tabela Processed.
-    //
-    // Logging.printLogDebug(logger, session, "Searching for anomalies ...");
-    //
-    // String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd");
-    // String yesterdayISO = new
-    // DateTime(DateTimeZone.forID("America/Sao_Paulo")).minusDays(1).toString("yyyy-MM-dd");
-    //
-    // int countToday = this.arrayProducts.size();
-    // int countYesterday = DatabaseDataFetcher.fetchCountOfProcessedsFromCrawlerRanking(location,
-    // market.getNumber(), nowISO, yesterdayISO).intValue();
-    //
-    // Logging.printLogDebug(logger, session, "Yesterday products: " + countYesterday);
-    //
-    // if(countYesterday > 0 && countToday == 0) {
-    // SessionError error = new SessionError(SessionError.EXCEPTION, "Was identified anomalie,
-    // yesterday in this location we"
-    // + " crawl " + countYesterday + " products and today we crawl 0 products.");
-    // session.registerError(error);
-    // }
-    //
-    // if(anomalies.size() > 0) {
-    // Logging.printLogDebug(logger, "Was identified " + anomalies.size() + " anomalies for this " +
-    // rankType + ".");
-    // } else {
-    // Logging.printLogDebug(logger, session, "No anomaly was identified.");
-    // }
-  }
-
 }
