@@ -44,8 +44,7 @@ public class SaopauloWalmartCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches()
-        && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTPS));
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTPS));
   }
 
 
@@ -55,8 +54,7 @@ public class SaopauloWalmartCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // Pid
       String internalPid = crawlInternalPid(session.getOriginalURL());
@@ -107,12 +105,10 @@ public class SaopauloWalmartCrawler extends Crawler {
         Integer stock = crawlStock(infoDoc);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -164,7 +160,11 @@ public class SaopauloWalmartCrawler extends Crawler {
     }
 
     if (infoProduct.has("name")) {
-      name += " " + infoProduct.getString("name");
+      String nameV = infoProduct.getString("name");
+
+      if (name != null && !name.toLowerCase().contains(nameV.toLowerCase())) {
+        name += " " + nameV;
+      }
     }
 
     return name;
@@ -174,8 +174,7 @@ public class SaopauloWalmartCrawler extends Crawler {
     Float price = null;
 
     if (available) {
-      Map<Integer, Double> visaCardPaymentOptions =
-          marketplaceMap.get("walmart").getCardPaymentOptions("visa");
+      Map<Integer, Double> visaCardPaymentOptions = marketplaceMap.get("walmart").getCardPaymentOptions("visa");
 
       if (visaCardPaymentOptions.containsKey(1)) {
         Double priceDouble = visaCardPaymentOptions.get(1);
@@ -238,8 +237,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 
       primaryImage = imgUrl;
     } else { // this case occurs when the product is discontinued, but it's info are still displayed
-      Element mainImageElement =
-          doc.select(".buybox-column.aside.discontinued .main-picture").first();
+      Element mainImageElement = doc.select(".buybox-column.aside.discontinued .main-picture").first();
       if (mainImageElement != null) {
         primaryImage = "https:" + mainImageElement.attr("src");
       }
@@ -317,8 +315,7 @@ public class SaopauloWalmartCrawler extends Crawler {
     return description;
   }
 
-  private Map<String, Prices> crawlMarketplace(String productId, String internalPid,
-      Document infoDoc) {
+  private Map<String, Prices> crawlMarketplace(String productId, String internalPid, Document infoDoc) {
     Map<String, Prices> marketplace = new HashMap<>();
 
     Elements sellers = infoDoc.select(".product-sellers-list-item");
@@ -381,8 +378,7 @@ public class SaopauloWalmartCrawler extends Crawler {
           Element priceElement = e.select(".payment-price").first();
 
           if (priceElement != null) {
-            Float price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "")
-                .replaceAll("\\.", "").replaceAll(",", ".").trim());
+            Float price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
             installmentPriceMap.put(1, price);
             prices.setBankTicketPrice(price);
           }
@@ -390,14 +386,13 @@ public class SaopauloWalmartCrawler extends Crawler {
           Element installmentElement = e.select(".payment-installment-amount").first();
 
           if (installmentElement != null) {
-            Integer installment =
-                Integer.parseInt(installmentElement.ownText().trim().replaceAll("[^0-9]", ""));
+            Integer installment = Integer.parseInt(installmentElement.ownText().trim().replaceAll("[^0-9]", ""));
 
             Element installmentValueElement = e.select(".payment-installment-price").first();
 
             if (installmentValueElement != null) {
-              Float value = Float.parseFloat(installmentValueElement.ownText()
-                  .replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+              Float value =
+                  Float.parseFloat(installmentValueElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
               installmentPriceMap.put(installment, value);
               prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -414,19 +409,15 @@ public class SaopauloWalmartCrawler extends Crawler {
   }
 
   private Document fetchMarketplaceInfoDoc(String productId, String pid) {
-    String infoUrl =
-        "https://www.walmart.com.br/xhr/sellers/sku/" + productId + "?productId=" + pid;
-    String fetchResult =
-        DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+    String infoUrl = "https://www.walmart.com.br/xhr/sellers/sku/" + productId + "?productId=" + pid;
+    String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
 
     return Jsoup.parse(fetchResult);
   }
 
   private Document fetchMarketplaceInfoDocMainPage(String productId) {
-    String infoUrl =
-        "https://www.walmart.com.br/xhr/sku/buybox/" + productId + "/?isProductPage=true";
-    String fetchResult =
-        DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+    String infoUrl = "https://www.walmart.com.br/xhr/sku/buybox/" + productId + "/?isProductPage=true";
+    String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
 
     return Jsoup.parse(fetchResult);
   }
@@ -444,10 +435,8 @@ public class SaopauloWalmartCrawler extends Crawler {
         // preço principal é o mesmo preço de 1x no cartão
         installmentPriceMap.put(1, price);
 
-        String urlInstallmentPrice = "https://www.walmart.com.br/produto/installment/1,"
-            + internalPid + "," + price + ",VISA/";
-        Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-            urlInstallmentPrice, null, cookies);
+        String urlInstallmentPrice = "https://www.walmart.com.br/produto/installment/1," + internalPid + "," + price + ",VISA/";
+        Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlInstallmentPrice, null, cookies);
         Elements installments = doc.select(".installment-table tr:not([id])");
 
         for (Element e : installments) {
@@ -459,8 +448,8 @@ public class SaopauloWalmartCrawler extends Crawler {
             Element parcValue = e.select(".valor-parcela").first();
 
             if (parcValue != null) {
-              Float installmentValue = Float.parseFloat(parcValue.text().replaceAll("[^0-9,]+", "")
-                  .replaceAll("\\.", "").replaceAll(",", ".").trim());
+              Float installmentValue =
+                  Float.parseFloat(parcValue.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
               installmentPriceMap.put(installment, installmentValue);
             }
@@ -503,16 +492,12 @@ public class SaopauloWalmartCrawler extends Crawler {
     Elements scriptTags = doc.getElementsByTag("script");
     for (Element tag : scriptTags) {
       for (DataNode node : tag.dataNodes()) {
-        if (tag.html().trim().startsWith("var dataLayer = ")
-            && tag.html().trim().contains("dataLayer.push(")) {
+        if (tag.html().trim().startsWith("var dataLayer = ") && tag.html().trim().contains("dataLayer.push(")) {
 
-          JSONObject dataLayer =
-              new JSONObject(node.getWholeData().split(Pattern.quote("dataLayer.push("))[1]
-                  + node.getWholeData().split(Pattern.quote("dataLayer.push("))[1]
-                      .split(Pattern.quote(");"))[0]);
+          JSONObject dataLayer = new JSONObject(node.getWholeData().split(Pattern.quote("dataLayer.push("))[1]
+              + node.getWholeData().split(Pattern.quote("dataLayer.push("))[1].split(Pattern.quote(");"))[0]);
 
-          productsListInfo = dataLayer.getJSONArray("trees").getJSONObject(0)
-              .getJSONObject("skuTree").getJSONArray("options");
+          productsListInfo = dataLayer.getJSONArray("trees").getJSONObject(0).getJSONObject("skuTree").getJSONArray("options");
 
           assembleSkuJsonForSingleProduct(productsListInfo, dataLayer);
         }
@@ -541,8 +526,7 @@ public class SaopauloWalmartCrawler extends Crawler {
       }
 
     } else {
-      productsListInfo.put(new JSONObject("{\"name\":\"\",\"skuId\":"
-          + dataLayer.getJSONArray("trees").getJSONObject(0).get("standardSku") + "}"));
+      productsListInfo.put(new JSONObject("{\"name\":\"\",\"skuId\":" + dataLayer.getJSONArray("trees").getJSONObject(0).get("standardSku") + "}"));
     }
   }
 }
