@@ -74,7 +74,7 @@ public class BrasilMeucarrefourCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlProductUrl(String id) {
-    return "https://api.carrefour.com.br/mobile-food/v1/product/" + id;
+    return "https://www.carrefour.com.br/meucarrefour#" + id;
   }
 
   private JSONObject crawlSearchApi(String url) {

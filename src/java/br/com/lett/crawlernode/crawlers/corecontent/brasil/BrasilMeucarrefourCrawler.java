@@ -46,9 +46,11 @@ public class BrasilMeucarrefourCrawler extends Crawler {
 
     Map<String, String> headers = new HashMap<>();
     headers.put("User-Agent", DataFetcher.randMobileUserAgent());
+    String[] tokens = session.getOriginalURL().split("#");
 
+    String url = "https://api.carrefour.com.br/mobile-food/v1/product/" + tokens[tokens.length - 1];
     // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(session.getOriginalURL(), cookies, headers, null, DataFetcher.GET_REQUEST, session);
+    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.GET_REQUEST, session);
     String page = null;
 
     if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
@@ -60,7 +62,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
       }
     } else {
       // normal request
-      page = GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, headers, 1);
+      page = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
     }
 
     if (page != null && page.startsWith("{") && page.endsWith("}")) {
@@ -117,7 +119,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
   }
 
   private boolean isProductPage(String url) {
-    return url.contains("product/");
+    return url.contains("#");
   }
 
   private String crawlInternalId(JSONObject json) {
