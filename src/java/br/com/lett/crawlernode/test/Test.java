@@ -51,7 +51,7 @@ public class Test {
   private static final Logger logger = LoggerFactory.getLogger(Test.class);
 
   public static void main(String args[]) {
-	  
+
 
     // adding command line options
     options = new Options();
@@ -130,11 +130,12 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("All in one", market);
+        session = SessionFactory.createTestRankingKeywordsSession("Gomitas Billiken", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
-        session = SessionFactory.createTestRankingCategoriesSession("https://www.netfarma.com.br/categoria/aparelhos-e-testes", market, "Aparelhos");
+        session =
+            SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.farmadelivery.com.br/ninho-composto-lacteo-prebio-3-400g", market);
+        session = SessionFactory.createTestSession("https://www.carrefour.com.br/meucarrefour#9684581", market);
       }
 
 
