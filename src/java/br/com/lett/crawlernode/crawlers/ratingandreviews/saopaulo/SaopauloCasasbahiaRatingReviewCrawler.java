@@ -59,10 +59,18 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
   private Integer getTotalRating(Document doc) {
     Integer total = null;
 
+    Element finalElement = null;
     Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
+    Element ratingOneEvaluation = doc.select(".pr-snapshot-average-based-on-text").first();
 
     if (rating != null) {
-      total = Integer.parseInt(rating.ownText().replaceAll("[^0-9]", ""));
+      finalElement = rating;
+    } else if (ratingOneEvaluation != null) {
+      finalElement = ratingOneEvaluation;
+    }
+
+    if (finalElement != null) {
+      total = Integer.parseInt(finalElement.ownText().replaceAll("[^0-9]", ""));
     }
 
     return total;
