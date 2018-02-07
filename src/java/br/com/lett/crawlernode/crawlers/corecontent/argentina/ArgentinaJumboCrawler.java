@@ -384,7 +384,7 @@ public class ArgentinaJumboCrawler extends Crawler {
       String nameEncoded = crawlNameFromAPI(session.getInternalId());
 
       try {
-        nameEncoded = URLEncoder.encode(crawlNameFromAPI(session.getInternalId()), "iso-8859-1").replace("+", "%20");
+        nameEncoded = URLEncoder.encode(nameEncoded, "iso-8859-1").replace("+", "%20");
       } catch (UnsupportedEncodingException e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
