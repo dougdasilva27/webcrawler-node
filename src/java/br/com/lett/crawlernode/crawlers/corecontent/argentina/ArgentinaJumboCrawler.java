@@ -377,7 +377,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 
     if (session.getInternalId() != null && !session.getInternalId().isEmpty()) {
       String urlFisrtPeace = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=";
-      String nameEncoded = crawlNameFromAPI(session.getInternalId());
+      String nameEncoded = crawlNameEncodedFromAPI(session.getInternalId());
 
       if (nameEncoded != null) {
         url = urlFisrtPeace + nameEncoded;
@@ -401,7 +401,7 @@ public class ArgentinaJumboCrawler extends Crawler {
    * @param internalId
    * @return
    */
-  private String crawlNameFromAPI(String internalId) {
+  private String crawlNameEncodedFromAPI(String internalId) {
     String name = null;
 
     String url = "https://www.jumbo.com.ar/Comprar/HomeService.aspx/SalvarArticuloEnCarrito";
