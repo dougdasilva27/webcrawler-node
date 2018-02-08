@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +12,7 @@ import org.json.JSONObject;
 import com.mongodb.util.JSON;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
 
@@ -110,13 +109,8 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
     String productUrl = null;
 
     if (product.has("DescripcionArticulo")) {
-      String name = "";
-      try {
-        name = URLEncoder.encode(product.getString("DescripcionArticulo"), "iso-8859-1").replace("+", "%20");
-      } catch (UnsupportedEncodingException e) {
-        this.logError("Name encode", e);
-      }
-      productUrl = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=" + name;
+      productUrl = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
+          + CommonMethods.removeAccents(product.getString("DescripcionArticulo")).replace(" ", "%20").replace("´", "%B4");
     }
 
     return productUrl;
@@ -143,10 +137,8 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
 
     String jsonString = fetchStringPOST(urlSearch, payload, headers, this.cookies);
 
-    if (jsonString != null) {
-      if (jsonString.startsWith("{")) {
-        json = parseJsonLevex(new JSONObject(jsonString));
-      }
+    if (jsonString != null && jsonString.startsWith("{")) {
+      json = parseJsonLevex(new JSONObject(jsonString));
     }
 
     return json;

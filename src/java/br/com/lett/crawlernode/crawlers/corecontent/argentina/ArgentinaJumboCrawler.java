@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -340,9 +338,7 @@ public class ArgentinaJumboCrawler extends Crawler {
       JSONObject jsonD = parseJsonLevex(json);
 
       if (jsonD.has("ResultadosBusquedaLevex")) {
-        JSONArray products = jsonD.getJSONArray("ResultadosBusquedaLevex");
-
-        return products;
+        return jsonD.getJSONArray("ResultadosBusquedaLevex");
       }
 
     }
@@ -382,12 +378,6 @@ public class ArgentinaJumboCrawler extends Crawler {
     if (session.getInternalId() != null && !session.getInternalId().isEmpty()) {
       String urlFisrtPeace = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=";
       String nameEncoded = crawlNameFromAPI(session.getInternalId());
-
-      try {
-        nameEncoded = URLEncoder.encode(nameEncoded, "iso-8859-1").replace("+", "%20");
-      } catch (UnsupportedEncodingException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
 
       if (nameEncoded != null) {
         url = urlFisrtPeace + nameEncoded;
@@ -435,7 +425,7 @@ public class ArgentinaJumboCrawler extends Crawler {
         JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
 
         if (articulo.has("descripcion")) {
-          name = articulo.getString("descripcion").replaceAll(" ", "%20").replaceAll("´", "%B4");
+          name = CommonMethods.removeAccents(articulo.getString("descripcion")).replace(" ", "%20").replace("´", "%B4");
         }
       }
     }
