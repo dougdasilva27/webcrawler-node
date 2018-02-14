@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -76,8 +77,14 @@ public class SaopauloAmericanasCrawler extends Crawler {
       String description = this.crawlDescription(internalPid, doc);
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson);
 
-      for (String internalId : skuOptions.keySet()) {
-        String variationName = (name.trim() + " " + skuOptions.get(internalId).trim()).trim();
+      for (Entry<String, String> entry : skuOptions.entrySet()) {
+        String internalId = entry.getKey();
+        String variationName = entry.getValue().trim();
+
+        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
+          name += " " + variationName;
+        }
+
         Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
         Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = this.crawlAvailability(marketplaceMap);
@@ -86,8 +93,8 @@ public class SaopauloAmericanasCrawler extends Crawler {
         Integer stock = null; // stock só tem na api
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-            .setName(variationName).setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(variationMarketplace).build();
 
