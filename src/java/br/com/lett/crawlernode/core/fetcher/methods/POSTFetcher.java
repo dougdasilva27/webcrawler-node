@@ -551,6 +551,7 @@ public class POSTFetcher {
 
       // Request via fetcher on first attempt
       if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+
         JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
 
         String content = response.getJSONObject("response").getString("body");
@@ -915,7 +916,7 @@ public class POSTFetcher {
       any.put(ProxyCollection.NO_PROXY);
 
       proxies.put("any", any);
-      payload.put(FETCHER_PARAMETER_PROXIES, proxies);
+      // payload.put(FETCHER_PARAMETER_PROXIES, proxies);
     }
 
     return payload;

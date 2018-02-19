@@ -1145,6 +1145,6 @@ public class DataFetcher {
     // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
     // Main.executionParameters.getUseFetcher());
 
-    return attempt < maxAttempts && Main.executionParameters.getUseFetcher();
+    return attempt == 1 && Main.executionParameters.getUseFetcher();
   }
 }
