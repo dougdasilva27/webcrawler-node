@@ -2,118 +2,112 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
-	public SaopauloPanvelCrawler(Session session) {
-		super(session);
-	}
+  public SaopauloPanvelCrawler(Session session) {
+    super(session);
+  }
 
-	private String crawlInternalId(String url) {
-		String internalId = null;
+  private String crawlInternalId(String url) {
+    String internalId = null;
 
-		String[] tokens = url.split("/");
-		internalId = tokens[tokens.length - 2];
+    String[] tokens = url.split("=");
+    internalId = tokens[tokens.length - 1];
 
-		return internalId;
-	}
+    return internalId.split("&")[0];
+  }
 
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
 
-		return internalPid;
-	}
+    return internalPid;
+  }
 
-	private String crawlProductUrl(Element e) {
-		String urlProduct = e.attr("href");
+  private String crawlProductUrl(Element e) {
+    String productUrl = e.attr("href");
 
-		if (!urlProduct.startsWith("https://www.panvel.com")) {
-			urlProduct = "https://www.panvel.com" + urlProduct;
-		}
+    if (!productUrl.startsWith("https://www.panvel.com")) {
+      productUrl = "https://www.panvel.com" + productUrl;
+    }
 
-		return urlProduct;
-	}
+    return productUrl;
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 15;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 15;
 
-		this.log("Página " + this.currentPage);
+    this.log("Página " + this.currentPage);
 
-		// monta a url com a keyword e a página
-		String url = "http://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage
-				+ "&tipo=bar&termoPesquisa=" + this.keywordWithoutAccents.replace(" ", "+");
-		this.log("Link onde são feitos os crawlers: " + url);
+    // monta a url com a keyword e a página
+    String url = "http://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&tipo=bar&termoPesquisa="
+        + this.keywordWithoutAccents.replace(" ", "+");
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+    this.currentDoc = fetchDocument(url);
 
-		Elements products = this.currentDoc.select("a.lnk_mais_detalhes.gsaLink");
+    Elements products = this.currentDoc.select("a.lnk_mais_detalhes.gsaLink");
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (products.size() >= 1) {
-			// se o total de busca não foi setado ainda, chama a função para
-			// setar
-			if (this.totalProducts == 0)
-				setTotalProducts();
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-			for (Element e : products) {
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+      for (Element e : products) {
+        String urlProduct = crawlProductUrl(e);
+        String internalPid = crawlInternalPid(e);
+        String internalId = crawlInternalId(urlProduct);
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+        saveDataProduct(internalId, internalPid, urlProduct);
 
-				// InternalId
-				String internalId = crawlInternalId(urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+  @Override
+  protected boolean hasNextPage() {
+    Element lastPage = this.currentDoc.select(".pagination li > a").last();
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-	}
+    if (lastPage != null) {
+      if (lastPage.hasClass("selected")) {
+        return false;
+      }
 
-	@Override
-	protected boolean hasNextPage() {
-		if ((this.totalProducts > this.arrayProducts.size()) && this.currentDoc.select("a.lnk_mais_detalhes.gsaLink").size() > 0) {
-			return true;
-		}
+      return true;
+    }
 
-		return false;
-	}
+    return false;
+  }
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("div.pag p").first();
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.select("div.pag p").first();
 
-		if (totalElement != null) {
-			try {
-				int x = totalElement.text().indexOf("de");
+    if (totalElement != null) {
+      try {
+        int x = totalElement.text().indexOf("de");
 
-				String token = totalElement.text().substring(x + 2).trim();
+        String token = totalElement.text().substring(x + 2).trim();
 
-				this.totalProducts = Integer.parseInt(token);
-			} catch (Exception e) {
-				this.logError(CommonMethods.getStackTrace(e));
-			}
+        this.totalProducts = Integer.parseInt(token);
+      } catch (Exception e) {
+        this.logError(CommonMethods.getStackTrace(e));
+      }
 
-			this.log("Total da busca: " + this.totalProducts);
-		}
-	}
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
 }
