@@ -26,13 +26,13 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("li.product > a[title]");
+    Elements products = this.currentDoc.select("li.product .prd-info a[title]");
 
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
       // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
-        setTotalProducts();
+    	  setTotalProductsCarrefour();
       }
 
       for (Element e : products) {
@@ -78,8 +78,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     return false;
   }
 
-  @Override
-  protected void setTotalProducts() {
+  protected void setTotalProductsCarrefour() {
     Element totalElement = this.currentDoc.select(".result-count strong span").first();
 
     if (totalElement != null) {
