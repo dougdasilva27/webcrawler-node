@@ -94,7 +94,7 @@ public class POSTFetcher {
       Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt)) {
+      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
         JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session);
 
         String content = response.getJSONObject("response").getString("body");
@@ -254,7 +254,7 @@ public class POSTFetcher {
     String requestHash = DataFetcher.generateRequestHash(session);
 
     // Request via fetcher on first attempt
-    if (DataFetcher.mustUseFetcher(attempt)) {
+    if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
       JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session);
 
       String content = response.getJSONObject("response").getString("body");
@@ -550,7 +550,7 @@ public class POSTFetcher {
       Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt)) {
+      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
         JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
 
         String content = response.getJSONObject("response").getString("body");

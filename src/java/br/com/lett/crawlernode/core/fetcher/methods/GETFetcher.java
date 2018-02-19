@@ -113,7 +113,7 @@ public class GETFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
       // Request via fetcher on first attempt
-      if (!(session instanceof TestCrawlerSession) && DataFetcher.mustUseFetcher(attempt)) {
+      if (!(session instanceof TestCrawlerSession) && DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
         Map<String, String> headers = new HashMap<>();
 
         if (cookies != null && !cookies.isEmpty()) {
@@ -286,7 +286,7 @@ public class GETFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt)) {
+      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
         if (cookies != null && !cookies.isEmpty()) {
           StringBuilder cookiesHeader = new StringBuilder();
 

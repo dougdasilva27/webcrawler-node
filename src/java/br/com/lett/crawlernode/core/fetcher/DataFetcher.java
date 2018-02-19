@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1138,12 +1136,15 @@ public class DataFetcher {
    * @param attempt
    * @return boolean
    */
-  public static boolean mustUseFetcher(int attempt) {
-    ZoneId utc = ZoneId.of("America/Sao_Paulo");
-    ZonedDateTime zonedDate = ZonedDateTime.now(utc);
-    int nowHour = zonedDate.getHour();
+  public static boolean mustUseFetcher(int attempt, int maxAttempts) {
+    // ZoneId utc = ZoneId.of("America/Sao_Paulo");
+    // ZonedDateTime zonedDate = ZonedDateTime.now(utc);
+    // int nowHour = zonedDate.getHour();
 
     // Request via fetcher on first attempt
-    return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) && Main.executionParameters.getUseFetcher());
+    // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
+    // Main.executionParameters.getUseFetcher());
+
+    return attempt < maxAttempts && Main.executionParameters.getUseFetcher();
   }
 }
