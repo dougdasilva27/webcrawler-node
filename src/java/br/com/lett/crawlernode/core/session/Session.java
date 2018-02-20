@@ -97,11 +97,11 @@ public class Session {
     maxConnectionAttemptsWebcrawler = 0;
 
     if (Main.executionParameters.getUseFetcher()) {
-      // for (String proxy : market.getProxies()) {
-      // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-      // }
-      // maxConnectionAttemptsWebcrawler++;
-      maxConnectionAttemptsWebcrawler = 3;
+      for (String proxy : market.getProxies()) {
+        maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+      }
+      maxConnectionAttemptsWebcrawler++;
+      // maxConnectionAttemptsWebcrawler = 3;
     } else {
       for (String proxy : market.getProxies()) {
         maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
