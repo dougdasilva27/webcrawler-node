@@ -1136,7 +1136,7 @@ public class DataFetcher {
    * @param attempt
    * @return boolean
    */
-  public static boolean mustUseFetcher(int attempt, int maxAttempts) {
+  public static boolean mustUseFetcher(int attempt, Session session) {
     // ZoneId utc = ZoneId.of("America/Sao_Paulo");
     // ZonedDateTime zonedDate = ZonedDateTime.now(utc);
     // int nowHour = zonedDate.getHour();
@@ -1145,6 +1145,7 @@ public class DataFetcher {
     // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
     // Main.executionParameters.getUseFetcher());
 
-    return attempt == 1 && Main.executionParameters.getUseFetcher();
+    return !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
+        && Main.executionParameters.getUseFetcher();
   }
 }

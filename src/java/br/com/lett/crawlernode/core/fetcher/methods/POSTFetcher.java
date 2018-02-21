@@ -94,20 +94,25 @@ public class POSTFetcher {
       Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
         JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session);
 
-        String content = response.getJSONObject("response").getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+        if (response.has("response")) {
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
-        if (response.has("request_status_code")) {
-          int responseCode = response.getInt("request_status_code");
-          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
           }
-        }
 
-        return content;
+          return content;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          throw new ResponseCodeException(500);
+        }
       }
 
       randUserAgent = DataFetcher.randUserAgent();
@@ -254,20 +259,25 @@ public class POSTFetcher {
     String requestHash = DataFetcher.generateRequestHash(session);
 
     // Request via fetcher on first attempt
-    if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+    if (DataFetcher.mustUseFetcher(attempt, session)) {
       JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session);
 
-      String content = response.getJSONObject("response").getString("body");
-      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+      if (response.has("response")) {
+        String content = response.getJSONObject("response").getString("body");
+        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
-      if (response.has("request_status_code")) {
-        int responseCode = response.getInt("request_status_code");
-        if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-          throw new ResponseCodeException(responseCode);
+        if (response.has("request_status_code")) {
+          int responseCode = response.getInt("request_status_code");
+          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+            throw new ResponseCodeException(responseCode);
+          }
         }
-      }
 
-      return content;
+        return content;
+      } else {
+        Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+        throw new ResponseCodeException(500);
+      }
     }
 
     String randUserAgent = DataFetcher.randUserAgent();
@@ -550,21 +560,26 @@ public class POSTFetcher {
       Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
 
         JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
 
-        String content = response.getJSONObject("response").getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+        if (response.has("response")) {
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
-        if (response.has("request_status_code")) {
-          int responseCode = response.getInt("request_status_code");
-          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
           }
-        }
 
-        return content;
+          return content;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          throw new ResponseCodeException(500);
+        }
       }
 
       randUserAgent = DataFetcher.randUserAgent();

@@ -34,7 +34,6 @@ import br.com.lett.crawlernode.core.fetcher.HostNameVerifier;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -113,7 +112,7 @@ public class GETFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
       // Request via fetcher on first attempt
-      if (!(session instanceof TestCrawlerSession) && DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
         Map<String, String> headers = new HashMap<>();
 
         if (cookies != null && !cookies.isEmpty()) {
@@ -129,20 +128,25 @@ public class GETFetcher {
         JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
         JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 
-        DataFetcher.setRequestProxyForFetcher(session, response, url);
-        session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+        if (response.has("response")) {
+          DataFetcher.setRequestProxyForFetcher(session, response, url);
+          session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
 
-        String content = response.getJSONObject("response").getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
-        if (response.has("request_status_code")) {
-          int responseCode = response.getInt("request_status_code");
-          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
           }
-        }
 
-        return content;
+          return content;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          throw new ResponseCodeException(500);
+        }
       }
 
       randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
@@ -286,7 +290,7 @@ public class GETFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request: " + url);
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt, session.getMaxConnectionAttemptsCrawler())) {
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
         if (cookies != null && !cookies.isEmpty()) {
           StringBuilder cookiesHeader = new StringBuilder();
 
@@ -300,21 +304,26 @@ public class GETFetcher {
         JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
         JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
 
-        DataFetcher.setRequestProxyForFetcher(session, response, url);
+        if (response.has("response")) {
+          DataFetcher.setRequestProxyForFetcher(session, response, url);
 
-        session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+          session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
 
-        String content = response.getJSONObject("response").getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
-        if (response.has("request_status_code")) {
-          int responseCode = response.getInt("request_status_code");
-          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
           }
-        }
 
-        return content;
+          return content;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          throw new ResponseCodeException(500);
+        }
       }
 
       randUserAgent = headers.containsKey("User-Agent") ? headers.get("User-Agent") : DataFetcher.randUserAgent();
