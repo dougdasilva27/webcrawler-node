@@ -795,10 +795,9 @@ public class POSTFetcher {
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    // Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 :
-    // timeout;
+    Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 : timeout;
 
-    Integer defaultTimeout = 1;
+    // Integer defaultTimeout = 1;
 
     RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
         .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
