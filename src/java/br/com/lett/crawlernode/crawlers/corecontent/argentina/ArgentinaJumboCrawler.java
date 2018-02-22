@@ -69,14 +69,25 @@ public class ArgentinaJumboCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
+    List<Product> products = crawlproducts(session.getOriginalURL());
+
+    if (products.isEmpty()) {
+      String newUrl = crawlNewUrl();
+      products = crawlproducts(newUrl);
+    }
+
+    return products;
+
+  }
+
+  private List<Product> crawlproducts(String url) {
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(url)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String productUrl = crawlNewUrl();
 
-      JSONObject searchJson = crawlProductApi(productUrl);
+      JSONObject searchJson = crawlProductApi(url);
       JSONArray productsArray = crawlProducts(searchJson);
 
       for (int i = 0; i < productsArray.length(); i++) {
@@ -96,8 +107,8 @@ public class ArgentinaJumboCrawler extends Crawler {
         Marketplace marketplace = crawlMarketplace();
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+        Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
             .setStock(stock).setMarketplace(marketplace).build();
 
@@ -109,7 +120,6 @@ public class ArgentinaJumboCrawler extends Crawler {
     }
 
     return products;
-
   }
 
   private boolean isProductPage(String url) {
@@ -309,7 +319,9 @@ public class ArgentinaJumboCrawler extends Crawler {
     JSONObject json = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Content-Type", "application/json; charset=UTF-8");
+    headers.put("X-Requested-With", "XMLHttpRequest");
 
     // Nome do produto na busca
     String[] tokens = url.split("=");
