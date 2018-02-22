@@ -756,9 +756,14 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
         if (parcela != null) {
           String parcelaText = parcela.text().toLowerCase();
-          int x = parcelaText.indexOf("x");
 
-          Integer installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
+          Integer installment = 1;
+
+          if (parcelaText.contains("x")) {
+            int x = parcelaText.indexOf("x");
+
+            installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
+          }
 
           Element valor = e.select("> td").first();
 
