@@ -50,7 +50,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
 
     String url = "https://api.carrefour.com.br/mobile-food/v1/product/" + tokens[tokens.length - 1];
     // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.GET_REQUEST, session);
+    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
     String page = null;
 
     if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200

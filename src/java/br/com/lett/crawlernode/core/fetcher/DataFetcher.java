@@ -694,7 +694,7 @@ public class DataFetcher {
    */
   public static void fetchPageAPIUrlBox(String url, Session session) {
     try {
-      POSTFetcher.requestWithFetcher(session, POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000);
+      POSTFetcher.requestWithFetcher(session, POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000, false);
 
     } catch (SocketTimeoutException e) {
       // do nothing

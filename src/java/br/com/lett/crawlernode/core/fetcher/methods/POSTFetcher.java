@@ -95,7 +95,7 @@ public class POSTFetcher {
 
       // Request via fetcher on first attempt
       if (DataFetcher.mustUseFetcher(attempt, session)) {
-        JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session);
+        JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           String content = response.getJSONObject("response").getString("body");
@@ -260,7 +260,7 @@ public class POSTFetcher {
 
     // Request via fetcher on first attempt
     if (DataFetcher.mustUseFetcher(attempt, session)) {
-      JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session);
+      JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session, true);
 
       if (response.has("response")) {
         String content = response.getJSONObject("response").getString("body");
@@ -562,7 +562,7 @@ public class POSTFetcher {
       // Request via fetcher on first attempt
       if (DataFetcher.mustUseFetcher(attempt, session)) {
 
-        JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
+        JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           String content = response.getJSONObject("response").getString("body");
@@ -726,10 +726,11 @@ public class POSTFetcher {
    * @param headers
    * @param payload
    * @param session
+   * @param dev - use fetcher dev
    * @return
    */
   public static JSONObject fetcherRequest(String url, List<Cookie> cookies, Map<String, String> headers, String payload, String resquestType,
-      Session session) {
+      Session session, boolean dev) {
 
     if (headers == null) {
       headers = new HashMap<>();
@@ -747,7 +748,7 @@ public class POSTFetcher {
     JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, null);
     JSONObject response = new JSONObject();
     try {
-      response = POSTFetcher.requestWithFetcher(session, payloadFetcher);
+      response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
     } catch (Exception e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
     }
@@ -769,8 +770,8 @@ public class POSTFetcher {
    *         https://www.notion.so/lett/Fetcher-e63950ab50c849aaa46931d124eba168#303c4ee9f1e347dabab305bd6725f49c
    * @throws Exception
    */
-  public static JSONObject requestWithFetcher(Session session, JSONObject payload) throws Exception {
-    return requestWithFetcher(session, payload, null);
+  public static JSONObject requestWithFetcher(Session session, JSONObject payload, boolean dev) throws Exception {
+    return requestWithFetcher(session, payload, null, dev);
   }
 
   /**
@@ -783,14 +784,20 @@ public class POSTFetcher {
    *         https://www.notion.so/lett/Fetcher-e63950ab50c849aaa46931d124eba168#303c4ee9f1e347dabab305bd6725f49c
    * @throws Exception
    */
-  public static JSONObject requestWithFetcher(Session session, JSONObject payload, Integer timeout) throws Exception {
+  public static JSONObject requestWithFetcher(Session session, JSONObject payload, Integer timeout, boolean dev) throws Exception {
     String requestHash = DataFetcher.generateRequestHash(session);
 
     Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a " + payload.getString(FETCHER_PARAMETER_METHOD)
         + " request in: " + payload.getString(FETCHER_PARAMETER_URL));
 
+    String fetcherHost = FETCHER_HOST;
+
+    if (dev) {
+      fetcherHost = FETCHER_HOST_DEV;
+    }
+
     // Authentication
-    URL requestURL = new URI(FETCHER_HOST).toURL();
+    URL requestURL = new URI(fetcherHost).toURL();
     String fetcherUrl = requestURL.getProtocol() + "://" + FETCHER_USER + ":" + FETCHER_PASSWORD + "@" + requestURL.getHost();
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -841,7 +848,7 @@ public class POSTFetcher {
     Integer responseLength = pageContent.getContentData().length;
 
     // assembling request information log message
-    DataFetcher.sendRequestInfoLog(FETCHER_HOST, DataFetcher.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength, requestHash);
+    DataFetcher.sendRequestInfoLog(fetcherHost, DataFetcher.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength, requestHash);
 
     // saving request content result on Amazon
     String content;

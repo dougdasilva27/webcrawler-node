@@ -694,7 +694,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session);
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session, false);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").getString("body");
@@ -713,7 +713,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.GET_REQUEST, session);
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.GET_REQUEST, session, false);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").getString("body");

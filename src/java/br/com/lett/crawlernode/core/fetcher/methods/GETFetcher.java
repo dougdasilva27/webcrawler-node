@@ -126,7 +126,7 @@ public class GETFetcher {
         }
 
         JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
-        JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
+        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
 
         if (response.has("response")) {
           DataFetcher.setRequestProxyForFetcher(session, response, url);
@@ -302,7 +302,7 @@ public class GETFetcher {
         }
 
         JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", false, null, headers, null);
-        JSONObject response = POSTFetcher.requestWithFetcher(session, payload);
+        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
 
         if (response.has("response")) {
           DataFetcher.setRequestProxyForFetcher(session, response, url);

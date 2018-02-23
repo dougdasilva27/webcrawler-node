@@ -82,7 +82,7 @@ public class BrasilMeucarrefourCrawler extends CrawlerRankingKeywords {
     headers.put("User-Agent", DataFetcher.randMobileUserAgent());
 
     // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, null, headers, null, DataFetcher.GET_REQUEST, session);
+    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, null, headers, null, DataFetcher.GET_REQUEST, session, false);
     String page = null;
 
     if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
