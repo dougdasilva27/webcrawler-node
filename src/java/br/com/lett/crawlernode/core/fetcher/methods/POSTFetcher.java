@@ -790,7 +790,7 @@ public class POSTFetcher {
         + " request in: " + payload.getString(FETCHER_PARAMETER_URL));
 
     // Authentication
-    URL requestURL = new URI(FETCHER_HOST_DEV).toURL();
+    URL requestURL = new URI(FETCHER_HOST).toURL();
     String fetcherUrl = requestURL.getProtocol() + "://" + FETCHER_USER + ":" + FETCHER_PASSWORD + "@" + requestURL.getHost();
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -841,8 +841,7 @@ public class POSTFetcher {
     Integer responseLength = pageContent.getContentData().length;
 
     // assembling request information log message
-    DataFetcher.sendRequestInfoLog(FETCHER_HOST_DEV, DataFetcher.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength,
-        requestHash);
+    DataFetcher.sendRequestInfoLog(FETCHER_HOST, DataFetcher.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength, requestHash);
 
     // saving request content result on Amazon
     String content;
