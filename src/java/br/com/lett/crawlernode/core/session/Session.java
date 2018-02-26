@@ -101,7 +101,7 @@ public class Session {
       // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
       // }
       // maxConnectionAttemptsWebcrawler++;
-      maxConnectionAttemptsWebcrawler = 3;
+      maxConnectionAttemptsWebcrawler = 2;
     } else {
       for (String proxy : market.getProxies()) {
         maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
