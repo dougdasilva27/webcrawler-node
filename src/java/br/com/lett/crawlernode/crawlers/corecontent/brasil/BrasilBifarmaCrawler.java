@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -25,310 +26,316 @@ import models.prices.Prices;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
-	private static final String HOME_PAGE = "http://www.bifarma.com.br/";
-
-	public BrasilBifarmaCrawler(Session session) {
-		super(session);
-		super.config.setFetcher(Fetcher.WEBDRIVER);
-	}
-
-	@Override
-	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
-	}
-
-
-	@Override
-	protected Object fetch() {
-		this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-		Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-		Element script = doc.select("script").first();
-		Element robots = doc.select("meta[name=robots]").first();
-
-		if (script != null && robots != null) {
-			String eval = script.html().trim();
-			if (!eval.isEmpty()) {
-				Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
-				this.webdriver.executeJavascript(eval);
-			}
-
-			this.webdriver.waitLoad(9000);
-			return Jsoup.parse(this.webdriver.getCurrentPageSource());
-		}
-
-		return doc;
-	}
-
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<>();
-
-		if (isProductPage(doc)) {
-			Logging.printLogDebug(logger, session,
-					"Product page identified: " + this.session.getOriginalURL());
+  private static final String HOME_PAGE = "http://www.bifarma.com.br/";
+
+  public BrasilBifarmaCrawler(Session session) {
+    super(session);
+    super.config.setFetcher(Fetcher.WEBDRIVER);
+  }
+
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
+  }
+
+
+  @Override
+  protected Object fetch() {
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+    Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    Element script = doc.select("script").first();
+    Element robots = doc.select("meta[name=robots]").first();
+
+    if (script != null && robots != null) {
+      String eval = script.html().trim();
+      if (!eval.isEmpty()) {
+        Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
+        this.webdriver.executeJavascript(eval);
+      }
 
-			JSONObject productInfo = crawlProductInfo(doc);
-
-			String internalId = crawlInternalId(productInfo);
-			String internalPid = crawlInternalPid(productInfo);
-			String name = crawlName(productInfo);
-			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(price, productInfo);
-			boolean available = crawlAvailability(productInfo);
-			CategoryCollection categories = crawlCategories(productInfo);
-			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);
-			String description = crawlDescription(doc);
-			Integer stock = null;
-			Marketplace marketplace = crawlMarketplace();
-
-			// Creating the product
-			Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-					.setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-					.setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-					.setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-					.setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-					.setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      this.webdriver.waitLoad(9000);
+      return Jsoup.parse(this.webdriver.getCurrentPageSource());
+    }
 
-			products.add(product);
-
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
-
-		return products;
+    return doc;
+  }
 
-	}
-
-	private boolean isProductPage(Document doc) {
-		if (doc.select(".product_body").first() != null) {
-			return true;
-		}
-		return false;
-	}
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-	private String crawlInternalId(JSONObject info) {
-		String internalId = null;
+    if (isProductPage(doc)) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-		if (info.has("skus")) {
-			JSONArray skus = info.getJSONArray("skus");
+      JSONObject productInfo = crawlProductInfo(doc);
+
+      String internalId = crawlInternalId(productInfo);
+      String internalPid = crawlInternalPid(productInfo);
+      String name = crawlName(productInfo);
+      Float price = crawlPrice(doc);
+      Prices prices = crawlPrices(price, productInfo);
+      boolean available = crawlAvailability(productInfo);
+      CategoryCollection categories = crawlCategories(productInfo);
+      String primaryImage = crawlPrimaryImage(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      String description = crawlDescription(doc);
+      Integer stock = null;
+      Marketplace marketplace = crawlMarketplace();
 
-			if (skus.length() > 0) {
-				JSONObject sku = skus.getJSONObject(0);
+      // Creating the product
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
-				if (sku.has("sku")) {
-					internalId = sku.getString("sku");
-				}
-			}
-		}
+      products.add(product);
 
-		return internalId;
-	}
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+    }
 
-	private String crawlInternalPid(JSONObject info) {
-		String internalPid = null;
+    return products;
 
-		if (info.has("id")) {
-			internalPid = info.getString("id");
-		}
+  }
 
-		return internalPid;
-	}
+  private boolean isProductPage(Document doc) {
+    if (doc.select(".product_body").first() != null) {
+      return true;
+    }
+    return false;
+  }
 
-	private String crawlName(JSONObject info) {
-		String name = null;
+  private String crawlInternalId(JSONObject info) {
+    String internalId = null;
 
-		if (info.has("name")) {
-			name = info.getString("name");
-		}
+    if (info.has("skus")) {
+      JSONArray skus = info.getJSONArray("skus");
 
-		return name;
-	}
+      if (skus.length() > 0) {
+        JSONObject sku = skus.getJSONObject(0);
 
-	private Float crawlPrice(Document document) {
-		Float price = null;
-		Element salePriceElement = document.select(".product_current_price strong").first();
+        if (sku.has("sku")) {
+          internalId = sku.getString("sku");
+        }
+      }
+    }
 
-		if (salePriceElement != null) {
-			String priceText = salePriceElement.ownText().trim();
+    return internalId;
+  }
 
-			if (!priceText.isEmpty()) {
-				price = MathCommonsMethods.parseFloat(priceText);
-			}
-		}
+  private String crawlInternalPid(JSONObject info) {
+    String internalPid = null;
 
-		return price;
-	}
+    if (info.has("id")) {
+      internalPid = info.getString("id");
+    }
 
-	private boolean crawlAvailability(JSONObject info) {
-		boolean available = false;
+    return internalPid;
+  }
 
-		if (info.has("status")) {
-			String status = info.getString("status");
+  private String crawlName(JSONObject info) {
+    String name = null;
 
-			if (status.equals("available")) {
-				available = true;
-			}
-		}
+    if (info.has("name")) {
+      name = info.getString("name");
+    }
 
-		return available;
-	}
+    return name;
+  }
 
-	private Marketplace crawlMarketplace() {
-		return new Marketplace();
-	}
+  private Float crawlPrice(Document document) {
+    Float price = null;
+    Element salePriceElement = document.select(".product_current_price strong").first();
 
-	private String crawlPrimaryImage(Document document) {
-		String primaryImage = null;
-		Element primaryImageElement = document.select(".slider-product .slide_image img").first();
+    if (salePriceElement != null) {
+      String priceText = salePriceElement.ownText().trim();
 
-		if (primaryImageElement != null) {
-			primaryImage = primaryImageElement.attr("src").trim();
+      if (!priceText.isEmpty()) {
+        price = MathCommonsMethods.parseFloat(priceText);
+      }
+    }
 
-			if (!primaryImage.contains("bifarma")) {
-				primaryImage = HOME_PAGE + primaryImage;
-			}
+    return price;
+  }
 
-			if (primaryImage.contains("SEM_IMAGEM")) {
-				primaryImage = null;
-			}
-		}
+  private boolean crawlAvailability(JSONObject info) {
+    boolean available = false;
 
-		return primaryImage;
-	}
+    if (info.has("status")) {
+      String status = info.getString("status");
 
-	private String crawlSecondaryImages(Document document) {
-		String secondaryImages = null;
-		JSONArray secondaryImagesArray = new JSONArray();
+      if (status.equals("available")) {
+        available = true;
+      }
+    }
 
-		Elements imagesElement = document.select(".slider-thumbs .thumb > img");
+    return available;
+  }
 
-		for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-			String image = imagesElement.get(i).attr("src").trim().replace("_mini", "");
+  private Marketplace crawlMarketplace() {
+    return new Marketplace();
+  }
 
-			if (!image.contains("bifarma")) {
-				image = HOME_PAGE + image;
-			}
+  private String crawlPrimaryImage(Document document) {
+    String primaryImage = null;
+    Element primaryImageElement = document.select(".slider-product .slide_image img").first();
 
-			secondaryImagesArray.put(image);
-		}
+    if (primaryImageElement != null) {
+      primaryImage = primaryImageElement.attr("src").trim();
 
-		if (secondaryImagesArray.length() > 0) {
-			secondaryImages = secondaryImagesArray.toString();
-		}
+      if (!primaryImage.contains("bifarma")) {
+        primaryImage = HOME_PAGE + primaryImage;
+      }
 
-		return secondaryImages;
-	}
+      if (primaryImage.contains("SEM_IMAGEM")) {
+        primaryImage = null;
+      }
+    }
 
-	private CategoryCollection crawlCategories(JSONObject info) {
-		CategoryCollection categories = new CategoryCollection();
+    return primaryImage;
+  }
 
-		if (info.has("categories")) {
-			JSONArray categoriesJson = info.getJSONArray("categories");
+  private String crawlSecondaryImages(Document document, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
 
-			for (int i = 0; i < categoriesJson.length(); i++) {
-				JSONObject categorieJson = categoriesJson.getJSONObject(i);
+    List<String> images = new ArrayList<>();
+    images.add(primaryImage);
 
-				if (categorieJson.has("name")) {
-					categories.add(categorieJson.getString("name"));
-				}
-			}
-		}
+    Elements imagesElement = document.select(".slider-thumbs .thumb > img");
 
+    for (int i = 0; i < imagesElement.size(); i++) { // first index is the primary image
+      String image = imagesElement.get(i).attr("src").trim().replace("_mini", "");
 
-		return categories;
-	}
+      if (!images.contains(image) && !isPrimaryImage(image, primaryImage)) {
+        images.add(image);
+        secondaryImagesArray.put(image);
+      }
+    }
 
-	private String crawlDescription(Document document) {
-		StringBuilder description = new StringBuilder();
-		Element descriptionElement = document.select(".accordion").first();
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
 
-		if (descriptionElement != null) {
-			description.append(descriptionElement.html());
-		}
+    return secondaryImages;
+  }
 
-		return description.toString();
-	}
+  private boolean isPrimaryImage(String image, String primaryImage) {
+    String x = image.replace(CommonMethods.getLast(image.replace(".jpg", "").split("\\.")), "");
+    String y = primaryImage.replace(CommonMethods.getLast(primaryImage.replace(".jpg", "").split("\\.")), "");
 
-	private Prices crawlPrices(Float price, JSONObject info) {
-		Prices prices = new Prices();
+    return x.equals(y);
+  }
 
-		if (price != null) {
+  private CategoryCollection crawlCategories(JSONObject info) {
+    CategoryCollection categories = new CategoryCollection();
 
-			Map<Integer, Float> installmentPriceMap = new HashMap<>();
+    if (info.has("categories")) {
+      JSONArray categoriesJson = info.getJSONArray("categories");
 
-			prices.setBankTicketPrice(price);
-			installmentPriceMap.put(1, price);
+      for (int i = 0; i < categoriesJson.length(); i++) {
+        JSONObject categorieJson = categoriesJson.getJSONObject(i);
 
-			if (info.has("installment")) {
-				JSONObject installment = info.getJSONObject("installment");
+        if (categorieJson.has("name")) {
+          categories.add(categorieJson.getString("name"));
+        }
+      }
+    }
 
-				if (installment.has("price") && installment.has("count")) {
-					Double priceInstallment = installment.getDouble("price");
-					Integer installmentCount = installment.getInt("count");
 
-					if (installmentCount > 0) {
-						installmentPriceMap.put(installmentCount, priceInstallment.floatValue());
-					}
-				}
-			}
+    return categories;
+  }
 
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-			prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-		}
+  private String crawlDescription(Document document) {
+    StringBuilder description = new StringBuilder();
+    Element descriptionElement = document.select(".accordion").first();
 
-		return prices;
-	}
+    if (descriptionElement != null) {
+      description.append(descriptionElement.html());
+    }
 
-	/**
-	 * Return a json like this: "{\"product\": {\n" + "\t \"id\": \"7748\",\n" + "\t \"name\":
-	 * \"Mucilon arroz/aveia 400gr neste\",\n" + "\t \n" + "\t \"url\":
-	 * \"/produto/mucilon-arroz-aveia-400gr-neste-7748\",\n" + "\t \"images\": {\n" + "\t \"235x235\":
-	 * \"/fotos/PRODUTO_SEM_IMAGEM_mini.png\"\n" + "\t },\n" + "\t \"status\": \"available\",\n" +
-	 * "\t\t \n" + "\t \"price\": 12.50,\n" + "\t \"categories\": [{\"name\":\"Mamãe e
-	 * Bebê\",\"id\":\"8\"},{\"name\":\"Alimentos\",\"id\":\"89\",\"parents\":[\"8\"]},],\n" + "\t
-	 * \"installment\": {\n" + "\t \"count\": 0,\n" + "\t \"price\": 0.00\n" + "\t },\n" + "\t \n" +
-	 * "\t \n" + "\t \n" + "\t \t\"skus\": [ {\n" + "\t \t\t\t\"sku\": \"280263\"\n" + "\t \t}],\n" +
-	 * "\t \n" + "\t \"details\": {},\n" + "\t \t\t\"published\": \"2017-01-24\"\n" + "\t }}";
-	 *
-	 * @param doc
-	 * @return
-	 */
-	private JSONObject crawlProductInfo(Document doc) {
-		JSONObject info = new JSONObject();
+    return description.toString();
+  }
 
-		Elements scripts = doc.select("script[type=\"text/javascript\"]");
+  private Prices crawlPrices(Float price, JSONObject info) {
+    Prices prices = new Prices();
 
-		for (Element e : scripts) {
-			String text = e.outerHtml();
+    if (price != null) {
 
-			String varChaordic = "chaordicProduct=";
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
-			if (text.contains(varChaordic)) {
-				int x = text.indexOf(varChaordic) + varChaordic.length();
-				int y = text.indexOf(";", x);
+      prices.setBankTicketPrice(price);
+      installmentPriceMap.put(1, price);
 
-				String json = text.substring(x, y).trim();
+      if (info.has("installment")) {
+        JSONObject installment = info.getJSONObject("installment");
 
-				if (json.startsWith("{") && json.endsWith("}")) {
-					JSONObject product = new JSONObject(json);
+        if (installment.has("price") && installment.has("count")) {
+          Double priceInstallment = installment.getDouble("price");
+          Integer installmentCount = installment.getInt("count");
 
-					if (product.has("product")) {
-						info = product.getJSONObject("product");
-					}
-				}
+          if (installmentCount > 0) {
+            installmentPriceMap.put(installmentCount, priceInstallment.floatValue());
+          }
+        }
+      }
 
-				break;
-			}
-		}
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+    }
 
-		return info;
-	}
+    return prices;
+  }
+
+  /**
+   * Return a json like this: "{\"product\": {\n" + "\t \"id\": \"7748\",\n" + "\t \"name\": \"Mucilon
+   * arroz/aveia 400gr neste\",\n" + "\t \n" + "\t \"url\":
+   * \"/produto/mucilon-arroz-aveia-400gr-neste-7748\",\n" + "\t \"images\": {\n" + "\t \"235x235\":
+   * \"/fotos/PRODUTO_SEM_IMAGEM_mini.png\"\n" + "\t },\n" + "\t \"status\": \"available\",\n" + "\t\t
+   * \n" + "\t \"price\": 12.50,\n" + "\t \"categories\": [{\"name\":\"Mamãe e
+   * Bebê\",\"id\":\"8\"},{\"name\":\"Alimentos\",\"id\":\"89\",\"parents\":[\"8\"]},],\n" + "\t
+   * \"installment\": {\n" + "\t \"count\": 0,\n" + "\t \"price\": 0.00\n" + "\t },\n" + "\t \n" + "\t
+   * \n" + "\t \n" + "\t \t\"skus\": [ {\n" + "\t \t\t\t\"sku\": \"280263\"\n" + "\t \t}],\n" + "\t
+   * \n" + "\t \"details\": {},\n" + "\t \t\t\"published\": \"2017-01-24\"\n" + "\t }}";
+   *
+   * @param doc
+   * @return
+   */
+  private JSONObject crawlProductInfo(Document doc) {
+    JSONObject info = new JSONObject();
+
+    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+
+    for (Element e : scripts) {
+      String text = e.outerHtml();
+
+      String varChaordic = "chaordicProduct=";
+
+      if (text.contains(varChaordic)) {
+        int x = text.indexOf(varChaordic) + varChaordic.length();
+        int y = text.indexOf(";", x);
+
+        String json = text.substring(x, y).trim();
+
+        if (json.startsWith("{") && json.endsWith("}")) {
+          JSONObject product = new JSONObject(json);
+
+          if (product.has("product")) {
+            info = product.getJSONObject("product");
+          }
+        }
+
+        break;
+      }
+    }
+
+    return info;
+  }
 }
