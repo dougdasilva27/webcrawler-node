@@ -175,6 +175,18 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
       }
     }
 
+    if (json.has("productPromotion")) {
+      JSONObject productPromotion = json.getJSONObject("productPromotion");
+
+      if (productPromotion.has("unitPrice")) {
+        Object pObj = productPromotion.get("unitPrice");
+
+        if (pObj instanceof Double) {
+          price = MathCommonsMethods.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+        }
+      }
+    }
+
     return price;
   }
 
