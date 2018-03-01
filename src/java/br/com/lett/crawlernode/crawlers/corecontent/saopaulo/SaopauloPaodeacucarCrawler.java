@@ -175,7 +175,8 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
       }
     }
 
-    if (json.has("productPromotion")) {
+
+    if (json.has("productPromotion") && json.get("productPromotion") instanceof JSONObject) {
       JSONObject productPromotion = json.getJSONObject("productPromotion");
 
       if (productPromotion.has("unitPrice")) {
