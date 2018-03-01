@@ -69,7 +69,6 @@ public class ProxyCollection {
 
     assembleIntervalsWebcrawler(markets);
     assembleIntervalsImages(markets);
-
   }
 
   /**
