@@ -121,7 +121,7 @@ public class Test {
     if (market != null) {
 
       // fetching proxies
-      proxies = new ProxyCollection(markets);
+      proxies = new ProxyCollection(markets, dbManager);
 
       // create a task executor
       // for testing we use 1 thread, there is no need for more
@@ -130,12 +130,12 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("Gomitas Billiken", market);
+        session = SessionFactory.createTestRankingKeywordsSession("papinha", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session =
             SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.carrefour.com.br/meucarrefour#9684581", market);
+        session = SessionFactory.createTestSession("https://www.drogariavenancio.com.br/produto/53303/nutren-15-com-200ml", market);
       }
 
 
