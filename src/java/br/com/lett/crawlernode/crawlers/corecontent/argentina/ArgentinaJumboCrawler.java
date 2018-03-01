@@ -437,7 +437,7 @@ public class ArgentinaJumboCrawler extends Crawler {
         JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
 
         if (articulo.has("descripcion")) {
-          name = CommonMethods.removeAccents(articulo.getString("descripcion")).replace(" ", "%20").replace("´", "%B4");
+          name = CommonMethods.removeAccents(articulo.getString("descripcion")).replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
         }
       }
     }

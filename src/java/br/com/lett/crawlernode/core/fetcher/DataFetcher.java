@@ -510,7 +510,7 @@ public class DataFetcher {
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
         Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
-        return null;
+        return new HashMap<>();
       } else {
         return fetchCookies(session, url, cookies, attempt + 1);
       }

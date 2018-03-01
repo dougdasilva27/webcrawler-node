@@ -110,7 +110,7 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
 
     if (product.has("DescripcionArticulo")) {
       productUrl = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + CommonMethods.removeAccents(product.getString("DescripcionArticulo")).replace(" ", "%20").replace("´", "%B4");
+          + CommonMethods.removeAccents(product.getString("DescripcionArticulo")).replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
     }
 
     return productUrl;

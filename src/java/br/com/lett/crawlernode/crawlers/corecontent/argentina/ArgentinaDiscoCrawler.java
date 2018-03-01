@@ -440,7 +440,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
         JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
 
         if (articulo.has("descripcion")) {
-          name = articulo.getString("descripcion").replaceAll(" ", "%20").replaceAll("´", "%B4");
+          name = articulo.getString("descripcion").replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
         }
       }
     }

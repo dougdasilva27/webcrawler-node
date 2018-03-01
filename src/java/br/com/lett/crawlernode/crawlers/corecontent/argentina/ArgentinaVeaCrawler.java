@@ -38,7 +38,7 @@ import models.prices.Prices;
  */
 public class ArgentinaVeaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.veadigital.com.ar/";
+  private static final String HOME_PAGE = "https://www.veadigital.com.ar/";
 
   public ArgentinaVeaCrawler(Session session) {
     super(session);
@@ -48,7 +48,7 @@ public class ArgentinaVeaCrawler extends Crawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, session.getOriginalURL(), cookies, 1);
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
 
     for (String cookieName : cookiesMap.keySet()) {
       if ("ASP.NET_SessionId".equals(cookieName)) {
@@ -438,7 +438,7 @@ public class ArgentinaVeaCrawler extends Crawler {
         JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
 
         if (articulo.has("descripcion")) {
-          name = articulo.getString("descripcion").replaceAll(" ", "%20").replaceAll("´", "%B4");
+          name = articulo.getString("descripcion").replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
         }
       }
     }
