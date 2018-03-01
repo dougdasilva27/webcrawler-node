@@ -59,6 +59,11 @@ public class CrawlerUtils {
     return skuJson;
   }
 
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+    return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
+  }
+
   /**
    * Crawl json inside element html
    *
@@ -77,7 +82,7 @@ public class CrawlerUtils {
    * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
    * @throws IllegalArgumentException if doc is null
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)
@@ -88,7 +93,9 @@ public class CrawlerUtils {
     Elements scripts = doc.select(cssElement);
 
     for (Element e : scripts) {
-      String script = e.outerHtml().replace(" ", "");
+      String script = e.outerHtml();
+
+      script = withoutSpaces ? script.replace(" ", "") : script;
 
       if (script.contains(token)) {
         int x = script.indexOf(token) + token.length();

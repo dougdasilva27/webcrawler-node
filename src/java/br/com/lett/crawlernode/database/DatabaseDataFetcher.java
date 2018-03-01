@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.FindIterable;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -132,6 +133,15 @@ public class DatabaseDataFetcher {
 
         if (doc.containsKey(FETCHER_PROXIES_SOURCE)) {
           proxySource = doc.getString(FETCHER_PROXIES_SOURCE);
+
+          if (proxySource.equals("buyproxies.org")) {
+            proxySource = ProxyCollection.BUY;
+          }
+
+          if (proxySource.equals("proxybonanza")) {
+            proxySource = ProxyCollection.BONANZA;
+          }
+
           proxy.setSource(proxySource);
         } else {
           Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_SOURCE + " in mongo fetcher.");
