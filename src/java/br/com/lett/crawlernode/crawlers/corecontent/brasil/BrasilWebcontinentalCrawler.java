@@ -280,7 +280,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
     String sellerName = crawlSeller(internalId);
 
-    if (!sellerName.equals(SELLER_NAME_LOWER)) {
+    if (!sellerName.equals(SELLER_NAME_LOWER) && !sellerName.isEmpty()) {
       JSONObject sellerJSON = new JSONObject();
       sellerJSON.put("name", sellerName);
 

@@ -52,9 +52,8 @@ public class Crawler extends Task {
 
   protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
-  protected static final Pattern FILTERS =
-      Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-          + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+  protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
   /**
    * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -124,8 +123,7 @@ public class Crawler extends Task {
 
     List<SessionError> errors = session.getErrors();
 
-    Logging.printLogDebug(logger, session,
-        "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+    Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
     // errors collected manually
     // they can be exceptions or business logic errors
@@ -133,20 +131,17 @@ public class Crawler extends Task {
     if (!errors.isEmpty()) {
       Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session,
-          Main.dbManager.connectionPanel);
+      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
 
       session.setTaskStatus(Task.STATUS_FAILED);
     }
 
     // only remove the task from queue if it was flawless
     // and if we are not testing, because when testing there is no message processing
-    else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession
-        || session instanceof DiscoveryCrawlerSession) {
+    else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
       Logging.printLogDebug(logger, session, "Task completed.");
 
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session,
-          Main.dbManager.connectionPanel);
+      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
 
       session.setTaskStatus(Task.STATUS_COMPLETED);
     }
@@ -162,11 +157,9 @@ public class Crawler extends Task {
 
   private void productionRun() {
     if (session instanceof InsightsCrawlerSession) {
-      Logging.printLogDebug(logger, session,
-          "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
+      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
     } else if (session instanceof ImageCrawlerSession) {
-      Logging.printLogDebug(logger, session,
-          "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
+      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
     }
 
     // crawl informations and create a list of products
@@ -191,8 +184,7 @@ public class Crawler extends Task {
     if (session instanceof InsightsCrawlerSession) {
 
       // get crawled product by it's internalId
-      Logging.printLogDebug(logger, session, "Selecting product with internalId "
-          + ((InsightsCrawlerSession) session).getInternalId());
+      Logging.printLogDebug(logger, session, "Selecting product with internalId " + ((InsightsCrawlerSession) session).getInternalId());
       Product crawledProduct = filter(products, ((InsightsCrawlerSession) session).getInternalId());
 
       // if the product is void run the active void analysis
@@ -203,8 +195,8 @@ public class Crawler extends Task {
           activeVoidResultProduct = activeVoid(crawledProduct);
         } catch (Exception e) {
           Logging.printLogError(logger, session, "Error in active void method.");
-          SessionError error =
-              new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
           session.registerError(error);
         }
       }
@@ -219,8 +211,7 @@ public class Crawler extends Task {
           Logging.printLogError(logger, session, "Error in process product method.");
           Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
-          SessionError error =
-              new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
           session.registerError(error);
         }
       }
@@ -232,16 +223,14 @@ public class Crawler extends Task {
     // an URL scheduled manually, we won't run active void and
     // we must process each crawled product
     else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
-      Logging.printLogDebug(logger, session,
-          "Processing session of type: " + session.getClass().getName());
+      Logging.printLogDebug(logger, session, "Processing session of type: " + session.getClass().getName());
 
       for (Product product : products) {
         try {
           processProduct(product);
         } catch (Exception e) {
           Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-          SessionError error =
-              new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
+          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
           session.registerError(error);
         }
       }
@@ -284,12 +273,12 @@ public class Crawler extends Task {
    * 5. Persist the new ProcessedModel;
    * <p>
    * In this method we also have the so called 'truco' stage. In cases that we already have the
-   * ProcessedModel, we will only update the informations of the previous ProcessedModel with the
-   * new information crawled. But we don't update the information in the first try. When we detect
-   * some important change, such as in sku availability or price, we run the process all over again.
-   * The crawler runs again and all the above enumerated stages are repeated, just to be shure that
-   * the information really changed or if it isn't a crawling bug or an URL blocking, by the
-   * ecommerce website.
+   * ProcessedModel, we will only update the informations of the previous ProcessedModel with the new
+   * information crawled. But we don't update the information in the first try. When we detect some
+   * important change, such as in sku availability or price, we run the process all over again. The
+   * crawler runs again and all the above enumerated stages are repeated, just to be shure that the
+   * information really changed or if it isn't a crawling bug or an URL blocking, by the ecommerce
+   * website.
    * </p>
    * <p>
    * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or
@@ -309,13 +298,11 @@ public class Crawler extends Task {
     // fetch the previous processed product stored on database
     Processed previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
 
-    if ((previousProcessedProduct == null
-        && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))
+    if ((previousProcessedProduct == null && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))
         || previousProcessedProduct != null) {
 
       // create the new processed product
-      Processed newProcessedProduct = Processor.createProcessed(product, session,
-          previousProcessedProduct, Main.processorResultManager);
+      Processed newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
 
       // the product doesn't exists yet
       if (previousProcessedProduct == null) {
@@ -324,8 +311,7 @@ public class Crawler extends Task {
         if (newProcessedProduct != null) {
 
           // persist the new created processed product
-          PersistenceResult persistenceResult =
-              Persistence.persistProcessedProduct(newProcessedProduct, session);
+          PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
           processPersistenceResult(persistenceResult);
           scheduleImages(persistenceResult, newProcessedProduct);
 
@@ -366,8 +352,7 @@ public class Crawler extends Task {
             // if it was only updated it will be the id of the previous existent processed product
             // if a new processed was created, it will be the id generated by the
             // this id will be added to the found_products field on the task document on Mongo
-            PersistenceResult persistenceResult =
-                Persistence.persistProcessedProduct(newProcessedProduct, session);
+            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             processPersistenceResult(persistenceResult);
             scheduleImages(persistenceResult, newProcessedProduct);
 
@@ -399,8 +384,7 @@ public class Crawler extends Task {
 
     if (createdId != null) {
       Persistence.appendProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
-      Persistence.appendCreatedProcessedIdOnMongo(createdId, session,
-          Main.dbManager.connectionPanel);
+      Persistence.appendCreatedProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
     } else if (modifiedId != null) {
       Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.connectionPanel);
     }
@@ -540,8 +524,7 @@ public class Crawler extends Task {
   protected Object fetch() {
     String html;
     if (config.getFetcher() == Fetcher.STATIC) {
-      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(),
-          null, cookies);
+      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
       // } else if (config.getFetcher() == Fetcher.SMART) {
       // html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
     } else {
@@ -554,9 +537,8 @@ public class Crawler extends Task {
 
   /**
    * Compare ProcessedModel p1 against p2 p2 is suposed to be the truco, that is the model we are
-   * checking against Obs: this method expects that both p1 and p2 are different from null.
-   * According to the method processProduct, this never occurs when the compare(p1, p2) method is
-   * called.
+   * checking against Obs: this method expects that both p1 and p2 are different from null. According
+   * to the method processProduct, this never occurs when the compare(p1, p2) method is called.
    * 
    * @param p1
    * @param p2
@@ -566,11 +548,8 @@ public class Crawler extends Task {
     ProcessedComparison comparison = p1.compareHugeChanges(p2);
 
     if (comparison.changed) {
-      Logging.printLogDebug(logger, session,
-          "Change detected between the current and previous processed [field " + comparison.field
-              + "]");
-      Logging.printLogDebug(logger, session,
-          "Went from " + comparison.from + " to " + comparison.to);
+      Logging.printLogDebug(logger, session, "Change detected between the current and previous processed [field " + comparison.field + "]");
+      Logging.printLogDebug(logger, session, "Went from " + comparison.from + " to " + comparison.to);
     }
 
     return comparison.changed;
@@ -596,8 +575,7 @@ public class Crawler extends Task {
       }
     }
 
-    Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId
-        + " was not found...geting an empty product.");
+    Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " was not found...geting an empty product.");
     return new Product();
   }
 
@@ -621,8 +599,7 @@ public class Crawler extends Task {
       Persistence.updateProcessedLRT(nowISO, session);
 
       Logging.printLogDebug(logger, session, "Updating behavior");
-      Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null,
-          new Prices(), null, session);
+      Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
       Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session);
 
       return product;
@@ -667,8 +644,7 @@ public class Crawler extends Task {
         Persistence.updateProcessedLMS(nowISO, session);
 
         Logging.printLogDebug(logger, session, "Updating behavior");
-        Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null,
-            new Prices(), null, session);
+        Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
         Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session);
       }
     }
@@ -696,8 +672,8 @@ public class Crawler extends Task {
       List<Product> products = extract();
 
       /*
-       * when we are processing all the the products in array (mode discovery) we will select only
-       * the product being 'trucado'
+       * when we are processing all the the products in array (mode discovery) we will select only the
+       * product being 'trucado'
        */
       Product localProduct = filter(products, currentTruco.getInternalId());
 
@@ -705,8 +681,7 @@ public class Crawler extends Task {
       if (localProduct != null && !localProduct.isVoid()) {
         Persistence.persistProduct(localProduct, session);
 
-        next = Processor.createProcessed(localProduct, session, previousProcessed,
-            Main.processorResultManager);
+        next = Processor.createProcessed(localProduct, session, previousProcessed, Main.processorResultManager);
 
         if (next != null) {
           if (compare(next, currentTruco)) {
@@ -717,8 +692,7 @@ public class Crawler extends Task {
           else {
             Persistence.insertProcessedIdOnMongo(session, Main.dbManager.connectionPanel);
 
-            PersistenceResult persistenceResult =
-                Persistence.persistProcessedProduct(next, session);
+            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
             Persistence.updateProcessedLMT(nowISO, session);
             processPersistenceResult(persistenceResult);
             scheduleImages(persistenceResult, next);
@@ -735,12 +709,10 @@ public class Crawler extends Task {
       }
 
       if (session.getTrucoAttempts() >= MAX_TRUCO_ATTEMPTS) {
-        Logging.printLogDebug(logger, session,
-            "Ended truco session but will not persist the product.");
+        Logging.printLogDebug(logger, session, "Ended truco session but will not persist the product.");
 
         // register business logic error on session
-        SessionError error = new SessionError(SessionError.BUSINESS_LOGIC,
-            "Ended truco session but will not persist the product.");
+        SessionError error = new SessionError(SessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
         session.registerError(error);
 
         // if we end up with a void at end of truco, we must change the status of the processed to
