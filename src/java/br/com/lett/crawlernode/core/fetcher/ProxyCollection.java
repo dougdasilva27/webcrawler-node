@@ -19,8 +19,8 @@ public class ProxyCollection {
 
   private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
 
-  public static final String BUY = "buy";
-  public static final String BONANZA = "bonanza";
+  public static final String BUY = "buyproxies.org";
+  public static final String BONANZA = "proxybonanza";
   public static final String STORM = "storm";
   public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
   public static final String NO_PROXY = "no_proxy";
