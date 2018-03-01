@@ -3,12 +3,18 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.campogrande;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
@@ -16,24 +22,31 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private String cookieValue;
-
+  private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
   private List<Cookie> cookies = new ArrayList<>();
+
+  private String userAgent;
 
   @Override
   protected void processBeforeFetch() {
-    if (this.cookies.size() < 1) {
-      Map<String, String> cookies = fetchCookies("http://www.comperdelivery.com.br/");
+    this.userAgent = DataFetcher.randUserAgent();
 
-      if (cookies.containsKey("ASP.NET_SessionId")) {
-        this.cookieValue = cookies.get("ASP.NET_SessionId");
-      }
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
 
-      BasicClientCookie cookieLoja = new BasicClientCookie("ASP.NET_SessionId", cookieValue);
-      cookieLoja.setDomain("www.comperdelivery.com.br");
-      cookieLoja.setPath("/");
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain("www.comperdelivery.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
 
-      this.cookies.add(cookieLoja);
+    Map<String, String> cookiesMap2 =
+        DataFetcher.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
+    for (Entry<String, String> entry : cookiesMap2.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain("www.comperdelivery.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
     }
   }
 
@@ -44,12 +57,12 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "http://www.comperdelivery.com.br/busca/3/0/0//MaisVendidos/Decrescente/20/"
-        + this.currentPage + "////" + this.keywordWithoutAccents.replace(" ", "-") + ".aspx";
+    String specialKeywrod = this.keywordWithoutAccents.replace(" ", "-");
+    String url = "https://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/" + this.currentPage + "/0/0/" + specialKeywrod
+        + ".aspx?q=" + specialKeywrod;
 
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url, this.cookies);
+    LettProxy proxy = session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
+    this.currentDoc = Jsoup.parse(GETFetcher.fetchPageGET(session, url, cookies, this.userAgent, proxy, 1));
     this.log("Link onde são feitos os crawlers: " + url);
 
     Elements products = this.currentDoc.select("ul#listProduct > li .url[title]");
@@ -64,16 +77,12 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
         // Url do produto
         String productUrl = crawlProductUrl(e);
 
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
-
         // InternalId
         String internalId = crawlInternalId(productUrl);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -82,28 +91,13 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    Element page = this.currentDoc.select("li.set-next.off").first();
-
-    // se elemeno page obtiver algum resultado
-    if (page != null) {
-      // não tem próxima página
-      return false;
-    }
-
-    return true;
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("p#divResultado strong").last();
+    Element totalElement = this.currentDoc.select(".filter-details p strong").last();
 
     try {
       this.totalProducts = Integer.parseInt(totalElement.text());
@@ -118,28 +112,19 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
     String internalId = null;
     String[] tokens = url.split("-");
 
-    internalId = tokens[tokens.length - 1].replaceAll("[^0-9]", "");
+    internalId = CommonMethods.getLast(tokens).split("/")[0];
 
     return internalId;
   }
 
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-    Element pidElement = e.select("> img").first();
-
-    if (pidElement != null) {
-      if (!pidElement.attr("src").contains("indisponivel")) {
-        String[] tokens = pidElement.attr("src").split("/");
-        internalPid = tokens[tokens.length - 2].replaceAll("[^0-9]", "").trim();
-      }
-    }
-
-    return internalPid;
-  }
 
   private String crawlProductUrl(Element e) {
-    String urlProduct = e.attr("href");
+    String productUrl = e.attr("href");
 
-    return urlProduct;
+    if (!productUrl.startsWith(HOME_PAGE)) {
+      productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
+    }
+
+    return productUrl;
   }
 }
