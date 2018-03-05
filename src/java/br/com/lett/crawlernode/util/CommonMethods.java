@@ -66,8 +66,8 @@ public class CommonMethods {
   }
 
   /**
-   * Check wether the string contentType contains identifiers of binary content. This method is
-   * mainly used by the Parser, when fetching web pages content.
+   * Check wether the string contentType contains identifiers of binary content. This method is mainly
+   * used by the Parser, when fetching web pages content.
    * 
    * @param contentType
    * @return
@@ -75,14 +75,13 @@ public class CommonMethods {
   public static boolean hasBinaryContent(String contentType) {
     String typeStr = (contentType != null) ? contentType.toLowerCase() : "";
 
-    return typeStr.contains("image") || typeStr.contains("audio") || typeStr.contains("video")
-        || typeStr.contains("application");
+    return typeStr.contains("image") || typeStr.contains("audio") || typeStr.contains("video") || typeStr.contains("application");
   }
 
   /**
    * Check wether the string contentType contains identifiers of text content. This method is mainly
-   * used by the Parser, when fetching web pages content. Can be used to parse only the text of a
-   * web page, for example.
+   * used by the Parser, when fetching web pages content. Can be used to parse only the text of a web
+   * page, for example.
    * 
    * @param contentType
    * @return
@@ -176,8 +175,7 @@ public class CommonMethods {
 
       try {
         Properties properties = new Properties();
-        properties.load(Thread.currentThread().getContextClassLoader()
-            .getResourceAsStream("project.properties"));
+        properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("project.properties"));
         version = properties.getProperty("version");
       } catch (Exception e) {
       }
@@ -230,8 +228,7 @@ public class CommonMethods {
       URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
 
       URIBuilder uriBuilder =
-          new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath())
-              .setScheme(urlObject.getProtocol()).setPort(urlObject.getPort());
+          new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath()).setScheme(urlObject.getProtocol()).setPort(urlObject.getPort());
 
       List<NameValuePair> params = getQueryMap(urlObject);
 
@@ -304,9 +301,8 @@ public class CommonMethods {
   }
 
   /**
-   * Check if the url contains a valid start with a valid protocol. A valid start could be http://
-   * or https:// If the url contains anything like http:/// for example, it won't be a valid url
-   * string.
+   * Check if the url contains a valid start with a valid protocol. A valid start could be http:// or
+   * https:// If the url contains anything like http:/// for example, it won't be a valid url string.
    * 
    * @param urlString
    * @return true if it's a valid url string <br>
@@ -319,6 +315,35 @@ public class CommonMethods {
     Matcher matcher = pattern.matcher(urlString);
 
     return matcher.find();
+  }
+
+  /**
+   * Remove illegal characters that do not belong to an xml or html
+   * 
+   * @param s - string that contains part of an xml or html
+   * @return
+   */
+  public static String stripNonValidXMLOrHTMLCharacters(String s) {
+    StringBuilder validXML = new StringBuilder();
+
+    char current; // Used to reference the current character.
+    char[] charArray = s.toCharArray();
+
+    if (s.isEmpty()) {
+      return s;
+    }
+
+    for (int i = 0; i < charArray.length; i++) {
+
+      current = charArray[i]; // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
+
+      if ((current == 0x9) || (current == 0xA) || (current == 0xD) || ((current >= 0x20) && (current <= 0xD7FF))
+          || ((current >= 0xE000) && (current <= 0xFFFD)) || ((current >= 0x10000) && (current <= 0x10FFFF)))
+
+        validXML.append(current);
+    }
+
+    return validXML.toString();
   }
 
   /**
