@@ -99,15 +99,14 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
     headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
     headerMap.put(DataFetcher.HTTP_HEADER_CONTENT_TYPE, "application/json; charset=utf-8");
 
-    String response =
-        GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
+    String response = GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
 
     JSONObject trustVoxResponse;
     try {
       trustVoxResponse = new JSONObject(response);
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       trustVoxResponse = new JSONObject();
     }

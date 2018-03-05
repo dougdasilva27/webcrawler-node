@@ -103,8 +103,8 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
     try {
       trustVoxResponse = new JSONObject(response);
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       trustVoxResponse = new JSONObject();
     }
