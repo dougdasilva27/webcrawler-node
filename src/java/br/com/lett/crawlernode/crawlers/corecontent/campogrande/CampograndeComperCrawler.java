@@ -90,9 +90,9 @@ public class CampograndeComperCrawler extends Crawler {
       String internalId = crawlInternalId(productJson);
       String internalPid = crawlInternalPid(productJson);
       String name = crawlName(productJson);
-      Float price = crawlPrice(productJson);
       boolean available = crawlAvailability(productJson);
-      Prices prices = available ? crawlPrices(price) : null;
+      Float price = available ? crawlPrice(productJson) : null;
+      Prices prices = available ? crawlPrices(price) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
