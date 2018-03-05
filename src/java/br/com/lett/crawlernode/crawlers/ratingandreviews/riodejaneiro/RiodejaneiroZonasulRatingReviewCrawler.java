@@ -28,7 +28,7 @@ public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler 
       ratingsReviews.setDate(session.getDate());
       ratingsReviews.setInternalId(crawlInternalId(document));
 
-      Elements evaluationLines = document.select(" ");
+      Elements evaluationLines = document.select("div.box_avaliacao tr");
       Double totalRating = 0.0;
       Integer totalNumberOfEvaluations = 0;
       for (int i = 1; i < evaluationLines.size(); i++) { // skip the first element because it is the table header
@@ -51,7 +51,7 @@ public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler 
           Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumberOfEvaluations);
 
           ratingsReviews.setTotalRating(totalNumberOfEvaluations);
-          ratingsReviews.setAverageOverallRating(avgRating);
+          ratingsReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);
         }
       }
 
