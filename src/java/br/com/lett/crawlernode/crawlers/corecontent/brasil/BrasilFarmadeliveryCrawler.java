@@ -57,21 +57,12 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       Element elementName = doc.select(".product-name h1").first();
       String name = elementName.text().replace("'", "").replace("’", "").trim();
 
-      // Preço
-      Float price = null;
-      Element elementPrice = doc.select(".price-box .regular-price .price").first();
-      if (elementPrice == null) {
-        elementPrice = doc.select(".price-box .special-price .price").first();
-      }
-
-      if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-      }
+      Float price = crawlPrice(doc);
 
       // Disponibilidade
       boolean available = true;
-      Element button_unavailable = doc.select("a.btn-esgotado").first();
-      if (button_unavailable != null) {
+      Element buttonUnavailable = doc.select("a.btn-esgotado").first();
+      if (buttonUnavailable != null) {
         available = false;
       }
 
@@ -183,6 +174,24 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
   private boolean isProductPage(String url, Document doc) {
     Element elementProduct = doc.select("div.product-view").first();
     return elementProduct != null && !url.contains("/review/");
+  }
+
+  private Float crawlPrice(Document doc) {
+    Float price = null;
+    Element elementPrice = doc.select(".price-box .regular-price .price").first();
+    if (elementPrice == null) {
+      elementPrice = doc.select(".price-box .special-price .price").first();
+    }
+
+    Element elementSpecialPrice = doc.select(".pagamento .boleto span").first();
+
+    if (elementPrice != null) {
+      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+    } else if (elementSpecialPrice != null) {
+      price = MathCommonsMethods.parseFloat(elementSpecialPrice.ownText());
+    }
+
+    return price;
   }
 
   /**
