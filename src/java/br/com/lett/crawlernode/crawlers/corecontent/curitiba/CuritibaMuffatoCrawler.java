@@ -185,8 +185,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
       apiResponse = new JSONArray(apiString);
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error trying to fetch sku JSON from Catalog API.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error trying to fetch sku JSON from Catalog API.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
       apiResponse = new JSONArray();
     }
 
