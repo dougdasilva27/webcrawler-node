@@ -171,14 +171,11 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     String url = "https://www.drogariaspacheco.com.br/produto/sku/" + internalId;
     String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
                                                                                                           // to get
-                                                                                                          // secondary
-                                                                                                          // images
-
     JSONObject jsonObjectImages = new JSONObject();
     try {
       jsonObjectImages = new JSONArray(stringJsonImages).getJSONObject(0);
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
     if (jsonObjectImages.has("Images")) {

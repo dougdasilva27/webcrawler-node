@@ -168,10 +168,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.drogariasaopaulo.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
-                                                                                                          // to get
-                                                                                                          // secondary
-                                                                                                          // images
+    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
     JSONObject jsonObjectImages = new JSONObject();
     try {
