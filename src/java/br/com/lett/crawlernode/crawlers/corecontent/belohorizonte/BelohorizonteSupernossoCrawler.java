@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -297,6 +298,30 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
       if (desc instanceof String) {
         description.append(desc.toString());
+      }
+    }
+
+    if (json.has("additionalAttributes")) {
+      Object obj = json.get("additionalAttributes");
+
+      if (obj instanceof JSONObject) {
+        JSONObject additionalAttributes = ((JSONObject) obj);
+        Set<?> attributes = additionalAttributes.keySet();
+
+        description.append("<div id=\"itensAdicionais\"> <table>");
+
+        for (Object key : attributes) {
+          String label = key.toString();
+          String value = additionalAttributes.get(label).toString();
+
+          if (!value.equalsIgnoreCase("null")) {
+            value = value.replace("[", "").replace("]", "").replace("\"", "");
+
+            description.append("<tr> <td> " + label + " <td> <td> " + value + " </td> </tr>");
+          }
+        }
+
+        description.append("</table></div>");
       }
     }
 
