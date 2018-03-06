@@ -215,6 +215,7 @@ public abstract class CrawlerRanking extends Task {
         // persistDiscoverData();
       }
     } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
       session.registerError(error);
     }
