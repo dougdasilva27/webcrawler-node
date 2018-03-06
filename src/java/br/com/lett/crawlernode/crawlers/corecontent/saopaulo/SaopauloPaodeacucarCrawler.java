@@ -80,7 +80,7 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
       boolean available = crawlAvailability(jsonSku);
 
       // Price
-      Float price = crawlPrice(jsonSku);
+      Float price = available ? crawlPrice(jsonSku) : null;
 
       // Primary image
       String primaryImage = crawlPrimaryImage(jsonSku);
