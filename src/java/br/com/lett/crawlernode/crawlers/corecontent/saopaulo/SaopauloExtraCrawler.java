@@ -96,7 +96,7 @@ public class SaopauloExtraCrawler extends Crawler {
       CategoryCollection categories = crawlCategories(jsonSku);
       String description = crawlDescription(jsonSku);
       boolean available = crawlAvailability(jsonSku);
-      Float price = crawlPrice(jsonSku);
+      Float price = available ? crawlPrice(jsonSku) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
       String name = crawlName(jsonSku);
       String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
