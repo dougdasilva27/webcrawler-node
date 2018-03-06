@@ -832,21 +832,6 @@ public class DataFetcher {
       HttpGet httpGet = new HttpGet(session.getOriginalURL());
       httpGet.setConfig(requestConfig);
 
-      // if we are using charity engine, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-      // String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-      // String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-      // httpGet.addHeader("Proxy-Authorization", headerValue);
-      //
-      // // setting header for proxy country
-      // httpGet.addHeader("X-Proxy-Country", "BR");
-      // }
-
-      // if we are using azure, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-      // httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-      // }
-
       // do request
       closeableHttpResponse = httpclient.execute(httpGet, localContext);
 

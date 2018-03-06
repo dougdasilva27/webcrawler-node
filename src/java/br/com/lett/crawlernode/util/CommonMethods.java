@@ -50,6 +50,23 @@ public class CommonMethods {
   }
 
   /**
+   * Strip string if cross the limit and append '...'
+   * 
+   * @param value - string
+   * @param length - limit
+   * @return
+   */
+  public static String strip(String value, int length) {
+    StringBuilder buf = new StringBuilder(value);
+    if (buf.length() > length) {
+      buf.setLength(length);
+      buf.append("...");
+    }
+
+    return buf.toString();
+  }
+
+  /**
    * 
    * @return
    * @throws NullPointerException
