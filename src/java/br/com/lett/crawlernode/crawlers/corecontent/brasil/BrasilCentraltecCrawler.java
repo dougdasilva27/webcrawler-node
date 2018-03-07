@@ -321,15 +321,11 @@ public class BrasilCentraltecCrawler extends Crawler {
           }
         } else {
           // this case we calculate the installments
-          String textParcela = installmentsElement.attr("data-maximo_parcelas").replaceAll("[^0-9]", "");
-          String textJuros = installmentsElement.attr("data-juros").replaceAll("[^0-9.]", "").trim();
+          String textParcela = installmentsElement.attr("data-maximo_parcelas_sem_juros").replaceAll("[^0-9]", "");
 
-          if (!textParcela.isEmpty() && !textJuros.isEmpty()) {
+          if (!textParcela.isEmpty()) {
             Integer parcelaNumber = Integer.parseInt(textParcela);
-            Float juros = Float.parseFloat(textJuros) / 100f;
-
-            Float valueParcela = calcJuros(price, parcelaNumber, juros);
-
+            Float valueParcela = price / parcelaNumber;
             installmentPriceMap.put(parcelaNumber, valueParcela);
           }
         }
