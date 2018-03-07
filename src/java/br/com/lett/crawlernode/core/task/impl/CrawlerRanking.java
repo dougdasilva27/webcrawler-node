@@ -626,7 +626,7 @@ public abstract class CrawlerRanking extends Task {
     }
 
     // faz a conexão na url baixando o document html
-    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies).trim();
 
     JSONObject jsonProducts = new JSONObject();
 

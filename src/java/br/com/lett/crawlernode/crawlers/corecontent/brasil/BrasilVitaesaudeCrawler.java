@@ -240,8 +240,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       secondaryImagesArray.put(e.attr("href"));
     }
 
-    System.err.println(secondaryImagesArray);
-
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();
     }

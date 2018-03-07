@@ -90,33 +90,10 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       }
 
       // Imagens
-      String primaryImage = null;
-      Element elementPrimaryImage = doc.select(".product-img-box img#image").first();
-      if (elementPrimaryImage != null) {
-        primaryImage = elementPrimaryImage.attr("src").trim();
-        primaryImage = primaryImage.replace("275x275/", "");
-      }
+      String primaryImage = crawlPrimaryImage(doc);
 
-      if (primaryImage != null) {
-        if (primaryImage.contains("banner_produto_sem_imagem")) {
-          primaryImage = "";
-        }
-      }
+      String secondaryImages = crawlSecondaryImages(doc);
 
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-      Elements elementSecondaryImages = doc.select(".product-img-box .more-views li a");
-
-      if (elementSecondaryImages.size() > 1) {
-        for (int i = 1; i < elementSecondaryImages.size(); i++) {
-          Element e = elementSecondaryImages.get(i);
-          secondaryImagesArray.put(e.attr("href"));
-        }
-
-      }
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
 
       // Descrição
       Element elementDescription = doc.select("div.product-collateral .box-description").first();
@@ -176,14 +153,58 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     return elementProduct != null && !url.contains("/review/");
   }
 
-  private Float crawlPrice(Document doc) {
-    Float price = null;
-    Element elementPrice = doc.select(".price-box .regular-price .price").first();
-    if (elementPrice == null) {
-      elementPrice = doc.select(".price-box .special-price .price").first();
+  private String crawlPrimaryImage(Document doc) {
+    String primaryImage = null;
+
+    Element elementPrimaryImage = doc.select(".inner-container-productimage img").first();
+    if (elementPrimaryImage != null) {
+      primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
+
+      if (primaryImage.isEmpty() || primaryImage.contains("banner_produto_sem_imagem")) {
+        primaryImage = elementPrimaryImage.attr("src").trim();
+      }
     }
 
-    Element elementSpecialPrice = doc.select(".pagamento .boleto span").first();
+    if (primaryImage != null && primaryImage.contains("banner_produto_sem_imagem")) {
+      primaryImage = null;
+    }
+
+    return primaryImage;
+  }
+
+  private String crawlSecondaryImages(Document doc) {
+    String secondaryImages = null;
+
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".more-views li a");
+
+    for (int i = 1; i < images.size(); i++) { // first image is the primary Image
+      Element e = images.get(i);
+      String image = e.attr("data-zoom-image").trim();
+
+      if (image.isEmpty() || image.equals("#")) {
+        image = e.attr("data-image").trim();
+      }
+
+      secondaryImagesArray.put(image);
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private Float crawlPrice(Document doc) {
+    Float price = null;
+    Element elementPrice = doc.select(".product-shop .price-box .regular-price .price").first();
+    if (elementPrice == null) {
+      elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
+    }
+
+    Element elementSpecialPrice = doc.select(".product-shop .pagamento .boleto span").first();
 
     if (elementPrice != null) {
       price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
