@@ -40,8 +40,7 @@ public class BrasilKalungaCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches()
-        && (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
   }
 
   @Override
@@ -50,8 +49,7 @@ public class BrasilKalungaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(this.session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalId = null;
@@ -80,9 +78,8 @@ public class BrasilKalungaCrawler extends Crawler {
       // Preço
       Float price = null;
       Element elementPrice = doc.select(".container-price .por .valor span.valorg").first();
-      if (elementPrice != null && available) {
-        String priceString = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-            .replaceAll(",", ".").trim();
+      if (elementPrice != null) {
+        String priceString = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
 
         if (!priceString.isEmpty()) {
           price = Float.parseFloat(priceString);
@@ -121,8 +118,7 @@ public class BrasilKalungaCrawler extends Crawler {
         String imageSrc = image.attr("src");
 
         if (!this.containsPattern(REGEX_Z, imageSrc) && !this.containsPattern(REGEX_Z_, imageSrc)) {
-          if (!this.containsPattern(REGEX_D, imageSrc)
-              && !this.containsPattern(REGEX_D_, imageSrc)) {
+          if (!this.containsPattern(REGEX_D, imageSrc) && !this.containsPattern(REGEX_D_, imageSrc)) {
             if (this.containsPattern(REGEX_ORIGINAL, imageSrc)) {
               imageSrc = imageSrc.replace(".jpg", "d.jpg");
             } else {
@@ -229,10 +225,9 @@ public class BrasilKalungaCrawler extends Crawler {
       Elements installments = doc.select(".line_parcelamento");
 
       for (Element e : installments) {
-        Integer installment =
-            Integer.parseInt(e.select("span").first().text().replaceAll("[^0-9]", ""));
-        Float value = Float.parseFloat(e.select("span.font_12_preto").last().text()
-            .replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+        Integer installment = Integer.parseInt(e.select("span").first().text().replaceAll("[^0-9]", ""));
+        Float value = Float
+            .parseFloat(e.select("span.font_12_preto").last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
         installmentsPriceMap.put(installment, value);
       }
