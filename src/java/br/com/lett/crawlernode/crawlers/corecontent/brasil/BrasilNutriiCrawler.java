@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -239,7 +240,7 @@ public class BrasilNutriiCrawler extends Crawler {
         prices.setBankTicketPrice(price);
       }
 
-      Element installmentsElement = doc.select(".parcelamento-view-prod-page span.bold").first();
+      Element installmentsElement = doc.select("div .bg-price.ico-cartao").first();
 
       if (installmentsElement != null) {
         String text = installmentsElement.ownText().toLowerCase().trim();
@@ -247,7 +248,7 @@ public class BrasilNutriiCrawler extends Crawler {
         if (text.contains("x")) {
           int x = text.indexOf('x');
 
-          String installmentText = text.substring(0, x).replaceAll("[^0-9]", "");
+          String installmentText = CommonMethods.getLast(text.substring(0, x).trim().split(" ")).replaceAll("[^0-9]", "");
           Float value = MathCommonsMethods.parseFloat(text.substring(x).trim());
 
           if (!installmentText.isEmpty() && value != null) {
