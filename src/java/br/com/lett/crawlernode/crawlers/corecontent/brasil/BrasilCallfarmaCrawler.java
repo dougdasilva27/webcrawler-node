@@ -197,8 +197,9 @@ public class BrasilCallfarmaCrawler extends Crawler {
       Element aviso = e.select("#avisoMedicamento").first();
       Element indicacao = e.select("#produto-indicacao").first();
       Element contraIndicacao = e.select("#produto-contra-indicacao").first();
+      Element bula = e.select("#produto-bula").first();
 
-      if (minibula != null || aviso != null || indicacao != null || contraIndicacao != null) {
+      if (minibula != null || aviso != null || indicacao != null || contraIndicacao != null || bula != null) {
         description.append(e.html());
       }
     }

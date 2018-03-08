@@ -67,8 +67,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -76,12 +75,11 @@ public class SaopauloTendadriveCrawler extends Crawler {
       JSONObject skusInfo = crawlSKusInfo(internalPid);
 
       CategoryCollection categories = crawlCategories(skusInfo);
-      String description = crawlDescription(skusInfo);
+      String description = crawlDescription(skusInfo, doc);
       Integer stock = null;
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -97,12 +95,10 @@ public class SaopauloTendadriveCrawler extends Crawler {
         Prices prices = crawlPrices(internalId, price);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -196,8 +192,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
     if (doc.select("figure.product-image > img").size() > 2) {
 
       String url = "http://www.tendadrive.com.br/produto/sku/" + internalId;
-      String stringJsonImages =
-          DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
+      String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
 
       JSONObject jsonObjectImages = new JSONObject();
       try {
@@ -256,8 +251,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
-      String internalId) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -298,33 +292,26 @@ public class SaopauloTendadriveCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(JSONObject skuInfo) {
+  private String crawlDescription(JSONObject skuInfo, Document doc) {
     StringBuilder description = new StringBuilder();
 
     if (skuInfo.has("description")) {
       description.append(skuInfo.getString("description") + "<br><br>");
     }
 
-    if (skuInfo.has("allSpecifications")) {
-      JSONArray spec = skuInfo.getJSONArray("allSpecifications");
+    Element info = doc.select("#caracteristicas table.Informacoes-Tecnicas").first();
 
-      for (int i = 0; i < spec.length(); i++) {
-        String key = spec.getString(i);
-
-        if (skuInfo.has(key)) {
-          description.append((key + ": ").replace("::", ":") + skuInfo.getJSONArray(key).toString()
-              .replace("[", "").replace("]", "").replace("\",", "\", ").replace("\"", "").trim()
-              + "<br>");
-        }
-      }
+    if (info != null) {
+      description.append("<h4 class=\"group Informacoes-Tecnicas\">Informações Técnicas</h4>");
+      description.append(info.html());
     }
 
     return description.toString();
   }
 
   /**
-   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
-   * Visa à vista R$ 1.790,00
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
+   * à vista R$ 1.790,00
    * 
    * @param internalId
    * @param price
@@ -335,8 +322,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.tendadrive.com.br/productotherpaymentsystems/" + internalId;
-      Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
@@ -403,8 +389,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-              .replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -418,10 +403,8 @@ public class SaopauloTendadriveCrawler extends Crawler {
   private JSONObject crawlSKusInfo(String internalPid) {
     JSONObject info = new JSONObject();
 
-    String url = "http://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:"
-        + internalPid + "&sc=14";
-    JSONArray skus =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String url = "http://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=14";
+    JSONArray skus = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (skus.length() > 0) {
       info = skus.getJSONObject(0);
