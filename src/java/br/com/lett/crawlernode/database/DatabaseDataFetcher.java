@@ -34,7 +34,7 @@ public class DatabaseDataFetcher {
   private static final String FETCHER_PROXIES_ADDRESSES = "addresses";
   private static final String FETCHER_PROXIES_ADDRESSES_HOST = "host";
   private static final String FETCHER_PROXIES_ADDRESSES_PORT = "port";
-  private static final String FETCHER_PROXIES_ACTIVE = "active";
+  // private static final String FETCHER_PROXIES_ACTIVE = "active";
 
 
   public DatabaseDataFetcher(DatabaseManager databaseManager) {
@@ -127,68 +127,66 @@ public class DatabaseDataFetcher {
 
     for (Document doc : documents) {
       List<LettProxy> proxies = new ArrayList<>();
-      if (doc.containsKey(FETCHER_PROXIES_ACTIVE) && doc.getBoolean(FETCHER_PROXIES_ACTIVE, false)) {
-        LettProxy proxy = new LettProxy();
-        String proxySource = "";
+      LettProxy proxy = new LettProxy();
+      String proxySource = "";
 
-        if (doc.containsKey(FETCHER_PROXIES_SOURCE)) {
-          proxySource = doc.getString(FETCHER_PROXIES_SOURCE);
+      if (doc.containsKey(FETCHER_PROXIES_SOURCE)) {
+        proxySource = doc.getString(FETCHER_PROXIES_SOURCE);
 
-          if (proxySource.equals("buyproxies.org")) {
-            proxySource = ProxyCollection.BUY;
+        if (proxySource.equals("buyproxies.org")) {
+          proxySource = ProxyCollection.BUY;
+        }
+
+        if (proxySource.equals("proxybonanza")) {
+          proxySource = ProxyCollection.BONANZA;
+        }
+
+        proxy.setSource(proxySource);
+      } else {
+        Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_SOURCE + " in mongo fetcher.");
+        continue;
+      }
+
+      if (doc.containsKey(FETCHER_PROXIES_USERNAME)) {
+        proxy.setUser(doc.getString(FETCHER_PROXIES_USERNAME));
+      }
+
+      if (doc.containsKey(FETCHER_PROXIES_PASSWORD)) {
+        proxy.setPass(doc.getString(FETCHER_PROXIES_PASSWORD));
+      }
+
+      if (doc.containsKey(FETCHER_PROXIES_LOCATION)) {
+        proxy.setLocation(doc.getString(FETCHER_PROXIES_LOCATION));
+      }
+
+      if (doc.containsKey(FETCHER_PROXIES_ADDRESSES)) {
+        @SuppressWarnings("unchecked")
+        List<Document> addressesDocuments = (List<Document>) doc.get(FETCHER_PROXIES_ADDRESSES);
+
+        for (Document addressDocumet : addressesDocuments) {
+          LettProxy clonedProxy = proxy.clone();
+          if (addressDocumet.containsKey(FETCHER_PROXIES_ADDRESSES_HOST)) {
+            clonedProxy.setAddress(addressDocumet.getString(FETCHER_PROXIES_ADDRESSES_HOST));
+          } else {
+            Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_HOST + " in mongo fetcher.");
+            continue;
           }
 
-          if (proxySource.equals("proxybonanza")) {
-            proxySource = ProxyCollection.BONANZA;
+          if (addressDocumet.containsKey(FETCHER_PROXIES_ADDRESSES_PORT)) {
+            clonedProxy.setPort(addressDocumet.getInteger(FETCHER_PROXIES_ADDRESSES_PORT));
+          } else {
+            Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_PORT + " in mongo fetcher.");
+            continue;
           }
-
-          proxy.setSource(proxySource);
-        } else {
-          Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_SOURCE + " in mongo fetcher.");
-          continue;
+          proxies.add(clonedProxy);
         }
+      } else {
+        Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_ADDRESSES + " in mongo fetcher.");
+        continue;
+      }
 
-        if (doc.containsKey(FETCHER_PROXIES_USERNAME)) {
-          proxy.setUser(doc.getString(FETCHER_PROXIES_USERNAME));
-        }
-
-        if (doc.containsKey(FETCHER_PROXIES_PASSWORD)) {
-          proxy.setPass(doc.getString(FETCHER_PROXIES_PASSWORD));
-        }
-
-        if (doc.containsKey(FETCHER_PROXIES_LOCATION)) {
-          proxy.setLocation(doc.getString(FETCHER_PROXIES_LOCATION));
-        }
-
-        if (doc.containsKey(FETCHER_PROXIES_ADDRESSES)) {
-          @SuppressWarnings("unchecked")
-          List<Document> addressesDocuments = (List<Document>) doc.get(FETCHER_PROXIES_ADDRESSES);
-
-          for (Document addressDocumet : addressesDocuments) {
-            LettProxy clonedProxy = proxy.clone();
-            if (addressDocumet.containsKey(FETCHER_PROXIES_ADDRESSES_HOST)) {
-              clonedProxy.setAddress(addressDocumet.getString(FETCHER_PROXIES_ADDRESSES_HOST));
-            } else {
-              Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_HOST + " in mongo fetcher.");
-              continue;
-            }
-
-            if (addressDocumet.containsKey(FETCHER_PROXIES_ADDRESSES_PORT)) {
-              clonedProxy.setPort(addressDocumet.getInteger(FETCHER_PROXIES_ADDRESSES_PORT));
-            } else {
-              Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_PORT + " in mongo fetcher.");
-              continue;
-            }
-            proxies.add(clonedProxy);
-          }
-        } else {
-          Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_ADDRESSES + " in mongo fetcher.");
-          continue;
-        }
-
-        if (!proxies.isEmpty()) {
-          proxiesMap.put(proxySource, proxies);
-        }
+      if (!proxies.isEmpty()) {
+        proxiesMap.put(proxySource, proxies);
       }
     }
 
