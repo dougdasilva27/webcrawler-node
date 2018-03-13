@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,9 +11,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
+public class CuritibaPaodeacucarCrawler extends CrawlerRankingKeywords {
 
-  public SaopauloPaodeacucarCrawler(Session session) {
+  public CuritibaPaodeacucarCrawler(Session session) {
     super(session);
   }
 
@@ -21,14 +21,12 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    if (this.cookies.isEmpty()) {
-      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "501");
-      cookie.setDomain(".paodeacucar.com");
-      cookie.setPath("/");
-      cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "1");
+    cookie.setDomain(".paodeacucar.com");
+    cookie.setPath("/");
+    cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
 
-      this.cookies.add(cookie);
-    }
+    this.cookies.add(cookie);
   }
 
   @Override

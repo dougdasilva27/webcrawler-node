@@ -1,147 +1,138 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
-public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords{
+public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords {
 
-	public RiodejaneiroExtraCrawler(Session session) {
-		super(session);
-	}
+  public RiodejaneiroExtraCrawler(Session session) {
+    super(session);
+  }
 
-	private List<Cookie> cookies = new ArrayList<Cookie>();
+  private List<Cookie> cookies = new ArrayList<>();
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
+  @Override
+  protected void processBeforeFetch() {
+    if (this.cookies.isEmpty()) {
+      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "241");
+      cookie.setDomain(".deliveryextra.com");
+      cookie.setPath("/");
+      cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
 
-		this.log("Página "+ this.currentPage);
+      this.cookies.add(cookie);
+    }
+  }
 
-		//monta a url com a keyword e a página
-		String url = "http://busca.deliveryextra.com.br/search?lbc=deliveryextra&w="+ this.keywordEncoded +"&cnt=36&srt="+ this.arrayProducts.size();
-		this.log("Link onde são feitos os crawlers: "+url);	
+  @Override
+  public void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 0;
 
-		if(this.currentPage == 1) this.cookies = getCookies();
+    this.log("Página " + this.currentPage);
 
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url, cookies);
+    // monta a url com a keyword e a página
+    String url = "https://deliveryextra.resultspage.com/search?af=&cnt=36&ep.selected_store=241&isort=&lot=json&p=Q&"
+        + "ref=www.deliveryextra.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
+        + "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36" + "&w="
+        + this.keywordEncoded;
 
-		Elements id 	= this.currentDoc.select(".boxProduct .showcase-item__name a");
-		Elements result = this.currentDoc.select("div#sli_noresult");
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:	
-		if(id.size() >= 1 && result.size() < 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
+    // chama função de pegar a url
+    String searchString = fetchGETString(url, cookies);
 
-			for(Element e: id){
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+    JSONObject search = new JSONObject(searchString);
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+    // se obter 1 ou mais links de produtos e essa página tiver resultado
+    if (search.has("results") && search.getJSONArray("results").length() > 0) {
+      JSONArray products = search.getJSONArray("results");
 
-				// InternalId
-				String internalId = crawlInternalId(productUrl);
+      // se o total de busca não foi setado ainda, chama a função para
+      if (this.totalProducts == 0) {
+        setTotalProducts(search);
+      }
 
-				saveDataProduct(internalId, internalPid, productUrl);;
+      for (int i = 0; i < products.length(); i++) {
+        JSONObject product = products.getJSONObject(i);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+        // Url do produto
+        String productUrl = crawlProductUrl(product);
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+        // InternalPid
+        String internalPid = crawlInternalPid(product);
 
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select(".sli_next_page").first();
+        // InternalId
+        String internalId = crawlInternalId(productUrl);
 
-		//se  elemento page obtiver algum resultado
-		if(page != null) return true;
+        saveDataProduct(internalId, internalPid, productUrl);
 
-		return false;
-	}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".sli_result_set_after_value").first();
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-		try {
-			if(totalElement != null) this.totalProducts = Integer.parseInt(totalElement.text());
-		} catch(Exception e) {
-			this.logError(e.getMessage());
-		}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-		this.log("Total da busca: "+this.totalProducts);
-	}
+  }
 
-	private String crawlInternalId(String url){
-		String internalId = null;
 
-		String[] tokens = url.split("/");
-		internalId = tokens[tokens.length-1];
+  @Override
+  protected boolean hasNextPage() {
+    return this.arrayProducts.size() < this.totalProducts;
+  }
 
-		return internalId;
-	}
+  protected void setTotalProducts(JSONObject search) {
+    if (search.has("result_meta")) {
+      JSONObject resultMeta = search.getJSONObject("result_meta");
 
-	private String crawlInternalPid(Element e){
-		String internalPid = null;		
+      if (resultMeta.has("total")) {
+        this.totalProducts = resultMeta.getInt("total");
+        this.log("Total da busca: " + this.totalProducts);
+      }
+    }
+  }
 
-		return internalPid;
-	}
+  private String crawlInternalId(String url) {
+    String internalId = null;
 
-	private String crawlProductUrl(Element e){
-		String urlProduct = e.attr("title");
+    if (url != null) {
+      internalId = CommonMethods.getLast(url.split("/"));
+    }
 
-		return urlProduct;
-	}
+    return internalId;
+  }
 
-	private List<Cookie> getCookies(){
+  private String crawlInternalPid(JSONObject product) {
+    String internalPid = null;
 
-		List<Cookie> listCookies = new ArrayList<Cookie>();
+    if (product.has("sku")) {
+      internalPid = product.getString("sku");
+    }
 
-		// Criando cookie da loja 21 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "42");
-		cookie.setDomain("busca.deliveryextra.com.br");
-		cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-		cookie.setPath("/");
-		listCookies.add(cookie);
+    return internalPid;
+  }
 
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie2 = new BasicClientCookie("ep.store_name_42", "Rio%20de%20Janeiro");
-		cookie2.setDomain("busca.deliveryextra.com.br");
-		cookie2.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-		cookie2.setPath("/");
-		listCookies.add(cookie2);
+  private String crawlProductUrl(JSONObject product) {
+    String urlProduct = null;
 
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie3 = new BasicClientCookie("ep.currency_code_42", "BRL");
-		cookie3.setDomain("busca.deliveryextra.com.br");
-		cookie3.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-		cookie3.setPath("/");
-		listCookies.add(cookie3);
+    if (product.has("url")) {
+      urlProduct = product.getString("url");
+    }
 
-		// Criando cookie simulando um usuário logado
-		BasicClientCookie cookie4 = new BasicClientCookie("ep.language_code_42", "pt-BR");
-		cookie4.setDomain("busca.deliveryextra.com.br");
-		cookie4.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-		cookie4.setPath("/");
-		listCookies.add(cookie4);
-
-		return listCookies;
-	}
+    return urlProduct;
+  }
 }
