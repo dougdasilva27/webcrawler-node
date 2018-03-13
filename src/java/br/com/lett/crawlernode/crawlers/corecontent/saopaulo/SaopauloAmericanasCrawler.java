@@ -7,10 +7,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +21,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -54,13 +58,52 @@ public class SaopauloAmericanasCrawler extends Crawler {
   }
 
   @Override
+  protected Document fetch() {
+    Document doc = new Document("");
+    String url = session.getOriginalURL();
+
+    List<String> proxiesToBeUsed = new ArrayList<>();
+    proxiesToBeUsed.add(ProxyCollection.BUY);
+    proxiesToBeUsed.add(ProxyCollection.STORM_RESIDENTIAL_EU);
+
+    // request with fetcher
+    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, DataFetcher.GET_REQUEST, false, null, null, proxiesToBeUsed, null);
+    JSONObject fetcherResponse = new JSONObject();
+
+    try {
+      fetcherResponse = POSTFetcher.requestWithFetcher(session, payloadFetcher, false);
+    } catch (Exception e) {
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    String page = null;
+
+    if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
+        && fetcherResponse.getInt("request_status_code") < 400) {
+      JSONObject response = fetcherResponse.getJSONObject("response");
+
+      if (response.has("body")) {
+        page = response.getString("body");
+      }
+    } else {
+      // normal request
+      page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    }
+
+    if (page != null) {
+      doc = Jsoup.parse(page);
+    }
+
+    return doc;
+  }
+
+  @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(session.getOriginalURL())) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
 
       // Json da pagina principal
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);

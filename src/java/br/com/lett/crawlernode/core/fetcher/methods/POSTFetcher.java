@@ -43,7 +43,6 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -401,6 +400,16 @@ public class POSTFetcher {
 
   public static Map<String, String> fetchCookiesPOSTWithHeaders(String url, Session session, String payload, List<Cookie> cookies, int attempt,
       Map<String, String> headers) {
+    return fetchCookiesPOSTWithHeaders(url, session, payload, cookies, null, null, attempt, headers);
+  }
+
+  public static Map<String, String> fetchCookiesPOSTWithHeaders(String url, Session session, String payload, List<Cookie> cookies, String userAgent,
+      int attempt, Map<String, String> headers) {
+    return fetchCookiesPOSTWithHeaders(url, session, payload, cookies, null, userAgent, attempt, headers);
+  }
+
+  public static Map<String, String> fetchCookiesPOSTWithHeaders(String url, Session session, String payload, List<Cookie> cookies,
+      LettProxy lettProxy, String userAgent, int attempt, Map<String, String> headers) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -412,8 +421,8 @@ public class POSTFetcher {
 
       Logging.printLogDebug(logger, session, "Performing POST request: " + url);
 
-      randUserAgent = DataFetcher.randUserAgent();
-      randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = userAgent != null ? userAgent : DataFetcher.randUserAgent();
+      randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
       CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
@@ -745,7 +754,7 @@ public class POSTFetcher {
       headers.put("Cookie", cookiesHeader.toString());
     }
 
-    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, null);
+    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, new ArrayList<>(), null);
     JSONObject response = new JSONObject();
     try {
       response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
@@ -872,6 +881,12 @@ public class POSTFetcher {
     return new JSONObject(DataFetcher.processContent(pageContent, session));
   }
 
+  @Deprecated
+  public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
+      Map<String, String> headers, JSONObject specificProxy) {
+    return fetcherPayloadBuilder(url, method, retrieveStatistics, payloadPOSTRequest, headers, new ArrayList<>(), specificProxy);
+  }
+
   /**
    * Build payload to request 'FETCHER'
    * 
@@ -888,9 +903,7 @@ public class POSTFetcher {
    * @return JSONObject with all parameters for request 'FETCHER'
    */
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
-      Map<String, String> headers,
-      /* List<String> anyProxies, */
-      JSONObject specificProxy) {
+      Map<String, String> headers, List<String> anyProxies, JSONObject specificProxy) {
 
     JSONObject payload = new JSONObject();
 
@@ -924,22 +937,18 @@ public class POSTFetcher {
       specific.put("specific", specificProxy);
 
       payload.put(FETCHER_PARAMETER_PROXIES, specific);
-    } else {
+    } else if (!anyProxies.isEmpty()) {
       JSONObject proxies = new JSONObject();
 
       // Proxies sequencie to be used for requests (1x per proxy service)
       JSONArray any = new JSONArray();
-      any.put(ProxyCollection.BUY);
-      any.put(ProxyCollection.LUMINATI_SERVER_BR);
-      any.put(ProxyCollection.BONANZA);
-      // any.put(ProxyCollection.STORM_RESIDENTIAL_US);
-      // any.put(ProxyCollection.LUMINATI_RESIDENTIAL_AR);
-      // any.put(ProxyCollection.LUMINATI_RESIDENTIAL_MX);
-      // any.put(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-      any.put(ProxyCollection.NO_PROXY);
+
+      for (String proxy : anyProxies) {
+        any.put(proxy);
+      }
 
       proxies.put("any", any);
-      // payload.put(FETCHER_PARAMETER_PROXIES, proxies);
+      payload.put(FETCHER_PARAMETER_PROXIES, proxies);
     }
 
     return payload;

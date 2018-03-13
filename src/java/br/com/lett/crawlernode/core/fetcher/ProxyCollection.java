@@ -23,6 +23,7 @@ public class ProxyCollection {
   public static final String BONANZA = "bonanza";
   public static final String STORM = "storm";
   public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
+  public static final String STORM_RESIDENTIAL_EU = "storm_residential_eu";
   public static final String NO_PROXY = "no_proxy";
   public static final String LUMINATI_SERVER_BR = "luminati_server_br";
   public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
@@ -39,6 +40,7 @@ public class ProxyCollection {
 
   public static final int MAX_ATTEMPTS_STORM = 3;
   public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_US = 2;
+  public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_EU = 2;
   public static final int MAX_ATTEMPTS_NO_PROXY = 1;
 
   /** Intervals used to select proxy service when running normal information extraction */
@@ -65,6 +67,7 @@ public class ProxyCollection {
     proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_AR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_AR);
     proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
     proxyMaxAttempts.put(STORM_RESIDENTIAL_US, MAX_ATTEMPTS_STORM_RESIDENTIAL_US);
+    proxyMaxAttempts.put(STORM_RESIDENTIAL_EU, MAX_ATTEMPTS_STORM_RESIDENTIAL_EU);
     proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
     assembleIntervalsWebcrawler(markets);

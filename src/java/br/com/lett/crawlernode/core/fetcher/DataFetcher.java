@@ -370,6 +370,10 @@ public class DataFetcher {
     return fetchCookies(session, url, cookies, null, attempt);
   }
 
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, int attempt) {
+    return fetchCookies(session, url, cookies, userAgent, null, attempt);
+  }
+
   /**
    * Fetch a page By default the redirects are enabled in the RequestConfig
    * 
@@ -381,7 +385,8 @@ public class DataFetcher {
    * @param attempt
    * @return the header value. Will return an empty string if the cookie wasn't found.
    */
-  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, int attempt) {
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, LettProxy lettProxy,
+      int attempt) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -393,7 +398,7 @@ public class DataFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
       randUserAgent = userAgent == null ? randUserAgent() : userAgent;
-      randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randProxy = lettProxy != null ? lettProxy : randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
       CookieStore cookieStore = createCookieStore(cookies);
 
