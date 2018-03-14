@@ -138,7 +138,7 @@ public class GPACrawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    if (url.contains("paodeacucar.com/produto/")) {
+    if (url.contains("/produto/")) {
       return true;
     }
     return false;
