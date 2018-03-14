@@ -379,6 +379,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
       Element elementProductDetails = doc.select(".info-section").last();
       if (elementProductDetails != null) {
+        elementProductDetails.select(".info-section-header.hidden-md.hidden-lg").remove();
         description = description + elementProductDetails.html();
       }
     }
