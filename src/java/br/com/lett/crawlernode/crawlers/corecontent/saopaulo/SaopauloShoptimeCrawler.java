@@ -66,6 +66,8 @@ public class SaopauloShoptimeCrawler extends Crawler {
       // Pega só o que interessa do json da api
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
+      System.err.println(infoProductJson);
+
       String internalPid = this.crawlInternalPid(infoProductJson);
       String name = this.crawlMainPageName(infoProductJson);
       CategoryCollection categories = crawlCategories(doc);
