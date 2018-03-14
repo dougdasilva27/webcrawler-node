@@ -29,43 +29,27 @@ public class GPACrawler {
   private String homePageHttp;
   private Logger logger;
   private String storeId;
+  private String store;
   private List<Cookie> cookies = new ArrayList<>();
 
-  public GPACrawler(Logger logger, Session session, String homePage, String homePageHttp, String storeId, List<Cookie> cookies) {
+  /**
+   * 
+   * @param logger
+   * @param session
+   * @param homePage - https
+   * @param homePageHttp - http
+   * @param storeId - needed to access api
+   * @param cookies
+   * @param store - "ex" to extra and "pa" to paodeacucar
+   */
+  public GPACrawler(Logger logger, Session session, String homePage, String homePageHttp, String storeId, List<Cookie> cookies, String store) {
     this.logger = logger;
     this.session = session;
     this.homePage = homePage;
     this.homePageHttp = homePageHttp;
     this.storeId = storeId;
+    this.store = store;
     this.cookies = cookies;
-  }
-
-  protected Object fetch() {
-    JSONObject productsInfo = new JSONObject();
-
-    String productUrl = session.getOriginalURL();
-
-    String id;
-    if (productUrl.startsWith(homePage)) {
-      id = productUrl.replace(homePage, "").split("/")[2];
-    } else {
-      id = productUrl.replace(homePageHttp, "").split("/")[2];
-    }
-
-    String url = "https://api.gpa.digital/ex/products/" + id + "?storeId=" + storeId + "&isClienteMais=false";
-
-    String res = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-    try {
-      JSONObject apiGPA = new JSONObject(res);
-      if (apiGPA.has("content")) {
-        productsInfo = apiGPA.getJSONObject("content");
-      }
-    } catch (JSONException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-
-    return productsInfo;
   }
 
   public List<Product> extractInformation() throws Exception {
@@ -454,7 +438,7 @@ public class GPACrawler {
       id = productUrl.replace(homePageHttp, "").split("/")[2];
     }
 
-    String url = "https://api.gpa.digital/pa/products/" + id + "?storeId=" + storeId + "&isClienteMais=false";
+    String url = "https://api.gpa.digital/" + this.store + "/products/" + id + "?storeId=" + storeId + "&isClienteMais=false";
 
     String res = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 

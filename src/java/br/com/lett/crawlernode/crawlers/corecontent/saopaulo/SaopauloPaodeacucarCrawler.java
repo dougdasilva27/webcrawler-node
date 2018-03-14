@@ -45,6 +45,6 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, STORE_ID, cookies).extractInformation();
+    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, STORE_ID, cookies, "pa").extractInformation();
   }
 }
