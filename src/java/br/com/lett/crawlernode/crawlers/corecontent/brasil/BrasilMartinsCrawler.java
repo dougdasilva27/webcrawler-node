@@ -1,12 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -29,6 +38,46 @@ public class BrasilMartinsCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+//  private String userAgent;
+//  private LettProxy proxy;
+//
+//  @Override
+//  public void handleCookiesBeforeFetch() {
+//    this.userAgent = DataFetcher.randUserAgent();
+//
+//    Map<String, String> headers = new HashMap<>();
+//    headers.put("Content-Type", "application/x-www-form-urlencoded");
+//
+//    Map<String, String> cookiesMapHome =
+//        POSTFetcher.fetchCookiesPOSTWithHeaders("https://b.martins.com.br/ajax/ajaxCodigoCliente.aspx?mail=victor.fernandes1@br.nestle.com", session,
+//            "idemail=victor.fernandes1%40br.nestle.com", cookies, proxy, userAgent, 1, headers);
+//
+//    for (Entry<String, String> entry : cookiesMapHome.entrySet()) {
+//      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+//      cookie.setDomain("b.martins.com.br");
+//      cookie.setPath("/");
+//      this.cookies.add(cookie);
+//    }
+//
+//    this.proxy = session.getRequestProxy(HOME_PAGE);
+//
+//    String url = "https://b.martins.com.br/ajax/ajaxLogarUsuario.aspx";
+//    Map<String, String> cookiesMap =
+//        POSTFetcher.fetchCookiesPOSTWithHeaders(url, session, "e=victor.fernandes1@br.nestle.com&p=nestle@2017&c=4041415&t=0", cookies, 1, headers);
+//
+//    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+//      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+//      cookie.setDomain("b.martins.com.br");
+//      cookie.setPath("/");
+//      this.cookies.add(cookie);
+//    }
+//
+//  }
+//
+//  @Override
+//  protected Object fetch() {
+//    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1));
+//  }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -181,7 +230,14 @@ public class BrasilMartinsCrawler extends Crawler {
   }
 
   private Float crawlPrice(Document doc) {
-    return null;
+    Float price = null;
+
+    Element elementPrice = doc.select(".ctnValorUnitario span").first();
+    if (elementPrice != null) {
+      price = MathCommonsMethods.parseFloat(elementPrice.text());
+    }
+
+    return price;
   }
 
   private String crawlName(Document doc) {
@@ -202,10 +258,10 @@ public class BrasilMartinsCrawler extends Crawler {
     Element internalIdElement = doc.select("#ctnCodProduto").first();
     if (internalIdElement != null) {
       List<TextNode> textNodes = internalIdElement.textNodes();
-      if (textNodes.size() > 0) {
+      if (!textNodes.isEmpty()) {
         String internalIdText = textNodes.get(0).text().trim();
         List<String> parsedNumbers = MathCommonsMethods.parseNumbers(internalIdText);
-        if (parsedNumbers.size() > 0) {
+        if (!parsedNumbers.isEmpty()) {
           internalId = parsedNumbers.get(0);
         }
       }
