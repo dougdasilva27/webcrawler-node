@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -100,7 +101,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       }
 
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 
       // Descrição
       String description = "";
@@ -199,14 +200,17 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document doc) {
+  private String crawlSecondaryImages(Document doc, String primaryImage) {
     String secondaryImages = null;
     JSONArray secundaryImagesArray = new JSONArray();
     Elements elementImages = doc.select(".product-image-gallery img.gallery-image");
 
-    for (int i = 2; i < elementImages.size(); i++) {
-      Element elementImage = elementImages.get(i);
-      secundaryImagesArray.put(elementImage.attr("data-zoom-image"));
+    for (Element e : elementImages) {
+      String image = e.attr("data-zoom-image").trim();
+
+      if (!isPrimaryImage(image, primaryImage)) {
+        secundaryImagesArray.put(image);
+      }
     }
 
     if (secundaryImagesArray.length() > 0) {
@@ -214,6 +218,13 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     }
 
     return secondaryImages;
+  }
+
+  private boolean isPrimaryImage(String image, String primaryImage) {
+    String x = CommonMethods.getLast(image.split("/"));
+    String y = CommonMethods.getLast(primaryImage.split("/"));
+
+    return x.equals(y);
   }
 
   /**
