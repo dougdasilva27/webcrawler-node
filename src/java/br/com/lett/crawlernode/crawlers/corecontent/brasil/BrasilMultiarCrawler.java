@@ -87,7 +87,7 @@ public class BrasilMultiarCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
         boolean available = marketplaceMap.containsKey(SELLER_NAME);
         Float price = crawlMainPagePrice(marketplaceMap);
 
@@ -95,7 +95,7 @@ public class BrasilMultiarCrawler extends Crawler {
         String primaryImage = crawlPrimaryImage(jsonProduct);
         String secondaryImages = crawlSecondaryImages(jsonProduct);
 
-        Prices prices = crawlPrices(internalId, price, jsonSku);
+        Prices prices = crawlPrices(internalId, price, jsonSku, doc);
         Integer stock = crawlStock(jsonProduct);
 
         // Creating the product
@@ -273,7 +273,7 @@ public class BrasilMultiarCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Document doc) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -283,7 +283,7 @@ public class BrasilMultiarCrawler extends Crawler {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", seller);
         sellerJSON.put("price", price);
-        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku).toJSON());
+        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku, doc).toJSON());
 
         try {
           Seller s = new Seller(sellerJSON);
@@ -332,7 +332,7 @@ public class BrasilMultiarCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Document docPrincipal) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -341,9 +341,22 @@ public class BrasilMultiarCrawler extends Crawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Element bank = doc.select("#ltlPrecoWrapper em").first();
-      if (bank != null) {
-        prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bank.text()));
+      Elements flags = docPrincipal.select("#product-price .flag");
+      Integer discount = 0;
+      for (Element e : flags) {
+        String classBoleto = e.attr("class");
+
+        if (classBoleto.contains("boleto")) {
+          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+
+          if (!text.isEmpty()) {
+            discount = Integer.parseInt(text);
+          }
+        }
+      }
+
+      if (discount > 0) {
+        prices.setBankTicketPrice(MathCommonsMethods.normalizeTwoDecimalPlaces(price - (price * (discount / 100.0))));
       } else {
         prices.setBankTicketPrice(price);
       }
