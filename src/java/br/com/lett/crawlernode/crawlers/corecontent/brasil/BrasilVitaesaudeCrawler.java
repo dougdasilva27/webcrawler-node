@@ -227,7 +227,10 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
           for (String token : tokens) {
             if (token.trim().contains("ThumbURLs[") && !token.contains("ThumbURLs[0]")) {
-              secondaryImagesArray.put(token.split("=")[1].trim().replace("//", "/").replace("\"", ""));
+              String image = token.split("=")[1].trim().replace("//", "/").replace("\"", "");
+              if (!image.isEmpty()) {
+                secondaryImagesArray.put(image);
+              }
             }
           }
 
@@ -237,7 +240,11 @@ public class BrasilVitaesaudeCrawler extends Crawler {
     }
 
     for (Element e : images) {
-      secondaryImagesArray.put(e.attr("href"));
+      String image = e.attr("href");
+
+      if (!image.isEmpty()) {
+        secondaryImagesArray.put(image);
+      }
     }
 
     if (secondaryImagesArray.length() > 0) {
