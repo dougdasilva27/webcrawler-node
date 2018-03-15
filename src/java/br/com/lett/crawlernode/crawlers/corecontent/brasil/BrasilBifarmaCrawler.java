@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -78,7 +77,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(price, productInfo);
       boolean available = crawlAvailability(productInfo);
-      CategoryCollection categories = crawlCategories(productInfo);
+      CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       String description = crawlDescription(doc);
@@ -224,27 +223,19 @@ public class BrasilBifarmaCrawler extends Crawler {
   }
 
   private boolean isPrimaryImage(String image, String primaryImage) {
-    String x = image.replace(CommonMethods.getLast(image.replace(".jpg", "").split("\\.")), "");
-    String y = primaryImage.replace(CommonMethods.getLast(primaryImage.replace(".jpg", "").split("\\.")), "");
+    String x = (image.replace("https://cdn-bifarma3.stoom.com.br/fotos/", "")).split("\\.")[0].replaceAll("[^0-9]", "");
+    String y = (primaryImage.replace("https://cdn-bifarma3.stoom.com.br/fotos/", "")).split("\\.")[0].replaceAll("[^0-9]", "");
 
     return x.equals(y);
   }
 
-  private CategoryCollection crawlCategories(JSONObject info) {
+  private CategoryCollection crawlCategories(Document doc) {
     CategoryCollection categories = new CategoryCollection();
+    Elements catElements = doc.select("#breadcrumbList li[itemprop=\"itemListElement\"] a span");
 
-    if (info.has("categories")) {
-      JSONArray categoriesJson = info.getJSONArray("categories");
-
-      for (int i = 0; i < categoriesJson.length(); i++) {
-        JSONObject categorieJson = categoriesJson.getJSONObject(i);
-
-        if (categorieJson.has("name")) {
-          categories.add(categorieJson.getString("name"));
-        }
-      }
+    for (int i = 1; i < catElements.size(); i++) { // first item is home
+      categories.add(catElements.get(i).ownText());
     }
-
 
     return categories;
   }
