@@ -25,7 +25,7 @@ public class SaopauloExtraCrawler extends Crawler {
   }
 
   // Loja 241 sp
-  private static final String STORE_ID = "261";
+  private static final String STORE_ID = "241";
 
   @Override
   public void handleCookiesBeforeFetch() {

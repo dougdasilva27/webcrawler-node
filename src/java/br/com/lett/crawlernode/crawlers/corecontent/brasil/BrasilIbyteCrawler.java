@@ -235,10 +235,9 @@ public class BrasilIbyteCrawler extends Crawler {
 			Element priceBoleto = doc.select(".boletoBox .price").first();
 
 			if (priceBoleto != null) {
-				Float bankTicketPrice = Float.parseFloat(priceBoleto.text().replaceAll("[^0-9,]+", "")
-						.replaceAll("\\.", "").replaceAll(",", ".").trim());
+				Float bankTicketPrice = MathCommonsMethods.parseFloat(priceBoleto.ownText());
 
-				if (bankTicketPrice > 0) {
+				if (bankTicketPrice != null && bankTicketPrice > 0) {
 					prices.setBankTicketPrice(bankTicketPrice);
 				} else {
 					prices.setBankTicketPrice(price);
