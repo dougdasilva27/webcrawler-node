@@ -74,7 +74,7 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
   private Double getTotalAvgRating(JSONObject rating) {
     Double avgRating = null;
 
-    if (rating.has("average")) {
+    if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
       avgRating = rating.getDouble("average");
     }
 
