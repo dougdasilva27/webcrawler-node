@@ -130,6 +130,7 @@ public class BrasilCsdCrawler extends Crawler {
     Element mainPagePriceElement = document.select(".price > span").first();
 
     if (mainPagePriceElement != null) {
+      mainPagePriceElement.select("small").remove();
       price = MathCommonsMethods.parseFloat(mainPagePriceElement.text());
     }
 
