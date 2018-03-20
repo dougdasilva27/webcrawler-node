@@ -160,7 +160,7 @@ public class SaopauloOnofreCrawler extends Crawler {
     Element elementPrimaryImage = document.select(".product-gallery__main img").first();
 
     if (elementPrimaryImage != null) {
-      primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
+      primaryImage = elementPrimaryImage.attr("src").trim();
     }
 
     if (primaryImage != null && !primaryImage.startsWith("http")) {
@@ -177,7 +177,7 @@ public class SaopauloOnofreCrawler extends Crawler {
     Elements elementSecondaryImages = document.select(".product-gallery__thumbs-list a");
 
     for (Element e : elementSecondaryImages) {
-      String image = e.attr("data-zoom-image").trim();
+      String image = e.attr("data-image").trim();
 
       if (!image.startsWith("http")) {
         image = HOME_PAGE + image;
