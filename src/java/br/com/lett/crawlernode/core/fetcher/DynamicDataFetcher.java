@@ -65,6 +65,7 @@ public class DynamicDataFetcher {
    */
   public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
     Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
+    String requestHash = DataFetcher.generateRequestHash(session);
 
     try {
       String phantomjsPath = null;
@@ -129,6 +130,9 @@ public class DynamicDataFetcher {
       }
 
       webdriver.loadUrl(url);
+
+      // saving request content result on Amazon
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, webdriver.getCurrentPageSource());
 
       return webdriver;
     } catch (Exception e) {
