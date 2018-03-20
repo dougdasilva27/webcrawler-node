@@ -817,7 +817,7 @@ public class Persistence {
       List<Field<?>> fields = new ArrayList<>();
       fields.add(processed.ID);
       fields.add(processed.MASTER_ID);
-      fields.add(processed.VOID);
+      fields.add(processed.STATUS);
       fields.add(processed.URL);
 
       List<Condition> conditions = new ArrayList<>();
@@ -829,7 +829,7 @@ public class Persistence {
       for (Record record : results) {
         Processed p = new Processed();
         Long masterId = record.get(processed.MASTER_ID);
-        p.setVoid(record.get(processed.VOID));
+        p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
         p.setUrl(record.get(processed.URL));
 
         if (masterId != null) {
@@ -858,7 +858,7 @@ public class Persistence {
       List<Field<?>> fields = new ArrayList<>();
       fields.add(processed.ID);
       fields.add(processed.MASTER_ID);
-      fields.add(processed.VOID);
+      fields.add(processed.STATUS);
       fields.add(processed.URL);
 
       List<Condition> conditions = new ArrayList<>();
@@ -870,7 +870,7 @@ public class Persistence {
       for (Record record : results) {
         Processed p = new Processed();
         Long masterId = record.get(processed.MASTER_ID);
-        p.setVoid(record.get(processed.VOID));
+        p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
         p.setUrl(record.get(processed.URL));
 
         if (masterId != null) {
