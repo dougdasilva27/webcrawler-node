@@ -9,6 +9,7 @@ import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
@@ -160,6 +161,7 @@ public class DynamicDataFetcher {
    */
   public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
     try {
+      String requestHash = DataFetcher.generateRequestHash(session);
       Document doc = new Document(url);
       webdriver.loadUrl(url);
 
@@ -170,6 +172,9 @@ public class DynamicDataFetcher {
       if (docString != null) {
         doc = Jsoup.parse(docString);
       }
+
+      // saving request content result on Amazon
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, docString);
 
       return doc;
     } catch (Exception e) {
