@@ -53,8 +53,7 @@ public class MexicoChedrauiCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
@@ -70,12 +69,10 @@ public class MexicoChedrauiCrawler extends Crawler {
       Marketplace marketplace = crawlMarketplace(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -192,7 +189,13 @@ public class MexicoChedrauiCrawler extends Crawler {
       images.remove(0);
 
       for (Element e : images) {
-        secondaryImagesArray.put(e.attr("data-zoom-image"));
+        String image = e.attr("data-zoom-image");
+
+        if (!image.contains("http")) {
+          image = HOME_PAGE + image;
+        }
+
+        secondaryImagesArray.put(image);
       }
     }
 
@@ -217,10 +220,12 @@ public class MexicoChedrauiCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.select("#productTabs").first();
+    Elements descriptionElements = document.select("#productTabs > div:not(#tabreview)");
 
-    if (descriptionElement != null) {
-      description.append(descriptionElement.html());
+    for (Element e : descriptionElements) {
+      if (e.select(".tab-review").first() == null) {
+        description.append(e.html());
+      }
     }
 
     return description.toString();

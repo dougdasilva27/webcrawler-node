@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -105,6 +103,8 @@ public class DataFetcher {
    */
   public static List<String> userAgents;
 
+  public static List<String> mobileUserAgents;
+
   public static List<String> errorCodes;
 
   public static List<String> highTimeoutMarkets;
@@ -134,6 +134,14 @@ public class DataFetcher {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
         "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
+
+    mobileUserAgents = Arrays.asList(
+        "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
+        "Mozilla/5.0 (Linux; Android 7.0; SM-A310F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36 OPR/42.7.2246.114996",
+        "Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10",
+        "Mozilla/5.0 (Linux; Android 5.1.1; Nexus 5 Build/LMY48B; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.65 Mobile Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/603.1.23 (KHTML, like Gecko) Version/10.0 Mobile/14E5239e Safari/602.1",
+        "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19");
 
     errorCodes = Arrays.asList("403");
 
@@ -358,6 +366,14 @@ public class DataFetcher {
   }
 
 
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, int attempt) {
+    return fetchCookies(session, url, cookies, null, attempt);
+  }
+
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, int attempt) {
+    return fetchCookies(session, url, cookies, userAgent, null, attempt);
+  }
+
   /**
    * Fetch a page By default the redirects are enabled in the RequestConfig
    * 
@@ -365,10 +381,12 @@ public class DataFetcher {
    * @param url
    * @param cookieName
    * @param cookies
+   * @param user agent
    * @param attempt
    * @return the header value. Will return an empty string if the cookie wasn't found.
    */
-  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, int attempt) {
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, LettProxy lettProxy,
+      int attempt) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -379,8 +397,8 @@ public class DataFetcher {
     try {
       Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
-      randUserAgent = randUserAgent();
-      randProxy = randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = userAgent == null ? randUserAgent() : userAgent;
+      randProxy = lettProxy != null ? lettProxy : randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
       CookieStore cookieStore = createCookieStore(cookies);
 
@@ -502,7 +520,7 @@ public class DataFetcher {
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
         Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
-        return null;
+        return new HashMap<>();
       } else {
         return fetchCookies(session, url, cookies, attempt + 1);
       }
@@ -686,7 +704,7 @@ public class DataFetcher {
    */
   public static void fetchPageAPIUrlBox(String url, Session session) {
     try {
-      POSTFetcher.requestWithFetcher(session, POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000);
+      POSTFetcher.requestWithFetcher(session, POSTFetcher.fetcherPayloadBuilder(url, GET_REQUEST, false, null, null, null), 1000, false);
 
     } catch (SocketTimeoutException e) {
       // do nothing
@@ -818,21 +836,6 @@ public class DataFetcher {
 
       HttpGet httpGet = new HttpGet(session.getOriginalURL());
       httpGet.setConfig(requestConfig);
-
-      // if we are using charity engine, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-      // String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-      // String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-      // httpGet.addHeader("Proxy-Authorization", headerValue);
-      //
-      // // setting header for proxy country
-      // httpGet.addHeader("X-Proxy-Country", "BR");
-      // }
-
-      // if we are using azure, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-      // httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-      // }
 
       // do request
       closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -1038,6 +1041,15 @@ public class DataFetcher {
   }
 
   /**
+   * Retrieve a random user agent from the user agents array.
+   * 
+   * @return
+   */
+  public static String randMobileUserAgent() {
+    return mobileUserAgents.get(MathCommonsMethods.randInt(0, mobileUserAgents.size() - 1));
+  }
+
+  /**
    * Select a proxy service according to the number of attempt.
    * 
    * @param attempt
@@ -1119,12 +1131,16 @@ public class DataFetcher {
    * @param attempt
    * @return boolean
    */
-  public static boolean mustUseFetcher(int attempt) {
-    ZoneId utc = ZoneId.of("America/Sao_Paulo");
-    ZonedDateTime zonedDate = ZonedDateTime.now(utc);
-    int nowHour = zonedDate.getHour();
+  public static boolean mustUseFetcher(int attempt, Session session) {
+    // ZoneId utc = ZoneId.of("America/Sao_Paulo");
+    // ZonedDateTime zonedDate = ZonedDateTime.now(utc);
+    // int nowHour = zonedDate.getHour();
 
     // Request via fetcher on first attempt
-    return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) && Main.executionParameters.getUseFetcher());
+    // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
+    // Main.executionParameters.getUseFetcher());
+
+    return !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
+        && Main.executionParameters.getUseFetcher();
   }
 }

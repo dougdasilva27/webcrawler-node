@@ -45,8 +45,7 @@ public class BrasilPoupafarmaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
@@ -62,12 +61,10 @@ public class BrasilPoupafarmaCrawler extends Crawler {
       Marketplace marketplace = crawlMarketplace();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -80,10 +77,7 @@ public class BrasilPoupafarmaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    if (doc.select(".prod-index").first() != null) {
-      return true;
-    }
-    return false;
+    return doc.select(".prod-index").first() != null;
   }
 
   private String crawlInternalId(Document doc) {
@@ -98,6 +92,12 @@ public class BrasilPoupafarmaCrawler extends Crawler {
 
       if (internalIdElement != null) {
         internalId = internalIdElement.attr("data-compra");
+      } else {
+        internalIdElement = doc.select(".consulta-prazo a[data-produto]").first();
+
+        if (internalIdElement != null) {
+          internalId = internalIdElement.attr("data-produto");
+        }
       }
     }
 
@@ -205,8 +205,7 @@ public class BrasilPoupafarmaCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories =
-        document.select(".breadcrumbs li.show-for-large-up:not(.current) a");
+    Elements elementCategories = document.select(".breadcrumbs li.show-for-large-up:not(.current) a");
 
     for (Element e : elementCategories) {
       String cat = e.ownText().trim();

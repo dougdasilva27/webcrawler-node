@@ -76,7 +76,7 @@ public class BrasilLojasmelCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc);
 
       // Availability
-      boolean available = doc.select(".product-detail .bt-checkout").first() != null;
+      boolean available = doc.select(".product-detail .bt-checkout[name=add_cart]").first() != null;
 
       // InternalId
       String internalId = crawlInternalId(jsonSku);

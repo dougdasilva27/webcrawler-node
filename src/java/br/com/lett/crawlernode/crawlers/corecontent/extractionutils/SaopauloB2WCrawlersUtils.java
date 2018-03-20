@@ -7,459 +7,406 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class SaopauloB2WCrawlersUtils {
-	
-	/**
-	 * B2W has two types of crawler
-	 * 
-	 * Old Way: Shoptime
-	 * New Way: Americanas and Submarino
-	 * 
-	 * this happen because americanas and submarino have changed their sites, but shoptime no
-	 */
-	
-	public static final String AMERICANAS = "americanas";
-	public static final String SUBMARINO = "submarino";
-	public static final String SHOPTIME = "shoptime";
-	
-	/**
-	 * New way	 
-	 */
-	
-	/**
-	 * 
-	 * @param doc
-	 * @return
-	 */
-	public static JSONObject getDataLayer(Document doc) {
-		JSONObject skus = new JSONObject();
-		Elements scripts = doc.select("script");
 
-		for (Element e : scripts) {
-			String json = e.outerHtml();
+  /**
+   * B2W has two types of crawler
+   * 
+   * Old Way: Shoptime New Way: Americanas and Submarino
+   * 
+   * this happen because americanas and submarino have changed their sites, but shoptime no
+   */
 
-			if (json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) {
-				int x = json.indexOf("_ =") + 3;
-				int y = json.indexOf("};", x);
+  public static final String AMERICANAS = "americanas";
+  public static final String SUBMARINO = "submarino";
+  public static final String SHOPTIME = "shoptime";
 
-				json = json.substring(x, y+1);
+  /**
+   * New way
+   */
 
-				skus = new JSONObject(json);
+  /**
+   * 
+   * @param doc
+   * @return
+   */
+  public static JSONObject getDataLayer(Document doc) {
+    JSONObject skus = new JSONObject();
+    Elements scripts = doc.select("script");
 
-				break;
-			}
-		}
+    for (Element e : scripts) {
+      String json = e.outerHtml();
 
-		return skus;
-	}
-	
-	/**
-	 * Nesse novo site da americanas todas as principais informações dos skus
-	 * estão em um json no html, esse json é muito grande, por isso pego somente
-	 * o que preciso e coloco em outro json para facilitar a captura de informações
-	 * 
-	 *{ 
-	 *	internalPid = '51612',
-	 *	skus:[
-	 *		{
-	 *			internal_id: '546',
-	 *			variationName: '110v'
-	 *		}
-	 *	],
-	 *	images:{
-	 *		primaryImage: '123.jpg'.
-	 *		secondaryImages: [
-	 *			'1.jpg',
-	 *			'2.jpg'
-	 *		]
-	 *	},
-	 *	categories:[
-	 *		{
-	 *			id: '123',
-	 *			name: 'cafeteira'
-	 *		}
-	 *	],
-	 *	prices:{
-	 *		546:{
-	 *			stock: 1706
-	 *			bankTicket: 59.86
-	 *			installments: [
-	 *				{
-	 *					quantity: 1,
-	 *					value: 54.20
-	 *				}
-	 *			]
-	 *		}
-	 *	}
-	 *	
-	 *}
-	 */
+      if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("};")) {
 
-	public static JSONObject assembleJsonProductWithNewWay(JSONObject initialJson){
-		JSONObject jsonProduct = new JSONObject();
+        int x = json.indexOf("_ =") + 3;
+        int y = json.indexOf("};", x);
 
-		if(initialJson.has("product")){
-			JSONObject productJson = initialJson.getJSONObject("product");
+        json = json.substring(x, y + 1);
 
-			JSONArray skus = getJSONSkus(initialJson);
-			jsonProduct.put("skus", skus);
-			
-			String internalPid = null;
-			
-			if(productJson.has("id")){
-				internalPid = productJson.getString("id");
-				jsonProduct.put("internalPid", internalPid);
-			}
+        skus = new JSONObject(json);
 
-			if(productJson.has("name")) {
-				jsonProduct.put("name", productJson.get("name"));
-			}
+        break;
+      }
+    }
 
-			JSONObject jsonForPrices;
-			if(productJson.has("offers")) {
-				jsonForPrices = productJson;
-			} else {
-				jsonForPrices = initialJson;
-			}
-			
-			JSONObject jsonPrices = getJsonPrices(jsonForPrices, internalPid);
-			jsonProduct.put("prices", jsonPrices);
+    return skus;
+  }
 
-			JSONObject jsonImages = getJSONImages(productJson);
-			jsonProduct.put("images", jsonImages);
+  /**
+   * Nesse novo site da americanas todas as principais informações dos skus estão em um json no html,
+   * esse json é muito grande, por isso pego somente o que preciso e coloco em outro json para
+   * facilitar a captura de informações
+   * 
+   * { internalPid = '51612', skus:[ { internal_id: '546', variationName: '110v' } ], images:{
+   * primaryImage: '123.jpg'. secondaryImages: [ '1.jpg', '2.jpg' ] }, categories:[ { id: '123', name:
+   * 'cafeteira' } ], prices:{ 546:{ stock: 1706 bankTicket: 59.86 installments: [ { quantity: 1,
+   * value: 54.20 } ] } }
+   * 
+   * }
+   */
 
-			JSONArray jsonCategories = getJSONCategories(productJson);
-			jsonProduct.put("categories", jsonCategories);
-		}
+  public static JSONObject assembleJsonProductWithNewWay(JSONObject initialJson) {
+    JSONObject jsonProduct = new JSONObject();
 
-		return jsonProduct;
+    if (initialJson.has("product")) {
+      JSONObject productJson = initialJson.getJSONObject("product");
 
-	}
+      JSONArray skus = getJSONSkus(initialJson);
+      jsonProduct.put("skus", skus);
 
-	/**
-	 * Para pegar todos os preços acessamos uma api que retorna um json
-	 * com todos preços de todos os marketplaces, depois pegamos somente
-	 * as parcelas e o preço no boleto do shoptime. Em seguida coloco somente
-	 * o id do produto com seu preço no boleto e as parcelas no cartão, também coloco
-	 * as parcelas do produto com maior quantidade de parcelas, pois foi verificado
-	 * que produtos com variações, a segunda variação está vindo com apenas
-	 * uma parcela no json da api. Vale lembrar que pegamos as parcelas do Cartão VISA. ex:
-	 * 
-	 * Endereço api: 
-	 * http://product-v3.shoptime.com.br/product?q=itemId:(125628846)&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO
-	 * 
-	 * Parse Json:
-	 * http://json.parser.online.fr/
-	 * 
-	 *{ 125628854":{
-	 *	"installments":[
-	 *		{
-	 *			"interestRate":0,
-	 * 			"total":1699,
-	 *			"quantity":1,
-	 *			"interestAmount":0,
-	 *			"value":1699,
-	 *			"annualCET":0
-	 *		},
-	 *		{...},
-	 *		{...}
-	 *	],
-	 *	"bankTicket":1699,
-	 *	"stock":72
-	 *	},
-	 *  "moreQuantityOfInstallments":[
-	 *	{
-	 *		"interestRate":0,
-	 *		"total":1699,
-	 *		"quantity":1,
-	 *		"interestAmount":0,
-	 *		"value":1699,
-	 *		"annualCET":0
-	 *	}
-	 *}
-	 */
-	public static JSONObject assembleJsonProductOldWay(JSONObject initialJson){
-		JSONObject jsonProduct = new JSONObject();
+      String internalPid = null;
 
-		if(initialJson.has("products") && initialJson.getJSONArray("products").length() > 0){
-			JSONObject productJson = initialJson.getJSONArray("products").getJSONObject(0);
+      if (productJson.has("id")) {
+        internalPid = productJson.getString("id");
+        jsonProduct.put("internalPid", internalPid);
+      }
 
-			JSONArray skus = getJSONSkus(productJson);
-			jsonProduct.put("skus", skus);
-			
-			String internalPid = null;
-			
-			if(productJson.has("id")){
-				internalPid = productJson.getString("id");
-				jsonProduct.put("internalPid", internalPid);
-			}
+      if (productJson.has("name")) {
+        jsonProduct.put("name", productJson.get("name"));
+      }
 
-			if(productJson.has("name")) {
-				jsonProduct.put("name", productJson.get("name"));
-			}
+      JSONObject jsonForPrices;
+      if (productJson.has("offers")) {
+        jsonForPrices = productJson;
+      } else {
+        jsonForPrices = initialJson;
+      }
 
-			JSONObject jsonPrices = getJsonPrices(productJson, internalPid);
-			jsonProduct.put("prices", jsonPrices);
+      JSONObject jsonPrices = getJsonPrices(jsonForPrices, internalPid);
+      jsonProduct.put("prices", jsonPrices);
 
-			JSONObject jsonImages = getJSONImages(productJson);
-			jsonProduct.put("images", jsonImages);
+      JSONObject jsonImages = getJSONImages(productJson);
+      jsonProduct.put("images", jsonImages);
 
-			JSONArray jsonCategories = getJSONCategories(productJson);
-			jsonProduct.put("categories", jsonCategories);
-		}
+      JSONArray jsonCategories = getJSONCategories(productJson);
+      jsonProduct.put("categories", jsonCategories);
+    }
 
-		return jsonProduct;
+    return jsonProduct;
 
-	}
-	
-	private static JSONArray getJSONSkus(JSONObject initialJson){
-		JSONArray skus = new JSONArray();
+  }
 
-		if(initialJson.has("skus")){
-			JSONArray skusJson = initialJson.getJSONArray("skus");
+  /**
+   * Para pegar todos os preços acessamos uma api que retorna um json com todos preços de todos os
+   * marketplaces, depois pegamos somente as parcelas e o preço no boleto do shoptime. Em seguida
+   * coloco somente o id do produto com seu preço no boleto e as parcelas no cartão, também coloco as
+   * parcelas do produto com maior quantidade de parcelas, pois foi verificado que produtos com
+   * variações, a segunda variação está vindo com apenas uma parcela no json da api. Vale lembrar que
+   * pegamos as parcelas do Cartão VISA. ex:
+   * 
+   * Endereço api:
+   * http://product-v3.shoptime.com.br/product?q=itemId:(125628846)&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO
+   * 
+   * Parse Json: http://json.parser.online.fr/
+   * 
+   * { 125628854":{ "installments":[ { "interestRate":0, "total":1699, "quantity":1,
+   * "interestAmount":0, "value":1699, "annualCET":0 }, {...}, {...} ], "bankTicket":1699, "stock":72
+   * }, "moreQuantityOfInstallments":[ { "interestRate":0, "total":1699, "quantity":1,
+   * "interestAmount":0, "value":1699, "annualCET":0 } }
+   */
+  public static JSONObject assembleJsonProductOldWay(JSONObject initialJson) {
+    JSONObject jsonProduct = new JSONObject();
 
-			for(int i = 0; i < skusJson.length(); i++){
-				JSONObject skuJson = skusJson.getJSONObject(i);
-				JSONObject sku = new JSONObject();
+    if (initialJson.has("products") && initialJson.getJSONArray("products").length() > 0) {
+      JSONObject productJson = initialJson.getJSONArray("products").getJSONObject(0);
 
-				if(skuJson.has("id")){
-					sku.put("internalId", skuJson.getString("id"));
+      JSONArray skus = getJSONSkus(productJson);
+      jsonProduct.put("skus", skus);
 
-					if(skuJson.has("name")){
-						String name = "";
+      String internalPid = null;
 
-						if(skuJson.has("diffs")){
-							JSONArray diffs = skuJson.getJSONArray("diffs");
+      if (productJson.has("id")) {
+        internalPid = productJson.getString("id");
+        jsonProduct.put("internalPid", internalPid);
+      }
 
-							for(int j = 0; j < diffs.length(); j++){
-								JSONObject variation = diffs.getJSONObject(j);
+      if (productJson.has("name")) {
+        jsonProduct.put("name", productJson.get("name"));
+      }
 
-								if(variation.has("value")){
-									name += " " + variation.getString("value").trim();
-								}
-							}
+      JSONObject jsonPrices = getJsonPrices(productJson, internalPid);
+      jsonProduct.put("prices", jsonPrices);
 
-							sku.put("variationName", name);
-						}
-					}
-				}
-				skus.put(sku);
-			}
-		}
+      JSONObject jsonImages = getJSONImages(productJson);
+      jsonProduct.put("images", jsonImages);
 
-		return skus;
-	}
+      JSONArray jsonCategories = getJSONCategories(productJson);
+      jsonProduct.put("categories", jsonCategories);
+    }
 
-	private static JSONArray getJSONCategories(JSONObject productJson){
-		JSONArray jsonCategories = new JSONArray();
+    return jsonProduct;
 
-		if(productJson.has("category")){
-			JSONObject category = productJson.getJSONObject("category");
+  }
 
-			if(category.has("breadcrumb")){
-				jsonCategories = category.getJSONArray("breadcrumb");
-			}
-		}
+  private static JSONArray getJSONSkus(JSONObject initialJson) {
+    JSONArray skus = new JSONArray();
 
-		return jsonCategories;
-	}
+    if (initialJson.has("skus")) {
+      JSONArray skusJson = initialJson.getJSONArray("skus");
 
-	private static JSONObject getJSONImages(JSONObject productJson){
-		JSONObject jsonImages = new JSONObject();
+      for (int i = 0; i < skusJson.length(); i++) {
+        JSONObject skuJson = skusJson.getJSONObject(i);
+        JSONObject sku = new JSONObject();
 
-		if(productJson.has("images")){
-			JSONArray imagesArray = productJson.getJSONArray("images");
-			JSONArray secondaryImages = new JSONArray();
+        if (skuJson.has("id")) {
+          sku.put("internalId", skuJson.getString("id"));
 
-			for(int i = 0; i < imagesArray.length(); i++){
-				JSONObject images = imagesArray.getJSONObject(i);
-				String image = null;
+          if (skuJson.has("name")) {
+            String name = "";
 
-				if(images.has("extraLarge")){
-					image = images.getString("extraLarge");
-				} else if(images.has("large")){
-					image = images.getString("large");
-				} else if(images.has("big")){
-					image = images.getString("big");
-				} else if(images.has("medium")){
-					image = images.getString("medium");
-				}
+            if (skuJson.has("diffs")) {
+              JSONArray diffs = skuJson.getJSONArray("diffs");
 
-				if(i == 0){
-					jsonImages.put("primaryImage", image);
-				} else {
-					secondaryImages.put(image);
-				}
-			}
+              for (int j = 0; j < diffs.length(); j++) {
+                JSONObject variation = diffs.getJSONObject(j);
 
-			jsonImages.put("secondaryImages", secondaryImages);
-		}
+                if (variation.has("value")) {
+                  name += " " + variation.getString("value").trim();
+                }
+              }
 
-		return jsonImages;
-	}
+              sku.put("variationName", name);
+            }
+          }
+        }
+        skus.put(sku);
+      }
+    }
 
-	private static JSONObject getJsonPrices(JSONObject initialJson, String internalPid){
-		JSONObject jsonPrices = new JSONObject();
+    return skus;
+  }
 
-		JSONArray offersJsonArray = new JSONArray();
-		
-		if(initialJson.has("offers")) {
-			offersJsonArray = initialJson.getJSONArray("offers");
-		} else if(initialJson.has("entities")) {
-			JSONObject entities = initialJson.getJSONObject("entities");
-			
-			if(entities.has("offers")) {
-				JSONObject offerObject = entities.getJSONObject("offers"); 
-				
-				if(offerObject.has(internalPid)) {
-					offersJsonArray = offerObject.getJSONArray(internalPid);
-				}
-			}
-		}
-		
-		if(offersJsonArray.length() > 0){
-			JSONArray moreQuantityOfInstallments = new JSONArray();
+  private static JSONArray getJSONCategories(JSONObject productJson) {
+    JSONArray jsonCategories = new JSONArray();
 
-			for(int i = 0; i < offersJsonArray.length(); i++){
-				JSONObject jsonOffer = offersJsonArray.getJSONObject(i);
-				JSONObject jsonSeller = new JSONObject();
-				
-				String idProduct = crawlIdProduct(jsonOffer);
-				
-				if(idProduct != null) {
-					manageEmbedded(jsonOffer, jsonSeller, moreQuantityOfInstallments);
-					
-					if(jsonOffer.has("availability")) {
-						JSONObject availability = jsonOffer.getJSONObject("availability");
-						
-						if(availability.has("_embedded")) {
-							JSONObject embedded = availability.getJSONObject("_embedded");
-							
-							if(embedded.has("stock")) {
-								JSONObject stock = embedded.getJSONObject("stock");
-								
-								if(stock.has("quantity")) {
-									jsonSeller.put("stock", stock.getInt("quantity"));
-								}
-							}
-						}
-					}
-					
-					if(jsonOffer.has("paymentOptions")){
-						JSONObject payment = jsonOffer.getJSONObject("paymentOptions");
+    if (productJson.has("category")) {
+      JSONObject category = productJson.getJSONObject("category");
 
-						setBoleto(payment, jsonSeller);
-						setCard(payment, jsonSeller, moreQuantityOfInstallments);
-					}
-					
-					if(jsonPrices.has(idProduct)) {
-						JSONArray installments = jsonPrices.getJSONArray(idProduct);
-						installments.put(jsonSeller);
-						
-						jsonPrices.put(idProduct, installments);
-					} else {
-						JSONArray installments = new JSONArray();
-						installments.put(jsonSeller);
-						
-						jsonPrices.put(idProduct, installments);
-					}
-				}
-			}
-			
-			jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
-		}
+      if (category.has("breadcrumb")) {
+        jsonCategories = category.getJSONArray("breadcrumb");
+      }
+    }
 
-		return jsonPrices;
-	}
+    return jsonCategories;
+  }
 
-	private static String crawlIdProduct(JSONObject jsonOffer) {
-		String idProduct = null;
-		
-		if(jsonOffer.has("_links")){
-			JSONObject links = jsonOffer.getJSONObject("_links");
+  private static JSONObject getJSONImages(JSONObject productJson) {
+    JSONObject jsonImages = new JSONObject();
 
-			if(links.has("sku")){
-				JSONObject sku = links.getJSONObject("sku");
+    if (productJson.has("images")) {
+      JSONArray imagesArray = productJson.getJSONArray("images");
+      JSONArray secondaryImages = new JSONArray();
 
-				if(sku.has("id")){
-					idProduct = sku.getString("id");
-				}
-			}
-		}
-		
-		return idProduct;
-	}
-	
-	private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
-		if(jsonOffer.has("_embedded")){
-			JSONObject embedded = jsonOffer.getJSONObject("_embedded");
+      for (int i = 0; i < imagesArray.length(); i++) {
+        JSONObject images = imagesArray.getJSONObject(i);
+        String image = null;
 
-			if(embedded.has("seller")){
-				JSONObject seller = embedded.getJSONObject("seller");
+        if (images.has("extraLarge")) {
+          image = images.getString("extraLarge");
+        } else if (images.has("large")) {
+          image = images.getString("large");
+        } else if (images.has("big")) {
+          image = images.getString("big");
+        } else if (images.has("medium")) {
+          image = images.getString("medium");
+        }
 
-				setStock(seller, jsonSeller);
+        if (i == 0) {
+          jsonImages.put("primaryImage", image);
+        } else {
+          secondaryImages.put(image);
+        }
+      }
 
-				if(seller.has("name")){
-					jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase());
-				}
-			}
-		}
-	}
-	
-	private static void setBoleto(JSONObject payment, JSONObject jsonSeller) {
-		if(payment.has("BOLETO")){
-			JSONObject boleto = payment.getJSONObject("BOLETO");
+      jsonImages.put("secondaryImages", secondaryImages);
+    }
 
-			if(boleto.has("price")){
-				jsonSeller.put("bankTicket", boleto.getDouble("price"));
-			}
-		}
-	}
-	
-	private static void setCard(JSONObject payment, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
-		if(payment.has("CARTAO_VISA")){
-			JSONObject visa = payment.getJSONObject("CARTAO_VISA");
+    return jsonImages;
+  }
 
-			if(visa.has("installments")){
-				JSONArray installments = visa.getJSONArray("installments");
-				jsonSeller.put("installments", installments);
+  private static JSONObject getJsonPrices(JSONObject initialJson, String internalPid) {
+    JSONObject jsonPrices = new JSONObject();
 
-				if(installments.length() > moreQuantityOfInstallments.length()){
-					moreQuantityOfInstallments = installments;
-				}
-			}
-			
-			if(visa.has("price")) {
-				jsonSeller.put("defaultPrice", visa.get("price"));
-			}
-		}
-	}
-	
-	private static void setStock(JSONObject seller, JSONObject jsonSeller) {
-		if(seller.has("availability")){
-			JSONObject availability = seller.getJSONObject("availability");
+    JSONArray offersJsonArray = new JSONArray();
 
-			if(availability.has("_embedded")){
-				JSONObject embeddedStock = availability.getJSONObject("_embedded");
+    if (initialJson.has("offers")) {
+      offersJsonArray = initialJson.getJSONArray("offers");
+    } else if (initialJson.has("entities")) {
+      JSONObject entities = initialJson.getJSONObject("entities");
 
-				if(embeddedStock.has("stock")){
-					JSONObject jsonStock = embeddedStock.getJSONObject("stock");
+      if (entities.has("offers")) {
+        JSONObject offerObject = entities.getJSONObject("offers");
 
-					if(jsonStock.has("quantity")){
-						jsonSeller.put("stock", jsonStock.getInt("quantity"));
-					}
-				}
-			}
-		}
-	}
-	
-	public static String crawlInternalPidShoptime(Document doc){
-		String internalID = null;
+        if (offerObject.has(internalPid)) {
+          offersJsonArray = offerObject.getJSONArray(internalPid);
+        }
+      }
+    }
 
-		Element elementInternalID = doc.select(".p-name#main-product-name .p-code").first();
-		if (elementInternalID != null) {
-			internalID =  elementInternalID.text().split(" ")[1].replace(")", " ").trim() ;
-		}
+    if (offersJsonArray.length() > 0) {
+      JSONArray moreQuantityOfInstallments = new JSONArray();
 
-		return internalID;
-	}
+      for (int i = 0; i < offersJsonArray.length(); i++) {
+        JSONObject jsonOffer = offersJsonArray.getJSONObject(i);
+        JSONObject jsonSeller = new JSONObject();
+
+        String idProduct = crawlIdProduct(jsonOffer);
+
+        if (idProduct != null) {
+          manageEmbedded(jsonOffer, jsonSeller, moreQuantityOfInstallments);
+
+          if (jsonOffer.has("availability")) {
+            JSONObject availability = jsonOffer.getJSONObject("availability");
+
+            if (availability.has("_embedded")) {
+              JSONObject embedded = availability.getJSONObject("_embedded");
+
+              if (embedded.has("stock")) {
+                JSONObject stock = embedded.getJSONObject("stock");
+
+                if (stock.has("quantity")) {
+                  jsonSeller.put("stock", stock.getInt("quantity"));
+                }
+              }
+            }
+          }
+
+          if (jsonOffer.has("paymentOptions")) {
+            JSONObject payment = jsonOffer.getJSONObject("paymentOptions");
+
+            setBoleto(payment, jsonSeller);
+            setCard(payment, jsonSeller, moreQuantityOfInstallments);
+          }
+
+          if (jsonPrices.has(idProduct)) {
+            JSONArray installments = jsonPrices.getJSONArray(idProduct);
+            installments.put(jsonSeller);
+
+            jsonPrices.put(idProduct, installments);
+          } else {
+            JSONArray installments = new JSONArray();
+            installments.put(jsonSeller);
+
+            jsonPrices.put(idProduct, installments);
+          }
+        }
+      }
+
+      jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
+    }
+
+    return jsonPrices;
+  }
+
+  private static String crawlIdProduct(JSONObject jsonOffer) {
+    String idProduct = null;
+
+    if (jsonOffer.has("_links")) {
+      JSONObject links = jsonOffer.getJSONObject("_links");
+
+      if (links.has("sku")) {
+        JSONObject sku = links.getJSONObject("sku");
+
+        if (sku.has("id")) {
+          idProduct = sku.getString("id");
+        }
+      }
+    }
+
+    return idProduct;
+  }
+
+  private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
+    if (jsonOffer.has("_embedded")) {
+      JSONObject embedded = jsonOffer.getJSONObject("_embedded");
+
+      if (embedded.has("seller")) {
+        JSONObject seller = embedded.getJSONObject("seller");
+
+        setStock(seller, jsonSeller);
+
+        if (seller.has("name")) {
+          jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase());
+        }
+      }
+    }
+  }
+
+  private static void setBoleto(JSONObject payment, JSONObject jsonSeller) {
+    if (payment.has("BOLETO")) {
+      JSONObject boleto = payment.getJSONObject("BOLETO");
+
+      if (boleto.has("price")) {
+        jsonSeller.put("bankTicket", boleto.getDouble("price"));
+      }
+    }
+  }
+
+  private static void setCard(JSONObject payment, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
+    if (payment.has("CARTAO_VISA")) {
+      JSONObject visa = payment.getJSONObject("CARTAO_VISA");
+
+      if (visa.has("installments")) {
+        JSONArray installments = visa.getJSONArray("installments");
+        jsonSeller.put("installments", installments);
+
+        if (installments.length() > moreQuantityOfInstallments.length()) {
+          moreQuantityOfInstallments = installments;
+        }
+      }
+
+      if (visa.has("price")) {
+        jsonSeller.put("defaultPrice", visa.get("price"));
+      }
+    }
+  }
+
+  private static void setStock(JSONObject seller, JSONObject jsonSeller) {
+    if (seller.has("availability")) {
+      JSONObject availability = seller.getJSONObject("availability");
+
+      if (availability.has("_embedded")) {
+        JSONObject embeddedStock = availability.getJSONObject("_embedded");
+
+        if (embeddedStock.has("stock")) {
+          JSONObject jsonStock = embeddedStock.getJSONObject("stock");
+
+          if (jsonStock.has("quantity")) {
+            jsonSeller.put("stock", jsonStock.getInt("quantity"));
+          }
+        }
+      }
+    }
+  }
+
+  public static String crawlInternalPidShoptime(Document doc) {
+    String internalID = null;
+
+    Element elementInternalID = doc.select(".p-name#main-product-name .p-code").first();
+    if (elementInternalID != null) {
+      internalID = elementInternalID.text().split(" ")[1].replace(")", " ").trim();
+    }
+
+    return internalID;
+  }
 }

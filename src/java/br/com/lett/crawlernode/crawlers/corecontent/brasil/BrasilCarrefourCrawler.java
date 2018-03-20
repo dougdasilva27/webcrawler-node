@@ -11,44 +11,29 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
+import models.Seller;
+import models.Util;
 import models.prices.Prices;
 
-/************************************************************************************************************************************************************************************
- * Crawling notes (20/09/2016):
+/**
+ * 02/02/2018
  * 
- * 1) One URL per sku. Despite the fact that the user can select a variation of a sku in a page,
- * like this case:
- * https://www.carrefour.com.br/Cafeteira-Eletrica-Mondial-Preta-Portateis-C-17-110V/p/9455310 The
- * crawler must only get the product that is default on that url. The other variation will be
- * discovered by the ranking crawler.
- * 
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
- * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 
- * 4) The sku page identification is done simply by looking the substring "/p/" in the URL.
- * 
- * 5) Even if a product is unavailable, its price is not displayed.
- * 
- * 6) Internal pid is always null.
- * 
- * Examples: ex2 (unavailable):
- * https://www.carrefour.com.br/Notebook-Samsung-Intel-Core-i7-8GB-1TB-Placa-de-Video-2GB-Windows-10-Tela-15-6-Expert-X40-Branco/p/9831541
+ * @author gabriel
  *
- * Optimizations notes: no optimization
- * 
- * @author Samir Leao
- *
- ***********************************************************************************************************************************************************************************/
+ */
 public class BrasilCarrefourCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.carrefour.com.br/";
+  private static final String HOME_PAGE = "https://www.carrefour.com.br/";
+  private static final String SELLER_NAME_LOWER = "carrefour";
 
   public BrasilCarrefourCrawler(Session session) {
     super(session);
@@ -68,73 +53,40 @@ public class BrasilCarrefourCrawler extends Crawler {
     if (isProductPage(this.session.getOriginalURL())) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      /*
-       * *********************************** crawling data of only one product *
-       *************************************/
 
-      // InternalId
-      String internalId = crawlInternalId(doc);
-
-      // Pid
       String internalPid = crawlInternalPid(session.getOriginalURL());
-
-      // Name
       String name = crawlName(doc);
-
-      // Price
-      Float price = crawlMainPagePrice(doc);
-
-      // Availability
-      boolean available = crawlAvailability(doc);
-
-      // Categories
-      ArrayList<String> categories = crawlCategories(doc);
-      String category1 = getCategory(categories, 0);
-      String category2 = getCategory(categories, 1);
-      String category3 = getCategory(categories, 2);
-
-      // Primary image
+      CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-
-      // Secondary images
       String secondaryImages = crawlSecondaryImages(doc);
-
-      // Description
       String description = crawlDescription(doc);
-
-      // Stock
       Integer stock = null;
+      String internalId = crawlInternalId(doc);
+      Elements marketplacesElements = doc.select(".list-group-item");
+      Map<String, Float> marketplaceMap;
 
-      // Marketplace map
-      Map<String, Float> marketplaceMap = crawlMarketplace(doc);
+      if (marketplacesElements.isEmpty()) {
+        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalId);
+      } else {
+        marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
+      }
 
-      // Marketplace
-      Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+      Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
 
-      // Prices
+      boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
+      Float price = available ? marketplaceMap.get(SELLER_NAME_LOWER) : null;
       Prices prices = crawlPrices(price, internalId);
 
-      // Creating the product
-      Product product = new Product();
-      product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setAvailable(available);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
-    } else {
+    } else
+
+    {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
 
@@ -173,7 +125,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     String internalPid = null;
 
     if (url.contains("?")) {
-      url = url.split("?")[0];
+      url = url.split("\\?")[0];
     }
 
     if (url.contains("/p/")) {
@@ -204,28 +156,85 @@ public class BrasilCarrefourCrawler extends Crawler {
     Element specialPrice = document.select(".prince-product-default").first();
 
     if (specialPrice != null) {
-      price = Float.parseFloat(specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
   }
 
-  private boolean crawlAvailability(Document document) {
+  private Map<String, Float> crawlMarketplaceForSingleSeller(Document document, String internalId) {
+    Map<String, Float> marketplaces = new HashMap<>();
+
+    Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalId).first();
+    Element oneMarketplace = document.select(".block-add-cart > span").first();
     Element notifyMeElement = document.select(".text-not-product-avisme").first();
 
-    if (notifyMeElement != null) {
-      return false;
+    if (notifyMeElement == null) {
+      Float price = crawlMainPagePrice(document);
+
+      if (oneMarketplaceInfo != null && oneMarketplace != null) {
+        String text = oneMarketplace.ownText().trim().toLowerCase();
+
+        if (text.contains("por") && text.contains(".")) {
+          int x = text.indexOf("por") + 3;
+          int y = text.indexOf(". entrega", x);
+
+          String sellerName = text.substring(x, y).trim();
+
+          marketplaces.put(sellerName, price);
+        }
+      } else {
+        marketplaces.put(SELLER_NAME_LOWER, price);
+      }
     }
 
-    return true;
+    return marketplaces;
   }
 
-  private Map<String, Float> crawlMarketplace(Document document) {
-    return new HashMap<String, Float>();
+  private Map<String, Float> crawlMarketplaceForMutipleSellers(Elements marketplacesElements) {
+    Map<String, Float> marketplaces = new HashMap<>();
+
+    for (Element e : marketplacesElements) {
+      Element name = e.select(".font-mirakl-vendor-name strong").first();
+      Element price = e.select(".prince-product-default span").first();
+
+      if (name != null && price != null) {
+        String sellerName = name.ownText().trim().toLowerCase();
+        Float sellerPrice = MathCommonsMethods.parseFloat(price.ownText());
+
+        if (sellerPrice != null && !sellerName.isEmpty()) {
+          marketplaces.put(sellerName, sellerPrice);
+        }
+      }
+    }
+
+    return marketplaces;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-    return new Marketplace();
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+    Marketplace marketplace = new Marketplace();
+
+    for (String sellerName : marketplaceMap.keySet()) {
+      if (!sellerName.equalsIgnoreCase(SELLER_NAME_LOWER) && !sellerName.equalsIgnoreCase(SELLER_NAME_LOWER)) {
+        JSONObject sellerJSON = new JSONObject();
+        sellerJSON.put("name", sellerName);
+
+        Float price = marketplaceMap.get(sellerName);
+        Prices prices = crawlPrices(price, internalId);
+
+        sellerJSON.put("price", price);
+        sellerJSON.put("prices", prices.toJSON());
+
+        try {
+          Seller seller = new Seller(sellerJSON);
+          marketplace.add(seller);
+        } catch (Exception e) {
+          Logging.printLogError(logger, session, Util.getStackTraceString(e));
+        }
+      }
+    }
+
+    return marketplace;
   }
 
   private String crawlPrimaryImage(Document document) {
@@ -265,26 +274,19 @@ public class BrasilCarrefourCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private ArrayList<String> crawlCategories(Document document) {
-    ArrayList<String> categories = new ArrayList<String>();
-    Elements elementCategories = document.select(".breadcrumb li span");
+  /**
+   * @param document
+   * @return
+   */
+  private CategoryCollection crawlCategories(Document document) {
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(".breadcrumb > li > a");
 
     for (int i = 1; i < elementCategories.size() - 1; i++) { // starting from index 1, because the
-                                                             // first is the market name
-      if (!categories.contains(elementCategories.get(i).text().trim())) {
-        categories.add(elementCategories.get(i).text().trim());
-      }
+      categories.add(elementCategories.get(i).text().trim());
     }
 
     return categories;
-  }
-
-  private String getCategory(ArrayList<String> categories, int n) {
-    if (n < categories.size()) {
-      return categories.get(n);
-    }
-
-    return "";
   }
 
   private String crawlDescription(Document document) {

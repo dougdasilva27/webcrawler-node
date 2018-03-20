@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
@@ -52,8 +53,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       products.add(crawlProduct(doc));
     } else {
@@ -104,12 +104,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     String description = crawlDescription(doc, internalId);
 
     // Creating the product
-    return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-        .setInternalPid(internalPid).setName(frontPageName).setPrice(price).setPrices(prices)
-        .setAvailable(available).setCategory1(categories.getCategory(0))
-        .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-        .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-        .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+    return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(frontPageName)
+        .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+        .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+        .setStock(stock).setMarketplace(marketplace).build();
   }
 
   /*******************************
@@ -210,12 +208,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       description.append(anchorDescription.html());
     }
 
-    String descriptionURL =
-        "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalId + "/";
-
+    String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalId + "/";
     description.append(DataFetcher.fetchString("GET", session, descriptionURL, null, cookies));
 
-    return description.toString();
+    return CommonMethods.stripNonValidXMLOrHTMLCharacters(description.toString());
   }
 
   /**
@@ -260,13 +256,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements imageThumbs =
-        doc.select(".showcase-product__container-thumbs .showcase-product__thumbs img");
+    Elements imageThumbs = doc.select(".showcase-product__container-thumbs .showcase-product__thumbs img");
     Elements imageThumbsSpecial = doc.select("img.product-thumbs-carousel__thumb");
 
     if (imageThumbs.size() > imageThumbsSpecial.size()) {
       for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image
-                                                     // is the primary image
+        // is the primary image
         Element e = imageThumbs.get(i);
 
         String image = e.attr("src").replace("88x66", "618x463");
@@ -279,7 +274,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     } else {
 
       for (int i = 1; i < imageThumbsSpecial.size(); i++) { // starts with index 1, because the
-                                                            // first image is the primary image
+        // first image is the primary image
         Element e = imageThumbsSpecial.get(i);
 
         String image = e.attr("src").replace("88x66", "618x463");
@@ -331,8 +326,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
     if (marketplaceName != null) {
       String sellerName = marketplaceName.attr("content").trim();
-      if (!sellerName.equalsIgnoreCase(SELLER_NAME) && (skuInfo == null
-          || (skuInfo.has("salePrice") && skuInfo.get("salePrice") instanceof Double))) {
+      if (!sellerName.equalsIgnoreCase(SELLER_NAME)
+          && (skuInfo == null || (skuInfo.has("salePrice") && skuInfo.get("salePrice") instanceof Double))) {
         Float sellerPrice = crawlPrice(skuInfo, true);
 
         JSONObject sellerJSON = new JSONObject();
@@ -413,8 +408,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
         prices.setBankTicketPrice(price);
       }
 
-      Elements luizaCard =
-          doc.select(".method-payment__card-luiza-box ul[class^=method-payment__values--] li > p");
+      Elements luizaCard = doc.select(".method-payment__card-luiza-box ul[class^=method-payment__values--] li > p");
 
       for (Element e : luizaCard) {
         String text = e.ownText();
@@ -432,8 +426,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
         }
       }
 
-      Elements normalCards =
-          doc.select(".method-payment__card-box .method-payment__values--general-cards li > p");
+      Elements normalCards = doc.select(".method-payment__card-box .method-payment__values--general-cards li > p");
 
       for (Element e : normalCards) {
         String text = e.ownText();
@@ -496,10 +489,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
         int x = html.indexOf(token) + token.length();
         int y = html.indexOf("};", x) + 1;
 
-        String json = html.substring(x, y).replace("window.location.host", "''")
-            .replace("window.location.protocol", "''").replace("window.location.pathname", "''")
-            .replace("document.referrer", "''").replace("encodeURIComponent(", "")
-            .replace("'),", "',");
+        String json = html.substring(x, y).replace("window.location.host", "''").replace("window.location.protocol", "''")
+            .replace("window.location.pathname", "''").replace("document.referrer", "''").replace("encodeURIComponent(", "").replace("'),", "',");
 
         skuJson = new JSONObject(json);
       }
