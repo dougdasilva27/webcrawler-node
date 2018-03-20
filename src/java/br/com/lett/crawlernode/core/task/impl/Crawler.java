@@ -522,14 +522,15 @@ public class Crawler extends Task {
    * @return Parsed HTML in form of a Document.
    */
   protected Object fetch() {
-    String html;
+    String html = "";
     if (config.getFetcher() == Fetcher.STATIC) {
       html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-      // } else if (config.getFetcher() == Fetcher.SMART) {
-      // html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
     } else {
       webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-      html = webdriver.getCurrentPageSource();
+
+      if (webdriver != null) {
+        html = webdriver.getCurrentPageSource();
+      }
     }
 
     return Jsoup.parse(html);
