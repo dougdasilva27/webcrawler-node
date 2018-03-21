@@ -2,105 +2,87 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilAmbientairCrawler extends CrawlerRankingKeywords {
 
-	public BrasilAmbientairCrawler(Session session) {
-		super(session);
-	}
+  public BrasilAmbientairCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 8;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 8;
 
-		this.log("Página " + this.currentPage);
+    this.log("Página " + this.currentPage);
 
-		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+    // monta a url com a keyword e a página
+    String url = "https://www.ambientair.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PS=50&PageNumber=" + this.currentPage;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		// monta a url com a keyword e a página
-		String url = "http://www.ambientair.com.br/busca.html?loja=110&acao=BU&busca=" + keyword
-				+ "&passo=exibeTodos&ordem=PROD_NOME&pagina=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url);
 
-		// chama função de pegar o html
-		this.currentDoc = fetchDocument(url);
+    Elements products = this.currentDoc.select(".prateleira ul > li[layout] .product-name a");
+    Elements productsPid = this.currentDoc.select(".prateleira ul > li[id]");
 
-		Elements products = this.currentDoc.select("div.divProdutos ul > li");
+    int count = 0;
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (products.size() >= 1) {
-			for (Element e : products) {
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(productsPid.get(count));
+        String productUrl = crawlProductUrl(e);
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+        saveDataProduct(null, internalPid, productUrl);
+        count++;
 
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
 
-				saveDataProduct(internalId, internalPid, productUrl);
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
-				}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-	}
+  @Override
+  protected void setTotalProducts() {
+    Element total = this.currentDoc.select(".resultado-busca-numero .value").first();
 
-	@Override
-	protected boolean hasNextPage() {
-		Elements products = this.currentDoc.select("div.divProdutos ul > li");
+    if (total != null) {
+      String text = total.ownText().replaceAll("[^0-9]", "").trim();
 
-		if (products.size() >= 8) {
-			return true;
-		}
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
 
-		return false;
-	}
+        this.log("Total products: " + this.totalProducts);
+      }
+    }
+  }
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
-		
-		Element id = e.select("input.compare").first();
-		
-		if (id != null) {
-			internalId = id.val();
-		}
+  private String crawlInternalPid(Element e) {
+    return CommonMethods.getLast(e.attr("id").split("_"));
+  }
 
-		return internalId;
-	}
+  private String crawlProductUrl(Element e) {
+    String productUrl = e.attr("href");
 
-	private String crawlInternalPid(Element e) {
-		return null;
-	}
+    if (!productUrl.contains("ambientair.com")) {
+      productUrl = ("https://www.ambientair.com.br/" + e.attr("href")).replace(".br//", ".br/");
+    }
 
-	private String crawlProductUrl(Element e) {
-		String productUrl = null;
-		Element eUrl = e.select("a.produto").first();
-		
-		if(eUrl != null) {
-			productUrl = eUrl.attr("href");
-			if (!productUrl.contains("ambientair")) {
-				productUrl = "http://www.ambientair.com.br/" + productUrl;
-			}
-		}
-
-		return productUrl;
-	}
+    return productUrl;
+  }
 }
