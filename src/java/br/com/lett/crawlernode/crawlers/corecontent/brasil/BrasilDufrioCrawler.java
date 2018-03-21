@@ -77,52 +77,54 @@ public class BrasilDufrioCrawler extends Crawler {
 
     this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
 
-    Element script = doc.select("script").first();
+    if (!isProductPage(doc)) {
+      Element script = doc.select("script").first();
 
-    if (script != null) {
-      String eval = script.html().trim();
+      if (script != null) {
+        String eval = script.html().trim();
 
-      if (eval.endsWith(";")) {
-        int y = eval.indexOf(";}}") + 3;
-        int x = eval.indexOf(';', y) + 1;
+        if (eval.endsWith(";")) {
+          int y = eval.indexOf(";}}") + 3;
+          int x = eval.indexOf(';', y) + 1;
 
-        String b = eval.substring(y, x);
+          String b = eval.substring(y, x);
 
-        if (b.contains("(")) {
-          int z = b.indexOf('(') + 1;
-          int u = b.indexOf(')', z);
+          if (b.contains("(")) {
+            int z = b.indexOf('(') + 1;
+            int u = b.indexOf(')', z);
 
-          String result = b.substring(z, u);
+            String result = b.substring(z, u);
 
-          eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
-        }
-      }
-
-      ScriptEngineManager factory = new ScriptEngineManager();
-      ScriptEngine engine = factory.getEngineByName("js");
-      try {
-        String cookieString = engine.eval(eval).toString();
-        if (cookieString != null && cookieString.contains("=")) {
-          String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
-
-          String[] tokens = cookieValues.split("=");
-
-          if (tokens.length > 1) {
-
-            BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-            cookie.setDomain("www.dufrio.com.br");
-            cookie.setPath("/");
-            this.cookies.add(cookie);
-
-            BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-            cookie2.setDomain("www.dufrio.com.br");
-            cookie2.setPath("/");
-            this.cookies.add(cookie2);
+            eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
           }
         }
 
-      } catch (ScriptException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        ScriptEngineManager factory = new ScriptEngineManager();
+        ScriptEngine engine = factory.getEngineByName("js");
+        try {
+          String cookieString = engine.eval(eval).toString();
+          if (cookieString != null && cookieString.contains("=")) {
+            String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
+
+            String[] tokens = cookieValues.split("=");
+
+            if (tokens.length > 1) {
+
+              BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
+              cookie.setDomain("www.dufrio.com.br");
+              cookie.setPath("/");
+              this.cookies.add(cookie);
+
+              BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
+              cookie2.setDomain("www.dufrio.com.br");
+              cookie2.setPath("/");
+              this.cookies.add(cookie2);
+            }
+          }
+
+        } catch (ScriptException e) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        }
       }
     }
   }
@@ -176,10 +178,7 @@ public class BrasilDufrioCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    if (doc.select(".detalheProduto").first() != null) {
-      return true;
-    }
-    return false;
+    return doc.select(".detalheProduto").first() != null;
   }
 
   private String crawlInternalId(Document document) {
@@ -329,7 +328,7 @@ public class BrasilDufrioCrawler extends Crawler {
     Element caracteristicas = document.select(".caracteristicasDetalhe").first();
     Element dimensoes = document.select(".dimensoes").first();
 
-    Elements specialDescriptions = document.select(".linha-16, .linha-22");
+    Elements specialDescriptions = document.select(".linha-16, .linha-22, .linha-53");
     for (Element e : specialDescriptions) {
       description.append(e.html());
     }

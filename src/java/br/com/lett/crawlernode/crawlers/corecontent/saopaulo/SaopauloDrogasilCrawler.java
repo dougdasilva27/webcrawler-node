@@ -10,7 +10,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -35,11 +37,11 @@ public class SaopauloDrogasilCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL(), doc)) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
-      String internalID = crawlInternalId(doc);
+      String internalId = crawlInternalId(doc);
 
       // Pid
       String internalPid = crawlInternalPid(doc);
@@ -66,34 +68,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
         price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       }
 
-      // Categorias
-      Elements elementCategories = doc.select(".breadcrumbs ul li");
-      ArrayList<String> categories = new ArrayList<String>();
-      if (elementCategories.size() > 0) {
-        for (int i = 1; i < elementCategories.size() - 1; i++) { // o primeiro e o último elemento
-                                                                 // estão sendo excluídos porque
-                                                                 // não são categoria
-          Element elementCategorieTmp = elementCategories.get(i).select("a").first();
-          if (elementCategorieTmp != null) {
-            categories.add(elementCategorieTmp.text().trim());
-          }
-        }
-      }
-      String category1 = null;
-      String category2 = null;
-      String category3 = null;
-      if (categories.size() > 0) {
-        if (categories.size() == 1) {
-          category1 = categories.get(0);
-        } else if (categories.size() == 2) {
-          category1 = categories.get(0);
-          category2 = categories.get(1);
-        } else if (categories.size() == 3) {
-          category1 = categories.get(0);
-          category2 = categories.get(1);
-          category3 = categories.get(2);
-        }
-      }
+      CategoryCollection categories = crawlCategories(doc);
 
       // Imagem primária
       Elements elementImages = doc.select(".product-img-box .product-image.product-image-zoom .product-image-gallery img");
@@ -125,11 +100,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       }
 
       // Descrição
-      String description = "";
-      Element elementDescription = doc.select("div#details.product-details").first();
-      if (elementDescription != null) {
-        description = elementDescription.html().trim();
-      }
+      String description = crawlDescription(doc);
 
       // Estoque
       Integer stock = null;
@@ -140,23 +111,10 @@ public class SaopauloDrogasilCrawler extends Crawler {
       // Prices
       Prices prices = crawlPrices(doc, price);
 
-      Product product = new Product();
-
-      product.setUrl(session.getOriginalURL());
-      product.setInternalId(internalID);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -173,13 +131,27 @@ public class SaopauloDrogasilCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url, Document document) {
-    Elements elementProductShop = document.select(".product-shop");
-    Elements elementShippingQuote = document.select(".shipping-quote");
-    return (elementProductShop.size() > 0 || elementShippingQuote.size() > 0);
+  private boolean isProductPage(Document document) {
+    return (!document.select(".product-shop").isEmpty() || !document.select(".shipping-quote").isEmpty());
   }
 
+  private CategoryCollection crawlCategories(Document document) {
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(".breadcrumbs ul li a");
+
+    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
+      categories.add(elementCategories.get(i).text().trim());
+    }
+
+    return categories;
+  }
+
+
   private boolean isPrimaryImage(String primaryImage, String image) {
+    if (primaryImage == null || image == null) {
+      return false;
+    }
+
     String[] tokens = primaryImage.split("/");
     String[] tokens2 = image.split("/");
 
@@ -247,6 +219,22 @@ public class SaopauloDrogasilCrawler extends Crawler {
     }
 
     return name;
+  }
+
+  private String crawlDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Element shortDescription = doc.select(".product-short-description").first();
+    if (shortDescription != null) {
+      description.append(shortDescription.html());
+    }
+
+    Element elementDescription = doc.select("div#details.product-details").first();
+    if (elementDescription != null) {
+      description.append(elementDescription.html());
+    }
+
+    return description.toString();
   }
 
   /**

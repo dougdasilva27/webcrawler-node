@@ -199,9 +199,9 @@ public class BrasilColomboCrawler extends Crawler {
 
           // Nome
           String variationName = null;
-          Element variationElementName = e.select(".dados-itens-table-caracteristicas").first();
+          Element variationElementName = e.select(".dados-itens-table-caracteristicas > label").first();
           if (variationElementName != null) {
-            variationName = name + " " + variationElementName.textNodes().get(0).toString().trim();
+            variationName = name + " " + variationElementName.ownText();
           }
 
           // Available

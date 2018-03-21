@@ -368,31 +368,31 @@ public class BrasilMultiarCrawler extends Crawler {
           String text = e.text().toLowerCase();
 
           if (text.contains("visa")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
           } else if (text.contains("mastercard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("diners")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
           } else if (text.contains("american") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
           } else if (text.contains("hipercard") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("credicard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 
           } else if (text.contains("elo")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
             prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
           }
@@ -413,7 +413,7 @@ public class BrasilMultiarCrawler extends Crawler {
     return prices;
   }
 
-  private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard) {
+  private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard, Integer discount) {
     Map<Integer, Float> mapInstallments = new HashMap<>();
 
     Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
@@ -435,6 +435,9 @@ public class BrasilMultiarCrawler extends Crawler {
         if (valueElement != null) {
           Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
+          if (discount != null && installment == 1) {
+            value = value - (value * (discount / 100f));
+          }
           mapInstallments.put(installment, value);
         }
       }

@@ -71,8 +71,7 @@ public class BrasilFastshopCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(session.getOriginalURL(), doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // Json com informações dos produtos
       JSONArray jsonArrayInfo = BrasilFastshopCrawlerUtils.crawlSkusInfo(doc);
@@ -197,9 +196,8 @@ public class BrasilFastshopCrawler extends Crawler {
     boolean available = false;
 
     if (hasVariations) {
-      String url =
-          "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6"
-              + "&hotsite=fastshop&itemId=" + internalId;
+      String url = "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6" + "&hotsite=fastshop&itemId="
+          + internalId;
 
       String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -257,8 +255,7 @@ public class BrasilFastshopCrawler extends Crawler {
         if (jsonAttributes.get("Voltagem_220V").equals("1")) {
           name += " 220V";
         }
-      } else if (jsonAttributes.has("Voltagem")
-          && !jsonAttributes.getString("Voltagem").trim().equalsIgnoreCase("bivolt")) {
+      } else if (jsonAttributes.has("Voltagem") && !jsonAttributes.getString("Voltagem").trim().equalsIgnoreCase("bivolt")) {
         name += " " + jsonAttributes.getString("Voltagem");
       }
     }
@@ -268,8 +265,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
   private String crawlPrimaryImage(Document document) {
     String primaryImage = null;
-    Element elementPrimaryImage =
-        document.select("#WC_CachedProductOnlyDisplay_images_1_1").first();
+    Element elementPrimaryImage = document.select("#WC_CachedProductOnlyDisplay_images_1_1").first();
     if (elementPrimaryImage != null) {
       String tmpImg = elementPrimaryImage.attr("src");
       if (!tmpImg.startsWith("https:") && !tmpImg.startsWith("http:")) {
@@ -341,9 +337,8 @@ public class BrasilFastshopCrawler extends Crawler {
     JSONObject jsonPrice = new JSONObject();
 
     if (available) {
-      String url = "http://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier="
-          + internalId + "&hotsite=fastshop&fromWishList=false&"
-          + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
+      String url = "http://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
+          + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
 
       String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
 
@@ -373,12 +368,11 @@ public class BrasilFastshopCrawler extends Crawler {
           if (!text.isEmpty()) {
             price = MathCommonsMethods.parseFloat(text);
           } else if (jsonCatalog.has("offerPrice")) {
-            price = Float.parseFloat(jsonCatalog.getString("offerPrice").trim()
-                .replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            price =
+                Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
           }
         } else if (jsonCatalog.has("offerPrice")) {
-          price = Float.parseFloat(jsonCatalog.getString("offerPrice").trim()
-              .replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+          price = Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
         }
       }
     }
@@ -479,6 +473,7 @@ public class BrasilFastshopCrawler extends Crawler {
     String description = "";
     Element productTabContainer = document.select("#productTabContainer").first();
     if (productTabContainer != null) {
+      productTabContainer.select("#_geral").remove();
       description = productTabContainer.text().trim();
     }
     return description;
