@@ -65,7 +65,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
           String internalId = crawlInternalId(jsonSku);
           String name = crawlName(productInformation, jsonSku);
-          Marketplace marketplace = crawlMarketplace(internalId, jsonSku);
+          Marketplace marketplace = crawlMarketplace(internalId);
           Float price = marketplace.isEmpty() ? crawlPrice(jsonSku) : null;
           boolean available = price != null;
           Prices prices = available ? crawlPrices(jsonSku, price) : new Prices();
@@ -172,7 +172,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     if (sku.has("prices")) {
       JSONObject prices = sku.getJSONObject("prices");
 
-      if (prices.has("realaPrazo")) {
+      if (prices.has("realaPrazo") && prices.get("realaPrazo") instanceof Double) {
         Double priceDouble = prices.getDouble("realaPrazo");
         price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
       }
@@ -245,8 +245,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     return description;
   }
 
-  private String crawlSeller(String internalId) {
-    String sellerName = SELLER_NAME_LOWER;
+  private JSONObject crawlPricesJson(String internalId) {
+    JSONObject product = new JSONObject();
     String payload = "data=" + internalId;
 
     Map<String, String> headers = new HashMap<>();
@@ -264,30 +264,54 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       JSONArray response = json.getJSONArray("response");
 
       for (int i = 0; i < response.length(); i++) {
-        JSONObject product = response.getJSONObject(0);
+        JSONObject temp = response.getJSONObject(0);
 
-        if (product.has("sku") && internalId.equals(product.getString("sku")) && product.has("vendidopor")) {
-          sellerName = product.getString("vendidopor").toLowerCase().trim();
+        if (temp.has("sku") && internalId.equals(temp.getString("sku"))) {
+          product = temp;
+          break;
         }
       }
     }
 
-    return sellerName;
+    return product;
   }
 
-  private Marketplace crawlMarketplace(String internalId, JSONObject sku) {
+  private Marketplace crawlMarketplace(String internalId) {
     Marketplace marketplace = new Marketplace();
 
-    String sellerName = crawlSeller(internalId);
+    String sellerName = SELLER_NAME_LOWER;
+    JSONObject product = crawlPricesJson(internalId);
+
+    Float priceSeller = null;
+    Float priceSeller1x = null;
+    Float priceFrom = null;
+
+    if (product.has("vendidopor")) {
+      sellerName = product.get("vendidopor").toString().toLowerCase().trim();
+    }
+
+    if (product.has("precoprazo") && product.get("precoprazo") instanceof Double) {
+      Double p = product.getDouble("precoprazo");
+      priceSeller = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+    }
+
+    if (product.has("precovista") && product.get("precovista") instanceof Double) {
+      Double p = product.getDouble("precovista");
+      priceSeller1x = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+    }
+
+    if (product.has("precode") && product.get("precode") instanceof Double) {
+      Double p = product.getDouble("precode");
+      priceFrom = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+    }
 
     if (!sellerName.equals(SELLER_NAME_LOWER) && !sellerName.isEmpty()) {
       JSONObject sellerJSON = new JSONObject();
       sellerJSON.put("name", sellerName);
 
-      Float price = crawlPrice(sku);
-      Prices prices = crawlPrices(sku, price);
+      Prices prices = crawlPricesSeller(priceSeller, priceSeller1x, priceFrom);
 
-      sellerJSON.put("price", price);
+      sellerJSON.put("price", priceSeller);
       sellerJSON.put("prices", prices.toJSON());
 
       try {
@@ -301,28 +325,61 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     return marketplace;
   }
 
+  private Prices crawlPricesSeller(Float price, Float price1x, Float priceFrom) {
+    Prices p = new Prices();
+
+    if (price != null) {
+      Map<Integer, Float> installments = new HashMap<>();
+
+      if (price1x != null) {
+        p.setBankTicketPrice(price1x);
+        installments.put(1, price1x);
+      } else {
+        p.setBankTicketPrice(price);
+        installments.put(1, price);
+      }
+
+      if (priceFrom != null) {
+        p.setPriceFrom(MathCommonsMethods.normalizeTwoDecimalPlaces(priceFrom.doubleValue()));
+      }
+
+      installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
+
+      p.insertCardInstallment(Card.AMEX.toString(), installments);
+      p.insertCardInstallment(Card.VISA.toString(), installments);
+      p.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+      p.insertCardInstallment(Card.DINERS.toString(), installments);
+      p.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+      p.insertCardInstallment(Card.ELO.toString(), installments);
+    }
+
+    return p;
+  }
+
   private Prices crawlPrices(JSONObject sku, Float price) {
     Prices p = new Prices();
 
-    if (sku.has("prices")) {
+    if (price != null && sku.has("prices")) {
       JSONObject pricesJson = sku.getJSONObject("prices");
+      Map<Integer, Float> installments = new HashMap<>();
 
-      if (pricesJson.has("realaVista")) {
+      if (pricesJson.has("realaVista") && pricesJson.get("realaVista") instanceof Double) {
         Double boleto = pricesJson.getDouble("realaVista");
-
         p.setBankTicketPrice(boleto);
-
-        Map<Integer, Float> installments = new HashMap<>();
         installments.put(1, MathCommonsMethods.normalizeTwoDecimalPlaces(boleto.floatValue()));
-        installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
-
-        p.insertCardInstallment(Card.AMEX.toString(), installments);
-        p.insertCardInstallment(Card.VISA.toString(), installments);
-        p.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-        p.insertCardInstallment(Card.DINERS.toString(), installments);
-        p.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-        p.insertCardInstallment(Card.ELO.toString(), installments);
+      } else {
+        installments.put(1, price);
+        p.setBankTicketPrice(price);
       }
+
+      installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
+
+      p.insertCardInstallment(Card.AMEX.toString(), installments);
+      p.insertCardInstallment(Card.VISA.toString(), installments);
+      p.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+      p.insertCardInstallment(Card.DINERS.toString(), installments);
+      p.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+      p.insertCardInstallment(Card.ELO.toString(), installments);
     }
 
     return p;
@@ -340,9 +397,28 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       String url = "https://www.webcontinental.com.br/ccstoreui/v1/pages/product?" + "pageParam=" + internalPid
           + "&dataOnly=false&pageId=product&cacheableDataOnly=true";
 
-      JSONObject api = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, null, null, DataFetcher.GET_REQUEST, session, false);
+      String page = null;
 
-      return sanityzeJsonAPI(api);
+      if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
+          && fetcherResponse.getInt("request_status_code") < 400) {
+        JSONObject response = fetcherResponse.getJSONObject("response");
+
+        if (response.has("body")) {
+          page = response.getString("body");
+        }
+      } else {
+        // normal request
+        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      }
+
+      try {
+        JSONObject api = page != null ? new JSONObject(page) : new JSONObject();
+
+        return sanityzeJsonAPI(api);
+      } catch (JSONException e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
     }
 
     return new JSONObject();
