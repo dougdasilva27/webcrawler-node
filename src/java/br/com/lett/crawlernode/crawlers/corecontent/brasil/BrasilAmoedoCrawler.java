@@ -278,11 +278,14 @@ public class BrasilAmoedoCrawler extends Crawler {
   private String crawlDescription(Document document) {
     String description = "";
     Element descriptionElement = document.select(".short-description").first();
+    Element kit = document.select(".product-options").first();
     Element specElement = document.select(".box-description").first();
     Element itemsElement = document.select(".box-additional").first();
 
     if (descriptionElement != null)
       description = description + descriptionElement.html();
+    if (kit != null)
+      description = description + kit.html();
     if (specElement != null)
       description = description + specElement.html();
     if (itemsElement != null)
