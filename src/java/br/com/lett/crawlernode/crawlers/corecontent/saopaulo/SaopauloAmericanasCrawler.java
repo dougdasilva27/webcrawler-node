@@ -68,7 +68,6 @@ public class SaopauloAmericanasCrawler extends Crawler {
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
       String internalPid = this.crawlInternalPid(infoProductJson);
-      String name = this.crawlMainPageName(infoProductJson);
       CategoryCollection categories = crawlCategories(doc);
       boolean hasImages = doc.select(".main-area .row > div > span > img:not([src])").first() == null && doc.select(".gallery-product") != null;
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
@@ -78,10 +77,11 @@ public class SaopauloAmericanasCrawler extends Crawler {
 
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
+        String name = this.crawlMainPageName(infoProductJson);
         String variationName = entry.getValue().trim();
 
         if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
-          variationName = name + " " + variationName;
+          name += " " + variationName;
         }
 
         Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
@@ -92,8 +92,8 @@ public class SaopauloAmericanasCrawler extends Crawler {
         Integer stock = null; // stock só tem na api
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-            .setName(variationName).setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(variationMarketplace).build();
 
