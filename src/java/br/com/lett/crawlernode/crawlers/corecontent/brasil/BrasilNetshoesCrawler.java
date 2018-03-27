@@ -2,203 +2,418 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathCommonsMethods;
 import models.Marketplace;
+import models.Seller;
+import models.Util;
+import models.prices.Prices;
+
+/**
+ * date: 27/03/2018
+ * 
+ * @author gabriel
+ *
+ */
 
 public class BrasilNetshoesCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.netshoes.com.br/";
+  private static final String HOME_PAGE = "https://www.netshoes.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "netshoes";
 
-	public BrasilNetshoesCrawler(Session session) {
-		super(session);
-	}
+  public BrasilNetshoesCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
+  private String userAgent;
 
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<>();
+  @Override
+  public void handleCookiesBeforeFetch() {
+    this.userAgent = DataFetcher.randUserAgent();
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
 
-		if( isProductPage(this.session.getOriginalURL()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain(".netshoes.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+  }
 
-			// Pré nome
-			Elements elementPreName = doc.select(".product-name-holder h1.base-title");
-			String preName = elementPreName.text().replace("'","").replace("’","").trim();
+  @Override
+  protected Object fetch() {
+    LettProxy proxy = session.getRequestProxy(HOME_PAGE);
+    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1);
 
-			// Preço
-			Float price = null;
-			Element elementPrice = doc.select(".price-holder .new-price").first();
-			if(elementPrice != null) {
-				price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-			}
+    return Jsoup.parse(page);
+  }
 
-			// Categorias
-			Elements elementCategories = doc.select(".body-holder .breadcrumbs li a"); 
-			String category1 = "";
-			String category2 = "";
-			String category3 = "";
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
-			for(Element e : elementCategories) {
-				if(category1.isEmpty()) {
-					category1 = e.text();
-				}
-				else if(category2.isEmpty()) {
-					category2 = e.text();
-				}
-				else if(category3.isEmpty()) {
-					category3 = e.text();
-				}
-			}
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-			// Imagens
-			Elements elementImages = doc.select(".photo-gallery-list").select("a");
-			String primaryImage = null;
-			String secondaryImages = null;
-			JSONArray secondaryImagesArray = new JSONArray();
+    if (isProductPage(doc)) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			for(Element e : elementImages) {
+      JSONObject chaordicJson = crawlChaordicJson(doc);
 
-				if(primaryImage == null) {
-					primaryImage = "http:" + e.attr("data-zoom");
-				} 
-				else {
-					secondaryImagesArray.put("http:" + e.attr("data-zoom"));
-				}
+      String internalPid = crawlInternalPid(chaordicJson);
+      CategoryCollection categories = crawlCategories(doc);
+      String description = crawlDescription(doc);
 
-			}
+      // sku data in json
+      JSONArray arraySkus = chaordicJson != null && chaordicJson.has("skus") ? chaordicJson.getJSONArray("skus") : new JSONArray();
 
-			if(secondaryImagesArray.length() > 0) {
-				secondaryImages = secondaryImagesArray.toString();
-			}
+      for (int i = 0; i < arraySkus.length(); i++) {
+        JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-			// Descrição
-			String description = "";   
-			Elements element_descricao = doc.select("#caracteristicas");
-			description = element_descricao.first().text().replace(".", ".\n").replace("'","").replace("’","").trim();
+        String internalId = crawlInternalId(jsonSku);
+        String name = crawlName(chaordicJson, jsonSku);
+        boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equals("available");
+        Document docSku = availableToBuy && arraySkus.length() > 1 ? crawlDocumentSku(internalId, jsonSku, doc) : doc;
 
-			// Marketplace
-			Marketplace marketplace = new Marketplace();
+        Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(docSku) : new HashMap<>();
+        boolean available = availableToBuy ? marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) : false;
 
-			Element elementSku = doc.select("form[name=addToCart] input[name=skuId]").first();
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+        Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Float price = crawlPrice(prices);
+        String primaryImage = crawlPrimaryImage(docSku);
+        String secondaryImages = crawlSecondaryImages(docSku);
 
-			// Capturando sku genérico
-			String sku = "";
-			String[] skuSpplited = elementSku.attr("value").split("-");
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setMarketplace(marketplace).build();
 
-			for(String s: skuSpplited) {
-				sku = sku + s + "-";
-			}
+        products.add(product);
+      }
 
-			// Pegar produtos dentro da url usando a variável da chaordic
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+    }
 
-			JSONObject chaordicMeta = null; //FIXME - variável da chaordic não existe mais
+    return products;
+  }
 
-			Elements scriptTags = doc.getElementsByTag("script");
-			for (Element tag : scriptTags){                
-				for (DataNode node : tag.dataNodes()) {
-					if(node.getWholeData().trim().startsWith("window.chaordic_meta = ")) {									
-						chaordicMeta = new JSONObject(node.getWholeData().trim().substring(22));
-					}
-				}        
-			}
+  /*******************************
+   * Product page identification *
+   *******************************/
 
-			if(chaordicMeta != null && chaordicMeta.length() > 0) {
+  private boolean isProductPage(Document document) {
+    return document.select(".reference").first() != null;
+  }
 
-				JSONArray skus = chaordicMeta.getJSONObject("product").getJSONArray("skus");
-				JSONArray sizes_information = chaordicMeta.getJSONObject("product").getJSONObject("specs").getJSONArray("size");
+  /*******************
+   * General methods *
+   *******************/
 
-				for(int i = 0; i < skus.length(); i++) {
+  private String crawlInternalId(JSONObject json) {
+    String internalId = null;
 
-					JSONObject skuInformation = skus.getJSONObject(i);
+    if (json.has("sku")) {
+      internalId = json.getString("sku").trim();
+    }
 
-					if(skuInformation.getString("url").equals(this.session.getOriginalURL())) {
+    return internalId;
+  }
 
-						// ID interno
-						String internalID = skuInformation.getString("sku");
+  private String crawlInternalPid(JSONObject skuJson) {
+    String internalPid = null;
 
-						// Nome
-						String name = preName;
+    if (skuJson.has("id")) {
+      internalPid = skuJson.get("id").toString();
+    }
 
-						// Se tiver múltiplos produtos, vamos mudar os nomes de acordo com o seu tamanho
-						if(skus.length() > 1) {
+    return internalPid;
+  }
 
-							Elements elementsSizes = doc.select("form[name=addToCart] ul.attr-size .attr-name");
+  private String crawlName(JSONObject chaordicJson, JSONObject skuJson) {
+    StringBuilder name = new StringBuilder();
 
-							// Tem múltiplos tamanhos
-							if(elementsSizes.size() > 0) {
+    if (chaordicJson.has("name")) {
+      name.append(chaordicJson.getString("name"));
 
-								String sizeLabel = "";
+      if (skuJson.has("specs")) {
+        JSONObject specs = skuJson.getJSONObject("specs");
 
-								for(int x = 0; x < sizes_information.length(); x++) {
-									if(sizes_information.getJSONObject(x).getString("id").equals(skuInformation.getJSONObject("specs").getString("size"))) {
-										sizeLabel = sizes_information.getJSONObject(x).getString("label");
-									}
-								}
+        Set<String> keys = specs.keySet();
 
-								if(!sizeLabel.isEmpty()) name = name + " (tamanho " + sizeLabel + ")";
+        for (String key : keys) {
+          if (!key.equalsIgnoreCase("color")) {
+            name.append(" " + specs.get(key));
+          }
+        }
+      }
+    }
 
-							}
+    return name.toString();
+  }
 
-						}
+  private Document crawlDocumentSku(String internalId, JSONObject skuJson, Document doc) {
+    Document docSku = doc;
+
+    if (skuJson.has("specs")) {
+      JSONObject specs = skuJson.getJSONObject("specs");
+
+      if (specs.has("size")) {
+        String url = "https://www.netshoes.com.br/refactoring/" + internalId;
+        String payload = "sizeLabelSelected=" + specs.get("size") + "&isQuickView=false";
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/x-www-form-urlencoded");
+
+        String body =
+            POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers, this.userAgent, session.getRequestProxy(HOME_PAGE));
+
+        if (body != null) {
+          docSku = Jsoup.parse(body);
+
+          Element test = docSku.select("div").first();
+
+          if (test == null) {
+            docSku = doc;
+          }
+        }
+      }
+    }
+
+    return docSku;
+  }
+
+  private Float crawlPrice(Prices prices) {
+    Float price = null;
+
+    if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+      price = priceDouble.floatValue();
+    }
+
+    return price;
+  }
+
+  private String crawlPrimaryImage(Document doc) {
+    String primaryImage = null;
+
+    Element image = doc.select(".photo-figure img.zoom").first();
+
+    if (image != null) {
+      primaryImage = image.attr("data-large-img-url");
+
+      if (!primaryImage.startsWith("http")) {
+        primaryImage = "https:" + primaryImage;
+      }
+    }
+
+    return primaryImage;
+  }
+
+  private String crawlSecondaryImages(Document doc) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".swiper-slide:not(.active) img");
+
+    for (Element e : images) {
+      String image = e.attr("data-src-large").trim();
+
+      if (image.isEmpty()) {
+        image = e.attr("src");
+      }
+
+      if (!image.startsWith("http")) {
+        image = "https:" + image;
+      }
+
+      secondaryImagesArray.put(image);
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private Map<String, Prices> crawlMarketplace(Document doc) {
+    Map<String, Prices> marketplace = new HashMap<>();
+
+    String sellerName = MAIN_SELLER_NAME_LOWER;
+    Element sellerNameElement = doc.select(".product-seller-name").first();
+
+    if (sellerNameElement != null) {
+      sellerName = sellerNameElement.ownText().toLowerCase();
+    }
+
+    marketplace.put(sellerName, crawlPrices(doc));
+
+    return marketplace;
+
+  }
+
+  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
+    Marketplace marketplace = new Marketplace();
+
+    for (String seller : marketplaceMap.keySet()) {
+      if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) {
+        Prices prices = marketplaceMap.get(seller);
+
+        JSONObject sellerJSON = new JSONObject();
+        sellerJSON.put("name", seller);
+        sellerJSON.put("price", crawlPrice(prices));
+        sellerJSON.put("prices", prices.toJSON());
+
+        try {
+          Seller s = new Seller(sellerJSON);
+          marketplace.add(s);
+        } catch (Exception e) {
+          Logging.printLogError(logger, session, Util.getStackTraceString(e));
+        }
+      }
+    }
+
+    return marketplace;
+  }
+
+  private CategoryCollection crawlCategories(Document document) {
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(".breadcrumb li > a span");
+
+    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
+      categories.add(elementCategories.get(i).text().trim());
+    }
+
+    return categories;
+  }
+
+  private String crawlDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Element shortDescription = doc.select(".description").first();
+    if (shortDescription != null) {
+      description.append(shortDescription.html());
+    }
+
+    Element elementInformation = doc.select("#features").first();
+    if (elementInformation != null) {
+      description.append(elementInformation.html());
+    }
+
+    return description.toString();
+  }
+
+  /**
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
+   * à vista R$ 1.790,00
+   * 
+   * @param internalId
+   * @param price
+   * @return
+   */
+  private Prices crawlPrices(Document doc) {
+    Prices prices = new Prices();
+
+    Element priceElement = doc.select(".price > strong").first();
+
+    if (priceElement != null) {
+      Float price = MathCommonsMethods.parseFloat(priceElement.ownText());
+      prices.setBankTicketPrice(price);
+
+      Map<Integer, Float> mapInstallments = new HashMap<>();
+      mapInstallments.put(1, price);
+
+      Element installmentsElement = doc.select(".installments-price").first();
+
+      if (installmentsElement != null) {
+        String text = installmentsElement.ownText().toLowerCase();
+
+        if (text.contains("x")) {
+          int x = text.indexOf('x');
+
+          String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+          Float priceInstallment = MathCommonsMethods.parseFloat(text.substring(x));
+
+          if (!installment.isEmpty() && priceInstallment != null) {
+            mapInstallments.put(Integer.parseInt(installment), priceInstallment);
+          }
+        }
+      }
+
+      prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
+    }
+
+    return prices;
+  }
+
+  private JSONObject crawlChaordicJson(Document doc) {
+    JSONObject skuJson = new JSONObject();
+
+    Elements scripts = doc.select("script");
+
+    for (Element e : scripts) {
+      String script = e.outerHtml();
 
 
-						Integer stock = null;
+      if (script.contains("freedom.metadata.chaordic(")) {
+        String token = "loader.js', '";
+        int x = script.indexOf(token) + token.length();
+        int y = script.indexOf("');", x);
 
-						boolean available = skuInformation.getString("status").equals("available");
+        String json = script.substring(x, y);
 
-						Product product = new Product();
-						
-						product.setUrl(this.session.getOriginalURL());
-						product.setInternalId(internalID);
-						product.setName(name);
-						product.setPrice(price);
-						product.setCategory1(category1);
-						product.setCategory2(category2);
-						product.setCategory3(category3);
-						product.setPrimaryImage(primaryImage);
-						product.setSecondaryImages(secondaryImages);
-						product.setDescription(description);
-						product.setStock(stock);
-						product.setMarketplace(marketplace);
-						product.setAvailable(available);
+        if (json.startsWith("{") && json.endsWith("}")) {
+          try {
+            JSONObject chaordic = new JSONObject(json);
 
-						products.add(product);
-					}
+            if (chaordic.has("product")) {
+              skuJson = chaordic.getJSONObject("product");
+            }
+          } catch (Exception e1) {
+            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+          }
+        }
 
-				}
-			}
+        break;
+      }
+    }
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
-
-		return products;
-
-	}
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(String url) {
-		return url.startsWith("http://www.netshoes.com.br/produto/");
-	}
+    return skuJson;
+  }
 }
