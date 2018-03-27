@@ -24,7 +24,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -405,7 +405,7 @@ public class BrasilMiamistoreCrawler extends Crawler {
 				Element boleto = docJson.select(".instant-price").first();
 				
 				if(boleto != null){
-					Float inCashPrice = MathCommonsMethods.parseFloat(boleto.ownText());
+					Float inCashPrice = MathUtils.parseFloat(boleto.ownText());
 					prices.setBankTicketPrice(inCashPrice);
 				} else {
 					prices.setBankTicketPrice(price);
@@ -418,7 +418,7 @@ public class BrasilMiamistoreCrawler extends Crawler {
 					Integer installment = parcels.ownText().replaceAll("[^0-9]", "").trim().isEmpty() 
 							? null : Integer.parseInt(parcels.ownText().replaceAll("[^0-9]", "").trim());
 					
-					Float value = MathCommonsMethods.parseFloat(parcelValue.ownText());
+					Float value = MathUtils.parseFloat(parcelValue.ownText());
 					
 					if(installment != null && value != null) {
 						installmentPriceMap.put(installment, value);

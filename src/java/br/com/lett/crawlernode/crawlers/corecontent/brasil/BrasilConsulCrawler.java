@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -312,12 +312,12 @@ public class BrasilConsulCrawler extends Crawler {
     if (skuIsAvailable) {
       if (skuInformationJson.has("bestPriceFormated")) {
         String bestPriceString = skuInformationJson.getString("bestPriceFormated");
-        Float bestPrice = MathCommonsMethods.parseFloat(bestPriceString);
+        Float bestPrice = MathUtils.parseFloat(bestPriceString);
 
         // get discount to apply on calculation
         Element discountElement = document.select(".flag.-cns--desconto-5--boleto").first();
         if (discountElement != null) {
-          bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(bestPrice - (0.05f * bestPrice));
+          bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bestPrice - (0.05f * bestPrice));
         } else {
           bankSlipPrice = bestPrice;
         }
@@ -355,11 +355,11 @@ public class BrasilConsulCrawler extends Crawler {
         String installmentNumberText = installmentNumberElement.text().toLowerCase();
         String installPriceText = installmentPriceElement.text();
 
-        List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+        List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
         if (parsedNumbers.size() == 0) { // à vista
-          installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
+          installments.put(1, MathUtils.parseFloat(installPriceText));
         } else {
-          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
+          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installPriceText));
         }
       }
     }

@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -140,7 +140,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
 		Element salePriceElement = document.select(".preco .precoPor").first();		
 
 		if (salePriceElement != null) {
-			price = MathCommonsMethods.parseFloat(salePriceElement.ownText());
+			price = MathUtils.parseFloat(salePriceElement.ownText());
 		}
 
 		return price;
@@ -249,7 +249,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
 			
 			if(installmentsElement != null && valueElement != null) {
 				String parcel = installmentsElement.ownText().replaceAll("[^0-9]", "").trim();
-				Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
+				Float value = MathUtils.parseFloat(valueElement.ownText());
 				
 				if(!parcel.isEmpty() && value != null) {
 					installmentPriceMap.put(Integer.parseInt(parcel), value);

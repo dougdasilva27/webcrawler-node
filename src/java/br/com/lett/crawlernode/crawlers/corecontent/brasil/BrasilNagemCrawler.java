@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -111,7 +111,7 @@ public class BrasilNagemCrawler extends Crawler {
       String priceText = salePriceElement.ownText();
 
       if (!priceText.isEmpty()) {
-        price = MathCommonsMethods.parseFloat(priceText);
+        price = MathUtils.parseFloat(priceText);
       }
     }
 
@@ -224,7 +224,7 @@ public class BrasilNagemCrawler extends Crawler {
       Element boleto = docPrincipal.select(".valor_boleto strong").first();
 
       if (boleto != null) {
-        prices.setBankTicketPrice(MathCommonsMethods.parseFloat(boleto.ownText()));
+        prices.setBankTicketPrice(MathUtils.parseFloat(boleto.ownText()));
       }
 
       String urlParameters = "codigoProduto=" + internalId;
@@ -282,7 +282,7 @@ public class BrasilNagemCrawler extends Crawler {
 
             if (text.contains("x")) {
               Integer installmentNumber = Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
-              Float installmentValue = MathCommonsMethods.parseFloat(text.split("x")[1]);
+              Float installmentValue = MathUtils.parseFloat(text.split("x")[1]);
 
               installmentPriceMap.put(installmentNumber, installmentValue);
             }

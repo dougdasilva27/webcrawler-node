@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -267,10 +267,10 @@ public class BrasilCopaferCrawler extends Crawler {
 		Element maxInstallmentNumberElement = document.select("#ContentSite_divAvailable .text_preco_prod_listagem_parcelas").first();
 		Element installmentPriceElement = document.select("#ContentSite_divAvailable .text_preco_prod_listagem_parcelado").first();
 		if (maxInstallmentNumberElement != null && installmentPriceElement != null) {
-			List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(maxInstallmentNumberElement.text());
+			List<String> parsedNumbers = MathUtils.parsePositiveNumbers(maxInstallmentNumberElement.text());
 			if (parsedNumbers.size() > 0) {
 				Integer maxInstallmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+				Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 				
 				installments.put(maxInstallmentNumber, installmentPrice);
 			}
@@ -291,7 +291,7 @@ public class BrasilCopaferCrawler extends Crawler {
 		Float bankSlipPrice = null;
 		Element bankSlipPriceElement = document.select("#ContentSite_divAvailable3 div.conteudo_preco_selos_detalhe #ContentSite_divAvailable .text_preco_prod_listagem_por").first();
 		if (bankSlipPriceElement != null) {
-			bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+			bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
 		}
 		return bankSlipPrice;
 	}

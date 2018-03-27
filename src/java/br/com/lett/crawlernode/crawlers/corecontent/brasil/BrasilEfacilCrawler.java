@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -345,13 +345,13 @@ public class BrasilEfacilCrawler extends Crawler {
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
 							Float result = valueInstallment * 2;
 
-							price = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+							price = MathUtils.normalizeTwoDecimalPlaces(result);
 
 							break;
 							
 						} else if(installment.contains("1")) { // se não achar o preço será o da primeira parcela
 							Float valueInstallment = Float.parseFloat(installmentJSON.getString("amount"));
-							price = MathCommonsMethods.normalizeTwoDecimalPlaces(valueInstallment);
+							price = MathUtils.normalizeTwoDecimalPlaces(valueInstallment);
 						}
 					}
 				}
@@ -392,7 +392,7 @@ public class BrasilEfacilCrawler extends Crawler {
 
 									if(installmentJSON.has("amount")){
 										Float priceBig = Float.parseFloat(installmentJSON.getString("amount"));							
-										Float value = MathCommonsMethods.normalizeTwoDecimalPlaces(priceBig);
+										Float value = MathUtils.normalizeTwoDecimalPlaces(priceBig);
 
 										installmentPriceMap.put(installment, value);
 									}

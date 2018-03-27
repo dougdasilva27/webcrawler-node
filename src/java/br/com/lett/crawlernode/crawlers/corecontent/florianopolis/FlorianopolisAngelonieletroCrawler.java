@@ -22,7 +22,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -349,11 +349,11 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 				String installmentNumberText = installmentNumberTextElements.get(i).text();
 				String installmentPriceText = installmentPriceTextElements.get(i).text();
 
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				if (parsedNumbers.size() == 0) {
-					installments.put(1, MathCommonsMethods.parseFloat(installmentPriceText));
+					installments.put(1, MathUtils.parseFloat(installmentPriceText));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceText));
 				}
 			}
 		}
@@ -489,7 +489,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 		Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por .microFormatoProduto").first();
 		if(elementPrice != null) {
-			price = MathCommonsMethods.parseFloat(elementPrice.text());
+			price = MathUtils.parseFloat(elementPrice.text());
 		}
 
 		return price;

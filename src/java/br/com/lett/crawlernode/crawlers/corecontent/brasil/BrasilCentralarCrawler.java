@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -284,7 +284,7 @@ public class BrasilCentralarCrawler extends Crawler {
       Element aVista = doc.select(".preco4 .preco1").first();
 
       if (aVista != null) {
-        Float bankTicketPrice = MathCommonsMethods.parseFloat(aVista.text().trim());
+        Float bankTicketPrice = MathUtils.parseFloat(aVista.text().trim());
         prices.setBankTicketPrice(bankTicketPrice);
       }
 
@@ -297,7 +297,7 @@ public class BrasilCentralarCrawler extends Crawler {
 
         Integer installment =
             Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", "").trim());
-        Float value = MathCommonsMethods.parseFloat(text.substring(x + 1));
+        Float value = MathUtils.parseFloat(text.substring(x + 1));
 
         installmentPriceMap.put(installment, value);
       }

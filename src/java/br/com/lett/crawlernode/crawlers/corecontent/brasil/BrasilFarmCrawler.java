@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -203,7 +203,7 @@ public class BrasilFarmCrawler extends Crawler {
     Float price = null;
 
     if (json.has("price")) {
-      price = MathCommonsMethods
+      price = MathUtils
           .normalizeTwoDecimalPlaces(((Double) json.getDouble("price")).floatValue());
     }
 
@@ -295,7 +295,7 @@ public class BrasilFarmCrawler extends Crawler {
 
       if (installmentElement.size() > 1) {
         String installment = installmentElement.get(0).ownText().replaceAll("[^0-9]", "").trim();
-        Float value = MathCommonsMethods.parseFloat(installmentElement.get(1).ownText());
+        Float value = MathUtils.parseFloat(installmentElement.get(1).ownText());
 
         if (!installment.isEmpty() && value != null) {
           mapInstallments.put(Integer.parseInt(installment), value);
@@ -326,8 +326,8 @@ public class BrasilFarmCrawler extends Crawler {
 
     Element e = doc.select(".price-old span").first();
     if (e != null) {
-      Float price = MathCommonsMethods.parseFloat(e.ownText());
-      priceFrom = MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue());
+      Float price = MathUtils.parseFloat(e.ownText());
+      priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
     }
 
     return priceFrom;

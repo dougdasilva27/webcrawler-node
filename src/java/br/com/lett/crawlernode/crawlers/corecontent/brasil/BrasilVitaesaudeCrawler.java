@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -156,7 +156,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathCommonsMethods.parseFloat(priceText);
+      price = MathUtils.parseFloat(priceText);
     }
 
     // Casos que não tem preço a vista em destaque
@@ -184,7 +184,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
     if (price == null && variationInfo.has("unformattedPrice")) {
       Double pDouble = variationInfo.getDouble("unformattedPrice");
-      price = MathCommonsMethods.normalizeTwoDecimalPlaces(pDouble.floatValue());
+      price = MathUtils.normalizeTwoDecimalPlaces(pDouble.floatValue());
     }
 
     return price;
@@ -317,7 +317,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
           Element valueElement = installmentsElement.select(".ValorProduto").first();
 
           if (valueElement != null) {
-            Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
+            Float value = MathUtils.parseFloat(valueElement.ownText());
 
             if (value != null) {
               installmentPriceMap.put(installment, value);
@@ -362,7 +362,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
             Element valueElement = installmentsElement.select(".ValorProduto").first();
 
             if (valueElement != null) {
-              Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
+              Float value = MathUtils.parseFloat(valueElement.ownText());
 
               if (value != null) {
                 installmentPriceMap.put(installment, value);

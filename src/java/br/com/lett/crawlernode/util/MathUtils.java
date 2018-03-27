@@ -7,7 +7,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MathCommonsMethods {
+public class MathUtils {
 	
 	public static final String PRICE_REGEX = "[^\\d.]+"; // get anything that is not either a digit or a period 
 	

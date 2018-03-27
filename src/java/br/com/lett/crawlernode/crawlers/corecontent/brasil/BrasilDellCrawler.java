@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -211,7 +211,7 @@ public class BrasilDellCrawler extends Crawler {
 			if(!text.isEmpty()){
 				int x = text.indexOf('.')+1;
 				
-				price = MathCommonsMethods.parseFloat(text.substring(x));
+				price = MathUtils.parseFloat(text.substring(x));
 			}
 		}
 
@@ -223,12 +223,12 @@ public class BrasilDellCrawler extends Crawler {
 		Element specialPrice = document.select(".pricing_sale_price").first();		
 
 		if (specialPrice != null) {
-			price = MathCommonsMethods.parseFloat(specialPrice.ownText());
+			price = MathUtils.parseFloat(specialPrice.ownText());
 		} else {
 			specialPrice = document.select(".pricing_retail_nodiscount_price").first();
 			
 			if (specialPrice != null) {
-				price = MathCommonsMethods.parseFloat(specialPrice.ownText());
+				price = MathUtils.parseFloat(specialPrice.ownText());
 			}
 		}
 
@@ -392,7 +392,7 @@ public class BrasilDellCrawler extends Crawler {
 			Element sightPriceElement = doc.select(".retailSmallPrice .price").first();
 			
 			if(sightPriceElement != null) {
-				Float sightPrice = MathCommonsMethods.parseFloat(sightPriceElement.ownText());
+				Float sightPrice = MathUtils.parseFloat(sightPriceElement.ownText());
 				
 				// bank ticket
 				prices.setBankTicketPrice(sightPrice);
@@ -410,7 +410,7 @@ public class BrasilDellCrawler extends Crawler {
 				int y = text.indexOf('.', x);
 				
 				Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", "").trim());
-				Float value = MathCommonsMethods.parseFloat(text.substring(x, y));
+				Float value = MathUtils.parseFloat(text.substring(x, y));
 				
 				installmentPriceMap.put(installment, value);
 			}

@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -119,7 +119,7 @@ public class BrasilVitaesaudeRatingReviewCrawler extends RatingReviewCrawler {
 			}
 			
 			if(count > 0) {
-				avgRating =  MathCommonsMethods.normalizeTwoDecimalPlaces(((double)values) / count);
+				avgRating =  MathUtils.normalizeTwoDecimalPlaces(((double)values) / count);
 			}
 		}
 		

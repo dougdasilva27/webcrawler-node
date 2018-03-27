@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -383,7 +383,7 @@ public class BrasilMoblyCrawler extends Crawler {
 					Integer.parseInt(jsonInformation.get("installmentsCount").toString()));
 		}
 		if (jsonInformation.has("installmentsValue")) {
-			jsonSku.put("InstallmentMaxValue", MathCommonsMethods.normalizeTwoDecimalPlaces(
+			jsonSku.put("InstallmentMaxValue", MathUtils.normalizeTwoDecimalPlaces(
 					Float.parseFloat(jsonInformation.getString("installmentsValue").replace(",", "."))));
 		}
 

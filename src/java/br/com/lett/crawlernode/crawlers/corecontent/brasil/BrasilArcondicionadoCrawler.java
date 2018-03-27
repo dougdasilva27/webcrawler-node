@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -232,7 +232,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 			Element bankTicketPriceElement =
 					document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
 			if (bankTicketPriceElement != null) {
-				bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
+				bankTicketPrice = MathUtils.parseFloat(bankTicketPriceElement.text());
 			}
 
 			// card payment options
@@ -259,7 +259,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 				// installment price is the last <b></b> child element
 				Element installmentPriceElement = installmentElement.select("b").last();
 				if (installmentPriceElement != null) {
-					installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+					installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 				}
 
 				installments.put(installmentNumber, installmentPrice);

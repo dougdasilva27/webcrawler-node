@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -174,7 +174,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
       if (prices.has("realaPrazo") && prices.get("realaPrazo") instanceof Double) {
         Double priceDouble = prices.getDouble("realaPrazo");
-        price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
+        price = MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue());
       }
     }
 
@@ -292,17 +292,17 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
     if (product.has("precoprazo") && product.get("precoprazo") instanceof Double) {
       Double p = product.getDouble("precoprazo");
-      priceSeller = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+      priceSeller = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
     }
 
     if (product.has("precovista") && product.get("precovista") instanceof Double) {
       Double p = product.getDouble("precovista");
-      priceSeller1x = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+      priceSeller1x = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
     }
 
     if (product.has("precode") && product.get("precode") instanceof Double) {
       Double p = product.getDouble("precode");
-      priceFrom = MathCommonsMethods.normalizeTwoDecimalPlaces(p.floatValue());
+      priceFrom = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
     }
 
     if (!sellerName.equals(SELLER_NAME_LOWER) && !sellerName.isEmpty()) {
@@ -340,10 +340,10 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       }
 
       if (priceFrom != null) {
-        p.setPriceFrom(MathCommonsMethods.normalizeTwoDecimalPlaces(priceFrom.doubleValue()));
+        p.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(priceFrom.doubleValue()));
       }
 
-      installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
+      installments.put(10, MathUtils.normalizeTwoDecimalPlaces(price / 10f));
 
       p.insertCardInstallment(Card.AMEX.toString(), installments);
       p.insertCardInstallment(Card.VISA.toString(), installments);
@@ -366,13 +366,13 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       if (pricesJson.has("realaVista") && pricesJson.get("realaVista") instanceof Double) {
         Double boleto = pricesJson.getDouble("realaVista");
         p.setBankTicketPrice(boleto);
-        installments.put(1, MathCommonsMethods.normalizeTwoDecimalPlaces(boleto.floatValue()));
+        installments.put(1, MathUtils.normalizeTwoDecimalPlaces(boleto.floatValue()));
       } else {
         installments.put(1, price);
         p.setBankTicketPrice(price);
       }
 
-      installments.put(10, MathCommonsMethods.normalizeTwoDecimalPlaces(price / 10f));
+      installments.put(10, MathUtils.normalizeTwoDecimalPlaces(price / 10f));
 
       p.insertCardInstallment(Card.AMEX.toString(), installments);
       p.insertCardInstallment(Card.VISA.toString(), installments);

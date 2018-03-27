@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -201,7 +201,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
     }
 
     if (salePriceElement != null) {
-      price = MathCommonsMethods.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloat(salePriceElement.ownText());
     }
 
     return price;
@@ -322,7 +322,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
       Element installmentsElement = doc.select(".preco_por_texto label").first();
 
       if (installmentsElement != null) {
-        Float aprazo = MathCommonsMethods.parseFloat(installmentsElement.ownText());
+        Float aprazo = MathUtils.parseFloat(installmentsElement.ownText());
         if (aprazo != null) {
           installmentPriceMap.put(1, aprazo);
         }
@@ -330,7 +330,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
         installmentsElement = doc.select(".preco_por").first();
 
         if (installmentsElement != null) {
-          Float aprazo = MathCommonsMethods.parseFloat(installmentsElement.ownText());
+          Float aprazo = MathUtils.parseFloat(installmentsElement.ownText());
           if (aprazo != null) {
             installmentPriceMap.put(1, aprazo);
           }

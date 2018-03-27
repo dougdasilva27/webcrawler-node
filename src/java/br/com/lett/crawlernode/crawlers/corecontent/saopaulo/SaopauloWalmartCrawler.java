@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -178,7 +178,7 @@ public class SaopauloWalmartCrawler extends Crawler {
 
       if (visaCardPaymentOptions.containsKey(1)) {
         Double priceDouble = visaCardPaymentOptions.get(1);
-        price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceDouble.floatValue());
+        price = MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue());
       }
     }
 
@@ -332,7 +332,7 @@ public class SaopauloWalmartCrawler extends Crawler {
         Element priceElement = e.select(".product-price .product-price-value").first();
 
         if (priceElement != null) {
-          Float price = MathCommonsMethods.parseFloat(priceElement.text().trim());
+          Float price = MathUtils.parseFloat(priceElement.text().trim());
           installmentPriceMap.put(1, price);
           prices.setBankTicketPrice(price);
         }
@@ -346,7 +346,7 @@ public class SaopauloWalmartCrawler extends Crawler {
           Element valueElement = installmentElement.select(".product-price-price").first();
 
           if (valueElement != null) {
-            Float value = MathCommonsMethods.parseFloat(valueElement.text());
+            Float value = MathUtils.parseFloat(valueElement.text());
 
             installmentPriceMap.put(installment, value);
           }

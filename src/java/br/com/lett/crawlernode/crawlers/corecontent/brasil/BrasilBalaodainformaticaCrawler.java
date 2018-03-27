@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -312,7 +312,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
           int x = bankText.indexOf("ou");
           int discount = Integer.parseInt(bankText.substring(x).replaceAll("[^0-9]", "").trim());
 
-          Float bankTicket = MathCommonsMethods.normalizeTwoDecimalPlaces((float) (price.doubleValue() - (price.doubleValue() * (discount / 100.0))));
+          Float bankTicket = MathUtils.normalizeTwoDecimalPlaces((float) (price.doubleValue() - (price.doubleValue() * (discount / 100.0))));
           prices.setBankTicketPrice(bankTicket);
         }
       } else {

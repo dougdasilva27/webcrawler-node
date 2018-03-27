@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
@@ -49,7 +49,7 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
       Double avgRating = getTotalAvgRating(rating);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(MathCommonsMethods.normalizeTwoDecimalPlaces(avgRating));
+      ratingReviews.setAverageOverallRating(MathUtils.normalizeTwoDecimalPlaces(avgRating));
       ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 

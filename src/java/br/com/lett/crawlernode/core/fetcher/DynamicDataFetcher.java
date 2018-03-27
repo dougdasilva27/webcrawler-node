@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 
 public class DynamicDataFetcher {
 
@@ -151,7 +151,7 @@ public class DynamicDataFetcher {
     }
 
     if (!proxies.isEmpty()) {
-      int i = MathCommonsMethods.randInt(0, proxies.size() - 1);
+      int i = MathUtils.randInt(0, proxies.size() - 1);
       return proxies.get(i);
     }
     return null;
@@ -346,7 +346,7 @@ public class DynamicDataFetcher {
    * @return a String representing an user agent
    */
   public static String randUserAgent() {
-    return userAgents.get(MathCommonsMethods.randInt(0, userAgents.size() - 1));
+    return userAgents.get(MathUtils.randInt(0, userAgents.size() - 1));
   }
 
 }

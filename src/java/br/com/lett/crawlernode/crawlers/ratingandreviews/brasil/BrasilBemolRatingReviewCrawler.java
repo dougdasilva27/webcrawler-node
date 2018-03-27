@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -88,7 +88,7 @@ public class BrasilBemolRatingReviewCrawler extends RatingReviewCrawler {
 				star--;
 			}
 
-			avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(total / totalRating);
+			avgRating = MathUtils.normalizeTwoDecimalPlaces(total / totalRating);
 		}
 
 		return avgRating;

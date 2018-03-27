@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -121,7 +121,7 @@ public class BrasilCentraltecCrawler extends Crawler {
     Element normalPrice = document.select("#product-price-" + internalId).first();
 
     if (normalPrice != null) {
-      price = MathCommonsMethods.parseFloat(normalPrice.text());
+      price = MathUtils.parseFloat(normalPrice.text());
     }
 
     if (price == null || price <= 0) {
@@ -254,10 +254,10 @@ public class BrasilCentraltecCrawler extends Crawler {
       Element bank = doc.select(".box-central .price-box .boletoBox").first();
 
       if (bank != null) {
-        Float bankTicketPrice = MathCommonsMethods.parseFloat(bank.text());
+        Float bankTicketPrice = MathUtils.parseFloat(bank.text());
 
         if (bankTicketPrice == null || bankTicketPrice <= 0) {
-          bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(price - (Float.parseFloat(bank.attr("data-desconto")) * price));
+          bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(price - (Float.parseFloat(bank.attr("data-desconto")) * price));
         }
 
         prices.setBankTicketPrice(bankTicketPrice);
@@ -275,7 +275,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 
           if (parcela != null && priceElement != null) {
             String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathCommonsMethods.parseFloat(priceElement.ownText());
+            Float value = MathUtils.parseFloat(priceElement.ownText());
 
             if (!text.isEmpty() && value != null && value > 0) {
               installmentPriceMap.put(Integer.parseInt(text), value);
@@ -285,7 +285,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 
               if (!textParcela.isEmpty()) {
                 Integer parcelaNumber = Integer.parseInt(textParcela);
-                Float valueParcela = MathCommonsMethods.normalizeTwoDecimalPlaces(price / parcelaNumber);
+                Float valueParcela = MathUtils.normalizeTwoDecimalPlaces(price / parcelaNumber);
 
                 installmentPriceMap.put(parcelaNumber, valueParcela);
               }
@@ -300,7 +300,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 
           if (parcela != null && priceElement != null) {
             String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathCommonsMethods.parseFloat(priceElement.text());
+            Float value = MathUtils.parseFloat(priceElement.text());
 
             if (!text.isEmpty() && value != null && value > 0) {
               installmentPriceMap.put(Integer.parseInt(text), value);
@@ -354,7 +354,7 @@ public class BrasilCentraltecCrawler extends Crawler {
   private Float calcJuros(Float price, Integer installment, Float juros) {
     Double value = price * (juros / (1 - Math.pow(1 + juros, installment * -1)));
 
-    return MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue());
+    return MathUtils.normalizeTwoDecimalPlaces(value.floatValue());
   }
 
 }

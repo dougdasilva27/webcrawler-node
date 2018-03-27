@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -97,7 +97,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select(".txt_preco_por").first();
       if (elementPrice != null) {
-        price = MathCommonsMethods.parseFloat(elementPrice.text());
+        price = MathUtils.parseFloat(elementPrice.text());
       }
 
       // Categorias

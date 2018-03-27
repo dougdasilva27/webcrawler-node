@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -234,7 +234,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
     Element elementPrice = doc.select(".ctnValorUnitario span").first();
     if (elementPrice != null) {
-      price = MathCommonsMethods.parseFloat(elementPrice.text());
+      price = MathUtils.parseFloat(elementPrice.text());
     }
 
     return price;
@@ -260,7 +260,7 @@ public class BrasilMartinsCrawler extends Crawler {
       List<TextNode> textNodes = internalIdElement.textNodes();
       if (!textNodes.isEmpty()) {
         String internalIdText = textNodes.get(0).text().trim();
-        List<String> parsedNumbers = MathCommonsMethods.parseNumbers(internalIdText);
+        List<String> parsedNumbers = MathUtils.parseNumbers(internalIdText);
         if (!parsedNumbers.isEmpty()) {
           internalId = parsedNumbers.get(0);
         }

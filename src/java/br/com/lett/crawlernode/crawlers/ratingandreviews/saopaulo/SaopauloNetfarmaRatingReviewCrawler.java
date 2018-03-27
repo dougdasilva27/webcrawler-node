@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
@@ -55,7 +55,7 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 				if (totalRating.equals(0.0)) {
 					avgRating = 0.0;
 				} else {
-					avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating/numRatings);
+					avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating/numRatings);
 				}
 				
 				ratingReviews.setTotalRating(numRatings);

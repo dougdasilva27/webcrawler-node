@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler {
@@ -48,7 +48,7 @@ public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler 
         }
 
         if (totalNumberOfEvaluations > 0) {
-          Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumberOfEvaluations);
+          Double avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumberOfEvaluations);
 
           ratingsReviews.setTotalRating(totalNumberOfEvaluations);
           ratingsReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);

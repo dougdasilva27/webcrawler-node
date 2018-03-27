@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -417,11 +417,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
           int x = text.indexOf('x') + 1;
 
           Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
-          Float installmentValue = MathCommonsMethods.parseFloat(text.substring(x));
+          Float installmentValue = MathUtils.parseFloat(text.substring(x));
 
           installmentsPriceMapShop.put(installment, installmentValue);
         } else if (!installmentsPriceMap.containsKey(1)) {
-          Float installmentValue = MathCommonsMethods.parseFloat(text);
+          Float installmentValue = MathUtils.parseFloat(text);
           installmentsPriceMapShop.put(1, installmentValue);
         }
       }
@@ -435,11 +435,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
           int x = text.indexOf('x') + 1;
 
           Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
-          Float installmentValue = MathCommonsMethods.parseFloat(text.substring(x));
+          Float installmentValue = MathUtils.parseFloat(text.substring(x));
 
           installmentsPriceMap.put(installment, installmentValue);
         } else if (!installmentsPriceMap.containsKey(1)) {
-          Float installmentValue = MathCommonsMethods.parseFloat(text);
+          Float installmentValue = MathUtils.parseFloat(text);
           installmentsPriceMap.put(1, installmentValue);
         }
       }

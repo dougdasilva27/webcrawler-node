@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
 
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -69,7 +69,7 @@ public class Product {
 	
 	public void setPrice(Float price) {
 		if ( price != null ) {
-			this.price = MathCommonsMethods.normalizeTwoDecimalPlaces(price);
+			this.price = MathUtils.normalizeTwoDecimalPlaces(price);
 		} else {
 			this.price = price;
 		}		

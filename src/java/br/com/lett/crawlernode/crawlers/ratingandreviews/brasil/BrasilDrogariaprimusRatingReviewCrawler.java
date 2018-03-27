@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.RatingsReviews;
 
@@ -93,7 +93,7 @@ public class BrasilDrogariaprimusRatingReviewCrawler extends RatingReviewCrawler
 		}
 		
 		if(ratingNumber > 0) {
-			avgRating =  MathCommonsMethods.normalizeTwoDecimalPlaces(((double)values) / ratingNumber);
+			avgRating =  MathUtils.normalizeTwoDecimalPlaces(((double)values) / ratingNumber);
 		}
 
 		return  new Pair<>(ratingNumber, avgRating);

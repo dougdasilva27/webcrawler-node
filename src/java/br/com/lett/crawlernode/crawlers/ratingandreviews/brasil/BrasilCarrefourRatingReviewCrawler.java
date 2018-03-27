@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
@@ -111,7 +111,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 				String ratingStarText = ratingStarElement.text();
 				String ratingCountText = ratingStarCount.attr("data-star");
 
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(ratingStarText);
+				List<String> parsedNumbers = MathUtils.parseNumbers(ratingStarText);
 				if (parsedNumbers.size() > 0 && !ratingCountText.isEmpty()) {
 					ratingDistributionMap.put(parsedNumbers.get(0), Integer.parseInt(ratingCountText));
 				}

@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -366,7 +366,7 @@ public class BrasilFastshopCrawler extends Crawler {
         if (jsonCatalog.has("totalPrice")) {
           String text = jsonCatalog.getString("totalPrice");
           if (!text.isEmpty()) {
-            price = MathCommonsMethods.parseFloat(text);
+            price = MathUtils.parseFloat(text);
           } else if (jsonCatalog.has("offerPrice")) {
             price =
                 Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
@@ -408,7 +408,7 @@ public class BrasilFastshopCrawler extends Crawler {
         JSONObject priceData = jsonPrices.getJSONObject("priceData");
 
         if (priceData.has("offerPrice")) {
-          Float offerPrice = MathCommonsMethods.parseFloat(priceData.getString("offerPrice"));
+          Float offerPrice = MathUtils.parseFloat(priceData.getString("offerPrice"));
 
           // Preço de boleto e 1 vez no cartão são iguais.
           installmentPriceMap.put(1, offerPrice);
@@ -425,7 +425,7 @@ public class BrasilFastshopCrawler extends Crawler {
             int x = text.indexOf("x");
 
             Integer installment = Integer.parseInt(text.substring(0, x));
-            Float value = MathCommonsMethods.parseFloat(text.substring(x));
+            Float value = MathUtils.parseFloat(text.substring(x));
 
             installmentPriceMap.put(installment, value);
           }

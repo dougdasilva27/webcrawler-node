@@ -60,7 +60,7 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 
 
 /**
@@ -1013,7 +1013,7 @@ public class DataFetcher {
         }
 
         if (!proxies.isEmpty()) {
-          nextProxy = proxies.get(MathCommonsMethods.randInt(0, proxies.size() - 1));
+          nextProxy = proxies.get(MathUtils.randInt(0, proxies.size() - 1));
         } else {
           attemptTemp += 1;
 
@@ -1037,7 +1037,7 @@ public class DataFetcher {
    * @return
    */
   public static String randUserAgent() {
-    return userAgents.get(MathCommonsMethods.randInt(0, userAgents.size() - 1));
+    return userAgents.get(MathUtils.randInt(0, userAgents.size() - 1));
   }
 
   /**
@@ -1046,7 +1046,7 @@ public class DataFetcher {
    * @return
    */
   public static String randMobileUserAgent() {
-    return mobileUserAgents.get(MathCommonsMethods.randInt(0, mobileUserAgents.size() - 1));
+    return mobileUserAgents.get(MathUtils.randInt(0, mobileUserAgents.size() - 1));
   }
 
   /**

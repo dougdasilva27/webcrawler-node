@@ -38,7 +38,7 @@ import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import dbmodels.Tables;
 import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerCategories;
@@ -151,7 +151,7 @@ public class Persistence {
       insertMapCrawler.put(crawler.PIC, primaryPic);
 
       if (price != null) {
-        insertMapCrawler.put(crawler.PRICE, MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
+        insertMapCrawler.put(crawler.PRICE, MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()));
       }
 
       if (prices != null) {

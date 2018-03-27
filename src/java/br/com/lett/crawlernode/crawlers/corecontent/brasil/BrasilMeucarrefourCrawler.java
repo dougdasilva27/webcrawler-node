@@ -22,7 +22,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -160,7 +160,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
     Float price = null;
 
     if (json.has("price")) {
-      price = MathCommonsMethods.parseFloat(json.getString("discountPrice"));
+      price = MathUtils.parseFloat(json.getString("discountPrice"));
     }
 
     return price;

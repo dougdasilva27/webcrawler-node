@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -281,7 +281,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 		if (bankSlipPriceElement != null) {
 			String bankSlipPriceText = bankSlipPriceElement.ownText();
 			if (!bankSlipPriceText.isEmpty()) {
-				bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceText);
+				bankSlipPrice = MathUtils.parseFloat(bankSlipPriceText);
 			}
 		}
 		
@@ -309,9 +309,9 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text();
 				String installmentPriceText = installmentPriceElement.text();
 				
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceText);
+				Float installmentPrice = MathUtils.parseFloat(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}
@@ -326,9 +326,9 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				String installmentNumberText = installmentNumberElement.text();
 				String installmentPriceText = installmentPriceElement.text();
 				
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceText);
+				Float installmentPrice = MathUtils.parseFloat(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -136,12 +136,12 @@ public class BrasilRamsonsCrawler extends Crawler {
 
 		if (salePriceElement != null) {
 			priceText = salePriceElement.ownText();
-			price = MathCommonsMethods.parseFloat(priceText);
+			price = MathUtils.parseFloat(priceText);
 		} else {
 			salePriceElement = document.select("#lblPreco.regular").first();
 			if (salePriceElement != null) {
 				priceText = salePriceElement.ownText();
-				price = MathCommonsMethods.parseFloat(priceText);
+				price = MathUtils.parseFloat(priceText);
 			}
 		}
 
@@ -248,7 +248,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 				String priceVistaString = vista.ownText();
 				
 				if(!priceVistaString.isEmpty()) {
-					Float priceVista = MathCommonsMethods.parseFloat(priceVistaString);
+					Float priceVista = MathUtils.parseFloat(priceVistaString);
 					
 					prices.setBankTicketPrice(priceVista);
 					installmentPriceMap.put(1, priceVista);
@@ -272,7 +272,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 					Element installmentValue = installments.select("#lblParcelamento2 strong").first();
 					
 					if(installmentValue != null) {
-						Float priceInstallment = MathCommonsMethods.parseFloat(installmentValue.ownText());
+						Float priceInstallment = MathUtils.parseFloat(installmentValue.ownText());
 						
 						installmentPriceMap.put(installment, priceInstallment);
 					}
@@ -282,7 +282,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 				
 				if(secondInstallment.size() >= 2) {
 					Integer installment = Integer.parseInt(secondInstallment.get(0).text().replaceAll("[^0-9]", ""));
-					Float priceInstallment = MathCommonsMethods.parseFloat(secondInstallment.get(1).text());
+					Float priceInstallment = MathUtils.parseFloat(secondInstallment.get(1).text());
 					
 					installmentPriceMap.put(installment, priceInstallment);
 				}

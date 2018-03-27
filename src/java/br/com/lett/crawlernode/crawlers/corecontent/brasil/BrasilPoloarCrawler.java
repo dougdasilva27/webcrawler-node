@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -183,7 +183,7 @@ public class BrasilPoloarCrawler extends Crawler {
 				Map<Integer, Double> card = installment.getValue();
 
 				if (card.containsKey(1)) {
-					price = MathCommonsMethods.normalizeTwoDecimalPlaces(card.get(1).floatValue());
+					price = MathUtils.normalizeTwoDecimalPlaces(card.get(1).floatValue());
 					break;
 				}
 			}

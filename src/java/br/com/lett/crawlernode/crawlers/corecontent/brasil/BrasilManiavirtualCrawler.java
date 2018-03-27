@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -233,7 +233,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 			Element vistaPrice = doc.select("div.prices > div > strong").first();
 
 			if (vistaPrice != null) {
-				Float bankTicketPrice = MathCommonsMethods.parseFloat(vistaPrice.ownText());
+				Float bankTicketPrice = MathUtils.parseFloat(vistaPrice.ownText());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
 
@@ -247,7 +247,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 					int x = text.indexOf("de") + 2;
 
 					String installment = text.substring(0, x).replaceAll("[^0-9]", "");
-					Float value = MathCommonsMethods.parseFloat(text.substring(x));
+					Float value = MathUtils.parseFloat(text.substring(x));
 
 					if (!installment.isEmpty() && value != null) {
 						installmentPriceMap.put(Integer.parseInt(installment), value);

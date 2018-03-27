@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 
 
 public class ProxyCollection {
@@ -161,7 +161,7 @@ public class ProxyCollection {
     } else {
       intervals = this.intervalsMarketsMapImages.get(market.getNumber());
     }
-    Interval<Integer> interval = MathCommonsMethods.findInterval(intervals, attempt);
+    Interval<Integer> interval = MathUtils.findInterval(intervals, attempt);
     if (interval != null) {
       return interval.getName();
     }

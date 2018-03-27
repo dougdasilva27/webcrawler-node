@@ -23,7 +23,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -519,7 +519,7 @@ public class BrasilLilianiCrawler extends Crawler {
     if (price != null) {
       Element boleto = doc.select("#lblPrecoAVista").first();
       if (boleto != null) {
-        prices.setBankTicketPrice(MathCommonsMethods.parseFloat(boleto.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloat(boleto.text()));
       }
 
       // installments
@@ -528,7 +528,7 @@ public class BrasilLilianiCrawler extends Crawler {
       // 1x
       Element firstPaymentElement = doc.select("#infoPrices .price sale price-to strong").first();
       if (firstPaymentElement != null) { // 1x
-        Float firstInstallmentPrice = MathCommonsMethods.parseFloat(firstPaymentElement.text());
+        Float firstInstallmentPrice = MathUtils.parseFloat(firstPaymentElement.text());
         installments.put(1, firstInstallmentPrice);
       }
 
@@ -536,11 +536,11 @@ public class BrasilLilianiCrawler extends Crawler {
       Element maxInstallmentNumberWithoutInterestElement = doc.select("#lblParcelamento1 strong").first();
       Element maxInstallmentPriceWithoutInterestElement = doc.select("#lblParcelamento2 strong").first();
       if (maxInstallmentNumberWithoutInterestElement != null && maxInstallmentPriceWithoutInterestElement != null) {
-        List<String> parsedNumbers = MathCommonsMethods.parseNumbers(maxInstallmentNumberWithoutInterestElement.text());
+        List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithoutInterestElement.text());
 
         if (!parsedNumbers.isEmpty()) {
           Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-          Float installmentPrice = MathCommonsMethods.parseFloat(maxInstallmentPriceWithoutInterestElement.text());
+          Float installmentPrice = MathUtils.parseFloat(maxInstallmentPriceWithoutInterestElement.text());
 
           installments.put(installmentNumber, installmentPrice);
         }
@@ -550,11 +550,11 @@ public class BrasilLilianiCrawler extends Crawler {
       Element maxInstallmentNumberWithInterestElement = doc.select("#lblOutroParc strong").first();
       Element maxInstallmentPriceWithInterestElement = doc.select("#lblOutroParc strong").last();
       if (maxInstallmentNumberWithInterestElement != null && maxInstallmentPriceWithInterestElement != null) {
-        List<String> parsedNumbers = MathCommonsMethods.parseNumbers(maxInstallmentNumberWithInterestElement.text());
+        List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithInterestElement.text());
 
         if (!parsedNumbers.isEmpty()) {
           Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-          Float installmentPrice = MathCommonsMethods.parseFloat(maxInstallmentPriceWithInterestElement.text());
+          Float installmentPrice = MathUtils.parseFloat(maxInstallmentPriceWithInterestElement.text());
 
           installments.put(installmentNumber, installmentPrice);
         }

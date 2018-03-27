@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -354,9 +354,9 @@ public class BrasilMultilojaCrawler extends Crawler {
 		Float price = null;
 
 		if(jsonPrices.has("price")){
-			price = MathCommonsMethods.parseFloat(jsonPrices.getString("price"));
+			price = MathUtils.parseFloat(jsonPrices.getString("price"));
 		} else if(jsonPrices.has("priceVista")){
-			price = MathCommonsMethods.parseFloat(jsonPrices.getString("priceVista"));
+			price = MathUtils.parseFloat(jsonPrices.getString("priceVista"));
 		}
 
 		return price;
@@ -536,7 +536,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			if(jsonPrices.has("priceVista")){
-				Float vistaPrice = MathCommonsMethods.parseFloat(jsonPrices.getString("priceVista"));
+				Float vistaPrice = MathUtils.parseFloat(jsonPrices.getString("priceVista"));
 
 				// 1x no cartão e boleto são o mesmo preço
 				installmentPriceMap.put(1, vistaPrice);
@@ -548,7 +548,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 				if(parcels.has("installment") && parcels.has("installmentValue")){
 					Integer installment = Integer.parseInt(parcels.getString("installment"));
-					Float value = MathCommonsMethods.parseFloat(parcels.getString("installmentValue"));
+					Float value = MathUtils.parseFloat(parcels.getString("installmentValue"));
 
 					installmentPriceMap.put(installment, value);
 				}

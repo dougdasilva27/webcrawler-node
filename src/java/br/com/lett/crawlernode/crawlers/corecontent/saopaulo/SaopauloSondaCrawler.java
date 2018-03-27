@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -100,7 +100,7 @@ public class SaopauloSondaCrawler extends Crawler {
     Element salePriceElement = document.select(".price-full .price strong").first();
 
     if (salePriceElement != null) {
-      price = MathCommonsMethods.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloat(salePriceElement.ownText());
     }
 
     return price;
@@ -203,7 +203,7 @@ public class SaopauloSondaCrawler extends Crawler {
       Element sondaElement = doc.select(".cartao-sonda .price-full .price strong span").first();
 
       if (sondaElement != null) {
-        Float sondaPrice = MathCommonsMethods.parseFloat(sondaElement.ownText());
+        Float sondaPrice = MathUtils.parseFloat(sondaElement.ownText());
 
         Map<Integer, Float> installmentPriceMapSonda = new TreeMap<>();
         installmentPriceMapSonda.put(1, sondaPrice);

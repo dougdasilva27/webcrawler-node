@@ -21,7 +21,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -342,7 +342,7 @@ public class BrasilClubedolarCrawler extends Crawler {
 				
 				if(discountBoleto != null){
 					Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue()/100.0)));
-					bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+					bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(result);
 				}
 				
 				prices.setBankTicketPrice(bankTicketPrice);

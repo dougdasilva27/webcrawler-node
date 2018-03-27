@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -232,7 +232,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 					Element valueElement = installments.select("#lblParcelamento2 > strong").first();
 					
 					if(valueElement != null) {
-						Float value = MathCommonsMethods.parseFloat(valueElement.text());
+						Float value = MathUtils.parseFloat(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);
 					}

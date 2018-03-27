@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -149,8 +149,8 @@ public class BrasilAmbientairCrawler extends Crawler {
     Double priceFrom = null;
 
     if (jsonSku.has("listPriceFormated")) {
-      Float price = MathCommonsMethods.parseFloat(jsonSku.get("listPriceFormated").toString());
-      priceFrom = MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue());
+      Float price = MathUtils.parseFloat(jsonSku.get("listPriceFormated").toString());
+      priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
     }
 
     return priceFrom;
@@ -240,7 +240,7 @@ public class BrasilAmbientairCrawler extends Crawler {
       String nameSeller = json.getString("seller").toLowerCase().trim();
 
       if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
-        Float price = MathCommonsMethods.parseFloat(json.getString("bestPriceFormated"));
+        Float price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
         marketplace.put(nameSeller, price);
       }
     }
@@ -318,7 +318,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bank.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
       } else {
         prices.setBankTicketPrice(price);
       }

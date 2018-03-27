@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -362,7 +362,7 @@ public class BrasilCasashowCrawler extends Crawler {
 
 			Element bankTicketElement = docPrices.select("#divBoleto em").first();
 			if(bankTicketElement != null){				
-				Float bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketElement.text());
+				Float bankTicketPrice = MathUtils.parseFloat(bankTicketElement.text());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
 

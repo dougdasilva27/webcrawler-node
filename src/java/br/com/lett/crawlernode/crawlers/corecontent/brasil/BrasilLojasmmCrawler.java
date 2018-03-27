@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -261,7 +261,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 			Float bankSlipPrice = null;
 			Element bankSlipPriceElement = document.select("#navpa ul.Menupa div.bcaa b").first();
 			if (bankSlipPriceElement != null) {
-				bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+				bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
 				prices.setBankTicketPrice(bankSlipPrice);
 			}
 
@@ -272,10 +272,10 @@ public class BrasilLojasmmCrawler extends Crawler {
 				Element installmentNumberElement = installmentElements.get(i);
 				Element installmentPriceElement = installmentElements.get(i+1);
 				
-				List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(installmentNumberElement.text());				
+				List<String> parsedNumbers = MathUtils.parsePositiveNumbers(installmentNumberElement.text());				
 				if (!parsedNumbers.isEmpty()) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-					Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.ownText());
+					Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.ownText());
 					
 					installments.put(installmentNumber, installmentPrice);
 				}

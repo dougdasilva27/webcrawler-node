@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -236,7 +236,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 			if (priceElement != null && nameElement != null) {
 				String partnerName = nameElement.text().trim().toLowerCase();
-				Float partnerPrice = MathCommonsMethods.parseFloat(priceElement.ownText());
+				Float partnerPrice = MathUtils.parseFloat(priceElement.ownText());
 
 				if (!partnerName.isEmpty() && partnerPrice != null) {
 					marketplace.put(partnerName,
@@ -249,7 +249,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 			Element priceElement = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
 
 			if (priceElement != null) {
-				Float price = MathCommonsMethods.parseFloat(priceElement.ownText());
+				Float price = MathUtils.parseFloat(priceElement.ownText());
 
 				if (price != null) {
 					marketplace.put(principalSeller, crawlPrices(doc, price, true, internalPid));
@@ -329,7 +329,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
 						if (values.size() > 2) {
 							String installment = values.get(0).ownText().replaceAll("[^0-9]", "").trim();
-							Float value = MathCommonsMethods.parseFloat(values.get(2).ownText());
+							Float value = MathUtils.parseFloat(values.get(2).ownText());
 
 							if (!installment.isEmpty() && value != null) {
 								installmentsPriceMap.put(Integer.parseInt(installment), value);

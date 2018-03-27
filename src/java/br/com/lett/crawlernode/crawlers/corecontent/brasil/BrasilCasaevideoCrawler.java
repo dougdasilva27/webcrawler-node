@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -286,7 +286,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
         Integer discount = Integer.parseInt(bankDiscount.text().replaceAll("[^0-9]", "").trim());
         Float result = (float) (price - (price * (discount.floatValue() / 100.0)));
 
-        Float bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+        Float bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(result);
         prices.setBankTicketPrice(bankTicketPrice);
       } else {
         prices.setBankTicketPrice(price);

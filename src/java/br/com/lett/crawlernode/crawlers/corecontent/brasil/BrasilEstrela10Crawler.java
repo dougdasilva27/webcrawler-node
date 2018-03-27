@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -488,7 +488,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 				Element boleto = docJson.select(".instant-price").first();
 				
 				if(boleto != null){
-					Float inCashPrice = MathCommonsMethods.parseFloat(boleto.text());
+					Float inCashPrice = MathUtils.parseFloat(boleto.text());
 					prices.setBankTicketPrice(inCashPrice);
 				}
 				
@@ -568,14 +568,14 @@ public class BrasilEstrela10Crawler extends Crawler {
 				String text = e.text().toLowerCase();
 				
 				if(text.contains("vista")){
-					Float value = MathCommonsMethods.parseFloat(text);
+					Float value = MathUtils.parseFloat(text);
 					mapInstallments.put(1, value);
 				} else {
 					int x = text.indexOf("x")+1;
 					int y = text.indexOf("juros", x);
 					
 					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", "").trim());
-					Float value = MathCommonsMethods.parseFloat(text.substring(x, y));
+					Float value = MathUtils.parseFloat(text.substring(x, y));
 					
 					mapInstallments.put(installment, value);
 				}

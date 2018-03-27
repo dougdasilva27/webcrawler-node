@@ -26,7 +26,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -115,7 +115,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 	 * @return
 	 */
 	private boolean isValidOption(WebElement skuOption) {
-		List<String> parsedIds = MathCommonsMethods.parseNumbers(skuOption.getAttribute("value").trim());
+		List<String> parsedIds = MathUtils.parseNumbers(skuOption.getAttribute("value").trim());
 		if (parsedIds.size() > 0) return true;
 		return false;
 	}
@@ -130,7 +130,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 	 * @return
 	 */
 	private boolean containsId(String id, WebElement skuOption) {
-		List<String> parsedIds = MathCommonsMethods.parseNumbers(skuOption.getAttribute("value").trim());
+		List<String> parsedIds = MathUtils.parseNumbers(skuOption.getAttribute("value").trim());
 		if (parsedIds.size() > 0 && parsedIds.get(0).contains(id)) return true;
 		return false;
 	}
@@ -325,11 +325,11 @@ public class BrasilCdiscountCrawler extends Crawler {
 			Element installmentPriceElement = trElement.select("td").first();
 
 			if (installmentNumberElement != null && installmentPriceElement != null) {
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberElement.text());
 
 				if (parsedNumbers.size() > 0) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-					Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+					Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 
 					installments.put(installmentNumber, installmentPrice);
 				}
@@ -355,7 +355,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		Element priceElement = document.select("#ctl00_Conteudo_ctl22_precoPorValue i").first();
 		if (priceElement != null) {
-			price = MathCommonsMethods.parseFloat(priceElement.text());
+			price = MathUtils.parseFloat(priceElement.text());
 		}
 
 		return price;
@@ -366,7 +366,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		Element internalIdElement = document.select("span[itemprop=productID]").first();
 		if (internalIdElement != null) {
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(internalIdElement.text());
+			List<String> parsedNumbers = MathUtils.parseNumbers(internalIdElement.text());
 			if (parsedNumbers.size() > 0) {
 				internalId = parsedNumbers.get(0);
 			}

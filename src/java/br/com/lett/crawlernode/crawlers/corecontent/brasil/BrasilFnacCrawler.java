@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -200,7 +200,7 @@ public class BrasilFnacCrawler extends Crawler {
 		Element discount = doc.select(".x-product-images-group .x-flags .flag").first();
 
 		if (discount != null) {
-			Float discountF = MathCommonsMethods.parseFloat(discount.ownText());
+			Float discountF = MathUtils.parseFloat(discount.ownText());
 
 			if (discountF != null) {
 				prices.setBankTicketPrice(price - (price * (discountF / 100f)));
@@ -234,7 +234,7 @@ public class BrasilFnacCrawler extends Crawler {
 					String installmentText = installmentNumberElement.text().trim();
 					if (installmentText != null && !installmentText.isEmpty()) {
 						installmentNumber =
-								Integer.parseInt(MathCommonsMethods.parseNumbers(installmentText).get(0));
+								Integer.parseInt(MathUtils.parseNumbers(installmentText).get(0));
 					}
 				}
 				if (installmentPriceElement != null) {

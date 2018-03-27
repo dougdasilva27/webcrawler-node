@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -126,7 +126,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
 		Element salePriceElement = document.select(".prod_box_info_top span[itemprop=price]").first();		
 
 		if (salePriceElement != null) {
-			price = MathCommonsMethods.parseFloat(salePriceElement.text());
+			price = MathUtils.parseFloat(salePriceElement.text());
 		} 
 
 		return price;
@@ -264,7 +264,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
 				int indexY = text.indexOf("(", indexX);
 				
 				String installmentText = text.substring(0, indexX).replaceAll("[^0-9]", "");
-				Float value = MathCommonsMethods.parseFloat(text.substring(indexX, indexY).trim());
+				Float value = MathUtils.parseFloat(text.substring(indexX, indexY).trim());
 				
 				if(!installmentText.isEmpty() && installmentText != "1" && value != null) {
 					installmentPriceMap.put(Integer.parseInt(installmentText), value);

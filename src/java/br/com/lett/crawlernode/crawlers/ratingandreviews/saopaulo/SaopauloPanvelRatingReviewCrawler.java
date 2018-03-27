@@ -9,7 +9,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
@@ -31,14 +31,14 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 			Element numRatingsElement = document.select("div.avaliacao.box_rounded span.num_votantes strong").first();
 			if (numRatingsElement != null) {
 				String text = numRatingsElement.text();
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(text);
+				List<String> parsedNumbers = MathUtils.parseNumbers(text);
 				
 				if (!parsedNumbers.isEmpty()) {
 					Integer numRatings = Integer.parseInt(parsedNumbers.get(0));
 					
 					if (numRatings != null) {
 						Double totalRating = crawlTotalRating(document);
-						Double avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating);
+						Double avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating);
 						
 						ratingReviews.setTotalRating(numRatings);
 						ratingReviews.setAverageOverallRating(avgRating);
@@ -80,7 +80,7 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 		Integer starNumber = null;
 		String starText = tdElement.select("img").first().attr("alt");
 		if (!starText.isEmpty()) {
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(starText);
+			List<String> parsedNumbers = MathUtils.parseNumbers(starText);
 			if (!parsedNumbers.isEmpty()) {
 				starNumber = Integer.parseInt(parsedNumbers.get(0));
 			}
@@ -92,7 +92,7 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
 		Double starRating = 0.0;
 		
 		String text = tdElement.text().trim();
-		List<String> parsedNumbers = MathCommonsMethods.parseNumbers(text);
+		List<String> parsedNumbers = MathUtils.parseNumbers(text);
 		if (!parsedNumbers.isEmpty()) {
 			starRating = Integer.parseInt(parsedNumbers.get(0))/100.0;
 		}

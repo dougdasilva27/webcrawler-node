@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -222,7 +222,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 		// bank ticket
 		Element bankTicketPriceElement = document.select("#comDesconto span").first();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text());
+			bankTicketPrice = MathUtils.parseFloat(bankTicketPriceElement.text());
 		}
 		
 		// card payment options
@@ -301,14 +301,14 @@ public class BrasilBalarotiCrawler extends Crawler {
 			Element installmentPriceElement = linhaFloatsParcelasElements.get(i).select(".fpagVlrParc").first();
 			
 			if (installmentNumberElement != null) {
-				List<String> numbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
+				List<String> numbers = MathUtils.parseNumbers(installmentNumberElement.text());
 				if (numbers.size() == 0) { // à vista
 					installmentNumber = 1;
 				} else {
 					installmentNumber = Integer.parseInt(numbers.get(0));
 				}
 				if (installmentPriceElement != null) {
-					installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+					installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 				}
 				
 				installments.put(installmentNumber, installmentPrice);

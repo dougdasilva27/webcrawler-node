@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -249,10 +249,10 @@ public class BrasilSchumannCrawler extends Crawler {
       Element discountElement = document.select("p[class^=flag desconto-boleto-").first();
 
       if (discountElement != null) {
-        Float discount = MathCommonsMethods.parseFloat(discountElement.ownText());
+        Float discount = MathUtils.parseFloat(discountElement.ownText());
 
         if (discount != null && price != null) {
-          bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(price - (price * (discount / 100f)));
+          bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(price - (price * (discount / 100f)));
         }
       }
     }
@@ -337,11 +337,11 @@ public class BrasilSchumannCrawler extends Crawler {
         String installmentNumberText = installmentNumberElement.text().toLowerCase();
         String installPriceText = installmentPriceElement.text();
 
-        List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+        List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
         if (parsedNumbers.isEmpty()) { // à vista
-          installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
+          installments.put(1, MathUtils.parseFloat(installPriceText));
         } else {
-          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
+          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installPriceText));
         }
       }
     }
@@ -368,12 +368,12 @@ public class BrasilSchumannCrawler extends Crawler {
 
     if (available) {
       if (jsonSku.has("bestPriceFormated") && available) {
-        Float basePrice = MathCommonsMethods.parseFloat(jsonSku.getString("bestPriceFormated"));
+        Float basePrice = MathUtils.parseFloat(jsonSku.getString("bestPriceFormated"));
         Float discountPercentage = crawlDiscountPercentage(document);
 
         // apply the discount on base price
         if (discountPercentage != null) {
-          bankSlipPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
+          bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
         }
       }
     }
@@ -396,12 +396,12 @@ public class BrasilSchumannCrawler extends Crawler {
     Float discountPercentage = null;
     Element discountElement = document.select(".product-info-container p[class^=flag desconto-boleto]").first();
     if (discountElement != null) {
-      List<String> parsedNumbers = MathCommonsMethods.parsePositiveNumbers(discountElement.attr("class"));
+      List<String> parsedNumbers = MathUtils.parsePositiveNumbers(discountElement.attr("class"));
       if (parsedNumbers.size() > 0) {
         try {
           Integer discount = Integer.parseInt(parsedNumbers.get(0));
           Float discountFloat = new Float(discount);
-          discountPercentage = MathCommonsMethods.normalizeTwoDecimalPlaces(discountFloat / 100);
+          discountPercentage = MathUtils.normalizeTwoDecimalPlaces(discountFloat / 100);
         } catch (NumberFormatException e) {
           Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
         }

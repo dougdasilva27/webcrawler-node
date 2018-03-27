@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.prices.Prices;
@@ -187,17 +187,17 @@ public class BrasilAmazonCrawler extends Crawler {
     Element specialPrice = document.select("#priceblock_ourprice").first();
 
     if (salePriceElement != null) {
-      price = MathCommonsMethods.parseFloat(salePriceElement.text().trim());
+      price = MathUtils.parseFloat(salePriceElement.text().trim());
     } else {
       salePriceElement = document.select("#buybox .a-color-price").first();
 
       if (salePriceElement != null) {
-        price = MathCommonsMethods.parseFloat(salePriceElement.ownText().trim());
+        price = MathUtils.parseFloat(salePriceElement.ownText().trim());
       }
     }
 
     if (price == null && specialPrice != null) {
-      price = MathCommonsMethods.parseFloat(specialPrice.ownText().trim());
+      price = MathUtils.parseFloat(specialPrice.ownText().trim());
     }
 
     return price;
@@ -297,7 +297,7 @@ public class BrasilAmazonCrawler extends Crawler {
         if ((name != null || nameImg != null) && priceS != null) {
           String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase()
               : name.text().trim().toLowerCase();
-          Float partnerPrice = MathCommonsMethods.parseFloat(priceS.ownText());
+          Float partnerPrice = MathUtils.parseFloat(priceS.ownText());
 
           if (partnerName.equals(principalSellerFrontPage)) {
             marketplace.put(partnerName, crawlPrices(doc, null));
@@ -526,7 +526,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
         if (info.size() > 1) {
           String installment = info.get(0).ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathCommonsMethods.parseFloat(info.get(1).ownText());
+          Float value = MathUtils.parseFloat(info.get(1).ownText());
 
           if (!installment.isEmpty() && value != null) {
             installments.put(Integer.parseInt(installment), value);

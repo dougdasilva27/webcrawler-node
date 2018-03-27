@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -196,7 +196,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
     Element priceElement = doc.select(".product-details__price span[itemprop=price]").first();
 
     if (priceElement != null) {
-      price = MathCommonsMethods.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloat(priceElement.ownText());
     }
 
     return price;
@@ -287,7 +287,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
           int x = text.indexOf("x") + 1;
 
           Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
-          Float value = MathCommonsMethods.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloat(text.substring(x));
 
           if (installment > 3) {
             installmentPriceMapAmex.put(installment, value);

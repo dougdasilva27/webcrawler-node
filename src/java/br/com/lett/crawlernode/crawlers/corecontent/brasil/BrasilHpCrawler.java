@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -183,7 +183,7 @@ public class BrasilHpCrawler extends Crawler {
 		if(available) {
 			Element elementPrice = document.select("i.sale.price").first();
 			if (elementPrice != null) {
-				price = MathCommonsMethods.parseFloat(elementPrice.ownText());
+				price = MathUtils.parseFloat(elementPrice.ownText());
 			}
 		}
 		
@@ -208,7 +208,7 @@ public class BrasilHpCrawler extends Crawler {
 			Element discount = doc.select(".price.discount").first();
 			
 			if(discount != null) {
-				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(discount.text()));
+				prices.setBankTicketPrice(MathUtils.parseFloat(discount.text()));
 			} else {
 				prices.setBankTicketPrice(price);
 			}
@@ -225,7 +225,7 @@ public class BrasilHpCrawler extends Crawler {
 				
 				if(!parcel.isEmpty()) {
 					Integer installment = Integer.parseInt(parcel);
-					Float value = MathCommonsMethods.parseFloat(tokens[tokens.length-1]);
+					Float value = MathUtils.parseFloat(tokens[tokens.length-1]);
 					
 					installmentsMap.put(installment, value);
 				}

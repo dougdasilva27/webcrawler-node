@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -311,9 +311,9 @@ public class BrasilMultisomCrawler extends Crawler {
 				String installmentPriceText = tdElements.get(1).text();
 				
 				if (!installmentNumberText.isEmpty() && !installmentPriceText.isEmpty()) {
-					List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
+					List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 					if (parsedNumbers.size() > 0) {
-						installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installmentPriceText));
+						installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceText));
 					}
 				}
 			}
@@ -336,7 +336,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		Float bankSlipPrice = null;
 		Element bankSlipPriceElement = document.select(".productRight small strong").first();
 		if (bankSlipPriceElement != null) {
-			bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+			bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
 		}
 		return bankSlipPrice;
 	}

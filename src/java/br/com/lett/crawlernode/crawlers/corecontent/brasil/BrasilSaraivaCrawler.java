@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -116,7 +116,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     Element elementSpan = document.select("section.product-info h1 span").first();
     if (elementSpan != null) {
       String spanText = elementSpan.text();
-      List<String> parsedNumbers = MathCommonsMethods.parseNumbers(spanText);
+      List<String> parsedNumbers = MathUtils.parseNumbers(spanText);
       if (!parsedNumbers.isEmpty()) {
         internalId = parsedNumbers.get(0);
       }
@@ -162,7 +162,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         JSONObject priceJson = priceBlock.getJSONObject("price");
 
         if (priceJson.has("final")) {
-          price = MathCommonsMethods.parseFloat(priceJson.getString("final"));
+          price = MathUtils.parseFloat(priceJson.getString("final"));
         }
       }
     }
@@ -207,7 +207,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       JSONObject billetJson = priceBlock.getJSONObject("billet");
 
       if (billetJson.has("has_discount") && billetJson.getInt("has_discount") > 0 && billetJson.has("value_with_discount")) {
-        billet = MathCommonsMethods.parseFloat(billetJson.getString("value_with_discount"));
+        billet = MathUtils.parseFloat(billetJson.getString("value_with_discount"));
       }
     }
 
@@ -230,7 +230,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_without_fee");
 
         if (installment > 0) {
-          installments.put(installment, MathCommonsMethods.parseFloat(priceJson.getString("value_installments_without_fee")));
+          installments.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_without_fee")));
         }
       }
 
@@ -238,7 +238,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_with_fee");
 
         if (installment > 0) {
-          installments.put(installment, MathCommonsMethods.parseFloat(priceJson.getString("value_installments_with_fee")));
+          installments.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_with_fee")));
         }
       }
     }
@@ -250,10 +250,10 @@ public class BrasilSaraivaCrawler extends Crawler {
           && creditCard.has("qty_installments_with_discount")) {
 
         installments.put(creditCard.getInt("qty_installments_with_discount"),
-            MathCommonsMethods.parseFloat(creditCard.getString("installment_with_discount")));
+            MathUtils.parseFloat(creditCard.getString("installment_with_discount")));
 
         if (creditCard.has("value_with_discount")) {
-          installments.put(1, MathCommonsMethods.parseFloat(creditCard.getString("value_with_discount")));
+          installments.put(1, MathUtils.parseFloat(creditCard.getString("value_with_discount")));
         }
       }
 
@@ -282,7 +282,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_without_fee");
 
         if (installment > 0) {
-          installmentsShopcardMap.put(installment, MathCommonsMethods.parseFloat(priceJson.getString("value_installments_without_fee")));
+          installmentsShopcardMap.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_without_fee")));
         }
       }
 
@@ -290,7 +290,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_with_fee");
 
         if (installment > 0) {
-          installmentsShopcardMap.put(installment, MathCommonsMethods.parseFloat(priceJson.getString("value_installments_with_fee")));
+          installmentsShopcardMap.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_with_fee")));
         }
       }
 
@@ -298,10 +298,10 @@ public class BrasilSaraivaCrawler extends Crawler {
           && priceJson.has("qty_installments_with_discount")) {
 
         installmentsShopcardMap.put(priceJson.getInt("qty_installments_with_discount"),
-            MathCommonsMethods.parseFloat(priceJson.getString("installment_with_discount")));
+            MathUtils.parseFloat(priceJson.getString("installment_with_discount")));
 
         if (priceJson.has("value_with_discount")) {
-          installmentsShopcardMap.put(1, MathCommonsMethods.parseFloat(priceJson.getString("value_with_discount")));
+          installmentsShopcardMap.put(1, MathUtils.parseFloat(priceJson.getString("value_with_discount")));
         }
       }
     }

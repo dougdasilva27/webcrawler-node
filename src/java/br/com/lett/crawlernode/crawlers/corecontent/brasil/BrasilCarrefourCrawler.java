@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -200,7 +200,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
       if (name != null && price != null) {
         String sellerName = name.ownText().trim().toLowerCase();
-        Float sellerPrice = MathCommonsMethods.parseFloat(price.ownText());
+        Float sellerPrice = MathUtils.parseFloat(price.ownText());
 
         if (sellerPrice != null && !sellerName.isEmpty()) {
           marketplaces.put(sellerName, sellerPrice);

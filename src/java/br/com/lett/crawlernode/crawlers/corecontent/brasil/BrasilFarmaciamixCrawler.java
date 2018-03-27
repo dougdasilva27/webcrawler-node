@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -241,7 +241,7 @@ public class BrasilFarmaciamixCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String parcel = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathCommonsMethods.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloat(text.substring(x));
 
           if (!parcel.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(parcel), value);

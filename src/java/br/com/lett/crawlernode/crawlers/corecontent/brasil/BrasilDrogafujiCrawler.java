@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -124,7 +124,7 @@ public class BrasilDrogafujiCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathCommonsMethods.parseFloat(priceText);
+      price = MathUtils.parseFloat(priceText);
     }
 
     return price;

@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -185,7 +185,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 					Element valueElement = installments.select("span").last();
 					
 					if (valueElement != null) {
-						Float value = MathCommonsMethods.parseFloat(valueElement.text());
+						Float value = MathUtils.parseFloat(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);
 					}

@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -318,7 +318,7 @@ public class BrasilFriopecasCrawler extends Crawler {
 
         Float result = (float) (price - (price * (discount.floatValue() / 100.0)));
 
-        Float bankTicketPrice = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+        Float bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(result);
         prices.setBankTicketPrice(bankTicketPrice);
       } else {
         prices.setBankTicketPrice(price);
@@ -335,7 +335,7 @@ public class BrasilFriopecasCrawler extends Crawler {
         }
       }
 
-      Float cardFirstInstallment = MathCommonsMethods.normalizeTwoDecimalPlaces((float) (price - (price * (cardDiscount.floatValue() / 100.0))));
+      Float cardFirstInstallment = MathUtils.normalizeTwoDecimalPlaces((float) (price - (price * (cardDiscount.floatValue() / 100.0))));
 
       Elements cardsElements = docPrices.select("#ddlCartao option");
 

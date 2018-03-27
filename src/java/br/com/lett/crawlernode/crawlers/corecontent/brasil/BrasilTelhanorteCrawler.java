@@ -21,7 +21,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -253,7 +253,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 			// bank slip
 			Float bankSlipPrice = null;
 			if (skuInformationJson.has("bestPriceFormated") && skuIsAvailable) {
-				bankSlipPrice = MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+				bankSlipPrice = MathUtils.parseFloat(skuInformationJson.getString("bestPriceFormated"));
 				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
@@ -266,7 +266,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 			// get the maximum installment number an it's price
 			if (skuInformationJson.has("installments") && skuInformationJson.has("installmentsValue")) {
 				Integer maxInstallmentNumber = skuInformationJson.getInt("installments");
-				Float installmentPrice = MathCommonsMethods.formatStringToFloat(String.valueOf(skuInformationJson.getInt("installmentsValue")));
+				Float installmentPrice = MathUtils.formatStringToFloat(String.valueOf(skuInformationJson.getInt("installmentsValue")));
 				
 				installments.put(maxInstallmentNumber, installmentPrice);
 			}

@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class BrasilDolcegustoRatingReviewCrawler extends RatingReviewCrawler {
@@ -86,7 +86,7 @@ public class BrasilDolcegustoRatingReviewCrawler extends RatingReviewCrawler {
 				Double percentage = Double.parseDouble(percentageElement.attr("content"));
 				
 				if(percentage > 0f) {
-					avgOverallRating = MathCommonsMethods.normalizeTwoDecimalPlaces(5 * (percentage/100f));
+					avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage/100f));
 				}
 				
 			} catch(Exception e) {

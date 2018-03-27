@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -131,7 +131,7 @@ public class BrasilCsdCrawler extends Crawler {
 
     if (mainPagePriceElement != null) {
       mainPagePriceElement.select("small").remove();
-      price = MathCommonsMethods.parseFloat(mainPagePriceElement.text());
+      price = MathUtils.parseFloat(mainPagePriceElement.text());
     }
 
     return price;

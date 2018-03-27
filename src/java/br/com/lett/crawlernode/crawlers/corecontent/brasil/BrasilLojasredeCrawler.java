@@ -17,7 +17,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -144,7 +144,7 @@ public class BrasilLojasredeCrawler extends Crawler {
 		Element mainPagePriceElement = document.select("#fbits-forma-pagamento .precoPor").first();
 
 		if (mainPagePriceElement != null) {
-			price = MathCommonsMethods.parseFloat(mainPagePriceElement.text());
+			price = MathUtils.parseFloat(mainPagePriceElement.text());
 		}
 
 		return price;
@@ -161,7 +161,7 @@ public class BrasilLojasredeCrawler extends Crawler {
 			
 			Element bankTicketPriceElement = doc.select(".fbits-boleto-preco").first();
 			if (bankTicketPriceElement != null) {
-				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bankTicketPriceElement.text()));
+				prices.setBankTicketPrice(MathUtils.parseFloat(bankTicketPriceElement.text()));
 			} 
 				
 			Element numParcelas = doc.select(".precoParcela .numeroparcelas").first();
@@ -169,7 +169,7 @@ public class BrasilLojasredeCrawler extends Crawler {
 			
 			if(numParcelas != null && parcelaValor != null) {
 				String nText = numParcelas.ownText().replaceAll("[^0-9]", "");
-				Float vFloat = MathCommonsMethods.parseFloat(parcelaValor.ownText());
+				Float vFloat = MathUtils.parseFloat(parcelaValor.ownText());
 				
 				if(!nText.isEmpty() && vFloat != null) {
 					installments.put(Integer.parseInt(nText), vFloat);

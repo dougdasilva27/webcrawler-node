@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -146,7 +146,7 @@ public class BrasilFarma22Crawler extends Crawler {
     Float price = null;
 
     if (json.has("bestPriceFormated") && available) {
-      price = MathCommonsMethods.parseFloat(json.getString("bestPriceFormated"));
+      price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
     }
 
     return price;
@@ -241,7 +241,7 @@ public class BrasilFarma22Crawler extends Crawler {
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        prices.setBankTicketPrice(MathCommonsMethods.parseFloat(bank.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
       }
 
       Elements cardsElements = doc.select("#ddlCartao option");

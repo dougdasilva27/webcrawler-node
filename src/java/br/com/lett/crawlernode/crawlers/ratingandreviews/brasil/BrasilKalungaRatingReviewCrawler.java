@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -71,7 +71,7 @@ public class BrasilKalungaRatingReviewCrawler extends RatingReviewCrawler {
 			String text = rating.ownText().trim();
 			
 			if(!text.isEmpty()) {
-				avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(MathCommonsMethods.parseFloat(text).doubleValue());
+				avgRating = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloat(text).doubleValue());
 			}
 		}
 

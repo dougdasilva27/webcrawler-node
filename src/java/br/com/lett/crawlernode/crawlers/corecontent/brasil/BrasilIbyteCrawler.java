@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -167,17 +167,17 @@ public class BrasilIbyteCrawler extends Crawler {
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
     if (price != null) {
-      Float priceWithDiscount = MathCommonsMethods.normalizeTwoDecimalPlaces(price - (price * 0.07f));
+      Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces(price - (price * 0.07f));
 
       installmentPriceMap.put(1, priceWithDiscount);
 
       Element boleto = doc.select(".boletoBox .price").last();
 
       if (boleto != null) {
-        Float value = MathCommonsMethods.parseFloat(boleto.ownText());
+        Float value = MathUtils.parseFloat(boleto.ownText());
 
         if (value != null) {
-          prices.setBankTicketPrice(MathCommonsMethods.normalizeTwoDecimalPlaces(value - (value * 0.07f)));
+          prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f)));
         } else {
           prices.setBankTicketPrice(priceWithDiscount);
         }
@@ -196,7 +196,7 @@ public class BrasilIbyteCrawler extends Crawler {
             Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
             if (installment == 1) {
-              value = MathCommonsMethods.normalizeTwoDecimalPlaces(value - (value * 0.07f));
+              value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
             }
 
             installmentPriceMap.put(installment, value);
@@ -211,13 +211,13 @@ public class BrasilIbyteCrawler extends Crawler {
 
           if (valueElement != null && installmentElement != null) {
             String installment = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathCommonsMethods.parseFloat(valueElement.ownText());
+            Float value = MathUtils.parseFloat(valueElement.ownText());
 
             if (!installment.isEmpty() && value != null) {
               int installmentNumber = Integer.parseInt(installment);
 
               if (installmentNumber == 1) {
-                value = MathCommonsMethods.normalizeTwoDecimalPlaces(value - (value * 0.07f));
+                value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
               }
 
               installmentPriceMap.put(installmentNumber, value);

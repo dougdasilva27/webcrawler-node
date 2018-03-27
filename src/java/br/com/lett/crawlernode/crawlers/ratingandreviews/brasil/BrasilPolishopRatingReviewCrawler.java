@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -51,7 +51,7 @@ public class BrasilPolishopRatingReviewCrawler extends RatingReviewCrawler {
 				Double avgRating = 0d;
 				if (totalNumOfEvaluations > 0) {
 					avgRating =
-							MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
+							MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
 				}
 
 				ratingReviews.setTotalRating(totalNumOfEvaluations);

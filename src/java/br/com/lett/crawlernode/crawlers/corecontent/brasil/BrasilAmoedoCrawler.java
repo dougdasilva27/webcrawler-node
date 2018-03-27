@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -311,7 +311,7 @@ public class BrasilAmoedoCrawler extends Crawler {
         Element installmentValue = installments.select("> span").first();
 
         if (installmentValue != null) {
-          Float value = MathCommonsMethods.parseFloat(installmentValue.text());
+          Float value = MathUtils.parseFloat(installmentValue.text());
 
           installmentPriceMap.put(installment, value);
         }

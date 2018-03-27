@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -224,7 +224,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
         String textVezes = installmentElements.first().text().replaceAll("[^0-9]", "").trim();
         if (!textVezes.isEmpty()) {
           Integer installment = Integer.parseInt(textVezes);
-          Float value = MathCommonsMethods.parseFloat(installmentElements.get(1).text());
+          Float value = MathUtils.parseFloat(installmentElements.get(1).text());
 
           installmentsPriceMap.put(installment, value);
         }

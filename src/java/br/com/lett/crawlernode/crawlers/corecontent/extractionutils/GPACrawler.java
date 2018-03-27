@@ -18,7 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -170,7 +170,7 @@ public class GPACrawler {
       Object pObj = json.get("currentPrice");
 
       if (pObj instanceof Double) {
-        price = MathCommonsMethods.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+        price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
       }
     }
 
@@ -182,7 +182,7 @@ public class GPACrawler {
         Object pObj = productPromotion.get("unitPrice");
 
         if (pObj instanceof Double) {
-          price = MathCommonsMethods.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+          price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
         }
       }
     }

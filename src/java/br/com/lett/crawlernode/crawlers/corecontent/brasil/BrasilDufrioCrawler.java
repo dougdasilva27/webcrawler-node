@@ -25,7 +25,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -245,7 +245,7 @@ public class BrasilDufrioCrawler extends Crawler {
       String priceText = salePriceElement.text().toLowerCase();
 
       if (!priceText.contains("de")) {
-        price = MathCommonsMethods.parseFloat(priceText);
+        price = MathUtils.parseFloat(priceText);
       } else {
         oldPrice = true;
       }
@@ -257,7 +257,7 @@ public class BrasilDufrioCrawler extends Crawler {
       salePriceElement = document.select(".boxComprarNew .boxComprarNew-t2").first();
 
       if (salePriceElement != null) {
-        price = MathCommonsMethods.parseFloat(salePriceElement.text());
+        price = MathUtils.parseFloat(salePriceElement.text());
       }
     }
 
@@ -363,7 +363,7 @@ public class BrasilDufrioCrawler extends Crawler {
           int x = text.indexOf("ou") + 2;
           int y = text.indexOf("no", x);
 
-          Float bankTicketPrice = MathCommonsMethods.parseFloat(text.substring(x, y));
+          Float bankTicketPrice = MathUtils.parseFloat(text.substring(x, y));
           prices.setBankTicketPrice(bankTicketPrice);
         }
       }
@@ -378,7 +378,7 @@ public class BrasilDufrioCrawler extends Crawler {
             int x = text.indexOf("ou") + 2;
             int y = text.indexOf("no", x);
 
-            Float bankTicketPrice = MathCommonsMethods.parseFloat(text.substring(x, y));
+            Float bankTicketPrice = MathUtils.parseFloat(text.substring(x, y));
             prices.setBankTicketPrice(bankTicketPrice);
           }
         }
@@ -397,11 +397,11 @@ public class BrasilDufrioCrawler extends Crawler {
             int x = parcelText.indexOf('x');
             int y = parcelText.indexOf('(');
 
-            Float parcelPrice = MathCommonsMethods.parseFloat(parcelText.substring(x, y));
+            Float parcelPrice = MathUtils.parseFloat(parcelText.substring(x, y));
 
             installmentPriceMap.put(parcel, parcelPrice);
           } else {
-            Float parcelPrice = MathCommonsMethods.parseFloat(parcelText.split("x")[1]);
+            Float parcelPrice = MathUtils.parseFloat(parcelText.split("x")[1]);
             installmentPriceMap.put(parcel, parcelPrice);
           }
         }

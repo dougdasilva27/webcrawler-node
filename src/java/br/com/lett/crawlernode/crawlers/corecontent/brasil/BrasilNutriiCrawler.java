@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -123,9 +123,9 @@ public class BrasilNutriiCrawler extends Crawler {
     Element salePriceElement = document.select(".price-box .price").first();
 
     if (discountPrice != null) {
-      price = MathCommonsMethods.parseFloat(discountPrice.text());
+      price = MathUtils.parseFloat(discountPrice.text());
     } else if (salePriceElement != null) {
-      price = MathCommonsMethods.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloat(salePriceElement.text());
     }
 
     return price;
@@ -220,7 +220,7 @@ public class BrasilNutriiCrawler extends Crawler {
       Element specialPrice = doc.select(".bg-price.ico-boleto").first();
 
       if (bank != null) {
-        Float bankTicket = MathCommonsMethods.parseFloat(bank.ownText());
+        Float bankTicket = MathUtils.parseFloat(bank.ownText());
 
         if (bankTicket != null) {
           prices.setBankTicketPrice(bankTicket);
@@ -228,7 +228,7 @@ public class BrasilNutriiCrawler extends Crawler {
           prices.setBankTicketPrice(price);
         }
       } else if (specialPrice != null) {
-        Float bankTicket = MathCommonsMethods.parseFloat(specialPrice.ownText());
+        Float bankTicket = MathUtils.parseFloat(specialPrice.ownText());
 
         if (bankTicket != null) {
           prices.setBankTicketPrice(bankTicket);
@@ -249,7 +249,7 @@ public class BrasilNutriiCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String installmentText = CommonMethods.getLast(text.substring(0, x).trim().split(" ")).replaceAll("[^0-9]", "");
-          Float value = MathCommonsMethods.parseFloat(text.substring(x).trim());
+          Float value = MathUtils.parseFloat(text.substring(x).trim());
 
           if (!installmentText.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installmentText), value);

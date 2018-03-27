@@ -15,7 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -138,7 +138,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     Element salePriceElement = document.select("#side-prod .preco-por strong").first();
 
     if (salePriceElement != null) {
-      price = MathCommonsMethods.parseFloat(salePriceElement.text().trim());
+      price = MathUtils.parseFloat(salePriceElement.text().trim());
     }
 
     return price;
@@ -255,7 +255,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       if (installmentsElement.size() > 1) {
         String textInstallment = installmentsElement.get(0).ownText().replaceAll("[^0-9]", "");
-        Float value = MathCommonsMethods.parseFloat(installmentsElement.get(1).ownText());
+        Float value = MathUtils.parseFloat(installmentsElement.get(1).ownText());
 
         if (!textInstallment.isEmpty() && value != null) {
           installmentPriceMap.put(Integer.parseInt(textInstallment), value);

@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -207,7 +207,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		// bank ticket
 		Element bankTicketPriceElement = document.select(".box-price div.price strong").first();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = MathCommonsMethods.parseFloat(bankTicketPriceElement.text().trim());
+			bankTicketPrice = MathUtils.parseFloat(bankTicketPriceElement.text().trim());
 		}
 		
 		// card payment options
@@ -232,14 +232,14 @@ public class BrasilCamicadoCrawler extends Crawler {
 			
 			Element installmentNumberElement = installmentElement.select("li").first(); // <li>2x</li> or <li>à vista</li>
 			Element installmentPriceElement = installmentElement.select("li").get(1); // <li>R$ 349,90</li>
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
+			List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberElement.text());
 			
 			if ( parsedNumbers.size() == 0 ) { // <li>à vista</li>
 				installmentNumber = 1;
 			} else { // <li>2x</li>
 				installmentNumber = Integer.parseInt(parsedNumbers.get(0));
 			}
-			installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+			installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 			
 			installments.put(installmentNumber, installmentPrice);
 		}

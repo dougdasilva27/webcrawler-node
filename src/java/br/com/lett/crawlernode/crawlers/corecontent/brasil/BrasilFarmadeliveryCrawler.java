@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -209,7 +209,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     if (elementPrice != null) {
       price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     } else if (elementSpecialPrice != null) {
-      price = MathCommonsMethods.parseFloat(elementSpecialPrice.ownText());
+      price = MathUtils.parseFloat(elementSpecialPrice.ownText());
     }
 
     return price;
@@ -228,7 +228,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       Element bankSlip = document.select(".pagamento .boleto > span").first();
 
       if (bankSlip != null) {
-        Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlip.text());
+        Float bankSlipPrice = MathUtils.parseFloat(bankSlip.text());
         prices.setBankTicketPrice(bankSlipPrice);
       }
 

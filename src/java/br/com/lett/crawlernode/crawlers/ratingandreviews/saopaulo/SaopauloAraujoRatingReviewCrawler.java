@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -49,7 +49,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
         Double avgRating = null;
         if (totalNumOfEvaluations > 0) {
-          avgRating = MathCommonsMethods.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
+          avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
         }
 
         ratingReviews.setTotalRating(totalNumOfEvaluations);

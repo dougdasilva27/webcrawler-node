@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -221,7 +221,7 @@ public class BrasilMundomaxCrawler extends Crawler {
 		// bank slip
 		Element bankSlipPriceElement = document.select(".desconto label").first();
 		if (bankSlipPriceElement != null) {
-			Float bankSlipPrice = MathCommonsMethods.parseFloat(bankSlipPriceElement.text());
+			Float bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
 			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
@@ -233,9 +233,9 @@ public class BrasilMundomaxCrawler extends Crawler {
 			Element installmentPriceElement = installmentElement.select("p.p-value").first();
 			
 			if (installmentNumberElement != null && installmentPriceElement != null) {
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberElement.text());
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberElement.text());
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathCommonsMethods.parseFloat(installmentPriceElement.text());
+				Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

@@ -26,7 +26,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -347,7 +347,7 @@ public class BrasilNetshoesCrawler extends Crawler {
     Element priceElement = doc.select(".price > strong").first();
 
     if (priceElement != null) {
-      Float price = MathCommonsMethods.parseFloat(priceElement.ownText());
+      Float price = MathUtils.parseFloat(priceElement.ownText());
       prices.setBankTicketPrice(price);
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
@@ -362,7 +362,7 @@ public class BrasilNetshoesCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float priceInstallment = MathCommonsMethods.parseFloat(text.substring(x));
+          Float priceInstallment = MathUtils.parseFloat(text.substring(x));
 
           if (!installment.isEmpty() && priceInstallment != null) {
             mapInstallments.put(Integer.parseInt(installment), priceInstallment);

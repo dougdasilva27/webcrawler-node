@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
@@ -202,7 +202,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		
 		if(installment != null) {
 			Float result = installment.getFirst() * installment.getSecond();
-			price = MathCommonsMethods.normalizeTwoDecimalPlaces(result);
+			price = MathUtils.normalizeTwoDecimalPlaces(result);
 		}
 
 		return price;
@@ -293,7 +293,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			Element priceBoleto = doc.select(".precoboleto span").first();
 			
 			if(priceBoleto != null) {
-				prices.setBankTicketPrice(MathCommonsMethods.parseFloat(priceBoleto.text()));
+				prices.setBankTicketPrice(MathUtils.parseFloat(priceBoleto.text()));
 			} else {
 				prices.setBankTicketPrice(price);
 			}
@@ -334,7 +334,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 					Element installmentElement = finalPriceParc.select("span").first();
 					
 					if(installmentElement != null) {
-						Float priceInstallment = MathCommonsMethods.parseFloat(installmentElement.text());
+						Float priceInstallment = MathUtils.parseFloat(installmentElement.text());
 						
 						return new Pair<Integer, Float>(numberInstallments, priceInstallment);
 					} 

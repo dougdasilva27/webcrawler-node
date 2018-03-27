@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -202,7 +202,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
           Integer quantity = installment.getInt("quantity");
           Double value = installment.getDouble("value");
 
-          installmentMapPrice.put(quantity, MathCommonsMethods.normalizeTwoDecimalPlaces(value.floatValue()));
+          installmentMapPrice.put(quantity, MathUtils.normalizeTwoDecimalPlaces(value.floatValue()));
         }
       }
 
@@ -212,7 +212,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
       // Para pegar esse preço, dividimos ele por 2 e adicionamos nas parcelas como 2x esse preço
       if (installments.length() == 1 && seller.has("defaultPrice")) {
         Double priceD = seller.getDouble("defaultPrice") / 2d;
-        installmentMapPrice.put(2, MathCommonsMethods.normalizeTwoDecimalPlaces(priceD.floatValue()));
+        installmentMapPrice.put(2, MathUtils.normalizeTwoDecimalPlaces(priceD.floatValue()));
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);

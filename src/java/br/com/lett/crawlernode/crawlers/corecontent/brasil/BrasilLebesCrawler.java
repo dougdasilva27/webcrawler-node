@@ -20,7 +20,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -267,12 +267,12 @@ public class BrasilLebesCrawler extends Crawler {
 			Element installmentPriceTextElement = lines.get(i).select("td").last();
 
 			if (installmentTextElement != null && installmentPriceTextElement != null) {
-				List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentTextElement.text());
+				List<String> parsedNumbers = MathUtils.parseNumbers(installmentTextElement.text());
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, MathCommonsMethods.parseFloat(installmentPriceTextElement.text()));
+					installments.put(1, MathUtils.parseFloat(installmentPriceTextElement.text()));
 				} else {
 					installments.put(Integer.parseInt(parsedNumbers.get(0)),
-							MathCommonsMethods.parseFloat(installmentPriceTextElement.text()));
+							MathUtils.parseFloat(installmentPriceTextElement.text()));
 				}
 			}
 		}
@@ -334,12 +334,12 @@ public class BrasilLebesCrawler extends Crawler {
 
 		if (skuInformationJson.has("bestPriceFormated")) {
 			Float basePrice =
-					MathCommonsMethods.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+					MathUtils.parseFloat(skuInformationJson.getString("bestPriceFormated"));
 			Float discountPercentage = crawlDiscountPercentage(document);
 
 			// apply the discount on base price
 			if (discountPercentage != null) {
-				bankSlipPrice = MathCommonsMethods
+				bankSlipPrice = MathUtils
 						.normalizeTwoDecimalPlacesDown(basePrice - (discountPercentage * basePrice));
 			}
 		}

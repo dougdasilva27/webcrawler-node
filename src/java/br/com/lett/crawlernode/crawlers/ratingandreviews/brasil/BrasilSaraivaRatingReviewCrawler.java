@@ -11,7 +11,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -63,7 +63,7 @@ public class BrasilSaraivaRatingReviewCrawler extends RatingReviewCrawler {
 		Element elementSpan = doc.select("section.product-info h1 span").first();
 		if (elementSpan != null) {
 			String spanText = elementSpan.text();
-			List<String> parsedNumbers = MathCommonsMethods.parseNumbers(spanText);
+			List<String> parsedNumbers = MathUtils.parseNumbers(spanText);
 			if (!parsedNumbers.isEmpty()) {
 				internalId = parsedNumbers.get(0);
 			}

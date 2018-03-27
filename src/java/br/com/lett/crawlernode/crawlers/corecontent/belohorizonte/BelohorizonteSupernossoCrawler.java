@@ -23,7 +23,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -194,7 +194,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
       if (priceO instanceof Double) {
         Double priceD = json.getDouble("price");
-        price = MathCommonsMethods.normalizeTwoDecimalPlaces(priceD.floatValue());
+        price = MathUtils.normalizeTwoDecimalPlaces(priceD.floatValue());
       }
     }
 

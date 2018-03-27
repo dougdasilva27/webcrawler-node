@@ -16,7 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathCommonsMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -350,7 +350,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 				
 				if(text.contains("x")){
 					Integer installment = Integer.parseInt(text.split("x")[0].trim());
-					Float value = MathCommonsMethods.parseFloat(text.split("x")[1].trim());
+					Float value = MathUtils.parseFloat(text.split("x")[1].trim());
 					
 					installmentPriceMap.put(installment, value);
 					
