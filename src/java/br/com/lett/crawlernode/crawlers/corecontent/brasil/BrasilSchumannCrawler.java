@@ -338,7 +338,7 @@ public class BrasilSchumannCrawler extends Crawler {
         String installPriceText = installmentPriceElement.text();
 
         List<String> parsedNumbers = MathCommonsMethods.parseNumbers(installmentNumberText);
-        if (!parsedNumbers.isEmpty()) { // à vista
+        if (parsedNumbers.isEmpty()) { // à vista
           installments.put(1, MathCommonsMethods.parseFloat(installPriceText));
         } else {
           installments.put(Integer.parseInt(parsedNumbers.get(0)), MathCommonsMethods.parseFloat(installPriceText));
