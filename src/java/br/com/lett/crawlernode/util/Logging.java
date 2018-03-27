@@ -12,6 +12,12 @@ import com.amazonaws.util.EC2MetadataUtils;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.OutputStreamAppender;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -41,8 +47,28 @@ public class Logging {
 		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
 		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
 		MDC.put("HOST", host);
-		
-		((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("managers.SupervisedPgSQL")).setLevel(ch.qos.logback.classic.Level.TRACE);
+
+		//setAdditionalLoggers();
+	}
+
+	private static void setAdditionalLoggers() {
+		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+		PatternLayoutEncoder logEncoder = new PatternLayoutEncoder();
+		logEncoder.setContext(loggerContext);
+		logEncoder.setPattern("[%-5level] -> %msg%n");
+		logEncoder.start();
+
+		OutputStreamAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
+		consoleAppender.setContext(loggerContext);
+		consoleAppender.setEncoder(logEncoder);
+		consoleAppender.start();
+
+		// Add appender for SupervisedPgSQL
+		ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("managers.SupervisedPgSQL");
+		logger.setAdditive(false);
+		logger.setLevel(Level.TRACE);
+		logger.addAppender(consoleAppender);
 	}
 
 	/* INFO */

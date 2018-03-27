@@ -4,9 +4,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class JSONObjectIgnoreDuplicates extends JSONObject {
+public class JsonUtils extends JSONObject {
 
-	public JSONObjectIgnoreDuplicates(String json) {
+	public JsonUtils(String json) {
 		super(json);
 	}
 

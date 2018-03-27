@@ -39,7 +39,7 @@ import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.JSONObjectIgnoreDuplicates;
+import br.com.lett.crawlernode.util.JsonUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.URLBox;
 import models.Processed;
@@ -645,7 +645,7 @@ public abstract class CrawlerRanking extends Task {
 
     if (json.startsWith("{") && json.endsWith("}")) {
       try {
-        jsonProducts = new JSONObjectIgnoreDuplicates(json);
+        jsonProducts = new JsonUtils(json);
       } catch (Exception e) {
         this.logError(CommonMethods.getStackTraceString(e));
       }
