@@ -557,6 +557,11 @@ public class POSTFetcher {
 
   public static String fetchPagePOSTWithHeaders(String url, Session session, String payload, List<Cookie> cookies, int attempt,
       Map<String, String> headers) {
+    return fetchPagePOSTWithHeaders(url, session, payload, cookies, attempt, headers, null, null);
+  }
+
+  public static String fetchPagePOSTWithHeaders(String url, Session session, String payload, List<Cookie> cookies, int attempt,
+      Map<String, String> headers, String userAgent, LettProxy lettProxy) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -591,8 +596,8 @@ public class POSTFetcher {
         }
       }
 
-      randUserAgent = DataFetcher.randUserAgent();
-      randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = userAgent != null ? userAgent : DataFetcher.randUserAgent();
+      randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
       CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
 
@@ -638,10 +643,8 @@ public class POSTFetcher {
       HttpPost httpPost = new HttpPost(url);
       httpPost.setEntity(input);
 
-      if (headers.containsKey("Content-Type")) {
-        if (payload != null) {
-          httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get("Content-Type"))));
-        }
+      if (headers.containsKey("Content-Type") && payload != null) {
+        httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get("Content-Type"))));
       }
 
       for (String key : headers.keySet()) {
