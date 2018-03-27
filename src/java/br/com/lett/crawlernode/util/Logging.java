@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.amazonaws.util.EC2MetadataUtils;
@@ -21,121 +22,119 @@ import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
  */
 
 public class Logging {
-	
+
 	private static final String VERSION = new Version().getVersion();
-	
+
 	/**
 	 * Set up MDC variables to be used in logback.xml log config file
 	 */
 	public static void setLogMDC() {
-
 		Pattern IPV4_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
-		
+
 		String host = EC2MetadataUtils.getPrivateIpAddress();
-		
+
 		// Avoiding ip parse errors in Elasticsearch index
 		if(host == null || !IPV4_PATTERN.matcher(host).matches()) {
 			host = "0.0.0.0";
 		}
-		
+
 		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
 		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
 		MDC.put("HOST", host);
-
-	}
 		
+		((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("managers.SupervisedPgSQL")).setLevel(ch.qos.logback.classic.Level.TRACE);
+	}
+
 	/* INFO */
 	public static void printLogInfo(Logger logger, String msg) {
 		printLogInfo(logger, null, msg);
 	}
-	
+
 	public static void printLogInfo(Logger logger, Session session, String msg) {
-		printLogInfo(logger, session, null, msg);
+		logInfo(logger, session, null, msg);
 	}
-	
-	public static void printLogInfo(Logger logger, Session session, JSONObject metadata, String msg) {
+
+	public static void logInfo(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.info("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
-	
+
 	/* ERROR */
 	public static void printLogError(Logger logger, String msg) {
 		printLogError(logger, null, msg);
 	}
-	
+
 	public static void printLogError(Logger logger, Session session, String msg) {
-		printLogError(logger, session, null, msg);
+		logError(logger, session, null, msg);
 	}
-	
-	public static void printLogError(Logger logger, Session session, JSONObject metadata, String msg) {
+
+	public static void logError(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.error("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
-	
-	
+
+
 	/* DEBUG */
 	public static void printLogDebug(Logger logger, String msg) {
 		printLogDebug(logger, null, msg);
 	}
-	
+
 	public static void printLogDebug(Logger logger, Session session, String msg) {
-		printLogDebug(logger, session, null, msg);
+		logDebug(logger, session, null, msg);
 	}
-	
-	public static void printLogDebug(Logger logger, Session session, JSONObject metadata, String msg) {
+
+	public static void logDebug(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.debug("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
-	
-	
+
+
 	/* WARN */
 	public static void printLogWarn(Logger logger, String msg) {
 		printLogWarn(logger, null, msg);
 	}
-	
+
 	public static void printLogWarn(Logger logger, Session session, String msg) {
-		printLogWarn(logger, session, null, msg);
+		logWarn(logger, session, null, msg);
 	}
-	
-	public static void printLogWarn(Logger logger, Session session, JSONObject metadata, String msg) {
+
+	public static void logWarn(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
-	
-	
+
+
 	/* TRACE */
 	public static void printLogTrace(Logger logger, String msg) {
 		printLogTrace(logger, null, msg);
 	}
-	
+
 	public static void printLogTrace(Logger logger, Session session, String msg) {
-		printLogTrace(logger, session, null, msg);
+		logTrace(logger, session, null, msg);
 	}
-	
-	public static void printLogTrace(Logger logger, Session session, JSONObject metadata, String msg) {
+
+	public static void logTrace(Logger logger, Session session, JSONObject metadata, String msg) {
 		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
 	}
-	
-	
+
+
 	private static JSONObject createMetadata(JSONObject metadata, Session session) {
-		
-		if(metadata == null || !(metadata instanceof JSONObject) ) {
+		if (metadata == null || !(metadata instanceof JSONObject)) {
 			metadata = new JSONObject();
 		}
-		
+
 		metadata.put("version",  VERSION);
 
-		if(session != null) {
+		if (session != null) {
 			metadata.put("city", session.getMarket().getCity());
 			metadata.put("market", session.getMarket().getName());
 			metadata.put("session", session.getSessionId());
 			metadata.put("session_type", session.getClass().getSimpleName());
-			
-			if(session instanceof RankingKeywordsSession) {
+
+			if (session instanceof RankingKeywordsSession) {
 				metadata.put("location", ((RankingKeywordsSession)session).getLocation());
 			}
 		}
-		
+
 		return metadata;
-		
 	}
-	
+
 	/**
 	 * Sanitize message before logging then
 	 * @param msg
@@ -146,7 +145,7 @@ public class Logging {
 		} else {
 			msg = Normalizer.normalize(msg, Normalizer.Form.NFD);
 			msg = msg.replaceAll("[^\\p{ASCII}]", "").trim();
-			
+
 			return msg;
 		}
 	}

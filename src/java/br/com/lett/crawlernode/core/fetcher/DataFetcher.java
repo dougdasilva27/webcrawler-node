@@ -736,7 +736,7 @@ public class DataFetcher {
     requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
     requestMetadata.put("res_length", (response == null) ? 0 : response.getEntity().getContentLength());
 
-    Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
 
   }
 
@@ -754,7 +754,7 @@ public class DataFetcher {
     requestMetadata.put("res_http_code", (response == null) ? 0 : response.getStatusLine().getStatusCode());
     requestMetadata.put("res_length", responseLength);
 
-    Logging.printLogDebug(logger, session, requestMetadata, "Registrando requisição...");
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
 
   }
 

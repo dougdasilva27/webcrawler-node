@@ -31,7 +31,7 @@ public class ServerExecutorStatusCollector implements Runnable {
 		metadata.put("crawler_node_threads_active", server.getActiveThreads());
 		//metadata.put("crawler_node_webdriver_instances", server.getWebdriverInstances());
 		
-		Logging.printLogDebug(logger, null, metadata, "Registering tasks status...");
+		Logging.logDebug(logger, null, metadata, "Registering tasks status...");
 	}
 
 }

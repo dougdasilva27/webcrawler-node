@@ -1,6 +1,6 @@
 /bin/
-.DS_Store
-/data
-.settings/
 /target/
-settings.xml
+/.settings/
+.project
+.classpath
+.DS_Store
