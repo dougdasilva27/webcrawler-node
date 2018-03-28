@@ -19,7 +19,7 @@ public class BrasilDafitiCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "http://www.dafiti.com.br/catalog/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+    String url = "https://www.dafiti.com.br/catalog/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
