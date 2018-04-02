@@ -15,16 +15,10 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(String url) {
     String internalId = null;
 
-    String[] tokens = url.split("=");
+    String[] tokens = url.split("-");
     internalId = tokens[tokens.length - 1];
 
-    return internalId.split("&")[0];
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    return internalPid;
+    return internalId;
   }
 
   private String crawlProductUrl(Element e) {
@@ -60,12 +54,11 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String urlProduct = crawlProductUrl(e);
-        String internalPid = crawlInternalPid(e);
         String internalId = crawlInternalId(urlProduct);
 
-        saveDataProduct(internalId, internalPid, urlProduct);
+        saveDataProduct(internalId, null, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
