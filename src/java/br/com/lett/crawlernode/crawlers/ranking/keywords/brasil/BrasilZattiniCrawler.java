@@ -18,13 +18,13 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.netshoes.com.br/busca?nsCat=Natural&q=" + this.keywordEncoded + "&page=" + this.currentPage;
+    String url = "https://www.zattini.com.br/busca?nsCat=Natural&q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#item-list .item");
+    Elements products = this.currentDoc.select("#item-list .card[parent-sku]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -32,7 +32,7 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
+        String internalPid = e.attr("parent-sku");
         String productUrl = crawlProductUrl(e);
 
         saveDataProduct(null, internalPid, productUrl);
@@ -67,10 +67,6 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
 
       this.log("Total da busca: " + this.totalProducts);
     }
-  }
-
-  private String crawlInternalPid(Element e) {
-    return e.attr("parent-sku");
   }
 
   private String crawlProductUrl(Element e) {
