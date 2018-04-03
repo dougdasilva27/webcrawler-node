@@ -2,13 +2,11 @@ package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -26,162 +24,161 @@ import models.RatingsReviews;
 
 public class RatingReviewCrawler extends Task {
 
-	protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
+  protected static final Logger logger = LoggerFactory.getLogger(RatingReviewCrawler.class);
 
-	/**
-	 * Cookies that must be used to fetch the sku page
-	 * this attribute is set by the handleCookiesBeforeFetch method.
-	 */
-	protected List<Cookie> cookies;
+  /**
+   * Cookies that must be used to fetch the sku page this attribute is set by the
+   * handleCookiesBeforeFetch method.
+   */
+  protected List<Cookie> cookies;
 
-	protected RatingCrawlerConfig config;
+  protected RatingCrawlerConfig config;
 
-	protected CrawlerWebdriver webdriver;
+  protected CrawlerWebdriver webdriver;
 
 
-	public RatingReviewCrawler(Session session) {
-		this.session = session;
-		cookies = new ArrayList<>();
+  public RatingReviewCrawler(Session session) {
+    this.session = session;
+    cookies = new ArrayList<>();
 
-		createDefaultConfig();
-	}
+    createDefaultConfig();
+  }
 
-	private void createDefaultConfig() {
-		this.config = new RatingCrawlerConfig();
-		this.config.setFetcher(Fetcher.STATIC);
-		this.config.setProxyList(new ArrayList<String>());
-		this.config.setConnectionAttempts(0);
-	}
+  private void createDefaultConfig() {
+    this.config = new RatingCrawlerConfig();
+    this.config.setFetcher(Fetcher.STATIC);
+    this.config.setProxyList(new ArrayList<String>());
+    this.config.setConnectionAttempts(0);
+  }
 
-	@Override
-	public void processTask() {
-		if (session instanceof RatingReviewsCrawlerSession) {
-			runProduction();
-		}
-		else {
-			runTest();
-		}
-	}
-	
-	@Override
-	public void onStart() {
-		Logging.printLogDebug(logger, session, "START");
-	}
+  @Override
+  public void processTask() {
+    if (session instanceof RatingReviewsCrawlerSession) {
+      runProduction();
+    } else {
+      runTest();
+    }
+  }
 
-	@Override
-	public void onFinish() {
-		List<SessionError> errors = session.getErrors();
+  @Override
+  public void onStart() {
+    Logging.printLogDebug(logger, session, "START");
+  }
 
-		Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+  @Override
+  public void onFinish() {
+    List<SessionError> errors = session.getErrors();
 
-		// errors collected manually
-		// they can be exceptions or business logic errors
-		// and are all gathered inside the session
-		if (!errors.isEmpty()) {
-			Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
-			session.setTaskStatus(Task.STATUS_FAILED);
-		}
+    Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
-		else {
+    // errors collected manually
+    // they can be exceptions or business logic errors
+    // and are all gathered inside the session
+    if (!errors.isEmpty()) {
+      Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+      session.setTaskStatus(Task.STATUS_FAILED);
+    }
 
-			// only remove the task from queue if it was flawless
-			// and if we are not testing, because when testing there is no message processing
-			Logging.printLogDebug(logger, session, "Task completed.");
+    else {
 
-			session.setTaskStatus(Task.STATUS_COMPLETED);
-		}
-		
-		Logging.printLogDebug(logger, session, "END");
-	}
+      // only remove the task from queue if it was flawless
+      // and if we are not testing, because when testing there is no message processing
+      Logging.printLogDebug(logger, session, "Task completed.");
 
-	public void runProduction() {
-		if (!cookies.isEmpty()) {
-			handleCookiesBeforeFetch();
-		}
+      session.setTaskStatus(Task.STATUS_COMPLETED);
+    }
 
-		// apply URL modifications
-		String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
-		session.setOriginalURL(modifiedURL);
+    Logging.printLogDebug(logger, session, "END");
+  }
 
-		Document document = fetch();
-		try {
-			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
+  public void runProduction() {
+    if (!cookies.isEmpty()) {
+      handleCookiesBeforeFetch();
+    }
 
-			// get only the desired rating and review, according to the internal id
-			RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
+    // apply URL modifications
+    String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
+    session.setOriginalURL(modifiedURL);
 
-			if (ratingReviews != null) {
-				printRatingsReviews(ratingReviews);
-				Persistence.updateRating(ratingReviews, session);
+    Document document = fetch();
+    try {
+      RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
 
-			} else {
-				Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
-			}
+      // get only the desired rating and review, according to the internal id
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
 
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-			session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
-		}
-	}
+      if (ratingReviews != null) {
+        printRatingsReviews(ratingReviews);
+        Persistence.updateRating(ratingReviews, session);
 
-	public void runTest() {
-		if (cookies.isEmpty()) {
-			handleCookiesBeforeFetch();
-		}
+      } else {
+        Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
+      }
 
-		// apply URL modifications
-		String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
-		session.setOriginalURL(modifiedURL);
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    }
+  }
 
-		Document document = fetch();
-		try {
-			RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
+  public void runTest() {
+    if (cookies.isEmpty()) {
+      handleCookiesBeforeFetch();
+    }
 
-			for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
-				printRatingsReviews(rating);
-			}
+    // apply URL modifications
+    String modifiedURL = handleURLBeforeFetch(session.getOriginalURL());
+    session.setOriginalURL(modifiedURL);
 
-		} catch (Exception e) {
-			Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-			session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
-		}
-	}
+    Document document = fetch();
+    try {
+      RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
 
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		/* subclasses must implement */
-		return new RatingReviewsCollection();
-	}
+      for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
+        printRatingsReviews(rating);
+      }
 
-	protected void handleCookiesBeforeFetch() {
-		/* subclasses must implement */
-	}
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    }
+  }
 
-	protected String handleURLBeforeFetch(String url) {
-		/* subclasses must implement */
-		return url;
-	}
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    /* subclasses must implement */
+    return new RatingReviewsCollection();
+  }
 
-	private void printRatingsReviews(RatingsReviews ratingReviews) {
-		Logging.printLogDebug(logger, session, ratingReviews.toString());
-	}
+  protected void handleCookiesBeforeFetch() {
+    /* subclasses must implement */
+  }
 
-	/**
-	 * Request the sku URL and parse to a DOM format.
-	 * 
-	 * @return Parsed HTML in form of a Document
-	 */
-	private Document fetch() {
-		String html;
-		if (this.config.getFetcher() == Fetcher.STATIC) {
-			html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-		//} else if (this.config.getFetcher() == Fetcher.SMART) {
-			//html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
-		} else {
-			this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-			html = this.webdriver.getCurrentPageSource();
-		}
+  protected String handleURLBeforeFetch(String url) {
+    /* subclasses must implement */
+    return url;
+  }
 
-		return Jsoup.parse(html);
-	}
+  private void printRatingsReviews(RatingsReviews ratingReviews) {
+    Logging.printLogDebug(logger, session, ratingReviews.toString());
+  }
+
+  /**
+   * Request the sku URL and parse to a DOM format.
+   * 
+   * @return Parsed HTML in form of a Document
+   */
+  protected Document fetch() {
+    String html;
+    if (this.config.getFetcher() == Fetcher.STATIC) {
+      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+      // } else if (this.config.getFetcher() == Fetcher.SMART) {
+      // html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
+    } else {
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+      html = this.webdriver.getCurrentPageSource();
+    }
+
+    return Jsoup.parse(html);
+  }
 
 }

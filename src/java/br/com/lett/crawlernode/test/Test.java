@@ -130,18 +130,24 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("papinha", market);
+        session = SessionFactory.createTestRankingKeywordsSession("futebol", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session =
             SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.drogariavenancio.com.br/produto/53303/nutren-15-com-200ml", market);
+        session = SessionFactory.createTestSession(
+            "https://www.petz.com.br/produto/racao-golden-formula-senior-para-caes-adultos-sabor-frango-e-arroz-15kg-71353", market);
       }
 
 
       Task task = TaskFactory.createTask(session);
 
       task.process();
+      try {
+        dbManager.connectionPostgreSQL.closeConnection();
+      } catch (Exception e) {
+        Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      }
     } else {
       System.err.println("Market não encontrado no banco!");
     }
