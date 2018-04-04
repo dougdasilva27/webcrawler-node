@@ -111,12 +111,11 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       String secondaryImages = null;
 
       JSONArray secondaryImagesArray = new JSONArray();
-      Elements element_fotosecundaria = doc.select(".cont_chama_produtos div img");
-      if (element_fotosecundaria.size() > 1) {
-        for (int i = 1; i < element_fotosecundaria.size(); i++) {
-          Element e = element_fotosecundaria.get(i);
-          secondaryImagesArray.put(e.attr("src"));
-        }
+      Elements images = doc.select(".divs-fotos img");
+
+      for (int i = 1; i < images.size(); i++) {
+        Element e = images.get(i);
+        secondaryImagesArray.put(e.attr("src"));
       }
 
       if (secondaryImagesArray.length() > 0) {
