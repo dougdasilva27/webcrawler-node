@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -78,12 +79,9 @@ public class BrasilColomboCrawler extends Crawler {
 
       // Preço
       Float price = null;
-      Element elementPrice = doc.select(".dados-condicao--texto b span").first();
+      Element elementPrice = doc.select(".parcelas-produto-table .parcelas-produto-table-valor").first();
       if (elementPrice != null) {
-        String priceText = elementPrice.text().trim();
-        if (!priceText.isEmpty()) {
-          price = Float.parseFloat(elementPrice.text().trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        }
+        price = MathUtils.parseFloat(elementPrice.ownText());
       }
 
       // Prices
@@ -285,24 +283,20 @@ public class BrasilColomboCrawler extends Crawler {
         prices.setBankTicketPrice(bankTicketPrice);
       }
 
-      Element installments = doc.select(".parcelas-produto-table").first();
+      Elements parcelas = doc.select(".detalhe-produto-dados__dados-comprar .parcelas-produto-table tr");
 
-      if (installments != null) {
-        Elements parcelas = installments.select("tr");
+      for (Element e : parcelas) {
+        Element index = e.select(".parcelas-produto-table-index").first();
 
-        for (Element e : parcelas) {
-          Element index = e.select(".parcelas-produto-table-index").first();
+        if (index != null) {
+          Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
 
-          if (index != null) {
-            Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
+          Element valor = e.select(".parcelas-produto-table-valor").first();
 
-            Element valor = e.select(".parcelas-produto-table-valor").first();
+          if (valor != null) {
+            Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
-            if (valor != null) {
-              Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-
-              installmentPriceMap.put(installment, value);
-            }
+            installmentPriceMap.put(installment, value);
           }
         }
 
