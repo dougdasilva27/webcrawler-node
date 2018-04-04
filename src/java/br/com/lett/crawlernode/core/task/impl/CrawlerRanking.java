@@ -336,7 +336,7 @@ public abstract class CrawlerRanking extends Task {
 
           if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
             saveProductUrlToQueue(url);
-            Logging.printLogWarn(logger, session, "Suspected of changing url: " + p.getId());
+            Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of changing url: " + url);
           }
         }
       }
