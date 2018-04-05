@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
+import br.com.lett.crawlernode.database.DBSlack;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
@@ -98,10 +99,15 @@ public class Crawler extends Task {
    */
   @Override
   public void processTask() {
-    if (session instanceof TestCrawlerSession) {
-      testRun();
-    } else {
-      productionRun();
+    try {
+      if (session instanceof TestCrawlerSession) {
+        testRun();
+      } else {
+        productionRun();
+      }
+    } catch (Exception e) {
+      DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -113,46 +119,51 @@ public class Crawler extends Task {
   @Override
   public void onFinish() {
 
-    Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
+    try {
+      Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
 
-    // close the webdriver
-    if (webdriver != null) {
-      Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
-      webdriver.terminate();
+      // close the webdriver
+      if (webdriver != null) {
+        Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
+        webdriver.terminate();
+      }
+
+      List<SessionError> errors = session.getErrors();
+
+      Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
+
+      // errors collected manually
+      // they can be exceptions or business logic errors
+      // and are all gathered inside the session
+      if (!errors.isEmpty()) {
+        Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+
+        session.setTaskStatus(Task.STATUS_FAILED);
+      }
+
+      // only remove the task from queue if it was flawless
+      // and if we are not testing, because when testing there is no message processing
+      else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
+        Logging.printLogDebug(logger, session, "Task completed.");
+
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
+
+        session.setTaskStatus(Task.STATUS_COMPLETED);
+      }
+
+      // only print statistics of void and truco if we are running an Insights session crawling
+      if (session instanceof InsightsCrawlerSession) {
+        Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+        Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
+      }
+
+      Logging.printLogDebug(logger, session, "END");
+    } catch (Exception e) {
+      DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
-
-    List<SessionError> errors = session.getErrors();
-
-    Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
-
-    // errors collected manually
-    // they can be exceptions or business logic errors
-    // and are all gathered inside the session
-    if (!errors.isEmpty()) {
-      Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
-
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
-
-      session.setTaskStatus(Task.STATUS_FAILED);
-    }
-
-    // only remove the task from queue if it was flawless
-    // and if we are not testing, because when testing there is no message processing
-    else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
-      Logging.printLogDebug(logger, session, "Task completed.");
-
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
-
-      session.setTaskStatus(Task.STATUS_COMPLETED);
-    }
-
-    // only print statistics of void and truco if we are running an Insights session crawling
-    if (session instanceof InsightsCrawlerSession) {
-      Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
-      Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
-    }
-
-    Logging.printLogDebug(logger, session, "END");
   }
 
   private void productionRun() {
