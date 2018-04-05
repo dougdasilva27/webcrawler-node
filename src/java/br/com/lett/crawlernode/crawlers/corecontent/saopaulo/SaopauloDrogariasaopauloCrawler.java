@@ -66,7 +66,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String primaryImage = crawlPrimaryImage(jsonSku);
         String name = crawlName(jsonSku, skuJson);
-        String secondaryImages = crawlSecondaryImages(internalId);
+        String secondaryImages = crawlSecondaryImages(internalId, primaryImage);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -163,7 +163,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(String internalId) {
+  private String crawlSecondaryImages(String internalId, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -187,7 +187,10 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
         if (jsonImage.has("Path")) {
           String urlImage = modifyImageURL(jsonImage.getString("Path"));
-          secondaryImagesArray.put(urlImage);
+
+          if (!urlImage.equalsIgnoreCase(primaryImage)) {
+            secondaryImagesArray.put(urlImage);
+          }
         }
 
       }
