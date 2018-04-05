@@ -25,7 +25,7 @@ import models.prices.Prices;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.bifarma.com.br/";
+  private static final String HOME_PAGE = "https://www.bifarma.com.br/";
 
   public BrasilBifarmaCrawler(Session session) {
     super(session);
@@ -44,19 +44,20 @@ public class BrasilBifarmaCrawler extends Crawler {
     this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
     Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    Element script = doc.select("script").first();
+    Element script = doc.select("head script").last();
     Element robots = doc.select("meta[name=robots]").first();
 
     if (script != null && robots != null) {
       String eval = script.html().trim();
+
       if (!eval.isEmpty()) {
-        Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
+        Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
         this.webdriver.executeJavascript(eval);
       }
-
-      this.webdriver.waitLoad(9000);
-      return Jsoup.parse(this.webdriver.getCurrentPageSource());
     }
+
+    this.webdriver.waitLoad(9000);
+    doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
     return doc;
   }
@@ -93,7 +94,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
