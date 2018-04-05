@@ -447,6 +447,11 @@ public class BrasilFastshopCrawler extends Crawler {
     Marketplace marketplace = new Marketplace();
 
     Element mktElement = doc.select("span.mktPartnerGreen").first();
+
+    if (mktElement == null) {
+      mktElement = doc.select(".mktPartnerBlue .infoValue").first();
+    }
+
     if (mktElement != null) {
       JSONObject sellerJSON = new JSONObject();
       Float price = crawlPrice(jsonPrices, available);
