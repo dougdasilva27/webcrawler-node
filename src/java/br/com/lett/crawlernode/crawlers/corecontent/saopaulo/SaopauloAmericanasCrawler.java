@@ -80,7 +80,7 @@ public class SaopauloAmericanasCrawler extends Crawler {
         String name = this.crawlMainPageName(infoProductJson);
         String variationName = entry.getValue().trim();
 
-        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
+        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase()) && skuOptions.size() > 1) {
           name += " " + variationName;
         }
 

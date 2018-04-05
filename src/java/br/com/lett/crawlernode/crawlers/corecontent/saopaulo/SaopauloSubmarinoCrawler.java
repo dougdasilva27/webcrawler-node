@@ -78,10 +78,10 @@ public class SaopauloSubmarinoCrawler extends Crawler {
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
 
-        String name = this.crawlMainPageName(infoProductJson);
+        String name = crawlMainPageName(infoProductJson);
         String variationName = entry.getValue().trim();
 
-        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
+        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase()) && skuOptions.size() > 1) {
           name += " " + variationName;
         }
 
