@@ -355,7 +355,6 @@ public class GPACrawler {
     StringBuilder str = new StringBuilder();
     str.append("<tbody>");
 
-    @SuppressWarnings("unchecked")
     Set<String> attributesList = nutritionalMap.keySet();
 
     for (String attribute : attributesList) {

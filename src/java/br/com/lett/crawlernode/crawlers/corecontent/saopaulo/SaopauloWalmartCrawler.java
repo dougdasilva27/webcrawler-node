@@ -93,7 +93,7 @@ public class SaopauloWalmartCrawler extends Crawler {
         String primaryImage = crawlPrimaryImage(doc);
 
         // Name
-        String name = crawlName(doc, jsonSku);
+        String name = crawlName(doc, arraySkus.length() > 1 ? jsonSku : new JSONObject());
 
         // Secondary images
         String secondaryImages = crawlSecondaryImages(doc);
