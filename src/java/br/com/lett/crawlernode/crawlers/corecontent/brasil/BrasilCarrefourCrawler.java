@@ -177,7 +177,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
         if (text.contains("por") && text.contains(".")) {
           int x = text.indexOf("por") + 3;
-          int y = text.indexOf(". entrega", x);
+          int y = text.lastIndexOf('.');
 
           String sellerName = text.substring(x, y).trim();
 
@@ -196,7 +196,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
     for (Element e : marketplacesElements) {
       Element name = e.select(".font-mirakl-vendor-name strong").first();
-      Element price = e.select(".prince-product-default span").first();
+      Element price = e.select("span.big-price").first();
 
       if (name != null && price != null) {
         String sellerName = name.ownText().trim().toLowerCase();
