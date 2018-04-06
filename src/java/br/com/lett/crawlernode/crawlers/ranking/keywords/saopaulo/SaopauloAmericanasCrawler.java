@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
@@ -18,11 +21,43 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String keyword = location.replaceAll(" ", "+");
-
     // monta a url com a keyword e a página
-    String url = "https://www.americanas.com.br/busca/?conteudo=" + this.keywordEncoded + "&limite=24&offset=" + this.arrayProducts.size();
+    String url = "https://www.americanas.com.br/busca/" + this.keywordEncoded + "?limite=24&offset=" + this.arrayProducts.size();
     this.log("Link onde são feitos os crawlers: " + url);
+
+    this.currentDoc = fetchDocument(url, null);
+
+    Elements products = this.currentDoc.select(".card-product .card-product-url");
+
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(e);
+        String productUrl = crawlProductUrl(internalPid);
+
+        saveDataProduct(null, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      Logging.printLogWarn(logger, session, "Busca na pagina principal retornou vazio, vou tentar via api ...");
+      extractProductsFromAPI();
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
+  }
+
+  protected void extractProductsFromAPI() {
+    this.log("Página " + this.currentPage);
+
+    String keyword = location.replaceAll(" ", "+");
 
     String urlAPi = "https://mystique-v1-americanas.b2w.io/mystique/search?content=" + keyword + "&offset=" + +this.arrayProducts.size()
         + "&sortBy=moreRelevant&source=nanook";
@@ -34,28 +69,20 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
       products = api.getJSONArray("products");
     }
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (products.length() >= 1) {
-      // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
-        setTotalBusca(api);
+        setTotalProducts(api);
       }
 
       for (int i = 0; i < products.length(); i++) {
         JSONObject product = products.getJSONObject(i);
 
-        // InternalPid
         String internalPid = crawlInternalPid(product);
-
-        // Url do produto
         String productUrl = crawlProductUrl(internalPid);
 
-        // InternalId
-        String internalId = crawlInternalId();
+        saveDataProduct(null, internalPid, productUrl);
 
-        saveDataProduct(internalId, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -69,17 +96,7 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    if (this.arrayProducts.size() < totalProducts) {
-      return true;
-    }
-
-    return false;
-  }
-
-
-  protected void setTotalBusca(JSONObject api) {
+  protected void setTotalProducts(JSONObject api) {
     if (api.has("_result")) {
       JSONObject result = api.getJSONObject("_result");
 
@@ -91,8 +108,18 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalId() {
-    return null;
+  @Override
+  protected void setTotalProducts() {
+    Element e = this.currentDoc.select(".form-group.display-sm-inline-block span[data-reactid]").first();
+
+    if (e != null) {
+      String total = e.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!total.isEmpty()) {
+        this.totalProducts = Integer.parseInt(total);
+        this.log("Total Search: " + this.totalProducts);
+      }
+    }
   }
 
   private String crawlInternalPid(JSONObject product) {
@@ -100,6 +127,22 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
     if (product.has("id")) {
       internalPid = Integer.toString(product.getInt("id"));
+    }
+
+    return internalPid;
+  }
+
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
+    String href = e.attr("href");
+
+    if (href.contains("?")) {
+      href = href.split("[?]")[0];
+    }
+
+    if (!href.isEmpty()) {
+      String[] tokens = href.split("/");
+      internalPid = tokens[tokens.length - 1];
     }
 
     return internalPid;
