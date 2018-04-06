@@ -29,8 +29,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
     boolean shouldVisit = false;
 
-    shouldVisit =
-        !FILTERS.matcher(href).matches() && (href.startsWith("http://www.angeloni.com.br/super/"));
+    shouldVisit = !FILTERS.matcher(href).matches() && (href.startsWith("http://www.angeloni.com.br/super/"));
 
     return shouldVisit;
   }
@@ -52,16 +51,13 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
       // Categorias
       Elements elementCategory1 = doc.select(".boxInIn ul li");
-      String category1 =
-          (elementCategory1.size() >= 5) ? elementCategory1.get(4).text().trim() : "";
+      String category1 = (elementCategory1.size() >= 5) ? elementCategory1.get(4).text().trim() : "";
 
       Elements elementCategory2 = doc.select(".boxInIn ul li");
-      String category2 =
-          (elementCategory2.size() >= 7) ? elementCategory2.get(6).text().trim() : "";
+      String category2 = (elementCategory2.size() >= 7) ? elementCategory2.get(6).text().trim() : "";
 
       Elements elementCategory3 = doc.select(".boxInIn ul li");
-      String category3 =
-          (elementCategory3.size() >= 9) ? elementCategory3.get(8).text().trim() : "";
+      String category3 = (elementCategory3.size() >= 9) ? elementCategory3.get(8).text().trim() : "";
 
       // Imagem primária
       Elements elementPrimaryImage;
@@ -157,8 +153,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
   private Float crawlPrice(Document doc) {
     Elements elementPrice = doc.select("span.valorPrice");
-    String priceText = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-        .replaceAll(",", ".").trim();
+    String priceText = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
 
     if (!priceText.isEmpty()) {
       return Float.parseFloat(priceText);
@@ -198,6 +193,11 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
     if (price != null) {
       prices.setBankTicketPrice(price);
+
+      Element priceFrom = doc.select(".prevPrice").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+      }
 
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), crawlInstallments(price, doc, "01"));
       prices.insertCardInstallment(Card.VISA.toString(), crawlInstallments(price, doc, "02"));

@@ -76,7 +76,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       String internalPid = crawlInternalPid(productInfo);
       String name = crawlName(productInfo);
       Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price, productInfo);
+      Prices prices = crawlPrices(price, productInfo, doc);
       boolean available = crawlAvailability(productInfo);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -252,7 +252,7 @@ public class BrasilBifarmaCrawler extends Crawler {
     return description.toString();
   }
 
-  private Prices crawlPrices(Float price, JSONObject info) {
+  private Prices crawlPrices(Float price, JSONObject info, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -261,6 +261,11 @@ public class BrasilBifarmaCrawler extends Crawler {
 
       prices.setBankTicketPrice(price);
       installmentPriceMap.put(1, price);
+
+      Element priceFrom = doc.select(".product_previous_price").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       if (info.has("installment")) {
         JSONObject installment = info.getJSONObject("installment");

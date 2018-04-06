@@ -51,7 +51,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
       String internalPid = null;
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price);
+      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -219,12 +219,17 @@ public class BrasilCallfarmaCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
+
+      Element priceFrom = doc.select("#preco span").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       prices.setBankTicketPrice(price);
 

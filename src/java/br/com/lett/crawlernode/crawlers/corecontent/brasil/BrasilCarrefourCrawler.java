@@ -50,7 +50,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 
@@ -63,7 +63,9 @@ public class BrasilCarrefourCrawler extends Crawler {
       Integer stock = null;
       String internalId = crawlInternalId(doc);
       Elements marketplacesElements = doc.select(".list-group-item");
-      Map<String, Float> marketplaceMap;
+      Map<String, Prices> marketplaceMap;
+
+      Double priceFrom = crawlPriceFrom(doc);
 
       if (marketplacesElements.isEmpty()) {
         marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalId);
@@ -71,11 +73,11 @@ public class BrasilCarrefourCrawler extends Crawler {
         marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
       }
 
-      Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+      Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, marketplaceMap.size() > 1 ? null : priceFrom);
 
       boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
-      Float price = available ? marketplaceMap.get(SELLER_NAME_LOWER) : null;
-      Prices prices = crawlPrices(price, internalId);
+      Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
+      Float price = available ? crawlPrice(prices) : null;
 
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
@@ -98,10 +100,8 @@ public class BrasilCarrefourCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    if ((url.contains("/p/")))
-      return true;
-    return false;
+  private boolean isProductPage(Document doc) {
+    return doc.select(".product-details-panel").first() != null;
   }
 
 
@@ -162,8 +162,8 @@ public class BrasilCarrefourCrawler extends Crawler {
     return price;
   }
 
-  private Map<String, Float> crawlMarketplaceForSingleSeller(Document document, String internalId) {
-    Map<String, Float> marketplaces = new HashMap<>();
+  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalId) {
+    Map<String, Prices> marketplaces = new HashMap<>();
 
     Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalId).first();
     Element oneMarketplace = document.select(".block-add-cart > span").first();
@@ -171,6 +171,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
     if (notifyMeElement == null) {
       Float price = crawlMainPagePrice(document);
+      Prices prices = crawlPrices(price, document, internalId);
 
       if (oneMarketplaceInfo != null && oneMarketplace != null) {
         String text = oneMarketplace.ownText().trim().toLowerCase();
@@ -181,20 +182,21 @@ public class BrasilCarrefourCrawler extends Crawler {
 
           String sellerName = text.substring(x, y).trim();
 
-          marketplaces.put(sellerName, price);
+          marketplaces.put(sellerName, prices);
         }
       } else {
-        marketplaces.put(SELLER_NAME_LOWER, price);
+        marketplaces.put(SELLER_NAME_LOWER, prices);
       }
     }
 
     return marketplaces;
   }
 
-  private Map<String, Float> crawlMarketplaceForMutipleSellers(Elements marketplacesElements) {
-    Map<String, Float> marketplaces = new HashMap<>();
+  private Map<String, Prices> crawlMarketplaceForMutipleSellers(Elements marketplacesElements) {
+    Map<String, Prices> marketplaces = new HashMap<>();
 
     for (Element e : marketplacesElements) {
+      String idOffer = e.attr("data-id-offers");
       Element name = e.select(".font-mirakl-vendor-name strong").first();
       Element price = e.select("span.big-price").first();
 
@@ -203,7 +205,7 @@ public class BrasilCarrefourCrawler extends Crawler {
         Float sellerPrice = MathUtils.parseFloat(price.ownText());
 
         if (sellerPrice != null && !sellerName.isEmpty()) {
-          marketplaces.put(sellerName, sellerPrice);
+          marketplaces.put(sellerName, crawlPrices(sellerPrice, e, idOffer));
         }
       }
     }
@@ -211,7 +213,18 @@ public class BrasilCarrefourCrawler extends Crawler {
     return marketplaces;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+  private Float crawlPrice(Prices prices) {
+    Float price = null;
+
+    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+      price = priceDouble.floatValue();
+    }
+
+    return price;
+  }
+
+  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, String internalId, Double priceFrom) {
     Marketplace marketplace = new Marketplace();
 
     for (String sellerName : marketplaceMap.keySet()) {
@@ -219,10 +232,9 @@ public class BrasilCarrefourCrawler extends Crawler {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", sellerName);
 
-        Float price = marketplaceMap.get(sellerName);
-        Prices prices = crawlPrices(price, internalId);
+        Prices prices = marketplaceMap.get(sellerName);
 
-        sellerJSON.put("price", price);
+        sellerJSON.put("price", crawlPrice(prices));
         sellerJSON.put("prices", prices.toJSON());
 
         try {
@@ -235,6 +247,17 @@ public class BrasilCarrefourCrawler extends Crawler {
     }
 
     return marketplace;
+  }
+
+  private Double crawlPriceFrom(Element e) {
+    Double price = null;
+
+    Element priceFrom = e.select(".price-old").first();
+    if (priceFrom != null) {
+      price = MathUtils.parseDouble(priceFrom.text());
+    }
+
+    return price;
   }
 
   private String crawlPrimaryImage(Document document) {
@@ -306,11 +329,12 @@ public class BrasilCarrefourCrawler extends Crawler {
     return description;
   }
 
-  private Prices crawlPrices(Float price, String internalId) {
+  private Prices crawlPrices(Float price, Element e, String internalId) {
     Prices prices = new Prices();
 
     if (price != null) {
       prices.setBankTicketPrice(price);
+      prices.setPriceFrom(crawlPriceFrom(e));
 
       String url = "https://www.carrefour.com.br/installment/creditCard?productPrice=" + price + "&productCode=" + internalId;
       String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
@@ -319,8 +343,8 @@ public class BrasilCarrefourCrawler extends Crawler {
 
       try {
         jsonPrices = new JSONObject(json);
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      } catch (Exception ex) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
       }
 
       if (jsonPrices.has("maestroInstallments")) {

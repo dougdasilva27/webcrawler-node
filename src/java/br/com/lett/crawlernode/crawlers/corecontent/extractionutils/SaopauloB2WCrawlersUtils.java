@@ -272,6 +272,10 @@ public class SaopauloB2WCrawlersUtils {
 
         String idProduct = crawlIdProduct(jsonOffer);
 
+        if (jsonOffer.has("listPrice")) {
+          jsonSeller.put("priceFrom", jsonOffer.get("listPrice"));
+        }
+
         if (idProduct != null) {
           manageEmbedded(jsonOffer, jsonSeller, moreQuantityOfInstallments);
 

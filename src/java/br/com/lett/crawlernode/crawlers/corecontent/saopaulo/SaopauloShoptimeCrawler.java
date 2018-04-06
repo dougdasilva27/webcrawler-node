@@ -173,6 +173,11 @@ public class SaopauloShoptimeCrawler extends Crawler {
             String sellerName = seller.getString("sellerName");
             Prices prices = crawlMarketplacePrices(seller);
 
+            if (marketArrays.length() == 1 && seller.has("priceFrom")) {
+              String text = seller.get("priceFrom").toString();
+              prices.setPriceFrom(MathUtils.parseDouble(text));
+            }
+
             marketplaces.put(sellerName, prices);
           }
         }
