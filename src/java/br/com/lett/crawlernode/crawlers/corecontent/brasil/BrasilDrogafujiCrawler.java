@@ -234,6 +234,11 @@ public class BrasilDrogafujiCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Element priceFrom = doc.select(".old-price span[id]").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Elements installmentsElement = doc.select("#parcelamento table tr");
 
       for (Element e : installmentsElement) {

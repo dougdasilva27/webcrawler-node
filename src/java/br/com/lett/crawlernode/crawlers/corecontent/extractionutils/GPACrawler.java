@@ -80,6 +80,7 @@ public class GPACrawler {
 
       // Price
       Float price = available ? crawlPrice(jsonSku) : null;
+      Double priceFrom = available ? crawlPriceFrom(jsonSku) : null;
 
       // Primary image
       String primaryImage = crawlPrimaryImage(jsonSku);
@@ -91,7 +92,7 @@ public class GPACrawler {
       String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
 
       // Prices
-      Prices prices = crawlPrices(price);
+      Prices prices = crawlPrices(price, priceFrom);
 
       // Stock
       Integer stock = null;
@@ -161,6 +162,20 @@ public class GPACrawler {
     }
 
     return name;
+  }
+
+  private Double crawlPriceFrom(JSONObject json) {
+    Double price = null;
+
+    if (json.has("priceFrom")) {
+      Object pObj = json.get("priceFrom");
+
+      if (pObj instanceof Double) {
+        price = (Double) pObj;
+      }
+    }
+
+    return price;
   }
 
   private Float crawlPrice(JSONObject json) {
@@ -400,13 +415,14 @@ public class GPACrawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, Double priceFrom) {
     Prices p = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
+      p.setPriceFrom(priceFrom);
       p.setBankTicketPrice(price);
 
       p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);

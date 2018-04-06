@@ -25,6 +25,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -92,7 +93,7 @@ public class CampograndeComperCrawler extends Crawler {
       String name = crawlName(productJson);
       boolean available = crawlAvailability(productJson);
       Float price = available ? crawlPrice(productJson) : null;
-      Prices prices = available ? crawlPrices(price) : new Prices();
+      Prices prices = available ? crawlPrices(price, doc) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
@@ -270,7 +271,7 @@ public class CampograndeComperCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -278,6 +279,11 @@ public class CampograndeComperCrawler extends Crawler {
 
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
+
+      Element priceFrom = doc.select("#lblPreco.price-from").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
