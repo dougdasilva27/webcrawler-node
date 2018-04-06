@@ -110,8 +110,6 @@ public class ImageCrawler extends Task {
 	public void onFinish() {
 		List<SessionError> errors = session.getErrors();
 
-		Logging.printLogDebug(LOGGER, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
-
 		if (!errors.isEmpty()) {
 			Logging.printLogError(LOGGER, session, "Task failed!");
 			session.setTaskStatus(Task.STATUS_FAILED);

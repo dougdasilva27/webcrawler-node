@@ -62,7 +62,6 @@ public class Crawler extends Task {
    */
   protected static final int MAX_VOID_ATTEMPTS = 3;
 
-
   protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
   protected CrawlerConfig config;
@@ -120,17 +119,15 @@ public class Crawler extends Task {
   public void onFinish() {
 
     try {
-      Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
+      //Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
 
       // close the webdriver
       if (webdriver != null) {
-        Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
+        Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
         webdriver.terminate();
       }
 
       List<SessionError> errors = session.getErrors();
-
-      Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
 
       // errors collected manually
       // they can be exceptions or business logic errors
@@ -167,11 +164,11 @@ public class Crawler extends Task {
   }
 
   private void productionRun() {
-    if (session instanceof InsightsCrawlerSession) {
-      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
-    } else if (session instanceof ImageCrawlerSession) {
-      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
-    }
+//    if (session instanceof InsightsCrawlerSession) {
+//      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
+//    } else if (session instanceof ImageCrawlerSession) {
+//      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
+//    }
 
     // crawl informations and create a list of products
     List<Product> products = null;
@@ -339,8 +336,7 @@ public class Crawler extends Task {
         else {
           // if we haven't a previous processed, and the new processed was null,
           // we don't have anything to give a trucada!
-          Logging.printLogDebug(logger, session,
-              "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+          Logging.printLogDebug(logger, session, "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
           return;
         }
       }
@@ -560,7 +556,7 @@ public class Crawler extends Task {
     ProcessedComparison comparison = p1.compareHugeChanges(p2);
 
     if (comparison.changed) {
-      Logging.printLogDebug(logger, session, "Change detected between the current and previous processed [field " + comparison.field + "]");
+      Logging.printLogInfo(logger, session, "Change detected on ProcessedModel [field " + comparison.field + "]");
       Logging.printLogDebug(logger, session, "Went from " + comparison.from + " to " + comparison.to);
     }
 
@@ -587,7 +583,7 @@ public class Crawler extends Task {
       }
     }
 
-    Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " was not found...geting an empty product.");
+    Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " not found.");
     return new Product();
   }
 
@@ -726,15 +722,6 @@ public class Crawler extends Task {
         // register business logic error on session
         SessionError error = new SessionError(SessionError.BUSINESS_LOGIC, "Ended truco session but will not persist the product.");
         session.registerError(error);
-
-        // if we end up with a void at end of truco, we must change the status of the processed to
-        // void
-        // if (localProduct.isVoid()) {
-        // if (previousProcessedProduct != null && previousProcessedProduct.getVoid() == false) {
-        // Logging.printLogDebug(logger, session, "Seting previous processed void to true");
-        // Persistence.updateProcessedVoid(previousProcessedProduct, true, session);
-        // }
-        // }
 
         break;
       }

@@ -130,8 +130,6 @@ public abstract class CrawlerRanking extends Task {
 
     List<SessionError> errors = session.getErrors();
 
-    Logging.printLogDebug(logger, session, "Finalizing session of type [" + session.getClass().getSimpleName() + "]");
-
     // errors collected manually
     // they can be exceptions or business logic errors
     // and are all gathered inside the session
