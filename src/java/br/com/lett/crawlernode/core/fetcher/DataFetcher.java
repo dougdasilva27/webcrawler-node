@@ -431,21 +431,6 @@ public class DataFetcher {
       HttpGet httpGet = new HttpGet(url);
       httpGet.setConfig(requestConfig);
 
-      // if we are using charity engine, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-      // String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-      // String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-      // httpGet.addHeader("Proxy-Authorization", headerValue);
-      //
-      // // setting header for proxy country
-      // httpGet.addHeader("X-Proxy-Country", "BR");
-      // }
-
-      // if we are using azure, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-      // httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-      // }
-
       // do request
       closeableHttpResponse = httpclient.execute(httpGet, localContext);
 
@@ -458,14 +443,8 @@ public class DataFetcher {
       }
 
       // creating the page content result from the http request
-      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-                                                                                    // information
-                                                                                    // from http
-                                                                                    // entity
-      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-                                                                                        // the
-                                                                                        // status
-                                                                                        // code
+      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); 
+      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); 
       pageContent.setUrl(url); // setting url
 
       responseLength = pageContent.getContentData().length;
@@ -515,8 +494,8 @@ public class DataFetcher {
     } catch (Exception e) {
       sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
+      Logging.printLogError(logger, session, e.getMessage());
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
         Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -571,17 +550,11 @@ public class DataFetcher {
 
       RequestConfig requestConfig = null;
       if (proxy != null) {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-                                                                                                             // redirect
-                                                                                                             // to
-                                                                                                             // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
             .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
             .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
       } else {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set
-                                                                                                             // redirect
-                                                                                                             // to
-                                                                                                             // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
             .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
             .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
       }
@@ -590,29 +563,19 @@ public class DataFetcher {
       List<Header> reqHeaders = new ArrayList<>();
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
-      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
-          .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
+      CloseableHttpClient httpclient = HttpClients.custom()
+    		  .setDefaultCookieStore(cookieStore)
+    		  .setUserAgent(randUserAgent)
+    		  .setDefaultRequestConfig(requestConfig)
+    		  .setDefaultCredentialsProvider(credentialsProvider)
+    		  .setDefaultHeaders(reqHeaders)
+    		  .build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
       HttpGet httpGet = new HttpGet(url);
       httpGet.setConfig(requestConfig);
-
-      // if we are using charity engine, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.CHARITY)) {
-      // String authenticator = "ff548a45065c581adbb23bbf9253de9b" + ":";
-      // String headerValue = "Basic " + Base64.encodeBase64String(authenticator.getBytes());
-      // httpGet.addHeader("Proxy-Authorization", headerValue);
-      //
-      // // setting header for proxy country
-      // httpGet.addHeader("X-Proxy-Country", "BR");
-      // }
-
-      // if we are using azure, we must set header for authentication
-      // if (randProxy != null && randProxy.getSource().equals(ProxyCollection.AZURE)) {
-      // httpGet.addHeader("Authorization", "5RXsOBETLoWjhdM83lDMRV3j335N1qbeOfMoyKsD");
-      // }
 
       // do request
       closeableHttpResponse = httpclient.execute(httpGet, localContext);
@@ -626,14 +589,8 @@ public class DataFetcher {
       }
 
       // creating the page content result from the http request
-      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-                                                                                    // information
-                                                                                    // from http
-                                                                                    // entity
-      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting
-                                                                                        // the
-                                                                                        // status
-                                                                                        // code
+      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); 
+      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); 
       pageContent.setUrl(url); // setting url
 
       responseLength = pageContent.getContentData().length;
@@ -680,8 +637,8 @@ public class DataFetcher {
     } catch (Exception e) {
       sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição GET para header: " + url);
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
+      Logging.printLogError(logger, session, e.getMessage());
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
         Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
@@ -740,8 +697,15 @@ public class DataFetcher {
 
   }
 
-  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy, String userAgent, Session session,
-      CloseableHttpResponse response, Integer responseLength, String requestHash) {
+  public static void sendRequestInfoLog(
+		  String url, 
+		  String requestType, 
+		  LettProxy proxy, 
+		  String userAgent, 
+		  Session session,
+		  CloseableHttpResponse response, 
+		  Integer responseLength, 
+		  String requestHash) {
 
     JSONObject requestMetadata = new JSONObject();
 
@@ -789,7 +753,6 @@ public class DataFetcher {
    * @return
    */
   private static File downloadImageFromMarket(int attempt, Session session) {
-
     File localFile = null;
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -879,13 +842,11 @@ public class DataFetcher {
       }
 
       if (e instanceof ResponseCodeException) {
-        Logging.printLogWarn(logger, session,
-            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
+        Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session,
-            "Tentativa " + attempt + " -> Erro ao fazer requisição GET para download de imagem: " + session.getOriginalURL());
-        Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
+        Logging.printLogError(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -897,75 +858,6 @@ public class DataFetcher {
     }
 
   }
-
-  // /**
-  // *
-  // * @param attempt
-  // * @param session
-  // * @param proxyServices
-  // * @return
-  // */
-  // public static LettProxy randLettProxy(int attempt, Session session, List<String> proxyServices,
-  // String url) {
-  // LettProxy nextProxy = getNextProxy(session, attempt, proxyServices);
-  // session.addRequestProxy(url, nextProxy);
-  //
-  // return nextProxy;
-  // }
-  //
-  // /**
-  // *
-  // * @param serviceName
-  // * @param session
-  // * @return
-  // */
-  // public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices)
-  // {
-  // LettProxy nextProxy = null;
-  //
-  // List<String> proxiesTemp = proxyServices;
-  // int attemptTemp = attempt;
-  //
-  // while(!proxiesTemp.isEmpty()) {
-  // String serviceName = getProxyService(attemptTemp, session, proxiesTemp);
-  // if(serviceName != null) {
-  // proxiesTemp.remove(serviceName);
-  //
-  // if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
-  // // testing
-  // List<LettProxy> proxies = Test.proxies.getProxy(serviceName);
-  //
-  // if (!proxies.isEmpty()) {
-  // nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-  // break;
-  // } else {
-  // Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but
-  // there was no proxy fetched for this service.");
-  // attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
-  // }
-  // }
-  //
-  // else if (Main.proxies != null) { // production
-  // List<LettProxy> proxies = Main.proxies.getProxy(serviceName);
-  //
-  // if (!proxies.isEmpty()) {
-  // nextProxy = proxies.get( MathCommonsMethods.randInt(0, proxies.size()-1) );
-  // break;
-  // } else {
-  // Logging.printLogError(logger, session, "Error: using proxy service " + serviceName + ", but
-  // there was no proxy fetched for this service.");
-  // attemptTemp += ProxyCollection.proxyMaxAttempts.get(serviceName);
-  // }
-  // }
-  // } else {
-  // Logging.printLogError(logger, session, "Error: using no proxy, because there is a proxy on this
-  // list that the crawler has no knowledge.");
-  // return null;
-  // }
-  // }
-  //
-  // return nextProxy;
-  // }
 
   /**
    * 
@@ -989,7 +881,6 @@ public class DataFetcher {
    */
   public static LettProxy getNextProxy(Session session, int attempt, List<String> proxyServices) {
     LettProxy nextProxy = null;
-
     List<LettProxy> proxies = new ArrayList<>();
     Integer attemptTemp = Integer.valueOf(attempt);
     Integer maxAttempts;

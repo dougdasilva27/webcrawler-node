@@ -104,7 +104,7 @@ public class Main {
 
     // create the scheduled task to check the executor status
     serverExecutorStatusAgent = new ServerExecutorStatusAgent();
-    serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 5);
+    serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 20);
   }
 
   private static void checkFiles() {

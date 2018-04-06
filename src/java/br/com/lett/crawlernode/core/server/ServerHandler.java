@@ -51,10 +51,8 @@ public class ServerHandler implements HttpHandler {
 
 		// handle request on the task endpoint
 		if (Server.ENDPOINT_TASK.equals(endpoint)) {
-			Logging.printLogDebug(logger, "Received a request on " + Server.ENDPOINT_TASK);
-			
-			Logging.printLogDebug(logger, "parsing request....");
-			
+			Logging.printLogInfo(logger, "Received a request on " + Server.ENDPOINT_TASK);
+						
 			Request request = parseRequest(t);
 
 			Logging.printLogDebug(logger, request.toString());
@@ -142,7 +140,6 @@ public class ServerHandler implements HttpHandler {
 			} else {
 				((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(false);
 			}
-			
 			
 		}
 		

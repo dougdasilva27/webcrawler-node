@@ -40,7 +40,7 @@ public class Processor {
   public static Processed createProcessed(Product product, Session session, Processed previousProcessedProduct,
       ResultManager processorResultManager) {
 
-    Logging.printLogDebug(logger, session, "Creating processed product...");
+    Logging.printLogInfo(logger, session, "Creating processed product ...");
 
     String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -128,28 +128,16 @@ public class Processor {
 
       // update availability
       newProcessedProduct.setAvailable(available);
-
-      // update LRT
       newProcessedProduct.setLrt(nowISO);
-
-      // update void
       newProcessedProduct.setVoid(false);
-
-      // update LAT
       if (available) {
         newProcessedProduct.setLat(nowISO);
       }
 
       // update status
       updateStatus(newProcessedProduct);
-
-      // update LMS
       updateLMS(newProcessedProduct, previousProcessedProduct, nowISO);
-
-      // update changes
       updateChanges(newProcessedProduct, previousProcessedProduct, session);
-
-      // update LMT
       updateLMT(newProcessedProduct, nowISO);
 
       // Retirando price = 0
@@ -164,7 +152,7 @@ public class Processor {
       Logging.printLogDebug(logger, session, "Produto processado:" + "\n" + newProcessedProduct.toString());
 
     } catch (Exception e2) {
-      Logging.printLogError(logger, session, "Erro ao tentar processar produto.");
+      Logging.printLogError(logger, session, "Error processing product.");
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e2));
     }
 
@@ -173,19 +161,19 @@ public class Processor {
 
   private static boolean checkFields(Float price, boolean available, String internalId, String url, String name, Session session) {
     if ((price == null || price.equals(0f)) && available) {
-      Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto disponível mas com campo vazio: price");
+      Logging.printLogError(logger, session, "Error creating ProcessedModel." + "[" + "product available but 'price' is empty" + "]");
       return false;
     } else if (internalId == null || internalId.isEmpty()) {
-      Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: internal_id");
+      Logging.printLogError(logger, session, "Error creating ProcessedModel." + "[" + "internalId is null or empty" + "]");
       return false;
     } else if (session.getMarket().getNumber() == 0) {
-      Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [marketId] ... aborting ...");
+      Logging.printLogError(logger, session, "Error creating ProcessedModel." + "[" + "marketId is 0");
       return false;
     } else if (url == null || url.isEmpty()) {
-      Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [url] ... aborting ...");
+      Logging.printLogError(logger, session, "Error creating ProcessedModel." + "[" + "url is empty" + "]");
       return false;
     } else if (name == null || name.isEmpty()) {
-      Logging.printLogError(logger, session, "Erro tentando criar ProcessedModel de leitura de produto com campo vazio: [name] ... aborting ...");
+      Logging.printLogError(logger, session, "Error creating ProcessedModel." + "[" + "name is null or empty" + "]");
       return false;
     }
 
@@ -326,7 +314,7 @@ public class Processor {
         BehaviorElement be = builder.build();
         newBehavior.add(be);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, "Error creating first behavior element from the day");
+        Logging.printLogError(logger, session, "Error creating first behavior element from the day.");
         Logging.printLogError(logger, session, Util.getStackTraceString(e));
       }
     }
@@ -396,7 +384,7 @@ public class Processor {
    * @throws MalformedPricesException
    */
   public static Processed fetchPreviousProcessed(Product product, Session session) {
-    Logging.printLogDebug(logger, session, "Fetching previous processed product...");
+    Logging.printLogInfo(logger, session, "Fetching previous processed product ...");
 
     Processed actualProcessedProduct;
 
@@ -436,9 +424,7 @@ public class Processor {
         query.append("' LIMIT 1");
 
         // ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-        Logging.printLogDebug(logger, session, "Running query: " + query.toString());
         ResultSet rs = Main.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
-
 
         while (rs.next()) {
 
