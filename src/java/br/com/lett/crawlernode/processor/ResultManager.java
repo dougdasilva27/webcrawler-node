@@ -81,7 +81,7 @@ public class ResultManager {
 	 * @return pm Retorna processModel com valores do Crawler 
 	 */
 	public Processed processProduct(Processed pm, Session session) {	
-		Logging.printLogDebug(LOGGER, session, "Processing product in ResultManager...");
+		Logging.printLogInfo(LOGGER, session, "Processing product in ResultManager...");
 
 		// preventing extra field to be null
 		if (pm.getExtra() == null) {
@@ -115,7 +115,7 @@ public class ResultManager {
 	 * @param session
 	 */
 	private void updateDigitalContent(Processed pm, Session session) {  
-		Logging.printLogDebug(LOGGER, session, "Updating digital content...");
+		Logging.printLogInfo(LOGGER, session, "Updating digital content ...");
 
 		// if the processed model doesn't have a digital content
 		// we must create an empty one, to be populated
@@ -137,7 +137,7 @@ public class ResultManager {
 				processedModelDigitalContentPic = pm.getDigitalContent().getJSONObject("pic");
 			}
 		} catch (Exception e) { 
-			Logging.printLogDebug(LOGGER, session, CommonMethods.getStackTraceString(e));
+			Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
 		}
 
 		// count images

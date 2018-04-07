@@ -27,7 +27,7 @@ public class CrawlerTaskEndpoint {
 	public static String perform(HttpExchange t, Request request) throws IOException {
 		String response;
 
-		Logging.printLogDebug(logger, "creating session....");
+		Logging.printLogDebug(logger, "Creating session....");
 		Session session = SessionFactory.createSession(request, Main.markets);
 		
 		//
@@ -55,12 +55,11 @@ public class CrawlerTaskEndpoint {
 //		}
 
 		// create the task
-		Logging.printLogDebug(logger, session, "creating task for " + session.getOriginalURL());
+		Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
 		Task task = TaskFactory.createTask(session);
-		Logging.printLogDebug(logger, session, "created task " + task.getClass().getSimpleName());
 
 		// perform the task
-		Logging.printLogDebug(logger, session, "processing task....");
+		Logging.printLogDebug(logger, session, "Processing task ...");
 		task.process();
 
 		// check final task status
