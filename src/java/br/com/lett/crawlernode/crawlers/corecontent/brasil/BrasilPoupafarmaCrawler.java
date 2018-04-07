@@ -255,6 +255,11 @@ public class BrasilPoupafarmaCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Element priceFrom = doc.select(".preco-det .preco-de").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Elements installmentsElement = doc.select("#formas-de-pagamento .show-for-medium-up li");
 
       for (Element e : installmentsElement) {

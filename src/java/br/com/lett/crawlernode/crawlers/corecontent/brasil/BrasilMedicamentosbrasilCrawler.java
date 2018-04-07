@@ -214,6 +214,11 @@ public class BrasilMedicamentosbrasilCrawler extends Crawler {
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 
+      Element priceFrom = doc.select("label.font-promocao[style]").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Element secondPrice = doc.select("h4.product-price").first();
 
       if (secondPrice != null) {

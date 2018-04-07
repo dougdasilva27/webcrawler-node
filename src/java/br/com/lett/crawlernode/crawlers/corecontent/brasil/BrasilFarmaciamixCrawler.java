@@ -232,6 +232,11 @@ public class BrasilFarmaciamixCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Element priceFrom = doc.select(".preco-de span[content]").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Elements installmentsElements = doc.select(".col-condicoes-and-frete .list-padrao li");
 
       for (Element e : installmentsElements) {

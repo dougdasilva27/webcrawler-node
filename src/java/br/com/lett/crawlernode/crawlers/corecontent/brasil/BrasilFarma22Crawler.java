@@ -69,7 +69,7 @@ public class BrasilFarma22Crawler extends Crawler {
         String primaryImage = crawlPrimaryImage(doc);
         String name = crawlName(doc, jsonSku);
         String secondaryImages = crawlSecondaryImages(doc);
-        Prices prices = crawlPrices(internalId, price);
+        Prices prices = crawlPrices(internalId, price, jsonSku);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -232,7 +232,7 @@ public class BrasilFarma22Crawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -242,6 +242,10 @@ public class BrasilFarma22Crawler extends Crawler {
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
         prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+      }
+
+      if (jsonSku.has("listPriceFormated")) {
+        prices.setPriceFrom(MathUtils.parseDouble(jsonSku.get("listPriceFormated").toString()));
       }
 
       Elements cardsElements = doc.select("#ddlCartao option");

@@ -354,6 +354,11 @@ public class CuritibaMuffatoCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
+      Element priceFrom = doc.select(".skuListPrice").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Element installmentElement = doc.select(".skuBestInstallmentNumber").first();
 
       if (installmentElement != null) {

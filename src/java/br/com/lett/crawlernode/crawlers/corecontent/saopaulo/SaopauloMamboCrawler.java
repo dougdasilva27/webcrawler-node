@@ -77,10 +77,10 @@ public class SaopauloMamboCrawler extends Crawler {
         String name = crawlName(jsonSku, skuJson);
         String secondaryImages = crawlSecondaryImages(internalId, primaryImage);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
-        Prices prices = crawlPrices(internalId, price);
+        Prices prices = crawlPrices(internalId, price, jsonSku);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -197,7 +197,7 @@ public class SaopauloMamboCrawler extends Crawler {
         if (jsonImage.has("Path")) {
           String urlImage = modifyImageURL(jsonImage.getString("Path"));
 
-          if (!primaryImage.equals(urlImage)) {
+          if (primaryImage != null && !primaryImage.equals(urlImage)) {
             secondaryImagesArray.put(urlImage);
           }
         }
@@ -237,7 +237,7 @@ public class SaopauloMamboCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -247,7 +247,7 @@ public class SaopauloMamboCrawler extends Crawler {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", seller);
         sellerJSON.put("price", price);
-        sellerJSON.put("prices", crawlPrices(internalId, price).toJSON());
+        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku).toJSON());
 
         try {
           Seller s = new Seller(sellerJSON);
@@ -304,7 +304,7 @@ public class SaopauloMamboCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -314,6 +314,10 @@ public class SaopauloMamboCrawler extends Crawler {
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
         prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+      }
+
+      if (jsonSku.has("listPriceFormated")) {
+        prices.setPriceFrom(MathUtils.parseDouble(jsonSku.get("listPriceFormated").toString()));
       }
 
       Elements cardsElements = doc.select("#ddlCartao option");

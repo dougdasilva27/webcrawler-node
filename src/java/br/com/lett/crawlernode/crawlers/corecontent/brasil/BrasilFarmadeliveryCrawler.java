@@ -232,6 +232,11 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
         prices.setBankTicketPrice(bankSlipPrice);
       }
 
+      Element priceFrom = document.select(".old-price span[id]").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 
       installmentPriceMap.put(1, price);

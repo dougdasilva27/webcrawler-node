@@ -179,13 +179,18 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Document document, Float price) {
+  private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<Integer, Float>();
 
       installmentPriceMap.put(1, price);
+
+      Element priceFrom = doc.select(".div_prec_det .txt_cinza_gr").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       prices.setBankTicketPrice(price);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);

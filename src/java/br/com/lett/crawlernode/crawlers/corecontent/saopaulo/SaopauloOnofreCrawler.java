@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -58,7 +59,7 @@ public class SaopauloOnofreCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price);
+      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -230,11 +231,16 @@ public class SaopauloOnofreCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+      Element priceFrom = doc.select(".price-box__old strike").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);

@@ -215,6 +215,11 @@ public class SaopauloPanvelCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Element priceFrom = doc.select(".etiqueta_preco .depor").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Element installments = doc.select(".vezes").first();
 
       if (installments != null) {

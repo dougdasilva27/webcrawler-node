@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -209,6 +210,11 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+      Element priceFrom = doc.select(".prod_preco .preco_de").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
 
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);

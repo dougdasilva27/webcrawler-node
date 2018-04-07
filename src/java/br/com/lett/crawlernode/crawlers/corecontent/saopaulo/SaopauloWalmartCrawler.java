@@ -337,6 +337,11 @@ public class SaopauloWalmartCrawler extends Crawler {
           prices.setBankTicketPrice(price);
         }
 
+        Element priceFrom = e.select(".product-price-old").first();
+        if (priceFrom != null) {
+          prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        }
+
         Element installmentElement = e.select(".product-price-installment").first();
         String priceInstallmentAmount = installmentElement.attr("data-price-installment-amount");
 

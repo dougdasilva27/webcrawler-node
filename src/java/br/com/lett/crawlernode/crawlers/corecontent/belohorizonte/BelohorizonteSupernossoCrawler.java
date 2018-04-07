@@ -113,7 +113,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
       String internalPid = crawlInternalPid(json);
       String name = crawlName(json);
       Float price = crawlPrice(json);
-      Prices prices = crawlPrices(price);
+      Prices prices = crawlPrices(price, json);
       Integer stock = crawlStock(json);
       boolean available = stock != null && stock > 0;
       CategoryCollection categories = crawlCategories(json);
@@ -334,13 +334,21 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, JSONObject jsonSku) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
+
+      if (jsonSku.has("oldPrice")) {
+        String text = jsonSku.get("oldPrice").toString().replaceAll("[^0-9.]", "");
+
+        if (!text.isEmpty()) {
+          prices.setPriceFrom(Double.parseDouble(text));
+        }
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);

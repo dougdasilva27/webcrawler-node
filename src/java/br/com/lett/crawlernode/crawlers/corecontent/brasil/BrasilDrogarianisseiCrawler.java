@@ -251,6 +251,11 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Element priceFrom = doc.select(".preco-de").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Elements installmentsElement = doc.select("#side-prod .preco-parcela strong");
 
       if (installmentsElement.size() > 1) {

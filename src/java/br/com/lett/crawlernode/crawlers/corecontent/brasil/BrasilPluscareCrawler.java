@@ -220,6 +220,11 @@ public class BrasilPluscareCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
+      Element priceFrom = doc.select(".precoDe #PrecoProduto").first();
+      if (priceFrom != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      }
+
       Element parc = doc.select("#ParcelamentoProduto").first();
 
       if (parc != null) {
