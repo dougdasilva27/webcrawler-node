@@ -6,7 +6,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
@@ -46,8 +45,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
         }
       }
     } else {
-      Logging.printLogWarn(logger, session, "Busca na pagina principal retornou vazio, vou tentar via api ...");
-      extractProductsFromAPI();
+      this.result = false;
+      this.log("Keyword sem resultado!");
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
@@ -57,7 +56,7 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromAPI() {
     this.log("Página " + this.currentPage);
 
-    String keyword = location.replaceAll(" ", "+");
+    String keyword = this.keywordEncoded.replaceAll(" ", "+");
 
     String urlAPi = "https://mystique-v1-americanas.b2w.io/mystique/search?content=" + keyword + "&offset=" + +this.arrayProducts.size()
         + "&sortBy=moreRelevant&source=nanook";

@@ -57,7 +57,7 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromAPI() {
     this.log("Página " + this.currentPage);
 
-    String keyword = location.replaceAll(" ", "+");
+    String keyword = this.keywordEncoded.replaceAll(" ", "+");
 
     String urlAPi = "https://mystique-v1-shoptime.b2w.io/mystique/search?content=" + keyword + "&offset=" + +this.arrayProducts.size()
         + "&sortBy=moreRelevant&source=nanook";
