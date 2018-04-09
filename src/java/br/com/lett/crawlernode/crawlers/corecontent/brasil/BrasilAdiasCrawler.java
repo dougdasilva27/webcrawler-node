@@ -94,7 +94,7 @@ public class BrasilAdiasCrawler extends Crawler {
       String primaryImage = crawlPrimaryImage(doc);
 
       // Secondary images
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 
       // Description
       String description = crawlDescription(doc);
@@ -272,14 +272,18 @@ public class BrasilAdiasCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document document) {
+  private String crawlSecondaryImages(Document document, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
     Elements imagesElement = document.select(".fbits-produto-imagensMinicarrossel-item a");
 
-    for (int i = 1; i < imagesElement.size(); i++) {
-      secondaryImagesArray.put(imagesElement.get(i).attr("data-zoom-image").trim());
+    for (Element e : imagesElement) {
+      String image = e.attr("data-zoom-image").trim();
+
+      if (!image.equalsIgnoreCase(primaryImage) && !image.isEmpty()) {
+        secondaryImagesArray.put(image);
+      }
     }
 
     if (secondaryImagesArray.length() > 0) {
