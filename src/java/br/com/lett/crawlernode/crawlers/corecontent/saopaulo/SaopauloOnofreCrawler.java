@@ -239,7 +239,11 @@ public class SaopauloOnofreCrawler extends Crawler {
 
       Element priceFrom = doc.select(".price-box__old strike").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        Float priceOld = MathUtils.parseFloat(priceFrom.text());
+
+        if (priceOld != null && !priceOld.equals(price)) {
+          prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        }
       }
 
       installmentPriceMap.put(1, price);

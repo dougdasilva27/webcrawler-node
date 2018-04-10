@@ -110,7 +110,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
 
       // Prices
-      Prices prices = crawlPrices(doc, price);
+      Prices prices = crawlPrices(doc, price, internalPid);
 
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
@@ -245,13 +245,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Document doc, Float price) {
+  private Prices crawlPrices(Document doc, Float price, String internalPid) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
-      Element priceFrom = doc.select(".old-price span[id]").first();
+      Element priceFrom = doc.select(".old-price span[id=old-price-" + internalPid + "]").first();
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
       }
