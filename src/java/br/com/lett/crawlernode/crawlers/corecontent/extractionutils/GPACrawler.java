@@ -333,11 +333,37 @@ public class GPACrawler {
 
 
   private String crawlDescription(JSONObject json) {
-    String description = "";
+    StringBuilder description = new StringBuilder();
 
-    if (json.has("shortDescription")) {
-      if (json.get("shortDescription") instanceof String) {
-        description += json.getString("shortDescription");
+    if (json.has("shortDescription") && json.get("shortDescription") instanceof String) {
+      description.append(json.getString("shortDescription"));
+    }
+
+    if (json.has("itemMap")) {
+      JSONArray itemMap = json.getJSONArray("itemMap");
+
+      if (itemMap.length() > 0) {
+        JSONObject productInfo = itemMap.getJSONObject(0);
+
+        if (productInfo.has("quantity") && productInfo.get("quantity") instanceof Integer && productInfo.has("name")) {
+          int quantity = productInfo.getInt("quantity");
+          String name = productInfo.get("name").toString();
+
+          if (quantity > 1) {
+            description.append("<table class=\"nutritional-table table product-table\">\n" + "                                <thead>\n"
+                + "                                    <tr>\n"
+                + "                                        <th colspan=\"2\" class=\"title\">Produtos no kit</th>\n"
+                + "                                    </tr>\n" + "                                    <tr>\n"
+                + "                                        <th>Nome</th>\n" + "                                        <th>Quantidade</th>\n"
+                + "                                    </tr>\n" + "                                </thead>\n"
+                + "                                <tbody>\n"
+                + "                                    <!-- ngRepeat: item in productDetailCtrl.product.itemMap --><tr ng-repeat=\"item in productDetailCtrl.product.itemMap\" class=\"ng-scope\">\n"
+                + "                                        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">" + name + "l</td>\n"
+                + "                                        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">" + quantity + "</td>\n"
+                + "                                    </tr><!-- end ngRepeat: item in productDetailCtrl.product.itemMap -->\n"
+                + "                                </tbody>\n" + "                            </table>");
+          }
+        }
       }
     }
 
@@ -360,10 +386,10 @@ public class GPACrawler {
       str.append(crawlNutritionalTableAttributes(nutritionalJson));
       str.append("</table>\n</div>");
 
-      description += str.toString();
+      description.append(str.toString());
     }
 
-    return description;
+    return description.toString();
   }
 
   private String crawlNutritionalTableAttributes(JSONObject nutritionalMap) {
