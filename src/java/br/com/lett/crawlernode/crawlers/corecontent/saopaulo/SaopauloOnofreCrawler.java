@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -111,10 +112,10 @@ public class SaopauloOnofreCrawler extends Crawler {
     Element id = doc.select("#product-code").first();
 
     if (id != null) {
-      String text = id.ownText();
+      String text = id.text();
 
       if (text.contains(":")) {
-        internalPid = text.split(":")[1].trim();
+        internalPid = CommonMethods.getLast(text.split(":")).trim();
       } else {
         internalPid = text.trim();
       }
