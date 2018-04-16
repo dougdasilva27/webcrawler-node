@@ -111,6 +111,14 @@ public class BrasilCsdCrawler extends Crawler {
       internalId = skuJson.getString("ecomm_prodid");
     }
 
+    if (internalId == null) {
+      Element id = document.select(".product-box[data-id]").first();
+
+      if (id != null) {
+        internalId = id.attr("data-id").trim().isEmpty() ? null : id.attr("data-id").trim();
+      }
+    }
+
     return internalId;
   }
 

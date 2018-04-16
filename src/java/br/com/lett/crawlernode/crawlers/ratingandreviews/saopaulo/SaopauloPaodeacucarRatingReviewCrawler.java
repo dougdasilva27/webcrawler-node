@@ -72,7 +72,7 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
    * @return
    */
   private Double getTotalAvgRating(JSONObject rating) {
-    Double avgRating = null;
+    Double avgRating = 0d;
 
     if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
       avgRating = rating.getDouble("average");
@@ -88,7 +88,7 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
    * @return
    */
   private Integer getTotalNumOfReviews(JSONObject rating) {
-    Integer totalReviews = null;
+    Integer totalReviews = 0;
 
     if (rating.has("rating")) {
       JSONObject ratingValues = rating.getJSONObject("rating");

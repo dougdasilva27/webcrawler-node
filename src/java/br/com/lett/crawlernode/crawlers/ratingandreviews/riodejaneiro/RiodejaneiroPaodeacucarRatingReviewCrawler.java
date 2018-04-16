@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.riodejaneiro;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -13,97 +12,151 @@ import models.RatingsReviews;
 
 public class RiodejaneiroPaodeacucarRatingReviewCrawler extends RatingReviewCrawler {
 
-	public RiodejaneiroPaodeacucarRatingReviewCrawler(Session session) {
-		super(session);
-	}
+  public RiodejaneiroPaodeacucarRatingReviewCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	public void handleCookiesBeforeFetch() {
+  private static final String HOME_PAGE = "https://www.paodeacucar.com.br";
 
-		// Criando cookie da loja 7 = Rio de Janeiro capital
-		BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "7");
-		cookie.setDomain(".paodeacucar.com.br");
-		cookie.setPath("/");
-		this.cookies.add(cookie);
+  @Override
+  public void handleCookiesBeforeFetch() {
 
-	}
+    // Criando cookie da loja 7 = Rio de Janeiro capital
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "7");
+    cookie.setDomain(".paodeacucar.com.br");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
 
-	@Override
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+  }
 
-		if (isProductPage(session.getOriginalURL())) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-			RatingsReviews ratingsReviews = new RatingsReviews();
+    if (isProductPage(session.getOriginalURL())) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			ratingsReviews.setDate(session.getDate());
-			ratingsReviews.setInternalId( crawlInternalId(document) );
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
 
-			Integer totalOfEvaluations = 0;
-			Integer totalRating = 0;
-			Elements evaluationLines = document.select("ul.product-rating.reset--list.product-rating--stacked li");
-			for (Element evaluationLine : evaluationLines) {
-				Integer star = getStarFromEvaluationLine(evaluationLine);
+      JSONObject rating = crawlProductInformatioFromGPAApi(session.getOriginalURL());
 
-				if (star != null) {
-					Integer starEvaluations = getStarQuantityFromEvaluationLine(evaluationLine);
-					totalOfEvaluations += starEvaluations;
-					totalRating += (star * starEvaluations);
-				}
-			}
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
+      Integer totalReviews = getTotalNumOfReviews(rating);
+      Double avgRating = getTotalAvgRating(rating);
 
-			if (totalOfEvaluations > 0) {
-				Double averageOverallRating = new Double(totalRating) / new Double(totalOfEvaluations);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalReviews);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
+      ratingReviewsCollection.addRatingReviews(ratingReviews);
 
-				ratingsReviews.setAverageOverallRating(averageOverallRating);
-				ratingsReviews.setTotalRating(totalOfEvaluations);
-			}
+    }
 
-			ratingReviewsCollection.addRatingReviews(ratingsReviews);
+    return ratingReviewsCollection;
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
+  }
 
-		return ratingReviewsCollection;
-	}
 
-	private Integer getStarFromEvaluationLine(Element evaluationLine) {
-		Integer star = null;
-		Element starElement = evaluationLine.select("span.product-rating__label").first();
-		if (starElement != null) {
-			String text = starElement.text().trim();
-			if (!text.isEmpty()) {
-				star = Integer.parseInt(text);
-			}
-		}
-		return star;
-	}
+  private String crawlInternalId(String productUrl) {
+    return productUrl.replace(HOME_PAGE, "").split("/")[2];
+  }
 
-	private Integer getStarQuantityFromEvaluationLine(Element evaluationLine) {
-		Integer starQuantity = 0;
-		Element starQuantityElement = evaluationLine.select("span.product-rating__info.inline--middle").first();
-		if (starQuantityElement != null) {
-			String text = starQuantityElement.text().trim();
-			if (!text.isEmpty()) {
-				starQuantity = Integer.parseInt(text);
-			}
-		}
-		return starQuantity;
-	}
+  /**
+   * Average is in html element
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(JSONObject rating) {
+    Double avgRating = 0d;
 
-	private String crawlInternalId(Document document) {
-		String internalId = null;
-		Element elementInternalId = document.select("input[name=productId]").first();
-		if (elementInternalId != null) {
-			internalId = elementInternalId.attr("value").trim();
-		}
-		return internalId;
-	}
+    if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
+      avgRating = rating.getDouble("average");
+    }
 
-	private boolean isProductPage(String url) {
-		return url.contains("/produto/");
-	}
+    return avgRating;
+  }
 
+  /**
+   * Number of ratings appear in key rating in json
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfReviews(JSONObject rating) {
+    Integer totalReviews = 0;
+
+    if (rating.has("rating")) {
+      JSONObject ratingValues = rating.getJSONObject("rating");
+
+      totalReviews = 0;
+
+      for (int i = 1; i <= ratingValues.length(); i++) {
+        if (ratingValues.has(Integer.toString(i))) {
+          totalReviews += ratingValues.getInt(Integer.toString(i));
+        }
+      }
+    }
+
+    return totalReviews;
+  }
+
+  /**
+   * Number of ratings appear in key rating in json
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfRatings(JSONObject rating) {
+    Integer totalRating = null;
+
+    if (rating.has("total")) {
+      totalRating = rating.getInt("total");
+    }
+
+    return totalRating;
+  }
+
+  private boolean isProductPage(String url) {
+    if (url.contains("paodeacucar.com/produto/")) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get the json of gpa api, this api has all info rating product
+   * 
+   * @return
+   */
+  private JSONObject crawlProductInformatioFromGPAApi(String productUrl) {
+    JSONObject productsInfo = new JSONObject();
+
+    String id;
+
+    if (productUrl.contains("?")) {
+      int x = productUrl.indexOf("produto/") + "produto/".length();
+      int y = productUrl.indexOf("?", x);
+
+      id = productUrl.substring(x, y);
+    } else {
+      int x = productUrl.indexOf("produto/") + "produto/".length();
+      id = productUrl.substring(x);
+    }
+
+    if (id != null && id.contains("/")) {
+      id = id.split("/")[0];
+    }
+
+    String url = "https://api.gpa.digital/pa/products/" + id + "/review";
+
+    JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (apiGPA.has("content")) {
+      productsInfo = apiGPA.getJSONObject("content");
+    }
+
+    return productsInfo;
+  }
 }
