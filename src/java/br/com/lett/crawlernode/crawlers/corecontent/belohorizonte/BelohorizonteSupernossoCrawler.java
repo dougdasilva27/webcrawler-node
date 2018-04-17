@@ -340,7 +340,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
+      // prices.setBankTicketPrice(price);
 
       if (jsonSku.has("oldPrice")) {
         String text = jsonSku.get("oldPrice").toString().replaceAll("[^0-9.]", "");

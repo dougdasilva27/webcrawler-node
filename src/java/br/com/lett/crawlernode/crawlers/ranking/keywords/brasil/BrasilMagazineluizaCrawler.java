@@ -45,7 +45,6 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
         if (product.has("stockTypes")) {
           JSONObject variations = product.getJSONObject("stockTypes");
 
-          @SuppressWarnings("unchecked")
           Iterator<String> variationsList = variations.keys();
 
           int count = 0;
@@ -54,7 +53,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             String internalId = variationsList.next();
 
             // InternalPid
-            String internalPid = null;
+            String internalPid = product.has("product") ? product.get("product").toString() : null;
 
             // Url do produto
             String urlProduct = crawlProductUrl(e, internalId, internalPid);
@@ -66,7 +65,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, urlProduct, this.position);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) {
               break;
             }
@@ -107,7 +106,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
     Element totalElement = this.currentDoc.select("div.header-search small").first();
     if (totalElement != null) {
       try {
-        int x = totalElement.text().indexOf("(");
+        int x = totalElement.text().indexOf('(');
         int y = totalElement.text().indexOf("produto");
 
         String token = totalElement.text().substring(x + 1, y).trim();
