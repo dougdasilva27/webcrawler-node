@@ -228,6 +228,25 @@ public class SaopauloSubmarinoCrawler extends Crawler {
       prices.insertCardInstallment(Card.AMEX.toString(), installmentMapPrice);
     }
 
+    if (seller.has("installmentsShopCard")) {
+      Map<Integer, Float> installmentMapPrice = new HashMap<>();
+
+      JSONArray installments = seller.getJSONArray("installmentsShopCard");
+
+      for (int i = 0; i < installments.length(); i++) {
+        JSONObject installment = installments.getJSONObject(i);
+
+        if (installment.has("quantity") && installment.has("value")) {
+          Integer quantity = installment.getInt("quantity");
+          Double value = installment.getDouble("value");
+
+          installmentMapPrice.put(quantity, MathUtils.normalizeTwoDecimalPlaces(value.floatValue()));
+        }
+      }
+
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentMapPrice);
+    }
+
     return prices;
   }
 
