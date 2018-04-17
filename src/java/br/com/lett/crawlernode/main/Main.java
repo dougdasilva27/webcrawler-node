@@ -58,22 +58,18 @@ public class Main {
   public static Server server;
 
   public static void main(String args[]) {
-    Logging.printLogDebug(LOGGER, "Starting webcrawler-node...");
+    Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
     // setting execution parameters
     executionParameters = new ExecutionParameters();
     executionParameters.setUpExecutionParameters();
 
     // check resources
-    Logging.printLogDebug(LOGGER, "Checking files...");
+    Logging.printLogInfo(LOGGER, "Checking files...");
     checkFiles();
-
-    // setting MDC for logging messages
-    Logging.setLogMDC();
 
     // setting database credentials
     DBCredentials dbCredentials = new DBCredentials();
-
 
     try {
       dbCredentials = DatabaseCredentialsSetter.setCredentials();

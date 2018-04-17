@@ -2,20 +2,33 @@
 
 <configuration>
 
-	<!-- Atenção: Este arquivo não faz parte do deploy em produção, pois srá substituído pelo DeployBot -->
-	
-	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+	<!-- This appender must only go to production. 
+	We don't want logs generated locally to go to syslog -->
+
+	<!-- <appender name="SYSLOG"
+		class="ch.qos.logback.classic.net.SyslogAppender">
+		<syslogHost>10.1.253.89</syslogHost>
+		<port>514</port>
+		<facility>USER</facility>
+		<suffixPattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</suffixPattern>
+		<filter class="br.com.lett.crawlernode.util.CustomLevelFilter"> </filter>
+	</appender> -->
+
+	<appender name="STDOUT"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="br.com.lett.crawlernode.util.CustomLevelFilter"> </filter>
 		<encoder>
-			<pattern>[%-5level] -> %msg%n</pattern>
+			<pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</pattern>
 		</encoder>
 	</appender>
 
-	<logger name="stdout" level="ALL" additivity="false">
-		<appender-ref ref="STDOUT" />
-	</logger>
-
 	<logger name="br.com.lett" level="TRACE">
 		<appender-ref ref="STDOUT" />
+		<!-- <appender-ref ref="SYSLOG" /> -->
+	</logger>
+	<logger name="managers.SupervisedPgSQL" level="TRACE">
+		<appender-ref ref="STDOUT" />
+		<!-- <appender-ref ref="SYSLOG" /> -->
 	</logger>
 
 	<!-- Strictly speaking, the level attribute is not necessary since -->

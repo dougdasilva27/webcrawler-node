@@ -1,23 +1,12 @@
 package br.com.lett.crawlernode.util;
 
 import java.text.Normalizer;
-import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import com.amazonaws.util.EC2MetadataUtils;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.OutputStreamAppender;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -30,45 +19,11 @@ import ch.qos.logback.core.OutputStreamAppender;
 public class Logging {
 
 	private static final String VERSION = new Version().getVersion();
+	
+	private static final String METADATA_TAG = "[METADATA]";
 
-	/**
-	 * Set up MDC variables to be used in logback.xml log config file
-	 */
-	public static void setLogMDC() {
-		Pattern IPV4_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
-
-		String host = EC2MetadataUtils.getPrivateIpAddress();
-
-		// Avoiding ip parse errors in Elasticsearch index
-		if(host == null || !IPV4_PATTERN.matcher(host).matches()) {
-			host = "0.0.0.0";
-		}
-
-		MDC.put("PATH", EC2MetadataUtils.getAvailabilityZone());
-		MDC.put("SOURCE", EC2MetadataUtils.getInstanceId());
-		MDC.put("HOST", host);
-
-		//setAdditionalLoggers();
-	}
-
-	private static void setAdditionalLoggers() {
-		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-
-		PatternLayoutEncoder logEncoder = new PatternLayoutEncoder();
-		logEncoder.setContext(loggerContext);
-		logEncoder.setPattern("[%-5level] -> %msg%n");
-		logEncoder.start();
-
-		OutputStreamAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
-		consoleAppender.setContext(loggerContext);
-		consoleAppender.setEncoder(logEncoder);
-		consoleAppender.start();
-
-		// Add appender for SupervisedPgSQL
-		ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("managers.SupervisedPgSQL");
-		logger.setAdditive(false);
-		logger.setLevel(Level.TRACE);
-		logger.addAppender(consoleAppender);
+	private Logging() {
+		super();
 	}
 
 	/* INFO */
@@ -81,7 +36,7 @@ public class Logging {
 	}
 
 	public static void logInfo(Logger logger, Session session, JSONObject metadata, String msg) {
-		logger.info("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+		logger.info(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());	
 	}
 
 	/* ERROR */
@@ -94,7 +49,7 @@ public class Logging {
 	}
 
 	public static void logError(Logger logger, Session session, JSONObject metadata, String msg) {
-		logger.error("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+		logger.error(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());	
 	}
 
 
@@ -108,7 +63,7 @@ public class Logging {
 	}
 
 	public static void logDebug(Logger logger, Session session, JSONObject metadata, String msg) {
-		logger.debug("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+		logger.debug(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());	
 	}
 
 
@@ -122,7 +77,7 @@ public class Logging {
 	}
 
 	public static void logWarn(Logger logger, Session session, JSONObject metadata, String msg) {
-		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+		logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());	
 	}
 
 
@@ -136,7 +91,7 @@ public class Logging {
 	}
 
 	public static void logTrace(Logger logger, Session session, JSONObject metadata, String msg) {
-		logger.warn("[MSG]" + sanitizeMessage(msg) + " [METADATA]" + createMetadata(metadata, session).toString());	
+		logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());	
 	}
 
 
