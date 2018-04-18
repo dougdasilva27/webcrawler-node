@@ -199,22 +199,20 @@ public class ResultManager {
 		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
 	}
 
-	/**
-	 * Fetch market informations.
-	 */
 	private void createMarketInfo() {
 		this.cityNameInfo = new HashMap<>();
 		this.marketNameInfo = new HashMap<>();
 		this.marketid = new ArrayList<>();
 
 		try {
-
-			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
-
-			while(rs.next()) {
-				cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
-				marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
-				marketid.add(rs.getInt("id"));
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT id, city, name FROM market");
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String city = rs.getString("city");
+				String name = rs.getString("name");
+				cityNameInfo.put(id, city);
+				marketNameInfo.put(id, name);
+				marketid.add(id);
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(LOGGER, "Error fetching market info on postgres!");
