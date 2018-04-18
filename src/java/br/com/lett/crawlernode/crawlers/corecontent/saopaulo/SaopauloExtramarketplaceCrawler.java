@@ -542,6 +542,10 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
       }
     }
 
+    if (primaryImage.trim().isEmpty()) {
+      primaryImage = null;
+    }
+
     return primaryImage;
   }
 

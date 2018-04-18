@@ -10,6 +10,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -56,8 +58,12 @@ public class BrasilBifarmaCrawler extends Crawler {
       }
     }
 
+    String requestHash = DataFetcher.generateRequestHash(session);
     this.webdriver.waitLoad(9000);
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    // saving request content result on Amazon
+    S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
 
     return doc;
   }

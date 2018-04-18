@@ -553,7 +553,6 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 
   private String crawlPrimaryImage(Document document) {
-
     String primaryImage = null;
 
     Element primaryImageElements = document.select(".carouselBox .thumbsImg li a").first();
@@ -570,6 +569,10 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       if (primaryImageElements != null) {
         primaryImage = primaryImageElements.attr("src");
       }
+    }
+
+    if (primaryImage.trim().isEmpty()) {
+      primaryImage = null;
     }
 
     return primaryImage;

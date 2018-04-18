@@ -546,7 +546,6 @@ public class SaopauloPontofrioCrawler extends Crawler {
   }
 
   private String crawlPrimaryImage(Document document) {
-
     String primaryImage = null;
 
     Element primaryImageElement = document.select(".carouselBox .thumbsImg li a").first();
@@ -565,6 +564,9 @@ public class SaopauloPontofrioCrawler extends Crawler {
       }
     }
 
+    if (primaryImage.trim().isEmpty()) {
+      primaryImage = null;
+    }
 
     return primaryImage;
   }
