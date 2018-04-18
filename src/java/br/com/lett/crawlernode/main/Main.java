@@ -87,7 +87,7 @@ public class Main {
     Persistence.initializeImagesDirectories(markets);
 
     // create result manager for processor stage
-    processorResultManager = new ResultManager(false, dbManager);
+    processorResultManager = new ResultManager(dbManager);
 
     // fetching proxies
     proxies = new ProxyCollection(markets, dbManager);

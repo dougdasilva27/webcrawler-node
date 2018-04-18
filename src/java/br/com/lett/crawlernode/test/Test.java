@@ -111,7 +111,7 @@ public class Test {
     dbManager = new DatabaseManager(dbCredentials);
 
     // create result manager for processor stage
-    processorResultManager = new ResultManager(false, dbManager);
+    processorResultManager = new ResultManager(dbManager);
 
     // fetch market information
     Market market = fetchMarket();
