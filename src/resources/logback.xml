@@ -18,8 +18,13 @@
 		class="ch.qos.logback.core.ConsoleAppender">
 		<filter class="br.com.lett.crawlernode.util.CustomLevelFilter"> </filter>
 		<encoder>
-			<pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</pattern>
-		</encoder>
+			<pattern>[%-5level] [MSG]%msg%n</pattern>
+		</encoder> 
+		<!-- Default Configuration 
+			<encoder>
+				<pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</pattern>
+			</encoder> 
+		-->
 	</appender>
 
 	<logger name="br.com.lett" level="TRACE">
