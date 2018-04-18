@@ -124,7 +124,7 @@ public class ResultManager {
 		}
 
 		// get reference digital content
-		JSONObject lettDigitalContent = fetchReferenceDigitalContent(pm.getLettId(), session);
+		//JSONObject lettDigitalContent = fetchReferenceDigitalContent(pm.getLettId(), session);
 
 		// analysing images
 		// count pics
@@ -224,7 +224,7 @@ public class ResultManager {
 		processedModelDigitalContentPic.put("primary", processedModelDigitalContentPicPrimary);
 
 		// computing pic secondary
-		Pic.setPicSecondary(lettDigitalContent, processedModelDigitalContentPic);
+		//Pic.setPicSecondary(lettDigitalContent, processedModelDigitalContentPic);
 
 		// set pic on digital content
 		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
@@ -260,21 +260,21 @@ public class ResultManager {
 	 * @param session
 	 * @return the json object containing the reference digital content or an empty json object
 	 */
-	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
-		try {
-			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
-			while(rs.next()) {
-				String referenceDigitalContent = rs.getString("digital_content");
-				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {
-					return new JSONObject(rs.getString("digital_content"));
-				}
-			}
-
-		} catch (Exception e) { 
-			Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
-		}
-
-		return new JSONObject();
-	}
+//	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
+//		try {
+//			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
+//			while(rs.next()) {
+//				String referenceDigitalContent = rs.getString("digital_content");
+//				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {
+//					return new JSONObject(rs.getString("digital_content"));
+//				}
+//			}
+//
+//		} catch (Exception e) { 
+//			Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
+//		}
+//
+//		return new JSONObject();
+//	}
 
 }
