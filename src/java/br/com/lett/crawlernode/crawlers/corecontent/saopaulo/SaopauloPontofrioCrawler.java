@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -162,7 +163,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
           String variationInternalID = internalPid + "-" + sku.attr("value");
 
           // Getting name variation
-          String variationName = makeVariationName(name, sku).trim();
+          String variationName = makeVariationName(name, sku);
 
           // Document marketplace
           Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
@@ -176,11 +177,11 @@ public class SaopauloPontofrioCrawler extends Crawler {
           // Available
           boolean available = this.crawlAvailability(marketplaceMap);
 
-          // Price
-          Float variationPrice = this.crawlPrice(docMarketplace);
-
           // Prices
           Prices prices = crawlPricesForProduct(marketplaceMap);
+
+          // Price
+          Float variationPrice = this.crawlPrice(prices);
 
           Product product = new Product();
 
@@ -229,11 +230,11 @@ public class SaopauloPontofrioCrawler extends Crawler {
         // Available
         boolean available = this.crawlAvailability(marketplaceMap);
 
-        // Price
-        Float price = this.crawlPrice(docMarketplace);
-
         // Prices
         Prices prices = crawlPricesForProduct(marketplaceMap);
+
+        // Price
+        Float price = this.crawlPrice(prices);
 
         Product product = new Product();
 
@@ -450,16 +451,21 @@ public class SaopauloPontofrioCrawler extends Crawler {
 
     Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
 
+    Element principalSellerPrice = doc.select(".sale.price").first();
+    if (principalSellerPrice != null) {
+      marketplace.put(principalSeller, crawlPrices(doc, MathUtils.parseFloat(principalSellerPrice.ownText())));
+    }
+
     for (Element linePartner : lines) {
-      String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-      Float partnerPrice =
-          Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      Element sellerElement = linePartner.select("a.seller").first();
+      Element sellerValueElement = linePartner.select(".valor").first();
 
-      Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+      if (sellerElement != null && sellerValueElement != null) {
+        String partnerName = sellerElement.text().trim().toLowerCase();
+        Float partnerPrice = MathUtils.parseFloat(sellerValueElement.text());
 
-      Prices prices = new Prices();
+        Prices prices = new Prices();
 
-      if (principalSeller != null) {
         if (!principalSeller.equals(partnerName)) {
           prices.setBankTicketPrice(partnerPrice);
 
@@ -470,23 +476,21 @@ public class SaopauloPontofrioCrawler extends Crawler {
 
           if (installments.size() > 1) {
             Integer installment = Integer.parseInt(installments.get(0).text().trim());
-            Float value = Float.parseFloat(installments.get(1).text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            Float value = MathUtils.parseFloat(installments.get(1).text());
 
             installmentPriceMap.put(installment, value);
 
           }
 
           prices.insertCardInstallment("visa", installmentPriceMap);
-        } else {
-          prices = crawlPrices(doc, partnerPrice);
+
+          Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+
+          if (comprar == null || (comprar != null && linePartner.select(".retirar a.bt-retirar") != null)) {
+            marketplace.put(partnerName, prices);
+          }
         }
-      } else {
-        prices = crawlPrices(doc, partnerPrice);
       }
-
-
-      if (comprar == null)
-        marketplace.put(partnerName, prices);
     }
 
     return marketplace;
@@ -515,21 +519,14 @@ public class SaopauloPontofrioCrawler extends Crawler {
     return (doc.select(".alertaIndisponivel").first() != null);
   }
 
-  private Float crawlPrice(Document docMarketplaceInfo) {
+  private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
-
-    for (Element linePartner : lines) {
-      String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-
-      Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
-
-      if (comprar == null && (partnerName.equals(MAIN_SELLER_NAME_LOWER) || partnerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2))) {
-        price = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-        break;
-      }
+    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+      price = priceDouble.floatValue();
     }
+
     return price;
   }
 

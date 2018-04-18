@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -86,8 +87,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     super(session);
   }
 
-  private final String MAIN_SELLER_NAME_LOWER = "extra";
-  private final String HOME_PAGE = "http://www.extra.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "extra";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "extra.com.br";
+  private static final String HOME_PAGE = "http://www.extra.com.br/";
 
   @Override
   public boolean shouldVisit() {
@@ -154,21 +156,21 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
           String variationInternalID = internalPid + "-" + sku.attr("value");
 
           // Getting name variation
-          String variationName = assembleVariationName(name, sku).trim();
+          String variationName = assembleVariationName(name, sku);
 
           Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
           Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
           Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, unnavailableForAll);
           boolean available = crawlAvailability(marketplaceMap, unnavailableForAll);
-          Float variationPrice = crawlPrice(docMarketplace, unnavailableForAll);
-          Prices prices = crawlPricesForProduct(marketplaceMap, unnavailableForAll);
+          Prices prices = crawlPricesForProduct(marketplaceMap);
+          Float price = this.crawlPrice(prices);
 
           Product product = new Product();
           product.setUrl(session.getOriginalURL());
           product.setInternalId(variationInternalID);
           product.setInternalPid(internalPid);
           product.setName(variationName);
-          product.setPrice(variationPrice);
+          product.setPrice(price);
           product.setPrices(prices);
           product.setCategory1(category1);
           product.setCategory2(category2);
@@ -201,8 +203,8 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, unnavailableForAll);
         boolean available = crawlAvailability(marketplaceMap, unnavailableForAll);
-        Float price = crawlPrice(docMarketplace, unnavailableForAll);
-        Prices prices = crawlPricesForProduct(marketplaceMap, unnavailableForAll);
+        Prices prices = crawlPricesForProduct(marketplaceMap);
+        Float price = this.crawlPrice(prices);
 
         Product product = new Product();
 
@@ -421,16 +423,21 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
     Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
 
+    Element principalSellerPrice = doc.select(".sale.price").first();
+    if (principalSellerPrice != null) {
+      marketplace.put(principalSeller, crawlPrices(doc, MathUtils.parseFloat(principalSellerPrice.ownText())));
+    }
+
     for (Element linePartner : lines) {
-      String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-      Float partnerPrice =
-          Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      Element sellerElement = linePartner.select("a.seller").first();
+      Element sellerValueElement = linePartner.select(".valor").first();
 
-      Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+      if (sellerElement != null && sellerValueElement != null) {
+        String partnerName = sellerElement.text().trim().toLowerCase();
+        Float partnerPrice = MathUtils.parseFloat(sellerValueElement.text());
 
-      Prices prices = new Prices();
+        Prices prices = new Prices();
 
-      if (principalSeller != null) {
         if (!principalSeller.equals(partnerName)) {
           prices.setBankTicketPrice(partnerPrice);
 
@@ -441,23 +448,20 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
           if (installments.size() > 1) {
             Integer installment = Integer.parseInt(installments.get(0).text().trim());
-            Float value = Float.parseFloat(installments.get(1).text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            Float value = MathUtils.parseFloat(installments.get(1).text());
 
             installmentPriceMap.put(installment, value);
 
           }
 
           prices.insertCardInstallment("visa", installmentPriceMap);
-        } else {
-          prices = crawlPrices(doc, partnerPrice);
+
+          Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+
+          if (comprar == null || (comprar != null && linePartner.select(".retirar a.bt-retirar") != null)) {
+            marketplace.put(partnerName, prices);
+          }
         }
-      } else {
-        prices = crawlPrices(doc, partnerPrice);
-      }
-
-
-      if (comprar == null) {
-        marketplace.put(partnerName, prices);
       }
     }
 
@@ -468,13 +472,14 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
   private String assembleVariationName(String name, Element sku) {
     String nameV = name;
 
-    String[] tokens = sku.text().split("\\|");
-    String variation = tokens[0].trim();
+    if (sku != null) {
+      String[] tokens = sku.text().split("\\|");
+      String variation = tokens[0].trim();
 
-    if (!variation.isEmpty()) {
-      nameV += " - " + variation;
+      if (!variation.isEmpty()) {
+        nameV += (" - " + variation).trim();
+      }
     }
-
     return nameV;
   }
 
@@ -486,25 +491,14 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     return doc.select(".alertaIndisponivel").first() != null;
   }
 
-  private Float crawlPrice(Document docMarketplaceInfo, boolean unnavailableForAll) {
+  private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    if (unnavailableForAll) {
-      return price;
+    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+      price = priceDouble.floatValue();
     }
 
-    Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
-
-    for (Element linePartner : lines) {
-      String partnerName = linePartner.select("a.seller").first().text().trim().toLowerCase();
-
-      Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
-
-      if (comprar == null && partnerName.equals(MAIN_SELLER_NAME_LOWER)) {
-        price = Float.parseFloat(linePartner.select(".valor").first().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
-        break;
-      }
-    }
     return price;
   }
 
@@ -773,19 +767,13 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     return prices;
   }
 
-  private Prices crawlPricesForProduct(Map<String, Prices> marketplaces, boolean unnavailableForAll) {
-
-    if (unnavailableForAll) {
-      return new Prices();
-    }
-
+  private Prices crawlPricesForProduct(Map<String, Prices> marketplaces) {
     Prices prices = new Prices();
 
-    for (String seller : marketplaces.keySet()) {
-      if (seller.equals(MAIN_SELLER_NAME_LOWER)) {
-        prices = marketplaces.get(seller);
-        break;
-      }
+    if (marketplaces.containsKey(MAIN_SELLER_NAME_LOWER)) {
+      prices = marketplaces.get(MAIN_SELLER_NAME_LOWER);
+    } else if (marketplaces.containsKey(MAIN_SELLER_NAME_LOWER_2)) {
+      prices = marketplaces.get(MAIN_SELLER_NAME_LOWER_2);
     }
 
     return prices;
