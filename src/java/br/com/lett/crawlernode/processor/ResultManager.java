@@ -33,9 +33,6 @@ public class ResultManager {
 
 	private DatabaseManager db;
 
-	// log messages on/off
-	private boolean logActivated;
-
 	private DateFormat isoDateFormat;
 	private Map<Integer, String> cityNameInfo;
 	private Map<Integer, String> marketNameInfo;
@@ -49,13 +46,9 @@ public class ResultManager {
 	 * @param db
 	 * @throws NullPointerException
 	 */
-	public ResultManager(
-			boolean activateLogging, 
-			DatabaseManager db
-			) throws NullPointerException {
-
+	public ResultManager(DatabaseManager db) throws NullPointerException {
 		this.db = db;
-		this.init(activateLogging);
+		this.init();
 	}
 
 	/**
@@ -64,11 +57,9 @@ public class ResultManager {
 	 * @param activateLogging
 	 * @throws NullPointerException
 	 */
-	private void init(boolean activateLogging) throws NullPointerException {
+	private void init() throws NullPointerException {
 		this.isoDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-		logActivated = activateLogging;
 		createMarketInfo();
 	}
 
@@ -91,14 +82,8 @@ public class ResultManager {
 		// update digital content
 		updateDigitalContent(pm, session);
 
-		if (logActivated) {
-			Logging.printLogDebug(LOGGER, "\n---> Final result:");
-		}
-
-		if (logActivated) {
-			Logging.printLogDebug(LOGGER, pm.toString());
-		}
-
+		Logging.printLogDebug(LOGGER, "Processed: " + pm.toString());
+		
 		return pm;
 	}
 
@@ -122,9 +107,6 @@ public class ResultManager {
 		if(pm.getDigitalContent() == null) { 
 			pm.setDigitalContent(new JSONObject()); 
 		}
-
-		// get reference digital content
-		//JSONObject lettDigitalContent = fetchReferenceDigitalContent(pm.getLettId(), session);
 
 		// analysing images
 		// count pics
@@ -167,8 +149,6 @@ public class ResultManager {
 		// fetch md5 of the image
 		String primaryMd5 = S3Service.fetchOriginalImageMd5(session, primaryImageAmazonKey); // the supposed new image
 
-		Logging.printLogDebug(LOGGER, session, "Last downloaded primary image md5: " + primaryMd5);
-
 		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		
 		if ( primaryMd5 == null ) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
@@ -179,7 +159,7 @@ public class ResultManager {
 			Logging.printLogDebug(LOGGER, session, "Previous image status is " + previousStatus);
 			
 			if ( !Pic.NO_IMAGE.equals(previousStatus) ) { // if the previous verified status is different from no-image, clear and set as not-verified
-				Logging.printLogDebug(LOGGER, session, "Previous image status is different from " + Pic.NO_IMAGE + "...let's clear and set to not-verified");
+				Logging.printLogTrace(LOGGER, session, "Previous image status is different from " + Pic.NO_IMAGE + "...let's clear and set to not-verified");
 				
 				processedModelDigitalContentPicPrimary = new JSONObject();
 				processedModelDigitalContentPicPrimary.put("status", Pic.NOT_VERIFIED);
@@ -192,20 +172,12 @@ public class ResultManager {
 			Logging.printLogDebug(LOGGER, session, "Previous verified md5: " + previousMd5);
 
 			if ( !primaryMd5.equals(previousMd5) ) {
-				Logging.printLogDebug(LOGGER, session, "Previous md5 is different from the new one...updating and seting as not_verified...");
+				Logging.printLogTrace(LOGGER, session, "Previous md5 is different from the new one...updating and seting as not_verified...");
 
 				File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
 				// get dimensions from image
 				processedModelDigitalContentPicPrimary.put("dimensions", DigitalContentAnalyser.imageDimensions(primaryImage));
-
-				// old similarity value
-				// was calculate using the naive similarity finder
-				// set to 0 because this algorithm was removed
-				processedModelDigitalContentPicPrimary.put("similarity", 0);
-
-				// TODO compute similarity of the new image using the SIFT algorithm
-				processedModelDigitalContentPicPrimary.put("similarity_sift", new JSONObject());
 
 				// setting fields of the new primary image
 				processedModelDigitalContentPicPrimary.put("md5", primaryMd5); // updated md5
@@ -217,64 +189,35 @@ public class ResultManager {
 					primaryImage.delete();
 				}
 			} else {
-				Logging.printLogDebug(LOGGER, session, "New image md5 is the same as the previous verified one. Nothing to be done.");
+				Logging.printLogTrace(LOGGER, session, "New image md5 is the same as the previous verified one. Nothing to be done.");
 			}
 		}
 
 		processedModelDigitalContentPic.put("primary", processedModelDigitalContentPicPrimary);
 
-		// computing pic secondary
-		//Pic.setPicSecondary(lettDigitalContent, processedModelDigitalContentPic);
-
 		// set pic on digital content
 		pm.getDigitalContent().put("pic", processedModelDigitalContentPic);
 	}
 
-	/**
-	 * Fetch market informations.
-	 */
 	private void createMarketInfo() {
 		this.cityNameInfo = new HashMap<>();
 		this.marketNameInfo = new HashMap<>();
 		this.marketid = new ArrayList<>();
 
 		try {
-
-			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT * FROM market");
-
-			while(rs.next()) {
-				cityNameInfo.put(rs.getInt("id"), rs.getString("city"));
-				marketNameInfo.put(rs.getInt("id"), rs.getString("name"));
-				marketid.add(rs.getInt("id"));
+			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT id, city, name FROM market");
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String city = rs.getString("city");
+				String name = rs.getString("name");
+				cityNameInfo.put(id, city);
+				marketNameInfo.put(id, name);
+				marketid.add(id);
 			}
 		} catch (SQLException e) {
 			Logging.printLogError(LOGGER, "Error fetching market info on postgres!");
 			Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
 		}
 	}
-
-	/**
-	 * Fetch the digital content from lett table.
-	 * 
-	 * @param lettId
-	 * @param session
-	 * @return the json object containing the reference digital content or an empty json object
-	 */
-//	private JSONObject fetchReferenceDigitalContent(Long lettId, Session session) {
-//		try {
-//			ResultSet rs = this.db.connectionPostgreSQL.runSqlConsult("SELECT digital_content FROM lett WHERE id = " + lettId);
-//			while(rs.next()) {
-//				String referenceDigitalContent = rs.getString("digital_content");
-//				if (referenceDigitalContent != null && !referenceDigitalContent.isEmpty()) {
-//					return new JSONObject(rs.getString("digital_content"));
-//				}
-//			}
-//
-//		} catch (Exception e) { 
-//			Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
-//		}
-//
-//		return new JSONObject();
-//	}
 
 }
