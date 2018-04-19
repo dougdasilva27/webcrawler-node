@@ -494,7 +494,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
   private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
