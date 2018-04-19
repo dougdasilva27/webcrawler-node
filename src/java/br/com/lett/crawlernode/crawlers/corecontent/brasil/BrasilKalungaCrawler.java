@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -77,15 +78,11 @@ public class BrasilKalungaCrawler extends Crawler {
 
       // Preço
       Float price = null;
-      Element elementPrice = doc.select(".container-price .por .valor span.valorg").first();
+      Element elementPrice = doc.select("#spanSchemaPrice").first();
       if (elementPrice != null) {
-        String priceString = elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
-
-        if (!priceString.isEmpty()) {
-          price = Float.parseFloat(priceString);
-        } else {
-          available = false;
-        }
+        price = Float.parseFloat(elementPrice.attr("content"));
+      } else {
+        available = false;
       }
 
       // Categoria
@@ -225,11 +222,17 @@ public class BrasilKalungaCrawler extends Crawler {
       Elements installments = doc.select(".line_parcelamento");
 
       for (Element e : installments) {
-        Integer installment = Integer.parseInt(e.select("span").first().text().replaceAll("[^0-9]", ""));
-        Float value = Float
-            .parseFloat(e.select("span.font_12_preto").last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+        Element installmentElement = e.select("span").first();
+        Element valueElement = e.select("span.font_12_preto").last();
 
-        installmentsPriceMap.put(installment, value);
+        if (installmentElement != null && valueElement != null) {
+          String text = installmentElement.text().replaceAll("[^0-9]", "");
+          Float value = MathUtils.parseFloat(valueElement.text());
+
+          if (!text.isEmpty() && value != null) {
+            installmentsPriceMap.put(Integer.parseInt(text), value);
+          }
+        }
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);

@@ -2,12 +2,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -57,7 +58,8 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject productJSON = crawlChaordicMeta(doc);
+      JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", ";", false);
+      JSONObject productJSON = chaordic.has("product") ? chaordic.getJSONObject("product") : chaordic;
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(productJSON);
@@ -74,7 +76,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       String description = crawlDescription(doc);
 
       // price is not displayed when sku is unavailable
-      Float price = crawlPrice(apiJson, available);
+      Float price = crawlPrice(apiJson);
       Prices prices = crawlPrices(apiJson, price);
 
       // Categories
@@ -96,8 +98,7 @@ public class BrasilSaraivaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document document) {
-    Element elementProduct = document.select("section.product-allinfo").first();
-    return elementProduct != null;
+    return !document.select("section.product-allinfo").isEmpty() || !document.select("#pdp-info").isEmpty();
   }
 
   /**
@@ -120,6 +121,16 @@ public class BrasilSaraivaCrawler extends Crawler {
       if (!parsedNumbers.isEmpty()) {
         internalId = parsedNumbers.get(0);
       }
+    } else {
+      elementSpan = document.select("#pdp-info .title_note").first();
+
+      if (elementSpan != null) {
+        String spanText = elementSpan.text();
+        List<String> parsedNumbers = MathUtils.parseNumbers(spanText);
+        if (!parsedNumbers.isEmpty()) {
+          internalId = parsedNumbers.get(0);
+        }
+      }
     }
 
     return internalId;
@@ -136,6 +147,8 @@ public class BrasilSaraivaCrawler extends Crawler {
 
     if (productJSON.has("id")) {
       internalPid = String.valueOf(productJSON.getInt("id"));
+    } else if (productJSON.has("pid")) {
+      internalPid = productJSON.get("pid").toString();
     }
 
     return internalPid;
@@ -144,7 +157,7 @@ public class BrasilSaraivaCrawler extends Crawler {
   private String crawlName(Document document) {
     String name = null;
 
-    Element elementName = document.select("section.product-info h1").first();
+    Element elementName = document.select("section.product-info h1, #pdp-info h1").first();
     if (elementName != null) {
       name = elementName.ownText().trim();
     }
@@ -152,10 +165,10 @@ public class BrasilSaraivaCrawler extends Crawler {
     return name;
   }
 
-  private Float crawlPrice(JSONObject apiJson, boolean available) {
+  private Float crawlPrice(JSONObject apiJson) {
     Float price = null;
 
-    if (available && apiJson.has("price_block")) {
+    if (apiJson.has("price_block")) {
       JSONObject priceBlock = apiJson.getJSONObject("price_block");
 
       if (priceBlock.has("price")) {
@@ -299,8 +312,12 @@ public class BrasilSaraivaCrawler extends Crawler {
 
         installmentsShopcardMap.put(priceJson.getInt("qty_installments_with_discount"),
             MathUtils.parseFloat(priceJson.getString("installment_with_discount")));
+      }
 
-        if (priceJson.has("value_with_discount")) {
+      if (priceJson.has("discount_percent") && priceJson.has("value_with_discount")) {
+        Double discount = MathUtils.parseDouble(priceJson.get("discount_percent").toString());
+
+        if (discount != null && discount > 0) {
           installmentsShopcardMap.put(1, MathUtils.parseFloat(priceJson.getString("value_with_discount")));
         }
       }
@@ -319,16 +336,7 @@ public class BrasilSaraivaCrawler extends Crawler {
    * @return
    */
   private boolean crawlAvailability(JSONObject productJSON) {
-    boolean available = true;
-
-    if (productJSON.has("status")) {
-      String status = productJSON.getString("status");
-      if ("unavailable".equals(status)) {
-        available = false;
-      }
-    }
-
-    return available;
+    return productJSON.has("status") && "available".equalsIgnoreCase(productJSON.get("status").toString());
   }
 
   /**
@@ -371,14 +379,20 @@ public class BrasilSaraivaCrawler extends Crawler {
       }
 
       if (primaryImage.contains(".gif")) {
-        return null;
+        primaryImage = null;
       }
 
       // modify the dimension parameter
-      return CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+      primaryImage = CommonMethods.modifyParameter(primaryImage, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+    } else {
+      Element imageSpecial = document.select(".slides li > img").first();
+
+      if (imageSpecial != null) {
+        primaryImage = CommonMethods.modifyParameter(imageSpecial.attr("src"), "l", String.valueOf(LARGER_IMAGE_DIMENSION));
+      }
     }
 
-    return null;
+    return primaryImage;
   }
 
   /**
@@ -391,18 +405,23 @@ public class BrasilSaraivaCrawler extends Crawler {
   private String crawlSecondaryImages(Document document, String primaryImage) {
     String secondaryImages = null;
 
-    Elements elementImages = document.select("section.product-image #thumbs-images a img");
     JSONArray secondaryImagesArray = new JSONArray();
+    Elements elementImages = document.select("section.product-image #thumbs-images a img, .slides li > img");
+    Set<String> setImages = new HashSet<>();
 
-    for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as the
-                                                     // primary image
-      String imageURL = elementImages.get(i).attr("src").trim();
+    for (Element e : elementImages) {
+      String imageURL = e.attr("src").trim();
       String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
 
       if (!biggerImageURL.equals(primaryImage) && !biggerImageURL.contains(".gif")) {
-        secondaryImagesArray.put(biggerImageURL);
+        setImages.add(biggerImageURL);
       }
     }
+
+    for (String s : setImages) {
+      secondaryImagesArray.put(s);
+    }
+
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();
     }
@@ -435,46 +454,16 @@ public class BrasilSaraivaCrawler extends Crawler {
       description.append(skuAdditionalInformation.html());
     }
 
+    Element specialDesc = document.select("#product_description").first();
+    if (specialDesc != null) {
+      description.append(specialDesc.html());
+    }
+
+    Element specialInfo = document.select("#product_attributes").first();
+    if (specialInfo != null) {
+      description.append(specialInfo.html());
+    }
+
     return description.toString();
-  }
-
-  /**
-   * { "page": { "name":"product", "timestamp":new Date(),
-   * "tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras - Expresso"}]
-   * }, "product": { "id":2496308, "skus":[{"sku":"4054233"}], "name":"Cafeteira Espresso Electrolux
-   * Chef Crema Silver Em400 - 220 Volts",
-   * "url":"www.saraiva.com.br\/cafeteira-espresso-electrolux-chef-crema-silver-em400-220-volts-4054233.html",
-   * "images":{"default":"images.livrariasaraiva.com.br\/imagemnet\/imagem.aspx\/?pro_id=4054233"},
-   * "status":"unavailable", "price":299, "description":"sku_description", "ean_code":"7896347127608",
-   * "isbn":null, "tags":[{"name":"Eletroport\u00e1teis"},{"name":"Cafeteiras"},{"name":"Cafeteiras -
-   * Expresso"}], "brand":"ELECTROLUX - Eletroport\u00e1teis",
-   * "details":{"product_free":"no","type":"simple"} } }
-   * 
-   * @param document
-   * @return
-   */
-  private JSONObject crawlChaordicMeta(Document document) {
-    Elements scriptTags = document.getElementsByTag("script");
-    JSONObject chaordicMeta = null;
-    JSONObject skuJson;
-
-    String chaordic = "window.chaordic_meta = ";
-
-    for (Element tag : scriptTags) {
-      for (DataNode node : tag.dataNodes()) {
-        if (tag.html().trim().startsWith(chaordic)) {
-          chaordicMeta = new JSONObject(node.getWholeData().split(Pattern.quote(chaordic))[1]
-              + node.getWholeData().split(Pattern.quote(chaordic))[1].split(Pattern.quote("}}}"))[0]);
-        }
-      }
-    }
-
-    if (chaordicMeta != null && chaordicMeta.has("product")) {
-      skuJson = chaordicMeta.getJSONObject("product");
-    } else {
-      skuJson = new JSONObject();
-    }
-
-    return skuJson;
   }
 }

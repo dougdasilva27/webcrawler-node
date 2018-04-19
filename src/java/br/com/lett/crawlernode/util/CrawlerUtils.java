@@ -75,7 +75,7 @@ public class CrawlerUtils {
    * @param doc
    * @param cssElement selector used to get the desired json element
    * @param token whithout spaces
-   * @param finalIndex
+   * @param finalIndex if final index is null or is'nt in html, substring will use only the token
    * @return JSONObject
    * 
    * @throws JSONException
@@ -93,15 +93,21 @@ public class CrawlerUtils {
     Elements scripts = doc.select(cssElement);
 
     for (Element e : scripts) {
-      String script = e.outerHtml();
+      String script = e.html();
 
       script = withoutSpaces ? script.replace(" ", "") : script;
 
       if (script.contains(token)) {
         int x = script.indexOf(token) + token.length();
-        int y = script.indexOf(finalIndex, x);
 
-        String json = script.substring(x, y).trim();
+        String json;
+
+        if (script.contains(finalIndex)) {
+          int y = script.indexOf(finalIndex, x);
+          json = script.substring(x, y).trim();
+        } else {
+          json = script.substring(x).trim();
+        }
 
         if (json.startsWith("{") && json.endsWith("}")) {
           try {
