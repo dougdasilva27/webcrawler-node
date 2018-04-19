@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -36,6 +37,7 @@ public class Test {
   public static final String KEYWORDS_TEST = "keywords";
   public static final String CATEGORIES_TEST = "categories";
 
+  public static ExecutionParameters executionParameters;
   public static DatabaseManager dbManager;
   public static ProxyCollection proxies;
   public static ResultManager processorResultManager;
@@ -48,10 +50,13 @@ public class Test {
   public static String testType;
   public static String phantomjsPath;
 
-  private static final Logger logger = LoggerFactory.getLogger(Test.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
 
   public static void main(String args[]) {
-
+    Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
+    // setting execution parameters
+    executionParameters = new ExecutionParameters();
+    executionParameters.setUpExecutionParameters();
 
     // adding command line options
     options = new Options();
@@ -104,7 +109,7 @@ public class Test {
     try {
       dbCredentials = DatabaseCredentialsSetter.setCredentials();
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
     }
 
     // creating the database manager
@@ -146,7 +151,7 @@ public class Test {
       try {
         dbManager.connectionPostgreSQL.closeConnection();
       } catch (Exception e) {
-        Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
       }
     } else {
       System.err.println("Market não encontrado no banco!");
