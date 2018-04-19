@@ -101,7 +101,7 @@ public class CrawlerUtils {
         int x = script.indexOf(token) + token.length();
         int y = script.indexOf(finalIndex, x);
 
-        String json = script.substring(x, y);
+        String json = script.substring(x, y).trim();
 
         if (json.startsWith("{") && json.endsWith("}")) {
           try {
