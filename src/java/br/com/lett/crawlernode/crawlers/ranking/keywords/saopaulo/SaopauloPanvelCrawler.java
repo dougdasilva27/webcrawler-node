@@ -12,25 +12,6 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private String crawlInternalId(String url) {
-    String internalId = null;
-
-    String[] tokens = url.split("-");
-    internalId = tokens[tokens.length - 1];
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = e.attr("href");
-
-    if (!productUrl.startsWith("https://www.panvel.com")) {
-      productUrl = "https://www.panvel.com" + productUrl;
-    }
-
-    return productUrl;
-  }
-
   @Override
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
@@ -39,19 +20,15 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "http://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&tipo=bar&termoPesquisa="
+    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa="
         + this.keywordWithoutAccents.replace(" ", "+");
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("a.lnk_mais_detalhes.gsaLink");
+    Elements products = this.currentDoc.select(".box-produto > a");
 
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
-
       for (Element e : products) {
         String urlProduct = crawlProductUrl(e);
         String internalId = crawlInternalId(urlProduct);
@@ -72,35 +49,21 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    Element lastPage = this.currentDoc.select(".pagination li > a").last();
-
-    if (lastPage != null) {
-      if (lastPage.hasClass("selected")) {
-        return false;
-      }
-
-      return true;
-    }
-
-    return false;
+    Element item = this.currentDoc.select(".pagination__item a").last();
+    return item != null && !item.hasClass("pagination__arrow--disabled");
   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("div.pag p").first();
+  private String crawlInternalId(String url) {
+    return CommonMethods.getLast(url.split("-"));
+  }
 
-    if (totalElement != null) {
-      try {
-        int x = totalElement.text().indexOf("de");
+  private String crawlProductUrl(Element e) {
+    String productUrl = e.attr("href");
 
-        String token = totalElement.text().substring(x + 2).trim();
-
-        this.totalProducts = Integer.parseInt(token);
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTrace(e));
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
+    if (!productUrl.startsWith("https://www.panvel.com")) {
+      productUrl = "https://www.panvel.com" + productUrl;
     }
+
+    return productUrl;
   }
 }
