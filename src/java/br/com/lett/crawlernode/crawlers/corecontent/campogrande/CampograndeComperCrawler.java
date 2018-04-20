@@ -278,7 +278,7 @@ public class CampograndeComperCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
+      // prices.setBankTicketPrice(price);
 
       Element priceFrom = doc.select("#lblPreco.price-from").first();
       if (priceFrom != null) {

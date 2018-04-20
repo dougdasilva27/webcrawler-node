@@ -78,9 +78,16 @@ public class BrasilKalungaCrawler extends Crawler {
 
       // Preço
       Float price = null;
-      Element elementPrice = doc.select("#spanSchemaPrice").first();
+      Element elementPrice = doc.select("#spanPriceInteger").first();
+      Element elementPriceCents = doc.select("#spanPriceCents").first();
       if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.attr("content"));
+        String priceStr = elementPrice.ownText();
+
+        if (elementPriceCents != null) {
+          priceStr += elementPriceCents.ownText();
+        }
+
+        price = MathUtils.parseFloat(priceStr);
       } else {
         available = false;
       }
