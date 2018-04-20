@@ -145,8 +145,8 @@ public class DataFetcher {
 
     errorCodes = Arrays.asList("403");
 
-    highTimeoutMarkets =
-        Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma", "multisom");
+    highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma",
+        "multisom", "confianca");
   }
 
   /**
@@ -443,8 +443,8 @@ public class DataFetcher {
       }
 
       // creating the page content result from the http request
-      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); 
-      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); 
+      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());
+      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());
       pageContent.setUrl(url); // setting url
 
       responseLength = pageContent.getContentData().length;
@@ -563,13 +563,8 @@ public class DataFetcher {
       List<Header> reqHeaders = new ArrayList<>();
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
 
-      CloseableHttpClient httpclient = HttpClients.custom()
-    		  .setDefaultCookieStore(cookieStore)
-    		  .setUserAgent(randUserAgent)
-    		  .setDefaultRequestConfig(requestConfig)
-    		  .setDefaultCredentialsProvider(credentialsProvider)
-    		  .setDefaultHeaders(reqHeaders)
-    		  .build();
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
+          .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders).build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -589,8 +584,8 @@ public class DataFetcher {
       }
 
       // creating the page content result from the http request
-      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); 
-      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); 
+      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());
+      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());
       pageContent.setUrl(url); // setting url
 
       responseLength = pageContent.getContentData().length;
@@ -697,15 +692,8 @@ public class DataFetcher {
 
   }
 
-  public static void sendRequestInfoLog(
-		  String url, 
-		  String requestType, 
-		  LettProxy proxy, 
-		  String userAgent, 
-		  Session session,
-		  CloseableHttpResponse response, 
-		  Integer responseLength, 
-		  String requestHash) {
+  public static void sendRequestInfoLog(String url, String requestType, LettProxy proxy, String userAgent, Session session,
+      CloseableHttpResponse response, Integer responseLength, String requestHash) {
 
     JSONObject requestMetadata = new JSONObject();
 
@@ -842,10 +830,12 @@ public class DataFetcher {
       }
 
       if (e instanceof ResponseCodeException) {
-        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
+        Logging.printLogWarn(logger, session,
+            "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
+        Logging.printLogError(logger, session,
+            "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
         Logging.printLogError(logger, session, e.getMessage());
       }
 
