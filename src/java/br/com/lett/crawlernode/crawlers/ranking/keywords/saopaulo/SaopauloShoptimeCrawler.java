@@ -17,7 +17,7 @@ public class SaopauloShoptimeCrawler extends CrawlerRankingKeywords {
   @Override
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
-    this.pageSize = 24;
+    this.pageSize = 48;
 
     this.log("Página " + this.currentPage);
 

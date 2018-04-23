@@ -179,6 +179,17 @@ public class SaopauloOnofreCrawler extends Crawler {
     Elements elementSecondaryImages = document.select(".product-gallery__thumbs-list a");
 
     for (Element e : elementSecondaryImages) {
+      Element img = e.select("img").first();
+      if (img != null) {
+        String imgString = img.attr("src").trim();
+
+        if (imgString.isEmpty()) {
+          continue;
+        }
+      } else {
+        continue;
+      }
+
       String image = e.attr("data-image").trim();
 
       if (!image.startsWith("http")) {
@@ -211,9 +222,9 @@ public class SaopauloOnofreCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".product-tabs__content").first();
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
+    Elements elementsDescription = doc.select(".product-tabs__content");
+    for (Element e : elementsDescription) {
+      description.append(e.html());
     }
 
     Element elementWarning = doc.select(".product-disclaimer").first();

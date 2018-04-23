@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -313,13 +314,18 @@ public class GPACrawler {
     if (json.has("shelfList")) {
       JSONArray shelfList = json.getJSONArray("shelfList");
 
-      List<String> listCategories = new ArrayList<>(); // It is a "set" because it has been noticed that there are repeated categories
+      Set<String> listCategories = new HashSet<>(); // It is a "set" because it has been noticed that there are repeated categories
 
-      for (int i = shelfList.length() - 1; i >= 0; i--) { // the last item is the first category and the first item is the last category
-        JSONObject cat = shelfList.getJSONObject(i);
+      if (shelfList.length() > 0) {
+        JSONObject cat1 = shelfList.getJSONObject(shelfList.length() - 1);
+        JSONObject cat2 = shelfList.getJSONObject(0);
 
-        if (cat.has("name") && !listCategories.contains(cat.getString("name"))) {
-          listCategories.add(cat.getString("name"));
+        if (cat1.has("name")) {
+          listCategories.add(cat1.getString("name"));
+        }
+
+        if (cat2.has("name")) {
+          listCategories.add(cat2.getString("name"));
         }
       }
 

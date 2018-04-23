@@ -247,7 +247,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
       description = description + elementWarning.outerHtml();
     }
 
-    Element elementProductDetails = document.select("#product-tips.product-description .nano-content").last();
+    Element elementProductDetails = document.select("#product-tips.product-description").last();
     if (elementProductDetails != null) {
       description = description + elementProductDetails.outerHtml();
     }

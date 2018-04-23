@@ -71,7 +71,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
    * @return
    */
   private Double getTotalAvgRating(JSONObject rating) {
-    Double avgRating = null;
+    Double avgRating = 0d;
 
     if (rating.has("ratingAverage")) {
       Object avg = rating.get("ratingAverage");
@@ -93,7 +93,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
    * @return
    */
   private Integer getTotalNumOfRatings(JSONObject api) {
-    Integer totalRating = null;
+    Integer totalRating = 0;
 
     if (api.has("ratingCount") && api.get("ratingCount") instanceof Integer) {
       totalRating = api.getInt("ratingCount");
