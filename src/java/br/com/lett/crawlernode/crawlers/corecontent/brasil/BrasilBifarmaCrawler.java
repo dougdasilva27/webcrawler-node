@@ -108,10 +108,7 @@ public class BrasilBifarmaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    if (doc.select(".product_body").first() != null) {
-      return true;
-    }
-    return false;
+    return !doc.select(".product_body").isEmpty();
   }
 
   private String crawlInternalId(JSONObject info) {
@@ -249,7 +246,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.select(".accordion").first();
+    Element descriptionElement = document.select(".accordion .accordion-section").first();
 
     if (descriptionElement != null) {
       description.append(descriptionElement.html());
