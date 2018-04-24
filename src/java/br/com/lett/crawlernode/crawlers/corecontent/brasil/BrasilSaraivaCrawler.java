@@ -409,7 +409,8 @@ public class BrasilSaraivaCrawler extends Crawler {
     Elements elementImages = document.select("section.product-image #thumbs-images a img, .slides li > img");
     Set<String> setImages = new HashSet<>();
 
-    for (Element e : elementImages) {
+    for (int i = 1; i < elementImages.size(); i++) {
+      Element e = elementImages.get(i);
       String imageURL = e.attr("src").trim();
       String biggerImageURL = CommonMethods.modifyParameter(imageURL, "l", String.valueOf(LARGER_IMAGE_DIMENSION));
 

@@ -247,13 +247,13 @@ public class BrasilIbyteCrawler extends Crawler {
 
       installmentPriceMap.put(1, priceWithDiscount);
 
-      Element boleto = doc.select(".boletoBox .price").last();
+      Element boleto = doc.select(".boletoBox .price").first();
 
       if (boleto != null) {
         Float value = MathUtils.parseFloat(boleto.ownText());
 
         if (value != null) {
-          prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f)));
+          prices.setBankTicketPrice(value);
         } else {
           prices.setBankTicketPrice(priceWithDiscount);
         }
