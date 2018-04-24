@@ -137,16 +137,7 @@ public class BrasilKabumCrawler extends Crawler {
         }
 
         // Price
-        Element elementPrice = elementProduct.select(".preco_normal").first();
-        if (elementPrice != null) {
-          price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        } else {
-          elementPrice = elementProduct.select(".preco_desconto-cm").first();
-
-          if (elementPrice != null) {
-            price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-          }
-        }
+        price = crawlPrice(prices);
 
         // Available
         Element elementAvailability = elementProduct.select(".disponibilidade img").first();
@@ -172,8 +163,6 @@ public class BrasilKabumCrawler extends Crawler {
         }
       }
 
-
-
       // description
       String description = crawlDescription(doc);
 
@@ -196,6 +185,18 @@ public class BrasilKabumCrawler extends Crawler {
     }
 
     return products;
+  }
+
+
+  private Float crawlPrice(Prices prices) {
+    Float price = null;
+
+    if (prices != null && prices.getCardPaymentOptions(Card.MASTERCARD.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(Card.MASTERCARD.toString()).get(1);
+      price = priceDouble.floatValue();
+    }
+
+    return price;
   }
 
   private String crawlDescription(Document doc) {

@@ -384,8 +384,8 @@ public class SaopauloB2WCrawlersUtils {
       }
     }
 
-    if (payment.has("CARTAO_SHOP_MASTERCARD")) {
-      JSONObject shopCard = payment.getJSONObject("CARTAO_SHOP_MASTERCARD");
+    if (payment.has("CARTAO_SUBA_MASTERCARD")) {
+      JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
 
       if (shopCard.has("installments")) {
         JSONArray installments = shopCard.getJSONArray("installments");
@@ -397,6 +397,31 @@ public class SaopauloB2WCrawlersUtils {
       }
     }
 
+    if (payment.has("CARTAO_ACOM_MASTERCARD")) {
+      JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
+
+      if (shopCard.has("installments")) {
+        JSONArray installments = shopCard.getJSONArray("installments");
+        jsonSeller.put("installmentsShopCard", installments);
+
+        if (installments.length() > moreQuantityOfInstallments.length()) {
+          moreQuantityOfInstallments = installments;
+        }
+      }
+    }
+
+    if (payment.has("CARTAO_SHOP_MASTERCARD")) {
+      JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
+
+      if (shopCard.has("installments")) {
+        JSONArray installments = shopCard.getJSONArray("installments");
+        jsonSeller.put("installmentsShopCard", installments);
+
+        if (installments.length() > moreQuantityOfInstallments.length()) {
+          moreQuantityOfInstallments = installments;
+        }
+      }
+    }
   }
 
   private static void setStock(JSONObject seller, JSONObject jsonSeller) {
