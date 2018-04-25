@@ -50,10 +50,10 @@ public class BrasilFarmaciamixCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String internalPid = null;
-      String name = crawlName(doc);
-      Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
+      String name = crawlName(doc);
+      Float price = available ? crawlPrice(doc) : null;
+      Prices prices = crawlPrices(price, doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);

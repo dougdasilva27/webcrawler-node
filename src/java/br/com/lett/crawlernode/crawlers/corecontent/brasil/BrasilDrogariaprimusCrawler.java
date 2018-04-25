@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -247,7 +248,29 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
    * @return
    */
   private String crawlSecondaryImages(Document doc) {
-    return null;
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".product-photos-list a");
+
+    for (int i = 1; i < images.size(); i++) {
+      Element e = images.get(i);
+
+      String image = e.attr("href").trim();
+
+      if (!image.startsWith("http")) {
+        image = "https:" + image;
+      }
+
+      secondaryImagesArray.put(image);
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+
   }
 
   /**

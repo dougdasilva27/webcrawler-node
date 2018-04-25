@@ -148,10 +148,15 @@ public class BrasilPluscareCrawler extends Crawler {
       String image = images.get(i).attr("href");
 
       if (image.isEmpty() || !image.toLowerCase().endsWith("jpg")) {
-        Element img = images.get(i).select("img").first();
+        String rel = images.get(i).attr("rel").replace(" ", "").trim();
 
-        if (img != null) {
-          image = img.attr("src");
+        String token = "smallImage:'";
+
+        if (rel.contains(token)) {
+          int x = rel.indexOf(token) + token.length();
+          int y = rel.indexOf("'", x);
+
+          image = rel.substring(x, y);
         }
       }
 

@@ -268,6 +268,17 @@ public class BrasilDrogarianetCrawler extends Crawler {
         Map<Integer, Float> installmentPriceMap = new HashMap<>();
         installmentPriceMap.put(1, price);
 
+        Elements specialInstallment = doc.select(".Parcelamento span");
+
+        if (specialInstallment.size() > 1) {
+          String installment = specialInstallment.get(0).ownText().replaceAll("[^0-9]", "").trim();
+          Float value = MathUtils.parseFloat(specialInstallment.get(1).ownText());
+
+          if (!installment.isEmpty() && value != null) {
+            installmentPriceMap.put(Integer.parseInt(installment), value);
+          }
+        }
+
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
