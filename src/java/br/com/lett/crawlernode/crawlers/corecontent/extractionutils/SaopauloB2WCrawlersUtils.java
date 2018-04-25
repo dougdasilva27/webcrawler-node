@@ -398,7 +398,7 @@ public class SaopauloB2WCrawlersUtils {
     }
 
     if (payment.has("CARTAO_ACOM_MASTERCARD")) {
-      JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
+      JSONObject shopCard = payment.getJSONObject("CARTAO_ACOM_MASTERCARD");
 
       if (shopCard.has("installments")) {
         JSONArray installments = shopCard.getJSONArray("installments");
@@ -411,7 +411,7 @@ public class SaopauloB2WCrawlersUtils {
     }
 
     if (payment.has("CARTAO_SHOP_MASTERCARD")) {
-      JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
+      JSONObject shopCard = payment.getJSONObject("CARTAO_SHOP_MASTERCARD");
 
       if (shopCard.has("installments")) {
         JSONArray installments = shopCard.getJSONArray("installments");
