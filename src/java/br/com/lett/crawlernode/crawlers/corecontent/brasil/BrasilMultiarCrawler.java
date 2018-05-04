@@ -341,22 +341,30 @@ public class BrasilMultiarCrawler extends Crawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Elements flags = docPrincipal.select("#product-price .flag");
-      Integer discount = 0;
-      for (Element e : flags) {
-        String classBoleto = e.attr("class");
+      Elements flags = docPrincipal.select("#product-info .flag");
+      Integer discountBoleto = 0;
+      Integer cardDiscount = 0;
 
-        if (classBoleto.contains("boleto")) {
+      for (Element e : flags) {
+        String classFlag = e.attr("class");
+
+        if (classFlag.contains("boleto")) {
           String text = e.ownText().replaceAll("[^0-9]", "").trim();
 
           if (!text.isEmpty()) {
-            discount = Integer.parseInt(text);
+            discountBoleto = Integer.parseInt(text);
+          }
+        } else if (classFlag.contains("credito")) {
+          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+
+          if (!text.isEmpty()) {
+            cardDiscount = Integer.parseInt(text);
           }
         }
       }
 
-      if (discount > 0) {
-        prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (discount / 100.0))));
+      if (discountBoleto > 0) {
+        prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (discountBoleto / 100.0))));
       } else {
         prices.setBankTicketPrice(price);
       }
@@ -368,38 +376,43 @@ public class BrasilMultiarCrawler extends Crawler {
           String text = e.text().toLowerCase();
 
           if (text.contains("visa")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
           } else if (text.contains("mastercard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("diners")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
           } else if (text.contains("american") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
           } else if (text.contains("hipercard") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("credicard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 
           } else if (text.contains("elo")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), discount);
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
           }
         }
       } else {
         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-        installmentPriceMap.put(1, price);
+
+        if (cardDiscount > 0) {
+          installmentPriceMap.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (cardDiscount / 100f))));
+        } else {
+          installmentPriceMap.put(1, price);
+        }
 
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);

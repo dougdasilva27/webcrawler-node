@@ -63,7 +63,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
 
@@ -71,7 +71,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         String primaryImage = crawlPrimaryImage(jsonProduct);
         String secondaryImages = /* crawlSecondaryImages(jsonProduct) */ null; // at the moment this crawler was made, secondary pics not appear in
                                                                                // product page
-        Prices prices = crawlPrices(internalId, price, jsonSku);
+        Prices prices = crawlPrices(internalId, price, jsonSku, doc);
         Integer stock = crawlStock(jsonProduct);
 
         // Creating the product
@@ -249,7 +249,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Document doc) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -259,7 +259,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", seller);
         sellerJSON.put("price", price);
-        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku).toJSON());
+        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku, doc).toJSON());
 
         try {
           Seller s = new Seller(sellerJSON);
@@ -303,7 +303,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Document docHome) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -312,10 +312,20 @@ public class BrasilKitchenaidCrawler extends Crawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Element bank = doc.select("#ltlPrecoWrapper em").first();
-      if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
-      } else {
+      Element discount = docHome.select(".desconto-cartao").first();
+      if (discount != null) {
+        String text = discount.ownText().trim();
+
+        if (text.contains("oleto")) {
+          String discountText = text.replaceAll("[^0-9]", "").trim();
+
+          if (!discountText.isEmpty()) {
+            prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (Integer.parseInt(discountText) / 100f))));
+          }
+        }
+      }
+
+      if (prices.getBankTicketPrice() == null) {
         prices.setBankTicketPrice(price);
       }
 

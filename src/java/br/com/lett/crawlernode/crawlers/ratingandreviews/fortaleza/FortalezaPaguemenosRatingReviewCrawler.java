@@ -54,7 +54,7 @@ public class FortalezaPaguemenosRatingReviewCrawler extends RatingReviewCrawler 
 
         List<String> idList = crawlIdList(skuJson);
         for (String internalId : idList) {
-          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }
@@ -155,7 +155,7 @@ public class FortalezaPaguemenosRatingReviewCrawler extends RatingReviewCrawler 
    * @return
    */
   private Integer getTotalNumOfRatings(Document docRating) {
-    Integer totalRating = null;
+    Integer totalRating = 0;
     Element totalRatingElement = docRating.select(".media em > span").first();
 
     if (totalRatingElement != null) {
@@ -176,9 +176,7 @@ public class FortalezaPaguemenosRatingReviewCrawler extends RatingReviewCrawler 
    * @return
    */
   private Integer getTotalNumOfReviews(Document docRating) {
-    Elements totalRatingElement = docRating.select(".resenhas .quem > li");
-
-    return totalRatingElement.size();
+    return docRating.select(".resenhas .quem > li").size();
   }
 
 

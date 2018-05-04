@@ -47,7 +47,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
         Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
         Double totalRating = getTotalRating(trustVoxResponse);
 
-        Double avgRating = null;
+        Double avgRating = 0d;
         if (totalNumOfEvaluations > 0) {
           avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
         }

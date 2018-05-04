@@ -63,14 +63,14 @@ public class BrasilFrigelarCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
 
         JSONObject jsonProduct = crawlApi(internalId);
         String primaryImage = crawlPrimaryImage(jsonProduct);
         String secondaryImages = crawlSecondaryImages(jsonProduct);
-        Prices prices = crawlPrices(internalId, price, jsonSku);
+        Prices prices = crawlPrices(internalId, price, jsonSku, doc);
         Integer stock = crawlStock(jsonProduct);
 
         // Creating the product
@@ -248,7 +248,7 @@ public class BrasilFrigelarCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Document doc) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -258,7 +258,7 @@ public class BrasilFrigelarCrawler extends Crawler {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", seller);
         sellerJSON.put("price", price);
-        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku).toJSON());
+        sellerJSON.put("prices", crawlPrices(internalId, price, jsonSku, doc).toJSON());
 
         try {
           Seller s = new Seller(sellerJSON);
@@ -309,7 +309,7 @@ public class BrasilFrigelarCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Document docHome) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -318,9 +318,30 @@ public class BrasilFrigelarCrawler extends Crawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Element bank = doc.select("#ltlPrecoWrapper em").first();
-      if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+      Elements flags = docHome.select("#product-info .flag");
+      Integer discountBoleto = 0;
+      Integer cardDiscount = 0;
+
+      for (Element e : flags) {
+        String classFlag = e.attr("class");
+
+        if (classFlag.contains("boleto")) {
+          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+
+          if (!text.isEmpty()) {
+            discountBoleto = Integer.parseInt(text);
+          }
+        } else if (classFlag.contains("credito")) {
+          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+
+          if (!text.isEmpty()) {
+            cardDiscount = Integer.parseInt(text);
+          }
+        }
+      }
+
+      if (discountBoleto > 0) {
+        prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (discountBoleto / 100.0))));
       } else {
         prices.setBankTicketPrice(price);
       }
@@ -332,38 +353,43 @@ public class BrasilFrigelarCrawler extends Crawler {
           String text = e.text().toLowerCase();
 
           if (text.contains("visa")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
           } else if (text.contains("mastercard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("diners")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
           } else if (text.contains("american") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
           } else if (text.contains("hipercard") || text.contains("amex")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
           } else if (text.contains("credicard")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 
           } else if (text.contains("elo")) {
-            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
+            Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), cardDiscount);
             prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
           }
         }
       } else {
         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-        installmentPriceMap.put(1, price);
+
+        if (cardDiscount > 0) {
+          installmentPriceMap.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (cardDiscount / 100f))));
+        } else {
+          installmentPriceMap.put(1, price);
+        }
 
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -377,7 +403,7 @@ public class BrasilFrigelarCrawler extends Crawler {
     return prices;
   }
 
-  private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard) {
+  private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard, Integer discount) {
     Map<Integer, Float> mapInstallments = new HashMap<>();
 
     Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
@@ -399,6 +425,9 @@ public class BrasilFrigelarCrawler extends Crawler {
         if (valueElement != null) {
           Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
+          if (discount != null && installment == 1) {
+            value = value - (value * (discount / 100f));
+          }
           mapInstallments.put(installment, value);
         }
       }

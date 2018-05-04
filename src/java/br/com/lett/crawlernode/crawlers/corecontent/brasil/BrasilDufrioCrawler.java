@@ -328,7 +328,7 @@ public class BrasilDufrioCrawler extends Crawler {
     Element caracteristicas = document.select(".caracteristicasDetalhe").first();
     Element dimensoes = document.select(".dimensoes").first();
 
-    Elements specialDescriptions = document.select("section[class^=linha-]");
+    Elements specialDescriptions = document.select("section[class^=linha-], div[class^=row box]");
     for (Element e : specialDescriptions) {
       description.append(e.html());
     }

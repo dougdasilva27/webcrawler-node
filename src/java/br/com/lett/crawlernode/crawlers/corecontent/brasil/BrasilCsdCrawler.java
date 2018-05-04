@@ -188,6 +188,15 @@ public class BrasilCsdCrawler extends Crawler {
       }
     }
 
+    Element cat3 = document.select(".breadcrumb").first();
+    if (cat3 != null) {
+      String text = cat3.ownText().replaceAll("[^A-Za-z ]", "").trim();
+
+      if (!text.isEmpty()) {
+        categories.add(text);
+      }
+    }
+
     return categories;
   }
 

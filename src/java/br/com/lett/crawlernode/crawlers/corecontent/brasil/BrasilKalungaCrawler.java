@@ -158,6 +158,11 @@ public class BrasilKalungaCrawler extends Crawler {
         description = description + elementDescription.html();
       }
 
+      Element specialDescription = doc.select("#ctl00_Body_dvEspecificacaoAdicionalTop").first();
+      if (specialDescription != null) {
+        description = description + specialDescription.html();
+      }
+
       // Prices
       Prices prices = crawlPrices(doc, price);
 

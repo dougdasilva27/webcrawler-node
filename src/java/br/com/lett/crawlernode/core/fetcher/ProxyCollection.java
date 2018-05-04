@@ -29,6 +29,7 @@ public class ProxyCollection {
   public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
   public static final String LUMINATI_RESIDENTIAL_AR = "luminati_residential_ar";
   public static final String LUMINATI_RESIDENTIAL_MX = "luminati_residential_mx";
+  public static final String BR_OXYLABS = "br-oxylabs";
 
   public static final int MAX_ATTEMPTS_BUY = 2;
   public static final int MAX_ATTEMPTS_BONANZA = 3;
@@ -68,6 +69,7 @@ public class ProxyCollection {
     proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
     proxyMaxAttempts.put(STORM_RESIDENTIAL_US, MAX_ATTEMPTS_STORM_RESIDENTIAL_US);
     proxyMaxAttempts.put(STORM_RESIDENTIAL_EU, MAX_ATTEMPTS_STORM_RESIDENTIAL_EU);
+    proxyMaxAttempts.put(BR_OXYLABS, 2);
     proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
     assembleIntervalsWebcrawler(markets);
