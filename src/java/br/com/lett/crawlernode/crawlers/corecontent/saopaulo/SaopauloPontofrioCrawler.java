@@ -116,7 +116,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Cache-Control", "no-cache");
     headers.put("Connection", "keep-alive");
-    headers.put("Host", "www.pontofri.com.br");
+    headers.put("Host", "www.pontofrio.com.br");
     headers.put("Referer", HOME_PAGE);
     headers.put("Upgrade-Insecure-Requests", "1");
     headers.put("User-Agent", DataFetcher.randUserAgent());
