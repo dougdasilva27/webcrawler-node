@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -83,9 +85,9 @@ import models.prices.Prices;
 
 public class SaopauloPontofrioCrawler extends Crawler {
 
-  private final String MAIN_SELLER_NAME_LOWER = "pontofrio";
-  private final String MAIN_SELLER_NAME_LOWER_2 = "pontofrio.com";
-  private final String HOME_PAGE = "http://www.pontofrio.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "pontofrio";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "pontofrio.com";
+  private static final String HOME_PAGE = "https://www.pontofrio.com.br/";
 
   public SaopauloPontofrioCrawler(Session session) {
     super(session);
@@ -95,6 +97,31 @@ public class SaopauloPontofrioCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
+  }
+
+  @Override
+  protected Object fetch() {
+    String page = fetchPage(session.getOriginalURL());
+
+    if (page != null) {
+      return Jsoup.parse(page);
+    }
+
+    return new Document("");
+  }
+
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Cache-Control", "no-cache");
+    headers.put("Connection", "keep-alive");
+    headers.put("Host", "www.pontofri.com.br");
+    headers.put("Referer", HOME_PAGE);
+    headers.put("Upgrade-Insecure-Requests", "1");
+    headers.put("User-Agent", DataFetcher.randUserAgent());
+
+    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
   }
 
   @Override
@@ -425,19 +452,16 @@ public class SaopauloPontofrioCrawler extends Crawler {
   }
 
   private Document fetchDocumentMarketPlace(String id, String url) {
-    Document doc = new Document(url);
+    String urlMarketPlace;
 
     if (id != null) {
       String[] tokens = url.split("-");
-      String urlMarketPlace = url.replace(tokens[tokens.length - 1], id + "/lista-de-lojistas.html");
-
-      doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null, null);
+      urlMarketPlace = url.replace(tokens[tokens.length - 1], id + "/lista-de-lojistas.html");
     } else {
-      String urlMarketPlace = url.replace(".html", "/lista-de-lojistas.html");
-      doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlMarketPlace, null, null);
+      urlMarketPlace = url.replace(".html", "/lista-de-lojistas.html");
     }
 
-    return doc;
+    return Jsoup.parse(fetchPage(urlMarketPlace));
   }
 
   private Elements crawlSkuOptions(Document document) {
