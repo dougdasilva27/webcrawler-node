@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -11,28 +16,10 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.casasbahia.com.br/";
+
   private boolean isCategory;
   private String urlCategory;
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    internalPid = e.attr("data-id");
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(String internalPid) {
-    String urlProduct = "https://produto.casasbahia.com.br/?IdProduto=" + internalPid;
-
-    return urlProduct;
-  }
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -42,17 +29,13 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
     String url = "https://buscas.casasbahia.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual=" + this.currentPage;
 
-    if (this.currentPage > 1) {
-      if (isCategory) {
-        url = this.urlCategory + "&paginaAtual=" + this.currentPage;
-      }
+    if (this.currentPage > 1 && isCategory) {
+      url = this.urlCategory + "&paginaAtual=" + this.currentPage;
     }
 
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url);
-
+    this.currentDoc = Jsoup.parse(fetchPage(url));
     Elements products = this.currentDoc.select("a.link.url");
 
     if (this.currentPage == 1) {
@@ -66,31 +49,26 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
     }
 
     // número de produtos por página do market
-    if (!isCategory)
-      this.pageSize = 20;
+    if (!isCategory) {
+      this.pageSize = 21;
+    }
 
     Elements result = this.currentDoc.select(".naoEncontrado");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado
-    // faça:
-    if (products.size() >= 1 && result.size() < 1) {
-      // se o total de busca não foi setado ainda, chama a função para
-      // setar
-      if (this.totalProducts == 0)
+    if (!products.isEmpty() && result.isEmpty()) {
+      if (this.totalProducts == 0) {
         setTotalProducts();
+      }
       for (Element e : products) {
         // InternalPid
         String internalPid = crawlInternalPid(e);
 
-        // InternalId
-        String internalId = crawlInternalId(e);
-
         // Url do produto
-        String productUrl = crawlProductUrl(internalPid);
+        String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -105,15 +83,35 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    Element page = this.currentDoc.select("li.next a").first();
+    return !this.currentDoc.select("li.next a").isEmpty();
+  }
 
-    // se elemeno page obtiver algum resultado
-    if (page != null) {
-      return true;
+  private String crawlInternalPid(Element e) {
+    return e.attr("data-id");
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = e.attr("href");
+
+    if (productUrl.contains("?")) {
+      productUrl = productUrl.split("\\?")[0];
     }
 
-    return false;
+    return productUrl;
+  }
 
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Cache-Control", "no-cache");
+    headers.put("Connection", "keep-alive");
+    headers.put("Host", "www.casasbahia.com.br");
+    headers.put("Referer", HOME_PAGE);
+    headers.put("Upgrade-Insecure-Requests", "1");
+    headers.put("User-Agent", DataFetcher.randUserAgent());
+
+    return GETFetcher.fetchPageGETWithHeaders(session, url, null, headers, 1);
   }
 
   @Override
@@ -123,17 +121,14 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
       totalElement = this.currentDoc.select(".resultado .resultado strong").first();
 
       if (totalElement != null) {
-        try {
+        String text = totalElement.text().replaceAll("[^0-9]", "");
+        if (!text.isEmpty()) {
           this.totalProducts = Integer.parseInt(totalElement.text());
-        } catch (Exception e) {
-          this.logError(e.getMessage());
         }
       }
       this.log("Total da busca: " + this.totalProducts);
-    } else {
-      if (this.arrayProducts.size() < 100 && !hasNextPage()) {
-        this.totalProducts = this.arrayProducts.size();
-      }
+    } else if (this.arrayProducts.size() < 100 && !hasNextPage()) {
+      this.totalProducts = this.arrayProducts.size();
     }
   }
 }

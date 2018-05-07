@@ -1,9 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
@@ -11,91 +17,39 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private boolean isCategory;
-  private String urlCategory;
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    internalPid = e.attr("data-id");
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(String internalPid) {
-    String urlProduct = "https://produto.extra.com.br/?IdProduto=" + internalPid;
-
-    return urlProduct;
-  }
+  private static final String HOME_PAGE = "https://www.extra.com.br/";
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-
-    String url = "https://buscando.extra.com.br/?strBusca=" + this.keywordEncoded + "&paginaAtual=" + this.currentPage;
-
-    if (this.currentPage > 1) {
-      if (isCategory) {
-        url = this.urlCategory + "&paginaAtual=" + this.currentPage;
-      }
-    }
-
+    String url = "https://buscando2.extra.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = Jsoup.parse(fetchPage(url));
+    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/EXTRA.html");
 
-    Elements products = this.currentDoc.select("a.link.url");
+    Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
 
-    if (this.currentPage == 1) {
-      String redirectUrl = this.session.getRedirectedToURL(url);
-      if (redirectUrl != null && !redirectUrl.equals(url)) {
-        isCategory = true;
-        this.urlCategory = redirectUrl;
-      } else {
-        isCategory = false;
+    this.pageSize = 21;
+
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
       }
-    }
-
-    // número de produtos por página do market
-    if (!isCategory)
-      this.pageSize = 20;
-
-    Elements result = this.currentDoc.select(".naoEncontrado");
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado
-    // faça:
-    if (products.size() >= 1 && result.size() < 1) {
       for (Element e : products) {
         // InternalPid
         String internalPid = crawlInternalPid(e);
 
-        // InternalId
-        String internalId = crawlInternalId(e);
-
         // Url do produto
-        String urlProduct = crawlProductUrl(internalPid);
+        String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, internalPid, urlProduct);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
-
       }
-
-      // se o total de busca não foi setado ainda, chama a função para
-      // setar
-      if (this.totalProducts == 0)
-        setTotalProducts();
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
@@ -107,35 +61,59 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    Element page = this.currentDoc.select("li.next a").first();
+    return !this.currentDoc.select(".neemu-pagination-next a").isEmpty();
+  }
 
-    // se elemeno page obtiver algum resultado
-    if (page != null) {
-      return true;
+  private String crawlInternalPid(Element e) {
+    return e.attr("data-productid");
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+
+    Element url = e.select(".nm-product-name a").first();
+
+    if (url != null) {
+      productUrl = url.attr("href");
+
+      if (!productUrl.startsWith("http")) {
+        productUrl = "https:" + productUrl;
+      }
+
+      if (productUrl.contains("?")) {
+        productUrl = productUrl.split("\\?")[0];
+      }
     }
 
-    return false;
+    return productUrl;
+  }
 
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Cache-Control", "no-cache");
+    headers.put("Connection", "keep-alive");
+    headers.put("Host", "www.extra.com.br");
+    headers.put("Referer", HOME_PAGE);
+    headers.put("Upgrade-Insecure-Requests", "1");
+    headers.put("User-Agent", DataFetcher.randUserAgent());
+
+    return GETFetcher.fetchPageGETWithHeaders(session, url, null, new HashMap<>(), 1);
   }
 
   @Override
   protected void setTotalProducts() {
     Element totalElement = null;
-    if (!isCategory) {
-      totalElement = this.currentDoc.select(".resultado .resultado strong").first();
+    totalElement = this.currentDoc.select("span[data-totalresults]").first();
 
-      if (totalElement != null) {
-        try {
-          this.totalProducts = Integer.parseInt(totalElement.text());
-        } catch (Exception e) {
-          this.logError(e.getMessage());
-        }
-      }
-      this.log("Total da busca: " + this.totalProducts);
-    } else {
-      if (this.arrayProducts.size() < 100 && !hasNextPage()) {
-        this.totalProducts = this.arrayProducts.size();
+    if (totalElement != null) {
+      String text = totalElement.text().replaceAll("[^0-9]", "");
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(totalElement.text());
       }
     }
+
+    this.log("Total da busca: " + this.totalProducts);
   }
 }

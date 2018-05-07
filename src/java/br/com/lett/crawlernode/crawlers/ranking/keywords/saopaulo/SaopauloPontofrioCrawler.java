@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -11,37 +16,36 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.pontofrio.com.br/";
+
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-    String url = "https://search3.pontofrio.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
-
+    String url = "https://search3.pontofrio.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".nm-product-item");
+    this.currentDoc = Jsoup.parse(fetchPage(url));
+    Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
 
-    // número de produtos por página do market
-    this.pageSize = 24;
+    this.pageSize = 21;
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
       for (Element e : products) {
+        // InternalPid
         String internalPid = crawlInternalPid(e);
-        String urlProduct = crawlProductUrl(internalPid);
 
-        saveDataProduct(null, internalPid, urlProduct);
+        // Url do produto
+        String productUrl = crawlProductUrl(e);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        saveDataProduct(null, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
-
       }
     } else {
       this.result = false;
@@ -53,24 +57,60 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".neemu-total-products-container span").first();
-
-    if (totalElement != null) {
-      String total = totalElement.attr("data-totalresults").replaceAll("[^0-9]", "").trim();
-
-      if (!total.isEmpty()) {
-        this.totalProducts = Integer.parseInt(total);
-      }
-    }
-    this.log("Total da busca: " + this.totalProducts);
+  protected boolean hasNextPage() {
+    return !this.currentDoc.select(".neemu-pagination-next a").isEmpty();
   }
 
   private String crawlInternalPid(Element e) {
     return e.attr("data-productid");
   }
 
-  private String crawlProductUrl(String internalPid) {
-    return "https://produto.pontofrio.com.br/?IdProduto=" + internalPid;
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+
+    Element url = e.select(".nm-product-name a").first();
+
+    if (url != null) {
+      productUrl = url.attr("href");
+
+      if (!productUrl.startsWith("http")) {
+        productUrl = "https:" + productUrl;
+      }
+
+      if (productUrl.contains("?")) {
+        productUrl = productUrl.split("\\?")[0];
+      }
+    }
+
+    return productUrl;
+  }
+
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Cache-Control", "no-cache");
+    headers.put("Connection", "keep-alive");
+    headers.put("Host", "www.pontofrio.com.br");
+    headers.put("Referer", HOME_PAGE);
+    headers.put("Upgrade-Insecure-Requests", "1");
+    headers.put("User-Agent", DataFetcher.randUserAgent());
+
+    return GETFetcher.fetchPageGETWithHeaders(session, url, null, new HashMap<>(), 1);
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = null;
+    totalElement = this.currentDoc.select("span[data-totalresults]").first();
+
+    if (totalElement != null) {
+      String text = totalElement.text().replaceAll("[^0-9]", "");
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(totalElement.text());
+      }
+    }
+
+    this.log("Total da busca: " + this.totalProducts);
   }
 }
