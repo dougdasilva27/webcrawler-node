@@ -1,10 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -21,6 +26,33 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
 
   public SaopauloCasasbahiaRatingReviewCrawler(Session session) {
     super(session);
+  }
+
+  private static final String HOME_PAGE = "https://www.casasbahia.com.br/";
+
+  @Override
+  protected Document fetch() {
+    String page = fetchPage(session.getOriginalURL());
+
+    if (page != null) {
+      return Jsoup.parse(page);
+    }
+
+    return new Document("");
+  }
+
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Cache-Control", "no-cache");
+    headers.put("Connection", "keep-alive");
+    headers.put("Host", "www.casasbahia.com.br");
+    headers.put("Referer", HOME_PAGE);
+    headers.put("Upgrade-Insecure-Requests", "1");
+    headers.put("User-Agent", DataFetcher.randUserAgent());
+
+    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
   }
 
   @Override
@@ -41,7 +73,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
 
       List<String> idList = crawlInternalIds(document);
       for (String internalId : idList) {
-        RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(internalId);
         ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
       }
