@@ -311,16 +311,16 @@ public class BrasilBifarmaCrawler extends Crawler {
   private JSONObject crawlProductInfo(Document doc) {
     JSONObject info = new JSONObject();
 
-    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+    Elements scripts = doc.select("script");
 
     for (Element e : scripts) {
-      String text = e.outerHtml();
+      String text = e.html();
 
-      String varChaordic = "chaordicProduct=";
+      String varChaordic = "chaordicProduct =";
 
       if (text.contains(varChaordic)) {
         int x = text.indexOf(varChaordic) + varChaordic.length();
-        int y = text.indexOf(";", x);
+        int y = text.indexOf(';', x);
 
         String json = text.substring(x, y).trim();
 

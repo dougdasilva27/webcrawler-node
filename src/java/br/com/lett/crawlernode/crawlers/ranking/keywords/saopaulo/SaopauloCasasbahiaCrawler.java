@@ -53,7 +53,7 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 21;
     }
 
-    Elements result = this.currentDoc.select(".naoEncontrado");
+    Elements result = this.currentDoc.select(".naoEncontrado, #divBuscaVaziaSuperior");
 
     if (!products.isEmpty() && result.isEmpty()) {
       if (this.totalProducts == 0) {
