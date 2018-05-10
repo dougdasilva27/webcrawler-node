@@ -120,7 +120,7 @@ public class BrasilCentralarCrawler extends Crawler {
   }
 
   private boolean isProductPage(String url) {
-    return url.startsWith(HOME_PAGE + "produto/");
+    return url.contains("produto/");
   }
 
   private String crawlInternalId(JSONObject json) {
