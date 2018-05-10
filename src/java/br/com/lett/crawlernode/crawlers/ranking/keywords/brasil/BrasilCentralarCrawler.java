@@ -1,109 +1,108 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
-public class BrasilCentralarCrawler extends CrawlerRankingKeywords{
+public class BrasilCentralarCrawler extends CrawlerRankingKeywords {
 
-	public BrasilCentralarCrawler(Session session) {
-		super(session);
-	}
+  public BrasilCentralarCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
-			
-		this.log("Página "+ this.currentPage);
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.centralar.com.br/loja/busca.php?pg="+ this.currentPage +"&palavra="+ this.keywordEncoded +"&paginacao=s";
-		this.log("Link onde são feitos os crawlers: "+url);	
-			
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
-		
-		Elements products =  this.currentDoc.select("div.float.parteA > a");
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 10;
 
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			
-			for(Element e: products) {
-				//seta o id com o seletor
-				String[] tokens = e.select("> img").first().attr("src").split("/");
-				String[] tokens2 = tokens[tokens.length-1].split("_");
-				
-				String internalPid 	= null;
-				String internalId 	= tokens2[tokens2.length-3].replaceAll("[^0-9]", "");
-				
-				//monta a url
-				String productUrl = crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+    this.log("Página " + this.currentPage);
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+    JSONObject productsInfo = crawlProductInfo();
+    JSONArray products = productsInfo.has("products") ? productsInfo.getJSONArray("products") : new JSONArray();
 
-	@Override
-	protected boolean hasNextPage() {
-		Elements page = this.currentDoc.select("div.float.parteA > a");
-		
-		//se  elemeno page não obtiver nenhum resultado
-		if(page.size() < this.pageSize) {
-			//não tem próxima página
-			return false;
-		} else {
-			//tem próxima página
-			return true;
-			
-		}
-	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("div.conteudinhos[style]").first();
-		
-		if(totalElement != null) { 	
-			try {
-				String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
-				
-				this.totalProducts = Integer.parseInt(token);
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
-	
+    if (products.length() > 0) {
+      if (totalProducts == 0) {
+        this.setTotalProducts(productsInfo);
+      }
 
-	private String crawlProductUrl(Element e){
-		String productUrl;
-		
-		productUrl = e.attr("href");
-			
-		if(!productUrl.contains("centralar")){
-			productUrl = "http://www.centralar.com.br" + productUrl;
-		}
-		
-		if(!productUrl.contains("http")){
-			productUrl = "http:" + productUrl;
-		}
-		
-		
-		return productUrl;
-	}
+      for (int i = 0; i < products.length(); i++) {
+        JSONObject product = products.getJSONObject(i);
+
+        String internalId = crawlInternalId(product);
+        String productUrl = crawlProductUrl(product);
+
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  protected void setTotalProducts(JSONObject json) {
+    if (json.has("pagination")) {
+      JSONObject pagination = json.getJSONObject("pagination");
+
+      if (pagination.has("totalProducts") && pagination.get("totalProducts") instanceof Integer) {
+        this.totalProducts = pagination.getInt("totalProducts");
+        this.log("Total: " + this.totalProducts);
+      }
+    }
+  }
+
+  private String crawlInternalId(JSONObject product) {
+    String internalId = null;
+
+    if (product.has("code")) {
+      internalId = product.getString("code");
+    }
+
+    return internalId;
+  }
+
+  private String crawlProductUrl(JSONObject product) {
+    String productUrl = null;
+
+    if (product.has("productSlug")) {
+      productUrl = "https://www.centralar.com.br/produto/" + product.get("productSlug");
+    }
+
+    return productUrl;
+  }
+
+  private JSONObject crawlProductInfo() {
+    JSONObject products = new JSONObject();
+    String payload =
+        "{\"searchWords\":\"" + this.location + "\",\"filter\":{\"page\":" + this.currentPage + ",\"rpp\":50,\"orderBy\":1,\"categories\":null,"
+            + "\"categorySlug\":null,\"brands\":null,\"btus\":null,\"energyRating\":null,\"operatingCycle\":null,\"newReleases\":null}}";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json");
+    headers.put("Authorization", "123456");
+    headers.put("Referer", "https://www.centralar.com.br/");
+
+    String page = fetchPostFetcher("http://api-services.centralar.com.br/mds/rest/products/search/v1", payload, headers, null);
+
+    if (page != null && page.startsWith("{") && page.endsWith("}")) {
+      try {
+        products = new JSONObject(page);
+      } catch (JSONException e) {
+        logError(CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return products;
+  }
 }
