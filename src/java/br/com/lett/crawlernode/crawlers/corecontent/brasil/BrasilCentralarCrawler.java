@@ -90,7 +90,7 @@ public class BrasilCentralarCrawler extends Crawler {
     super.extractInformation(json);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (json.has("code")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(json);
@@ -112,15 +112,11 @@ public class BrasilCentralarCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
 
-  }
-
-  private boolean isProductPage(String url) {
-    return url.contains("produto/");
   }
 
   private String crawlInternalId(JSONObject json) {
