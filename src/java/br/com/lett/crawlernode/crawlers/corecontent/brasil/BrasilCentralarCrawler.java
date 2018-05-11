@@ -49,7 +49,7 @@ public class BrasilCentralarCrawler extends Crawler {
     String url = session.getOriginalURL();
 
     if (url.contains("/produto/")) {
-      String slugName = url.split("/produto/")[1].split("/")[0];
+      String slugName = url.split("/produto/")[1].split("/")[0].replace(".html", "");
       String apiUrl = "http://api-services.centralar.com.br/mds/rest/product/v1?productSlug=" + slugName;
 
       Map<String, String> headers = new HashMap<>();
@@ -81,6 +81,8 @@ public class BrasilCentralarCrawler extends Crawler {
         }
       }
     }
+
+    System.err.println(api);
 
     return api;
   }
