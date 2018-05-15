@@ -252,6 +252,12 @@ public class BrasilBifarmaCrawler extends Crawler {
       description.append(descriptionElement.html());
     }
 
+    Element advert = document.select("#tipoMensagemProduto").first();
+
+    if (advert != null) {
+      description.append(advert.html());
+    }
+
     return description.toString();
   }
 

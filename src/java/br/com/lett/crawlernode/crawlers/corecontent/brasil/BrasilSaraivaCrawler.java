@@ -67,8 +67,6 @@ public class BrasilSaraivaCrawler extends Crawler {
       String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
       JSONObject apiJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
 
-      System.err.println(apiJson);
-
       String name = crawlName(doc);
       boolean available = crawlAvailability(productJSON);
       String primaryImage = crawlPrimaryImage(doc);
