@@ -217,7 +217,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
       }
 
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
+      // prices.setBankTicketPrice(price);
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);

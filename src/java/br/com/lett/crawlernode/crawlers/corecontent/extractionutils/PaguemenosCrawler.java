@@ -308,13 +308,6 @@ public class PaguemenosCrawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Element bank = doc.select("#ltlPrecoWrapper em").first();
-      if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
-      } else {
-        prices.setBankTicketPrice(price);
-      }
-
       Elements cardsElements = doc.select("#ddlCartao option");
 
       if (!cardsElements.isEmpty()) {

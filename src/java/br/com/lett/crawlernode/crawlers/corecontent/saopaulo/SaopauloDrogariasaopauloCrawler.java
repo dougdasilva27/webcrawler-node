@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -273,6 +274,12 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
     Element elementInformation = doc.select(".productSpecification").first();
     if (elementInformation != null) {
+
+      Element iframe = elementInformation.select("iframe[src]").first();
+      if (iframe != null) {
+        description.append(GETFetcher.fetchPageGET(session, iframe.attr("src"), cookies, 1));
+      }
+
       description.append(elementInformation.html());
     }
 
@@ -280,6 +287,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     if (advert != null && !advert.select("#___rc-p-id").isEmpty()) {
       description.append(advert.html());
     }
+
+    CommonMethods.saveDataToAFile(description, "/home/gabriel/htmls/DESC.txt");
 
     return description.toString();
   }

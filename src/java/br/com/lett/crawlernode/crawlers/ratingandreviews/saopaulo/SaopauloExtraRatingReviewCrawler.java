@@ -49,7 +49,7 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
       Double avgRating = getTotalAvgRating(rating);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(MathUtils.normalizeTwoDecimalPlaces(avgRating));
+      ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
@@ -74,7 +74,7 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
     Double avgRating = 0d;
 
     if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
-      avgRating = rating.getDouble("average");
+      avgRating = MathUtils.normalizeTwoDecimalPlaces(rating.getDouble("average"));
     }
 
     return avgRating;

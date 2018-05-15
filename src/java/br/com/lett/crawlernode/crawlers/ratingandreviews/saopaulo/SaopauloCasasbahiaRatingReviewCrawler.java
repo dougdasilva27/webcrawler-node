@@ -89,7 +89,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
    * @return
    */
   private Integer getTotalRating(Document doc) {
-    Integer total = null;
+    Integer total = 0;
 
     Element finalElement = null;
     Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
@@ -113,7 +113,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
    * @return
    */
   private Double getTotalAvgRating(Document doc) {
-    Double avgRating = null;
+    Double avgRating = 0d;
 
     Element avg = doc.select(".pr-snapshot-rating.rating .pr-rounded.average").first();
 

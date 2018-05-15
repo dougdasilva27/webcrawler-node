@@ -54,7 +54,7 @@ public class SaopauloPanvelCrawler extends Crawler {
       Float price = crawlPrice(productJson);
       Prices prices = crawlPrices(price, productJson);
       boolean available = crawlAvailability(productJson);
-      CategoryCollection categories = crawlCategories(productJson);
+      CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       String description = crawlDescription(doc);
@@ -153,19 +153,12 @@ public class SaopauloPanvelCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private CategoryCollection crawlCategories(JSONObject product) {
+  private CategoryCollection crawlCategories(Document doc) {
     CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = doc.select(".breadcrumb a span");
 
-    if (product.has("categories")) {
-      JSONArray categoriesArray = product.getJSONArray("categories");
-
-      for (int i = 0; i < categoriesArray.length(); i++) {
-        JSONObject catJson = categoriesArray.getJSONObject(i);
-
-        if (catJson.has("name")) {
-          categories.add(catJson.getString("name"));
-        }
-      }
+    for (int i = 1; i < elementCategories.size(); i++) { // first index is the home page
+      categories.add(elementCategories.get(i).text().replace("/", "").trim());
     }
 
     return categories;

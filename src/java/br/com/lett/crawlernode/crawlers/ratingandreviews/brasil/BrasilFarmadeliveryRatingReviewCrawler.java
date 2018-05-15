@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -34,7 +35,7 @@ public class BrasilFarmadeliveryRatingReviewCrawler extends RatingReviewCrawler 
 
       if (internalId != null) {
         Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
-        Double avgRating = getTotalAvgRating(document);
+        Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
 
         ratingReviews.setInternalId(internalId);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -66,12 +67,19 @@ public class BrasilFarmadeliveryRatingReviewCrawler extends RatingReviewCrawler 
    * @param document
    * @return
    */
-  private Double getTotalAvgRating(Document doc) {
-    Double avgRating = null;
-    Element avg = doc.select(".netreviews_note_generale").first();
+  private Double getTotalAvgRating(Document doc, Integer ratingCount) {
+    Double avgRating = 0d;
 
-    if (avg != null && !avg.ownText().isEmpty()) {
-      avgRating = Double.parseDouble(avg.ownText());
+    if (ratingCount > 0) {
+      Element avg = doc.select(".rating-box-product .rating-box .rating").first();
+
+      if (avg != null) {
+        Double percentage = MathUtils.normalizeTwoDecimalPlaces(Double.parseDouble(avg.attr("style").replaceAll("[^0-9.]", "").trim()));
+
+        if (percentage != null) {
+          avgRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage / 100d));
+        }
+      }
     }
 
     return avgRating;
@@ -84,8 +92,8 @@ public class BrasilFarmadeliveryRatingReviewCrawler extends RatingReviewCrawler 
    * @return
    */
   private Integer getTotalNumOfRatings(Document docRating) {
-    Integer totalRating = null;
-    Element totalRatingElement = docRating.select(".netreviews_subtitle").first();
+    Integer totalRating = 0;
+    Element totalRatingElement = docRating.select(".rating-box-product .amount a").first();
 
     if (totalRatingElement != null) {
       String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

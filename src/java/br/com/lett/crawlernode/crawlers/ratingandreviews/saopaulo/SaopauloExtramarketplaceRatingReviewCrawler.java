@@ -67,21 +67,16 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 
       String internalPid = crawlInternalPid(document);
 
-      // To get reviews
-      // JSONArray ratings = crawlScriptWithRating(internalPid);
-      //
-      // Integer totalNumOfEvaluations = ratings.length();
-      // Double avgRating = getTotalAvgRating(ratings, totalNumOfEvaluations);
-
       Integer total = getTotalRating(document);
+      Double avgRating = getTotalAvgRating(document);
 
       ratingReviews.setTotalRating(total);
       ratingReviews.setTotalWrittenReviews(total);
-      ratingReviews.setAverageOverallRating(getTotalAvgRating(document));
+      ratingReviews.setAverageOverallRating(avgRating);
 
       List<String> idList = crawlInternalIds(document, internalPid);
       for (String internalId : idList) {
-        RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(internalId);
         ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
       }
@@ -200,12 +195,15 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
    * @return
    */
   private Integer getTotalRating(Document doc) {
-    Integer total = null;
+    Integer total = 0;
 
     Element rating = doc.select(".rating .rating-count").first();
+    Element reviewCount = doc.select(".pr-review-count").first();
 
     if (rating != null) {
       total = Integer.parseInt(rating.ownText().replaceAll("[^0-9]", ""));
+    } else if (reviewCount != null) {
+      total = Integer.parseInt(reviewCount.ownText().replaceAll("[^0-9]", ""));
     }
 
     return total;
@@ -216,9 +214,13 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
    * @return
    */
   private Double getTotalAvgRating(Document doc) {
-    Double avgRating = null;
+    Double avgRating = 0d;
 
     Element avg = doc.select(".rating .rating-value").first();
+
+    if (avg == null) {
+      avg = doc.select(".pr-rating.pr-rounded.average").first();
+    }
 
     if (avg != null) {
       avgRating = Double.parseDouble(avg.ownText().replace(",", "."));

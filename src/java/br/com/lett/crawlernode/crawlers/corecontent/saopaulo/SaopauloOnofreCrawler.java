@@ -224,6 +224,19 @@ public class SaopauloOnofreCrawler extends Crawler {
 
     Elements elementsDescription = doc.select(".product-tabs__content");
     for (Element e : elementsDescription) {
+      Elements specs = e.select(".product-tabs__table tr td");
+
+      if (!specs.isEmpty()) {
+        for (Element spec : specs) {
+          String text = spec.text().trim();
+          String content = spec.attr("content").trim();
+
+          if (text.isEmpty()) {
+            spec.appendText(content.isEmpty() ? "Não possui" : content);
+          }
+        }
+      }
+
       description.append(e.html());
     }
 

@@ -113,7 +113,7 @@ public class FortalezaPaguemenosRatingReviewCrawler extends RatingReviewCrawler 
     Double avgRating = null;
     Elements rating = docRating.select("ul.rating li");
 
-    if (totalRating != null) {
+    if (totalRating != null && totalRating > 0) {
       Double total = 0.0;
 
       for (Element e : rating) {

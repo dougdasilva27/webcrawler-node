@@ -99,7 +99,7 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
    * @return
    */
   private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-    Double avgRating = null;
+    Double avgRating = 0d;
     Element rating = docRating.select("meta[itemprop=ratingValue]").first();
 
     if (rating != null) {
@@ -116,7 +116,7 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
    * @return
    */
   private Integer getTotalNumOfRatings(Document doc) {
-    Integer totalRating = null;
+    Integer totalRating = 0;
     Element totalRatingElement = doc.select("strong[itemprop=ratingCount]").first();
 
     if (totalRatingElement != null) {

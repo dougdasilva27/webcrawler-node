@@ -81,9 +81,7 @@ public class BrasilCentralarCrawler extends Crawler {
         }
       }
     }
-
-    System.err.println(api);
-
+    
     return api;
   }
 
