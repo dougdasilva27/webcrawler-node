@@ -9,7 +9,6 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -208,8 +207,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       description.append(anchorDescription.html());
     }
 
-    String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalId + "/";
-    description.append(DataFetcher.fetchString("GET", session, descriptionURL, null, cookies));
+    // String descriptionURL = "http://www.magazineluiza.com.br/produto/ficha-tecnica/" + internalId +
+    // "/";
+    // description.append(DataFetcher.fetchString("GET", session, descriptionURL, null, cookies));
 
     return CommonMethods.stripNonValidXMLOrHTMLCharacters(description.toString());
   }
