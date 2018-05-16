@@ -330,13 +330,12 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
     if (price != null) {
       Map<Integer, Float> installments = new HashMap<>();
+      installments.put(1, price);
 
       if (price1x != null) {
         p.setBankTicketPrice(price1x);
-        installments.put(1, price1x);
       } else {
         p.setBankTicketPrice(price);
-        installments.put(1, price);
       }
 
       if (priceFrom != null) {
@@ -363,12 +362,12 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       JSONObject pricesJson = sku.getJSONObject("prices");
       Map<Integer, Float> installments = new HashMap<>();
 
+      installments.put(1, price);
+
       if (pricesJson.has("realaVista") && pricesJson.get("realaVista") instanceof Double) {
         Double boleto = pricesJson.getDouble("realaVista");
         p.setBankTicketPrice(boleto);
-        installments.put(1, MathUtils.normalizeTwoDecimalPlaces(boleto.floatValue()));
       } else {
-        installments.put(1, price);
         p.setBankTicketPrice(price);
       }
 

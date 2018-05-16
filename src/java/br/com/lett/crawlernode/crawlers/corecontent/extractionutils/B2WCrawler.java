@@ -101,7 +101,7 @@ public class B2WCrawler {
    *******************************/
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".product-info-area").isEmpty();
+    return !doc.select(".product-info-area").isEmpty() || !doc.select(".product-page").isEmpty();
   }
 
   private String crawlInternalPid(JSONObject assembleJsonProduct) {
