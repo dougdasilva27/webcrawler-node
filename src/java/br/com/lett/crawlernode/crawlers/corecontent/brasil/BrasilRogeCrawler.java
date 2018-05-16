@@ -36,8 +36,7 @@ public class BrasilRogeCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
@@ -53,12 +52,10 @@ public class BrasilRogeCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -148,7 +145,7 @@ public class BrasilRogeCrawler extends Crawler {
     for (int i = 1; i < elementCategories.size(); i++) {
       String cat = elementCategories.get(i).ownText().trim();
 
-      if (!cat.isEmpty()) {
+      if (!cat.isEmpty() && !cat.equalsIgnoreCase("pesquisa")) {
         categories.add(cat);
       }
     }

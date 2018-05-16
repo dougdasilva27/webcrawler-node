@@ -249,7 +249,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
 
       Element priceFrom = doc.select(".prod-index .preco-de").first();
       if (priceFrom != null) {

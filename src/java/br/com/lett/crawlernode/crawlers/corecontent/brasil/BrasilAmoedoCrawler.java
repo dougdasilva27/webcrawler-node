@@ -302,6 +302,7 @@ public class BrasilAmoedoCrawler extends Crawler {
       // O preço no boleto tem desconto mas não aparece na página do produto
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
+      prices.setBankTicketPrice(price);
 
       Element installments = doc.select(".precoParcela strong").first();
 

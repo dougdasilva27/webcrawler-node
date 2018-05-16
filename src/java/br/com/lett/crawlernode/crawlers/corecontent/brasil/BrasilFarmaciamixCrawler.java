@@ -179,6 +179,12 @@ public class BrasilFarmaciamixCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
+    Element shortDescription = doc.select("[itemprop=description]").first();
+
+    if (shortDescription != null) {
+      description.append(shortDescription.html());
+    }
+
     Element elementDescription = doc.select(".col-infos-produto").last();
 
     if (elementDescription != null) {
@@ -198,10 +204,10 @@ public class BrasilFarmaciamixCrawler extends Crawler {
 
       Document docBula = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-      Element shortDescription = docBula.select(".informacoes-bula").last();
+      Element bulaShort = docBula.select(".informacoes-bula").last();
 
-      if (shortDescription != null) {
-        description.append(shortDescription.html());
+      if (bulaShort != null) {
+        description.append(bulaShort.html());
       }
 
       Element descSimple = docBula.select(".col-desc-produto > div > p").first();

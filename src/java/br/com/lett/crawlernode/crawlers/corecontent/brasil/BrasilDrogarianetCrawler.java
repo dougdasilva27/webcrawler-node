@@ -217,6 +217,12 @@ public class BrasilDrogarianetCrawler extends Crawler {
       description.append(elementAditional.html());
     }
 
+    Element medico = doc.select(".MensagemMedicamento").first();
+
+    if (medico != null) {
+      description.append(medico.html());
+    }
+
     return description.toString();
   }
 

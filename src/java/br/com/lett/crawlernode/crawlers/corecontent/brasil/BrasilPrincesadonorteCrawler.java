@@ -241,10 +241,9 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".description_section").last();
-
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
+    Elements elementsDescription = doc.select(".description_section");
+    for (Element e : elementsDescription) {
+      description.append(e.html());
     }
 
     return description.toString();

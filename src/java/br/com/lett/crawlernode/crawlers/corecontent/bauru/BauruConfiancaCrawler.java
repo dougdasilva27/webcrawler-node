@@ -128,10 +128,10 @@ public class BauruConfiancaCrawler extends Crawler {
   private Float crawlPrice(Document document) {
     Float price = null;
 
-    Element salePriceElement = document.select(".price-box .special-price .price").first();
+    Element salePriceElement = document.select(".product-shop .price-box .special-price .price").first();
 
     if (salePriceElement == null) {
-      salePriceElement = document.select(".price-box .regular-price .price").first();
+      salePriceElement = document.select(".product-shop .price-box .regular-price .price").first();
     }
 
     if (salePriceElement != null) {
@@ -236,7 +236,7 @@ public class BauruConfiancaCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      Element priceFrom = doc.select(".price-box .old-price .price").first();
+      Element priceFrom = doc.select(".product-shop .price-box .old-price .price").first();
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
       }
