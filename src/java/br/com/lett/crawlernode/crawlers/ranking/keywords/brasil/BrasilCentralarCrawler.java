@@ -76,7 +76,7 @@ public class BrasilCentralarCrawler extends CrawlerRankingKeywords {
     String productUrl = null;
 
     if (product.has("productSlug")) {
-      productUrl = "https://www.centralar.com.br/produto/" + product.get("productSlug");
+      productUrl = ("https://www.centralar.com.br/produto/" + product.get("productSlug")).replace("produto/produto/", "produto/");
     }
 
     return productUrl;
