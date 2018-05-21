@@ -710,6 +710,22 @@ public class DataFetcher {
 
   }
 
+  public static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session,
+      String requestHash) {
+
+    JSONObject requestMetadata = new JSONObject();
+
+    requestMetadata.put("req_hash", requestHash);
+    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
+    requestMetadata.put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()));
+    requestMetadata.put("user_agent", userAgent);
+    requestMetadata.put("req_method", requestType);
+    requestMetadata.put("req_location", url);
+
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+
+  }
+
   /**
    * Parse the page content, either to get a html or a plain text In case we are expecting JSONObject
    * or JSONArray response from an API, the content will be parsed as a plain text. Otherwise it will

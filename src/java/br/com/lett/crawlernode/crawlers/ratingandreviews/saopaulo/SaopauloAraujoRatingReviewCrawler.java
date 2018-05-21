@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -42,15 +41,10 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
       if (skuJson.has("productId")) {
-        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.getInt("productId"));
+        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.getInt("productId"), document);
 
         Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
-        Double totalRating = getTotalRating(trustVoxResponse);
-
-        Double avgRating = 0d;
-        if (totalNumOfEvaluations > 0) {
-          avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
-        }
+        Double avgRating = getTotalRating(trustVoxResponse);
 
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
@@ -58,7 +52,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
         List<String> idList = crawlIdList(skuJson);
         for (String internalId : idList) {
-          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }
@@ -71,7 +65,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.select(".skuList").size() > 0;
+    return !doc.select(".skuList").isEmpty();
   }
 
   private List<String> crawlIdList(JSONObject skuJson) {
@@ -98,40 +92,37 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
    * @return the total of evaluations
    */
   private Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
-    if (trustVoxResponse.has("items")) {
-      JSONArray ratings = trustVoxResponse.getJSONArray("items");
-      return ratings.length();
+    if (trustVoxResponse.has("count") && trustVoxResponse.get("count") instanceof Integer) {
+      return trustVoxResponse.getInt("count");
     }
     return 0;
   }
 
   private Double getTotalRating(JSONObject trustVoxResponse) {
-    Double totalRating = 0.0;
-    if (trustVoxResponse.has("items")) {
-      JSONArray ratings = trustVoxResponse.getJSONArray("items");
-
-      for (int i = 0; i < ratings.length(); i++) {
-        JSONObject rating = ratings.getJSONObject(i);
-
-        if (rating.has("rate")) {
-          totalRating += rating.getInt("rate");
-        }
-      }
+    if (trustVoxResponse.has("average") && trustVoxResponse.get("average") instanceof Double) {
+      return trustVoxResponse.getDouble("average");
     }
-    return totalRating;
+    return 0d;
   }
 
-  private JSONObject requestTrustVoxEndpoint(int id) {
+  private JSONObject requestTrustVoxEndpoint(int id, Document doc) {
     StringBuilder requestURL = new StringBuilder();
 
-    requestURL.append("http://trustvox.com.br/widget/opinions?code=");
+    requestURL.append("https://trustvox.com.br/widget/root?code=");
     requestURL.append(id);
 
     requestURL.append("&");
     requestURL.append("store_id=78444");
 
-    requestURL.append("&");
+    requestURL.append("&url=");
     requestURL.append(session.getOriginalURL());
+
+    JSONObject vtxctx = CrawlerUtils.selectJsonFromHtml(doc, "script[type=text/javascript]", "vtxctx=", ";", true);
+
+    if (vtxctx.has("departmentyId") && vtxctx.has("categoryId")) {
+      requestURL.append("&product_extra_attributes%5Bdepartment_id%5D=" + vtxctx.get("departmentyId") + "&product_extra_attributes%5Bcategory_id%5D="
+          + vtxctx.get("categoryId"));
+    }
 
     Map<String, String> headerMap = new HashMap<>();
     headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
@@ -142,6 +133,11 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject trustVoxResponse;
     try {
       trustVoxResponse = new JSONObject(response);
+
+      if (trustVoxResponse.has("rate")) {
+        return trustVoxResponse.getJSONObject("rate");
+      }
+
     } catch (JSONException e) {
       Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));

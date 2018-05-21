@@ -109,7 +109,7 @@ public class RiodejaneiroPaodeacucarRatingReviewCrawler extends RatingReviewCraw
    * @return
    */
   private Integer getTotalNumOfRatings(JSONObject rating) {
-    Integer totalRating = null;
+    Integer totalRating = 0;
 
     if (rating.has("total")) {
       totalRating = rating.getInt("total");

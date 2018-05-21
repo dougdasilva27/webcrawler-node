@@ -114,7 +114,11 @@ public class DynamicDataFetcher {
       //
       // Set a random user agent
       //
-      caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", DataFetcher.randUserAgent());
+      String userAgent = DataFetcher.randUserAgent();
+      caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", userAgent);
+
+
+      DataFetcher.sendRequestInfoLogWebdriver(url, DataFetcher.GET_REQUEST, proxy, userAgent, session, requestHash);
 
       //
       // Tell the HAProxy which proxy service we want to use
