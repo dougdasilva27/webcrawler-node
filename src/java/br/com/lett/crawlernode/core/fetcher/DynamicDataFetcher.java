@@ -76,7 +76,7 @@ public class DynamicDataFetcher {
       }
 
       // choose a proxy randomly
-      String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
+      String proxyString = ProxyCollection.BONANZA;
 
       // // Bifarma block luminati_server
       if (session.getMarket().getName().equals("bifarma")) {

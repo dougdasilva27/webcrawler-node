@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -243,7 +244,7 @@ public class SaopauloWalmartCrawler extends Crawler {
       }
     }
 
-    return primaryImage;
+    return primaryImage != null ? CommonMethods.sanitizeUrl(primaryImage) : null;
   }
 
   private String crawlSecondaryImages(Document doc) {
@@ -270,7 +271,7 @@ public class SaopauloWalmartCrawler extends Crawler {
           imgUrl = "http:" + imgUrl;
         }
 
-        secondaryImagesArray.put(imgUrl);
+        secondaryImagesArray.put(imgUrl != null ? CommonMethods.sanitizeUrl(imgUrl) : null);
       }
     }
 
