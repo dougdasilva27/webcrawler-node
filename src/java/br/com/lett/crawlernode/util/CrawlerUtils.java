@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import models.Marketplace;
 import models.Seller;
@@ -230,5 +231,30 @@ public class CrawlerUtils {
     }
 
     return marketplace;
+  }
+
+  /**
+   * 
+   * @param url
+   * @param session
+   * @return
+   */
+  public static String crawlFinalUrl(String url, Session session) {
+    if (url.equals(session.getRedirectedToURL(url)) || session.getRedirectedToURL(url) == null) {
+      return url;
+    }
+
+    return session.getRedirectedToURL(url);
+  }
+
+  public static CategoryCollection crawlCategories(Document document, String selector) {
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(selector);
+
+    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
+      categories.add(elementCategories.get(i).text().trim());
+    }
+
+    return categories;
   }
 }

@@ -318,25 +318,25 @@ public class BrasilFrigelarCrawler extends Crawler {
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
-      Elements flags = docHome.select("#product-info .flag");
       Integer discountBoleto = 0;
       Integer cardDiscount = 0;
 
-      for (Element e : flags) {
-        String classFlag = e.attr("class");
+      Element flagBoleto = docHome.select("#desconto-boleto").first();
+      Element flagCard = docHome.select("#desconto-avista").first();
 
-        if (classFlag.contains("boleto")) {
-          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+      if (flagBoleto != null) {
+        String text = flagBoleto.text().replaceAll("[^0-9]", "").trim();
 
-          if (!text.isEmpty()) {
-            discountBoleto = Integer.parseInt(text);
-          }
-        } else if (classFlag.contains("credito")) {
-          String text = e.ownText().replaceAll("[^0-9]", "").trim();
+        if (!text.isEmpty()) {
+          discountBoleto = Integer.parseInt(text);
+        }
+      }
 
-          if (!text.isEmpty()) {
-            cardDiscount = Integer.parseInt(text);
-          }
+      if (flagCard != null) {
+        String text = flagCard.text().replaceAll("[^0-9]", "").trim();
+
+        if (!text.isEmpty()) {
+          cardDiscount = Integer.parseInt(text);
         }
       }
 

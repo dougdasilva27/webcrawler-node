@@ -176,10 +176,20 @@ public class BrasilElonutricaoCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".prod_box_descricao_conteudo").first();
+    Element title = doc.select(".prod_box_tit").first();
+    if (title != null) {
+      title.select("#aba-avaliacao-ancora").remove();
+      description.append(title);
+    }
 
+    Element elementDescription = doc.select(".prod_box_descricao_conteudo").first();
     if (elementDescription != null) {
       description.append(elementDescription.html());
+    }
+
+    Element marca = doc.select("#fabricante-aba-produto").first();
+    if (marca != null) {
+      description.append(marca.html());
     }
 
     return description.toString();

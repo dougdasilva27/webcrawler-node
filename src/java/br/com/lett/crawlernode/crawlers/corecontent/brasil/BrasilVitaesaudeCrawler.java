@@ -62,10 +62,10 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       Elements variationsRadio = doc.select(".ProductOptionList li label");
       Elements variationsBox = doc.select(".ProductOptionList option");
 
-      boolean isRadio = variationsRadio.size() > 0;
+      boolean isRadio = !variationsRadio.isEmpty();
       Elements variations = isRadio ? variationsRadio : variationsBox;
 
-      if (variationsRadio.size() > 0 || variationsBox.size() > 0) {
+      if (!variations.isEmpty()) {
         for (Element e : variations) {
           // Id variation
           String variationId = isRadio ? e.select("input").val() : e.val().trim();
@@ -77,9 +77,9 @@ public class BrasilVitaesaudeCrawler extends Crawler {
             primaryImage = variationInfo.has("image") ? variationInfo.getString("image") : primaryImage;
             String internalId = internalPid + "-" + variationId;
             String variationName = name + " " + e.ownText().trim();
-            Float price = crawlVariationPrice(variationInfo);
-            Prices prices = crawlPrices(price, variationInfo);
             boolean available = crawlAvailability(variationInfo);
+            Float price = available ? crawlVariationPrice(variationInfo) : null;
+            Prices prices = crawlPrices(price, variationInfo);
 
             // Creating the product
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
@@ -98,9 +98,9 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          * seleção, que com a combinação com o id do produto deixa aquele produto único.
          */
         String internalId = internalPid + "-" + internalPid;
-        Float price = crawlPrice(doc);
-        Prices prices = crawlPrices(price, doc);
         boolean available = crawlAvailability(doc);
+        Float price = available ? crawlPrice(doc) : null;
+        Prices prices = crawlPrices(price, doc);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)

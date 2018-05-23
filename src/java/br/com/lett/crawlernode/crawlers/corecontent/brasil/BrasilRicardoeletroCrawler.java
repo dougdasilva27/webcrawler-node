@@ -233,7 +233,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         Float partnerPrice = MathUtils.parseFloat(priceElement.ownText());
 
         if (!partnerName.isEmpty() && partnerPrice != null) {
-          marketplace.put(partnerName, crawlPrices(doc, partnerPrice, principalSeller.equals(partnerName), internalPid));
+          marketplace.put(partnerName, crawlPrices(doc, partnerPrice, partnerName.equals(principalSeller), internalPid));
         }
       }
     }
