@@ -65,16 +65,13 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      String internalPid = crawlInternalPid(document);
-
-      Integer total = getTotalRating(document);
+      Integer totalNumOfEvaluations = getTotalRating(document);
       Double avgRating = getTotalAvgRating(document);
 
-      ratingReviews.setTotalRating(total);
-      ratingReviews.setTotalWrittenReviews(total);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
 
-      List<String> idList = crawlInternalIds(document, internalPid);
+      List<String> idList = crawlInternalIds(document);
       for (String internalId : idList) {
         RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(internalId);
@@ -86,109 +83,6 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 
   }
 
-  // /**
-  // * Para esse market foi necessario fazer uma engenharia reversa para conseguir capturar 2
-  // * parametros da url de rating que sao baseados no considerado "internalPid" do produto, com
-  // isso
-  // * ao realizar essa engenharia foi notado que no arquivo full.js tem uma função que monta esses
-  // * parâmetros baseados em uma string, no caso o internalPid. Essa função em js foi traduzida
-  // para
-  // * java para podermos montar a url de rating dos produtos.
-  // *
-  // * Abaixo segue a função traduzida para java, que tem o objetivo de retornar 5 caracteres sendo
-  // * eles ++/++ onde o + seriam números, esses números são retirados de um charcode do
-  // internalPid,
-  // * depois pega o módulo de 255 - o charcode de um caracter do mesmo e tudo isso sendo somado em
-  // * uma variavel DA. Após isso é pego o resto da divisão desse DA por 1023 e transformado em
-  // * string. Caso esse resto não dê 4 carcateres, é importante que coloque 0's no inicio da string
-  // * até completar os 4 caracteres. Depois damos um split na metade dessa string e colocamos uma
-  // * barra no meio e assim teremos os 2 parâmetros para a url de rating.
-  // *
-  // * O arquivo full.js se encontra em: http://www.extra-imagens.com.br/Js/pwr/engine/js/full.js
-  // *
-  // * @param internalPid
-  // * @return
-  // */
-  // private String CNOVAFunction(String internalPid) {
-  // String DB = internalPid + "_2";
-  // int DA = 0;
-  //
-  // for (int DZ = 0; DZ < DB.length(); DZ++) {
-  // int De = DB.charAt(DZ);
-  // De = De * Math.abs(255 - De);
-  // DA += De;
-  // }
-  //
-  // DA = DA % 1023;
-  // String DAString = DA + "";
-  //
-  // int DW = DAString.length();
-  //
-  // switch (DW) {
-  // case 0: {
-  // DAString = "0000";
-  // break;
-  // }
-  // case 1: {
-  // DAString = "000" + DAString;
-  // break;
-  // }
-  // case 2: {
-  // DAString = "00" + DAString;
-  // break;
-  // }
-  // case 3: {
-  // DAString = "0" + DAString;
-  // break;
-  // }
-  // default: {
-  // break;
-  // }
-  // }
-  //
-  // DW = DAString.length();;
-  //
-  // return DAString.substring(0, DW / 2) + "/" + DAString.substring(DW / 2, DW);
-  //
-  // }
-
-  // /**
-  // * The rating of this market is in a js script like this:
-  // *
-  // * POWERREVIEWS.common.gResult['content/06/80/7931784_2-pt_BR-1-reviews.js'] =
-  // * [{r:{id:220121082,si:2,pi:27515520,dp:true,mu:13070544,v:0,t:0,r:5,h:"A fralda &eacute;
-  // * &oacute;tima para sair, n&atilde;o vaza, grandinha atr&aacute;s", n:"DIDI",l:"pt_BR",
-  // w:"Campos
-  // * dos Goytacazes\/RJ",fc:0,b:{n:"Avalia&ccedil;&atilde;o Geral",k:"Yes"},
-  // * o:"e",d:"9\/6\/2017",db:"2017-06-09T07:29:14",p:"MUITO BOM!"}}];
-  // *
-  // * @param internalPid
-  // * @return
-  // */
-  // private JSONArray crawlScriptWithReviews(String internalPid) {
-  // JSONArray ratings = new JSONArray();
-  //
-  // String parametersBasedOnInternalPid = CNOVAFunction(internalPid);
-  //
-  // String url = "http://www.extra-imagens.com.br/Js/pwr/content/" + parametersBasedOnInternalPid
-  // + "/" + internalPid + "_2-pt_BR-1-reviews.js";
-  // String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null,
-  // cookies);
-  //
-  // if (response.contains("=") && response.contains(";")) {
-  // int x = response.indexOf("=") + 1;
-  // int y = response.indexOf("];", x);
-  //
-  // String json = response.substring(x, y + 1).trim();
-  //
-  // if (json.startsWith("[") && json.endsWith("]")) {
-  // ratings = new JSONArray(json);
-  // }
-  // }
-  //
-  // return ratings;
-  // }
-
   /**
    * 
    * @param doc
@@ -197,13 +91,18 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
   private Integer getTotalRating(Document doc) {
     Integer total = 0;
 
-    Element rating = doc.select(".rating .rating-count").first();
-    Element reviewCount = doc.select(".pr-review-count").first();
+    Element finalElement = null;
+    Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
+    Element ratingOneEvaluation = doc.select(".pr-snapshot-average-based-on-text").first();
 
     if (rating != null) {
-      total = Integer.parseInt(rating.ownText().replaceAll("[^0-9]", ""));
-    } else if (reviewCount != null) {
-      total = Integer.parseInt(reviewCount.ownText().replaceAll("[^0-9]", ""));
+      finalElement = rating;
+    } else if (ratingOneEvaluation != null) {
+      finalElement = ratingOneEvaluation;
+    }
+
+    if (finalElement != null) {
+      total = Integer.parseInt(finalElement.ownText().replaceAll("[^0-9]", ""));
     }
 
     return total;
@@ -216,11 +115,7 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
 
-    Element avg = doc.select(".rating .rating-value").first();
-
-    if (avg == null) {
-      avg = doc.select(".pr-rating.pr-rounded.average").first();
-    }
+    Element avg = doc.select(".pr-snapshot-rating.rating .pr-rounded.average").first();
 
     if (avg != null) {
       avgRating = Double.parseDouble(avg.ownText().replace(",", "."));
@@ -229,8 +124,10 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
     return avgRating;
   }
 
-  private List<String> crawlInternalIds(Document doc, String internalPid) {
+  private List<String> crawlInternalIds(Document doc) {
     List<String> ids = new ArrayList<>();
+    String internalPid = crawlInternalPid(doc);
+
     if (hasProductVariations(doc)) {
       Elements skuOptions = doc.select(".produtoSku option[value]:not([value=\"\"])");
 
@@ -300,11 +197,12 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
   }
 
   private boolean isProductPage(Document doc) {
-    Element productElement = doc.select(".produtoNome").first();
+    Element productElement = doc.select(".produtoNome h1").first();
 
     if (productElement != null) {
       return true;
     }
+
     return false;
   }
 
