@@ -2,12 +2,9 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,200 +15,168 @@ import models.RatingsReviews;
 
 public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
 
-	public BrasilFastshopRatingReviewCrawler(Session session) {
-		super(session);
-	}
+  public BrasilFastshopRatingReviewCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-		if (isProductPage(document)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-			
-			RatingsReviews ratingReviews = crawlRatingReviews(document);
-			
-			// Json com informações dos produtos
-			JSONArray jsonArrayInfo = BrasilFastshopCrawlerUtils.crawlSkusInfo(document);
-			
-			List<String> idList = crawlIdList(jsonArrayInfo);
-			for (String internalId : idList) {
-				RatingsReviews clonedRatingReviews = (RatingsReviews)ratingReviews.clone();
-				clonedRatingReviews.setInternalId(internalId);
-				ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
-			}
+    List<String> idList;
+    JSONArray jsonArrayInfo = BrasilFastshopCrawlerUtils.crawlSkusInfo(document);
+    String partnerId;
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
+    if (jsonArrayInfo.length() > 0) {
+      idList = crawlIdList(jsonArrayInfo);
+      partnerId = BrasilFastshopCrawlerUtils.crawlPartnerId(document);
+    } else {
+      partnerId = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
+      JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(partnerId, session, cookies);
+      JSONArray arraySkus = productAPIJSON.has("voltage") ? productAPIJSON.getJSONArray("voltage") : new JSONArray();
 
-		return ratingReviewsCollection;
-	}
+      idList = crawlIdList(arraySkus);
+    }
 
-	private boolean isProductPage(Document doc) {
-		return doc.select("#widget_product_info_viewer").first() != null;
-	}
-	
-	private List<String> crawlIdList(JSONArray jsonArrayInfo) {
-		List<String> idList = new ArrayList<>();
-		
-		for (int i = 0; i < jsonArrayInfo.length(); i++) {
-			JSONObject productInfo = jsonArrayInfo.getJSONObject(i);
+    if (!idList.isEmpty()) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      RatingsReviews ratingReviews = crawlRatingReviews(partnerId);
 
-			// InternalId
-			idList.add(crawlInternalId(productInfo));
-		}
-		
-		return idList;
-	}
-	
-	private String crawlInternalId(JSONObject jsonInfo){
-		String internalId = null;
+      for (String internalId : idList) {
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
+        clonedRatingReviews.setInternalId(internalId);
+        ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+      }
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    }
 
-		if (jsonInfo.has("catentry_id")) {
-			internalId = jsonInfo.getString("catentry_id").trim();
-		}
+    return ratingReviewsCollection;
+  }
 
-		return internalId;
-	}
+  private List<String> crawlIdList(JSONArray jsonArrayInfo) {
+    List<String> idList = new ArrayList<>();
 
-	/**
-	 * Crawl rating and reviews stats using the bazaar voice endpoint.
-	 * To get only the stats summary we need at first, we only have to do
-	 * one request. If we want to get detailed information about each review, we must
-	 * perform pagination.
-	 * 
-	 * The RatingReviews crawled in this method, is the same across all skus variations
-	 * in a page.
-	 *
-	 * @param document
-	 * @return
-	 */
-	private RatingsReviews crawlRatingReviews(Document doc) {
-		RatingsReviews ratingReviews = new RatingsReviews();
-		
-		ratingReviews.setDate(session.getDate());
+    for (int i = 0; i < jsonArrayInfo.length(); i++) {
+      JSONObject productInfo = jsonArrayInfo.getJSONObject(i);
 
-		final String bazaarVoicePassKey = "7aksvh9g2wyusqaqbc2sxx6h4";
-		String skuInternalPid = crawlProductIdBazarVoice(doc);
-		String endpointRequest = assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
+      // InternalId
+      idList.add(crawlInternalId(productInfo));
+    }
 
-		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
-		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
+    return idList;
+  }
 
-		ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
-		ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+  private String crawlInternalId(JSONObject jsonInfo) {
+    String internalId = null;
 
-		return ratingReviews;
-	}
-	
-	private Integer getTotalReviewCount(JSONObject reviewStatistics) {
-		Integer totalReviewCount = null;
-		if (reviewStatistics.has("TotalReviewCount")) {
-			totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
-		}
-		return totalReviewCount;
-	}
-	
-	private Double getAverageOverallRating(JSONObject reviewStatistics) {
-		Double avgOverallRating = null;
-		if (reviewStatistics.has("AverageOverallRating")) {
-			avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
-		}
-		return avgOverallRating;
-	}
+    if (jsonInfo.has("catentry_id")) {
+      internalId = jsonInfo.getString("catentry_id").trim();
+    }
 
+    return internalId;
+  }
 
-	/**
-	 * e.g: 
-	 * http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
-	 * &passkey=oqu6lchjs2mb5jp55bl55ov0d
-	 * &Offset=0
-	 * &Limit=5
-	 * &Sort=SubmissionTime:desc
-	 * &Filter=ProductId:113048617
-	 * &Include=Products
-	 * &Stats=Reviews
-	 * 
-	 * Endpoint request parameters:
-	 * <p>
-	 * &passKey: the password used to request the bazaar voice endpoint.
-	 * This pass key e crawled inside the html of the sku page, inside a script tag.
-	 * More details on how to crawl this passKey
-	 * </p>
-	 * <p>
-	 * &Offset: the number of the chunk of data retrieved by the endpoint. If
-	 * we want the second chunk, we must add this value by the &Limit parameter.
-	 * </p>
-	 * <p>
-	 * &Limit: the number of reviews that a request will return, at maximum.
-	 * </p>
-	 * 
-	 * The others parameters we left as default.
-	 * 
-	 * Request Method: GET
-	 */
-	private String assembleBazaarVoiceEndpointRequest(
-			String skuInternalPid,
-			String bazaarVoiceEnpointPassKey,
-			Integer offset,
-			Integer limit) {
+  /**
+   * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
+   * need at first, we only have to do one request. If we want to get detailed information about each
+   * review, we must perform pagination.
+   * 
+   * The RatingReviews crawled in this method, is the same across all skus variations in a page.
+   *
+   * @param document
+   * @return
+   */
+  private RatingsReviews crawlRatingReviews(String partnerId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
 
-		StringBuilder request = new StringBuilder();
+    ratingReviews.setDate(session.getDate());
 
-		request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5");
-		request.append("&passkey=" + bazaarVoiceEnpointPassKey);
-		request.append("&Offset=" + offset);
-		request.append("&Limit=" + limit);
-		request.append("&Sort=SubmissionTime:desc");
-		request.append("&Filter=ProductId:" + skuInternalPid);
-		request.append("&Include=Products");
-		request.append("&Stats=Reviews");
+    final String bazaarVoicePassKey = "caw1ZMlxPTUHLUFtjzQeE602umnQqFlKyTwhRjlDvuTac";
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(partnerId, bazaarVoicePassKey, 0, 50);
 
-		return request.toString();
-	}
+    JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+    JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
+
+    ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
+    ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+
+    return ratingReviews;
+  }
+
+  private Integer getTotalReviewCount(JSONObject reviewStatistics) {
+    Integer totalReviewCount = null;
+    if (reviewStatistics.has("TotalReviewCount")) {
+      totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
+    }
+    return totalReviewCount;
+  }
+
+  private Double getAverageOverallRating(JSONObject reviewStatistics) {
+    Double avgOverallRating = null;
+    if (reviewStatistics.has("AverageOverallRating")) {
+      avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
+    }
+    return avgOverallRating;
+  }
 
 
-	private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
-		if (ratingReviewsEndpointResponse.has("Includes")) {
-			JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
+  /**
+   * e.g: http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
+   * &passkey=oqu6lchjs2mb5jp55bl55ov0d &Offset=0 &Limit=5 &Sort=SubmissionTime:desc
+   * &Filter=ProductId:113048617 &Include=Products &Stats=Reviews
+   * 
+   * Endpoint request parameters:
+   * <p>
+   * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled inside
+   * the html of the sku page, inside a script tag. More details on how to crawl this passKey
+   * </p>
+   * <p>
+   * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second chunk,
+   * we must add this value by the &Limit parameter.
+   * </p>
+   * <p>
+   * &Limit: the number of reviews that a request will return, at maximum.
+   * </p>
+   * 
+   * The others parameters we left as default.
+   * 
+   * Request Method: GET
+   */
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
 
-			if (includes.has("Products")) {
-				JSONObject products = includes.getJSONObject("Products");
+    StringBuilder request = new StringBuilder();
 
-				if (products.has(skuInternalPid)) {
-					JSONObject product = products.getJSONObject(skuInternalPid);
+    request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5");
+    request.append("&passkey=" + bazaarVoiceEnpointPassKey);
+    request.append("&Offset=" + offset);
+    request.append("&Limit=" + limit);
+    request.append("&Sort=SubmissionTime:desc");
+    request.append("&Filter=ProductId:" + skuInternalPid);
+    request.append("&Include=Products");
+    request.append("&Stats=Reviews");
 
-					if (product.has("ReviewStatistics")) {
-						return product.getJSONObject("ReviewStatistics");
-					}
-				}
-			}
-		}
-
-		return new JSONObject();
-	}
+    return request.toString();
+  }
 
 
-	/**
-	 * Crawl id for access bazaar voice api
-	 * @param doc
-	 * @return
-	 */
-	private String crawlProductIdBazarVoice(Document doc) {
-		String id = null;
-		
-		Element bz = doc.select("meta[name=chaordic:product]").first();
-		
-		if(bz != null) {
-			id = bz.attr("data-pid").trim();
-			
-			if(!id.endsWith("_PRD")) {
-				id += "_PRD";
-			}
-		}
+  private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
+    if (ratingReviewsEndpointResponse.has("Includes")) {
+      JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
 
-		return id;
-	}
+      if (includes.has("Products")) {
+        JSONObject products = includes.getJSONObject("Products");
 
+        if (products.has(skuInternalPid)) {
+          JSONObject product = products.getJSONObject(skuInternalPid);
+
+          if (product.has("ReviewStatistics")) {
+            return product.getJSONObject("ReviewStatistics");
+          }
+        }
+      }
+    }
+
+    return new JSONObject();
+  }
 }

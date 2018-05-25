@@ -70,14 +70,27 @@ public class BrasilFastshopCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    // Json com informações dos produtos
+    JSONArray jsonArrayInfo = BrasilFastshopCrawlerUtils.crawlSkusInfo(doc);
+
+    if (jsonArrayInfo.length() > 0) {
+      products.addAll(crawlProductsOldWay(doc, jsonArrayInfo));
+    } else {
+      BrasilFastshopNewCrawler fastshop = new BrasilFastshopNewCrawler(session, logger, cookies);
+      products.addAll(fastshop.crawlProductsNewWay());
+    }
+
+    return products;
+  }
+
+  private List<Product> crawlProductsOldWay(Document doc, JSONArray jsonArrayInfo) {
+    List<Product> products = new ArrayList<>();
+
     if (isProductPage(session.getOriginalURL(), doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // Json com informações dos produtos
-      JSONArray jsonArrayInfo = BrasilFastshopCrawlerUtils.crawlSkusInfo(doc);
-
       // internal pid
-      String internalPid = crawlInternalPid(doc);
+      String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(doc);
 
       // name
       String name = crawlName(doc);
@@ -116,7 +129,7 @@ public class BrasilFastshopCrawler extends Crawler {
         String variationName = crawlVariationName(productInfo, name);
 
         // Json prices
-        JSONObject jsonPrices = fetchPrices(internalId, available);
+        JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, available, session, logger);
 
         // Marketplace
         Marketplace marketplace = crawlMarketPlace(doc, jsonPrices, available);
@@ -158,7 +171,6 @@ public class BrasilFastshopCrawler extends Crawler {
   }
 
 
-
   /*******************************
    * Product page identification *
    *******************************/
@@ -182,22 +194,12 @@ public class BrasilFastshopCrawler extends Crawler {
     return internalId;
   }
 
-  private String crawlInternalPid(Document document) {
-    String internalPid = null;
-    Element elementInternalPid = document.select(".newLeftSKU").first();
-    if (elementInternalPid != null) {
-      internalPid = elementInternalPid.attr("id").split("_")[2].trim();
-    }
-
-    return internalPid;
-  }
-
   private boolean crawlAvailability(String internalId, boolean hasVariations, Document doc) {
     boolean available = false;
 
     if (hasVariations) {
-      String url = "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6" + "&hotsite=fastshop&itemId="
-          + internalId;
+      String url =
+          "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6&hotsite=fastshop&itemId=" + internalId;
 
       String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -325,61 +327,6 @@ public class BrasilFastshopCrawler extends Crawler {
     return "";
   }
 
-  /**
-   * Json Prices { priceData":{ "catalogEntryId":"4611686018426116511",
-   * "displayPriceProdInactive":"true", "offerPrice":"R$ 439,61", "offerPriceValue":"439.61",
-   * "listPrice":"R$ 649,00", "installmentPrice":"3x de R$ 153,00 iguais", "interestPrice":"juros de
-   * 2,19% a.m. e 29,69% a.a.", "totalPrice":"Total a prazo: R$ 459,00", "displayPriceRange":"",
-   * "displayLinkWhyInterest":"" } }
-   */
-
-  private JSONObject fetchPrices(String internalId, boolean available) {
-    JSONObject jsonPrice = new JSONObject();
-
-    if (available) {
-      String url = "http://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
-          + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
-
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
-
-      try {
-        int x = json.indexOf("/*");
-        int y = json.indexOf("*/", x + 2);
-
-        json = json.substring(x + 2, y);
-
-        jsonPrice = new JSONObject(json);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-    return jsonPrice;
-  }
-
-  private Float crawlPrice(JSONObject jsonPrices, boolean available) {
-    Float price = null;
-
-    if (available) {
-      if (jsonPrices.has("priceData")) {
-        JSONObject jsonCatalog = jsonPrices.getJSONObject("priceData");
-
-        if (jsonCatalog.has("totalPrice")) {
-          String text = jsonCatalog.getString("totalPrice");
-          if (!text.isEmpty()) {
-            price = MathUtils.parseFloat(text);
-          } else if (jsonCatalog.has("offerPrice")) {
-            price =
-                Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-          }
-        } else if (jsonCatalog.has("offerPrice")) {
-          price = Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        }
-      }
-    }
-
-
-    return price;
-  }
 
   private Prices crawlPrices(JSONObject jsonPrices, Float price, Document doc) {
     Prices prices = new Prices();
@@ -472,6 +419,31 @@ public class BrasilFastshopCrawler extends Crawler {
     }
 
     return marketplace;
+  }
+
+  private static Float crawlPrice(JSONObject jsonPrices, boolean available) {
+    Float price = null;
+
+    if (available) {
+      if (jsonPrices.has("priceData")) {
+        JSONObject jsonCatalog = jsonPrices.getJSONObject("priceData");
+
+        if (jsonCatalog.has("totalPrice")) {
+          String text = jsonCatalog.getString("totalPrice");
+          if (!text.isEmpty()) {
+            price = MathUtils.parseFloat(text);
+          } else if (jsonCatalog.has("offerPrice")) {
+            price =
+                Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+          }
+        } else if (jsonCatalog.has("offerPrice")) {
+          price = Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        }
+      }
+    }
+
+
+    return price;
   }
 
   private String crawlDescription(Document document) {
