@@ -81,7 +81,7 @@ public class BrasilCentralarCrawler extends Crawler {
         }
       }
     }
-    
+
     return api;
   }
 
@@ -95,9 +95,9 @@ public class BrasilCentralarCrawler extends Crawler {
 
       String internalId = crawlInternalId(json);
       String name = crawlName(json);
-      Float price = crawlPrice(json);
-      Prices prices = crawlPrices(price, json);
       boolean available = crawlAvailability(json);
+      Float price = available ? crawlPrice(json) : null;
+      Prices prices = crawlPrices(price, json);
       CategoryCollection categories = crawlCategories(json);
       String primaryImage = crawlPrimaryImage(json);
       String secondaryImages = crawlSecondaryImages(json);

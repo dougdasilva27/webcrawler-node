@@ -8,6 +8,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -116,8 +118,9 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
     requestURL.append("&url=");
     requestURL.append(session.getOriginalURL());
+    CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/FODAS.html");
 
-    JSONObject vtxctx = CrawlerUtils.selectJsonFromHtml(doc, "script[type=text/javascript]", "vtxctx=", ";", true);
+    JSONObject vtxctx = selectJsonFromHtml(doc, "script", "vtxctx=", ";", true);
 
     if (vtxctx.has("departmentyId") && vtxctx.has("categoryId")) {
       requestURL.append("&product_extra_attributes%5Bdepartment_id%5D=" + vtxctx.get("departmentyId") + "&product_extra_attributes%5Bcategory_id%5D="
@@ -146,5 +149,47 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     return trustVoxResponse;
+  }
+
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+
+    if (doc == null)
+      throw new IllegalArgumentException("Argument doc cannot be null");
+
+    JSONObject object = new JSONObject();
+
+    Elements scripts = doc.select(cssElement);
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      script = withoutSpaces ? script.replace(" ", "") : script;
+
+      if (script.contains(token)) {
+        int x = script.indexOf(token) + token.length();
+
+        String json;
+
+        if (script.contains(finalIndex)) {
+          int y = script.lastIndexOf(finalIndex);
+          json = script.substring(x, y).trim();
+        } else {
+          json = script.substring(x).trim();
+        }
+
+        if (json.startsWith("{") && json.endsWith("}")) {
+          try {
+            object = new JSONObject(json);
+          } catch (Exception e1) {
+            Logging.printLogError(logger, CommonMethods.getStackTrace(e1));
+          }
+        }
+
+        break;
+      }
+    }
+
+    return object;
   }
 }

@@ -195,18 +195,17 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-
     if (productInfo.has("secondaryImages")) {
-      JSONArray secondaryArray = productInfo.getJSONArray("secondaryImages");
+      JSONArray imagesArray = productInfo.getJSONArray("secondaryImages");
 
-      for (int i = 0; i < secondaryArray.length(); i++) {
-        String image = secondaryArray.getString(i);
+      for (int i = 0; i < imagesArray.length(); i++) {
+        String image = imagesArray.getString(i);
 
         if (!primaryImage.contains(image) && !primaryImage.equals(image)) {
           if (image.startsWith(HOME_PAGE)) {
-            secondaryImagesArray.put(image);
+            secondaryImagesArray.put(CommonMethods.sanitizeUrl(image));
           } else {
-            secondaryImagesArray.put(HOME_PAGE + image);
+            secondaryImagesArray.put(CommonMethods.sanitizeUrl(HOME_PAGE + image));
           }
         }
       }
@@ -496,21 +495,25 @@ public class BrasilWebcontinentalCrawler extends Crawler {
   }
 
   private void computeDescription(JSONObject prod, JSONObject product) {
-    String descriptions = "";
+    StringBuilder descriptions = new StringBuilder();
 
-    if (prod.has("mobileDescription") && prod.get("mobileDescription") instanceof String) {
-      descriptions += prod.getString("mobileDescription");
-    }
+    // if (prod.has("mobileDescription") && prod.get("mobileDescription") instanceof String) {
+    // descriptions.append(prod.getString("mobileDescription"));
+    // }
 
-    if (prod.has("description") && prod.get("description") instanceof String) {
-      descriptions += prod.getString("description");
-    }
+    // if (prod.has("description") && prod.get("description") instanceof String) {
+    // descriptions.append(prod.getString("description"));
+    // }
 
     if (prod.has("longDescription") && prod.get("longDescription") instanceof String) {
-      descriptions += prod.getString("longDescription");
+      descriptions.append(prod.getString("longDescription"));
     }
 
-    product.put("description", descriptions);
+    if (prod.has("caracteristicasTecnicas") && prod.get("caracteristicasTecnicas") instanceof String) {
+      descriptions.append(prod.getString("caracteristicasTecnicas"));
+    }
+
+    product.put("description", descriptions.toString());
   }
 
   private void computeCategories(JSONObject prod, JSONObject product) {

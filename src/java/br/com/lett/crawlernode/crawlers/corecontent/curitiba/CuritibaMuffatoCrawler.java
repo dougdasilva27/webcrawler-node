@@ -106,7 +106,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL(), doc)) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
       // InternalId
@@ -206,11 +206,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url, Document document) {
-    Element prdElement = document.select(".container.prd-info-container").first();
-    if (url.startsWith("http://delivery.supermuffato.com.br/") && url.split("\\?")[0].endsWith("/p") && prdElement != null)
-      return true;
-    return false;
+  private boolean isProductPage(Document document) {
+    return document.select(".container.prd-info-container").first() != null;
   }
 
 

@@ -69,7 +69,7 @@ public class BrasilAmbientairCrawler extends Crawler {
 
         JSONObject jsonProduct = crawlApi(internalId);
         String primaryImage = crawlPrimaryImage(jsonProduct);
-        String secondaryImages = crawlSecondaryImages(jsonProduct);
+        String secondaryImages = /* crawlSecondaryImages(jsonProduct) */ null; // site nao mostra as imagens
         Prices prices = crawlPrices(internalId, price, jsonSku);
         Integer stock = crawlStock(jsonProduct);
 
@@ -315,13 +315,7 @@ public class BrasilAmbientairCrawler extends Crawler {
       Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
-
-      Element bank = doc.select("#ltlPrecoWrapper em").first();
-      if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
-      } else {
-        prices.setBankTicketPrice(price);
-      }
+      prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * 0.05))); // padrao 5% desconto nesse site
 
       Elements cardsElements = doc.select("#ddlCartao option");
 

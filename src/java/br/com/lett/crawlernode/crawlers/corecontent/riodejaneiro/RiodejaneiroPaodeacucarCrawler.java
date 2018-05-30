@@ -12,7 +12,7 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.paodeacucar.com";
   private static final String HOME_PAGE_HTTP = "http://www.paodeacucar.com";
-  private static final String STORE_ID = "481";
+  private static final String STORE_ID = "7";
 
   public RiodejaneiroPaodeacucarCrawler(Session session) {
     super(session);

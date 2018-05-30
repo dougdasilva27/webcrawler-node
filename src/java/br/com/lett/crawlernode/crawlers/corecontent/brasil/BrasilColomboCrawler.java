@@ -155,7 +155,7 @@ public class BrasilColomboCrawler extends Crawler {
         if (elementUnavailable != null) {
           available = false;
         }
-        if (available == false) {
+        if (!available) {
           price = null;
           prices = new Prices();
         }
@@ -212,6 +212,11 @@ public class BrasilColomboCrawler extends Crawler {
             }
           }
 
+
+          if (!variationAvailable) {
+            price = null;
+            prices = new Prices();
+          }
 
           Product product = new Product();
           product.setUrl(session.getOriginalURL());
