@@ -48,10 +48,11 @@ public class BrasilCsdCrawler extends Crawler {
     super.extractInformation(jsonSku);
     List<Product> products = new ArrayList<>();
 
-    if (jsonSku.has("idProduct")) {
+    if (jsonSku.has("idLojaProduto")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(jsonSku);
+      String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
       String description = crawlDescription(jsonSku);
       Integer stock = jsonSku.has("quantityStock") && jsonSku.get("quantityStock") instanceof Integer ? jsonSku.getInt("quantityStock") : null;
@@ -64,8 +65,8 @@ public class BrasilCsdCrawler extends Crawler {
       Prices prices = crawlPrices(price, priceFrom);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
           .setStock(stock).setMarketplace(new Marketplace()).build();
 
@@ -85,6 +86,16 @@ public class BrasilCsdCrawler extends Crawler {
    *******************/
 
   private String crawlInternalId(JSONObject json) {
+    String internalId = null;
+
+    if (json.has("idLojaProduto")) {
+      internalId = json.get("idLojaProduto").toString();
+    }
+
+    return internalId;
+  }
+
+  private String crawlInternalPid(JSONObject json) {
     String internalId = null;
 
     if (json.has("idProduct")) {
