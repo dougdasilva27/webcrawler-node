@@ -1,9 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilCsdCrawler extends CrawlerRankingKeywords {
 
@@ -11,33 +15,39 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoscidadecancao/maringa-loja-brasil-01-zona-05-avenida-brasil";
+
   @Override
-  protected void extractProductsFromCurrentPage() {
+  public void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
+    JSONObject search = crawlProductInfo();
 
-    // monta a url com a keyword e a página
-    String url = "https://www.sitemercado.com.br/supermercadoscidadecancao/maringa-loja-brasil-01-zona-05-avenida-brasil/busca/"
-        + this.keywordWithoutAccents.replace(" ", "%20");
-    this.log("Link onde são feitos os crawlers: " + url);
+    // se obter 1 ou mais links de produtos e essa página tiver resultado
+    if (search.has("products") && search.getJSONArray("products").length() > 0) {
+      JSONArray products = search.getJSONArray("products");
 
-    // chama função de pegar o html
-    this.currentDoc = fetchDocument(url);
+      this.totalProducts = products.length();
+      this.log("Total da busca: " + this.totalProducts);
 
-    Elements products = this.currentDoc.select("ul li .product-box");
+      for (int i = 0; i < products.length(); i++) {
+        JSONObject product = products.getJSONObject(i);
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String internalId = e.attr("data-id");
-        String productUrl = crawlProductUrl(e);
+        // Url do produto
+        String productUrl = crawlProductUrl(product);
 
-        saveDataProduct(internalId, null, productUrl);
+        // InternalPid
+        String internalPid = crawlInternalPid(product);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        // InternalId
+        String internalId = crawlInternalId(product);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
     } else {
       this.result = false;
@@ -45,6 +55,7 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
   }
 
   @Override
@@ -52,18 +63,62 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     return false;
   }
 
-  private String crawlProductUrl(Element e) {
+  private String crawlInternalId(JSONObject product) {
+    String internalId = null;
+
+    if (product.has("idLojaProduto")) {
+      internalId = product.get("idLojaProduto").toString();
+    }
+
+    return internalId;
+  }
+
+  private String crawlInternalPid(JSONObject product) {
+    String internalPid = null;
+
+    if (product.has("idProduct")) {
+      internalPid = product.get("idProduct").toString();
+    }
+
+    return internalPid;
+  }
+
+  private String crawlProductUrl(JSONObject product) {
     String productUrl = null;
-    Element url = e.select("> a").first();
 
-    if (url != null) {
-      productUrl = url.attr("href");
+    if (product.has("url")) {
+      productUrl = product.getString("url");
 
-      if (!productUrl.startsWith("http")) {
-        productUrl = ("https://www.sitemercado.com.br/" + productUrl).replace("br//", "br/");
+      if (!productUrl.contains("sitemercado")) {
+        productUrl = HOME_PAGE + "/" + productUrl;
       }
     }
 
     return productUrl;
+  }
+
+  private JSONObject crawlProductInfo() {
+    JSONObject products = new JSONObject();
+    String payload = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("referer", HOME_PAGE);
+    headers.put("sm-b2c",
+        "{\"platform\":1,\"lojaName\":\"maringa-loja-brasil-01-zona-05-avenida-brasil\",\"redeName\":\"supermercadoscidadecancao\"}");
+    headers.put("sm-mmc", "2018.05.29-0");
+    headers.put("accept", "application/json, text/plain, */*");
+    headers.put("Content-Type", "application/json");
+
+    String page = fetchStringPOST("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch", payload, headers, null);
+
+    if (page != null && page.startsWith("{") && page.endsWith("}")) {
+      try {
+        products = new JSONObject(page);
+      } catch (JSONException e) {
+        logError(CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return products;
   }
 }
