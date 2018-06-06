@@ -130,6 +130,10 @@ public class DatabaseDataFetcher {
       LettProxy proxy = new LettProxy();
       String proxySource = "";
 
+      if (doc.containsKey("active") && !doc.getBoolean("active")) {
+        continue;
+      }
+
       if (doc.containsKey(FETCHER_PROXIES_SOURCE)) {
         proxySource = doc.getString(FETCHER_PROXIES_SOURCE);
 
