@@ -1011,8 +1011,8 @@ public class DataFetcher {
             JSONObject proxyObj = succesRequest.getJSONObject("proxy");
 
             if (proxyObj.length() > 0 && proxyObj.has("source")) {
-              LettProxy lettProxy =
-                  new LettProxy(proxyObj.getString("source"), proxyObj.getString("host"), null, proxyObj.getString("location"), null, null);
+              LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.has("host") ? proxyObj.getString("host") : null, null,
+                  proxyObj.has("location") ? proxyObj.getString("location") : null, null, null);
 
               session.addRequestProxy(url, lettProxy);
             }
