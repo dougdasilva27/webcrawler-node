@@ -19,228 +19,236 @@ import br.com.lett.crawlernode.util.DateConstants;
 
 public class Session {
 
-  protected static final Logger logger = LoggerFactory.getLogger(Session.class);
+	protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-  protected DateTime date = new DateTime(DateConstants.timeZone);
+	protected DateTime date = new DateTime(DateConstants.timeZone);
 
-  protected String taskStaus;
+	protected String taskStaus;
 
-  /** Id of current crawling session. It's the same id of the message from Amazon SQS */
-  protected String sessionId;
+	/** Id of current crawling session. It's the same id of the message from Amazon SQS */
+	protected String sessionId;
 
-  /** Name of the queue from which the message was retrieved */
-  protected String queueName;
+	/** Name of the queue from which the message was retrieved */
+	protected String queueName;
 
-  /** Original URL of the sku being crawled */
-  protected String originalURL;
+	/** Original URL of the sku being crawled */
+	protected String originalURL;
 
-  /** Association of URL and its final modified version, a redirection for instance */
-  Map<String, String> redirectionMap;
+	/** Association of URL and its final modified version, a redirection for instance */
+	Map<String, String> redirectionMap;
 
-  /** Association of URL and its proxy */
-  protected Map<String, LettProxy> requestProxyMap;
+	/** Association of URL and its proxy */
+	protected Map<String, LettProxy> requestProxyMap;
 
-  /** Market associated with this session */
-  protected Market market;
+	/** Market associated with this session */
+	protected Market market;
 
-  /** Errors occurred during crawling session */
-  protected List<SessionError> crawlerSessionErrors;
+	/** Errors occurred during crawling session */
+	protected List<SessionError> crawlerSessionErrors;
 
-  /** The maximum number of connection attempts to be made when crawling normal information */
-  protected int maxConnectionAttemptsWebcrawler;
+	/** The maximum number of connection attempts to be made when crawling normal information */
+	protected int maxConnectionAttemptsWebcrawler;
 
-  /** The maximum number of connection attempts to be made when downloading images */
-  protected int maxConnectionAttemptsImages;
+	/** The maximum number of connection attempts to be made when downloading images */
+	protected int maxConnectionAttemptsImages;
 
+	protected long startTime;
 
-  /**
-   * Default empty constructor
-   */
-  public Session(Market market) {
-    super();
+	/**
+	 * Default empty constructor
+	 */
+	public Session(Market market) {
 
-    this.market = market;
+		this.startTime = System.currentTimeMillis();
 
-    // creating the errors list
-    this.crawlerSessionErrors = new ArrayList<>();
+		this.market = market;
 
-    // creating the map of redirections
-    this.redirectionMap = new HashMap<>();
-    requestProxyMap = new HashMap<>();
-    maxConnectionAttemptsWebcrawler = 0;
+		// creating the errors list
+		this.crawlerSessionErrors = new ArrayList<>();
 
-    for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += Test.proxies.getProxyMaxAttempts(proxy);
-    }
+		// creating the map of redirections
+		this.redirectionMap = new HashMap<>();
+		requestProxyMap = new HashMap<>();
+		maxConnectionAttemptsWebcrawler = 0;
 
-    maxConnectionAttemptsImages = 0;
-    for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + Test.proxies.getProxyMaxAttempts(proxy);
-    }
+		for (String proxy : market.getProxies()) {
+			maxConnectionAttemptsWebcrawler += Test.proxies.getProxyMaxAttempts(proxy);
+		}
 
-  }
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Test.proxies.getProxyMaxAttempts(proxy);
+		}
 
-  public Session(Request request, String queueName, Markets markets) {
-    taskStaus = Task.STATUS_COMPLETED;
+	}
 
-    this.queueName = queueName;
-    crawlerSessionErrors = new ArrayList<>();
-    redirectionMap = new HashMap<>();
-    requestProxyMap = new HashMap<>();
-    sessionId = request.getMessageId();
-    market = markets.getMarket(request.getMarketId());
+	public Session(Request request, String queueName, Markets markets) {
+		taskStaus = Task.STATUS_COMPLETED;
+		
+		this.startTime = System.currentTimeMillis();
 
-    if (!(request instanceof CrawlerRankingKeywordsRequest)) {
-      originalURL = request.getMessageBody();
-    }
+		this.queueName = queueName;
+		crawlerSessionErrors = new ArrayList<>();
+		redirectionMap = new HashMap<>();
+		requestProxyMap = new HashMap<>();
+		sessionId = request.getMessageId();
+		market = markets.getMarket(request.getMarketId());
 
-    maxConnectionAttemptsWebcrawler = 0;
+		if (!(request instanceof CrawlerRankingKeywordsRequest)) {
+			originalURL = request.getMessageBody();
+		}
 
-    if (Main.executionParameters.getUseFetcher()) {
-      // for (String proxy : market.getProxies()) {
-      // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-      // }
-      // maxConnectionAttemptsWebcrawler++;
-      maxConnectionAttemptsWebcrawler = 2;
-    } else {
-      for (String proxy : market.getProxies()) {
-        maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-      }
-    }
+		maxConnectionAttemptsWebcrawler = 0;
 
-    maxConnectionAttemptsImages = 0;
-    for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
-    }
+		if (Main.executionParameters.getUseFetcher()) {
+			// for (String proxy : market.getProxies()) {
+			// maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+			// }
+			// maxConnectionAttemptsWebcrawler++;
+			maxConnectionAttemptsWebcrawler = 2;
+		} else {
+			for (String proxy : market.getProxies()) {
+				maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+			}
+		}
 
-  }
+		maxConnectionAttemptsImages = 0;
+		for (String proxy : market.getImageProxies()) {
+			maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
+		}
 
-  public DateTime getDate() {
-    return this.date;
-  }
+	}
+	
+	public long getStartTime() {
+		return this.startTime;
+	}
 
-  public int getMaxConnectionAttemptsCrawler() {
-    return this.maxConnectionAttemptsWebcrawler;
-  }
+	public DateTime getDate() {
+		return this.date;
+	}
 
-  public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
-    this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
-  }
+	public int getMaxConnectionAttemptsCrawler() {
+		return this.maxConnectionAttemptsWebcrawler;
+	}
 
-  public int getMaxConnectionAttemptsImages() {
-    return this.maxConnectionAttemptsImages;
-  }
+	public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
+		this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
+	}
 
-  public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
-    this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
-  }
+	public int getMaxConnectionAttemptsImages() {
+		return this.maxConnectionAttemptsImages;
+	}
 
-  public String getInternalId() {
-    /* by default returns an empty string */
-    return "";
-  }
+	public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
+		this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
+	}
 
-  public Long getProcessedId() {
-    /* by default returns a null object */
-    return null;
-  }
+	public String getInternalId() {
+		/* by default returns an empty string */
+		return "";
+	}
 
-  public String getOriginalURL() {
-    return originalURL;
-  }
+	public Long getProcessedId() {
+		/* by default returns a null object */
+		return null;
+	}
 
-  public void setOriginalURL(String originalURL) {
-    this.originalURL = originalURL;
-  }
+	public String getOriginalURL() {
+		return originalURL;
+	}
 
-  public void addRedirection(String originalURL, String redirectedURL) {
-    this.redirectionMap.put(originalURL, redirectedURL);
-  }
+	public void setOriginalURL(String originalURL) {
+		this.originalURL = originalURL;
+	}
 
-  public String getRedirectedToURL(String originalURL) {
-    return this.redirectionMap.get(originalURL);
-  }
+	public void addRedirection(String originalURL, String redirectedURL) {
+		this.redirectionMap.put(originalURL, redirectedURL);
+	}
 
-  public String getSessionId() {
-    return sessionId;
-  }
+	public String getRedirectedToURL(String originalURL) {
+		return this.redirectionMap.get(originalURL);
+	}
 
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
+	public String getSessionId() {
+		return sessionId;
+	}
 
-  public Market getMarket() {
-    return market;
-  }
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
+	}
 
-  public void setMarket(Market market) {
-    this.market = market;
-  }
+	public Market getMarket() {
+		return market;
+	}
 
-  public String getTaskStatus() {
-    return taskStaus;
-  }
+	public void setMarket(Market market) {
+		this.market = market;
+	}
 
-  public void setTaskStatus(String taskStatus) {
-    this.taskStaus = taskStatus;
-  }
+	public String getTaskStatus() {
+		return taskStaus;
+	}
 
-  public int getVoidAttempts() {
-    /* returns -1 by default */
-    return -1;
-  }
+	public void setTaskStatus(String taskStatus) {
+		this.taskStaus = taskStatus;
+	}
 
-  public int getTrucoAttempts() {
-    /* returns -1 by default */
-    return -1;
-  }
+	public int getVoidAttempts() {
+		/* returns -1 by default */
+		return -1;
+	}
 
-  public void incrementVoidAttemptsCounter() {
-    /* do nothing by default */
-  }
+	public int getTrucoAttempts() {
+		/* returns -1 by default */
+		return -1;
+	}
 
-  public void incrementTrucoAttemptsCounter() {
-    /* do nothing by default */
-  }
+	public void incrementVoidAttemptsCounter() {
+		/* do nothing by default */
+	}
 
-  public void clearSession() {
-    /* do nothing by default */
-  }
+	public void incrementTrucoAttemptsCounter() {
+		/* do nothing by default */
+	}
 
-  public List<SessionError> getErrors() {
-    return crawlerSessionErrors;
-  }
+	public void clearSession() {
+		/* do nothing by default */
+	}
 
-  public void registerError(SessionError error) {
-    crawlerSessionErrors.add(error);
-  }
+	public List<SessionError> getErrors() {
+		return crawlerSessionErrors;
+	}
 
-  public String getQueueName() {
-    return queueName;
-  }
+	public void registerError(SessionError error) {
+		crawlerSessionErrors.add(error);
+	}
 
-  public void setQueueName(String queueName) {
-    this.queueName = queueName;
-  }
+	public String getQueueName() {
+		return queueName;
+	}
 
-  public LettProxy getRequestProxy(String url) {
-    return requestProxyMap.get(url);
-  }
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
+	}
 
-  public void addRequestProxy(String url, LettProxy proxy) {
-    this.requestProxyMap.put(url, proxy);
-  }
+	public LettProxy getRequestProxy(String url) {
+		return requestProxyMap.get(url);
+	}
 
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
+	public void addRequestProxy(String url, LettProxy proxy) {
+		this.requestProxyMap.put(url, proxy);
+	}
 
-    sb.append("sessionId: " + sessionId + "\n");
-    sb.append("queueName: " + getQueueName() + "\n");
-    sb.append("url: " + originalURL + "\n");
-    sb.append("marketId: " + market.getNumber() + "\n");
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
 
-    return sb.toString();
-  }
+		sb.append("sessionId: " + sessionId + "\n");
+		sb.append("queueName: " + getQueueName() + "\n");
+		sb.append("url: " + originalURL + "\n");
+		sb.append("marketId: " + market.getNumber() + "\n");
+
+		return sb.toString();
+	}
 
 }

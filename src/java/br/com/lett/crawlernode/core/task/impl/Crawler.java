@@ -155,8 +155,10 @@ public class Crawler extends Task {
         Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
         Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
       }
-
-      Logging.printLogDebug(logger, session, "END");
+      
+      
+      Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
+            
     } catch (Exception e) {
       DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
