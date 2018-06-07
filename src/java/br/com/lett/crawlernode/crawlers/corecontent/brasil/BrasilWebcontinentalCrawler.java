@@ -289,14 +289,24 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       sellerName = product.get("vendidopor").toString().toLowerCase().trim();
     }
 
-    if (product.has("precoprazo") && product.get("precoprazo") instanceof Double) {
-      Double p = product.getDouble("precoprazo");
-      priceSeller = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
+    if (product.has("precoprazo")) {
+      Object priceObj = product.get("precoprazo");
+
+      if (priceObj instanceof Double) {
+        priceSeller = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
+      } else if (priceObj instanceof Integer) {
+        priceSeller = MathUtils.normalizeTwoDecimalPlaces(((Integer) priceObj).floatValue());
+      }
     }
 
-    if (product.has("precovista") && product.get("precovista") instanceof Double) {
-      Double p = product.getDouble("precovista");
-      priceSeller1x = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
+    if (product.has("precovista")) {
+      Object priceObj = product.get("precovista");
+
+      if (priceObj instanceof Double) {
+        priceSeller1x = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
+      } else if (priceObj instanceof Integer) {
+        priceSeller1x = MathUtils.normalizeTwoDecimalPlaces(((Integer) priceObj).floatValue());
+      }
     }
 
     if (product.has("precode") && product.get("precode") instanceof Double) {
@@ -304,7 +314,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       priceFrom = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
     }
 
-    if (!sellerName.equals(SELLER_NAME_LOWER) && !sellerName.isEmpty()) {
+    if (!sellerName.equals(SELLER_NAME_LOWER) && !sellerName.isEmpty() && priceSeller != null) {
       JSONObject sellerJSON = new JSONObject();
       sellerJSON.put("name", sellerName);
 
@@ -327,14 +337,15 @@ public class BrasilWebcontinentalCrawler extends Crawler {
   private Prices crawlPricesSeller(Float price, Float price1x, Float priceFrom) {
     Prices p = new Prices();
 
-    if (price != null) {
+    if (price != null || price1x != null) {
       Map<Integer, Float> installments = new HashMap<>();
-      installments.put(1, price);
 
       if (price1x != null) {
         p.setBankTicketPrice(price1x);
+        installments.put(1, price1x);
       } else {
         p.setBankTicketPrice(price);
+        installments.put(1, price);
       }
 
       if (priceFrom != null) {
