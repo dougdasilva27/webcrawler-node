@@ -92,16 +92,20 @@ public class CrawlerUtils {
     JSONObject object = new JSONObject();
 
     Elements scripts = doc.select(cssElement);
+    boolean hasToken = token != null;
 
     for (Element e : scripts) {
       String script = e.html();
 
       script = withoutSpaces ? script.replace(" ", "") : script;
 
-      if (script.contains(token)) {
+      if (!hasToken) {
+        object = stringToJson(script.trim());
+        break;
+      } else if (script.contains(token)) {
         int x = script.indexOf(token) + token.length();
 
-        String json;
+        String json = null;
 
         if (script.contains(finalIndex)) {
           int y = script.indexOf(finalIndex, x);
@@ -110,13 +114,7 @@ public class CrawlerUtils {
           json = script.substring(x).trim();
         }
 
-        if (json.startsWith("{") && json.endsWith("}")) {
-          try {
-            object = new JSONObject(json);
-          } catch (Exception e1) {
-            Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
-          }
-        }
+        object = stringToJson(json);
 
         break;
       }
@@ -124,6 +122,20 @@ public class CrawlerUtils {
 
 
     return object;
+  }
+
+  public static JSONObject stringToJson(String str) {
+    JSONObject json = new JSONObject();
+
+    if (str.startsWith("{") && str.endsWith("}")) {
+      try {
+        json = new JSONObject(str);
+      } catch (Exception e1) {
+        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+      }
+    }
+
+    return json;
   }
 
   /**

@@ -95,11 +95,14 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
     Element finalElement = null;
     Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
     Element ratingOneEvaluation = doc.select(".pr-snapshot-average-based-on-text").first();
+    Element specialEvaluation = doc.select(".rating-count[itemprop=\"reviewCount\"]").first();
 
     if (rating != null) {
       finalElement = rating;
     } else if (ratingOneEvaluation != null) {
       finalElement = ratingOneEvaluation;
+    } else if (specialEvaluation != null) {
+      finalElement = specialEvaluation;
     }
 
     if (finalElement != null) {
@@ -117,6 +120,10 @@ public class SaopauloPontofrioRatingReviewCrawler extends RatingReviewCrawler {
     Double avgRating = 0d;
 
     Element avg = doc.select(".pr-snapshot-rating.rating .pr-rounded.average").first();
+
+    if (avg == null) {
+      avg = doc.select(".rating .rating-value").first();
+    }
 
     if (avg != null) {
       avgRating = Double.parseDouble(avg.ownText().replace(",", "."));

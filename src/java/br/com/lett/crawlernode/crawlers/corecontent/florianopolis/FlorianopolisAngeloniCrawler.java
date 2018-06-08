@@ -192,8 +192,6 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      prices.setBankTicketPrice(price);
-
       Element priceFrom = doc.select(".prevPrice").first();
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));

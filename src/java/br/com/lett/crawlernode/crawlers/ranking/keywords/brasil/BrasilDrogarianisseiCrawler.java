@@ -13,47 +13,27 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 32;
-
+    this.pageSize = 16;
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "https://www.drogariasnissei.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?pagina=" + this.currentPage;
+    String url = "https://www.drogariasnissei.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded
+        + "&product_list_limit=36";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
+    Elements products = this.currentDoc.select(".category-products .product-item-info");
 
-    Elements products = this.currentDoc.select(".listagem-prod .item-prod .nome a.link-prod");
-
-    System.err.println(arrayProducts.size());
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
-      if (totalProducts == 0) {
-        setTotalProducts();
-      }
-
-      for (int i = this.arrayProducts.size(); i < products.size(); i++) {
-        Element e = products.get(i);
-
-        // InternalPid
-        String internalPid = null;
-
-        // InternalId
+      for (Element e : products) {
         String internalId = crawlInternalId(e);
-
-        // Url do produto
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
     } else {
       this.result = false;
@@ -65,34 +45,16 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return this.currentDoc.select("#botao-paginacao").first() != null;
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element total = this.currentDoc.select(".row .columns .large-12 > p").last();
-
-    if (total != null && total.ownText().contains("de")) {
-      String totalText = total.ownText().trim().split("de")[1].replaceAll("[^0-9]", "").trim();
-
-      if (!totalText.isEmpty()) {
-        this.totalProducts = Integer.parseInt(totalText);
-      }
-    }
-
-    this.log("Total products: " + this.totalProducts);
+    return this.currentDoc.select(".action.next").first() != null;
   }
 
   private String crawlInternalId(Element e) {
     String internalId = null;
 
-    String[] tokens = e.attr("href").split("/");
-    String id = tokens[tokens.length - 1].split("-")[0].replaceAll("[^0-9]", "").trim();
-
-    if (!id.isEmpty()) {
-      internalId = id;
+    Element id = e.select("[data-product-id]").first();
+    if (id != null) {
+      internalId = id.attr("data-product-id");
     }
-
 
     return internalId;
   }
@@ -100,8 +62,9 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(Element e) {
     String productUrl = e.attr("href");
 
-    if (!productUrl.startsWith("https://www.drogariasnissei.com.br/")) {
-      productUrl = ("https://www.drogariasnissei.com.br/" + productUrl).replace("br//", "br/");
+    Element url = e.select(".product-item-link").first();
+    if (url != null) {
+      productUrl = url.attr("href");
     }
 
     return productUrl;

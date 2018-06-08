@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
@@ -61,7 +62,7 @@ public class RiodejaneiroExtraRatingReviewCrawler extends RatingReviewCrawler {
 
 
   private String crawlInternalId(String productUrl) {
-    return productUrl.replace(HOME_PAGE, "").split("/")[2];
+    return CommonMethods.getLast(productUrl.replace(HOME_PAGE, "").split("/"));
   }
 
   /**

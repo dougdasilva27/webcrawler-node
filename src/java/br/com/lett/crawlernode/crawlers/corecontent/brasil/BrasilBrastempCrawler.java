@@ -277,7 +277,7 @@ public class BrasilBrastempCrawler extends Crawler {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(".bread-crumb li > a");
 
-    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
+    for (int i = 2; i < elementCategories.size(); i++) { // first item is the home page
       categories.add(elementCategories.get(i).text().trim());
     }
 
