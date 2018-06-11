@@ -249,10 +249,10 @@ public class CompraCertaCrawlerUtils {
 
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".bread-crumb li > a");
+    Element elementCategories = document.select(".bread-crumb li > a").last();
 
-    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
-      categories.add(elementCategories.get(i).text().trim());
+    if (elementCategories != null) {
+      categories.add(elementCategories.text().trim());
     }
 
     return categories;

@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
+package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +26,9 @@ import models.RatingsReviews;
  * @author gabriel
  *
  */
-public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
+public class BrasilCompracertaoutletRatingReviewCrawler extends RatingReviewCrawler {
 
-  public SaopauloAraujoRatingReviewCrawler(Session session) {
+  public BrasilCompracertaoutletRatingReviewCrawler(Session session) {
     super(session);
   }
 
@@ -67,7 +67,19 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".skuList").isEmpty();
+    String producReference = crawlProductReference(doc).toLowerCase();
+    return doc.select(".main-product").first() != null && producReference.endsWith("_out");
+  }
+
+  private String crawlProductReference(Document doc) {
+    String producReference = "";
+    Element prod = doc.select(".productReference").first();
+
+    if (prod != null) {
+      producReference = prod.ownText().trim();
+    }
+
+    return producReference;
   }
 
   private List<String> crawlIdList(JSONObject skuJson) {
@@ -114,7 +126,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
     requestURL.append(id);
 
     requestURL.append("&");
-    requestURL.append("store_id=78444");
+    requestURL.append("store_id=1756");
 
     requestURL.append("&url=");
     requestURL.append(session.getOriginalURL());
