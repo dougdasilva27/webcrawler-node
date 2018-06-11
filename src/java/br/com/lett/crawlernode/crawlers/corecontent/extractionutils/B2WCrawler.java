@@ -31,13 +31,15 @@ public class B2WCrawler {
   private Logger logger;
   private Session session;
   private String sellerNameLower;
+  private List<String> subSellers;
   private String homePage;
   private List<Cookie> cookies;
 
-  public B2WCrawler(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies) {
+  public B2WCrawler(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies, List<String> subSellers) {
     this.session = session;
     this.logger = logger2;
     this.sellerNameLower = store;
+    this.subSellers = subSellers;
     this.homePage = homePage;
     this.cookies = cookies;
   }
@@ -237,13 +239,11 @@ public class B2WCrawler {
 
   private Float crawlPrice(Map<String, Prices> marketplaces) {
     Float price = null;
-
     Prices prices = null;
 
-    if (marketplaces.containsKey(sellerNameLower)) {
-      prices = marketplaces.get(sellerNameLower);
-    } else if (marketplaces.containsKey(MAIN_B2W_NAME_LOWER)) {
-      prices = marketplaces.get(MAIN_B2W_NAME_LOWER);
+    String sellerName = getPrincipalSellerName(marketplaces);
+    if (sellerName != null) {
+      prices = marketplaces.get(sellerName);
     }
 
     if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
@@ -257,11 +257,9 @@ public class B2WCrawler {
   private boolean crawlAvailability(Map<String, Prices> marketplaces) {
     boolean available = false;
 
-    for (String seller : marketplaces.keySet()) {
-      if (seller.equalsIgnoreCase(sellerNameLower) || seller.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
-        available = true;
-        break;
-      }
+    String sellerName = getPrincipalSellerName(marketplaces);
+    if (sellerName != null) {
+      available = true;
     }
 
     return available;
@@ -333,8 +331,14 @@ public class B2WCrawler {
   private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
     Marketplace marketplace = new Marketplace();
 
+    boolean hasPrincipalSeller = marketplaceMap.containsKey(MAIN_B2W_NAME_LOWER) || marketplaceMap.containsKey(sellerNameLower);
+
     for (String sellerName : marketplaceMap.keySet()) {
       if (!sellerName.equalsIgnoreCase(sellerNameLower) && !sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
+        if (!hasPrincipalSeller && this.subSellers.contains(sellerName)) {
+          continue;
+        }
+
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", sellerName);
 
@@ -392,6 +396,42 @@ public class B2WCrawler {
     return description;
   }
 
+  private Prices crawlPrices(Map<String, Prices> marketplaceMap) {
+    Prices prices = new Prices();
+
+    String sellerName = getPrincipalSellerName(marketplaceMap);
+    if (sellerName != null) {
+      prices = marketplaceMap.get(sellerName);
+    }
+
+    return prices;
+  }
+
+  /**
+   * se retornar null o produto nao e vendido pela loja
+   * 
+   * @param marketplaceMap
+   * @return
+   */
+  private String getPrincipalSellerName(Map<String, Prices> marketplaceMap) {
+    String sellerName = null;
+
+    if (marketplaceMap.containsKey(sellerNameLower)) {
+      sellerName = sellerNameLower;
+    } else if (marketplaceMap.containsKey(MAIN_B2W_NAME_LOWER)) {
+      sellerName = MAIN_B2W_NAME_LOWER;
+    } else {
+      for (String seller : subSellers) {
+        if (marketplaceMap.containsKey(seller)) {
+          sellerName = seller;
+          break;
+        }
+      }
+    }
+
+    return sellerName;
+  }
+
   // private Integer crawlStock(String internalId, JSONObject jsonProduct){
   // Integer stock = null;
   //
@@ -417,16 +457,4 @@ public class B2WCrawler {
   //
   // return stock;
   // }
-
-  private Prices crawlPrices(Map<String, Prices> marketplaceMap) {
-    Prices prices = new Prices();
-
-    if (marketplaceMap.containsKey(sellerNameLower)) {
-      prices = marketplaceMap.get(sellerNameLower);
-    } else if (marketplaceMap.containsKey(MAIN_B2W_NAME_LOWER)) {
-      prices = marketplaceMap.get(MAIN_B2W_NAME_LOWER);
-    }
-
-    return prices;
-  }
 }

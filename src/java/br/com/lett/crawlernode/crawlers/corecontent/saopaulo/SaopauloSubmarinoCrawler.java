@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,7 +26,7 @@ public class SaopauloSubmarinoCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    B2WCrawler b2w = new B2WCrawler(session, logger, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    B2WCrawler b2w = new B2WCrawler(session, logger, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, new ArrayList<>());
 
     return b2w.extractProducts(doc);
   }
