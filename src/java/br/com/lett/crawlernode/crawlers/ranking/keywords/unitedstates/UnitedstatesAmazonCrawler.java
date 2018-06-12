@@ -55,7 +55,7 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return this.totalProducts > this.arrayProducts.size();
+    return this.currentDoc.select("#pagnNextString").first() != null;
   }
 
   @Override

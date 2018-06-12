@@ -292,7 +292,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
         if ((name != null || nameImg != null) && priceS != null) {
           String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase() : name.text().trim().toLowerCase();
-          Float partnerPrice = MathUtils.parseFloat(priceS.ownText());
+          Float partnerPrice = MathUtils.parseFloat(priceS.ownText().replace(",", "").replace(".", ","));
 
           if (partnerName.equals(principalSellerFrontPage)) {
             marketplace.put(partnerName, crawlPrices(doc, null));
