@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -89,31 +90,17 @@ public class BrasilFastshopCrawler extends Crawler {
     if (isProductPage(session.getOriginalURL(), doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // internal pid
       String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(doc);
-
-      // name
+      String newUrl = internalPid != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
       String name = crawlName(doc);
-
-      // Categories
       ArrayList<String> categories = crawlCategories(doc);
       String category1 = getCategory(categories, 0);
       String category2 = getCategory(categories, 1);
       String category3 = getCategory(categories, 2);
-
-      // primary image
       String primaryImage = crawlPrimaryImage(doc);
-
-      // secondary images
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-
-      // description
       String description = crawlDescription(doc);
-
-      // has variations
       boolean hasVariations = hasVariations(jsonArrayInfo);
-
-      // Estoque
       Integer stock = null;
 
       for (int i = 0; i < jsonArrayInfo.length(); i++) {
@@ -144,7 +131,7 @@ public class BrasilFastshopCrawler extends Crawler {
         Prices prices = crawlPrices(jsonPrices, price, doc);
 
         Product product = new Product();
-        product.setUrl(this.session.getOriginalURL());
+        product.setUrl(newUrl);
         product.setInternalId(internalId);
         product.setInternalPid(internalPid);
         product.setName(variationName);

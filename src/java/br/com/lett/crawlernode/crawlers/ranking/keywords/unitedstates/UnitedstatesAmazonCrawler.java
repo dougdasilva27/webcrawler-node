@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
@@ -7,9 +7,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
+public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
 
-  public BrasilAmazonCrawler(Session session) {
+  public UnitedstatesAmazonCrawler(Session session) {
     super(session);
   }
 
@@ -18,8 +18,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url =
-        "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+    String url = "https://www.amazon.com/s/?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
@@ -85,8 +84,8 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
     if (url != null) {
       productUrl = url.attr("href").split("\\?")[0];
 
-      if (!productUrl.contains("amazon.com.br")) {
-        productUrl = "https://www.amazon.com.br" + productUrl;
+      if (!productUrl.contains("amazon.com")) {
+        productUrl = "https://www.amazon.com" + productUrl;
       }
     }
 

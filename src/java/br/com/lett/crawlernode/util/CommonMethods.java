@@ -68,6 +68,20 @@ public class CommonMethods {
 
   /**
    * 
+   * @param delay
+   */
+  public static void delay(int delay) {
+    int count = delay * 1000;
+
+    try {
+      Thread.sleep(count);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * 
    * @return
    * @throws NullPointerException
    * @throws IOException
