@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
@@ -21,18 +21,7 @@ import models.prices.Prices;
 
 public class BrasilKalungaCrawler extends Crawler {
 
-  private static final String HOME_PAGE_HTTP = "http://www.kalunga.com.br/";
-  private static final String HOME_PAGE_HTTPS = "https://www.kalunga.com.br/";
-
-  private static final String REGEX_Z = "/\\d+z(?!_)"; // identificar quando temos algo do tipo
-  private static final String REGEX_Z_ = "/\\d+z_\\d+"; // identificar quando temos algo do tipo
-
-  private static final String REGEX_D = "/\\d+d(?!_)"; // identificar quando temos algo do tipo
-  private static final String REGEX_D_ = "/\\d+d_\\d+"; // identificar quando tempos algo do tipo
-                                                        // /3244356d_
-  private static final String REGEX_ORIGINAL = "/\\d+(?!_)\\."; // identificar quando temos algo do
-                                                                // tipo /4534534.
-
+  private static final String HOME_PAGE = "https://www.kalunga.com.br/";
 
   public BrasilKalungaCrawler(Session session) {
     super(session);
@@ -41,7 +30,7 @@ public class BrasilKalungaCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE_HTTP) || href.startsWith(HOME_PAGE_HTTPS));
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
   @Override
@@ -49,145 +38,27 @@ public class BrasilKalungaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // ID interno
-      String internalId = null;
-      Element elementInternalId = doc.select("input#hdnCodProduto").first();
-      if (elementInternalId != null) {
-        internalId = elementInternalId.attr("value").trim();
-      }
-
-      // Pid
+      String internalId = crawlInternalId(doc);
       String internalPid = null;
-
-      // Nome
-      String name = null;
-      Element elementName = doc.select(".product-txt h1").first();
-      if (elementName != null) {
-        name = elementName.text();
-      }
-
-      // Disponibilidade
-      boolean available = true;
-      Element elementUnavailable = doc.select(".box-price .bt_comprar_indisponivel").first();
-      if (elementUnavailable != null) {
-        available = false;
-      }
-
-      // Preço
-      Float price = null;
-      Element elementPrice = doc.select("#spanPriceInteger").first();
-      Element elementPriceCents = doc.select("#spanPriceCents").first();
-      if (elementPrice != null) {
-        String priceStr = elementPrice.ownText();
-
-        if (elementPriceCents != null) {
-          priceStr += elementPriceCents.ownText();
-        }
-
-        price = MathUtils.parseFloat(priceStr);
-      } else {
-        available = false;
-      }
-
-      // Categoria
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      Elements elementCategories = doc.select("#breadcrumbs a");
-      ArrayList<String> categories = new ArrayList<>();
-      for (int i = 1; i < elementCategories.size(); i++) {
-        Element e = elementCategories.get(i);
-        categories.add(e.text());
-      }
-      for (String c : categories) {
-        if (category1.isEmpty()) {
-          category1 = c.trim();
-        } else if (category2.isEmpty()) {
-          category2 = c.trim();
-        } else if (category3.isEmpty()) {
-          category3 = c.trim();
-        }
-      }
-
-      // Imagens
-      Elements elementImages = doc.select("#galeria img");
-      String primaryImage = null;
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      for (Element image : elementImages) {
-        String imageSrc = image.attr("src");
-
-        if (!this.containsPattern(REGEX_Z, imageSrc) && !this.containsPattern(REGEX_Z_, imageSrc)) {
-          if (!this.containsPattern(REGEX_D, imageSrc) && !this.containsPattern(REGEX_D_, imageSrc)) {
-            if (this.containsPattern(REGEX_ORIGINAL, imageSrc)) {
-              imageSrc = imageSrc.replace(".jpg", "d.jpg");
-            } else {
-              imageSrc = imageSrc.replace("_", "d_");
-            }
-          }
-        }
-
-        if (primaryImage == null) {
-          primaryImage = imageSrc;
-        } else {
-          secondaryImagesArray.put(imageSrc);
-        }
-      }
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
-
-      if (primaryImage == null) {
-        Element elementPrimaryImage = doc.select(".product-image .zoom img").first();
-        if (elementPrimaryImage != null) {
-          primaryImage = elementPrimaryImage.attr("src");
-          if (!primaryImage.contains("http")) {
-            primaryImage = "http:" + primaryImage;
-          }
-        }
-      }
-
-      // Descrição
-      String description = "";
-      Element elementDescription = doc.select("#descricaoPadrao").first();
-      if (elementDescription != null) {
-        description = description + elementDescription.html();
-      }
-
-      Element specialDescription = doc.select("#ctl00_Body_dvEspecificacaoAdicionalTop").first();
-      if (specialDescription != null) {
-        description = description + specialDescription.html();
-      }
-
-      // Prices
+      String name = crawlName(doc);
+      Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
-
-      // Estoque
+      boolean available = crawlAvailability(doc);
+      CategoryCollection categories = crawlCategories(doc);
+      String primaryImage = crawlPrimaryImage(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      String description = crawlDescription(doc);
       Integer stock = null;
+      Marketplace marketplace = crawlMarketplace();
 
-      // Marketplace
-      Marketplace marketplace = new Marketplace();
-
-      Product product = new Product();
-      product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
+      // Creating the product
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -196,29 +67,128 @@ public class BrasilKalungaCrawler extends Crawler {
     }
 
     return products;
+
   }
 
-  private boolean containsPattern(String regex, String originalString) {
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(originalString);
-    List<String> listMatches = new ArrayList<String>();
+  private boolean isProductPage(Document doc) {
+    return doc.select("input#hdnCodProduto").first() != null;
+  }
 
-    while (matcher.find()) {
-      listMatches.add(matcher.group(0));
+  private String crawlInternalId(Document doc) {
+    String internalId = null;
+
+    Element internalIdElement = doc.select("input#hdnCodProduto").first();
+    if (internalIdElement != null) {
+      internalId = internalIdElement.val();
     }
 
-    if (listMatches.size() > 0)
-      return true;
-
-    return false;
+    return internalId;
   }
 
-  /*******************************
-   * Product page identification *
-   *******************************/
+  private String crawlName(Document document) {
+    String name = null;
+    Element nameElement = document.select("h1.h5").first();
 
-  private boolean isProductPage(String url) {
-    return url.contains("/prod/");
+    if (nameElement != null) {
+      name = nameElement.ownText().trim();
+    }
+
+    return name;
+  }
+
+  private Float crawlPrice(Document document) {
+    Float price = null;
+    Element salePriceElement = document.select(".container-price h4").first();
+
+    if (salePriceElement != null) {
+      price = MathUtils.parseFloat(salePriceElement.text());
+    }
+
+    return price;
+  }
+
+  private Marketplace crawlMarketplace() {
+    return new Marketplace();
+  }
+
+
+  private String crawlPrimaryImage(Document doc) {
+    String primaryImage = null;
+    Element elementPrimaryImage = doc.select(".carousel-produto-grande .item figure > a").first();
+
+    if (elementPrimaryImage != null) {
+      primaryImage = elementPrimaryImage.attr("href");
+    }
+
+    return primaryImage;
+  }
+
+  /**
+   * Quando este crawler foi feito, nao tinha imagens secundarias
+   * 
+   * @param doc
+   * @return
+   */
+  private String crawlSecondaryImages(Document doc, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".carousel-produto-grande .item figure > a");
+
+    for (Element e : images) {
+      String image = e.attr("href");
+
+      if (!image.equals(primaryImage)) {
+        secondaryImagesArray.put(image);
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  /**
+   * @param document
+   * @return
+   */
+  private CategoryCollection crawlCategories(Document document) {
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(".breadcrumbs > a");
+
+    for (int i = 1; i < elementCategories.size(); i++) {
+      String cat = elementCategories.get(i).ownText().trim();
+
+      if (!cat.isEmpty()) {
+        categories.add(cat);
+      }
+    }
+
+    return categories;
+  }
+
+  private String crawlDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Element elementDescription = doc.select("#ctl00_Body_dvEspecificacaoAdicionalTop").first();
+
+    if (elementDescription != null) {
+      description.append(elementDescription.html());
+    }
+
+    Element specs = doc.select("#descricaoPadrao").first();
+
+    if (specs != null) {
+      description.append(specs.html());
+    }
+
+    return description.toString();
+  }
+
+  private boolean crawlAvailability(Document doc) {
+    return doc.select("#ctl00_Body_ibtnComprar").first() != null;
   }
 
   private Prices crawlPrices(Document doc, Float price) {
@@ -231,11 +201,11 @@ public class BrasilKalungaCrawler extends Crawler {
       prices.setBankTicketPrice(price);
       installmentsPriceMap.put(1, price);
 
-      Elements installments = doc.select(".line_parcelamento");
+      Elements installments = doc.select(".container-price table.table-bordered tr");
 
       for (Element e : installments) {
-        Element installmentElement = e.select("span").first();
-        Element valueElement = e.select("span.font_12_preto").last();
+        Element installmentElement = e.select("td").first();
+        Element valueElement = e.select("td").last();
 
         if (installmentElement != null && valueElement != null) {
           String text = installmentElement.text().replaceAll("[^0-9]", "");
