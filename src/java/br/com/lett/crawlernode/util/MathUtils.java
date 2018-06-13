@@ -31,6 +31,25 @@ public class MathUtils {
   }
 
   /**
+   * Parses a Float from an input String. It will parse only the first match. If there is more than
+   * one float in the string, the others occurrences after the first will be disconsidered.
+   * 
+   * e.g: R$ 2.779,20 returns the Float 2779.2
+   * 
+   * @param input
+   * @return
+   */
+  public static Float parseFloatUSA(String input) {
+    String floatText = input.replaceAll("[^0-9.]+", "");
+
+    if (!floatText.isEmpty()) {
+      return Float.parseFloat(floatText);
+    }
+
+    return null;
+  }
+
+  /**
    * Parses a Double from an input String. It will parse only the first match. If there is more than
    * one float in the string, the others occurrences after the first will be disconsidered.
    * 

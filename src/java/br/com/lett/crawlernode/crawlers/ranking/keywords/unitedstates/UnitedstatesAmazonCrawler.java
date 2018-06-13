@@ -1,10 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
@@ -13,15 +21,42 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.amazon.com/";
+  private List<Cookie> cookies = new ArrayList<>();
+  private String nextPageUrl;
+
+  @Override
+  protected void processBeforeFetch() {
+
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
+
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain("amazon.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+  }
+
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.amazon.com/s/?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+    String url;
+
+    if (this.currentPage == 1) {
+      url = "https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&page=" + this.currentPage + "&keywords=" + this.keywordEncoded
+          + "&ie=UTF8&qid=1528919530";
+    } else {
+      url = this.nextPageUrl;
+    }
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = fetchDocument(url, this.cookies);
+    this.nextPageUrl = crawlNextPage();
+
+    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/keywords-" + this.currentPage + ".html");
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");
     Element result = this.currentDoc.select("#noResultsTitle").first();
@@ -35,7 +70,7 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
 
         String internalPid = crawlInternalPid(e);
         String internalId = internalPid;
-        String productUrl = crawlProductUrl(e);
+        String productUrl = crawlProductUrl(internalPid);
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -51,6 +86,26 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  private String crawlNextPage() {
+    String url = null;
+
+    Element e = this.currentDoc.select(".pagnRA > a").first();
+
+    if (e != null) {
+      url = e.attr("href");
+
+      if (url.startsWith("#")) {
+        url = url.replaceFirst("#", "");
+      }
+
+      if (!url.contains("amazon.com")) {
+        url = HOME_PAGE + "s" + url;
+      }
+    }
+
+    return url;
   }
 
   @Override
@@ -76,20 +131,8 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
     return e.attr("data-asin");
   }
 
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.select(".a-link-normal").first();
-
-    if (url != null) {
-      productUrl = url.attr("href").split("\\?")[0];
-
-      if (!productUrl.contains("amazon.com")) {
-        productUrl = "https://www.amazon.com" + productUrl;
-      }
-    }
-
-    return productUrl;
+  private String crawlProductUrl(String id) {
+    return HOME_PAGE + "dp/" + id;
   }
 
 }

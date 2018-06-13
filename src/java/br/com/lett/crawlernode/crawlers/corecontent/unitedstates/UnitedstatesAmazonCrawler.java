@@ -68,9 +68,6 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       Integer stock = null;
 
       List<Document> docMarketPlaces = fetchDocumentMarketPlace(doc, internalId);
-      // CommonMethods.saveDataToAFile(
-      // docMarketPlaces.get(0) == null ? "ERROU" : docMarketPlaces.get(0),
-      // "/home/gabriel/htmls/c.html");
       Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketPlaces, doc);
       Marketplace marketplace = crawlMarketplace(marketplaceMap);
 
@@ -180,20 +177,20 @@ public class UnitedstatesAmazonCrawler extends Crawler {
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
     Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
-    Element specialPrice = document.select("#priceblock_ourprice").first();
+    Element specialPrice = document.select("#priceblock_dealprice").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text().trim());
+      price = MathUtils.parseFloatUSA(salePriceElement.text().trim());
     } else {
       salePriceElement = document.select("#buybox .a-color-price").first();
 
       if (salePriceElement != null) {
-        price = MathUtils.parseFloat(salePriceElement.ownText().trim());
+        price = MathUtils.parseFloatUSA(salePriceElement.ownText().trim());
       }
     }
 
     if (price == null && specialPrice != null) {
-      price = MathUtils.parseFloat(specialPrice.ownText().trim());
+      price = MathUtils.parseFloatUSA(specialPrice.ownText().trim());
     }
 
     return price;
@@ -292,7 +289,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
         if ((name != null || nameImg != null) && priceS != null) {
           String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase() : name.text().trim().toLowerCase();
-          Float partnerPrice = MathUtils.parseFloat(priceS.ownText().replace(",", "").replace(".", ","));
+          Float partnerPrice = MathUtils.parseFloatUSA(priceS.ownText());
 
           if (partnerName.equals(principalSellerFrontPage)) {
             marketplace.put(partnerName, crawlPrices(doc, null));
@@ -322,7 +319,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
         Prices prices = marketplaceEntry.getValue();
 
-        if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+        if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
           // Pegando o preço de uma vez no cartão
           Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
           Float priceFloat = price.floatValue();
@@ -454,7 +451,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       description.append(elementDescription2.html());
     }
 
-    Element elementDetails = doc.select("#detail_bullets_id").first();
+    Element elementDetails = doc.select("#feature-bullets").first();
 
     if (elementDetails != null) {
       description.append(elementDetails.html());
@@ -480,6 +477,12 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
     if (info != null) {
       description.append(info.html());
+    }
+
+    Element html = doc.select("#aplus3p_feature_div").first();
+
+    if (html != null) {
+      description.append(html);
     }
 
     return description.toString();
