@@ -33,7 +33,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
       this.currentDoc = new Document("");
     }
 
-    Elements products = this.currentDoc.select("ul.listas > li > a");
+    Elements products = this.currentDoc.select(".blocoproduto a:not(.small):first-child");
 
     if (!products.isEmpty()) {
       // se o total de busca não foi setado ainda, chama a função para setar
@@ -53,8 +53,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -64,8 +63,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultados!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -119,10 +117,8 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
   private JSONObject fetchJsonApi() {
     String url = "https://www.kalunga.com.br/webapi/Busca/BindSearch";
-    String payload =
-        "{\"pageIndex\":\"" + this.currentPage + "\",\"idClassificacao\":\"0\",\"idGrupo\":\"0\","
-            + "\"tipoOrdenacao\":\"1\",\"termoBuscado\":\"" + this.location
-            + "\",\"itensFiltro\":\"\"," + "\"visao\":\"L\"}";
+    String payload = "{\"pageIndex\":\"" + this.currentPage + "\",\"idClassificacao\":\"0\",\"idGrupo\":\"0\","
+        + "\"tipoOrdenacao\":\"1\",\"termoBuscado\":\"" + this.location + "\",\"itensFiltro\":\"\"," + "\"visao\":\"T\"}";
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
