@@ -29,7 +29,7 @@ import models.prices.Prices;
  */
 public class BrasilDrogarianisseiCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.drogariasnissei.com.br/";
+  private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
 
   public BrasilDrogarianisseiCrawler(Session session) {
     super(session);

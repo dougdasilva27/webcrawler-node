@@ -16,7 +16,7 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
     this.pageSize = 16;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.drogariasnissei.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded
+    String url = "https://www.farmaciasnissei.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded
         + "&product_list_limit=36";
     this.log("Link onde são feitos os crawlers: " + url);
 
