@@ -117,7 +117,7 @@ public class BrasilWebarcondicionadoCrawler extends CrawlerRankingKeywords {
     productUrl = e.attr("href");
 
     if (!productUrl.contains("webarcondicionado")) {
-      productUrl = ("https://www.webarcondicionado.com.br/" + e.attr("href")).replace("br//", "br/");
+      productUrl = ("http://www.webarcondicionado.com.br/" + e.attr("href")).replace("br//", "br/");
     }
 
 
