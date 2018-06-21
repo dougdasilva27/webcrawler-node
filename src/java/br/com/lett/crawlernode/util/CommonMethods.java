@@ -393,5 +393,21 @@ public class CommonMethods {
     }
   }
 
+  /**
+   * Str must not be null and empty, if thath happens this function return ""
+   * 
+   * @param str
+   * @return
+   */
+  public static String upperCaseFirstCharacter(String str) {
+    StringBuilder strBuilder = new StringBuilder();
+
+    if (str != null && str.isEmpty()) {
+      strBuilder.append(str.substring(0, 1).toUpperCase());
+      strBuilder.append(str.substring(1, str.length()));
+    }
+
+    return strBuilder.toString();
+  }
 
 }

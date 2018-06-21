@@ -269,4 +269,51 @@ public class CrawlerUtils {
 
     return categories;
   }
+
+  /**
+   * 
+   * @param json
+   * @param key
+   * @return
+   */
+  public static Float getFloatPriceFromJSON(JSONObject json, String key) {
+    Float price = null;
+
+    if (json.has(key)) {
+      Object priceObj = json.get(key);
+      Double priceDouble = null;
+
+      if (priceObj instanceof Integer) {
+        priceDouble = ((Integer) priceObj).doubleValue();
+      } else if (priceObj instanceof Double) {
+        priceDouble = (Double) priceObj;
+      }
+
+      price = priceDouble != null ? MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue()) : null;
+    }
+
+    return price;
+  }
+
+  /**
+   * 
+   * @param json
+   * @param key
+   * @return
+   */
+  public static Double getDoublePriceFromJSON(JSONObject json, String key) {
+    Double price = null;
+
+    if (json.has(key)) {
+      Object priceObj = json.get(key);
+
+      if (priceObj instanceof Integer) {
+        price = ((Integer) priceObj).doubleValue();
+      } else if (priceObj instanceof Double) {
+        price = (Double) priceObj;
+      }
+    }
+
+    return price;
+  }
 }
