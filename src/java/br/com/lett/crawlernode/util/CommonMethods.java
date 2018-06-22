@@ -402,7 +402,7 @@ public class CommonMethods {
   public static String upperCaseFirstCharacter(String str) {
     StringBuilder strBuilder = new StringBuilder();
 
-    if (str != null && str.isEmpty()) {
+    if (str != null && !str.isEmpty()) {
       strBuilder.append(str.substring(0, 1).toUpperCase());
       strBuilder.append(str.substring(1, str.length()));
     }

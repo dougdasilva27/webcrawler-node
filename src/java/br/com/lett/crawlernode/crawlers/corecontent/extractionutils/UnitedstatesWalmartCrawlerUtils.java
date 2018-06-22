@@ -68,6 +68,21 @@ public class UnitedstatesWalmartCrawlerUtils {
   public static final String NAME = "variationName";
 
   /**
+   * This field in santizedJson is of type {@link JSONObject}
+   */
+  public static final String RATING = "rating";
+
+  /**
+   * This field in santizedJson is of type {@link Double} or {@link Integer}
+   */
+  public static final String RATING_AVERAGE = "average";
+
+  /**
+   * This field in santizedJson is of type {@link Integer}
+   */
+  public static final String RATING_COUNT = "count";
+
+  /**
    * Essa função pega o json INITIAL_STATE do html e o deixa mais simples para capturar as informações
    * 
    * @param doc
@@ -82,14 +97,15 @@ public class UnitedstatesWalmartCrawlerUtils {
 
       JSONObject images = crawlJsonImages(product);
       JSONObject offers = crawlJsonOffers(product);
+      JSONObject rating = crawlRating(product);
 
-      products = crawlProductsInfo(product, images, offers);
+      products = crawlProductsInfo(product, images, offers, rating);
     }
 
     return products;
   }
 
-  private static JSONArray crawlProductsInfo(JSONObject product, JSONObject images, JSONObject offers) {
+  private static JSONArray crawlProductsInfo(JSONObject product, JSONObject images, JSONObject offers, JSONObject rating) {
     JSONArray products = new JSONArray();
 
     if (product.has("products")) {
@@ -99,6 +115,7 @@ public class UnitedstatesWalmartCrawlerUtils {
         JSONObject productJson = productsJson.getJSONObject(internalId);
 
         JSONObject santizedProductInfo = new JSONObject();
+        santizedProductInfo.put(RATING, rating);
         santizedProductInfo.put(INTERNAL_ID, internalId);
 
         // nesse json existem muitos id's, esse foi escolhido por estar presente na url
@@ -114,6 +131,32 @@ public class UnitedstatesWalmartCrawlerUtils {
     }
 
     return products;
+  }
+
+  private static JSONObject crawlRating(JSONObject product) {
+    JSONObject rating = new JSONObject();
+
+    if (product.has("primaryProduct")) {
+      String primaryProduct = product.getString("primaryProduct");
+
+      if (product.has("reviews")) {
+        JSONObject reviews = product.getJSONObject("reviews");
+
+        if (reviews.has(primaryProduct)) {
+          JSONObject productRating = reviews.getJSONObject(primaryProduct);
+
+          if (productRating.has("roundedAverageOverallRating")) {
+            rating.put(RATING_AVERAGE, productRating.get("roundedAverageOverallRating"));
+          }
+
+          if (productRating.has("totalReviewCount")) {
+            rating.put(RATING_COUNT, productRating.get("totalReviewCount"));
+          }
+        }
+      }
+    }
+
+    return rating;
   }
 
   private static JSONObject crawlImages(JSONObject productJson, JSONObject images) {

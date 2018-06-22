@@ -65,6 +65,11 @@ public class CrawlerUtils {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
   }
 
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+    return selectJsonFromHtml(doc, cssElement, token, finalIndex, withoutSpaces, false);
+  }
+
   /**
    * Crawl json inside element html
    *
@@ -77,14 +82,16 @@ public class CrawlerUtils {
    * @param cssElement selector used to get the desired json element
    * @param token whithout spaces
    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
+   * @param withoutSpaces remove all spaces
+   * @param lastFinalIndex if true, the substring will find last index of finalIndex
    * @return JSONObject
    * 
    * @throws JSONException
    * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
    * @throws IllegalArgumentException if doc is null
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
-      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
+      boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)
       throw new IllegalArgumentException("Argument doc cannot be null");
@@ -108,7 +115,13 @@ public class CrawlerUtils {
         String json = null;
 
         if (script.contains(finalIndex)) {
-          int y = script.indexOf(finalIndex, x);
+          int y;
+
+          if (lastFinalIndex) {
+            y = script.lastIndexOf(finalIndex);
+          } else {
+            y = script.indexOf(finalIndex, x);
+          }
           json = script.substring(x, y).trim();
         } else {
           json = script.substring(x).trim();
@@ -276,7 +289,7 @@ public class CrawlerUtils {
    * @param key
    * @return
    */
-  public static Float getFloatPriceFromJSON(JSONObject json, String key) {
+  public static Float getFloatValueFromJSON(JSONObject json, String key) {
     Float price = null;
 
     if (json.has(key)) {
@@ -301,7 +314,7 @@ public class CrawlerUtils {
    * @param key
    * @return
    */
-  public static Double getDoublePriceFromJSON(JSONObject json, String key) {
+  public static Double getDoubleValueFromJSON(JSONObject json, String key) {
     Double price = null;
 
     if (json.has(key)) {

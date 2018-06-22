@@ -178,10 +178,10 @@ public class UnitedstatesWalmartCrawler extends Crawler {
         if (offerJson.has(UnitedstatesWalmartCrawlerUtils.OFFERS_AVAILABLE) && offerJson.getBoolean(UnitedstatesWalmartCrawlerUtils.OFFERS_AVAILABLE)
             && offerJson.has(UnitedstatesWalmartCrawlerUtils.OFFERS_PRICE) && offerJson.has(UnitedstatesWalmartCrawlerUtils.OFFERS_SELLER_NAME)) {
 
-          Float price = CrawlerUtils.getFloatPriceFromJSON(offerJson, UnitedstatesWalmartCrawlerUtils.OFFERS_PRICE);
+          Float price = CrawlerUtils.getFloatValueFromJSON(offerJson, UnitedstatesWalmartCrawlerUtils.OFFERS_PRICE);
           Double oldPrice = null;
           if (offerJson.has(UnitedstatesWalmartCrawlerUtils.OFFERS_OLD_PRICE)) {
-            oldPrice = CrawlerUtils.getDoublePriceFromJSON(offerJson, UnitedstatesWalmartCrawlerUtils.OFFERS_OLD_PRICE);
+            oldPrice = CrawlerUtils.getDoubleValueFromJSON(offerJson, UnitedstatesWalmartCrawlerUtils.OFFERS_OLD_PRICE);
           }
 
           marketplace.put(offerJson.get(UnitedstatesWalmartCrawlerUtils.OFFERS_SELLER_NAME).toString(), crawlPrices(price, oldPrice));
