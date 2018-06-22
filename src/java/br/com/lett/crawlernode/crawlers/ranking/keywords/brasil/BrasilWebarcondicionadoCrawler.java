@@ -14,7 +14,7 @@ public class BrasilWebarcondicionadoCrawler extends CrawlerRankingKeywords {
   }
 
   private String nextUrl;
-  private StringBuilder products = new StringBuilder();
+  private StringBuilder productsBuilder = new StringBuilder();
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -37,8 +37,6 @@ public class BrasilWebarcondicionadoCrawler extends CrawlerRankingKeywords {
     // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
     this.nextUrl = crawlNextUrl();
-
-    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/WA-" + this.currentPage + ".html");
 
     Elements products = this.currentDoc.select(".product-div > a");
 
@@ -82,10 +80,10 @@ public class BrasilWebarcondicionadoCrawler extends CrawlerRankingKeywords {
 
     Elements productIds = this.currentDoc.select("input[name=\"product[]\"]");
     for (Element e : productIds) {
-      this.products.append("&procuct%5B%5D=" + e.val());
+      this.productsBuilder.append("&procuct%5B%5D=" + e.val());
     }
 
-    str.append(this.products.toString());
+    str.append(this.productsBuilder.toString());
 
     return str.toString();
   }
