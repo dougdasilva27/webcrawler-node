@@ -24,7 +24,7 @@ import models.prices.Prices;
 public class VTEXCrawlersUtils {
 
   private static final String SKU_ID = "sku";
-  private static final String PRODUCT_ID = "sku";
+  private static final String PRODUCT_ID = "productId";
   private static final String SKU_NAME = "skuname";
   private static final String PRODUCT_NAME = "name";
   private static final String PRICE_FROM = "listPriceFormated";
