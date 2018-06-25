@@ -154,19 +154,6 @@ public class CampograndeComperCrawler extends Crawler {
   private Float crawlPrice(JSONObject product) {
     Float price = null;
 
-
-    try {
-      if (product.has("RKProductOffer")) {
-        price = Float.parseFloat(product.get("RKProductOffer").toString());
-
-        if (price < 0.1) {
-          price = null;
-        }
-      }
-    } catch (NumberFormatException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-
     try {
       if (price == null && product.has("RKProductPrice")) {
         price = Float.parseFloat(product.get("RKProductPrice").toString());
