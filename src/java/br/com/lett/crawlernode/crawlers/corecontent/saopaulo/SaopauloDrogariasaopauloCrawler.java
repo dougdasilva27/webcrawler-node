@@ -95,10 +95,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    if (document.select(".produto").first() != null) {
-      return true;
-    }
-    return false;
+    return document.select("#___rc-p-sku-ids").first() != null;
   }
 
   /*******************
