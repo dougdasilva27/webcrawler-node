@@ -105,7 +105,7 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     headers.put("referer", HOME_PAGE);
     headers.put("sm-b2c",
         "{\"platform\":1,\"lojaName\":\"maringa-loja-brasil-01-zona-05-avenida-brasil\",\"redeName\":\"supermercadoscidadecancao\"}");
-    headers.put("sm-mmc", "2018.06.14-0");
+    headers.put("sm-mmc", "2018.06.25-0");
     headers.put("accept", "application/json, text/plain, */*");
     headers.put("Content-Type", "application/json");
 
