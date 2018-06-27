@@ -8,7 +8,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
@@ -41,8 +40,6 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url, cookies);
-
-    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/WALMART.html");
 
     JSONObject initialState = CrawlerUtils.selectJsonFromHtml(currentDoc, "script", "window.__WML_REDUX_INITIAL_STATE__=", ";", true, true);
     JSONArray products = crawlProductsJson(initialState);

@@ -20,20 +20,14 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 07/12/2016
- * 
- * 1) Only one sku per page.
- * 
- * Price crawling notes: 1) In the time this crawler was made, we doesn't found any unnavailable
- * product. 2) There is no bank slip (boleto bancario) payment option. 3) There is installments for
- * card payment, but was found only shopCard payment method.
+ * Date: 22/06/2018
  * 
  * @author Gabriel Dornelas
  *
  */
 public class ArgentinaGpsfarmaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.cotodigital3.com.ar/";
+  private static final String HOME_PAGE = "https://www.gpsfarma.com/";
 
   public ArgentinaGpsfarmaCrawler(Session session) {
     super(session);

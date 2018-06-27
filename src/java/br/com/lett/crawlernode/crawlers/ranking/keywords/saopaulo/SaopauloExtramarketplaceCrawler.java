@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
@@ -27,8 +26,6 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = Jsoup.parse(fetchPage(url));
-    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/EXTRA.html");
-
     Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
 
     this.pageSize = 21;

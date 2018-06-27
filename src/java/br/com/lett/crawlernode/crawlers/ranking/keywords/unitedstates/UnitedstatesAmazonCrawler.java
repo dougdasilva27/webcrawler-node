@@ -12,7 +12,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
@@ -55,8 +54,6 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url, this.cookies);
     this.nextPageUrl = crawlNextPage();
-
-    CommonMethods.saveDataToAFile(currentDoc, "/home/gabriel/htmls/keywords-" + this.currentPage + ".html");
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");
     Element result = this.currentDoc.select("#noResultsTitle").first();

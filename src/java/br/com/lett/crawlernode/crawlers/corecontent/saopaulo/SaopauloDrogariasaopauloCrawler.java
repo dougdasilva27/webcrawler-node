@@ -285,8 +285,6 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
       description.append(advert.html());
     }
 
-    CommonMethods.saveDataToAFile(description, "/home/gabriel/htmls/DESC.txt");
-
     return description.toString();
   }
 
