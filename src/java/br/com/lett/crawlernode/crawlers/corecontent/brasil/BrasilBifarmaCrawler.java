@@ -210,10 +210,10 @@ public class BrasilBifarmaCrawler extends Crawler {
 
     Elements imagesElement = document.select(".slider-thumbs .thumb > img");
 
-    for (int i = 0; i < imagesElement.size(); i++) { // first index is the primary image
+    for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
       String image = imagesElement.get(i).attr("src").trim().replace("_mini", "");
 
-      if (!images.contains(image) && !isPrimaryImage(image, primaryImage)) {
+      if (!images.contains(image)) {
         images.add(image);
         secondaryImagesArray.put(image);
       }
