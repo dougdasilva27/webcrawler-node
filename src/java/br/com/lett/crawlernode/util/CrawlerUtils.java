@@ -60,11 +60,34 @@ public class CrawlerUtils {
     return skuJson;
   }
 
+  /**
+   * 
+   * @param doc
+   * @param cssElement
+   * @param token
+   * @param finalIndex
+   * @return
+   * @throws JSONException
+   * @throws ArrayIndexOutOfBoundsException
+   * @throws IllegalArgumentException
+   */
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
   }
 
+  /**
+   * 
+   * @param doc
+   * @param cssElement
+   * @param token
+   * @param finalIndex
+   * @param withoutSpaces
+   * @return
+   * @throws JSONException
+   * @throws ArrayIndexOutOfBoundsException
+   * @throws IllegalArgumentException
+   */
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, withoutSpaces, false);

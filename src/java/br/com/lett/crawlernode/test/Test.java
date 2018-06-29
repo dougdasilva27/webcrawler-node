@@ -141,7 +141,7 @@ public class Test {
             SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
       } else {
         session = SessionFactory.createTestSession(
-            "https://www.petz.com.br/produto/racao-golden-formula-senior-para-caes-adultos-sabor-frango-e-arroz-15kg-71353", market);
+            "https://www.carrefour.com.ar/lavarropas-automatico-samsung-8-kg-wa80f5s4utw-blanco.html", market);
       }
 
 
