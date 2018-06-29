@@ -99,9 +99,12 @@ public class UnitedstatesAmazonCrawler extends Crawler {
     String internalId = null;
 
     Element internalIdElement = doc.select("input[name^=ASIN]").first();
+    Element internalIdElementSpecial = doc.select("input.askAsin").first();
 
     if (internalIdElement != null) {
       internalId = internalIdElement.val();
+    } else if (internalIdElementSpecial != null) {
+      internalId = internalIdElementSpecial.val();
     }
 
     return internalId;
@@ -110,12 +113,15 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
   private String crawlName(Document document) {
     String name = null;
+
     Element nameElement = document.select("#centerCol h1#title").first();
+    Element nameElementSpecial = document.select("#productTitle").first();
 
     if (nameElement != null) {
       name = nameElement.text().trim();
+    } else if (nameElementSpecial != null) {
+      name = nameElementSpecial.text().trim();
     }
-
 
     return name;
   }
@@ -153,7 +159,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       prices = marketplaces.get(SELLER_NAME_LOWER);
     }
 
-    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
@@ -178,6 +184,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
     Float price = null;
     Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
     Element specialPrice = document.select("#priceblock_dealprice").first();
+    Element foodPrice = document.select("#priceblock_ourprice").first();
 
     if (salePriceElement != null) {
       price = MathUtils.parseFloatUSA(salePriceElement.text().trim());
@@ -191,6 +198,8 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
     if (price == null && specialPrice != null) {
       price = MathUtils.parseFloatUSA(specialPrice.ownText().trim());
+    } else if (price == null && foodPrice != null) {
+      price = MathUtils.parseFloatUSA(foodPrice.ownText());
     }
 
     return price;
@@ -433,34 +442,12 @@ public class UnitedstatesAmazonCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select("#bookDescription_feature_div").first();
+    Elements elementsDescription = doc.select("#bookDescription_feature_div,#descriptionAndDetails,#product-description-iframe,"
+        + "#feature-bullets,#bookDescription_feature_div,#productDetails_feature_div,#aplus3p_feature_div,#importantInformation,"
+        + "#descriptionAndDetails,#aplus_feature_div");
 
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    Element elementDescription1 = doc.select("#descriptionAndDetails").first();
-
-    if (elementDescription1 != null) {
-      description.append(elementDescription1.html());
-    }
-
-    Element elementDescription2 = doc.select("#product-description-iframe").first();
-
-    if (elementDescription2 != null) {
-      description.append(elementDescription2.html());
-    }
-
-    Element elementDetails = doc.select("#feature-bullets").first();
-
-    if (elementDetails != null) {
-      description.append(elementDetails.html());
-    }
-
-    Element bookDetails = doc.select("#bookDescription_feature_div").first();
-
-    if (bookDetails != null) {
-      description.append(bookDetails.html());
+    for (Element e : elementsDescription) {
+      description.append(e.html());
     }
 
     Elements longDescription = doc.select(".feature[id^=btfContent]");
@@ -471,18 +458,6 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       if (compare == null) {
         description.append(e.html());
       }
-    }
-
-    Element info = doc.select("#productDetails_feature_div").first();
-
-    if (info != null) {
-      description.append(info.html());
-    }
-
-    Element html = doc.select("#aplus3p_feature_div").first();
-
-    if (html != null) {
-      description.append(html);
     }
 
     return description.toString();

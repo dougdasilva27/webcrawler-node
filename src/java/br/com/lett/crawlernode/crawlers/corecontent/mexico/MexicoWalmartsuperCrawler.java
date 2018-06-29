@@ -4,18 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -24,247 +22,251 @@ import models.prices.Prices;
  * 
  * 1) Only one sku per page.
  * 
- * Price crawling notes:
- * 1) In time crawler was made, there no product unnavailable.
- * 2) There is no bank slip (boleto bancario) payment option.
- * 3) There is no installments for card payment. So we only have 
- * 1x payment, and to this value we use the cash price crawled from
- * the sku page. (nao existe divisao no cartao de credito).
+ * Price crawling notes: 1) In time crawler was made, there no product unnavailable. 2) There is no
+ * bank slip (boleto bancario) payment option. 3) There is no installments for card payment. So we
+ * only have 1x payment, and to this value we use the cash price crawled from the sku page. (nao
+ * existe divisao no cartao de credito).
  * 
  * @author Gabriel Dornelas
  *
  */
 public class MexicoWalmartsuperCrawler extends Crawler {
 
-	private final String HOME_PAGE = "https://super.walmart.com.mx";
+  private static final String HOME_PAGE = "https://super.walmart.com.mx";
 
-	public MexicoWalmartsuperCrawler(Session session) {
-		super(session);
-	}
+  public MexicoWalmartsuperCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	public boolean shouldVisit() {
-		String href = session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
+  @Override
+  public boolean shouldVisit() {
+    String href = session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
-		
-		if ( isProductPage(doc) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+  @Override
+  protected Object fetch() {
+    String url = session.getOriginalURL();
 
+    if (url.contains("?")) {
+      url = url.split("\\?")[0];
+    }
 
-			String internalId = crawlInternalId(doc);
-			String internalPid = crawlInternalPid(doc);
-			String name = crawlName(doc);
-			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(price);
-			boolean available = crawlAvailability(doc);
-			CategoryCollection categories = crawlCategories(doc);
-			String primaryImage = crawlPrimaryImage(doc);
-			String secondaryImages = crawlSecondaryImages(doc);
-			String description = crawlDescription(doc);
-			Integer stock = null;
-			Marketplace marketplace = crawlMarketplace(doc);
+    String finalParameter = CommonMethods.getLast(url.split("/"));
 
-			// Creating the product
-			Product product = ProductBuilder.create()
-					.setUrl(session.getOriginalURL())
-					.setInternalId(internalId)
-					.setInternalPid(internalPid)
-					.setName(name)
-					.setPrice(price)
-					.setPrices(prices)
-					.setAvailable(available)
-					.setCategory1(categories.getCategory(0))
-					.setCategory2(categories.getCategory(1))
-					.setCategory3(categories.getCategory(2))
-					.setPrimaryImage(primaryImage)
-					.setSecondaryImages(secondaryImages)
-					.setDescription(description)
-					.setStock(stock)
-					.setMarketplace(marketplace)
-					.build();
+    if (finalParameter.contains("_")) {
+      finalParameter = CommonMethods.getLast(finalParameter.split("_")).trim();
+    }
 
-			products.add(product);
+    String apiUrl =
+        "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
+            + finalParameter + "&skuId=" + finalParameter;
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
+    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+  }
 
-		return products;
+  @Override
+  public List<Product> extractInformation(JSONObject apiJson) throws Exception {
+    super.extractInformation(apiJson);
+    List<Product> products = new ArrayList<>();
 
-	}
+    if (apiJson.has("skuId")) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-details").first() != null) return true;
-		return false;
-	}
+      String internalId = crawlInternalId(apiJson);
+      String name = crawlName(apiJson);
+      Float price = crawlPrice(apiJson);
+      Prices prices = crawlPrices(price);
+      boolean available = crawlAvailability(apiJson);
+      CategoryCollection categories = crawlCategories(apiJson);
+      String primaryImage = crawlPrimaryImage(internalId);
+      String secondaryImages = crawlSecondaryImages(apiJson);
+      String description = crawlDescription(apiJson);
+      Integer stock = null;
 
-	private String crawlInternalId(Document document) {
-		String internalId = null;
+      // Creating the product
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(new Marketplace()).build();
 
-		Element internalIdElement = document.select("span[itemprop=productID]").first();
-		if (internalIdElement != null) {
-			internalId = internalIdElement.text();
-		}
+      products.add(product);
 
-		return internalId;
-	}
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+    }
 
-	/**
-	 * There is no internalPid.
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private String crawlInternalPid(Document document) {
-		String internalPid = null;
+    return products;
 
-		return internalPid;
-	}
+  }
 
-	private String crawlName(Document document) {
-		String name = null;
-		Element nameElement = document.select(".p-name h1 span").first();
+  private String crawlInternalId(JSONObject apiJson) {
+    String internalId = null;
 
-		if (nameElement != null) {
-			name = nameElement.text().trim();
-		}
+    if (apiJson.has("skuId")) {
+      internalId = apiJson.getString("skuId");
+    }
 
-		return name;
-	}
+    return internalId;
+  }
 
-	private Float crawlPrice(Document document) {
-		Float price = null;
+  private String crawlName(JSONObject apiJson) {
+    String name = null;
 
-		String priceText = null;
-		Element salePriceElement = document.select(".p-price.price").first();		
+    if (apiJson.has("skuDisplayNameText")) {
+      name = apiJson.getString("skuDisplayNameText");
+    }
 
-		if (salePriceElement != null) {
-			priceText = salePriceElement.text();
-		}
+    return name;
+  }
 
-		if (priceText != null && !priceText.isEmpty()) {
-			price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", "").trim());
-		}
+  private Float crawlPrice(JSONObject apiJson) {
+    Float price = null;
 
-		return price;
-	}
+    if (apiJson.has("specialPrice")) {
+      String priceText = apiJson.get("specialPrice").toString().replaceAll("[^0-9.]", "");
 
-	private boolean crawlAvailability(Document document) {
-		boolean available = false;
+      if (!priceText.isEmpty()) {
+        price = Float.parseFloat(priceText);
+      }
+    }
 
-		Element outOfStockElement = document.select(".slider-button input.enable").first();
-		if (outOfStockElement != null) {
-			available = true;
-		}
+    return price;
+  }
 
-		return available;
-	}
+  private boolean crawlAvailability(JSONObject apiJson) {
+    boolean available = false;
 
-	private Marketplace crawlMarketplace(Document document) {
-		return new Marketplace();
-	}
+    if (apiJson.has("status")) {
+      String status = apiJson.getString("status");
 
-	private String crawlPrimaryImage(Document document) {
-		String primaryImage = null;
-		Element primaryImageElement = document.select(".slider-img-display img").first();
+      available = status.equalsIgnoreCase("SELLABLE");
+    }
 
-		if (primaryImageElement != null) {			
-			primaryImage = primaryImageElement.attr("data-extralarge").trim();
-			
-			if(primaryImage.isEmpty()){
-				primaryImage = primaryImageElement.attr("url").trim();
-			}
-			
-			if(primaryImage.isEmpty()){
-				primaryImage = primaryImageElement.attr("src").trim();
-			}
-		}
-		
-		if(!primaryImage.contains("walmart") && !primaryImage.isEmpty()){
-			primaryImage = HOME_PAGE + primaryImage;
-		}
+    return available;
+  }
 
-		return primaryImage;
-	}
+  private String crawlPrimaryImage(String id) {
 
-	private String crawlSecondaryImages(Document document) {
-		String secondaryImages = null;
-		JSONArray secondaryImagesArray = new JSONArray();
+    return "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L.jpg";
+  }
 
-		Elements imagesElement = document.select(".slider-img-display img");
+  /**
+   * Não achei imagens secundarias
+   * 
+   * @param document
+   * @return
+   */
+  private String crawlSecondaryImages(JSONObject apiJson) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
 
-		for (int i = 1; i < imagesElement.size(); i++) { // first is the primary image
-			String image = HOME_PAGE + imagesElement.get(i).attr("data-extralarge").trim();
-			
-			if(image.isEmpty()){
-				image = imagesElement.get(i).attr("url").trim();
-			}
-			
-			if(image.isEmpty()){
-				image = imagesElement.get(i).attr("src").trim();
-			}
-			
-			secondaryImagesArray.put( image );	
-		}
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
 
-		if (secondaryImagesArray.length() > 0) {
-			secondaryImages = secondaryImagesArray.toString();
-		}
+    return secondaryImages;
+  }
 
-		return secondaryImages;
-	}
+  private CategoryCollection crawlCategories(JSONObject apiJson) {
+    CategoryCollection categories = new CategoryCollection();
 
-	private CategoryCollection crawlCategories(Document document) {
-		CategoryCollection categories = new CategoryCollection();
+    if (apiJson.has("breadcrumb")) {
+      JSONObject breadcrumb = apiJson.getJSONObject("breadcrumb");
 
-		Elements elementCategories = document.select(".product-nav > li a");
-		for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-			categories.add( elementCategories.get(i).text().trim() );
-		}
+      if (breadcrumb.has("departmentName")) {
+        categories.add(breadcrumb.get("departmentName").toString());
+      }
 
-		return categories;
-	}
+      if (breadcrumb.has("familyName")) {
+        categories.add(breadcrumb.get("familyName").toString());
+      }
 
-	private String crawlDescription(Document document) {
-		StringBuilder description = new StringBuilder();
-		Elements descriptionElements = document.select("#accordion-panel.accordion-prd-sectn");
-		
-		if (!descriptionElements.isEmpty()) {
-			description.append(descriptionElements.html());
-		}		
+      if (breadcrumb.has("fineLineName")) {
+        categories.add(breadcrumb.get("fineLineName").toString());
+      }
+    }
 
-		return description.toString();
-	}
+    return categories;
+  }
 
-	/**
-	 * There is no bankSlip price.
-	 * 
-	 * There is no card payment options, other than cash price.
-	 * So for installments, we will have only one installment for each
-	 * card brand, and it will be equals to the price crawled on the sku
-	 * main page.
-	 * 
-	 * @param doc
-	 * @param price
-	 * @return
-	 */
-	private Prices crawlPrices(Float price) {
-		Prices prices = new Prices();
+  private String crawlDescription(JSONObject apiJson) {
+    StringBuilder description = new StringBuilder();
 
-		if(price != null){
-			Map<Integer,Float> installmentPriceMap = new TreeMap<Integer, Float>();
-			installmentPriceMap.put(1, price);
-	
-			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-		}
+    if (apiJson.has("longDescription")) {
+      description.append("<div id=\"desc\"> <h3> Descripción </h3>");
+      description.append(apiJson.get("longDescription") + "</div>");
+    }
 
-		return prices;
-	}
+    StringBuilder nutritionalTable = new StringBuilder();
+    StringBuilder caracteristicas = new StringBuilder();
+
+    if (apiJson.has("attributesMap")) {
+      JSONObject attributesMap = apiJson.getJSONObject("attributesMap");
+
+      for (String key : attributesMap.keySet()) {
+        JSONObject attribute = attributesMap.getJSONObject(key);
+
+        if (attribute.has("attrGroupId")) {
+          JSONObject attrGroupId = attribute.getJSONObject("attrGroupId");
+
+          if (attrGroupId.has("optionValue")) {
+            String optionValue = attrGroupId.getString("optionValue");
+
+            if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
+              setAPIDescription(attribute, nutritionalTable);
+            } else if (optionValue.equalsIgnoreCase("Caracterisitcas")) {
+              setAPIDescription(attribute, caracteristicas);
+            }
+          }
+        }
+      }
+    }
+
+    if (!nutritionalTable.toString().isEmpty()) {
+      description.append("<div id=\"table\"> <h3> Nutrición </h3>");
+      description.append(nutritionalTable + "</div>");
+    }
+
+    if (!caracteristicas.toString().isEmpty()) {
+      description.append("<div id=\"short\"> <h3> Características </h3>");
+      description.append(caracteristicas + "</div>");
+    }
+
+    return description.toString();
+  }
+
+  private void setAPIDescription(JSONObject attributesMap, StringBuilder desc) {
+    if (attributesMap.has("attrDesc") && attributesMap.has("value")) {
+      desc.append("<div>");
+      desc.append("<span float=\"left\">" + attributesMap.get("attrDesc") + "&nbsp </span>");
+      desc.append("<span float=\"right\">" + attributesMap.get("value") + " </span>");
+      desc.append("</div>");
+    }
+  }
+
+  /**
+   * There is no bankSlip price.
+   * 
+   * There is no card payment options, other than cash price. So for installments, we will have only
+   * one installment for each card brand, and it will be equals to the price crawled on the sku main
+   * page.
+   * 
+   * @param doc
+   * @param price
+   * @return
+   */
+  private Prices crawlPrices(Float price) {
+    Prices prices = new Prices();
+
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+    }
+
+    return prices;
+  }
 
 }
