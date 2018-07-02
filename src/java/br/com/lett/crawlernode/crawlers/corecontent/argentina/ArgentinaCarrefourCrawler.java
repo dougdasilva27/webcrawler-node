@@ -2,7 +2,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -10,6 +16,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.remote.JsonException;
 
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -42,17 +49,12 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 
 		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-			JSONObject dataLayer = parseDataLayer(doc);
-			JSONObject dataBanking = parseDataBanking(doc);
-
-			System.out.println(dataBanking);
-
-			String internalId = crawlInternalId(dataLayer);
+			
+			String internalId = crawlInternalId(doc);
 			String internalPid = crawlInternalPid(session.getOriginalURL());
 			String name = crawlName(doc);
 			Float price = crawlPrice(doc);
-			Prices prices = crawlPrices(price, doc);
+			Prices prices = crawlPrices(doc);
 			boolean available = crawlAvailability(doc);
 			CategoryCollection categories = crawlCategories(doc);
 			String primaryImage = crawlPrimaryImage(doc);
@@ -60,17 +62,6 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 			String description = crawlDescription(doc);
 			Integer stock = null;
 			Marketplace marketplace = crawlMarketplace();
-
-			//				System.out.println("InternalId: " + internalId);
-			//				System.out.println("InternalPid: " + internalPid);
-			//				System.out.println("Name: " + name);
-			//				System.out.println("Available: " +   available);
-			//				System.out.println("Price: " + price);
-			//				System.out.println("Categories: " + categories.getCategory(0) + " > " + categories.getCategory(1) + " > " + categories.getCategory(2));
-			//				System.out.println("Primary Image: " + primaryImage);
-			//				System.out.println("Secondary Images: " + secondaryImages);
-			//				System.out.println("Marketplace: " + marketplace);
-			//				System.out.println("Description: " + description);
 
 			// Creating the product
 			Product product = ProductBuilder.create()
@@ -90,9 +81,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 					.setStock(stock)
 					.setMarketplace(marketplace)
 					.build();
-
-
-
+			
 			products.add(product);
 
 		} else {
@@ -147,9 +136,65 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 		return true;
 	}
 
-	private Prices crawlPrices(Float price, Document doc) {
+	/**
+	 * Possui várias bandeiras e para cada bandeira vários bancos.
+	 * Apenas o cartão da loja está sendo capturado.
+	 * 
+	 * @param price
+	 * @param doc
+	 * @return
+	 */
+	private Prices crawlPrices(Document doc) {
 		Prices prices = new Prices();
+		Pair<String, String> idTarjeta = getIdTarjetaCarrefourId(doc);
+		JSONObject dataBanking = parseDataBanking(doc);
+		if (idTarjeta != null) {
+			if (dataBanking.has(idTarjeta.getLeft())) {
+				JSONObject tarjeta = dataBanking.getJSONObject(idTarjeta.getLeft());
+				if (tarjeta.has(idTarjeta.getRight())) {
+					JSONObject tarjetaCarrefour = tarjeta.getJSONObject(idTarjeta.getRight());
+					if (tarjetaCarrefour.has("0")) {
+						JSONObject installmentsJson = tarjetaCarrefour.getJSONObject("0");
+						Set<String> keys = installmentsJson.keySet();
+						Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+						for (String key : keys) {
+							JSONObject installmentJson = installmentsJson.getJSONObject(key);
+							if (installmentJson.has("name")) {
+								Pattern p = Pattern.compile("(\\$[\\d\\.]+\\,\\d+)");
+								Matcher m = p.matcher(installmentJson.getString("name"));
+								if (m.find()) {
+									try {
+										Float installmentPrice = Float.parseFloat(m.group(1).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+										installmentPriceMap.put(Integer.parseInt(key), installmentPrice);
+									} catch (NumberFormatException ex) {
+										Logging.printLogWarn(logger, session, "Error parsing installment value from dataBanking. [" + ex.getMessage() + "]");
+									}
+								}
+							}
+						}
+						prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+					}
+				}
+			}
+		}
 		return prices;
+	}
+
+	/**
+	 * Cada badneira de cartão possuía um id, o qual deve
+	 * ser usado para pegar as informações das parcelas no
+	 * json parseado na função crawrlPrices.
+	 * 
+	 * @return
+	 */
+	private Pair<String, String> getIdTarjetaCarrefourId(Document doc) {
+		Elements elements = doc.select("#lc_pmnt_cc_id option");
+		for (Element e : elements) {
+			if (e.text().toLowerCase().contains("carrefour")) {
+				return Pair.of(e.attr("value"), e.text());
+			}
+		}
+		return null;
 	}
 
 	private Float crawlPrice(Document doc) {
@@ -196,7 +241,8 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 		return false;
 	}
 
-	private String crawlInternalId(JSONObject dataLayer) {
+	private String crawlInternalId(Document doc) {
+		JSONObject dataLayer = parseDataLayer(doc);
 		if (dataLayer.has("productos")) {
 			JSONArray products = dataLayer.getJSONArray("productos");
 			if (products.length() > 0) {
