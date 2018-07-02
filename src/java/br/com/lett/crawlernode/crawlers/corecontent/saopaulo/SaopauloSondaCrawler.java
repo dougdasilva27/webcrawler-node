@@ -21,7 +21,7 @@ import models.prices.Prices;
 
 public class SaopauloSondaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.sondadelivery.com.br/";
+  private static final String HOME_PAGE = "https://www.sondadelivery.com.br/";
 
   public SaopauloSondaCrawler(Session session) {
     super(session);
