@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,6 +33,21 @@ public class ArgentinaLaanonimaonlineCrawler extends Crawler {
 
   public ArgentinaLaanonimaonlineCrawler(Session session) {
     super(session);
+  }
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    // Criando cookie da cidade CABA
+    BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", "9%20de%20Julio");
+    cookie.setDomain("www.laanonimaonline.com");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    // Criando cookie da regiao sao nicolas
+    BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", "138");
+    cookie2.setDomain("www.laanonimaonline.com");
+    cookie2.setPath("/");
+    this.cookies.add(cookie2);
   }
 
   @Override

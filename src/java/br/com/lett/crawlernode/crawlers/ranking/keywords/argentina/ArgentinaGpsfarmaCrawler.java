@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -12,6 +16,30 @@ public class ArgentinaGpsfarmaCrawler extends CrawlerRankingKeywords {
   public ArgentinaGpsfarmaCrawler(Session session) {
     super(session);
   }
+
+  private List<Cookie> cookies = new ArrayList<>();
+
+  @Override
+  protected void processBeforeFetch() {
+    // Criando cookie da cidade CABA
+    BasicClientCookie cookie = new BasicClientCookie("GPS_CITY_ID", "32");
+    cookie.setDomain(".www.gpsfarma.com");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    // Criando cookie da regiao sao nicolas
+    BasicClientCookie cookie2 = new BasicClientCookie("GPS_REGION_ID", "509");
+    cookie2.setDomain(".www.gpsfarma.com");
+    cookie2.setPath("/");
+    this.cookies.add(cookie2);
+
+    // Criando cookie da loja 10
+    BasicClientCookie cookie3 = new BasicClientCookie("GPS_WAREHOUSE_ID", "10");
+    cookie3.setDomain(".www.gpsfarma.com");
+    cookie3.setPath("/");
+    this.cookies.add(cookie3);
+  }
+
 
   private String categoryUrl;
 

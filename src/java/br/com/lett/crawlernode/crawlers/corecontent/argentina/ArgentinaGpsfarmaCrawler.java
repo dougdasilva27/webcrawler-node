@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,6 +35,27 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
   }
 
   @Override
+  public void handleCookiesBeforeFetch() {
+    // Criando cookie da cidade CABA
+    BasicClientCookie cookie = new BasicClientCookie("GPS_CITY_ID", "32");
+    cookie.setDomain(".www.gpsfarma.com");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    // Criando cookie da regiao sao nicolas
+    BasicClientCookie cookie2 = new BasicClientCookie("GPS_REGION_ID", "509");
+    cookie2.setDomain(".www.gpsfarma.com");
+    cookie2.setPath("/");
+    this.cookies.add(cookie2);
+
+    // Criando cookie da loja 10
+    BasicClientCookie cookie3 = new BasicClientCookie("GPS_WAREHOUSE_ID", "10");
+    cookie3.setDomain(".www.gpsfarma.com");
+    cookie3.setPath("/");
+    this.cookies.add(cookie3);
+  }
+
+  @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
@@ -51,7 +73,7 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price);
+      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -196,10 +218,15 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
+      Element priceOld = doc.select(".old-price").first();
+      if (priceOld != null) {
+        prices.setPriceFrom(MathUtils.parseDouble(priceOld.text()));
+      }
+
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 

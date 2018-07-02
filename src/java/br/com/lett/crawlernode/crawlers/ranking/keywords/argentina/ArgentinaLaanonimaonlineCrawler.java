@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -13,6 +17,23 @@ public class ArgentinaLaanonimaonlineCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private List<Cookie> cookies = new ArrayList<>();
+
+  @Override
+  protected void processBeforeFetch() {
+    // Criando cookie da cidade CABA
+    BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", "9%20de%20Julio");
+    cookie.setDomain("www.laanonimaonline.com");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    // Criando cookie da regiao sao nicolas
+    BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", "138");
+    cookie2.setDomain("www.laanonimaonline.com");
+    cookie2.setPath("/");
+    this.cookies.add(cookie2);
+  }
+
   @Override
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
@@ -23,7 +44,7 @@ public class ArgentinaLaanonimaonlineCrawler extends CrawlerRankingKeywords {
     String url = "http://www.laanonimaonline.com/buscar?pag=" + this.currentPage + "&clave=" + this.keywordWithoutAccents.replace(" ", "%20");
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = fetchDocument(url, cookies);
     Elements products = this.currentDoc.select(".producto.item a.mostrar_listado");
 
     if (!products.isEmpty()) {
