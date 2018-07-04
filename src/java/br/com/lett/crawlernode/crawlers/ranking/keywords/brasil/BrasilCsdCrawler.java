@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
@@ -16,6 +18,7 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoscidadecancao/maringa-loja-brasil-01-zona-05-avenida-brasil";
+  private String apiVersion = "2018.07.04-0";
 
   @Override
   public void extractProductsFromCurrentPage() {
@@ -105,11 +108,17 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     headers.put("referer", HOME_PAGE);
     headers.put("sm-b2c",
         "{\"platform\":1,\"lojaName\":\"maringa-loja-brasil-01-zona-05-avenida-brasil\",\"redeName\":\"supermercadoscidadecancao\"}");
-    headers.put("sm-mmc", "2018.07.03-0");
+    headers.put("sm-mmc", this.apiVersion);
     headers.put("accept", "application/json, text/plain, */*");
     headers.put("Content-Type", "application/json");
 
     String page = fetchStringPOST("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch", payload, headers, null);
+
+    if (page == null || page.trim().isEmpty()) {
+      this.apiVersion = new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0";
+      headers.put("sm-mmc", this.apiVersion);
+      page = fetchStringPOST("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch", payload, headers, null);
+    }
 
     if (page != null && page.startsWith("{") && page.endsWith("}")) {
       try {

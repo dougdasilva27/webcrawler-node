@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -307,10 +309,15 @@ public class BrasilCsdCrawler extends Crawler {
     headers.put("referer", productUrl);
     headers.put("sm-b2c",
         "{\"platform\":1,\"lojaName\":\"maringa-loja-brasil-01-zona-05-avenida-brasil\",\"redeName\":\"supermercadoscidadecancao\"}");
-    headers.put("sm-mmc", "2018.07.03-0");
+    headers.put("sm-mmc", "2018.07.04-0");
     headers.put("accept", "application/json, text/plain, */*");
 
     String res = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+
+    if (res.isEmpty()) {
+      headers.put("sm-mmc", new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0");
+      res = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    }
 
     try {
       productsInfo = new JSONObject(res);
