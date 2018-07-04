@@ -66,7 +66,6 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     if (skus.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String description = crawlDescription(doc);
       CategoryCollection categories = crawlCategories(doc);
 
       for (Object sku : skus) {
@@ -77,6 +76,7 @@ public class UnitedstatesWalmartCrawler extends Crawler {
         String name = crawlName(skuJson, doc);
         String primaryImage = crawlPrimaryImage(skuJson);
         String secondaryImages = crawlSecondaryImages(skuJson);
+        String description = crawlDescription(skuJson);
         Map<String, Prices> marketplaceMap = crawlMarketplaces(skuJson);
         Marketplace marketplace =
             CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), session);
@@ -250,13 +250,11 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(JSONObject skuJson) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".prod-IDML-container").first();
-
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
+    if (skuJson.has(UnitedstatesWalmartCrawlerUtils.DESCRIPTION)) {
+      description.append(skuJson.get(UnitedstatesWalmartCrawlerUtils.DESCRIPTION));
     }
 
     return description.toString();

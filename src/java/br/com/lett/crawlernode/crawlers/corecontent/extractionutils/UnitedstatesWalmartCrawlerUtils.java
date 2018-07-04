@@ -68,6 +68,12 @@ public class UnitedstatesWalmartCrawlerUtils {
   public static final String NAME = "variationName";
 
   /**
+   * This field in santizedJson is of type {@link String}
+   */
+  public static final String DESCRIPTION = "description";
+
+
+  /**
    * This field in santizedJson is of type {@link JSONObject}
    */
   public static final String RATING = "rating";
@@ -123,6 +129,7 @@ public class UnitedstatesWalmartCrawlerUtils {
           santizedProductInfo.put(INTERNAL_PID, productJson.get("usItemId"));
         }
 
+        santizedProductInfo.put(DESCRIPTION, crawlDescription(product));
         santizedProductInfo.put(NAME, crawlName(productJson));
         santizedProductInfo.put(OFFERS, crawlOffers(productJson, offers));
         santizedProductInfo.put(IMAGES, crawlImages(productJson, images));
@@ -131,6 +138,114 @@ public class UnitedstatesWalmartCrawlerUtils {
     }
 
     return products;
+  }
+
+  private static String crawlDescription(JSONObject product) {
+    StringBuilder desc = new StringBuilder();
+
+    if (product.has("idmlMap")) {
+      JSONObject idmlMap = product.getJSONObject("idmlMap");
+      JSONObject descriptions = idmlMap.getJSONObject(idmlMap.keys().next());
+
+      if (descriptions.has("modules")) {
+        JSONObject modules = descriptions.getJSONObject("modules");
+
+        for (String key : modules.keySet()) {
+          if (!key.equalsIgnoreCase("GeneralInfo")) {
+            desc.append(crawlSpecificDescription(modules, key));
+          }
+        }
+      }
+    }
+
+    return desc.toString();
+  }
+
+  private static String crawlSpecificDescription(JSONObject modules, String key) {
+    StringBuilder desc = new StringBuilder();
+
+    if (modules.has(key)) {
+      JSONObject module = modules.getJSONObject(key);
+      desc.append("<div id=\"" + key + "\">");
+
+      for (String descKey : module.keySet()) {
+        JSONObject descObject = module.getJSONObject(descKey);
+
+        if (descObject.has("displayName")) {
+          desc.append("<div id=\"" + descKey + "\">");
+          desc.append("<strong> " + descObject.get("displayName") + " &nbsp</strong>");
+
+          if (descObject.has("displayValue")) {
+            desc.append("<span> " + descObject.get("displayValue") + " &nbsp</span>");
+          } else if (descObject.has("values")) {
+            desc.append("<table id=\"" + descKey + "\">");
+            desc.append(crawlDescriptionValues(descObject));
+            desc.append("</table>");
+          } else if (descObject.has("children")) {
+            JSONArray children = descObject.getJSONArray("children");
+            desc.append("<table id=\"" + descKey + "\">");
+
+            for (Object child : children) {
+              JSONObject childObj = (JSONObject) child;
+
+              if (descObject.has("displayName")) {
+                desc.append("<div id=\"" + descKey + "\">");
+                desc.append("<strong> " + descObject.get("displayName") + " &nbsp</strong>");
+
+                if (childObj.has("values")) {
+                  desc.append("<table id=\"" + descObject.get("displayName") + "\">");
+                  desc.append(crawlDescriptionValues(childObj));
+                  desc.append("<\table>");
+                }
+              }
+            }
+
+            desc.append("<\table>");
+          }
+
+          desc.append("</div>");
+        }
+      }
+
+      desc.append("</div>");
+    }
+
+    return desc.toString();
+  }
+
+
+  private static String crawlDescriptionValues(JSONObject descObject) {
+    StringBuilder desc = new StringBuilder();
+
+    JSONArray values = descObject.getJSONArray("values");
+
+    for (Object value : values) {
+      desc.append("<tr>");
+
+      if (value instanceof String) {
+        desc.append(value);
+      } else {
+        JSONObject valueObj = new JSONObject();
+
+        if (value instanceof JSONObject) {
+          valueObj = (JSONObject) value;
+        } else if (value instanceof JSONArray) {
+          valueObj = ((JSONArray) value).length() > 0 ? ((JSONArray) value).getJSONObject(0) : new JSONObject();
+        }
+
+        if (valueObj.length() > 0) {
+          JSONObject valueContent = valueObj.getJSONObject(valueObj.keys().next());
+
+          if (valueContent.has("displayName") && valueContent.has("displayValue")) {
+            desc.append("<td> " + valueContent.get("displayName") + "</td>");
+            desc.append("<td> " + valueContent.get("displayValue") + "</td>");
+          }
+        }
+      }
+      desc.append("<\tr>");
+    }
+
+    return desc.toString();
   }
 
   private static JSONObject crawlRating(JSONObject product) {
