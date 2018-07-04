@@ -69,6 +69,12 @@ public class RatingReviewCrawler extends Task {
   public void onFinish() {
     List<SessionError> errors = session.getErrors();
 
+    // close the webdriver
+    if (webdriver != null) {
+      Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
+      webdriver.terminate();
+    }
+
     // errors collected manually
     // they can be exceptions or business logic errors
     // and are all gathered inside the session
