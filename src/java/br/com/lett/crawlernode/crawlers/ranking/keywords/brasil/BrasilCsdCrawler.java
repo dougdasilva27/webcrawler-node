@@ -18,7 +18,7 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoscidadecancao/maringa-loja-brasil-01-zona-05-avenida-brasil";
-  private String apiVersion = "2018.07.04-0";
+  private String apiVersion = "true";
 
   @Override
   public void extractProductsFromCurrentPage() {
