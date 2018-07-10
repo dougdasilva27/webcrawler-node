@@ -64,38 +64,17 @@ public class GPACrawler {
 
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
 
-      // InternalId
       String internalId = crawlInternalId(jsonSku);
-
-      // Pid
       String internalPid = crawlInternalPid(jsonSku);
-
-      // Categories
       CategoryCollection categories = crawlCategories(jsonSku);
-
-      // Description
       String description = crawlDescription(jsonSku);
-
-      // Availability
       boolean available = crawlAvailability(jsonSku);
-
-      // Price
       Float price = available ? crawlPrice(jsonSku) : null;
       Double priceFrom = available ? crawlPriceFrom(jsonSku) : null;
-
-      // Primary image
       String primaryImage = crawlPrimaryImage(jsonSku);
-
-      // Name
       String name = crawlName(jsonSku);
-
-      // Secondary images
       String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
-
-      // Prices
       Prices prices = crawlPrices(price, priceFrom);
-
-      // Stock
       Integer stock = null;
 
       // Pid não sendo null, o produto não está void
@@ -190,28 +169,11 @@ public class GPACrawler {
       }
     }
 
-
-    if (json.has("productPromotion") && json.get("productPromotion") instanceof JSONObject) {
-      JSONObject productPromotion = json.getJSONObject("productPromotion");
-
-      if (productPromotion.has("unitPrice")) {
-        Object pObj = productPromotion.get("unitPrice");
-
-        if (pObj instanceof Double) {
-          price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
-        }
-      }
-    }
-
     return price;
   }
 
   private boolean crawlAvailability(JSONObject json) {
-    if (json.has("stock") && json.getBoolean("stock")) {
-      return true;
-    }
-
-    return false;
+    return json.has("stock") && json.getBoolean("stock");
   }
 
   private String crawlPrimaryImage(JSONObject json) {

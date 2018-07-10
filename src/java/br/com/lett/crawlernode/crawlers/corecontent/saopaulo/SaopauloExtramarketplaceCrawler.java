@@ -179,25 +179,27 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
           Element sku = productVariationElements.get(i);
 
-          // InternalId
           String variationInternalID = internalPid + "-" + sku.attr("value");
-
-          // Getting name variation
+          boolean unnavailable = sku.text().contains("Esgotado");
           String variationName = assembleVariationName(name, sku);
+          Map<String, Prices> marketplaceMap = new HashMap<>();
 
-          Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
-          Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
-          Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, unnavailableForAll);
-          boolean available = crawlAvailability(marketplaceMap, unnavailableForAll);
+          if (!unnavailable) {
+            Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
+            marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
+          }
+
+          Marketplace marketplace = unnavailable ? new Marketplace() : assembleMarketplaceFromMap(marketplaceMap);
+          boolean available = !unnavailable && crawlAvailability(marketplaceMap, unnavailableForAll);
           Prices prices = crawlPricesForProduct(marketplaceMap);
-          Float price = this.crawlPrice(prices);
+          Float variationPrice = this.crawlPrice(prices);
 
           Product product = new Product();
           product.setUrl(session.getOriginalURL());
           product.setInternalId(variationInternalID);
           product.setInternalPid(internalPid);
           product.setName(variationName);
-          product.setPrice(price);
+          product.setPrice(variationPrice);
           product.setPrices(prices);
           product.setCategory1(category1);
           product.setCategory2(category2);
@@ -228,7 +230,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
         // Document marketplace
         Document docMarketplace = fetchDocumentMarketPlace(internalIdSecondPart, modifiedURL);
         Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, unnavailableForAll);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
         boolean available = crawlAvailability(marketplaceMap, unnavailableForAll);
         Prices prices = crawlPricesForProduct(marketplaceMap);
         Float price = this.crawlPrice(prices);
@@ -630,7 +632,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     return "";
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, boolean availableForAll) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
     Marketplace marketplace = new Marketplace();
 
     for (String sellerName : marketplaceMap.keySet()) {
@@ -686,24 +688,21 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
   private Document getDocumentMarketpalceForSku(Map<String, Document> documentsMarketPlaces, String name, Element sku, String url) {
     Document docMarketplaceInfo = new Document(url);
 
-    if (!sku.text().contains("Esgotado")) {
-      if (documentsMarketPlaces.size() > 0) {
-        if (documentsMarketPlaces.size() == 1) {
-          for (String key : documentsMarketPlaces.keySet()) {
-            docMarketplaceInfo = documentsMarketPlaces.get(key);
-          }
-        } else {
-          String[] tokens = name.split("-");
-          String nameV = tokens[tokens.length - 1].trim().toLowerCase();
+    if (documentsMarketPlaces.size() > 0) {
 
-          if (documentsMarketPlaces.containsKey(nameV)) {
-            docMarketplaceInfo = documentsMarketPlaces.get(nameV);
-          }
+      if (documentsMarketPlaces.size() == 1) {
+        docMarketplaceInfo = documentsMarketPlaces.entrySet().iterator().next().getValue();
+      } else if (name != null) {
+        String[] tokens = name.split("-");
+        String nameV = tokens[tokens.length - 1].trim().toLowerCase();
+
+        if (documentsMarketPlaces.containsKey(nameV)) {
+          docMarketplaceInfo = documentsMarketPlaces.get(nameV);
         }
-
-      } else {
-        docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
       }
+
+    } else {
+      docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
     }
 
     return docMarketplaceInfo;

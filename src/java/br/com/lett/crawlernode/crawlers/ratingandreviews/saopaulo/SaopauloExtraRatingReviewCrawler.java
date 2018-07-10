@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
@@ -53,6 +54,8 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
@@ -61,7 +64,7 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
 
 
   private String crawlInternalId(String productUrl) {
-    return productUrl.replace(HOME_PAGE, "").split("/")[2];
+    return CommonMethods.getLast(productUrl.replace(HOME_PAGE, "").split("/"));
   }
 
   /**
@@ -138,7 +141,6 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     String url = "https://api.gpa.digital/pa/products/" + id + "/review";
-
     JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (apiGPA.has("content")) {

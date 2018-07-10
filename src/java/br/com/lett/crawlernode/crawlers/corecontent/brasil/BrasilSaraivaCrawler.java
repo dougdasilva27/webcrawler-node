@@ -76,7 +76,9 @@ public class BrasilSaraivaCrawler extends Crawler {
       String description = crawlDescription(doc);
 
       // price is not displayed when sku is unavailable
-      Float price = crawlPrice(apiJson);
+      // Ex:
+      // https://www.saraiva.com.br/notebook-acerr-es1-572-37ep-branco-156-processador-intelr-coretm-i3-6100u-4gb-hd-1tb-windows-10-9400154.html
+      Float price = available ? crawlPrice(apiJson) : null;
       Prices prices = crawlPrices(apiJson, price);
 
       // Categories

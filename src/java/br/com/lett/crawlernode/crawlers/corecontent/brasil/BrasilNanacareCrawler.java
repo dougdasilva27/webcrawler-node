@@ -210,7 +210,8 @@ public class BrasilNanacareCrawler extends Crawler {
     Element elementDescription = doc.select(".prod-description").first();
 
     if (elementDescription != null) {
-      description.append(elementDescription.html());
+      elementDescription.select("#tab-testimonials").remove();
+      description.append(elementDescription.html().replace(">Depoimentos</a>", "></a>"));
     }
 
     return description.toString();

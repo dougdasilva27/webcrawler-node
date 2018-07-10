@@ -52,7 +52,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
+      ratingReviews.setInternalId(crawlInternalId(api));
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
     }
@@ -60,8 +60,14 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
     return ratingReviewsCollection;
   }
 
-  private String crawlInternalId(String productUrl) {
-    return productUrl.replace(HOME_PAGE, "").split("/")[2];
+  private String crawlInternalId(JSONObject json) {
+    String internalId = null;
+
+    if (json.has("sku")) {
+      internalId = json.getString("sku");
+    }
+
+    return internalId;
   }
 
   /**

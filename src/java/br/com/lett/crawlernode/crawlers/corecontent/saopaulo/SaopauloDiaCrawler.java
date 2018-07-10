@@ -64,7 +64,7 @@ public class SaopauloDiaCrawler extends Crawler {
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(price, doc);
-      boolean available = crawlAvailability(doc);
+      boolean available = crawlAvailability(doc) && price != null;
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
@@ -128,7 +128,7 @@ public class SaopauloDiaCrawler extends Crawler {
   private Float crawlPrice(Document document) {
     Float price = null;
 
-    Element salePriceElement = document.select(".bestPrice .val").first();
+    Element salePriceElement = document.select(".price-line .withStock .bestPrice .val").first();
     if (salePriceElement != null) {
       price = Float.parseFloat(salePriceElement.attr("content"));
     }

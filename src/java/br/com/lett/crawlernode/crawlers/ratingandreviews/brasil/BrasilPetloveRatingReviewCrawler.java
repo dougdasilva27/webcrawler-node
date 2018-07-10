@@ -89,7 +89,7 @@ public class BrasilPetloveRatingReviewCrawler extends RatingReviewCrawler {
     Element rating = doc.select(".box-rating [itemprop=reviewCount]").first();
 
     if (rating != null) {
-      String votes = rating.attr("content");
+      String votes = rating.text().replaceAll("[^0-9]", "").trim();
 
       if (!votes.isEmpty()) {
         totalRating = Integer.parseInt(votes);

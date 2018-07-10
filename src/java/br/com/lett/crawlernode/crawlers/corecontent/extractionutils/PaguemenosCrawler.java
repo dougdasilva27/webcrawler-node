@@ -278,7 +278,7 @@ public class PaguemenosCrawler {
       description.append(shortDescription.html());
     }
 
-    Element elementInformation = doc.select(".productSpecification").first();
+    Element elementInformation = doc.select("#specification").first();
     if (elementInformation != null) {
       description.append(elementInformation.html());
     }

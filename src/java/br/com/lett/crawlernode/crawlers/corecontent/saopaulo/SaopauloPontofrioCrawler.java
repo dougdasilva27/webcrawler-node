@@ -186,28 +186,19 @@ public class SaopauloPontofrioCrawler extends Crawler {
 
           Element sku = productVariationElements.get(i);
 
-          // InternalId
           String variationInternalID = internalPid + "-" + sku.attr("value");
+          boolean unnavailable = sku.text().contains("Esgotado");
+          String variationName = assembleVariationName(name, sku);
+          Map<String, Prices> marketplaceMap = new HashMap<>();
 
-          // Getting name variation
-          String variationName = makeVariationName(name, sku);
+          if (!unnavailable) {
+            Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
+            marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
+          }
 
-          // Document marketplace
-          Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
-
-          // Marketplace map
-          Map<String, Prices> marketplaceMap = this.crawlMarketplaces(docMarketplace, principalSeller, doc);
-
-          // Assemble marketplace from marketplace map
-          Marketplace marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
-
-          // Available
-          boolean available = this.crawlAvailability(marketplaceMap);
-
-          // Prices
+          Marketplace marketplace = unnavailable ? new Marketplace() : assembleMarketplaceFromMap(marketplaceMap);
+          boolean available = !unnavailable && crawlAvailability(marketplaceMap);
           Prices prices = crawlPricesForProduct(marketplaceMap);
-
-          // Price
           Float variationPrice = this.crawlPrice(prices);
 
           Product product = new Product();
@@ -521,16 +512,17 @@ public class SaopauloPontofrioCrawler extends Crawler {
   }
 
 
-  private String makeVariationName(String name, Element sku) {
+  private String assembleVariationName(String name, Element sku) {
     String nameV = name;
 
-    String[] tokens = sku.text().split("\\|");
-    String variation = tokens[0].trim();
+    if (sku != null) {
+      String[] tokens = sku.text().split("\\|");
+      String variation = tokens[0].trim();
 
-    if (!variation.isEmpty()) {
-      nameV += " - " + variation;
+      if (!variation.isEmpty()) {
+        nameV += (" - " + variation).trim();
+      }
     }
-
     return nameV;
   }
 
@@ -711,25 +703,21 @@ public class SaopauloPontofrioCrawler extends Crawler {
 
   private Document getDocumentMarketpalceForSku(Map<String, Document> documentsMarketPlaces, String name, Element sku, String url) {
     Document docMarketplaceInfo = new Document(url);
-    if (!sku.text().contains("Esgotado")) {
-      if (documentsMarketPlaces.size() > 0) {
+    if (documentsMarketPlaces.size() > 0) {
 
-        if (documentsMarketPlaces.size() == 1) {
-          for (String key : documentsMarketPlaces.keySet()) {
-            docMarketplaceInfo = documentsMarketPlaces.get(key);
-          }
-        } else {
-          String[] tokens = name.split("-");
-          String nameV = tokens[tokens.length - 1].trim().toLowerCase();
+      if (documentsMarketPlaces.size() == 1) {
+        docMarketplaceInfo = documentsMarketPlaces.entrySet().iterator().next().getValue();
+      } else if (name != null) {
+        String[] tokens = name.split("-");
+        String nameV = tokens[tokens.length - 1].trim().toLowerCase();
 
-          if (documentsMarketPlaces.containsKey(nameV)) {
-            docMarketplaceInfo = documentsMarketPlaces.get(nameV);
-          }
+        if (documentsMarketPlaces.containsKey(nameV)) {
+          docMarketplaceInfo = documentsMarketPlaces.get(nameV);
         }
-
-      } else {
-        docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
       }
+
+    } else {
+      docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
     }
 
     return docMarketplaceInfo;
