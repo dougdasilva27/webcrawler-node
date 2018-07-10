@@ -271,6 +271,21 @@ public class SaopauloOnofreCrawler extends Crawler {
         }
       }
 
+      Element installment = doc.select(".price-box__portion span").first();
+      if (installment != null) {
+        Element installmentNumber = installment.select("u").first();
+        Element installmentValue = installment.select("u strong").first();
+
+        if (installmentNumber != null && installmentValue != null) {
+          String parcel = installmentNumber.ownText().replaceAll("[^0-9]", "").trim();
+          Float value = MathUtils.parseFloat(installmentValue.ownText());
+
+          if (!parcel.isEmpty() && value != null) {
+            installmentPriceMap.put(Integer.parseInt(parcel), value);
+          }
+        }
+      }
+
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
