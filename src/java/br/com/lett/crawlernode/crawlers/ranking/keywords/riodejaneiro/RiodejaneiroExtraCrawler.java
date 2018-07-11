@@ -22,7 +22,7 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords {
   @Override
   protected void processBeforeFetch() {
     if (this.cookies.isEmpty()) {
-      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "241");
+      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "42");
       cookie.setDomain(".deliveryextra.com");
       cookie.setPath("/");
       cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
@@ -31,31 +31,19 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords {
     }
   }
 
+  private String keyword;
+
   @Override
   public void extractProductsFromCurrentPage() {
     // número de produtos por página do market
     this.pageSize = 0;
 
     this.log("Página " + this.currentPage);
+    JSONObject search = crawlSearchApi();
 
-    // monta a url com a keyword e a página
-    String url = "https://deliveryextra.resultspage.com/search?af=&cnt=36&ep.selected_store=241&isort=&lot=json&p=Q&"
-        + "ref=www.deliveryextra.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
-        + "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36" + "&w="
-        + this.keywordEncoded;
-
-    this.log("Link onde são feitos os crawlers: " + url);
-
-    // chama função de pegar a url
-    String searchString = fetchGETString(url, cookies);
-
-    JSONObject search = new JSONObject(searchString);
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado
     if (search.has("results") && search.getJSONArray("results").length() > 0) {
       JSONArray products = search.getJSONArray("results");
 
-      // se o total de busca não foi setado ainda, chama a função para
       if (this.totalProducts == 0) {
         setTotalProducts(search);
       }
@@ -88,7 +76,6 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
   }
-
 
   @Override
   protected boolean hasNextPage() {
@@ -134,5 +121,34 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingKeywords {
     }
 
     return urlProduct;
+  }
+
+  private JSONObject crawlSearchApi() {
+    String url = "https://deliveryextra.resultspage.com/search?af=&cnt=36&ep.selected_store=42&isort=&lot=json&p=Q&"
+        + "ref=www.paodeacucar.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
+        + "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36" + "&w="
+        + this.keyword;
+
+    JSONObject searchApi = fetchJSONObject(url, cookies);
+
+    if (this.currentPage == 1 && searchApi.has("merch")) {
+      JSONObject merch = searchApi.getJSONObject("merch");
+
+      if (merch.has("jumpurl")) {
+        String jumpurl = merch.get("jumpurl").toString();
+
+        if (jumpurl.contains("especial")) {
+          String newKeyword = CommonMethods.getLast(jumpurl.split("\\?")[0].split("/"));
+          url = url.replace(this.keyword, newKeyword);
+          this.keyword = newKeyword;
+
+          searchApi = fetchJSONObject(url, cookies);
+        }
+      }
+    }
+
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    return searchApi;
   }
 }
