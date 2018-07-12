@@ -283,6 +283,44 @@ public class GETFetcher {
     String requestHash = DataFetcher.generateRequestHash(session);
 
     try {
+
+
+      // Request via fetcher on first attempt
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
+        if (cookies != null && !cookies.isEmpty()) {
+          StringBuilder cookiesHeader = new StringBuilder();
+
+          for (Cookie c : cookies) {
+            cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+          }
+
+          headers.put("Cookie", cookiesHeader.toString());
+        }
+
+        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
+        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
+
+        if (response.has("response")) {
+          DataFetcher.setRequestProxyForFetcher(session, response, url);
+          session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
+          }
+
+          return content;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+          throw new ResponseCodeException(500);
+        }
+      }
+
       randUserAgent = headers.containsKey("User-Agent") ? headers.get("User-Agent") : DataFetcher.randUserAgent();
       randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
