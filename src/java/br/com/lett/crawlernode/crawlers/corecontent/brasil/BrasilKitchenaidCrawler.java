@@ -69,8 +69,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
 
         JSONObject jsonProduct = crawlApi(internalId);
         String primaryImage = crawlPrimaryImage(jsonProduct);
-        String secondaryImages = /* crawlSecondaryImages(jsonProduct) */ null; // at the moment this crawler was made, secondary pics not appear in
-                                                                               // product page
+        String secondaryImages = crawlSecondaryImages(jsonProduct);
         Prices prices = crawlPrices(internalId, price, jsonSku, doc);
         Integer stock = crawlStock(jsonProduct);
 

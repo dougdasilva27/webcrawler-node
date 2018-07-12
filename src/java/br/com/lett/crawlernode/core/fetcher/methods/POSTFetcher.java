@@ -59,7 +59,9 @@ public class POSTFetcher {
   // private static final String FETCHER_HOST_OLD_ACCOUNT =
   // "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
   public static final String FETCHER_HOST = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
-  public static final String FETCHER_HOST_DEV = "http://placeholder-fetcher-dev.us-east-1.elasticbeanstalk.com";
+  public static final String FETCHER_HOST_DEV = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
+  // public static final String FETCHER_HOST_DEV =
+  // "http://placeholder-fetcher-dev.us-east-1.elasticbeanstalk.com";
 
   private static final String FETCHER_PARAMETER_URL = "url";
   // private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
@@ -730,6 +732,14 @@ public class POSTFetcher {
     DataFetcher.setRequestProxyForFetcher(session, response, url);
     if (response.has("response")) {
       session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+    }
+
+    if (response.has("statistics")) {
+      JSONObject statistics = response.getJSONObject("statistics");
+
+      if (statistics.has("request_id")) {
+        Logging.printLogInfo(logger, session, "Request Fetcher Id: " + statistics.get("request_id"));
+      }
     }
 
     return response;
