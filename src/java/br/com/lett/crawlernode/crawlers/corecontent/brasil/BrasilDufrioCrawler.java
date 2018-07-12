@@ -265,16 +265,7 @@ public class BrasilDufrioCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document document) {
-    boolean available;
-    Element outOfStockElement = document.select("#aviseme").first();
-
-    if (outOfStockElement != null) {
-      available = false;
-    } else {
-      available = true;
-    }
-
-    return available;
+    return document.select("#aviseme, #sobconsulta").isEmpty();
   }
 
   private Marketplace crawlMarketplace() {

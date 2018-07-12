@@ -196,7 +196,13 @@ public class BrasilNagemCrawler extends Crawler {
         String flixMediaDesc = CrawlerUtils.crawlDescriptionFromFlixMedia("4154", ean, session);
 
         description.append(flixMediaDesc);
-      } else if (!descriptionElement.text().trim().isEmpty()) {
+      } else if (detalheNagem != null) {
+        description.append(detalheNagem.html());
+      }
+
+
+
+      if (!descriptionElement.text().trim().isEmpty()) {
         description.append(descriptionElement.html());
       }
     }

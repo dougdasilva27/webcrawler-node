@@ -29,7 +29,7 @@ public class BrasiliaPaodeacucarCrawler extends CrawlerRankingKeywords {
     this.cookies.add(cookie);
   }
 
-  private String keyword;
+  private String keyword = this.keywordEncoded;
 
   @Override
   public void extractProductsFromCurrentPage() {

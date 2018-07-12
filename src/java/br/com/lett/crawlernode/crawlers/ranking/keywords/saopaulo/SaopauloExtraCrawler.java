@@ -31,7 +31,7 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String keyword;
+  private String keyword = this.keywordEncoded;
 
   @Override
   public void extractProductsFromCurrentPage() {
@@ -125,7 +125,7 @@ public class SaopauloExtraCrawler extends CrawlerRankingKeywords {
 
   private JSONObject crawlSearchApi() {
     String url = "https://deliveryextra.resultspage.com/search?af=&cnt=36&ep.selected_store=241&isort=&lot=json&p=Q&"
-        + "ref=www.paodeacucar.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
+        + "ref=www.deliveryextra.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
         + "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36" + "&w="
         + this.keyword;
 

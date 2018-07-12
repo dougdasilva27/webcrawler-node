@@ -61,6 +61,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", ";", false);
       JSONObject productJSON = chaordic.has("product") ? chaordic.getJSONObject("product") : chaordic;
 
+      String ean = crawlEan(productJSON);
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(productJSON);
 
@@ -73,7 +74,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, ean);
 
       // price is not displayed when sku is unavailable
       // Ex:
@@ -136,6 +137,21 @@ public class BrasilSaraivaCrawler extends Crawler {
     }
 
     return internalId;
+  }
+
+  /**
+   * 
+   * @param productJSON
+   * @return
+   */
+  private String crawlEan(JSONObject productJSON) {
+    String ean = null;
+
+    if (productJSON.has("ean_code")) {
+      ean = productJSON.getString("ean_code");
+    }
+
+    return ean;
   }
 
   /**
@@ -444,7 +460,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document document) {
+  private String crawlDescription(Document document, String ean) {
     StringBuilder description = new StringBuilder();
 
     Element skuInformation = document.select("#product-information").first();
@@ -466,6 +482,8 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (specialInfo != null) {
       description.append(specialInfo.html());
     }
+
+    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, session));
 
     return description.toString();
   }
