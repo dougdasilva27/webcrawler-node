@@ -128,8 +128,7 @@ public class Session {
   }
 
   public int getMaxConnectionAttemptsCrawler() {
-    return 2;
-    // return this.maxConnectionAttemptsWebcrawler;
+    return this.maxConnectionAttemptsWebcrawler;
   }
 
   public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
