@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -33,6 +34,12 @@ public class BrasilCallfarmaCrawler extends Crawler {
     super(session);
   }
 
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, new ArrayList<>(), "www.callfarma.com.br", "/", session);
+  }
+
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
@@ -44,7 +51,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
@@ -76,11 +83,8 @@ public class BrasilCallfarmaCrawler extends Crawler {
 
   }
 
-  private boolean isProductPage(String url) {
-    if (url.startsWith(HOME_PAGE + "/produto/")) {
-      return true;
-    }
-    return false;
+  private boolean isProductPage(Document doc) {
+    return !doc.select("input[name=produtoCodigo]").isEmpty();
   }
 
   private String crawlInternalId(Document doc) {

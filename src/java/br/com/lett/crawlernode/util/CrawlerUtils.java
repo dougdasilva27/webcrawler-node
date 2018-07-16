@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
@@ -23,6 +27,36 @@ import models.prices.Prices;
 public class CrawlerUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
+
+
+  /**
+   * Crawl cookies from a page
+   * 
+   * @param url - page where are cookies
+   * @param cookiesToBeCrawled - list(string) of cookies to be crawled
+   * @param domain - domain to set in cookie
+   * @param path - path to set in cookie
+   * @param session - crawler session
+   * @return List<Cookie>
+   */
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
+    List<Cookie> cookies = new ArrayList<>();
+
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookies, 1);
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      String cookieName = entry.getKey().trim();
+
+      if (cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieName)) {
+        BasicClientCookie cookie = new BasicClientCookie(cookieName, entry.getValue());
+        cookie.setDomain(domain);
+        cookie.setPath(path);
+        cookies.add(cookie);
+      }
+
+    }
+
+    return cookies;
+  }
 
   /**
    * Crawl skuJson from html in VTEX Sites
