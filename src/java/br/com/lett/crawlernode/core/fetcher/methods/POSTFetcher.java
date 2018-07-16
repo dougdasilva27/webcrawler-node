@@ -43,6 +43,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloRappiCrawler;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -721,7 +722,17 @@ public class POSTFetcher {
       headers.put("Cookie", cookiesHeader.toString());
     }
 
-    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, new ArrayList<>(), null);
+    List<String> forcedProxies = new ArrayList<>();
+    if (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")) {
+      forcedProxies.add(ProxyCollection.BUY);
+      forcedProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
+      forcedProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
+    } else if (url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com")) {
+      forcedProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
+      forcedProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
+    }
+
+    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, forcedProxies, null);
     JSONObject response = new JSONObject();
     try {
       response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);

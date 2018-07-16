@@ -120,8 +120,7 @@ public class GETFetcher {
           headers.put("Cookie", cookiesHeader.toString());
         }
 
-        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
-        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
+        JSONObject response = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           DataFetcher.setRequestProxyForFetcher(session, response, url);
@@ -297,8 +296,7 @@ public class GETFetcher {
           headers.put("Cookie", cookiesHeader.toString());
         }
 
-        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
-        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
+        JSONObject response = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           DataFetcher.setRequestProxyForFetcher(session, response, url);
