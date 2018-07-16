@@ -914,6 +914,18 @@ public class POSTFetcher {
       payload.put(FETCHER_PARAMETER_REQUEST_PARAMETERS, requestParameters);
     }
 
+
+    if (anyProxies.isEmpty()) {
+      if (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")) {
+        anyProxies.add(ProxyCollection.BUY);
+        anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
+        anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
+      } else if (url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com")) {
+        anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
+        anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
+      }
+    }
+
     if (specificProxy != null) {
       JSONObject specific = new JSONObject();
       specific.put("specific", specificProxy);
