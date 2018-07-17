@@ -42,7 +42,7 @@ public class BrasilColomboCrawler extends Crawler {
 
     Element productElement = doc.select(".detalhe-produto").first();
 
-    if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && !session.getOriginalURL().contains("?") && (productElement != null)) {
+    if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
