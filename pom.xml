@@ -17,7 +17,7 @@
 		<selenium.version>2.47.0</selenium.version>
 		<s3.version>1.11.194</s3.version>
 		<sqs.version>1.11.194</sqs.version>
-		<db.version>3.1.0</db.version>
+		<db.version>4.3.0</db.version>
 		<jsoup.version>1.9.2</jsoup.version>
 		<models.version>2.1.5</models.version>
 		<logback.version>1.2.3</logback.version>

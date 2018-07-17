@@ -52,6 +52,9 @@ public class Session {
   /** The maximum number of connection attempts to be made when downloading images */
   protected int maxConnectionAttemptsImages;
 
+  /** Response when request product page */
+  protected Object productPageResponse;
+
   protected long startTime;
 
   /**
@@ -201,6 +204,14 @@ public class Session {
   public int getTrucoAttempts() {
     /* returns -1 by default */
     return -1;
+  }
+
+  public Object getProductPageResponse() {
+    return productPageResponse;
+  }
+
+  public void setProductPageResponse(Object productPageResponse) {
+    this.productPageResponse = productPageResponse;
   }
 
   public void incrementVoidAttemptsCounter() {

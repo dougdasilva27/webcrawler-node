@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
@@ -119,7 +118,7 @@ public class Crawler extends Task {
   public void onFinish() {
 
     try {
-      //Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
+      // Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
 
       // close the webdriver
       if (webdriver != null) {
@@ -155,10 +154,10 @@ public class Crawler extends Task {
         Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
         Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
       }
-      
-      
+
+
       Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
-            
+
     } catch (Exception e) {
       DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -166,11 +165,13 @@ public class Crawler extends Task {
   }
 
   private void productionRun() {
-//    if (session instanceof InsightsCrawlerSession) {
-//      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsCrawler());
-//    } else if (session instanceof ImageCrawlerSession) {
-//      Logging.printLogDebug(logger, session, "Max attempts for request in this market: " + session.getMaxConnectionAttemptsImages());
-//    }
+    // if (session instanceof InsightsCrawlerSession) {
+    // Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
+    // session.getMaxConnectionAttemptsCrawler());
+    // } else if (session instanceof ImageCrawlerSession) {
+    // Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
+    // session.getMaxConnectionAttemptsImages());
+    // }
 
     // crawl informations and create a list of products
     List<Product> products = null;
@@ -338,7 +339,8 @@ public class Crawler extends Task {
         else {
           // if we haven't a previous processed, and the new processed was null,
           // we don't have anything to give a trucada!
-          Logging.printLogDebug(logger, session, "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+          Logging.printLogDebug(logger, session,
+              "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
           return;
         }
       }
@@ -470,6 +472,7 @@ public class Crawler extends Task {
     session.setOriginalURL(url);
 
     Object obj = fetch();
+    session.setProductPageResponse(obj);
     List<Product> products = new ArrayList<>();
 
     try {

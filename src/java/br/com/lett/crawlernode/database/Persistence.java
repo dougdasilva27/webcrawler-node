@@ -19,6 +19,7 @@ import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.Table;
+import org.jooq.impl.DSL;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ import dbmodels.Tables;
 import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerRanking;
-import generation.PostgresJSONGsonBinding;
+import generation.PostgresJsonBinding;
 import managers.MongoDB;
 import models.Behavior;
 import models.Marketplace;
@@ -70,7 +71,7 @@ public class Persistence {
 
   // Class generated in project DB to convert an object to gson because dialect postgres not accepted
   // this type
-  private static final PostgresJSONGsonBinding CONVERT_STRING_GSON = new PostgresJSONGsonBinding();
+  private static final PostgresJsonBinding CONVERT_STRING_GSON = new PostgresJsonBinding();
 
   /**
    * Persist the product crawled informations on tables crawler and crawler_old
@@ -166,43 +167,6 @@ public class Persistence {
         insertMapCrawler.put(crawler.MARKETPLACE, marketplaceString);
       }
 
-      // Create a fields and values of crawler_old
-      // CrawlerOld crawlerOld = Tables.CRAWLER_OLD;
-      //
-      // Map<Field<?>, Object> insertMapCrawlerOld = new HashMap<>();
-      //
-      // insertMapCrawlerOld.put(crawlerOld.AVAILABLE, available);
-      // insertMapCrawlerOld.put(crawlerOld.MARKET, session.getMarket().getNumber());
-      // insertMapCrawlerOld.put(crawlerOld.INTERNAL_ID, internalId);
-      // insertMapCrawlerOld.put(crawlerOld.INTERNAL_PID, internalPid);
-      // insertMapCrawlerOld.put(crawlerOld.URL, url);
-      // insertMapCrawlerOld.put(crawlerOld.STOCK, stock);
-      // insertMapCrawlerOld.put(crawlerOld.NAME, name);
-      // insertMapCrawlerOld.put(crawlerOld.SECONDARY_PICS, secondaryPics);
-      // insertMapCrawlerOld.put(crawlerOld.CAT1, cat1);
-      // insertMapCrawlerOld.put(crawlerOld.CAT2, cat2);
-      // insertMapCrawlerOld.put(crawlerOld.CAT3, cat3);
-      // insertMapCrawlerOld.put(crawlerOld.PIC, primaryPic);
-
-      // if(price != null) {
-      // insertMapCrawlerOld.put(crawlerOld.PRICE,
-      // MathCommonsMethods.normalizeTwoDecimalPlaces(price.doubleValue()));
-      // }
-      //
-      // if(prices != null) {
-      // insertMapCrawlerOld.put(crawlerOld.PRICES,
-      // CONVERT_STRING_GSON.converter().from(prices.toString()));
-      // }
-      //
-      // if(description != null && !Jsoup.parse(description).text().replace("\n", "").replace(" ",
-      // "").trim().isEmpty()) {
-      // insertMapCrawlerOld.put(crawlerOld.DESCRIPTION, description);
-      // }
-      //
-      // if(marketplaceString != null) {
-      // insertMapCrawlerOld.put(crawlerOld.MARKETPLACE, marketplaceString);
-      // }
-
       // List of tables for batch insert
       List<Table<?>> tables = new ArrayList<>();
       tables.add(crawler);
@@ -221,6 +185,26 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    }
+
+    if (Main.dbManager.connectionMySQL != null) {
+      try {
+        Map<Field<?>, Object> mysqlInsertMap = new HashMap<>();
+        mysqlInsertMap.put(DSL.field("url"), url);
+        mysqlInsertMap.put(DSL.field("name"), name);
+        mysqlInsertMap.put(DSL.field("cat1"), cat1);
+        mysqlInsertMap.put(DSL.field("cat2"), cat2);
+        mysqlInsertMap.put(DSL.field("cat3"), cat3);
+        mysqlInsertMap.put(DSL.field("market"), session.getMarket().getNumber());
+        mysqlInsertMap.put(DSL.field("description"), url);
+        mysqlInsertMap.put(DSL.field("html"), (session.getProductPageResponse().toString()));
+
+        Main.dbManager.connectionMySQL.runInsert(DSL.table("teste_ped"), mysqlInsertMap);
+        Logging.printLogDebug(logger, session, "Product persisted in MYSQL.");
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, session, "Error inserting product on database MYSQL!");
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+      }
     }
   }
 
