@@ -722,17 +722,7 @@ public class POSTFetcher {
       headers.put("Cookie", cookiesHeader.toString());
     }
 
-    List<String> forcedProxies = new ArrayList<>();
-    if (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")) {
-      forcedProxies.add(ProxyCollection.BUY);
-      forcedProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
-      forcedProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-    } else if (url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com")) {
-      forcedProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
-      forcedProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-    }
-
-    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, forcedProxies, null);
+    JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, new ArrayList<>(), null);
     JSONObject response = new JSONObject();
     try {
       response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
@@ -915,15 +905,12 @@ public class POSTFetcher {
     }
 
 
-    if (anyProxies.isEmpty()) {
-      if (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")) {
-        anyProxies.add(ProxyCollection.BUY);
-        anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
-        anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-      } else if (url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com")) {
-        anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
-        anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-      }
+    if (anyProxies.isEmpty() && (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")
+        || url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com"))) {
+      payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, false);
+      anyProxies.add(ProxyCollection.BUY);
+      anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
+      anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
     }
 
     if (specificProxy != null) {
