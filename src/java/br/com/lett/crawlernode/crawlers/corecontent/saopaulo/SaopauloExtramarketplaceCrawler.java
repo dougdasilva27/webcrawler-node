@@ -159,7 +159,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
       String category3 = getCategory(categories, 2);
 
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc, unnavailableForAll);
+      String secondaryImages = crawlSecondaryImages(doc, unnavailableForAll, primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
 
@@ -569,11 +569,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
+  private String crawlSecondaryImages(Document document, boolean unnavailableForAll, String primaryImage) {
     String secondaryImages = null;
-
     JSONArray secondaryImagesArray = new JSONArray();
-
 
     if (!unnavailableForAll) {
       Elements elementFotoSecundaria = document.select(".carouselBox .thumbsImg li a");
@@ -581,11 +579,10 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
       if (elementFotoSecundaria.size() > 1) {
         for (int i = 1; i < elementFotoSecundaria.size(); i++) { // starts with index 1 because de primary image is the first image
           Element e = elementFotoSecundaria.get(i);
+          String image = e.attr("href");
 
-          if (!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")) {
-            secondaryImagesArray.put(e.attr("rev"));
-          } else {
-            secondaryImagesArray.put(e.attr("href"));
+          if (image != null && !image.equals(primaryImage)) {
+            secondaryImagesArray.put(image);
           }
         }
 

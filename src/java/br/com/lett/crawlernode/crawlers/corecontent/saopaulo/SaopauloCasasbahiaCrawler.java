@@ -597,9 +597,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
   private String crawlSecondaryImages(Document document, boolean unnavailableForAll, String primaryImage) {
     String secondaryImages = null;
-
     JSONArray secondaryImagesArray = new JSONArray();
-
 
     if (!unnavailableForAll) {
       Elements elementFotoSecundaria = document.select(".carouselBox .thumbsImg li a");
@@ -607,16 +605,9 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       if (elementFotoSecundaria.size() > 1) {
         for (int i = 1; i < elementFotoSecundaria.size(); i++) { // starts with index 1 because de primary image is the first image
           Element e = elementFotoSecundaria.get(i);
+          String image = e.attr("href");
 
-          String image;
-
-          if (!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")) {
-            image = e.attr("rev");
-          } else {
-            image = e.attr("href");
-          }
-
-          if (!image.equals(primaryImage)) {
+          if (image != null && !image.equals(primaryImage)) {
             secondaryImagesArray.put(image);
           }
         }

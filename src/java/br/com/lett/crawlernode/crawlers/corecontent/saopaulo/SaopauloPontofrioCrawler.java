@@ -158,7 +158,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
       String primaryImage = this.crawlPrimaryImage(doc);
 
       // Secondary images
-      String secondaryImages = this.crawlSecondaryImages(doc, unnavailableForAll);
+      String secondaryImages = this.crawlSecondaryImages(doc, unnavailableForAll, primaryImage);
 
       // Description
       String description = this.crawlDescription(doc);
@@ -584,11 +584,9 @@ public class SaopauloPontofrioCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document document, boolean unnavailableForAll) {
+  private String crawlSecondaryImages(Document document, boolean unnavailableForAll, String primaryImage) {
     String secondaryImages = null;
-
     JSONArray secondaryImagesArray = new JSONArray();
-
 
     if (!unnavailableForAll) {
       Elements elementFotoSecundaria = document.select(".carouselBox .thumbsImg li a");
@@ -596,11 +594,10 @@ public class SaopauloPontofrioCrawler extends Crawler {
       if (elementFotoSecundaria.size() > 1) {
         for (int i = 1; i < elementFotoSecundaria.size(); i++) { // starts with index 1 because de primary image is the first image
           Element e = elementFotoSecundaria.get(i);
+          String image = e.attr("href");
 
-          if (!e.attr("rev").isEmpty() && e.attr("rev").startsWith("http")) {
-            secondaryImagesArray.put(e.attr("rev"));
-          } else {
-            secondaryImagesArray.put(e.attr("href"));
+          if (image != null && !image.equals(primaryImage)) {
+            secondaryImagesArray.put(image);
           }
         }
 

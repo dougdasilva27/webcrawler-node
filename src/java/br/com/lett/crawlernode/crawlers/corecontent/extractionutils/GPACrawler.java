@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -166,6 +167,22 @@ public class GPACrawler {
 
       if (pObj instanceof Double) {
         price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+      }
+    }
+
+    if (json.has("productPromotion")) {
+      JSONObject productPromotion = json.getJSONObject("productPromotion");
+
+      if (productPromotion.has("unitPrice") && productPromotion.has("promotionPercentOffOnUnity")) {
+        Object promotionPercentOffOnUnity = productPromotion.get("promotionPercentOffOnUnity");
+
+        if (promotionPercentOffOnUnity instanceof Integer) {
+          Integer promotion = (Integer) promotionPercentOffOnUnity;
+
+          if (promotion == 1) {
+            price = CrawlerUtils.getFloatValueFromJSON(productPromotion, "unitPrice");
+          }
+        }
       }
     }
 
