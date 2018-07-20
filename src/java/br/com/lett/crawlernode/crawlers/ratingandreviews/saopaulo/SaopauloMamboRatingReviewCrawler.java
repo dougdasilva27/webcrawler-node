@@ -8,6 +8,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -16,7 +18,6 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
@@ -35,15 +36,10 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
       if (skuJson.has("productId")) {
-        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.getInt("productId"));
+        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.getInt("productId"), document);
 
         Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
-        Double totalRating = getTotalRating(trustVoxResponse);
-
-        Double avgRating = null;
-        if (totalNumOfEvaluations > 0) {
-          avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
-        }
+        Double avgRating = getTotalRating(trustVoxResponse);
 
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
@@ -51,7 +47,7 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
 
         List<String> idList = crawlIdList(skuJson);
         for (String internalId : idList) {
-          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }
@@ -87,40 +83,37 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
    * @return the total of evaluations
    */
   private Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
-    if (trustVoxResponse.has("items")) {
-      JSONArray ratings = trustVoxResponse.getJSONArray("items");
-      return ratings.length();
+    if (trustVoxResponse.has("count") && trustVoxResponse.get("count") instanceof Integer) {
+      return trustVoxResponse.getInt("count");
     }
     return 0;
   }
 
   private Double getTotalRating(JSONObject trustVoxResponse) {
-    Double totalRating = 0.0;
-    if (trustVoxResponse.has("items")) {
-      JSONArray ratings = trustVoxResponse.getJSONArray("items");
-
-      for (int i = 0; i < ratings.length(); i++) {
-        JSONObject rating = ratings.getJSONObject(i);
-
-        if (rating.has("rate")) {
-          totalRating += rating.getInt("rate");
-        }
-      }
+    if (trustVoxResponse.has("average") && trustVoxResponse.get("average") instanceof Double) {
+      return trustVoxResponse.getDouble("average");
     }
-    return totalRating;
+    return 0d;
   }
 
-  private JSONObject requestTrustVoxEndpoint(int id) {
+  private JSONObject requestTrustVoxEndpoint(int id, Document doc) {
     StringBuilder requestURL = new StringBuilder();
 
-    requestURL.append("http://trustvox.com.br/widget/opinions?code=");
+    requestURL.append("https://trustvox.com.br/widget/root?code=");
     requestURL.append(id);
 
     requestURL.append("&");
     requestURL.append("store_id=944");
 
-    requestURL.append("&");
+    requestURL.append("&url=");
     requestURL.append(session.getOriginalURL());
+
+    JSONObject vtxctx = selectJsonFromHtml(doc, "script", "vtxctx=", ";", true);
+
+    if (vtxctx.has("departmentyId") && vtxctx.has("categoryId")) {
+      requestURL.append("&product_extra_attributes%5Bdepartment_id%5D=" + vtxctx.get("departmentyId") + "&product_extra_attributes%5Bcategory_id%5D="
+          + vtxctx.get("categoryId"));
+    }
 
     Map<String, String> headerMap = new HashMap<>();
     headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
@@ -131,6 +124,11 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject trustVoxResponse;
     try {
       trustVoxResponse = new JSONObject(response);
+
+      if (trustVoxResponse.has("rate")) {
+        return trustVoxResponse.getJSONObject("rate");
+      }
+
     } catch (JSONException e) {
       Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -139,6 +137,48 @@ public class SaopauloMamboRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     return trustVoxResponse;
+  }
+
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+
+    if (doc == null)
+      throw new IllegalArgumentException("Argument doc cannot be null");
+
+    JSONObject object = new JSONObject();
+
+    Elements scripts = doc.select(cssElement);
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      script = withoutSpaces ? script.replace(" ", "") : script;
+
+      if (script.contains(token)) {
+        int x = script.indexOf(token) + token.length();
+
+        String json;
+
+        if (script.contains(finalIndex)) {
+          int y = script.lastIndexOf(finalIndex);
+          json = script.substring(x, y).trim();
+        } else {
+          json = script.substring(x).trim();
+        }
+
+        if (json.startsWith("{") && json.endsWith("}")) {
+          try {
+            object = new JSONObject(json);
+          } catch (Exception e1) {
+            Logging.printLogError(logger, CommonMethods.getStackTrace(e1));
+          }
+        }
+
+        break;
+      }
+    }
+
+    return object;
   }
 
   private boolean isProductPage(Document document) {

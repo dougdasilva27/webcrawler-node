@@ -204,7 +204,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       name = elementName.text().trim();
 
       // brand
-      Element elementBrand = document.select(".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca").first();
+      Element elementBrand = document.select(".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca.show-hover").first();
       if (elementBrand != null) {
         name = name + " " + elementBrand.text().trim();
       }

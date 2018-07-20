@@ -150,9 +150,6 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
   }
 
   private boolean isProductPage(Document document) {
-    Element body = document.select("body").first();
-    Element elementId = document.select("div.productReference").first();
-
-    return body.hasClass("produto") && elementId != null;
+    return document.select("#___rc-p-sku-ids").first() != null;
   }
 }

@@ -15,101 +15,69 @@ public class BrasilSchumannCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    // número de produtos por página do market
-    this.pageSize = 30;
-
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-    // monta a url com a keyword e a página
-    String url = "http://www.schumann.com.br/" + keyword + "?PageNumber=" + this.currentPage;
+    this.pageSize = 36;
+    String url = "https://www.schumann.com.br/pesquisa?t=" + this.keywordEncoded + "&pg=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
 
-    Elements id = this.currentDoc.select("div div.prateleira > ul > li[layout]");
+    Elements products = this.currentDoc.select(".wd-content ul li[class^=product] > div[data-product-id]");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (id.size() >= 1) {
-      // se o total de busca não foi setado ainda, chama a função para setar
-      if (this.totalProducts == 0)
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
         setTotalProducts();
+      }
 
-      for (Element e : id) {
-        // InternalPid
+      for (Element e : products) {
         String internalPid = crawlInternalPid(e);
+        String productUrl = crawlProductUrl(e);
 
-        // InternalId
-        String internalId = crawlInternalId(e);
+        saveDataProduct(null, internalPid, productUrl);
 
-        // Url do produto
-        String urlProduct = crawlProductUrl(e);
-
-        saveDataProduct(internalId, internalPid, urlProduct);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + urlProduct);
-        if (this.arrayProducts.size() == productsLimit)
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
           break;
-
+        }
       }
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    if (arrayProducts.size() < this.totalProducts) {
-      return true;
-    }
-
-    return false;
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
+    Element totalElement = this.currentDoc.select(".search-description strong").first();
 
-    try {
-      if (totalElement != null)
-        this.totalProducts = Integer.parseInt(totalElement.text());
-    } catch (Exception e) {
-      this.logError(e.getMessage());
+    if (totalElement != null) {
+      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
     }
 
     this.log("Total da busca: " + this.totalProducts);
   }
 
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    return internalId;
-  }
-
   private String crawlInternalPid(Element e) {
-    String internalPid = null;
-    Element pidElement = e.select(".id-produto").first();
-
-    if (pidElement != null) {
-      internalPid = pidElement.text();
-    }
-
-    return internalPid;
+    return e.attr("data-product-id");
   }
 
   private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element urlElement = e.select(".data > h3 a").first();
+    String productUrl = null;
+    Element urlElement = e.select(".name a").first();
 
     if (urlElement != null) {
-      urlProduct = urlElement.attr("href");
+      productUrl = urlElement.attr("href");
+
+      if (!productUrl.contains("schumann")) {
+        productUrl = ("https://www.schumann.com.br/" + productUrl).replace(".br//", ".br/");
+      }
     }
 
-    return urlProduct;
+    return productUrl;
   }
 }
