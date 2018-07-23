@@ -271,7 +271,7 @@ public class BrasilPetzCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
-    Elements elementsInformation = doc.select(".infos");
+    Elements elementsInformation = doc.select(".infos, #especificacoes, .prodEspecificacoes");
     for (Element e : elementsInformation) {
       if (e.select(".depoimento").isEmpty()) {
         description.append(e.html());

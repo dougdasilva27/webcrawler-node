@@ -9,9 +9,9 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.mongodb.util.JSON;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
 
@@ -37,7 +37,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    JSONObject jsonSearch = crawlProductsApi(this.keywordEncoded);
+    JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
     JSONArray products = new JSONArray();
 
     if (jsonSearch.has("ResultadosBusquedaLevex")) {
@@ -110,10 +110,8 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
     if (product.has("DescripcionArticulo")) {
       String name = product.getString("DescripcionArticulo");
 
-      System.err.println(name);
-
       productUrl = "https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + name.replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
+          + CommonMethods.encondeStringURLToISO8859(name, logger, session);
     }
 
     return productUrl;
@@ -140,10 +138,8 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
 
     String jsonString = fetchStringPOST(urlSearch, payload, headers, this.cookies);
 
-    if (jsonString != null) {
-      if (jsonString.startsWith("{")) {
-        json = parseJsonLevex(new JSONObject(jsonString));
-      }
+    if (jsonString != null && jsonString.startsWith("{")) {
+      json = parseJsonLevex(new JSONObject(jsonString));
     }
 
     return json;
@@ -153,7 +149,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
     JSONObject jsonD = new JSONObject();
 
     if (json.has("d")) {
-      String dParser = JSON.parse(json.getString("d")).toString();
+      String dParser = JSONObject.stringToValue(json.getString("d")).toString();
       jsonD = new JSONObject(dParser);
     }
 

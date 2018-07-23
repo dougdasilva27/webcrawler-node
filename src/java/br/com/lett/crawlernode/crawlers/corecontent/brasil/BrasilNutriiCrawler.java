@@ -177,7 +177,7 @@ public class BrasilNutriiCrawler extends Crawler {
     Elements elementCategories = document.select(".breadcrumbs li[class^=category] a");
 
     for (int i = 0; i < elementCategories.size(); i++) {
-      String cat = elementCategories.get(i).ownText().trim();
+      String cat = elementCategories.get(i).text().trim();
 
       if (!cat.isEmpty()) {
         categories.add(cat);

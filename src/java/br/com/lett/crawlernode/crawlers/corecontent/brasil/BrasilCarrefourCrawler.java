@@ -313,20 +313,24 @@ public class BrasilCarrefourCrawler extends Crawler {
   }
 
   private String crawlDescription(Document document) {
-    String description = "";
-    Elements descriptionElements = document.select("#accordionFichaTecnica");
+    StringBuilder description = new StringBuilder();
 
+    Element desc2 = document.select(".productDetailsPageShortDescription").first();
+    if (desc2 != null) {
+      description.append(desc2.outerHtml());
+    }
+
+    Elements descriptionElements = document.select("#accordionFichaTecnica");
     if (descriptionElements != null) {
-      description = description + descriptionElements.html();
+      description.append(descriptionElements.html());
     }
 
     Element desc = document.select(".productDetailsPageDescription").first();
-
     if (desc != null) {
-      description += desc.outerHtml();
+      description.append(desc.outerHtml());
     }
 
-    return description;
+    return description.toString();
   }
 
   private Prices crawlPrices(Float price, Element e, String internalId) {

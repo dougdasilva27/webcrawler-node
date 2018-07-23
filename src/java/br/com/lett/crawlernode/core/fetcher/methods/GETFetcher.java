@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -198,10 +200,22 @@ public class GETFetcher {
       List<Header> headers = new ArrayList<>();
       headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
 
+      // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
+      // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
+      // verification to happen the capture
+      HostnameVerifier hostNameVerifier = new HostNameVerifier();
+      if (session.getMarket().getNumber() == 115) {
+        hostNameVerifier = new HostnameVerifier() {
+          public boolean verify(String hostname, SSLSession session) {
+            return true;
+          }
+        };
+      }
+
       CloseableHttpClient httpclient =
           HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(userAgent).setDefaultRequestConfig(requestConfig)
               .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(headers)
-              .setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(new HostNameVerifier()).build();
+              .setSSLSocketFactory(DataFetcher.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
 
       HttpContext localContext = new BasicHttpContext();
       localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);

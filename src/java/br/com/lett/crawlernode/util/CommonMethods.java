@@ -7,10 +7,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.session.Session;
 
 
 /**
@@ -408,6 +411,26 @@ public class CommonMethods {
     }
 
     return strBuilder.toString();
+  }
+
+  /**
+   * Encode url for ISO-8859-1
+   * 
+   * @param str
+   * @param logger
+   * @param session
+   * @return
+   */
+  public static String encondeStringURLToISO8859(String str, Logger logger, Session session) {
+    String strEncoded = null;
+
+    try {
+      strEncoded = URLEncoder.encode(str, "ISO-8859-1");
+    } catch (UnsupportedEncodingException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return strEncoded;
   }
 
 }

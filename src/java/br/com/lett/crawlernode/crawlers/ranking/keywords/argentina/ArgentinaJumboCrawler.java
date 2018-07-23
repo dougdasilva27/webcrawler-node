@@ -9,7 +9,6 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.mongodb.util.JSON;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -38,7 +37,7 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    JSONObject jsonSearch = crawlProductsApi(this.keywordEncoded);
+    JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
     JSONArray products = new JSONArray();
 
     if (jsonSearch.has("ResultadosBusquedaLevex")) {
@@ -109,8 +108,10 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
     String productUrl = null;
 
     if (product.has("DescripcionArticulo")) {
+      String name = product.getString("DescripcionArticulo");
+
       productUrl = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + CommonMethods.removeAccents(product.getString("DescripcionArticulo")).replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
+          + CommonMethods.encondeStringURLToISO8859(name, logger, session);
     }
 
     return productUrl;
@@ -148,7 +149,7 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
     JSONObject jsonD = new JSONObject();
 
     if (json.has("d")) {
-      String dParser = JSON.parse(json.getString("d")).toString();
+      String dParser = JSONObject.stringToValue(json.getString("d")).toString();
       jsonD = new JSONObject(dParser);
     }
 

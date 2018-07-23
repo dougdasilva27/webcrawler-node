@@ -185,6 +185,12 @@ public class BrasilDrogalCrawler extends Crawler {
     if (descriptionElement != null) {
       description.append(descriptionElement.html());
     }
+
+    Element modal = document.select(".modal-content").last();
+    if (modal != null) {
+      description.append(modal.html());
+    }
+
     return description.toString();
   }
 

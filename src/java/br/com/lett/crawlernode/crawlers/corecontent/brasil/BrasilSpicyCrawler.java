@@ -306,7 +306,9 @@ public class BrasilSpicyCrawler extends Crawler {
     Element descriptionElement = document.select(".productDetails#information").first();
 
     if (descriptionElement != null) {
-      description = description + descriptionElement.html().replace("display: none", "");
+      descriptionElement.select("h4.group").remove();
+      descriptionElement.select(".Bloco-1-Curto").remove();
+      description = description + descriptionElement.html().replace("display: none;", "");
     }
 
     return description;
