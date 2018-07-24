@@ -7,6 +7,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -55,7 +56,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalPid);
       Integer stock = null;
 
       // sku data in json
@@ -261,7 +262,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalPid) {
     StringBuilder description = new StringBuilder();
 
     Element shortDescription = doc.select(".productDescription").first();
@@ -283,6 +284,42 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     Element advert = doc.select(".advertencia").first();
     if (advert != null && !advert.select("#___rc-p-id").isEmpty()) {
       description.append(advert.html());
+    }
+
+    String url = "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (skuInfo.length() > 0) {
+      JSONObject product = skuInfo.getJSONObject(0);
+
+      if (product.has("Informações")) {
+        JSONArray infos = product.getJSONArray("Informações");
+
+        for (Object o : infos) {
+          if (product.has(o.toString())) {
+            description.append("<div> <strong>" + o.toString() + ":</strong>");
+            JSONArray spec = product.getJSONArray(o.toString());
+
+            for (Object obj : spec) {
+              description.append(obj.toString() + "&nbsp");
+            }
+
+            description.append("</div>");
+          }
+        }
+      }
+
+      if (product.has("Página Especial")) {
+        JSONArray specialPage = product.getJSONArray("Página Especial");
+
+        if (specialPage.length() > 0) {
+          Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
+
+          if (iframe != null && iframe.hasAttr("src")) {
+            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+          }
+        }
+      }
     }
 
     return description.toString();

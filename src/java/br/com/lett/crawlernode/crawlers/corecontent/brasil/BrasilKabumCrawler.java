@@ -285,6 +285,6 @@ public class BrasilKabumCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return (url.startsWith("https://www.kabum.com.br/produto/") || url.startsWith("http://www.kabum.com.br/produto/") || url.contains("blackfriday"));
+    return true;
   }
 }

@@ -272,7 +272,11 @@ public class BrasilFastshopNewCrawler {
     Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     String urlDESC = "https://www.fastshop.com.br/wcs/resources/v1/spots/ProductDetail_" + partnerId;
-    description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDESC, null, cookies));
+    Document docDesc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDESC, null, cookies);
+
+    if (!docDesc.toString().contains("errorCode")) {
+      description.append(docDesc);
+    }
 
     Element iframe = doc.select("iframe").first();
 
