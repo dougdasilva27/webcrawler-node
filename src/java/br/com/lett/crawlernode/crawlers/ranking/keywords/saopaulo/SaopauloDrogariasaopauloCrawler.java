@@ -22,7 +22,7 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
     int index = this.arrayProducts.size();
 
     String url = "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search/" + this.keywordEncoded + "?_from=" + index + "&_to="
-        + (index + 14) + "&O=OrderByReleaseDateDESC";
+        + (index + 14) + "&O=OrderByTopSaleDESC";
     this.log("Link onde são feitos os crawlers: " + url);
 
     String response = fetchGETString(url, null);
