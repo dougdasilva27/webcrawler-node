@@ -133,9 +133,9 @@ public class BrasilCallfarmaCrawler extends Crawler {
     Element elementPrimaryImage = doc.select("#exposicao-produto img.zoom").first();
 
     if (elementPrimaryImage != null) {
-      primaryImage = elementPrimaryImage.attr("data-zoom-image");
+      primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
 
-      if (!primaryImage.isEmpty() || !primaryImage.startsWith("http")) {
+      if (primaryImage.isEmpty() || !primaryImage.startsWith("http")) {
         primaryImage = elementPrimaryImage.attr("src");
       }
 
