@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -56,15 +57,17 @@ public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/DIA.html");
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
       String name = crawlName(doc);
-      Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
+      Float price = available ? crawlPrice(doc) : null;
+      Prices prices = crawlPrices(price, doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
@@ -137,7 +140,7 @@ public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document document) {
-    return document.select(".btComprar").first() != null;
+    return document.select(".priceProduct.withStock").first() != null;
   }
 
   private Marketplace crawlMarketplace() {

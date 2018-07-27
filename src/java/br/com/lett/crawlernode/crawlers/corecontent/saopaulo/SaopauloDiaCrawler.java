@@ -137,7 +137,7 @@ public class SaopauloDiaCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document document) {
-    return document.select(".btComprar").first() != null;
+    return document.select(".priceProduct.withStock").first() != null;
   }
 
   private Marketplace crawlMarketplace() {

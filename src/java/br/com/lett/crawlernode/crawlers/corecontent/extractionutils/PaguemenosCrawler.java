@@ -280,6 +280,7 @@ public class PaguemenosCrawler {
 
     Element elementInformation = doc.select("#specification").first();
     if (elementInformation != null) {
+      elementInformation.select("h4.Campos-de-Produto").remove();
       description.append(elementInformation.html());
     }
 
