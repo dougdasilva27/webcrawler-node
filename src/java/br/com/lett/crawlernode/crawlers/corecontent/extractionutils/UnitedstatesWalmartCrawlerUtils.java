@@ -101,6 +101,8 @@ public class UnitedstatesWalmartCrawlerUtils {
     if (initialState.has("product")) {
       JSONObject product = initialState.getJSONObject("product");
 
+      CommonMethods.saveDataToAFile(product, "/home/gabriel/htmls/WALMART.txt");
+
       JSONObject images = crawlJsonImages(product);
       JSONObject offers = crawlJsonOffers(product);
       JSONObject rating = crawlRating(product);
@@ -169,31 +171,32 @@ public class UnitedstatesWalmartCrawlerUtils {
       desc.append("<div id=\"" + key + "\">");
 
       for (String descKey : module.keySet()) {
-        JSONObject descObject = module.getJSONObject(descKey);
+        Object descObject = module.get(descKey);
+        JSONObject descJSONObject = descObject instanceof JSONObject ? (JSONObject) descObject : new JSONObject();
 
-        if (descObject.has("displayName")) {
+        if (descJSONObject.has("displayName")) {
           desc.append("<div id=\"" + descKey + "\">");
-          desc.append("<strong> " + descObject.get("displayName") + " &nbsp</strong>");
+          desc.append("<strong> " + descJSONObject.get("displayName") + " &nbsp</strong>");
 
-          if (descObject.has("displayValue")) {
-            desc.append("<span> " + descObject.get("displayValue") + " &nbsp</span>");
-          } else if (descObject.has("values")) {
+          if (descJSONObject.has("displayValue")) {
+            desc.append("<span> " + descJSONObject.get("displayValue") + " &nbsp</span>");
+          } else if (descJSONObject.has("values")) {
             desc.append("<table id=\"" + descKey + "\">");
-            desc.append(crawlDescriptionValues(descObject));
+            desc.append(crawlDescriptionValues(descJSONObject));
             desc.append("</table>");
-          } else if (descObject.has("children")) {
-            JSONArray children = descObject.getJSONArray("children");
+          } else if (descJSONObject.has("children")) {
+            JSONArray children = descJSONObject.getJSONArray("children");
             desc.append("<table id=\"" + descKey + "\">");
 
             for (Object child : children) {
               JSONObject childObj = (JSONObject) child;
 
-              if (descObject.has("displayName")) {
+              if (descJSONObject.has("displayName")) {
                 desc.append("<div id=\"" + descKey + "\">");
-                desc.append("<strong> " + descObject.get("displayName") + " &nbsp</strong>");
+                desc.append("<strong> " + descJSONObject.get("displayName") + " &nbsp</strong>");
 
                 if (childObj.has("values")) {
-                  desc.append("<table id=\"" + descObject.get("displayName") + "\">");
+                  desc.append("<table id=\"" + descJSONObject.get("displayName") + "\">");
                   desc.append(crawlDescriptionValues(childObj));
                   desc.append("<\table>");
                 }
