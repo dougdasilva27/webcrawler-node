@@ -1055,8 +1055,9 @@ public class DataFetcher {
     String url = session.getOriginalURL();
 
     boolean mustUseFetcher = !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
-        && Main.executionParameters.getUseFetcher() && !(url.contains("americanas.com") || url.contains("submarino.com")
-            || url.contains("shoptime.com") || url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com"));
+        && Main.executionParameters.getUseFetcher()
+        && !(url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com") || url.contains("casasbahia.com")
+            || url.contains("pontofrio.com") || url.contains("extra.com") || url.contains("ricardoeletro.com"));
 
     if (mustUseFetcher) {
       session.setMaxConnectionAttemptsCrawler(2);
