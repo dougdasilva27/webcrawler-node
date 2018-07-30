@@ -1052,7 +1052,16 @@ public class DataFetcher {
     // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
     // Main.executionParameters.getUseFetcher());
 
-    return !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
-        && Main.executionParameters.getUseFetcher();
+    String url = session.getOriginalURL();
+
+    boolean mustUseFetcher = !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
+        && Main.executionParameters.getUseFetcher() && !(url.contains("americanas.com") || url.contains("submarino.com")
+            || url.contains("shoptime.com") || url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com"));
+
+    if (mustUseFetcher) {
+      session.setMaxConnectionAttemptsCrawler(2);
+    }
+
+    return mustUseFetcher;
   }
 }
