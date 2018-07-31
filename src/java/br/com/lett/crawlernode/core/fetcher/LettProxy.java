@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.fetcher;
 import java.io.Serializable;
 import java.util.UUID;
 import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONObject;
 
 public class LettProxy implements Serializable {
 
@@ -88,4 +89,33 @@ public class LettProxy implements Serializable {
     this.pass = pass;
   }
 
+  public JSONObject toJson() {
+    JSONObject proxyJson = new JSONObject();
+
+    if (this.user != null) {
+      proxyJson.put("user", this.user);
+    }
+
+    if (this.pass != null) {
+      proxyJson.put("pass", this.pass);
+    }
+
+    if (this.address != null) {
+      proxyJson.put("host", this.address);
+    }
+
+    if (this.port != null) {
+      proxyJson.put("port", this.port);
+    }
+
+    if (this.source != null) {
+      proxyJson.put("source", this.source);
+    }
+
+    if (this.location != null) {
+      proxyJson.put("location", this.location);
+    }
+
+    return proxyJson;
+  }
 }
