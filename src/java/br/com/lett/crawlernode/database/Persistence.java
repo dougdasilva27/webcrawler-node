@@ -36,7 +36,7 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -178,7 +178,7 @@ public class Persistence {
       // tablesMap.put(crawlerOld, insertMapCrawlerOld); // Comentando temporariamente inserção na
       // crawler_old
 
-      Main.dbManager.connectionPostgreSQL.runBatchInsertWithNTables(tables, tablesMap);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runBatchInsertWithNTables(tables, tablesMap);
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error inserting product on database!");
@@ -187,7 +187,7 @@ public class Persistence {
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
     }
 
-    if (Main.dbManager.connectionMySQL != null) {
+    if (GlobalConfigurations.dbManager.connectionMySQL != null) {
       try {
         Map<Field<?>, Object> mysqlInsertMap = new HashMap<>();
         mysqlInsertMap.put(DSL.field("url"), url);
@@ -199,7 +199,7 @@ public class Persistence {
         mysqlInsertMap.put(DSL.field("description"), url);
         mysqlInsertMap.put(DSL.field("html"), (session.getProductPageResponse().toString()));
 
-        Main.dbManager.connectionMySQL.runInsert(DSL.table("teste_ped"), mysqlInsertMap);
+        GlobalConfigurations.dbManager.connectionMySQL.runInsert(DSL.table("teste_ped"), mysqlInsertMap);
         Logging.printLogDebug(logger, session, "Product persisted in MYSQL.");
       } catch (Exception e) {
         Logging.printLogWarn(logger, session, "Error inserting product on database MYSQL!");
@@ -224,7 +224,7 @@ public class Persistence {
     conditions.add(processedTable.ID.equal(((RatingReviewsCrawlerSession) session).getProcessedId()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
 
     } catch (Exception e) {
@@ -324,7 +324,7 @@ public class Persistence {
         }
 
         // get processeed id of new processed product
-        Record recordId = Main.dbManager.connectionPostgreSQL.runInsertReturningID(processedTable, insertMap, processedTable.ID);
+        Record recordId = GlobalConfigurations.dbManager.connectionPostgreSQL.runInsertReturningID(processedTable, insertMap, processedTable.ID);
 
         if (recordId != null) {
           id = recordId.get(processedTable.ID);
@@ -415,7 +415,7 @@ public class Persistence {
           ((ProcessedModelPersistenceResult) persistenceResult).addModifiedId(id);
         }
 
-        Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateMap, conditions);
+        GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateMap, conditions);
       }
 
       Logging.printLogDebug(logger, session, "Processed product persisted with success.");
@@ -455,7 +455,7 @@ public class Persistence {
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product behaviour updated with success.");
 
     } catch (Exception e) {
@@ -500,7 +500,7 @@ public class Persistence {
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
     } catch (Exception e) {
@@ -528,7 +528,7 @@ public class Persistence {
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
     } catch (Exception e) {
@@ -556,7 +556,7 @@ public class Persistence {
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 
     } catch (Exception e) {
@@ -585,7 +585,7 @@ public class Persistence {
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
     try {
-      Main.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
       Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
 
     } catch (Exception e) {
@@ -706,7 +706,7 @@ public class Persistence {
    * @param markets
    */
   public static void initializeImagesDirectories(Markets markets) {
-    Logging.printLogDebug(logger, "Initializing temp images directory at:" + Main.executionParameters.getTmpImageFolder() + "...");
+    Logging.printLogDebug(logger, "Initializing temp images directory at:" + GlobalConfigurations.executionParameters.getTmpImageFolder() + "...");
 
     List<Market> marketsList = markets.getMarkets();
 
@@ -738,11 +738,11 @@ public class Persistence {
     File file;
 
     if (name == null) {
-      file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city);
+      file = new File(GlobalConfigurations.executionParameters.getTmpImageFolder() + "/" + city);
     } else if (folder == null) {
-      file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city + "/" + name);
+      file = new File(GlobalConfigurations.executionParameters.getTmpImageFolder() + "/" + city + "/" + name);
     } else {
-      file = new File(Main.executionParameters.getTmpImageFolder() + "/" + city + "/" + name + "/" + folder);
+      file = new File(GlobalConfigurations.executionParameters.getTmpImageFolder() + "/" + city + "/" + name + "/" + folder);
     }
 
     if (!file.exists()) {
@@ -771,7 +771,7 @@ public class Persistence {
       List<Condition> conditions = new ArrayList<>();
       conditions.add(crawlerCategories.ID.equal((long) id));
 
-      Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(crawlerCategories, fields, conditions);
+      Result<Record> results = GlobalConfigurations.dbManager.connectionPostgreSQL.runSelect(crawlerCategories, fields, conditions);
 
       CategoriesRanking cat = new CategoriesRanking();
 
@@ -808,7 +808,7 @@ public class Persistence {
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.INTERNAL_ID.equal(id));
 
-      Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+      Result<Record> results = GlobalConfigurations.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
       for (Record record : results) {
         Processed p = new Processed();
@@ -849,7 +849,7 @@ public class Persistence {
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.INTERNAL_PID.equal(pid));
 
-      Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+      Result<Record> results = GlobalConfigurations.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
       for (Record record : results) {
         Processed p = new Processed();
@@ -890,7 +890,7 @@ public class Persistence {
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.URL.equal(url));
 
-      Result<Record> results = Main.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
+      Result<Record> results = GlobalConfigurations.dbManager.connectionPostgreSQL.runSelect(processed, fields, conditions);
 
       for (Record record : results) {
         Long masterId = record.get(processed.MASTER_ID);
@@ -937,11 +937,11 @@ public class Persistence {
           mapInsert.put(crawlerRanking.SCREENSHOT, rankingProducts.getScreenshot());
 
 
-          queries.add(Main.dbManager.connectionPostgreSQL.createQueryInsert(crawlerRanking, mapInsert));
+          queries.add(GlobalConfigurations.dbManager.connectionPostgreSQL.createQueryInsert(crawlerRanking, mapInsert));
         }
       }
 
-      Main.dbManager.connectionPostgreSQL.runBatchInsert(queries);
+      GlobalConfigurations.dbManager.connectionPostgreSQL.runBatchInsert(queries);
 
       Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
 
@@ -966,15 +966,15 @@ public class Persistence {
       Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", r.getRankType())
           .append("date", ft.format(new Date()));
 
-      if (Main.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
+      if (GlobalConfigurations.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
 
         Document update = new Document("$set", new Document(r.getDocumentUpdate()));
-        Main.dbManager.connectionFrozen.updateOne(filter, update, MONGO_COLLECTION_DISCOVER_STATS);
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(filter, update, MONGO_COLLECTION_DISCOVER_STATS);
         Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
 
       } else {
 
-        Main.dbManager.connectionFrozen.insertOne(r.getDocument(), MONGO_COLLECTION_DISCOVER_STATS);
+        GlobalConfigurations.dbManager.connectionFrozen.insertOne(r.getDocument(), MONGO_COLLECTION_DISCOVER_STATS);
         Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
 
       }
@@ -1006,7 +1006,7 @@ public class Persistence {
     categories.put("lmt", cg.getDataUpdated());
 
     try {
-      Main.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
+      GlobalConfigurations.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
       Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
@@ -1021,7 +1021,7 @@ public class Persistence {
     Document update = new Document("$set", new Document("lmt", nowISO).append("url", cg.getUrl()));
 
     try {
-      return (int) Main.dbManager.connectionPanel.updateMany(filter, update, MONGO_COLLECTION_CATEGORIES).getModifiedCount();
+      return (int) GlobalConfigurations.dbManager.connectionPanel.updateMany(filter, update, MONGO_COLLECTION_CATEGORIES).getModifiedCount();
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
     }
@@ -1035,7 +1035,7 @@ public class Persistence {
 
     try {
       FindIterable<Document> iterable =
-          Main.dbManager.connectionPanel.runFind(Filters.and(Filters.eq("_id", new ObjectId(id))), MONGO_COLLECTION_CATEGORIES);
+          GlobalConfigurations.dbManager.connectionPanel.runFind(Filters.and(Filters.eq("_id", new ObjectId(id))), MONGO_COLLECTION_CATEGORIES);
 
       for (Document e : iterable) {
         CategoriesRanking categories = new CategoriesRanking();
@@ -1063,7 +1063,7 @@ public class Persistence {
         .append("found_skus", new ArrayList<String>());
 
     try {
-      Main.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
+      GlobalConfigurations.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
     }

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,12 +16,14 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -46,7 +49,18 @@ public class BrasilPetzCrawler extends Crawler {
   @Override
   public void handleCookiesBeforeFetch() {
     this.userAgent = DataFetcher.randUserAgent();
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
+    Map<String, String> cookiesMap;
+
+    if (DataFetcher.mustUseFetcher(1, session)) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("User-Agent", this.userAgent);
+
+      JSONObject fetcherPayload =
+          POSTFetcher.fetcherPayloadBuilder(HOME_PAGE, DataFetcher.GET_REQUEST, true, null, headers, session.getMarket().getProxies(), null);
+      cookiesMap = POSTFetcher.fetchCookiesWithFetcher(fetcherPayload, session);
+    } else {
+      cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, userAgent, null, 1);
+    }
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
@@ -54,6 +68,7 @@ public class BrasilPetzCrawler extends Crawler {
       cookie.setPath("/");
       this.cookies.add(cookie);
     }
+
   }
 
   @Override
@@ -120,7 +135,8 @@ public class BrasilPetzCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/PETZ.html");
+      Logging.printLogDebug(logger, session, "Not a product page: " + this.session.getOriginalURL());
     }
 
     return products;

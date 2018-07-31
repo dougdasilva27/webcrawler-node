@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
@@ -424,7 +424,7 @@ public class Processor {
         query.append("' LIMIT 1");
 
         // ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-        ResultSet rs = Main.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
+        ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
 
         while (rs.next()) {
 

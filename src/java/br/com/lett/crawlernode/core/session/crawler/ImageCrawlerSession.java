@@ -11,7 +11,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
@@ -107,15 +107,15 @@ public class ImageCrawlerSession extends Session {
   }
 
   private String createLocalOriginalImageFileDir() {
-    return new StringBuilder().append(Main.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity()).append("/")
-        .append(super.market.getName()).append("/").append("images").append("/").append(internalId).append("_").append(imageNumber).append("_")
-        .append(createImageBaseName()).toString();
+    return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
+        .append("/").append(super.market.getName()).append("/").append("images").append("/").append(internalId).append("_").append(imageNumber)
+        .append("_").append(createImageBaseName()).toString();
   }
 
   private String createLocalTransformedImageFileDir() {
-    return new StringBuilder().append(Main.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity()).append("/")
-        .append(super.market.getName()).append("/").append("images").append(internalId).append("_").append("imageNumber_transformed").append("_")
-        .append(createImageBaseName()).toString();
+    return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
+        .append("/").append(super.market.getName()).append("/").append("images").append(internalId).append("_").append("imageNumber_transformed")
+        .append("_").append(createImageBaseName()).toString();
   }
 
   public String getLocalOriginalFileDir() {

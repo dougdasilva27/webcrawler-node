@@ -13,8 +13,7 @@ import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateConstants;
 
 public class Session {
@@ -75,12 +74,12 @@ public class Session {
     maxConnectionAttemptsWebcrawler = 0;
 
     for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += Test.proxies.getProxyMaxAttempts(proxy);
+      maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
     }
 
     maxConnectionAttemptsImages = 0;
     for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + Test.proxies.getProxyMaxAttempts(proxy);
+      maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
     }
 
   }
@@ -111,13 +110,13 @@ public class Session {
     // maxConnectionAttemptsWebcrawler = 2;
     // } else {
     for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+      maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
     }
     // }
 
     maxConnectionAttemptsImages = 0;
     for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + Main.proxies.getProxyMaxAttempts(proxy);
+      maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
     }
 
   }

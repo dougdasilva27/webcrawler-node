@@ -27,7 +27,7 @@ public class VTEXCrawlersUtils {
   private static final String PRODUCT_ID = "productId";
   private static final String SKU_NAME = "skuname";
   private static final String PRODUCT_NAME = "name";
-  private static final String PRICE_FROM = "listPriceFormated";
+  private static final String PRICE_FROM = "ListPrice";
   private static final String IMAGES = "Images";
   private static final String IS_PRINCIPAL_IMAGE = "IsMain";
   private static final String IMAGE_PATH = "Path";
@@ -103,8 +103,7 @@ public class VTEXCrawlersUtils {
     Double priceFrom = null;
 
     if (jsonSku.has(PRICE_FROM)) {
-      Float price = MathUtils.parseFloat(jsonSku.get(PRICE_FROM).toString());
-      priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
+      priceFrom = Double.parseDouble(jsonSku.get(PRICE_FROM).toString());
     }
 
     return priceFrom;
@@ -399,7 +398,7 @@ public class VTEXCrawlersUtils {
       for (Object s : sellers) {
         JSONObject seller = (JSONObject) s;
 
-        if (seller.has(SELLER_NAME) && sellerNameLower.equals(seller.get(SELLER_NAME).toString()) && seller.has(SELLER_AVAILABLE_QUANTITY)
+        if (seller.has(SELLER_NAME) && sellerNameLower.equalsIgnoreCase(seller.get(SELLER_NAME).toString()) && seller.has(SELLER_AVAILABLE_QUANTITY)
             && seller.get(SELLER_AVAILABLE_QUANTITY) instanceof Integer) {
           stock = seller.getInt(SELLER_AVAILABLE_QUANTITY);
           break;

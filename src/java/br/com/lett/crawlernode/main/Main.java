@@ -4,19 +4,12 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.server.ServerExecutorStatusAgent;
 import br.com.lett.crawlernode.core.server.ServerExecutorStatusCollector;
 import br.com.lett.crawlernode.core.task.Resources;
-import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
-import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.processor.ResultManager;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import credentials.models.DBCredentials;
 
 
 /**
@@ -46,13 +39,7 @@ public class Main {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-  public static ExecutionParameters executionParameters;
-  public static ProxyCollection proxies;
-  public static DBCredentials dbCredentials;
-  public static DatabaseManager dbManager;
-  public static ResultManager processorResultManager;
   public static QueueHandler queueHandler;
-  public static Markets markets;
   public static Resources globalResources;
   public static ServerExecutorStatusAgent serverExecutorStatusAgent;
   public static Server server;
@@ -60,37 +47,15 @@ public class Main {
   public static void main(String args[]) {
     Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
-    // setting execution parameters
-    executionParameters = new ExecutionParameters();
-    executionParameters.setUpExecutionParameters();
+    // setting global configuraions
+    GlobalConfigurations.setConfigurations();
 
     // check resources
     Logging.printLogInfo(LOGGER, "Checking files...");
     checkFiles();
 
-    // setting database credentials
-    DBCredentials dbCredentials = new DBCredentials();
-
-    try {
-      dbCredentials = DatabaseCredentialsSetter.setCredentials();
-    } catch (Exception e) {
-      Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
-    }
-
-    // creating the database manager
-    dbManager = new DatabaseManager(dbCredentials);
-
-    // fetch all markets information from database
-    markets = new Markets(dbManager);
-
     // initialize temporary folder for images download
-    Persistence.initializeImagesDirectories(markets);
-
-    // create result manager for processor stage
-    processorResultManager = new ResultManager(dbManager);
-
-    // fetching proxies
-    proxies = new ProxyCollection(markets, dbManager);
+    Persistence.initializeImagesDirectories(GlobalConfigurations.markets);
 
     // create a queue handler that will contain an Amazon SQS instance
     queueHandler = new QueueHandler();
@@ -104,7 +69,7 @@ public class Main {
   }
 
   private static void checkFiles() {
-    File phantom = new File(executionParameters.getPhantomjsPath());
+    File phantom = new File(GlobalConfigurations.executionParameters.getPhantomjsPath());
     if (!phantom.exists() && !phantom.isDirectory()) {
       Logging.printLogError(LOGGER, "Phantom webdriver binary not found.");
       System.exit(1);

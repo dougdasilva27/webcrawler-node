@@ -29,6 +29,7 @@ import br.com.lett.crawlernode.database.DBSlack;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
@@ -134,7 +135,7 @@ public class Crawler extends Task {
       if (!errors.isEmpty()) {
         Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
-        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, GlobalConfigurations.dbManager.connectionPanel);
 
         session.setTaskStatus(Task.STATUS_FAILED);
       }
@@ -144,7 +145,7 @@ public class Crawler extends Task {
       else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
         Logging.printLogDebug(logger, session, "Task completed.");
 
-        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, GlobalConfigurations.dbManager.connectionPanel);
 
         session.setTaskStatus(Task.STATUS_COMPLETED);
       }
@@ -313,7 +314,8 @@ public class Crawler extends Task {
         || previousProcessedProduct != null) {
 
       // create the new processed product
-      Processed newProcessedProduct = Processor.createProcessed(product, session, previousProcessedProduct, Main.processorResultManager);
+      Processed newProcessedProduct =
+          Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
 
       // the product doesn't exists yet
       if (previousProcessedProduct == null) {
@@ -394,10 +396,10 @@ public class Crawler extends Task {
     }
 
     if (createdId != null) {
-      Persistence.appendProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
-      Persistence.appendCreatedProcessedIdOnMongo(createdId, session, Main.dbManager.connectionPanel);
+      Persistence.appendProcessedIdOnMongo(createdId, session, GlobalConfigurations.dbManager.connectionPanel);
+      Persistence.appendCreatedProcessedIdOnMongo(createdId, session, GlobalConfigurations.dbManager.connectionPanel);
     } else if (modifiedId != null) {
-      Persistence.appendProcessedIdOnMongo(modifiedId, session, Main.dbManager.connectionPanel);
+      Persistence.appendProcessedIdOnMongo(modifiedId, session, GlobalConfigurations.dbManager.connectionPanel);
     }
   }
 
@@ -694,7 +696,7 @@ public class Crawler extends Task {
       if (localProduct != null && !localProduct.isVoid()) {
         Persistence.persistProduct(localProduct, session);
 
-        next = Processor.createProcessed(localProduct, session, previousProcessed, Main.processorResultManager);
+        next = Processor.createProcessed(localProduct, session, previousProcessed, GlobalConfigurations.processorResultManager);
 
         if (next != null) {
           if (compare(next, currentTruco)) {
@@ -703,7 +705,7 @@ public class Crawler extends Task {
 
           // we found two consecutive equals processed products, persist and end
           else {
-            Persistence.insertProcessedIdOnMongo(session, Main.dbManager.connectionPanel);
+            Persistence.insertProcessedIdOnMongo(session, GlobalConfigurations.dbManager.connectionPanel);
 
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(next, session);
             Persistence.updateProcessedLMT(nowISO, session);

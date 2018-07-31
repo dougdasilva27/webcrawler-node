@@ -53,12 +53,8 @@ import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
@@ -398,6 +394,65 @@ public class DataFetcher {
 
     try {
       Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
+
+      if (DataFetcher.mustUseFetcher(attempt, session)) {
+        Map<String, String> headers = new HashMap<>();
+
+        if (cookies != null && !cookies.isEmpty()) {
+          StringBuilder cookiesHeader = new StringBuilder();
+
+          for (Cookie c : cookies) {
+            cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+          }
+
+          headers.put("Cookie", cookiesHeader.toString());
+        }
+
+        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
+        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
+
+        if (response.has("response")) {
+          DataFetcher.setRequestProxyForFetcher(session, response, url);
+          session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+
+          String content = response.getJSONObject("response").getString("body");
+          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+
+          if (response.has("request_status_code")) {
+            int responseCode = response.getInt("request_status_code");
+            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+              throw new ResponseCodeException(responseCode);
+            }
+          }
+
+          Map<String, String> cookiesMap = new HashMap<>();
+
+          if (response.has("headers")) {
+            JSONObject headersJson = response.getJSONObject("headers");
+
+            if (headersJson.has(HTTP_COOKIE_HEADER.toLowerCase())) {
+              JSONArray cookiesArray = headersJson.getJSONArray(HTTP_COOKIE_HEADER.toLowerCase());
+
+              for (Object o : cookiesArray) {
+                String cookieHeader = o.toString();
+                String cookieName = cookieHeader.split("=")[0].trim();
+
+                int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+                int y = cookieHeader.indexOf(';', x);
+
+                String cookieValue = cookieHeader.substring(x, y).trim();
+
+                cookiesMap.put(cookieName, cookieValue);
+              }
+            }
+          }
+
+          return cookiesMap;
+        } else {
+          Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+          throw new ResponseCodeException(500);
+        }
+      }
 
       randUserAgent = userAgent == null ? randUserAgent() : userAgent;
       randProxy = lettProxy != null ? lettProxy : randLettProxy(attempt, session, session.getMarket().getProxies(), url);
@@ -918,10 +973,8 @@ public class DataFetcher {
       serviceName = getProxyService(attemptTemp, session, proxyServices);
 
       if (serviceName != null) {
-        if (session instanceof TestCrawlerSession || session instanceof TestRankingKeywordsSession) {
-          proxies = Test.proxies.getProxy(serviceName);
-        } else if (Main.proxies != null) {
-          proxies = Main.proxies.getProxy(serviceName);
+        if (GlobalConfigurations.proxies != null) {
+          proxies = GlobalConfigurations.proxies.getProxy(serviceName);
         }
 
         if (!proxies.isEmpty()) {
@@ -974,12 +1027,10 @@ public class DataFetcher {
 
     Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
 
-    if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
-      service = br.com.lett.crawlernode.test.Test.proxies.selectProxy(session.getMarket(), true, attempt);
-    } else if (session instanceof ImageCrawlerSession) {
-      service = Main.proxies.selectProxy(session.getMarket(), false, attempt);
+    if (session instanceof ImageCrawlerSession) {
+      service = GlobalConfigurations.proxies.selectProxy(session.getMarket(), false, attempt);
     } else {
-      service = Main.proxies.selectProxy(session.getMarket(), true, attempt);
+      service = GlobalConfigurations.proxies.selectProxy(session.getMarket(), true, attempt);
     }
 
     Logging.printLogDebug(logger, session, "Selected proxy: " + service);
@@ -1026,8 +1077,22 @@ public class DataFetcher {
             JSONObject proxyObj = succesRequest.getJSONObject("proxy");
 
             if (proxyObj.length() > 0 && proxyObj.has("source")) {
-              LettProxy lettProxy = new LettProxy(proxyObj.getString("source"), proxyObj.has("host") ? proxyObj.getString("host") : null, null,
-                  proxyObj.has("location") ? proxyObj.getString("location") : null, null, null);
+              String source = proxyObj.getString("source");
+              List<LettProxy> proxyList = GlobalConfigurations.proxies.getProxy(source);
+
+              String user = null;
+              String pass = null;
+
+              if (!proxyList.isEmpty()) {
+                LettProxy tempProxy = proxyList.get(0);
+
+                user = tempProxy.getUser();
+                pass = tempProxy.getPass();
+              }
+
+              LettProxy lettProxy = new LettProxy(source, proxyObj.has("host") ? proxyObj.getString("host") : null,
+                  proxyObj.has("port") ? proxyObj.getInt("port") : null, proxyObj.has("location") ? proxyObj.getString("location") : null, user,
+                  pass);
 
               session.addRequestProxy(url, lettProxy);
             }
@@ -1054,12 +1119,11 @@ public class DataFetcher {
 
     String url = session.getOriginalURL();
 
-    boolean mustUseFetcher = !(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession) && attempt == 1
-        && Main.executionParameters.getUseFetcher()
+    boolean mustUseFetcher = attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher()
         && !(url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com") || url.contains("casasbahia.com")
             || url.contains("pontofrio.com") || url.contains("extra.com") || url.contains("ricardoeletro.com"));
 
-    if (mustUseFetcher) {
+    if (mustUseFetcher && attempt == 1) {
       session.setMaxConnectionAttemptsCrawler(2);
     }
 

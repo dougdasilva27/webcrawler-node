@@ -43,7 +43,6 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloRappiCrawler;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -735,14 +734,6 @@ public class POSTFetcher {
       session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
     }
 
-    if (response.has("statistics")) {
-      JSONObject statistics = response.getJSONObject("statistics");
-
-      if (statistics.has("request_id")) {
-        Logging.printLogInfo(logger, session, "Request Fetcher Id: " + statistics.get("request_id"));
-      }
-    }
-
     return response;
   }
 
@@ -850,12 +841,22 @@ public class POSTFetcher {
     }
 
     // process response and parse
-    return new JSONObject(DataFetcher.processContent(pageContent, session));
+    JSONObject response = new JSONObject(DataFetcher.processContent(pageContent, session));
+
+    if (response.has("statistics")) {
+      JSONObject statistics = response.getJSONObject("statistics");
+
+      if (statistics.has("request_id")) {
+        Logging.printLogInfo(logger, session, "Request Fetcher Id: " + statistics.get("request_id"));
+      }
+    }
+
+    return response;
   }
 
   @Deprecated
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
-      Map<String, String> headers, JSONObject specificProxy) {
+      Map<String, String> headers, LettProxy specificProxy) {
     return fetcherPayloadBuilder(url, method, retrieveStatistics, payloadPOSTRequest, headers, new ArrayList<>(), specificProxy);
   }
 
@@ -875,7 +876,7 @@ public class POSTFetcher {
    * @return JSONObject with all parameters for request 'FETCHER'
    */
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
-      Map<String, String> headers, List<String> anyProxies, JSONObject specificProxy) {
+      Map<String, String> headers, List<String> anyProxies, LettProxy specificProxy) {
 
     JSONObject payload = new JSONObject();
 
@@ -905,19 +906,21 @@ public class POSTFetcher {
     }
 
 
-    if (anyProxies.isEmpty() && (url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com")
-        || url.contains("casasbahia.com") || url.contains("pontofrio.com") || url.contains("extra.com"))) {
-      payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, false);
-      anyProxies.add(ProxyCollection.BUY);
-      anyProxies.add(ProxyCollection.STORM_RESIDENTIAL_US);
-      anyProxies.add(ProxyCollection.LUMINATI_RESIDENTIAL_BR);
-    }
-
     if (specificProxy != null) {
+      JSONObject specificProxyJson = new JSONObject();
+      specificProxyJson.put("source", specificProxy.getSource());
+      specificProxyJson.put("host", specificProxy.getAddress());
+      specificProxyJson.put("port", specificProxy.getPort());
+      specificProxyJson.put("location", specificProxy.getLocation());
+      specificProxyJson.put("user", specificProxy.getUser());
+      specificProxyJson.put("pass", specificProxy.getPass());
+
+
       JSONObject specific = new JSONObject();
-      specific.put("specific", specificProxy);
+      specific.put("specific", specificProxyJson);
 
       payload.put(FETCHER_PARAMETER_PROXIES, specific);
+      payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, false);
     } else if (!anyProxies.isEmpty()) {
       JSONObject proxies = new JSONObject();
 
@@ -933,6 +936,56 @@ public class POSTFetcher {
     }
 
     return payload;
+  }
+
+  public static Map<String, String> fetchCookiesWithFetcher(JSONObject fetcherPayload, Session session) {
+    Map<String, String> cookiesMap = new HashMap<>();
+    String requestHash = DataFetcher.generateRequestHash(session);
+
+    try {
+      JSONObject response = POSTFetcher.requestWithFetcher(session, fetcherPayload, true);
+
+      if (response.has("response")) {
+        JSONObject responseJSON = response.getJSONObject("response");
+        DataFetcher.setRequestProxyForFetcher(session, response, fetcherPayload.getString("url"));
+        session.addRedirection(fetcherPayload.getString("url"), response.getJSONObject("response").getString("redirect_url"));
+
+        String content = responseJSON.getString("body");
+        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+
+        if (response.has("request_status_code")) {
+          int responseCode = response.getInt("request_status_code");
+          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+            throw new ResponseCodeException(responseCode);
+          }
+        }
+
+
+        if (responseJSON.has("headers")) {
+          JSONObject headersJson = responseJSON.getJSONObject("headers");
+
+          if (headersJson.has(DataFetcher.HTTP_COOKIE_HEADER.toLowerCase())) {
+            JSONArray cookiesArray = headersJson.getJSONArray(DataFetcher.HTTP_COOKIE_HEADER.toLowerCase());
+
+            for (Object o : cookiesArray) {
+              String cookieHeader = o.toString();
+              String cookieName = cookieHeader.split("=")[0].trim();
+
+              int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+              int y = cookieHeader.indexOf(';', x);
+
+              String cookieValue = cookieHeader.substring(x, y).trim();
+
+              cookiesMap.put(cookieName, cookieValue);
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+    }
+
+    return cookiesMap;
   }
 
   /**

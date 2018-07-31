@@ -16,7 +16,7 @@ import com.mongodb.client.FindIterable;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
@@ -106,7 +106,7 @@ public class DatabaseDataFetcher {
           + "AND processed.market = " + market + " " + "AND crawler_ranking.location = '" + location + "' " + "AND crawler_ranking.date BETWEEN '"
           + yesterday + "' AND '" + today + "'";
 
-      count = (Long) Main.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql).get(0).get("count");
+      count = (Long) GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql).get(0).get("count");
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));

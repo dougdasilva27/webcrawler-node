@@ -37,6 +37,7 @@ import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JsonUtils;
@@ -141,7 +142,7 @@ public abstract class CrawlerRanking extends Task {
       }
 
       if (!(session instanceof TestRankingSession)) {
-        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, Main.dbManager.connectionPanel);
+        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, GlobalConfigurations.dbManager.connectionPanel);
       }
 
       session.setTaskStatus(Task.STATUS_FAILED);
@@ -152,7 +153,7 @@ public abstract class CrawlerRanking extends Task {
     else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
       Logging.printLogDebug(logger, session, "Task completed.");
 
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, Main.dbManager.connectionPanel);
+      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, GlobalConfigurations.dbManager.connectionPanel);
 
       session.setTaskStatus(Task.STATUS_COMPLETED);
     }
@@ -179,7 +180,7 @@ public abstract class CrawlerRanking extends Task {
 
         // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
         if (session instanceof RankingSession || session instanceof RankingDiscoverSession
-            && Main.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+            && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
           sendMessagesToAmazonAndMongo();
         }

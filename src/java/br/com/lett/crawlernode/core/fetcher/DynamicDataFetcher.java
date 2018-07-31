@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -72,7 +73,7 @@ public class DynamicDataFetcher {
       if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
         phantomjsPath = Test.phantomjsPath;
       } else {
-        phantomjsPath = Main.executionParameters.getPhantomjsPath();
+        phantomjsPath = GlobalConfigurations.executionParameters.getPhantomjsPath();
       }
 
       // choose a proxy randomly
@@ -146,13 +147,7 @@ public class DynamicDataFetcher {
   }
 
   private static LettProxy randomProxy(String proxyService, Session session) {
-    List<LettProxy> proxies;
-
-    if (session instanceof TestRankingSession || session instanceof TestCrawlerSession) {
-      proxies = Test.proxies.getProxy(proxyService);
-    } else {
-      proxies = Main.proxies.getProxy(proxyService);
-    }
+    List<LettProxy> proxies = GlobalConfigurations.proxies.getProxy(proxyService);
 
     if (!proxies.isEmpty()) {
       int i = MathUtils.randInt(0, proxies.size() - 1);

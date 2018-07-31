@@ -8,21 +8,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
-import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.processor.ResultManager;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import credentials.models.DBCredentials;
 
 /**
  * 
@@ -37,12 +31,7 @@ public class Test {
   public static final String KEYWORDS_TEST = "keywords";
   public static final String CATEGORIES_TEST = "categories";
 
-  public static ExecutionParameters executionParameters;
-  public static DatabaseManager dbManager;
-  public static ProxyCollection proxies;
-  public static ResultManager processorResultManager;
   private static Options options;
-  public static Markets markets;
 
   private static String market;
   private static String city;
@@ -54,9 +43,9 @@ public class Test {
 
   public static void main(String args[]) {
     Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
-    // setting execution parameters
-    executionParameters = new ExecutionParameters();
-    executionParameters.setUpExecutionParameters();
+
+    // setting global configuraions
+    GlobalConfigurations.setConfigurations();
 
     // adding command line options
     options = new Options();
@@ -103,30 +92,10 @@ public class Test {
     if (cmd.hasOption("phantomjsPath"))
       phantomjsPath = cmd.getOptionValue("phantomjsPath");
 
-    // setting database credentials
-    DBCredentials dbCredentials = new DBCredentials();
-
-    try {
-      dbCredentials = DatabaseCredentialsSetter.setCredentials();
-    } catch (Exception e) {
-      Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
-    }
-
-    // creating the database manager
-    dbManager = new DatabaseManager(dbCredentials);
-
-    // create result manager for processor stage
-    processorResultManager = new ResultManager(dbManager);
-
     // fetch market information
     Market market = fetchMarket();
 
-    markets = new Markets(dbManager);
-
     if (market != null) {
-
-      // fetching proxies
-      proxies = new ProxyCollection(markets, dbManager);
 
       // create a task executor
       // for testing we use 1 thread, there is no need for more
@@ -135,21 +104,20 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("futebol", market);
+        session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session =
             SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
       } else {
         session = SessionFactory.createTestSession(
-            "https://www.carrefour.com.ar/lavarropas-automatico-samsung-8-kg-wa80f5s4utw-blanco.html", market);
+            "https://www.strar.com.br/ar-condicionado-split-libero-artcool-inverter-new-lg-22000-btu-h-frio-220v-as-q242crz1.html", market);
       }
-
 
       Task task = TaskFactory.createTask(session);
 
       task.process();
       try {
-        dbManager.connectionPostgreSQL.closeConnection();
+        GlobalConfigurations.dbManager.connectionPostgreSQL.closeConnection();
       } catch (Exception e) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
       }
@@ -159,7 +127,7 @@ public class Test {
   }
 
   private static Market fetchMarket() {
-    DatabaseDataFetcher fetcher = new DatabaseDataFetcher(dbManager);
+    DatabaseDataFetcher fetcher = new DatabaseDataFetcher(GlobalConfigurations.dbManager);
     return fetcher.fetchMarket(city, market);
   }
 

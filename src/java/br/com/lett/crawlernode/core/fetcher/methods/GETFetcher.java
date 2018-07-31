@@ -122,7 +122,11 @@ public class GETFetcher {
           headers.put("Cookie", cookiesHeader.toString());
         }
 
-        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
+        if (userAgent != null) {
+          headers.put("User-Agent", userAgent);
+        }
+
+        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, DataFetcher.GET_REQUEST, true, null, headers, lettProxy);
         JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
 
         if (response.has("response")) {
