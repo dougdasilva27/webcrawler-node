@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -43,6 +42,10 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloRappiCrawler;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -62,14 +65,6 @@ public class POSTFetcher {
   public static final String FETCHER_HOST_DEV = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
   // public static final String FETCHER_HOST_DEV =
   // "http://placeholder-fetcher-dev.us-east-1.elasticbeanstalk.com";
-
-  private static final String FETCHER_PARAMETER_URL = "url";
-  // private static final String FETCHER_PARAMETER_USE_PROXY_TREE = "use_proxy_tree";
-  private static final String FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE = "use_proxy_by_moving_average";
-  private static final String FETCHER_PARAMETER_METHOD = "request_type";
-  private static final String FETCHER_PARAMETER_RETRIEVE_STATISTICS = "retrieve_statistics";
-  private static final String FETCHER_PARAMETER_PROXIES = "forced_proxies";
-  private static final String FETCHER_PARAMETER_REQUEST_PARAMETERS = "request_parameters";
 
   private POSTFetcher() {
     super();
@@ -763,8 +758,8 @@ public class POSTFetcher {
   public static JSONObject requestWithFetcher(Session session, JSONObject payload, Integer timeout, boolean dev) throws Exception {
     String requestHash = DataFetcher.generateRequestHash(session);
 
-    Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a " + payload.getString(FETCHER_PARAMETER_METHOD)
-        + " request in: " + payload.getString(FETCHER_PARAMETER_URL));
+    Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a "
+        + payload.getString(FetcherRequest.FETCHER_PARAMETER_METHOD) + " request in: " + payload.getString(FetcherRequest.FETCHER_PARAMETER_URL));
 
     String fetcherHost = FETCHER_HOST;
 
@@ -779,8 +774,6 @@ public class POSTFetcher {
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
     Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 : timeout;
-
-    // Integer defaultTimeout = 1;
 
     RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
         .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
@@ -878,64 +871,11 @@ public class POSTFetcher {
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
       Map<String, String> headers, List<String> anyProxies, LettProxy specificProxy) {
 
-    JSONObject payload = new JSONObject();
+    FetcherRequest payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(specificProxy == null).setRequestType(method)
+        .setRetrieveStatistics(retrieveStatistics).setForcedProxies(new FetcherRequestForcedProxies().setAny(anyProxies).setSpecific(specificProxy))
+        .setParameters(new FetcherRequestsParameters().setHeaders(headers).setPayload(payloadPOSTRequest)).build();
 
-    payload.put(FETCHER_PARAMETER_URL, url);
-    payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, true);
-    payload.put(FETCHER_PARAMETER_METHOD, method);
-    payload.put(FETCHER_PARAMETER_RETRIEVE_STATISTICS, retrieveStatistics);
-
-    if (payloadPOSTRequest != null || headers != null) {
-      JSONObject requestParameters = new JSONObject();
-
-      if (payloadPOSTRequest != null) {
-        requestParameters.put("payload", payloadPOSTRequest);
-      }
-
-      if (headers != null && !headers.isEmpty()) {
-        JSONObject headersOBJ = new JSONObject();
-
-        for (Entry<String, String> entry : headers.entrySet()) {
-          headersOBJ.put(entry.getKey(), entry.getValue());
-        }
-
-        requestParameters.put("headers", headersOBJ);
-      }
-
-      payload.put(FETCHER_PARAMETER_REQUEST_PARAMETERS, requestParameters);
-    }
-
-
-    if (specificProxy != null) {
-      JSONObject specificProxyJson = new JSONObject();
-      specificProxyJson.put("source", specificProxy.getSource());
-      specificProxyJson.put("host", specificProxy.getAddress());
-      specificProxyJson.put("port", specificProxy.getPort());
-      specificProxyJson.put("location", specificProxy.getLocation());
-      specificProxyJson.put("user", specificProxy.getUser());
-      specificProxyJson.put("pass", specificProxy.getPass());
-
-
-      JSONObject specific = new JSONObject();
-      specific.put("specific", specificProxyJson);
-
-      payload.put(FETCHER_PARAMETER_PROXIES, specific);
-      payload.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, false);
-    } else if (!anyProxies.isEmpty()) {
-      JSONObject proxies = new JSONObject();
-
-      // Proxies sequencie to be used for requests (1x per proxy service)
-      JSONArray any = new JSONArray();
-
-      for (String proxy : anyProxies) {
-        any.put(proxy);
-      }
-
-      proxies.put("any", any);
-      payload.put(FETCHER_PARAMETER_PROXIES, proxies);
-    }
-
-    return payload;
+    return payload.toJson();
   }
 
   public static Map<String, String> fetchCookiesWithFetcher(JSONObject fetcherPayload, Session session) {
