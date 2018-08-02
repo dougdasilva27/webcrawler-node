@@ -52,7 +52,7 @@ public class BrasilFrigelarCrawler extends Crawler {
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalPid);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -283,7 +283,7 @@ public class BrasilFrigelarCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalPid) {
     StringBuilder description = new StringBuilder();
 
     Element descElement = doc.select("#product-description").first();
@@ -296,6 +296,66 @@ public class BrasilFrigelarCrawler extends Crawler {
 
     if (specElement != null) {
       description.append(specElement.html());
+    }
+
+    String url = session.getOriginalURL();
+
+    // To capture the installation recommendations, I analyzed a script on this link:
+    // https://www.frigelar.com.br/files/inst.js
+    // that does exactly what the code below does
+    if (!url.contains("janela") && !url.contains("cortina") && !url.contains("portatil") && !url.contains("suporte")
+        && !url.contains("kit-instalacao") && !url.contains("kit-wi-fi") && !url.contains("umidificador") && !url.contains("bebedouro")
+        && !url.contains("purificador") && !url.contains("refrigerador") && !url.contains("cervejeira") && !url.contains("conservador")
+        && !url.contains("freezer") && !url.contains("Ventilador") && !url.contains("ventilador") && !url.contains("adega")
+        && !url.contains("frigobar")) {
+      description.append(
+          "<h4 class=\"sub-titulo\">Recomendações de Instalação</h4><b>Escolha do equipamento:</b><br><br>Você precisa considerar a quantidade de pessoas que vivem no local,"
+              + " as dimensões do cômodo onde você vai realizar a instalação do ar condicionado, a incidência de luz solar no "
+              + "local além da presença ou não de equipamentos eletrônicos no ambiente. Em caso de dúvidas, utilize nossa "
+              + "calculadora ou entre em contato com um de nossos vendedores.<br><br><b>Instalação:</b><br><br> É de extrema "
+              + "importância que o produto seja instalado por técnicos credenciados ou autorizados com o fabricante, assegurando "
+              + "desta forma os prazos de garantia do produto e as corretas práticas de instalação estabelecidas pelo fabricante "
+              + "para um perfeito funcionamento do aparelho.<br><br> <b>Como é a instalação do split?</b><br><br> Lembrando que uma "
+              + "unidade do aparelho fica dentro da casa e outra fora, considere que o aparelho é ligado por tubulações frigorígenas "
+              + "e fios elétricos conectando as duas unidades.<br><br><b>Para a infraestrutura que liga as duas partes do aparelho são "
+              + "usados:</b><br>-Tubos em cobre ou alumínio (também chamados de tubulação frigorígena), com bitolas e espessuras adequadas "
+              + "conforme especificação do fabricante.<br>-Fiação elétrica, com cabos dimensionados conforme especificação do fabricante e "
+              + "um disjuntor exclusivo para cada aparelho de ar condicionado;<br>-Tubos de PVC para drenagem da água na unidade interna.");
+    } else if (!url.contains("janela")) {
+      description.append(
+          "<h4 class=\"sub-titulo\">Recomendações de Instalação</h4><b>Escolha do equipamento:</b><br><br>Você precisa considerar a quantidade de pessoas que vivem no local, "
+              + "as dimensões do cômodo onde você vai realizar a instalação do ar-condicionado, a incidência de luz solar no local além "
+              + "da presença ou não de equipamentos eletrônicos no ambiente. Em caso de dúvidas, utilize nossa calculadora ou entre em "
+              + "contato com um de nossos vendedores.<br><br><b>Instalação:</b><br>É de extrema importância que o produto seja instalado "
+              + "por técnicos credenciados ou autorizados com o fabricante, assegurando desta forma os prazos de garantia do produto e as "
+              + "corretas práticas de instalação estabelecidas pelo fabricante para um perfeito funcionamento do aparelho.<br><br><b>Como é "
+              + "a instalação do Ar-condicionado de Janela?</b><br><br>Primeiramente, você precisa escolher um local apropriado para a instalação "
+              + "do seu Ar-Condicionado de Janela. Uma tomada de voltagem compatível com o aparelho e um disjuntor exclusivo, devem ficar próximos"
+              + " ao local de instalação. Tenha cuidado para que a parede não possua fios e/ou canos por perto.<br><br>O aparelho deverá ficar "
+              + "a uma altura mínima entre 1,50m e 1,80m do chão e a uma distância mínima de 50cm da parede lateral. Para garantir máxima "
+              + "eficiência do aparelho, instale preferencialmente na parte central do ambiente, se for possível.<br><br>1 - Verifique as "
+              + "medidas do aparelho e o seu local de instalação.<br>2 - Faça o caixilho (suporte de madeira para o ar-condicionado), caso "
+              + "não tenha a estrutura pronta.<br>3 - Corte o revestimento da parede criando a abertura para o seu aparelho.<br>4 - Instale "
+              + "o caixilho de madeira dando acabamento para a abertura na parede.<br>5 - Encaixe o aparelho na abertura certificando-se de "
+              + "que o mesmo está devidamente preso.<br>6 - Realize o acabamento da instalação sem deixar frisos para escapamento do ar."
+              + "<br>Tenha cuidado para que as aberturas laterais e superiores do lado externo do aparelho de ar-condicionado estejam sem obstruções.");
+    } else if (!url.contains("cortina")) {
+      description.append(
+          "<h4 class=\"sub-titulo\">Recomendações de Instalação</h4><br>É de extrema importância que o produto seja instalado por técnicos credenciados ou autorizados com o fabricante, "
+              + "assegurando desta forma os prazos de garantia do produto e as corretas práticas de instalação estabelecidas pelo fabricante para um "
+              + "perfeito funcionamento do aparelho.<br><br><b>Como é a instalação de uma Cortina de Ar?</b><br><br>Estes aparelhos se adaptam a qualquer "
+              + "tamanho de vão, com alcance de 1,30m e 1,75m de largura por até 3m de altura.<br><br>1 - Para a instalação da cortina de ar, escolha um local "
+              + "que ofereça uma fixação segura e com tomada de voltagem compatível.<br>2 - Posicione a cortina de ar entre 1,50 e 3,0m de altura, sempre na horizontal "
+              + "e com a saída de ar para baixo.<br>3 - Em casos que a largura do vão for maior que o tamanho máximo de módulo disponível, sugerimos a instalação "
+              + "de dois ou mais módulos até o fechamento completo do vão, observando a distância de mínima de 20mm entre as cortinas de ar.<br>4"
+              + " - Remova o suporte da cortina de ar soltando os parafusos de fixação localizados na parte traseira.<br>5 - Com os suportes removidos "
+              + "da cortina de ar, fixe-os firmemente, observando a distância entre os mesmos para posterior encaixe do equipamento.<br>6 - "
+              + "Encaixe a cortina de ar na parte superior do suporte e recoloque os parafusos de fixação.");
+    } else if (!url.contains("portatil")) {
+      description.append(
+          "<h4 class=\"sub-titulo\">Recomendações de Instalação</h4><br>A grande vantagem do Ar Condicionado Portátil em relação aos outros modelos, é a sua mobilidade, podendo climatizar "
+              + "diferentes ambientes em um único aparelho, pois não requer instalação, sendo necessário apenas ser posicionado próximo a uma "
+              + "janela para eliminar o ar quente do ambiente.<br><br>Uma ótima opção para locais onde não seja possível realizar a instalação de um aparelho split.");
     }
 
     return description.toString();

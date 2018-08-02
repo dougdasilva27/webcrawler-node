@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -694,12 +695,18 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
 
   private String crawlDescription(Document document) {
-    String description = "";
+    StringBuilder description = new StringBuilder();
     Element elementProductDetails = document.select("#detalhes").first();
-    if (elementProductDetails != null)
-      description = description + elementProductDetails.html();
+    if (elementProductDetails != null) {
+      description.append(elementProductDetails.html());
+    }
 
-    return description;
+    Element ean = document.select(".productEan").first();
+    if (ean != null) {
+      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), session));
+    }
+
+    return description.toString();
   }
 
 

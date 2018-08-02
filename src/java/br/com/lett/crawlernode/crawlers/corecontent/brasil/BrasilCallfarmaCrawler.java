@@ -188,24 +188,10 @@ public class BrasilCallfarmaCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select("#content #informacao-produto").first();
-
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    Elements rows = doc.select("#content .row");
+    Elements rows = doc.select(".exposicao-produto-info");
 
     for (Element e : rows) {
-      Element minibula = e.select("#produto-minibula").first();
-      Element aviso = e.select("#avisoMedicamento").first();
-      Element indicacao = e.select("#produto-indicacao").first();
-      Element contraIndicacao = e.select("#produto-contra-indicacao").first();
-      Element bula = e.select("#produto-bula").first();
-
-      if (minibula != null || aviso != null || indicacao != null || contraIndicacao != null || bula != null) {
-        description.append(e.html());
-      }
+      description.append(e.html());
     }
 
 

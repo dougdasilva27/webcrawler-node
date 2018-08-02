@@ -137,7 +137,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
     Element productIdElement = document.select("#produtoid").first();
     if (productIdElement != null) {
-      String attrValue = productDataElement.attr("value");
+      String attrValue = productIdElement.attr("value");
       if (attrValue == null || attrValue.isEmpty()) {
         Logging.printLogDebug(logger, session, "Backup approach also failed [attrValue = " + attrValue + "]");
       } else {

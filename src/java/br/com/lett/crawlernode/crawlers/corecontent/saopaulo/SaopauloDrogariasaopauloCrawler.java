@@ -309,6 +309,23 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         }
       }
 
+      if (product.has("Especificações")) {
+        JSONArray infos = product.getJSONArray("Especificações");
+
+        for (Object o : infos) {
+          if (product.has(o.toString())) {
+            description.append("<div> <strong>" + o.toString() + ":</strong>");
+            JSONArray spec = product.getJSONArray(o.toString());
+
+            for (Object obj : spec) {
+              description.append(obj.toString() + "&nbsp");
+            }
+
+            description.append("</div>");
+          }
+        }
+      }
+
       if (product.has("Página Especial")) {
         JSONArray specialPage = product.getJSONArray("Página Especial");
 

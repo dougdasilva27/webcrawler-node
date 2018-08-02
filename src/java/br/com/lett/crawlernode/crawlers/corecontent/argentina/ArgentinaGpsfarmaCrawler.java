@@ -166,6 +166,10 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
 
     if (primaryImageElement != null) {
       primaryImage = primaryImageElement.attr("data-zoom-image").trim();
+
+      if (primaryImage.isEmpty()) {
+        primaryImage = primaryImageElement.attr("src");
+      }
     }
 
     return primaryImage;

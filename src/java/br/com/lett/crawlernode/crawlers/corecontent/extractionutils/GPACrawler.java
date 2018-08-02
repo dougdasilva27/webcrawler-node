@@ -35,6 +35,9 @@ public class GPACrawler {
   private List<Cookie> cookies = new ArrayList<>();
 
   /**
+   * Cep's gpa
+   * 
+   * São paulo: 01007-040 Curitiba: 80010-080 Brasília: 70330-500 Rio de Janeiro: 20021-020
    * 
    * @param logger
    * @param session

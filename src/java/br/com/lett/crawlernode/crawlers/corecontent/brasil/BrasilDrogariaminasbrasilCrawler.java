@@ -156,10 +156,10 @@ public class BrasilDrogariaminasbrasilCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements images = doc.select(".more-views-list > li:not([class=active]) a");
+    Elements images = doc.select(".Fotos .Pequenas a[href]");
 
-    for (Element e : images) {
-      secondaryImagesArray.put(e.attr("href"));
+    for (int i = 1; i < images.size(); i++) { // first index is the primary image
+      secondaryImagesArray.put(images.get(i).attr("href"));
     }
 
     if (secondaryImagesArray.length() > 0) {

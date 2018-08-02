@@ -171,7 +171,7 @@ public class ArgentinaLaanonimaonlineCrawler extends Crawler {
 
     Elements imagesElement = doc.select("#galeria_img div > a");
 
-    for (int i = 1; i < imagesElement.size() - 1; i++) { // first index and last index is the primary image
+    for (int i = 1; i < imagesElement.size(); i++) { // first index and last index is the primary image
       String image = imagesElement.get(i).attr("data-zoom-image").trim();
       secondaryImagesArray.put(image);
     }
