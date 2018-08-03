@@ -27,11 +27,11 @@ public class FetcherRequest {
     fetcherParameters.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, mustUseMovingAverage);
 
     if (parameters != null) {
-      fetcherParameters.put(FETCHER_PARAMETER_REQUEST_PARAMETERS, parameters);
+      fetcherParameters.put(FETCHER_PARAMETER_REQUEST_PARAMETERS, parameters.toJson());
     }
 
     if (forcedProxies != null) {
-      fetcherParameters.put(FETCHER_PARAMETER_PROXIES, forcedProxies);
+      fetcherParameters.put(FETCHER_PARAMETER_PROXIES, forcedProxies.toJson());
     }
 
     return fetcherParameters;
