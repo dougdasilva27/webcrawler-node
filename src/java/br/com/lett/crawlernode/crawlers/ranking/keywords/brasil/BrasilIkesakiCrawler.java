@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
@@ -18,7 +19,7 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.ikesaki.com.br/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
+    String url = "https://www.ikesaki.com.br/busca?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
@@ -51,6 +52,11 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
+  protected boolean checkIfHasNextPage() {
+    return super.checkIfHasNextPage() && !(session instanceof RankingKeywordsSession);
+  }
+
+  @Override
   protected void setTotalProducts() {
     Element totalElement = this.currentDoc.select(".resultado-busca-numero .value").first();
 
@@ -66,20 +72,13 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalPid(Element e) {
-    String pid = null;
-
-    Element id = e.select(".product-id").first();
-    if (id != null) {
-      pid = id.ownText();
-    }
-
-    return pid;
+    return e.attr("data-product-id");
   }
 
   private String crawlProductUrl(Element e) {
     String productUrl = null;
 
-    Element url = e.select("> a").first();
+    Element url = e.select(".shelf-product-name__link").first();
 
     if (url != null) {
       productUrl = url.attr("href");
