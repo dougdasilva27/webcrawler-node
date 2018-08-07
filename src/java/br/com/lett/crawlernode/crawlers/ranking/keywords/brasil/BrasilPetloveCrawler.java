@@ -25,7 +25,7 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#shelf-loop li > a");
+    Elements products = this.currentDoc.select("#shelf-loop .catalog-info-product > a:first-of-type");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
