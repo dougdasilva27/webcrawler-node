@@ -206,7 +206,7 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = doc.select(".product-collateral").first();
+    Element descriptionElement = doc.select(".product-collateral .toggle-content").first();
 
     if (descriptionElement != null) {
       description.append(descriptionElement.html());
