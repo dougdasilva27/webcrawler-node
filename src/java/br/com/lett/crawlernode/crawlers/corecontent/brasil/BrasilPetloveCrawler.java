@@ -127,8 +127,8 @@ public class BrasilPetloveCrawler extends Crawler {
   private String crawlName(JSONObject jsonSku) {
     StringBuilder name = new StringBuilder();
 
-    if (jsonSku.has("full_name")) {
-      name.append(jsonSku.getString("full_name"));
+    if (jsonSku.has("name")) {
+      name.append(jsonSku.getString("name"));
     }
 
     return name.toString();
