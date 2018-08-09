@@ -366,7 +366,12 @@ public class B2WCrawler {
   }
 
   private String crawlDescription(String internalPid, Document doc) {
-    String description = "";
+    StringBuilder description = new StringBuilder();
+
+    Element datasheet = doc.selectFirst("#info-section");
+    if (datasheet != null) {
+      description.append(datasheet.html());
+    }
 
     if (internalPid != null) {
       // String url = HOME_PAGE + "product-description/shop/" + internalPid;
@@ -382,18 +387,18 @@ public class B2WCrawler {
         String urlDesc2 = homePage + "product-description/acom/" + internalPid;
         Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
         if (docDescriptionFrame != null) {
-          description = description + docDescriptionFrame.html();
+          description.append(docDescriptionFrame.html());
         }
       }
 
       Element elementProductDetails = doc.select(".info-section").last();
       if (elementProductDetails != null) {
         elementProductDetails.select(".info-section-header.hidden-md.hidden-lg").remove();
-        description = description + elementProductDetails.html();
+        description.append(elementProductDetails.html());
       }
     }
 
-    return description;
+    return description.toString();
   }
 
   private Prices crawlPrices(Map<String, Prices> marketplaceMap) {

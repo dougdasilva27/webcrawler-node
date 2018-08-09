@@ -74,7 +74,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(doc, ean);
+      String description = crawlDescription(ean, apiJson);
 
       // price is not displayed when sku is unavailable
       // Ex:
@@ -460,27 +460,34 @@ public class BrasilSaraivaCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document document, String ean) {
+  private String crawlDescription(String ean, JSONObject apiJson) {
     StringBuilder description = new StringBuilder();
 
-    Element skuInformation = document.select("#product-information").first();
-    if (skuInformation != null) {
-      description.append(skuInformation.html());
+    if (apiJson.has("description")) {
+      description.append("<section id=\"description\"> <h4> Descrição </h4>");
+      description.append(apiJson.get("description"));
+      description.append("</section>");
     }
 
-    Element skuAdditionalInformation = document.select("#product-additional").first();
-    if (skuAdditionalInformation != null) {
-      description.append(skuAdditionalInformation.html());
-    }
 
-    Element specialDesc = document.select("#product_description").first();
-    if (specialDesc != null) {
-      description.append(specialDesc.html());
-    }
+    if (apiJson.has("attributes")) {
+      JSONObject attributes = apiJson.getJSONObject("attributes");
 
-    Element specialInfo = document.select("#product_attributes").first();
-    if (specialInfo != null) {
-      description.append(specialInfo.html());
+      description.append("<section id=\"description\"> <h4> Características </h4>");
+      description.append("<table id=\"ficha\"> <tbody>");
+      for (String key : attributes.keySet()) {
+        JSONObject attribute = attributes.getJSONObject(key);
+
+        if (attribute.has("label") && attribute.has("value")) {
+          description.append("<tr>");
+          description.append("<td> " + attribute.get("label") + "&nbsp</td>");
+          description.append("<td> " + attribute.get("value") + "</td>");
+          description.append("</tr>");
+        }
+      }
+
+      description.append("</tbody></table>");
+      description.append("</section>");
     }
 
     description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, session));
