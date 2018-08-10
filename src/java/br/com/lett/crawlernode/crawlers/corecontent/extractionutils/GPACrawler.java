@@ -245,31 +245,29 @@ public class GPACrawler {
     if (json.has("mapOfImages")) {
       JSONObject images = json.getJSONObject("mapOfImages");
 
-      for (int i = 1; i < images.length(); i++) { // index 0 may be a primary Image
-        if (images.length() > 0 && images.has(Integer.toString(i))) {
-          JSONObject imageObj = images.getJSONObject(Integer.toString(i));
+      for (String key : images.keySet()) { // index 0 may be a primary Image
+        JSONObject imageObj = images.getJSONObject(key);
 
-          if (imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
-            String image = homePage + imageObj.getString("BIG");
-            String imageId = getImageId(image);
+        if (imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
+          String image = homePage + imageObj.getString("BIG");
+          String imageId = getImageId(image);
 
-            if (image.contains("img") && !imageId.equals(primaryImageId)) {
-              secondaryImagesArray.put(homePage + imageObj.getString("BIG"));
-            }
-          } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
-            String image = homePage + imageObj.getString("MEDIUM");
-            String imageId = getImageId(image);
+          if (image.contains("img") && !imageId.equals(primaryImageId)) {
+            secondaryImagesArray.put(homePage + imageObj.getString("BIG"));
+          }
+        } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
+          String image = homePage + imageObj.getString("MEDIUM");
+          String imageId = getImageId(image);
 
-            if (image.contains("img") && !imageId.equals(primaryImageId)) {
-              secondaryImagesArray.put(homePage + imageObj.getString("MEDIUM"));
-            }
-          } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
-            String image = homePage + imageObj.getString("SMALL");
-            String imageId = getImageId(image);
+          if (image.contains("img") && !imageId.equals(primaryImageId)) {
+            secondaryImagesArray.put(homePage + imageObj.getString("MEDIUM"));
+          }
+        } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
+          String image = homePage + imageObj.getString("SMALL");
+          String imageId = getImageId(image);
 
-            if (image.contains("img") && !imageId.equals(primaryImageId)) {
-              secondaryImagesArray.put(homePage + imageObj.getString("SMALL"));
-            }
+          if (image.contains("img") && !imageId.equals(primaryImageId)) {
+            secondaryImagesArray.put(homePage + imageObj.getString("SMALL"));
           }
         }
       }
