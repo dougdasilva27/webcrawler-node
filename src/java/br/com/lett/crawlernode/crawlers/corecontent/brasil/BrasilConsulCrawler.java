@@ -46,7 +46,6 @@ public class BrasilConsulCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -56,6 +55,7 @@ public class BrasilConsulCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
+        String description = crawlDescription(doc,apiJSON);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
@@ -98,18 +98,76 @@ public class BrasilConsulCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document document) {
-    String description = "";
+  /**
+   * @param document
+   * @param apiJSON
+   * @return
+   */
+  private String crawlDescription(Document document, JSONObject apiJSON) {
+    StringBuilder description = new StringBuilder();
     Element descriptionElement = document.select(".productDescription").first();
     Element specElement = document.select("#caracteristicas").first();
 
     if (descriptionElement != null) {
-      description = description + descriptionElement.html();
+      descriptionElement.select(".hide").remove();
+      //description = description + descriptionElement.html();
+      description.append(descriptionElement.html());    
     }
     if (specElement != null) {
-      description = description + specElement.html();
+      //description = description + specElement.html();
+      description.append(specElement.html());
     }
 
-    return description;
+    if(apiJSON.has("RealHeight")) {
+
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Largura")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + apiJSON.getFloat("RealHeight"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(apiJSON.has("RealWidth")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Altura")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + apiJSON.getFloat("RealWidth"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(apiJSON.has("RealLength")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Profundidade")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + apiJSON.getFloat("RealLength"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(apiJSON.has("RealWeightKg")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Peso")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + apiJSON.getFloat("RealWeightKg"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+
+    return description.toString();
   }
 }
