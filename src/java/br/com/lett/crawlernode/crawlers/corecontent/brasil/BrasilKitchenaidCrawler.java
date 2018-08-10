@@ -10,6 +10,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -49,10 +50,9 @@ public class BrasilKitchenaidCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
+      System.out.println(skuJson);
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -67,7 +67,8 @@ public class BrasilKitchenaidCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
 
-        JSONObject jsonProduct = crawlApi(internalId);
+        JSONObject jsonProduct = crawlApi(internalId,"http://www.kitchenaid.com.br/produto/sku/");
+        String description = crawlDescription(doc,jsonProduct);
         String primaryImage = crawlPrimaryImage(jsonProduct);
         String secondaryImages = crawlSecondaryImages(jsonProduct);
         Prices prices = crawlPrices(internalId, price, jsonSku, doc);
@@ -207,7 +208,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
           secondaryImagesArray.put(urlImage);
         }
 
-      }
+      } 
     }
 
     if (secondaryImagesArray.length() > 0) {
@@ -283,12 +284,63 @@ public class BrasilKitchenaidCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc ,JSONObject jsonProduct) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select(".js-product-infos").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
+    Element skuID = doc.select(".skuReference").first();
+    JSONObject jsonProductApiData = crawlApi(skuID.text(), "https://www.kitchenaid.com.br/api/catalog_system/pub/products/search?fq=alternateIds_RefId:");
+
+    if (jsonProductApiData != null) {
+      description.append(jsonProductApiData.getJSONArray("Descrição curta topo").get(0));
+    }
+
+    if(jsonProduct.has("RealHeight")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Largura")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + jsonProduct.getFloat("RealHeight"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(jsonProduct.has("RealWidth")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Altura")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + jsonProduct.getFloat("RealWidth"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(jsonProduct.has("RealLength")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Profundidade")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + jsonProduct.getFloat("RealLength"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
+    }
+    if(jsonProduct.has("RealWeightKg")) {
+      description.append("<table cellspacing=\"0\" class=\"descricao\">\n") 
+      .append("<tbody>")
+      .append("<tr>")
+      .append("<th>Peso")
+      .append("</th>")
+      .append("<td>")
+      .append("\n   " + jsonProduct.getFloat("RealWeightKg"))
+      .append("</td>")
+      .append("</tbody>")
+      .append("</table>");
     }
 
     return description.toString();
@@ -410,8 +462,8 @@ public class BrasilKitchenaidCrawler extends Crawler {
     return mapInstallments;
   }
 
-  private JSONObject crawlApi(String internalId) {
-    String url = "http://www.kitchenaid.com.br/produto/sku/" + internalId;
+  private JSONObject crawlApi(String internalId , String urlLink) {
+    String url = urlLink + internalId;
 
     JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -421,7 +473,6 @@ public class BrasilKitchenaidCrawler extends Crawler {
 
     return new JSONObject();
   }
-
 
   private Integer crawlStock(JSONObject jsonProduct) {
     Integer stock = null;
