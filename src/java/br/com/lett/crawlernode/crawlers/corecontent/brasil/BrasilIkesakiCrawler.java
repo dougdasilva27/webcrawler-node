@@ -286,7 +286,7 @@ public class BrasilIkesakiCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select(".product-characteristics").first();
+    Element shortDescription = doc.select(".product-characteristics table.Abas-de-informacao").first();
     if (shortDescription != null) {
       description.append(shortDescription.html());
     }

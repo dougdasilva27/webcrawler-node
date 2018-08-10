@@ -129,9 +129,23 @@ public class BrasilPetloveCrawler extends Crawler {
 
     if (jsonSku.has("name")) {
       name.append(jsonSku.getString("name"));
+
+      if (jsonSku.has("label_name")) {
+        name.append(" ");
+        name.append(jsonSku.get("label_name"));
+      }
+
+      if (jsonSku.has("original_short_name")) {
+        String shortName = jsonSku.getString("original_short_name");
+
+        if (!name.toString().toLowerCase().contains(shortName.toLowerCase())) {
+          name.append(" ");
+          name.append(shortName);
+        }
+      }
     }
 
-    return name.toString();
+    return name.toString().trim();
   }
 
   private Float crawlMainPagePrice(JSONObject json, boolean available) {

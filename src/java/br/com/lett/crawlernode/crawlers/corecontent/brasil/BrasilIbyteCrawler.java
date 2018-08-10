@@ -148,10 +148,10 @@ public class BrasilIbyteCrawler extends Crawler {
       Element elementPrice = doc.select(".regular-price .price").first();
       Element specialPrice = doc.select(".special-price .price").first();
 
-      if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-      } else if (specialPrice != null) {
+      if (specialPrice != null) {
         price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      } else if (elementPrice != null) {
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Categoria
@@ -244,7 +244,6 @@ public class BrasilIbyteCrawler extends Crawler {
 
     if (price != null) {
       Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces(price - (price * 0.07f));
-
       installmentPriceMap.put(1, priceWithDiscount);
 
       Element boleto = doc.select(".boletoBox .price").first();
@@ -279,7 +278,7 @@ public class BrasilIbyteCrawler extends Crawler {
           }
         }
       } else {
-        installments = doc.select(".parcelaBloco div[class^=parcela-]");
+        installments = doc.select(".product-shop .parcelaBloco div[class^=parcela-]");
 
         for (Element e : installments) {
           Element installmentElement = e.select(".parcela").last();
@@ -300,11 +299,6 @@ public class BrasilIbyteCrawler extends Crawler {
             }
           }
         }
-      }
-
-
-      if (installmentPriceMap.size() < 1) {
-        installmentPriceMap.put(1, priceWithDiscount);
       }
 
       prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
