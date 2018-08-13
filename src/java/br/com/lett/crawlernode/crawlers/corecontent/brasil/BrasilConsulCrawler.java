@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -109,6 +110,17 @@ public class BrasilConsulCrawler extends Crawler {
 
     if (specElement != null) {
       specElement.select(".group.Prateleira").remove();
+
+      Elements nameFields = specElement.select(".name-field, h4");
+      for (Element e : nameFields) {
+        String classString = e.attr("class");
+
+        if (classString.toLowerCase().contains("modulo") || classString.toLowerCase().contains("foto")) {
+          specElement.select("." + classString.trim().replace(" ", ".")).remove();
+        }
+      }
+
+      specElement.select(".Galeria, .Video").remove();
       description.append(specElement.html().replace("Arquivos", "Downloads"));
     }
 
