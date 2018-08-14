@@ -146,7 +146,7 @@ public class ArgentinaLaanonimaonlineCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document doc) {
-    return !doc.select(".btn carrito spa_bot sin_stock").isEmpty();
+    return doc.select(".sin_stock").isEmpty();
   }
 
   private Marketplace crawlMarketplace() {
