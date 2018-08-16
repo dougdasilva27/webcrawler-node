@@ -64,7 +64,7 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
 
 
   private String crawlInternalId(String productUrl) {
-    return CommonMethods.getLast(productUrl.replace(HOME_PAGE, "").split("/"));
+    return CommonMethods.getLast(productUrl.replace(HOME_PAGE, "").split("produto/")).split("/")[0].trim();
   }
 
   /**
