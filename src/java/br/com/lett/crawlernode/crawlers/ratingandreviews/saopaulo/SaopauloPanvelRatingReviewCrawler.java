@@ -3,10 +3,12 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
@@ -28,9 +30,11 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
       JSONObject productJson = chaordic.has("product") ? chaordic.getJSONObject("product") : new JSONObject();
 
       ratingReviews.setInternalId(crawlInternalId(productJson));
+      Integer commentsNumber = crawlCommentsNumber(document);
 
-      ratingReviews.setTotalRating(crawlCommentsNumber(document));
-      ratingReviews.setAverageOverallRating(crawlTotalRating(document));
+      ratingReviews.setTotalRating(commentsNumber);
+      ratingReviews.setTotalWrittenReviews(commentsNumber);
+      ratingReviews.setAverageOverallRating(crawlTotalRating(document, commentsNumber));
 
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
@@ -39,24 +43,23 @@ public class SaopauloPanvelRatingReviewCrawler extends RatingReviewCrawler {
     return ratingReviewsCollection;
   }
 
-  private Double crawlTotalRating(Document document) {
-    Integer stars = document.select(".item-info__rating i.active").size();
-    return stars.doubleValue();
+  private Double crawlTotalRating(Document document, Integer commentsNumber) {
+    Double stars = 0d;
+
+    if (commentsNumber > 0) {
+      Double values = 0d;
+      Elements comments = document.select(".box-comment .comment-title__rating");
+      for (Element e : comments) {
+        values += e.select("i.active").size();
+      }
+
+      stars = MathUtils.normalizeTwoDecimalPlaces(values / commentsNumber);
+    }
+    return stars;
   }
 
   private Integer crawlCommentsNumber(Document doc) {
-    Integer starNumber = 0;
-    Element total = doc.select(".item-info__comments > span").first();
-
-    if (total != null) {
-      String text = total.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        starNumber = Integer.parseInt(text);
-      }
-    }
-
-    return starNumber;
+    return doc.select(".box-comment").size();
   }
 
   private String crawlInternalId(JSONObject product) {
