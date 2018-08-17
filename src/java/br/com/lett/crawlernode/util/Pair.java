@@ -1,8 +1,8 @@
 package br.com.lett.crawlernode.util;
 
 /**
- * Auxiliar data structure representing a pair of values
- * associated with each other. Like c++ pair ;)
+ * Auxiliar data structure representing a pair of values associated with each other. Like c++ pair
+ * ;)
  * 
  * @author Samir Leao
  *
@@ -10,21 +10,29 @@ package br.com.lett.crawlernode.util;
  * @param <S>
  */
 public class Pair<F, S> {
-	
-	private F first;
-	private S second;
-	
-	public Pair(F first, S second) {
-		this.first = first;
-		this.second = second;
-	}
-	
-	public F getFirst() {
-		return this.first;
-	}
-	
-	public S getSecond() {
-		return this.second;
-	}
 
+  private F first;
+  private S second;
+
+  public Pair() {
+
+  }
+
+  public Pair(F first, S second) {
+    this.first = first;
+    this.second = second;
+  }
+
+  public F getFirst() {
+    return this.first;
+  }
+
+  public S getSecond() {
+    return this.second;
+  }
+
+  public void set(F first, S second) {
+    this.first = first;
+    this.second = second;
+  }
 }
