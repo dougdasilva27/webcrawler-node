@@ -104,6 +104,7 @@ public class CrawlerUtils {
    * @throws JSONException
    * @throws ArrayIndexOutOfBoundsException
    * @throws IllegalArgumentException
+   * @deprecated
    */
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
@@ -121,6 +122,7 @@ public class CrawlerUtils {
    * @throws JSONException
    * @throws ArrayIndexOutOfBoundsException
    * @throws IllegalArgumentException
+   * @deprecated
    */
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
