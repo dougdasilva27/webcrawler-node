@@ -237,6 +237,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     Element desc = doc.select(".prod-info").first();
 
     if (desc != null) {
+      desc.select("h4.Conteudo-da-Pagina-de-Produto").remove();
       str.append(desc.html());
     }
 

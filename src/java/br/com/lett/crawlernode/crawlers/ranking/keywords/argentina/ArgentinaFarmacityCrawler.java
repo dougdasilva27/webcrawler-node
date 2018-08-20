@@ -2,95 +2,89 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
-public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords{
+public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
 
-	public ArgentinaFarmacityCrawler(Session session) {
-		super(session);
-	}
+  public ArgentinaFarmacityCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		this.log("Página "+ this.currentPage);
-		
-		this.pageSize = 30;
-		
-		//monta a url com a keyword e a página
-		String url = "https://www.farmacity.com/buscar/" + this.keywordEncoded + "?page=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + url);	
-		
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url, null);
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.log("Página " + this.currentPage);
+    this.pageSize = 20;
 
-		Elements products =  this.currentDoc.select(".products .item[data-product-id]");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
-				setTotalProducts();
-			}
-			
-			for(Element e: products) {
-				String internalPid = crawlInternalPid(e);
-				String internalId = null;
-				String productUrl = crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-				
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+    String url = "https://www.farmacity.com/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-	@Override
-	protected boolean hasNextPage() {
-		return arrayProducts.size() < this.totalProducts;
-	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".page-list .total").first();
-		
-		if(totalElement != null) {
-			String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-			
-			if(!text.isEmpty()) {
-				this.totalProducts = Integer.parseInt(totalElement.text());
-			}
-		}
-		
-		this.log("Total da busca: " + this.totalProducts);
-	}
+    this.currentDoc = fetchDocument(url, null);
 
-	private String crawlInternalPid(Element e){
-		return e.attr("data-product-id");
-	}
-	
-	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		Element urlElement = e.select(".product-pic > a").first();
-		
-		if(urlElement != null){
-			urlProduct = urlElement.attr("href");
-			
-			if(!urlProduct.startsWith("https://www.farmacity.com/")) {
-				urlProduct = ("https://www.farmacity.com/" + urlProduct).replace("com//", "com/");
-			}
-		}
-		
-		return urlProduct;
-	}
+    Elements products = this.currentDoc.select(".main .prateleira ul > li[layout] .name");
+    Elements productsPid = this.currentDoc.select(".prateleira ul > li[id]");
+
+    int count = 0;
+
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(productsPid.get(count));
+        String productUrl = crawlProductUrl(e);
+
+        saveDataProduct(null, internalPid, productUrl);
+        count++;
+
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+
+  @Override
+  protected void setTotalProducts() {
+    Element total = this.currentDoc.select(".resultado-busca-numero .value").first();
+
+    if (total != null) {
+      String text = total.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+
+        this.log("Total products: " + this.totalProducts);
+      }
+    }
+  }
+
+  private String crawlInternalPid(Element e) {
+    return CommonMethods.getLast(e.attr("id").split("_"));
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+    String onClick = e.attr("onclick").replace("'", "");
+
+    if (onClick.contains("=")) {
+      productUrl = CommonMethods.getLast(onClick.split("=")).trim();
+
+      if (!productUrl.contains("farmacity.com")) {
+        productUrl = ("https://www.farmacity.com/" + e.attr("href")).replace(".com//", ".com/");
+      }
+    }
+
+    return productUrl;
+  }
 }

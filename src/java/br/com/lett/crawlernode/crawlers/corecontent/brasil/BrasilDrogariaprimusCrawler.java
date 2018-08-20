@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONArray;
@@ -292,10 +291,13 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+
     Element descriptionElement = doc.select("div.informations-wrapper #informations").first();
     if (descriptionElement != null) {
-      description.append(descriptionElement.text().trim());
+      descriptionElement.select(".information-toolbar, .legend, .tab-toolbar").remove();
+      description.append(descriptionElement.html().trim());
     }
+
     return description.toString();
   }
 
@@ -320,41 +322,47 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
     Document paymentPage = retrievePaymentWebpage(doc);
 
     if (paymentPage != null) {
+      // get the other payment options
+      Elements tableElementsCollection = paymentPage.select("table"); // each table line
 
-      // get the bank slip price
-      Element tdElement = paymentPage.select("td nobr").first();
-      if (tdElement != null) {
-        Pattern regex = Pattern.compile("(\\b)r\\$\\s*\\d*,\\d*", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = regex.matcher(tdElement.text());
-        if (matcher.find()) {
-          Float price = Float.parseFloat(matcher.group().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-          prices.setBankTicketPrice(price);
+      if (tableElementsCollection.size() > 1) {
+        Elements trElements = tableElementsCollection.get(1).select("tr");
+        if (trElements.size() > 2) {
+          Element cardPriceElement = trElements.get(2).select("td div").first();
+          if (cardPriceElement != null) {
+            prices.setBankTicketPrice(MathUtils.parseFloat(cardPriceElement.ownText()));
+          }
         }
       }
 
-      // get the other payment options
-      Elements tableElementsCollection = paymentPage.select("table"); // each table line
-      if (tableElementsCollection.size() >= 3) {
-        Element tableElement = tableElementsCollection.get(2);
-        Elements trElements = tableElement.select("tr");
-        if (trElements.size() >= 3) {
-          Element trElement = trElements.get(2);
-          Element cardPriceElement = trElement.select("td div").first();
-          if (cardPriceElement != null) {
-            String text = cardPriceElement.text();
-            if (!text.isEmpty()) {
-              Float cardPrice = Float.parseFloat(text.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-              Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-              installmentPriceMap.put(1, cardPrice);
-              prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-              prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+      if (tableElementsCollection.size() > 1) {
+        Elements trElements = tableElementsCollection.get(3).select("tr");
+        if (trElements.size() > 2) {
+          Elements cardPriceElements = trElements.last().select("div");
+          Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+
+          for (Element e : cardPriceElements) {
+            String text = e.ownText().toLowerCase();
+            if (text.contains("vista")) {
+              installmentPriceMap.put(1, MathUtils.parseFloat(text));
+            } else if (text.contains("x") && text.contains("(")) {
+              int x = text.indexOf('x');
+              int y = text.indexOf('(');
+
+              String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+              if (!installment.isEmpty()) {
+                installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloat(text.substring(x, y)));
+              }
             }
           }
+
+          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
         }
       }
     }

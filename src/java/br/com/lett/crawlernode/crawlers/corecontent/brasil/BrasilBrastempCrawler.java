@@ -52,7 +52,6 @@ public class BrasilBrastempCrawler extends Crawler {
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -68,6 +67,7 @@ public class BrasilBrastempCrawler extends Crawler {
         Float price = crawlMainPagePrice(marketplaceMap);
 
         JSONObject jsonProduct = crawlApi(internalId);
+        String description = crawlDescription(doc, jsonProduct);
         String primaryImage = crawlPrimaryImage(jsonProduct);
         String secondaryImages = crawlSecondaryImages(jsonProduct);
 
@@ -284,17 +284,63 @@ public class BrasilBrastempCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  /**
+   * @param document
+   * @param apiJSON
+   * @return
+   */
+  private String crawlDescription(Document document, JSONObject apiJSON) {
     StringBuilder description = new StringBuilder();
 
-    Element caracteristicas = doc.select("#caracteristicas").first();
-    if (caracteristicas != null) {
-      description.append(caracteristicas.html());
+    Element desc = document.select("div.productDescription").first();
+    if (desc != null) {
+      description.append(desc.html());
     }
 
-    Element shortDescription = doc.select(".productDescription").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
+    Element specElement = document.select("#caracteristicas").first();
+
+    if (specElement != null) {
+      Element specTemp = specElement.clone();
+      specTemp.select(".group.Prateleira").remove();
+
+      Elements nameFields = specElement.select(".name-field, h4");
+      for (Element e : nameFields) {
+        String classString = e.attr("class");
+
+        if (classString.toLowerCase().contains("modulo") || classString.toLowerCase().contains("foto")) {
+          specTemp.select("." + classString.trim().replace(" ", ".")).remove();
+        }
+      }
+
+      specTemp.select(".Galeria, .Video, .Manual-do-Produto, h4.Arquivos").remove();
+      description.append(specTemp.html());
+    }
+
+    Element manual = document.selectFirst(".value-field.Manual-do-Produto");
+    if (manual != null) {
+
+      description
+          .append("<a href=\"" + manual.ownText() + "\" title=\"Baixar manual\" class=\"details__manual\" target=\"_blank\">Baixar manual</a>");
+    }
+
+    if (apiJSON.has("RealHeight")) {
+      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
+          .append("<td>").append("\n" + apiJSON.getFloat("RealHeight")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJSON.has("RealWidth")) {
+      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWidth")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJSON.has("RealLength")) {
+      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
+          .append("<td>").append("\n" + apiJSON.getFloat("RealLength")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJSON.has("RealWeightKg")) {
+      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWeightKg")).append("</td>").append("</tbody>").append("</table>");
     }
 
     return description.toString();

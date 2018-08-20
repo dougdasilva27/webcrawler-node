@@ -419,10 +419,10 @@ public class SaopauloAraujoCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Elements rows = doc.select("#caracteristicas table.Caracteristica");
+    Element rows = doc.selectFirst("#caracteristicas table.Caracteristica");
 
-    for (Element e : rows) {
-      description.append(e.outerHtml() + " \n");
+    if (rows != null) {
+      description.append(rows.outerHtml() + " \n");
     }
 
     Element elementDescriptionMais = doc.select("#caracteristicas table.Saiba-Mais").first();

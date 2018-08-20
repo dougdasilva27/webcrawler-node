@@ -368,22 +368,28 @@ public class B2WCrawler {
   private String crawlDescription(String internalPid, Document doc) {
     StringBuilder description = new StringBuilder();
 
+    boolean alreadyCapturedHtmlSlide = false;
+
     Element datasheet = doc.selectFirst("#info-section");
     if (datasheet != null) {
+      Element iframe = datasheet.selectFirst("iframe");
+
+      if (iframe != null) {
+        Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies);
+        if (docDescriptionFrame != null) {
+          alreadyCapturedHtmlSlide = true;
+          description.append(docDescriptionFrame.html());
+        }
+      }
+
+      datasheet.select("iframe, h1.sc-hgHYgh").remove();
       description.append(datasheet.html());
     }
 
     if (internalPid != null) {
-      // String url = HOME_PAGE + "product-description/shop/" + internalPid;
-      // Document docDescription = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null,
-      // cookies);
-      // if(docDescription != null){
-      // description = description + docDescription.html();
-      // }
-
       Element desc2 = doc.select(".info-description-frame-inside").first();
 
-      if (desc2 != null) {
+      if (desc2 != null && !alreadyCapturedHtmlSlide) {
         String urlDesc2 = homePage + "product-description/acom/" + internalPid;
         Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
         if (docDescriptionFrame != null) {

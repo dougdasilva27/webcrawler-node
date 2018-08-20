@@ -27,7 +27,7 @@ import models.prices.Prices;
 public class CrawlerUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
-
+  public static final String CSS_SELECTOR_IGNORE_FIRST_CHILD = ":not(:first-child)";
 
   /**
    * Crawl cookies from a page
@@ -385,5 +385,37 @@ public class CrawlerUtils {
     }
 
     return price;
+  }
+
+  /**
+   * Crawl simple installment with this text example:
+   * 
+   * 2x de R$12,90
+   * 
+   * @param cssSelector - if null, you must pass the specific element in the html parameter
+   * @param html - document html or element html
+   * @param ownText - if the returned text of the element is taken from the first child
+   * @return Pair<Integer, Float>
+   */
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
+    Pair<Integer, Float> pair = new Pair<>();
+
+    Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
+
+    if (installment != null) {
+      String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
+      if (text.contains("x")) {
+        int x = text.indexOf('x');
+
+        String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+        Float value = MathUtils.parseFloat(text.substring(x));
+
+        if (!installmentNumber.isEmpty() && value != null) {
+          pair.set(Integer.parseInt(installmentNumber), value);
+        }
+      }
+    }
+
+    return pair;
   }
 }
