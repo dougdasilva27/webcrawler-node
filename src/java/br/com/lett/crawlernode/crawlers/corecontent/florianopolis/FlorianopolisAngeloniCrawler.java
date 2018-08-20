@@ -180,7 +180,9 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       installmentsPriceMap.put(1, price);
 
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".box-produto__parcelamento", doc, false);
-      installmentsPriceMap.put(pair.getFirst(), pair.getSecond());
+      if (!pair.isAnyValueNull()) {
+        installmentsPriceMap.put(pair.getFirst(), pair.getSecond());
+      }
 
       prices.insertCardInstallment(Card.AMEX.toString(), installmentsPriceMap);
       prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);

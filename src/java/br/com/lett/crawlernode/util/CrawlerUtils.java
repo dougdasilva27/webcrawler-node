@@ -392,15 +392,15 @@ public class CrawlerUtils {
    * 
    * 2x de R$12,90
    * 
-   * @param cssSelector
-   * @param doc
+   * @param cssSelector - if null, you must pass the specific element in the html parameter
+   * @param html - document html or element html
    * @param ownText - if the returned text of the element is taken from the first child
    * @return Pair<Integer, Float>
    */
-  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Document doc, boolean ownText) {
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
     Pair<Integer, Float> pair = new Pair<>();
 
-    Element installment = doc.selectFirst(cssSelector);
+    Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
 
     if (installment != null) {
       String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();

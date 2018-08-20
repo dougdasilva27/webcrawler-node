@@ -35,4 +35,8 @@ public class Pair<F, S> {
     this.first = first;
     this.second = second;
   }
+
+  public boolean isAnyValueNull() {
+    return this.first == null || this.second == null;
+  }
 }
