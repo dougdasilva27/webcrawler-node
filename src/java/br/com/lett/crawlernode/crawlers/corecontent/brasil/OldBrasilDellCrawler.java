@@ -39,11 +39,12 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-public class BrasilDellCrawler extends Crawler {
+public class OldBrasilDellCrawler extends Crawler {
 
-	private static final String COMMON_DOMAIN = "dell.com"; 
 
-	public BrasilDellCrawler(Session session) {
+  private static final String COMMON_DOMAIN = "dell.com"; 
+
+	public OldBrasilDellCrawler(Session session) {
 		super(session);
 	}
 
