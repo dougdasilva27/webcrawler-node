@@ -58,7 +58,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", ";", false);
+      JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", "", false, true);
       JSONObject productJSON = chaordic.has("product") ? chaordic.getJSONObject("product") : chaordic;
 
       String ean = crawlEan(productJSON);
@@ -385,8 +385,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       if (primaryImage.contains(".gif")) {
         Elements elementImages = document.select("section.product-image #thumbs-images a img");
 
-        for (int i = 1; i < elementImages.size(); i++) { // skip the first because it's the same as
-                                                         // the primary image.gif
+        for (int i = 0; i < elementImages.size(); i++) {
           String imageURL = elementImages.get(i).attr("src").trim();
 
           if (!imageURL.contains(".gif")) {

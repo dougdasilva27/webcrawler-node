@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.util;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -394,6 +396,33 @@ public class CommonMethods {
     } catch (Exception e1) {
       e1.printStackTrace();
     }
+  }
+
+  /**
+   * 
+   * @param path
+   * @return
+   */
+  public static String readFile(String path) {
+    StringBuilder str = new StringBuilder();
+
+    try {
+      FileReader fr = new FileReader(path);
+      BufferedReader br = new BufferedReader(fr);
+
+      String sCurrentLine;
+
+      while ((sCurrentLine = br.readLine()) != null) {
+        str.append(sCurrentLine);
+      }
+
+      br.close();
+      fr.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return str.toString();
   }
 
   /**

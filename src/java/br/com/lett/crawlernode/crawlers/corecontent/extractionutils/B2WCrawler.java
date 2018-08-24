@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -57,7 +56,7 @@ public class B2WCrawler {
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
       String internalPid = this.crawlInternalPid(infoProductJson);
-      CategoryCollection categories = crawlCategories(doc);
+      CategoryCollection categories = crawlCategories(infoProductJson);
       boolean hasImages = doc.select(".main-area .row > div > span > img:not([src])").first() == null && doc.select(".gallery-product") != null;
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
@@ -70,7 +69,7 @@ public class B2WCrawler {
         String name = crawlMainPageName(infoProductJson);
         String variationName = entry.getValue().trim();
 
-        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase()) && skuOptions.size() > 1) {
+        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
           name += " " + variationName;
         }
 
@@ -313,12 +312,13 @@ public class B2WCrawler {
    * @param document
    * @return
    */
-  private CategoryCollection crawlCategories(Document document) {
+  private CategoryCollection crawlCategories(JSONObject document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb > li > a");
 
-    for (int i = 1; i < elementCategories.size(); i++) { // primeiro item é a home
-      String cat = elementCategories.get(i).attr("name").trim();
+    JSONArray categoryList = document.getJSONArray("categories");
+
+    for (int i = categoryList.length() - 1; i >= 0; i--) { // Invert the Loop since the categorys in the JSONArray come reversed
+      String cat = (categoryList.getJSONObject(i).get("name")).toString();
 
       if (!cat.isEmpty()) {
         categories.add(cat);
@@ -327,6 +327,7 @@ public class B2WCrawler {
 
     return categories;
   }
+
 
   private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
     Marketplace marketplace = new Marketplace();

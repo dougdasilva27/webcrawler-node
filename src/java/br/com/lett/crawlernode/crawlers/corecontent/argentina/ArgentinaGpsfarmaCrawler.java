@@ -127,10 +127,10 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
 
   private String crawlName(Document doc) {
     String name = null;
-    Element nameElement = doc.select(".breadcrumbs .product strong").first();
+    Element nameElement = doc.select(".product-name").first();
 
     if (nameElement != null) {
-      name = nameElement.ownText().trim();
+      name = nameElement.text().trim();
     }
 
     return name;
@@ -179,10 +179,10 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements imagesElement = doc.select(".product-image-gallery img");
+    Elements imagesElement = doc.select(".product-image-thumbs img");
 
-    for (int i = 1; i < imagesElement.size() - 1; i++) { // first index and last index is the primary image
-      String image = imagesElement.get(i).attr("data-zoom-image").trim();
+    for (int i = 1; i < imagesElement.size(); i++) { // Ignore primary image get only the secondarys
+      String image = imagesElement.get(i).attr("src").trim();
       secondaryImagesArray.put(image);
     }
 
