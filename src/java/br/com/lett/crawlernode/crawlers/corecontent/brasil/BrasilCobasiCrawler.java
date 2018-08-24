@@ -90,9 +90,14 @@ public class BrasilCobasiCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select("#conteudo-produto").first();
+    Element shortDescription = doc.selectFirst(".productDescriptionShort");
     if (shortDescription != null) {
       description.append(shortDescription.html());
+    }
+
+    Element elementDescription = doc.select("#conteudo-produto").first();
+    if (elementDescription != null) {
+      description.append(elementDescription.html());
     }
 
     return description.toString();

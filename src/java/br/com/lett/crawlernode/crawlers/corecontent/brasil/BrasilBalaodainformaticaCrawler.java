@@ -48,8 +48,6 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
       String description = crawlDescription(doc);
-      String primaryImage = null;
-      String secondaryImages = null;
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -63,8 +61,8 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
@@ -87,7 +85,7 @@ public class BrasilBalaodainformaticaCrawler extends Crawler {
 
 
   private boolean isProductPage(Document document) {
-    return document.select(".productName").first() != null;
+    return document.selectFirst(".productName") != null;
   }
 
   private String crawlDescription(Document document) {

@@ -74,7 +74,8 @@ public class BrasilVitaesaudeCrawler extends Crawler {
             // Variation info
             JSONObject variationInfo = crawlVariationsInfo(internalPid, variationId);
 
-            primaryImage = variationInfo.has("image") ? variationInfo.getString("image") : primaryImage;
+            primaryImage =
+                variationInfo.has("image") && !variationInfo.getString("image").trim().isEmpty() ? variationInfo.getString("image") : primaryImage;
             String internalId = internalPid + "-" + variationId;
             String variationName = name + " " + e.ownText().trim();
             boolean available = crawlAvailability(variationInfo);

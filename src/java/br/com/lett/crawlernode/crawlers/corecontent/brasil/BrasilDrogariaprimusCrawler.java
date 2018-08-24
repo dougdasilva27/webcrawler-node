@@ -59,8 +59,8 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
       String name = crawlName(doc);
-      Prices prices = crawlPrices(doc);
-      Float price = getPrice(prices);
+      Float price = crawlPrice(doc);
+      Prices prices = crawlPrices(doc, price);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -92,15 +92,15 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
     return false;
   }
 
-  private Float getPrice(Prices prices) {
-    if (prices.getBankTicketPrice() != null) {
-      return prices.getBankTicketPrice().floatValue();
+  private Float crawlPrice(Document doc) {
+    Float price = null;
+
+    Element priceElement = doc.selectFirst(".price .sale[itemprop=\"price\"]");
+    if (priceElement != null) {
+      price = MathUtils.parseFloat(priceElement.ownText());
     }
-    Double installmentValue = prices.getCardInstallmentValue(Card.VISA.toString(), 1);
-    if (installmentValue != null) {
-      return installmentValue.floatValue();
-    }
-    return null;
+
+    return price;
   }
 
   /**
@@ -311,7 +311,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Document doc) {
+  private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
     Element priceFrom = doc.select(".list-price .list").first();
@@ -319,27 +319,37 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
       prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
     }
 
+    Element bankTicket = doc.selectFirst(".price .savings b");
+    if (bankTicket != null) {
+      prices.setBankTicketPrice(MathUtils.parseFloat(bankTicket.ownText()));
+    } else {
+      prices.setBankTicketPrice(price);
+    }
+
+    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+    installmentPriceMap.put(1, price);
+
+
     Document paymentPage = retrievePaymentWebpage(doc);
 
     if (paymentPage != null) {
+
+      // this code block was created because in some cases the first table contains bank payments methods
+      // so because of it, we need sum one index to get the others payments informations
+      int index = 0;
+
+      Element specialPage = paymentPage.selectFirst("table tr:first-child > td:first-child >  strong");
+      if (specialPage != null) {
+        index++;
+      }
+
       // get the other payment options
       Elements tableElementsCollection = paymentPage.select("table"); // each table line
 
       if (tableElementsCollection.size() > 1) {
-        Elements trElements = tableElementsCollection.get(1).select("tr");
-        if (trElements.size() > 2) {
-          Element cardPriceElement = trElements.get(2).select("td div").first();
-          if (cardPriceElement != null) {
-            prices.setBankTicketPrice(MathUtils.parseFloat(cardPriceElement.ownText()));
-          }
-        }
-      }
-
-      if (tableElementsCollection.size() > 1) {
-        Elements trElements = tableElementsCollection.get(3).select("tr");
+        Elements trElements = tableElementsCollection.get(3 + index).select("tr");
         if (trElements.size() > 2) {
           Elements cardPriceElements = trElements.last().select("div");
-          Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 
           for (Element e : cardPriceElements) {
             String text = e.ownText().toLowerCase();
@@ -355,17 +365,17 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
               }
             }
           }
-
-          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
         }
       }
     }
+
+    prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+    prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
     return prices;
   }

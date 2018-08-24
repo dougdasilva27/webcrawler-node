@@ -242,6 +242,10 @@ public class BrasilPetzCrawler extends Crawler {
 
     if (image != null) {
       primaryImage = image.attr("href");
+
+      if (!primaryImage.contains("petz.com")) {
+        primaryImage = "https://www.petz.com.br" + primaryImage;
+      }
     }
 
     return primaryImage;
@@ -255,6 +259,10 @@ public class BrasilPetzCrawler extends Crawler {
 
     for (Element e : images) {
       String image = e.attr("href").trim();
+
+      if (!image.contains("petz.com")) {
+        image = "https://www.petz.com.br" + image;
+      }
 
       if (!image.equals(primaryImage)) {
         secondaryImagesArray.put(image);
@@ -281,6 +289,11 @@ public class BrasilPetzCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+
+    Element prodInfo = doc.selectFirst(".col-md-7.prod-info > div:not([class])");
+    if (prodInfo != null) {
+      description.append(prodInfo.html());
+    }
 
     Element shortDescription = doc.select("p[dir=ltr]").first();
     if (shortDescription != null) {
