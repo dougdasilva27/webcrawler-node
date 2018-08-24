@@ -62,19 +62,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       }
 
       // Nome
-      String name = null;
-      Element elementName = doc.select(".limit.columns .col-1 .product-info .product-name h1").first();
-      Element elementBrand = doc.select(".limit.columns .col-1 .product-info .product-attributes .marca.show-hover").first();
-      Element elementQuantity = doc.select(".limit.columns .col-1 .product-info .product-attributes .quantidade.show-hover").first();
-      if (elementName != null) {
-        name = elementName.text().trim().isEmpty() ? "" : elementName.text().trim();
-      }
-      if (name != null && elementBrand != null) {
-        name += elementBrand.text().trim().isEmpty() ? "" : " " + elementBrand.text().trim();
-      }
-      if (name != null && elementQuantity != null) {
-        name += elementQuantity.text().trim().isEmpty() ? "" : " " + elementQuantity.text().trim();
-      }
+      String name = crawlName(doc);
 
       // Preço
       Float price = null;
@@ -163,9 +151,25 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     return elementInternalID != null;
   }
 
+  private String crawlName(Document doc) {
+    StringBuilder name = new StringBuilder();
+
+    Element firstName = doc.selectFirst(".product-name h1");
+    if (firstName != null) {
+      name.append(firstName.text());
+
+      Elements attributes = doc.select(".product-attributes .show-hover");
+      for (Element e : attributes) {
+        name.append(" ").append(e.ownText().trim());
+      }
+    }
+
+    return name.toString().replace("  ", " ").trim();
+  }
+
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");");
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
 
     if (json.has("ecommerce")) {
       JSONObject ecommerce = json.getJSONObject("ecommerce");
