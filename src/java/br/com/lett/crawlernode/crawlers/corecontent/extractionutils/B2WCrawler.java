@@ -317,7 +317,7 @@ public class B2WCrawler {
     
     JSONArray categoryList = document.getJSONArray("categories");
     
-    for (int i = 0; i < categoryList.length(); i++) {
+    for (int i = categoryList.length() - 1; i >= 0; i--) { // Invert the Loop since the categorys in the JSONArray come reversed
       String cat = (categoryList.getJSONObject(i).get("name")).toString();
       
       if (!cat.isEmpty()) {
