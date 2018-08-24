@@ -133,7 +133,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
         JSONObject response = fetcherResponse.getJSONObject("response");
 
         if (response.has("body")) {
-          page = response.getString("body");
+          page = response.get("body").toString();
         }
       } else {
         // normal request

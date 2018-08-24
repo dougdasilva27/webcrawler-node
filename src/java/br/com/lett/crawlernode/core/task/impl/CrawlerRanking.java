@@ -710,7 +710,7 @@ public abstract class CrawlerRanking extends Task {
     JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session, false);
 
     if (res != null && res.has("response")) {
-      return res.getJSONObject("response").getString("body");
+      return res.getJSONObject("response").get("body").toString();
     }
 
     return null;

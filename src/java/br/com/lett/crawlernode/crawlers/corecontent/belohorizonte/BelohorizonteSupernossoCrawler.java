@@ -76,7 +76,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
         JSONObject response = fetcherResponse.getJSONObject("response");
 
         if (response.has("body")) {
-          page = response.getString("body");
+          page = response.get("body").toString();
         }
       } else {
         // normal request
