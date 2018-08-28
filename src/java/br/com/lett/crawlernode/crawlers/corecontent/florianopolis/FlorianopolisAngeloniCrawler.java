@@ -102,8 +102,8 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
   private Float crawlPrice(Document doc) {
     Float price = null;
     
-    Elements elementPrice = doc.select(".content__desc-prod__box-valores");
-    if (!elementPrice.isEmpty()) {
+    Element elementPrice = doc.selectFirst(".content__desc-prod__box-valores");
+    if (elementPrice != null) {
       price = Float.parseFloat(elementPrice.attr("content"));
     }
     
