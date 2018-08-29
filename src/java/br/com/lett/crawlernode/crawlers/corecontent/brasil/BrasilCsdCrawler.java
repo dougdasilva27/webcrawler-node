@@ -32,7 +32,8 @@ public class BrasilCsdCrawler extends Crawler {
     super(session);
   }
 
-  private static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoscidadecancao/maringa-loja-brasil-01-zona-05-avenida-brasil";
+  private static final String HOME_PAGE =
+      "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/";
 
   @Override
   public boolean shouldVisit() {
@@ -308,7 +309,7 @@ public class BrasilCsdCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("referer", productUrl);
     headers.put("sm-b2c",
-        "{\"platform\":1,\"lojaName\":\"maringa-loja-brasil-01-zona-05-avenida-brasil\",\"redeName\":\"supermercadoscidadecancao\"}");
+        "{\"platform\":1,\"lojaName\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeName\":\"supermercadoscidadecancao\"}");
     headers.put("sm-mmc", "true");
     headers.put("accept", "application/json, text/plain, */*");
 
