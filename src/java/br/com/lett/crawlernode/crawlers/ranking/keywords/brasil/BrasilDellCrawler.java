@@ -22,20 +22,17 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords {
     
     this.log("Página " + this.currentPage);
     
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    
     // monta a url com a keyword e a página
-    String url = "http://pilot.search.dell.com/queryunderstandingapi/4/br/pt/19/search-v/products?term=" + keyword;
-    String payload = createRequestPayload(url, this.currentPage, pageSize);
+    String url = "https://pilot.search.dell.com/queryunderstandingapi/4/br/pt/19/search-v/products?term=" + this.keywordEncoded;
+    String payload = createRequestPayload(this.currentPage, pageSize);
     
     Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
+    headers.put("content-type", "application/json");
     
     this.log("Link onde são feitos os crawlers: " + url);
     
     // chama função de pegar o html
-    JSONObject products = new JSONObject(fetchStringPOST(url, payload, headers, null));
-    
+    JSONObject products = new JSONObject(fetchPostFetcher(url, payload, headers, null));
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (products.length() >= 1) {
       // se o total de busca não foi setado ainda, chama a função para setar
@@ -57,6 +54,10 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords {
           
           // Url do produto
           String productUrl = product.getValue();
+          if (productUrl != null && !productUrl.startsWith("http")) {
+            productUrl = "https:" + productUrl;
+          }
+          
           
           saveDataProduct(internalId, internalPid, productUrl);
           
@@ -130,34 +131,37 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords {
     return productMap;
   }
   
-  private String createRequestPayload(String location, int page, int pageSize) {
+  private String createRequestPayload(int page, int pageSize) {
     JSONObject jsonPayload = new JSONObject();
     
     jsonPayload.put("IncludeRefiners", true);
     jsonPayload.put("IncludeCategoryTree", false);
+    
+    JSONObject virtualAssistantData = new JSONObject();
+    
+    virtualAssistantData.put("TemplateName", "AutoSuggest");
+    virtualAssistantData.put("TemplateId", JSONObject.NULL);// The Dell API still reads the null value inside the String.
+    virtualAssistantData.put("Purpose", JSONObject.NULL);
+    virtualAssistantData.put("Data", new JSONObject());
+    
+    jsonPayload.put("VirtualAssistantData", virtualAssistantData);
     jsonPayload.put("FiltersUpdatedByUser", false);
-    jsonPayload.put("PreviousTerm", location);
-    jsonPayload.put("VirtualAssistantData", new JSONObject());
+    jsonPayload.put("PreviousTerm", this.location);
     jsonPayload.put("Categories", new JSONArray());
     
     JSONObject options = new JSONObject();
+    JSONArray resultOptions = new JSONArray();
     
     options.put("withqueryunderstandingenabled", true);
+    options.put("UrlReferrer", "https://www.dell.com/pt-br");
     options.put("WithNoTrackingEnabled", false);
+    options.put("ResultOptions", resultOptions);
     options.put("IncludeGraph", false);
     options.put("IncludeSignals", false);
-    options.put("UrlReferrer", "http://www1.la.dell.com/content/default.aspx?c=br&l=pt&s=&s=gen&~ck=cr");
-    
-    JSONArray resultOptions = new JSONArray();
-    JSONObject result = new JSONObject();
-    
-    result.put("Name", "include-fast-query");
-    result.put("Value", false);
-    resultOptions.put(result);
-    
-    options.put("ResultOptions", resultOptions);
+    options.put("IncludeTimings", false);
     
     jsonPayload.put("Options", options);
+    jsonPayload.put("Categories", JSONObject.NULL);
     
     JSONObject profile = new JSONObject();
     
@@ -168,11 +172,12 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords {
     profile.put("STPShopEnabled", false);
     
     jsonPayload.put("Profile", profile);
-    
     jsonPayload.put("Products", new JSONArray().put(new JSONObject().put("Code", "")));
+    jsonPayload.put("PreviousCategories", new JSONArray());
+    jsonPayload.put("FiltersUpdatedByUser", false);
+    jsonPayload.put("OverrideTerm", false);
     
-    jsonPayload.put("PagingOptions",
-        new JSONObject().put("Skip", this.currentPage * pageSize).put("Take", pageSize).put("Strategy", "ProductStrategy"));
+    jsonPayload.put("PagingOptions", new JSONObject().put("Take", this.pageSize).put("Skip", this.arrayProducts.size()));
     
     return jsonPayload.toString();
   }
