@@ -122,7 +122,7 @@ public class ArgentinaGpsfarmaCrawler extends CrawlerRankingKeywords {
 
   private String crawlProductUrl(Element e) {
     String productUrl = null;
-    Element eUrl = e.select(" > a").first();
+    Element eUrl = e.select(".product-name > a").first();
 
     if (eUrl != null) {
       productUrl = eUrl.attr("href");
