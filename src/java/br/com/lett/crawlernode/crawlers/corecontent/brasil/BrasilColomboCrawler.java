@@ -47,6 +47,16 @@ public class BrasilColomboCrawler extends Crawler {
 
       Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
 
+      // Pid
+      String internalPid = null;
+      Element elementInternalPid = doc.select(".codigo-produto").first();
+      if (elementInternalPid != null) {
+        internalPid = elementInternalPid.attr("content").trim();
+        if (internalPid.isEmpty()) {
+          internalPid = elementInternalPid.text().replaceAll("[^0-9]", "").trim();
+        }
+      }
+
       // ID interno
       String internalId = null;
       Element elementInternalID = doc.select("input[type=radio][checked]").first();
@@ -57,18 +67,8 @@ public class BrasilColomboCrawler extends Crawler {
         if (elementInternalID != null) {
           internalId = elementInternalID.attr("value").trim();
         }
-
       }
 
-      // Pid
-      String internalPid = null;
-      Element elementInternalPid = doc.select(".codigo-produto").first();
-      if (elementInternalPid != null) {
-        internalPid = elementInternalPid.attr("content").trim();
-        if (internalPid.isEmpty()) {
-          internalPid = elementInternalPid.text().replaceAll("[^0-9]", "").trim();
-        }
-      }
 
       // Nome
       String name = null;
@@ -160,6 +160,11 @@ public class BrasilColomboCrawler extends Crawler {
           prices = new Prices();
         }
 
+        // esse caso acontece quando o internalId não aparece, apenas o internalPid
+        // isso acontece quando o produto está indisponível em alguns casos
+        if (!available && (internalId == null || internalId.isEmpty())) {
+          internalId = internalPid + "-i";
+        }
 
         Product product = new Product();
         product.setUrl(session.getOriginalURL());
