@@ -45,7 +45,7 @@ public class BrasilColomboCrawler extends Crawler {
     if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements selections = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
+      Elements selections = doc.select(".dados-itens-table tr[data-item]");
 
       // Pid
       String internalPid = null;
@@ -189,9 +189,8 @@ public class BrasilColomboCrawler extends Crawler {
 
       else { // múltiplas variações
 
-        Elements variations = doc.select(".dados-itens-table.dados-itens-detalhe tr[data-item]");
 
-        for (Element e : variations) {
+        for (Element e : selections) {
 
           // ID interno
           String variationInternalId = null;
