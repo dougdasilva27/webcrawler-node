@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ import models.prices.Prices;
 public class BrasilClimarioCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.climario.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "climario.com.br";
+  private static final List<String> MAIN_SELLER_NAME_LOWER_LIST = Arrays.asList("climario.com.br", "climario");
 
   public BrasilClimarioCrawler(Session session) {
     super(session);
@@ -97,8 +98,8 @@ public class BrasilClimarioCrawler extends Crawler {
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
+        boolean available = price != null;
 
         JSONObject jsonProduct = crawlApi(internalId);
         String primaryImage = crawlPrimaryImage(jsonProduct);
@@ -192,8 +193,11 @@ public class BrasilClimarioCrawler extends Crawler {
   private Float crawlMainPagePrice(Map<String, Float> marketplace) {
     Float price = null;
 
-    if (marketplace.containsKey(MAIN_SELLER_NAME_LOWER)) {
-      price = marketplace.get(MAIN_SELLER_NAME_LOWER);
+    for (String mainSellerNameLower : MAIN_SELLER_NAME_LOWER_LIST) {
+      if (marketplace.containsKey(mainSellerNameLower)) {
+        price = marketplace.get(mainSellerNameLower);
+        break;
+      }
     }
 
     return price;
@@ -285,7 +289,7 @@ public class BrasilClimarioCrawler extends Crawler {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
-      if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) {
+      if (!MAIN_SELLER_NAME_LOWER_LIST.contains(seller)) {
         Float price = marketplaceMap.get(seller);
 
         JSONObject sellerJSON = new JSONObject();
