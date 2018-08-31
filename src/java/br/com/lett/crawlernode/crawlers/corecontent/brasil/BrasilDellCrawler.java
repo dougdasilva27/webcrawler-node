@@ -101,6 +101,14 @@ public class BrasilDellCrawler extends Crawler {
       }
     }
 
+    if (internalId == null || internalId.isEmpty()) {
+      Element metaProductID = doc.selectFirst("meta[name=ProductId]");
+
+      if (metaProductID != null) {
+        internalId = metaProductID.attr("content");
+      }
+    }
+
     return internalId;
   }
 

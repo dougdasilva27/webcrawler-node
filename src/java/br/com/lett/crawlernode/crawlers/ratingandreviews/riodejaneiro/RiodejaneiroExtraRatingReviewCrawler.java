@@ -138,7 +138,7 @@ public class RiodejaneiroExtraRatingReviewCrawler extends RatingReviewCrawler {
       id = id.split("/")[0];
     }
 
-    String url = "https://api.gpa.digital/pa/products/" + id + "/review";
+    String url = "https://api.gpa.digital/ex/products/" + id + "/review";
 
     JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
 

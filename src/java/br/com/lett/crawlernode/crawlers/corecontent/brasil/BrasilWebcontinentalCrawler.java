@@ -65,9 +65,10 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
           String internalId = crawlInternalId(jsonSku);
           String name = crawlName(productInformation, jsonSku);
-          Marketplace marketplace = crawlMarketplace(internalId);
-          Float price = marketplace.isEmpty() ? crawlPrice(jsonSku) : null;
-          boolean available = price != null;
+          JSONObject sellerInfo = internalId != null ? crawlPricesJson(internalId) : new JSONObject();
+          boolean available = sellerInfo.has("estoque") && sellerInfo.getBoolean("estoque");
+          Marketplace marketplace = available ? crawlMarketplace(sellerInfo) : new Marketplace();
+          Float price = marketplace.isEmpty() && available ? crawlPrice(jsonSku) : null;
           Prices prices = available ? crawlPrices(jsonSku, price) : new Prices();
 
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
@@ -275,22 +276,21 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     return product;
   }
 
-  private Marketplace crawlMarketplace(String internalId) {
+  private Marketplace crawlMarketplace(JSONObject sellerInfo) {
     Marketplace marketplace = new Marketplace();
 
     String sellerName = SELLER_NAME_LOWER;
-    JSONObject product = crawlPricesJson(internalId);
 
     Float priceSeller = null;
     Float priceSeller1x = null;
     Float priceFrom = null;
 
-    if (product.has("vendidopor")) {
-      sellerName = product.get("vendidopor").toString().toLowerCase().trim();
+    if (sellerInfo.has("vendidopor")) {
+      sellerName = sellerInfo.get("vendidopor").toString().toLowerCase().trim();
     }
 
-    if (product.has("precoprazo")) {
-      Object priceObj = product.get("precoprazo");
+    if (sellerInfo.has("precoprazo")) {
+      Object priceObj = sellerInfo.get("precoprazo");
 
       if (priceObj instanceof Double) {
         priceSeller = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
@@ -299,8 +299,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       }
     }
 
-    if (product.has("precovista")) {
-      Object priceObj = product.get("precovista");
+    if (sellerInfo.has("precovista")) {
+      Object priceObj = sellerInfo.get("precovista");
 
       if (priceObj instanceof Double) {
         priceSeller1x = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
@@ -309,8 +309,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       }
     }
 
-    if (product.has("precode") && product.get("precode") instanceof Double) {
-      Double p = product.getDouble("precode");
+    if (sellerInfo.has("precode") && sellerInfo.get("precode") instanceof Double) {
+      Double p = sellerInfo.getDouble("precode");
       priceFrom = MathUtils.normalizeTwoDecimalPlaces(p.floatValue());
     }
 
