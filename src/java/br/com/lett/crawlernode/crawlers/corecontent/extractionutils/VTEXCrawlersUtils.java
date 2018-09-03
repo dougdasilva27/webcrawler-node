@@ -254,6 +254,22 @@ public class VTEXCrawlersUtils {
   }
 
   /**
+   * Crawl description api on this url examples:
+   * https://www.thebeautybox.com.br/api/catalog_system/pub/products/search?fq=skuId:19245
+   * https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search?fq=productId:19245
+   * 
+   * HOME_PAGE + api/catalog_system/pub/products/search?fq= + idType(sku or product) + : + id
+   * 
+   * @param id
+   * @param idType
+   * @return
+   */
+  public JSONArray crawlDescriptionAPI(String id, String idType) {
+    String url = homePage + "api/catalog_system/pub/products/search?fq=" + idType + ":" + id;
+    return DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+  }
+
+  /**
    * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
    * à vista R$ 1.790,00
    * 
