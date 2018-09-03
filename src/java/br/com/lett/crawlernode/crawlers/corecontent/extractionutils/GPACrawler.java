@@ -34,6 +34,13 @@ public class GPACrawler {
   private String store;
   private List<Cookie> cookies = new ArrayList<>();
 
+  public static final String RIO_DE_JANEIRO_STORE_ID = "7";
+  public static final String RIO_DE_JANEIRO_STORE_ID_EXTRA = "42";
+  public static final String SAO_PAULO_STORE_ID = "501";
+  public static final String SAO_PAULO_STORE_ID_EXTRA = "241";
+  public static final String CURITIBA_STORE_ID = "1";
+  public static final String BRASILIA_STORE_ID = "6";
+
   /**
    * Cep's gpa
    * 

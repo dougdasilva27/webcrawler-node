@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
@@ -23,7 +24,7 @@ public class RiodejaneiroPaodeacucarRatingReviewCrawler extends RatingReviewCraw
   public void handleCookiesBeforeFetch() {
 
     // Criando cookie da loja 7 = Rio de Janeiro capital
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "7");
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.RIO_DE_JANEIRO_STORE_ID);
     cookie.setDomain(".paodeacucar.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);

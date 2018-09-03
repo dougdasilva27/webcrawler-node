@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -18,16 +19,13 @@ public class RiodejaneiroExtraRatingReviewCrawler extends RatingReviewCrawler {
     super(session);
   }
 
-  // Loja 42 rj
-  private static final String STORE_ID = "42";
-
   private static final String HOME_PAGE = "https://www.deliveryextra.com.br";
 
   @Override
   public void handleCookiesBeforeFetch() {
 
     // Criando cookie da loja 3 = São Paulo capital
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", STORE_ID);
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.RIO_DE_JANEIRO_STORE_ID_EXTRA);
     cookie.setDomain(".deliveryextra.com");
     cookie.setPath("/");
     this.cookies.add(cookie);

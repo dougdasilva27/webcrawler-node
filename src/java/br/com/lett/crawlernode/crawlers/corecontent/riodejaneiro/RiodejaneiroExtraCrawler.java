@@ -24,14 +24,11 @@ public class RiodejaneiroExtraCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  // Loja 241 sp
-  private static final String STORE_ID = "42";
-
   @Override
   public void handleCookiesBeforeFetch() {
 
     // Criando cookie da loja 501 = São Paulo capital
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", STORE_ID);
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.RIO_DE_JANEIRO_STORE_ID_EXTRA);
     cookie.setDomain(".deliveryextra.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
@@ -46,7 +43,7 @@ public class RiodejaneiroExtraCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, STORE_ID, cookies, "ex").extractInformation();
+    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, GPACrawler.RIO_DE_JANEIRO_STORE_ID_EXTRA, cookies, "ex").extractInformation();
   }
 
 }

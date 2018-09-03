@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasiliaPaodeacucarCrawler extends CrawlerRankingKeywords {
@@ -21,7 +22,7 @@ public class BrasiliaPaodeacucarCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", "6");
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.BRASILIA_STORE_ID);
     cookie.setDomain(".paodeacucar.com");
     cookie.setPath("/");
     cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
@@ -122,8 +123,8 @@ public class BrasiliaPaodeacucarCrawler extends CrawlerRankingKeywords {
   }
 
   private JSONObject crawlSearchApi() {
-    String url = "https://paodeacucar.resultspage.com/search?af=&cnt=36&ep.selected_store=6&isort=&lot=json&p=Q&" + "ref=www.paodeacucar.com.br&srt="
-        + this.arrayProducts.size() + "&ts=json-full"
+    String url = "https://paodeacucar.resultspage.com/search?af=&cnt=36&ep.selected_store=" + GPACrawler.BRASILIA_STORE_ID + "&isort=&lot=json&p=Q&"
+        + "ref=www.paodeacucar.com.br&srt=" + this.arrayProducts.size() + "&ts=json-full"
         + "&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36" + "&w="
         + this.keyword;
 

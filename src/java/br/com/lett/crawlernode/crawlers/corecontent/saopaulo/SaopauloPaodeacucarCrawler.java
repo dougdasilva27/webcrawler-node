@@ -23,14 +23,11 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  // Loja 501 sp
-  private static final String STORE_ID = "501";
-
   @Override
   public void handleCookiesBeforeFetch() {
 
     // Criando cookie da loja 501 = São Paulo capital
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", STORE_ID);
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.SAO_PAULO_STORE_ID);
     cookie.setDomain(".paodeacucar.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
@@ -45,6 +42,6 @@ public class SaopauloPaodeacucarCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, STORE_ID, cookies, "pa").extractInformation();
+    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, GPACrawler.SAO_PAULO_STORE_ID, cookies, "pa").extractInformation();
   }
 }

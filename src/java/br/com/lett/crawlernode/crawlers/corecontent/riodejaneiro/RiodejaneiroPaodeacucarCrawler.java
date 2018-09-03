@@ -12,7 +12,6 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.paodeacucar.com";
   private static final String HOME_PAGE_HTTP = "http://www.paodeacucar.com";
-  private static final String STORE_ID = "7";
 
   public RiodejaneiroPaodeacucarCrawler(Session session) {
     super(session);
@@ -26,7 +25,7 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", STORE_ID);
+    BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.RIO_DE_JANEIRO_STORE_ID);
     cookie.setDomain(".paodeacucar.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
@@ -40,6 +39,6 @@ public class RiodejaneiroPaodeacucarCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, STORE_ID, cookies, "pa").extractInformation();
+    return new GPACrawler(logger, session, HOME_PAGE, HOME_PAGE_HTTP, GPACrawler.RIO_DE_JANEIRO_STORE_ID, cookies, "pa").extractInformation();
   }
 }
