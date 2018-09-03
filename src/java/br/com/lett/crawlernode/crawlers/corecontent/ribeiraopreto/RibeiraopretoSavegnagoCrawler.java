@@ -79,7 +79,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
@@ -197,8 +197,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    return (url.contains("/p"));
+  private boolean isProductPage(Document document) {
+    return document.select("#___rc-p-sku-ids").first() != null;
   }
 
   /**
