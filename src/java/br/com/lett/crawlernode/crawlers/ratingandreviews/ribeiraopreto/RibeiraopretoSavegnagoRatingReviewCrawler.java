@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import models.RatingsReviews;
 
 /**
@@ -85,8 +84,6 @@ public class RibeiraopretoSavegnagoRatingReviewCrawler extends RatingReviewCrawl
         doc = Jsoup.parse(json.get("html").toString());
       }
     }
-
-    CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/SAVEGNAGO.html");
 
     return doc;
   }
