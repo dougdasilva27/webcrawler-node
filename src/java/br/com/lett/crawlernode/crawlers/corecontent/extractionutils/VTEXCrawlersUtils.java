@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -36,7 +37,8 @@ public class VTEXCrawlersUtils {
   private static final String SELLER_PRICE = "Price";
   private static final String SELLER_AVAILABLE_QUANTITY = "AvailableQuantity";
   private static final String IS_DEFAULT_SELLER = "IsDefaultSeller";
-
+  private static final String BEST_INSTALLMENT_NUMBER = "BestInstallmentNumber";
+  private static final String BEST_INSTALLMENT_VALUE = "BestInstallmentValue";
 
   private Logger logger;
   private Session session;
@@ -187,7 +189,25 @@ public class VTEXCrawlersUtils {
     return url.replace(dimensionImage, dimensionImageFinal); // The image size is changed
   }
 
+  /**
+   * @deprecated
+   * @param json
+   * @param internalId
+   * @return
+   */
   public Map<String, Prices> crawlMarketplace(JSONObject json, String internalId) {
+    return crawlMarketplace(json, internalId, true);
+  }
+
+  /**
+   * 
+   * @param json
+   * @param internalId
+   * @param usePriceApi -> if you need acces price api for crawl installments ex: homePage +
+   *        "productotherpaymentsystems/" + internalId
+   * @return
+   */
+  public Map<String, Prices> crawlMarketplace(JSONObject json, String internalId, boolean usePriceApi) {
     Map<String, Prices> marketplace = new HashMap<>();
 
     if (json.has(SELLERS_INFORMATION)) {
@@ -209,11 +229,11 @@ public class VTEXCrawlersUtils {
               seller.has(IS_DEFAULT_SELLER) && seller.get(IS_DEFAULT_SELLER) instanceof Boolean && seller.getBoolean(IS_DEFAULT_SELLER);
 
           if (priceObject instanceof Double) {
-            marketplace.put(nameSeller,
-                crawlPrices(internalId, MathUtils.normalizeTwoDecimalPlaces(((Double) priceObject).floatValue()), json, isDefaultSeller));
+            marketplace.put(nameSeller, crawlPrices(internalId, MathUtils.normalizeTwoDecimalPlaces(((Double) priceObject).floatValue()), json,
+                isDefaultSeller, usePriceApi));
           } else if (priceObject instanceof Integer) {
-            marketplace.put(nameSeller,
-                crawlPrices(internalId, MathUtils.normalizeTwoDecimalPlaces(((Integer) priceObject).floatValue()), json, isDefaultSeller));
+            marketplace.put(nameSeller, crawlPrices(internalId, MathUtils.normalizeTwoDecimalPlaces(((Integer) priceObject).floatValue()), json,
+                isDefaultSeller, usePriceApi));
           }
         }
       }
@@ -264,9 +284,17 @@ public class VTEXCrawlersUtils {
    * @param idType
    * @return
    */
-  public JSONArray crawlDescriptionAPI(String id, String idType) {
+  public JSONObject crawlDescriptionAPI(String id, String idType) {
+    JSONObject json = new JSONObject();
+
     String url = homePage + "api/catalog_system/pub/products/search?fq=" + idType + ":" + id;
-    return DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray array = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (array.length() > 0) {
+      json = array.getJSONObject(0);
+    }
+
+    return json;
   }
 
   /**
@@ -277,75 +305,25 @@ public class VTEXCrawlersUtils {
    * @param price
    * @return
    */
-  public Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, boolean marketplace) {
+  public Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, boolean marketplace, boolean usePriceApi) {
     Prices prices = new Prices();
 
     if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+      installmentPriceMap.put(1, price);
 
-      if (marketplace) {
-        String url = homePage + "productotherpaymentsystems/" + internalId;
-        Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      if (marketplace && usePriceApi) {
+        crawlPricesFromApi(internalId, jsonSku, prices, price);
+      } else if (marketplace && jsonSku.has(BEST_INSTALLMENT_NUMBER) && jsonSku.has(BEST_INSTALLMENT_VALUE)) {
+        Float value = CrawlerUtils.getFloatValueFromJSON(jsonSku, BEST_INSTALLMENT_VALUE);
 
-        prices.setPriceFrom(crawlPriceFrom(jsonSku));
-
-        Element bank = doc.select("#ltlPrecoWrapper em").first();
-        if (bank != null) {
-          prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
-        } else {
-          prices.setBankTicketPrice(price);
+        if (value != null) {
+          installmentPriceMap.put(jsonSku.getInt(BEST_INSTALLMENT_NUMBER), value);
         }
+      }
 
-        Elements cardsElements = doc.select("#ddlCartao option");
-
-        if (!cardsElements.isEmpty()) {
-          for (Element e : cardsElements) {
-            String text = e.text().toLowerCase();
-
-            if (text.contains("visa")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-
-            } else if (text.contains("mastercard")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-
-            } else if (text.contains("diners")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-
-            } else if (text.contains("american") || text.contains("amex")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-
-            } else if (text.contains("hipercard") || text.contains("amex")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-
-            } else if (text.contains("credicard")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
-
-            } else if (text.contains("elo")) {
-              Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
-              prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-
-            }
-          }
-        } else {
-          Map<Integer, Float> installmentPriceMap = new HashMap<>();
-          installmentPriceMap.put(1, price);
-
-          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-          prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-        }
-      } else {
-        Map<Integer, Float> installmentPriceMap = new HashMap<>();
-        installmentPriceMap.put(1, price);
-
+      if (prices.isEmpty()) {
+        prices.setBankTicketPrice(price);
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
@@ -356,6 +334,68 @@ public class VTEXCrawlersUtils {
     }
 
     return prices;
+  }
+
+  public void crawlPricesFromApi(String internalId, JSONObject jsonSku, Prices prices, Float price) {
+    String url = homePage + "productotherpaymentsystems/" + internalId;
+    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    prices.setPriceFrom(crawlPriceFrom(jsonSku));
+
+    Element bank = doc.select("#ltlPrecoWrapper em").first();
+    if (bank != null) {
+      prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+    } else {
+      prices.setBankTicketPrice(price);
+    }
+
+    Elements cardsElements = doc.select("#ddlCartao option");
+
+    if (!cardsElements.isEmpty()) {
+      for (Element e : cardsElements) {
+        String text = e.text().toLowerCase();
+
+        if (text.contains("visa")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+
+        } else if (text.contains("mastercard")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+
+        } else if (text.contains("diners")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+
+        } else if (text.contains("american") || text.contains("amex")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+
+        } else if (text.contains("hipercard") || text.contains("amex")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+
+        } else if (text.contains("credicard")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
+
+        } else if (text.contains("elo")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+
+        }
+      }
+    } else {
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+      installmentPriceMap.put(1, price);
+
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+    }
   }
 
   public Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard, Float bankPrice) {
