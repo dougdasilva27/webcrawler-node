@@ -66,9 +66,10 @@ public class BrasilWebcontinentalCrawler extends Crawler {
           String internalId = crawlInternalId(jsonSku);
           String name = crawlName(productInformation, jsonSku);
           JSONObject sellerInfo = internalId != null ? crawlPricesJson(internalId) : new JSONObject();
-          boolean available = sellerInfo.has("estoque") && sellerInfo.getBoolean("estoque");
-          Marketplace marketplace = available ? crawlMarketplace(sellerInfo) : new Marketplace();
-          Float price = marketplace.isEmpty() && available ? crawlPrice(jsonSku) : null;
+          boolean availableForBuy = sellerInfo.has("estoque") && sellerInfo.getBoolean("estoque");
+          Marketplace marketplace = availableForBuy ? crawlMarketplace(sellerInfo) : new Marketplace();
+          boolean available = availableForBuy && marketplace.isEmpty();
+          Float price = available ? crawlPrice(jsonSku) : null;
           Prices prices = available ? crawlPrices(jsonSku, price) : new Prices();
 
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
