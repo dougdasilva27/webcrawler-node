@@ -99,10 +99,10 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
   private String crawlName(Document document) {
     String name = null;
-    Element nameElement = document.select("h1 span[itemprop=name]").first();
+    Element nameElement = document.select(".produto-detalhes h1").first();
 
     if (nameElement != null) {
-      name = nameElement.ownText().trim();
+      name = nameElement.text().trim();
     }
 
     return name;
