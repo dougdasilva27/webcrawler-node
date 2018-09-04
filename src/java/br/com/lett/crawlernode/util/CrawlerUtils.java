@@ -25,10 +25,10 @@ import models.Util;
 import models.prices.Prices;
 
 public class CrawlerUtils {
-
+  
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
   public static final String CSS_SELECTOR_IGNORE_FIRST_CHILD = ":not(:first-child)";
-
+  
   /**
    * Crawl cookies from a page
    * 
@@ -41,23 +41,23 @@ public class CrawlerUtils {
    */
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
     List<Cookie> cookies = new ArrayList<>();
-
+    
     Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookies, 1);
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       String cookieName = entry.getKey().trim();
-
+      
       if (cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieName)) {
         BasicClientCookie cookie = new BasicClientCookie(cookieName, entry.getValue());
         cookie.setDomain(domain);
         cookie.setPath(path);
         cookies.add(cookie);
       }
-
+      
     }
-
+    
     return cookies;
   }
-
+  
   /**
    * Crawl skuJson from html in VTEX Sites
    * 
@@ -70,7 +70,7 @@ public class CrawlerUtils {
     String scriptVariableName = "var skuJson_0 = ";
     JSONObject skuJson = new JSONObject();
     String skuJsonString = null;
-
+    
     for (Element tag : scriptTags) {
       for (DataNode node : tag.dataNodes()) {
         if (tag.html().trim().startsWith(scriptVariableName)) {
@@ -80,20 +80,20 @@ public class CrawlerUtils {
         }
       }
     }
-
+    
     if (skuJsonString != null) {
       try {
         skuJson = new JSONObject(skuJsonString);
-
+        
       } catch (JSONException e) {
         Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
         Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
       }
     }
-
+    
     return skuJson;
   }
-
+  
   /**
    * 
    * @param doc
@@ -110,7 +110,7 @@ public class CrawlerUtils {
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
   }
-
+  
   /**
    * 
    * @param doc
@@ -128,7 +128,7 @@ public class CrawlerUtils {
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, withoutSpaces, false);
   }
-
+  
   /**
    * Crawl json inside element html
    *
@@ -151,31 +151,31 @@ public class CrawlerUtils {
    */
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
       boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
-
+    
     if (doc == null)
       throw new IllegalArgumentException("Argument doc cannot be null");
-
+    
     JSONObject object = new JSONObject();
-
+    
     Elements scripts = doc.select(cssElement);
     boolean hasToken = token != null;
-
+    
     for (Element e : scripts) {
       String script = e.html();
-
+      
       script = withoutSpaces ? script.replace(" ", "") : script;
-
+      
       if (!hasToken) {
         object = stringToJson(script.trim());
         break;
       } else if (script.contains(token)) {
         int x = script.indexOf(token) + token.length();
-
+        
         String json = null;
-
+        
         if (script.contains(finalIndex)) {
           int y;
-
+          
           if (lastFinalIndex) {
             y = script.lastIndexOf(finalIndex);
           } else {
@@ -185,20 +185,20 @@ public class CrawlerUtils {
         } else {
           json = script.substring(x).trim();
         }
-
+        
         object = stringToJson(json);
-
+        
         break;
       }
     }
-
-
+    
+    
     return object;
   }
-
+  
   public static JSONObject stringToJson(String str) {
     JSONObject json = new JSONObject();
-
+    
     if (str.startsWith("{") && str.endsWith("}")) {
       try {
         json = new JSONObject(str);
@@ -206,10 +206,10 @@ public class CrawlerUtils {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
-
+    
     return json;
   }
-
+  
   /**
    * Crawl description of stores with flix media
    * 
@@ -220,49 +220,49 @@ public class CrawlerUtils {
    */
   public static String crawlDescriptionFromFlixMedia(String storeId, String ean, Session session) {
     StringBuilder description = new StringBuilder();
-
+    
     String url =
         "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
-
+    
     String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
     final String token = "$(\"#flixinpage_\"+i).inPage";
-
+    
     JSONObject productInfo = new JSONObject();
-
+    
     if (script.contains(token)) {
       int x = script.indexOf(token + " (") + token.length() + 2;
       int y = script.indexOf(");", x);
-
+      
       String json = script.substring(x, y);
-
+      
       try {
         productInfo = new JSONObject(json);
       } catch (JSONException e) {
         Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
       }
     }
-
+    
     if (productInfo.has("product")) {
       String id = productInfo.getString("product");
-
+      
       String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
           + "&complimentary=0&type=.html";
       String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
-
+      
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
         int y = scriptDesc.lastIndexOf("})") + 1;
-
+        
         String json = scriptDesc.substring(x, y);
-
+        
         try {
           JSONObject jsonInfo = new JSONObject(json);
-
+          
           if (jsonInfo.has("html")) {
             if (jsonInfo.has("css")) {
               description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
             }
-
+            
             description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
           }
         } catch (JSONException e) {
@@ -270,10 +270,10 @@ public class CrawlerUtils {
         }
       }
     }
-
+    
     return description.toString();
   }
-
+  
   /**
    * AssembleMarketplaceFromMap
    * 
@@ -287,24 +287,24 @@ public class CrawlerUtils {
    */
   public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Session session) {
     Marketplace marketplace = new Marketplace();
-
+    
     for (String sellerName : marketplaceMap.keySet()) {
       if (!sellerNameLowerList.contains(sellerName)) {
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", sellerName);
-
+        
         Prices prices = marketplaceMap.get(sellerName);
-
+        
         if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
           // Pegando o preço de uma vez no cartão
           Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
           Float priceFloat = price.floatValue();
-
+          
           sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
         }
-
+        
         sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
-
+        
         try {
           Seller seller = new Seller(sellerJSON);
           marketplace.add(seller);
@@ -313,10 +313,10 @@ public class CrawlerUtils {
         }
       }
     }
-
+    
     return marketplace;
   }
-
+  
   /**
    * 
    * @param url
@@ -327,21 +327,21 @@ public class CrawlerUtils {
     if (url.equals(session.getRedirectedToURL(url)) || session.getRedirectedToURL(url) == null) {
       return url;
     }
-
+    
     return session.getRedirectedToURL(url);
   }
-
+  
   public static CategoryCollection crawlCategories(Document document, String selector) {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(selector);
-
+    
     for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
       categories.add(elementCategories.get(i).text().trim());
     }
-
+    
     return categories;
   }
-
+  
   /**
    * 
    * @param json
@@ -350,23 +350,23 @@ public class CrawlerUtils {
    */
   public static Float getFloatValueFromJSON(JSONObject json, String key) {
     Float price = null;
-
+    
     if (json.has(key)) {
       Object priceObj = json.get(key);
       Double priceDouble = null;
-
+      
       if (priceObj instanceof Integer) {
         priceDouble = ((Integer) priceObj).doubleValue();
       } else if (priceObj instanceof Double) {
         priceDouble = (Double) priceObj;
       }
-
+      
       price = priceDouble != null ? MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue()) : null;
     }
-
+    
     return price;
   }
-
+  
   /**
    * 
    * @param json
@@ -375,20 +375,20 @@ public class CrawlerUtils {
    */
   public static Double getDoubleValueFromJSON(JSONObject json, String key) {
     Double price = null;
-
+    
     if (json.has(key)) {
       Object priceObj = json.get(key);
-
+      
       if (priceObj instanceof Integer) {
         price = ((Integer) priceObj).doubleValue();
       } else if (priceObj instanceof Double) {
         price = (Double) priceObj;
       }
     }
-
+    
     return price;
   }
-
+  
   /**
    * Crawl simple installment with this text example:
    * 
@@ -401,23 +401,24 @@ public class CrawlerUtils {
    */
   public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
     Pair<Integer, Float> pair = new Pair<>();
-
+    
     Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
-
+    
     if (installment != null) {
       String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
       if (text.contains("x")) {
         int x = text.indexOf('x');
-
+        
         String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
         Float value = MathUtils.parseFloat(text.substring(x));
-
+        
         if (!installmentNumber.isEmpty() && value != null) {
           pair.set(Integer.parseInt(installmentNumber), value);
         }
       }
     }
-
+    
     return pair;
   }
+  
 }
