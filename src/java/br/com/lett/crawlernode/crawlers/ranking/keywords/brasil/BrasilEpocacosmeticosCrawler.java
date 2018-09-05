@@ -7,6 +7,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
   
@@ -92,13 +93,17 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
   
   private String crawlInternalPid(Element e) {
     String internalPid = null;
+    
     Element pid = e.selectFirst(".nm-product-item");
     
     if (pid != null) {
-      String[] tokens = pid.attr("id").split("nm-product-");
-      internalPid = tokens[tokens.length - 1].trim().split(" ")[0].trim();
+      
+      String text = pid.attr("id");
+      
+      if (text.contains("-")) {
+        internalPid = CommonMethods.getLast(text.split("-")).trim();
+      }
     }
-    
     return internalPid;
   }
   
