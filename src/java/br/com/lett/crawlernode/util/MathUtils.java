@@ -12,6 +12,22 @@ public class MathUtils {
   public static final String PRICE_REGEX = "[^\\d.]+"; // get anything that is not either a digit or a period
 
   /**
+   * Parses a Integer from an input String. It will parse only the first match.
+   * 
+   * @param input
+   * @return
+   */
+  public static Integer parseInt(String input) {
+    String intText = input.replaceAll("[^0-9]", "").trim();
+
+    if (!intText.isEmpty()) {
+      return Integer.parseInt(intText);
+    }
+
+    return null;
+  }
+
+  /**
    * Parses a Float from an input String. It will parse only the first match. If there is more than
    * one float in the string, the others occurrences after the first will be disconsidered.
    * 
