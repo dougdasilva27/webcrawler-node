@@ -295,14 +295,14 @@ public class BrasilPetzCrawler extends Crawler {
       description.append(prodInfo.html());
     }
 
-    Element shortDescription = doc.select("p[dir=ltr]").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
-    }
+    // Element shortDescription = doc.select("p[dir=ltr]").first();
+    // if (shortDescription != null) {
+    // description.append(shortDescription.html());
+    // }
 
-    Elements elementsInformation = doc.select(".infos, #especificacoes, .prodEspecificacoes");
+    Elements elementsInformation = doc.select(".infos, #especificacoes");
     for (Element e : elementsInformation) {
-      if (e.select(".depoimento").isEmpty()) {
+      if (e.select(".depoimento, #depoimentos, .depoimentoTexto").isEmpty()) {
         description.append(e.html());
       }
     }

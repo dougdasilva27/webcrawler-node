@@ -202,7 +202,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".detalhe-produto").last();
+    Element elementDescription = doc.selectFirst(".descricao-produto");
 
     if (elementDescription != null) {
       description.append(elementDescription.html());

@@ -68,8 +68,9 @@ public class BrasilPetzRatingReviewCrawler extends RatingReviewCrawler {
         RatingsReviews ratingReviews = new RatingsReviews();
         ratingReviews.setInternalId(crawlInternalId(docProduct));
         ratingReviews.setDate(session.getDate());
-        ratingReviews.setTotalRating(getTotalNumOfRatings(docProduct));
-        ratingReviews.setAverageOverallRating(getTotalAvgRating(docProduct));
+        Integer totalRating = getTotalNumOfRatings(docProduct);
+        ratingReviews.setTotalRating(totalRating);
+        ratingReviews.setAverageOverallRating(totalRating > 0 ? getTotalAvgRating(docProduct) : 0d);
 
         ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
