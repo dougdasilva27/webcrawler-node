@@ -23,7 +23,7 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 11/10/2018
+ * Date: 12/10/2018
  * 
  * @author Gabriel Dornelas
  *
@@ -135,6 +135,11 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
       for (Object o : imagesArray) {
         JSONObject imageJson = (JSONObject) o;
 
+        // in this case the image is a video thumbnail
+        if (imageJson.has("youtubeId") && imageJson.get("youtubeId") instanceof String && !imageJson.getString("youtubeId").trim().isEmpty()) {
+          continue;
+        }
+
         if (imageJson.has("shouldLoadImageZoom") && imageJson.getBoolean("shouldLoadImageZoom") && imageJson.has("zoomUrl")
             && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
           images.add(imageJson.get("zoomUrl").toString());
@@ -167,9 +172,12 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Elements rows = doc.select(".exposicao-produto-info");
+    Elements rows = doc.select(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container");
 
     for (Element e : rows) {
+      if (e.attr("name").equals("caracteristicas-tecnicas")) {
+        description.append("<h3>  Características Técnicas </h3>");
+      }
       description.append(e.html());
     }
 
@@ -178,11 +186,12 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document doc) {
-    return doc.select("button[rel=gravaProdu]").first() != null;
+    return !doc.select(".product-purchase-buttons .buy-button[data-button=ecommerce]:not(.disabled), "
+        + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
   }
 
   /**
-   * In the time when this crawler was made, this market hasn't installments informations
+   * In the time when this crawler was made, this market hasn't bank ticket informations
    * 
    * @param doc
    * @param price
@@ -195,12 +204,35 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      Element priceFrom = doc.select("#preco span").first();
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
-      }
+      Element pricesElements = doc.selectFirst(".product-price-tag > div");
+      if (pricesElements != null) {
 
-      prices.setBankTicketPrice(price);
+        if (pricesElements.hasAttr("data-from-price-integers") && pricesElements.hasAttr("data-from-price-decimals")) {
+          String integers = pricesElements.attr("data-from-price-integers").trim();
+          String decimals = pricesElements.attr("data-from-price-decimals").trim();
+
+          if (!integers.isEmpty()) {
+            StringBuilder str = new StringBuilder();
+            str.append(integers);
+
+            if (!decimals.isEmpty()) {
+              str.append(".");
+              str.append(decimals);
+            }
+
+            prices.setPriceFrom(Double.parseDouble(str.toString()));
+          }
+        }
+
+        if (pricesElements.hasAttr("data-branded-installments-amount") && pricesElements.hasAttr("data-branded-installments-value")) {
+          String installment = pricesElements.attr("data-branded-installments-amount").trim();
+          String value = pricesElements.attr("data-branded-installments-value").trim();
+
+          if (!installment.isEmpty() && !value.isEmpty()) {
+            installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloat(value));
+          }
+        }
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
