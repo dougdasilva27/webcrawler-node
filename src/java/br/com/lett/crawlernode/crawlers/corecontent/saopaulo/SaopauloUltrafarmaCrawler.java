@@ -23,30 +23,30 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
-  
+
   private final String HOME_PAGE = "http://www.ultrafarma.com.br/";
-  
+
   public SaopauloUltrafarmaCrawler(Session session) {
     super(session);
   }
-  
+
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
-  
+
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
-    
+
     BasicClientCookie cookie = new BasicClientCookie("ultrafarma_uf", "SP");
     cookie.setDomain(".ultrafarma.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
-    
+
     Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
-    
+
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie2 = new BasicClientCookie(entry.getKey(), entry.getValue());
       cookie2.setDomain(".ultrafarma.com.br");
@@ -54,28 +54,28 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       this.cookies.add(cookie2);
     }
   }
-  
-  
+
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    
+
     if (isProductPage(this.session.getOriginalURL())) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      
+
       // ID interno
       String id = this.session.getOriginalURL().split("/")[4];
       String internalID = id.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
-      
+
       // Pid
       String internalPid = internalID;
-      
+
       // Disponibilidade
       Element elementBuyButton = doc.select(".div_btn_comprar").first();
       Element elementBuyButtonNew = doc.select(".overlay_button_add_cesta_detalhe").first();
       boolean available = false;
-      
+
       if (elementBuyButton != null) {
         if (elementBuyButton.text().trim().toLowerCase().contains("produto indisponível")) {
           available = false;
@@ -85,49 +85,48 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       } else if (elementBuyButtonNew != null) {
         available = true;
       }
-      
+
       // Nome
       String name = null;
       Element elementName = doc.select("h1.div_nome_prod").first();
       if (elementName != null) {
         name = elementName.text().trim();
       }
-      
+
       // Preço
       Float price = null;
       Element elementPrice = doc.select(".txt_preco_por").first();
-      System.out.println(price);
       if (elementPrice != null) {
         price = MathUtils.parseFloat(elementPrice.text());
       }
-      
+
       // Categorias
       CategoryCollection categories = crawlCategories(doc);
-      
+
       // Imagem primária
       Elements elementPrimaryImage = doc.select("#imagem-grande");
       String primaryImage = elementPrimaryImage.attr("src");
-      
+
       // Imagens secundárias
       String secondaryImages = null;
-      
+
       JSONArray secondaryImagesArray = new JSONArray();
       Elements images = doc.select(".divs-fotos img");
-      
+
       for (int i = 1; i < images.size(); i++) {
         Element e = images.get(i);
         secondaryImagesArray.put(e.attr("src"));
       }
-      
+
       if (secondaryImagesArray.length() > 0) {
         secondaryImages = secondaryImagesArray.toString();
       }
-      
+
       // Descrição
       String description = "";
-      
+
       try {
-        
+
         Element[] sections = new Element[] {doc.select(".div_informacoes_prod").first(), doc.select(".div_anvisa").first(),};
         for (Element e : sections) {
           if (e != null) {
@@ -137,39 +136,39 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       } catch (Exception e1) {
         e1.printStackTrace();
       }
-      
+
       // Estoque
       Integer stock = null;
-      
+
       // Marketplace
       Marketplace marketplace = new Marketplace();
-      
+
       // Prices
       Prices prices = crawlPrices(doc, price);
-      
+
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
           .setStock(stock).setMarketplace(marketplace).build();
-      
+
       products.add(product);
-      
+
     } else {
       Logging.printLogDebug(logger, "Not a product page.");
     }
-    
+
     return products;
   }
-  
+
   /*******************************
    * Product page identification *
    *******************************/
-  
+
   private boolean isProductPage(String url) {
     return url.startsWith("http://www.ultrafarma.com.br/produto/detalhes");
   }
-  
+
   /**
    * 
    * There is no card payment options, other than cash price. So for installments, we will have only
@@ -182,17 +181,17 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
    */
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
-    
+
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<Integer, Float>();
-      
+
       installmentPriceMap.put(1, price);
-      
+
       Element priceFrom = doc.select(".div_prec_det .txt_cinza_gr").first();
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
       }
-      
+
       prices.setBankTicketPrice(price);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -202,16 +201,16 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
-    
+
     return prices;
   }
-  
+
   private CategoryCollection crawlCategories(Document doc) {
     CategoryCollection categories = new CategoryCollection();
-    
+
     Elements cats = doc.select(".breadCrumbs li a");
     int i = 0;
-    
+
     for (Element e : cats) {
       if (i != 0) {
         String text = e.ownText().trim();
@@ -219,7 +218,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       }
       i++;
     }
-    
+
     return categories;
   }
 }
