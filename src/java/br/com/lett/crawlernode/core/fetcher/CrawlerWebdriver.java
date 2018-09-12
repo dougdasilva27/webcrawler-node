@@ -207,7 +207,7 @@ public class CrawlerWebdriver {
     try {
       FileUtils.copyFile(screenshot, new File(path));
     } catch (Exception ex) {
-      System.err.println("Error saving screenshot! [" + ex.getMessage() + "]");
+      Logging.printLogError(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
     }
   }
 
