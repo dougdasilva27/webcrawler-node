@@ -12,18 +12,13 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     super(session);
   }
   
-  int pageCounter = 0;
-  
-  
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 20;
     
-    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
     this.log("Página " + this.currentPage);
-    
-    
-    String url = "http://www.dicico.com.br/dicico-br/search/?No=" + this.pageCounter + "&Nrpp=" + this.pageSize + "&Ntt=" + key;
+    String url = "http://www.dicico.com.br/dicico-br/search/?No=" + this.arrayProducts.size() + "&Nrpp=" + this.pageSize + "&Ntt="
+        + this.keywordWithoutAccents.replace(" ", "%20");
     this.log("Link onde são feitos os crawlers: " + url);
     
     this.currentDoc = fetchDocument(url);
@@ -51,7 +46,6 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     }
     
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-    this.pageCounter += this.pageSize;
   }
   
   @Override
@@ -86,9 +80,10 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     if (urlElement != null) {
       productUrl = urlElement.attr("href");
       
-      if (!productUrl.startsWith("http")) {
+      if (!productUrl.startsWith("http://")) {
         productUrl = "https://www.dicico.com.br" + productUrl;
       }
+      System.out.println(productUrl);
     }
     return productUrl;
   }
