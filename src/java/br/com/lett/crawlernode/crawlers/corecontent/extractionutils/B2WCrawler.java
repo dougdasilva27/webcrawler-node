@@ -65,14 +65,7 @@ public class B2WCrawler {
 
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
-
-        String name = crawlMainPageName(infoProductJson);
-        String variationName = entry.getValue().trim();
-
-        if (name != null && !name.toLowerCase().contains(variationName.toLowerCase())) {
-          name += " " + variationName;
-        }
-
+        String name = entry.getValue().trim();
         Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
         Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = this.crawlAvailability(marketplaceMap);
@@ -126,13 +119,19 @@ public class B2WCrawler {
 
         if (sku.has("internalId")) {
           String internalId = sku.getString("internalId");
-          String name = "";
+          StringBuilder name = new StringBuilder();
 
-          if (sku.has("variationName")) {
-            name = sku.getString("variationName");
+          if (sku.has("name") && sku.has("variationName")) {
+            name.append(sku.getString("name"));
+
+            String variationName = sku.getString("variationName");
+
+            if (!name.toString().toLowerCase().contains(variationName.toLowerCase())) {
+              name.append(" " + variationName);
+            }
           }
 
-          skuMap.put(internalId, name);
+          skuMap.put(internalId, name.toString().trim());
         }
       }
     }
@@ -296,16 +295,6 @@ public class B2WCrawler {
     }
 
     return secondaryImages;
-  }
-
-  private String crawlMainPageName(JSONObject json) {
-    String name = null;
-
-    if (json.has("name")) {
-      name = json.getString("name");
-    }
-
-    return name;
   }
 
   /**

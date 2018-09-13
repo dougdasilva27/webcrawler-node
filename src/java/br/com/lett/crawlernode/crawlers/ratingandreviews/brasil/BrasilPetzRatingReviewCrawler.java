@@ -70,6 +70,7 @@ public class BrasilPetzRatingReviewCrawler extends RatingReviewCrawler {
         ratingReviews.setDate(session.getDate());
         Integer totalRating = getTotalNumOfRatings(docProduct);
         ratingReviews.setTotalRating(totalRating);
+        ratingReviews.setTotalWrittenReviews(totalRating);
         ratingReviews.setAverageOverallRating(totalRating > 0 ? getTotalAvgRating(docProduct) : 0d);
 
         ratingReviewsCollection.addRatingReviews(ratingReviews);
@@ -124,7 +125,7 @@ public class BrasilPetzRatingReviewCrawler extends RatingReviewCrawler {
    * @return
    */
   private Integer getTotalNumOfRatings(Document doc) {
-    return doc.select(".depoimento").size();
+    return doc.select(".ancora-depoimento").size();
   }
 
   /**
@@ -135,7 +136,7 @@ public class BrasilPetzRatingReviewCrawler extends RatingReviewCrawler {
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
 
-    JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "\"extraInfo\":", ",", true);
+    JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "\"extraInfo\":", ",", true, false);
 
     if (productJson.has("rating")) {
       avgRating = productJson.getDouble("rating");
