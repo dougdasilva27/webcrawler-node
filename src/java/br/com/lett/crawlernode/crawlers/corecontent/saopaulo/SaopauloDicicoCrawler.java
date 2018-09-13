@@ -51,6 +51,7 @@ public class SaopauloDicicoCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String[] skuIDs = getJSONArray(doc);
       String description = crawlDescription(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a");
       
       if (skuIDs != null) {
         for (String internalId : skuIDs) {
@@ -60,7 +61,6 @@ public class SaopauloDicicoCrawler extends Crawler {
           Float price = crawlPrice(fetchedData);
           Prices prices = crawlPrices(price, fetchedData);
           boolean available = crawlAvailability(fetchedData) && price != null;
-          CategoryCollection categories = CrawlerUtils.crawlCategories(fetchedData, ".breadcrumb a");
           Marketplace marketplace = crawlMarketplace();
           List<String> imagesArr = getImagesFromAPI(internalId);
           String primaryImage = crawlPrimaryImage(imagesArr);
@@ -131,7 +131,7 @@ public class SaopauloDicicoCrawler extends Crawler {
       
       if (skuObject.has("pickupInStore")) {
         String valueId = skuObject.getString("pickupInStore");
-        valueId = valueId.substring(1, valueId.length() - 1).replaceAll("=true", "").replaceAll("=false", "").replaceAll(" ", "");
+        valueId = valueId.substring(1, valueId.length() - 1).replace("=true", "").replace("=false", "").replace(" ", "");
         idArray = valueId.split(",");
         
         return idArray;
@@ -172,7 +172,7 @@ public class SaopauloDicicoCrawler extends Crawler {
   
   private String crawlName(Document doc) {
     String name = null;
-    Element nameElement = doc.select("#productTitleDisplayContainer > h1.name > span").first();
+    Element nameElement = doc.selectFirst("#productTitleDisplayContainer > h1.name > span");
     
     if (nameElement != null) {
       name = nameElement.ownText().trim();
