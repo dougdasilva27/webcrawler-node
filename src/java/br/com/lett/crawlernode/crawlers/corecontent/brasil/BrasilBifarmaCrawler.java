@@ -226,12 +226,14 @@ public class BrasilBifarmaCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private boolean isPrimaryImage(String image, String primaryImage) {
-    String x = (image.replace("https://cdn-bifarma3.stoom.com.br/fotos/", "")).split("\\.")[0].replaceAll("[^0-9]", "");
-    String y = (primaryImage.replace("https://cdn-bifarma3.stoom.com.br/fotos/", "")).split("\\.")[0].replaceAll("[^0-9]", "");
-
-    return x.equals(y);
-  }
+  // private boolean isPrimaryImage(String image, String primaryImage) {
+  // String x = (image.replace("https://cdn-bifarma3.stoom.com.br/fotos/",
+  // "")).split("\\.")[0].replaceAll("[^0-9]", "");
+  // String y = (primaryImage.replace("https://cdn-bifarma3.stoom.com.br/fotos/",
+  // "")).split("\\.")[0].replaceAll("[^0-9]", "");
+  //
+  // return x.equals(y);
+  // }
 
   private CategoryCollection crawlCategories(Document doc) {
     CategoryCollection categories = new CategoryCollection();
@@ -246,7 +248,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.select(".accordion .accordion-section").first();
+    Element descriptionElement = document.selectFirst(".accordion .accordion-section:not(.dp-banner)");
 
     if (descriptionElement != null) {
       description.append(descriptionElement.html());
