@@ -48,10 +48,10 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
-      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+    if (skuJson.length() > 0) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
@@ -93,13 +93,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
   /*******************************
    * Product page identification *
    *******************************/
-
-  private boolean isProductPage(Document document) {
-    if (document.select(".produto").first() != null) {
-      return true;
-    }
-    return false;
-  }
 
   /*******************
    * General methods *

@@ -2,111 +2,78 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
 
-	public SaopauloUltrafarmaCrawler(Session session) {
-		super(session);
-	}
+  public SaopauloUltrafarmaCrawler(Session session) {
+    super(session);
+  }
 
-	private String crawlInternalId(String url) {
-		String internalId = null;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 12;
 
-		String[] tokens = url.split("/");
-		String[] tokens2 = tokens[tokens.length - 2].split("-");
-		internalId = tokens2[tokens2.length - 1];
+    this.log("Página " + this.currentPage);
+    String url = "https://busca.ultrafarma.com.br/search?w=" + this.keywordEncoded + "&srt=" + this.arrayProducts.size();
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		return internalId;
-	}
+    this.currentDoc = fetchDocument(url);
 
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
+    Elements products = this.currentDoc.select(".conj_prod_categorias");
 
-		return internalPid;
-	}
+    if (!products.isEmpty()) {
+      for (Element e : products) {
+        String productUrl = crawlProductUrl(e);
+        String internalId = crawlInternalId(e);
 
-	private String crawlProductUrl(Element e) {
-		String urlProduct = e.attr("title");
+        saveDataProduct(internalId, null, productUrl);
 
-		return urlProduct;
-	}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 12;
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-		this.log("Página " + this.currentPage);
-		// monta a url com a keyword e a página
-		String url = "http://busca.ultrafarma.com.br/search?w=" + this.keywordEncoded + "&srt="
-				+ this.arrayProducts.size();
-		this.log("Link onde são feitos os crawlers: " + url);
+  }
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+  @Override
+  protected boolean hasNextPage() {
+    Element page = this.currentDoc.select(".paginacao li a").last();
+    return page == null || !page.hasClass("ativo");
+  }
 
-		Elements products = this.currentDoc.select("a.nome_produtos_vitrine");
+  private String crawlInternalId(Element e) {
+    String internalId = null;
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (products.size() >= 1) {
-			// se o total de busca não foi setado ainda, chama a função para
-			// setar
-			if (this.totalProducts == 0)
-				setTotalProducts();
+    Element id = e.selectFirst(".preco_lista_prod[data-id]");
+    if (id != null) {
+      String text = id.attr("data-id");
 
-			for (Element e : products) {
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+      if (text.contains("_")) {
+        internalId = CommonMethods.getLast(text.split("_"));
+      }
+    }
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+    return internalId;
+  }
 
-				// InternalId
-				String internalId = crawlInternalId(urlProduct);
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+    Element url = e.selectFirst("a.nome_produtos_vitrine");
+    if (url != null) {
+      productUrl = url.attr("title");
+    }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-
-	}
-
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("a#botao_seta_direita").first();
-
-		// se elemento page obtiver algum resultado
-		if (page != null)
-			return true;
-
-		return false;
-	}
-
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span.sli_bct_total_records").first();
-
-		try {
-			if (totalElement != null)
-				this.totalProducts = Integer.parseInt(totalElement.text());
-		} catch (Exception e) {
-			this.logError(e.getMessage());
-		}
-		this.log("Total da busca: " + this.totalProducts);
-	}
-
+    return productUrl;
+  }
 }
