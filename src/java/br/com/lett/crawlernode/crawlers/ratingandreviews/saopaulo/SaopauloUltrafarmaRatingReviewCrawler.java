@@ -2,11 +2,13 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
@@ -77,19 +79,20 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Double crawlAverageOverallRating(Document document) {
-    Double avgOverallRating = null;
+    Double avgOverallRating = 0d;
+    Double values = 0d;
 
-    Element percentageElement = document.select("#avaliacao img").first();
-    if (percentageElement != null) {
-      try {
-        String avgString = CommonMethods.getLast(percentageElement.attr("src").split("/")).replaceAll("[^0-9.]", "");
+    Elements ratings = document.select(".cont-div-avalia .div_estrela_comentario img");
+    for (Element e : ratings) {
+      String avgString = CommonMethods.getLast(e.attr("src").split("/")).replaceAll("[^0-9.]", "");
 
-        if (!avgString.isEmpty()) {
-          avgOverallRating = Double.parseDouble(avgString);
-        }
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      if (!avgString.isEmpty()) {
+        values += Double.parseDouble(avgString);
       }
+    }
+
+    if (!ratings.isEmpty()) {
+      avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(values / ratings.size());
     }
 
     return avgOverallRating;
