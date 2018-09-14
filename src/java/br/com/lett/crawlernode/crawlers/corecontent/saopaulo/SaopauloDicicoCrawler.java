@@ -172,10 +172,9 @@ public class SaopauloDicicoCrawler extends Crawler {
   
   private String crawlName(Document doc) {
     String name = null;
-    Element nameElement = doc.selectFirst("#productTitleDisplayContainer > h1.name > span");
-    
+    Element nameElement = doc.selectFirst("#productTitleDisplayContainer");
     if (nameElement != null) {
-      name = nameElement.ownText().trim();
+      name = nameElement.text();
     }
     return name;
   }
