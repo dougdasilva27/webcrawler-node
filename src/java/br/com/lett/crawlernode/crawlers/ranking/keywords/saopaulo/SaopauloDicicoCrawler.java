@@ -67,7 +67,7 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     String internalPid = null;
     
     Element text = e.selectFirst(".sku");
-    if (text.ownText().contains(": ")) {
+    if (text != null) {
       internalPid = MathUtils.parseInt((text.ownText())).toString();
     }
     return internalPid;
@@ -79,6 +79,7 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     
     if (urlElement != null) {
       productUrl = urlElement.attr("href");
+      System.out.println(productUrl);
       
       if (!productUrl.startsWith("http://")) {
         productUrl = "https://www.dicico.com.br" + productUrl;
