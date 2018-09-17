@@ -479,7 +479,7 @@ public class VTEXCrawlersUtils {
 
   /******************************** RATING ****************************************/
 
-  public List<String> crawlIdList(JSONObject skuJson) {
+  public static List<String> crawlIdList(JSONObject skuJson) {
     List<String> idList = new ArrayList<>();
 
     if (skuJson.has("skus")) {
