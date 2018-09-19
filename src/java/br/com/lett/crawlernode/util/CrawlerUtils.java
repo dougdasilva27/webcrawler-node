@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
@@ -28,6 +29,153 @@ public class CrawlerUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
   public static final String CSS_SELECTOR_IGNORE_FIRST_CHILD = ":not(:first-child)";
+
+  /**
+   * Scrap simple string from html
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @return
+   */
+  public static String scrapStringSimpleInfo(Document doc, String cssSelector, boolean ownText) {
+    String info = null;
+
+    Element infoElement = doc.selectFirst(cssSelector);
+    if (infoElement != null) {
+      info = ownText ? infoElement.ownText().trim() : infoElement.text().trim();
+    }
+
+    return info;
+  }
+
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * @return
+   */
+  public static Float scrapSimplePrice(Document document, String cssSelector, boolean ownText) {
+    Float price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseFloat(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple description from html
+   * 
+   * @param doc
+   * @param selectors - description css selectors list
+   * @return
+   */
+  public static String scrapSimpleDescription(Document doc, List<String> selectors) {
+    StringBuilder description = new StringBuilder();
+
+    for (String selector : selectors) {
+      Element e = doc.selectFirst(selector);
+
+      if (e != null) {
+        description.append(e.outerHtml());
+      }
+    }
+
+    return description.toString();
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param attributes - attributes list for get image
+   * @param protocol - https: or https:// or http: or http://
+   * @param host - www.hostname.com.br
+   * @return
+   */
+  public static String scrapSimplePrimaryImage(Document doc, String cssSelector, List<String> attributes, String protocol, String host) {
+    String image = null;
+
+    Element elementPrimaryImage = doc.selectFirst(cssSelector);
+    if (elementPrimaryImage != null) {
+      image = sanitizeImageUrl(elementPrimaryImage, attributes, protocol, host);
+    }
+
+    return image;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param attributes - attributes list for get image
+   * @param protocol - https: or https:// or http: or http://
+   * @param host - www.hostname.com.br
+   * @param primaryImage - if null, all images will be in secondary images
+   * @return
+   */
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+      String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(cssSelector);
+    for (Element e : images) {
+      String image = sanitizeImageUrl(e, attributes, protocol, host);
+
+      if (primaryImage == null || !primaryImage.equals(image)) {
+        secondaryImagesArray.put(image);
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+
+  /**
+   * 
+   * @param imageElement
+   * @param attributes
+   * @param protocol
+   * @param host
+   * @return
+   */
+  public static String sanitizeImageUrl(Element imageElement, List<String> attributes, String protocol, String host) {
+    StringBuilder sanitizedImage = new StringBuilder();
+
+    for (String att : attributes) {
+      String imageUrl = imageElement.attr(att).trim();
+
+      if (!imageUrl.isEmpty()) {
+
+        if (!imageUrl.startsWith("http") && imageUrl.contains(host)) {
+          sanitizedImage.append(protocol).append(imageUrl);
+        } else if (!imageUrl.contains(host)) {
+          sanitizedImage.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(imageUrl);
+        } else {
+          sanitizedImage.append(imageUrl);
+        }
+
+        break;
+      }
+    }
+
+    if (sanitizedImage.toString().isEmpty()) {
+      return null;
+    }
+
+    return sanitizedImage.toString();
+  }
 
   /**
    * Crawl cookies from a page
@@ -192,6 +340,72 @@ public class CrawlerUtils {
       }
     }
 
+    return object;
+  }
+
+  /**
+   * Crawl json inside element html
+   *
+   * e.g: vtxctx = [{ skus:"825484", searchTerm:"", categoryId:"38", categoryName:"Leite infantil",
+   * departmentyId:"4", departmentName:"Infantil", url:"www.araujo.com.br" }, {...}];
+   *
+   * token = "vtxctx=" finalIndex = ";"
+   * 
+   * @param doc
+   * @param cssElement selector used to get the desired json element
+   * @param token whithout spaces
+   * @param finalIndex if final index is null or is'nt in html, substring will use only the token
+   * @param withoutSpaces remove all spaces
+   * @param lastFinalIndex if true, the substring will find last index of finalIndex
+   * @return JSONArray
+   * 
+   * @throws JSONException
+   * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
+   * @throws IllegalArgumentException if doc is null
+   */
+  public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
+      boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+
+    if (doc == null)
+      throw new IllegalArgumentException("Argument doc cannot be null");
+
+    JSONArray object = new JSONArray();
+
+    Elements scripts = doc.select(cssElement);
+    boolean hasToken = token != null;
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      script = withoutSpaces ? script.replace(" ", "") : script;
+
+      if (!hasToken) {
+        object = stringToJsonArray(script.trim());
+        break;
+      } else if (script.contains(token)) {
+        int x = script.indexOf(token) + token.length();
+
+        String json = null;
+
+        if (script.contains(finalIndex)) {
+          int y;
+
+          if (lastFinalIndex) {
+            y = script.lastIndexOf(finalIndex);
+          } else {
+            y = script.indexOf(finalIndex, x);
+          }
+          json = script.substring(x, y).trim();
+        } else {
+          json = script.substring(x).trim();
+        }
+
+        object = stringToJsonArray(json);
+
+        break;
+      }
+    }
+
 
     return object;
   }
@@ -202,6 +416,20 @@ public class CrawlerUtils {
     if (str.startsWith("{") && str.endsWith("}")) {
       try {
         json = new JSONObject(str);
+      } catch (Exception e1) {
+        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+      }
+    }
+
+    return json;
+  }
+
+  public static JSONArray stringToJsonArray(String str) {
+    JSONArray json = new JSONArray();
+
+    if (str.startsWith("[") && str.endsWith("]")) {
+      try {
+        json = new JSONArray(str);
       } catch (Exception e1) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
       }
@@ -341,12 +569,19 @@ public class CrawlerUtils {
     return crawlCategories(document, selector, true);
   }
 
+  /**
+   * 
+   * @param document
+   * @param selector
+   * @param ignoreFirstChild - ignore first element from cssSelector
+   * @return
+   */
   public static CategoryCollection crawlCategories(Document document, String selector, boolean ignoreFirstChild) {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(selector);
 
-    for (Element e : elementCategories) { // first item is the home page
-      categories.add(e.text().trim());
+    for (int i = ignoreFirstChild ? 1 : 0; i < elementCategories.size(); i++) {
+      categories.add(elementCategories.get(i).text().trim());
     }
 
     return categories;
