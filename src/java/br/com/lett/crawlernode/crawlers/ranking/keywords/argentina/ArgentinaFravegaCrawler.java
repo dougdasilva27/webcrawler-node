@@ -8,7 +8,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.MathUtils;
 
 public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
   
@@ -30,7 +29,7 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
     
-    Elements products = this.currentDoc.select("li[layout] .image");
+    Elements products = this.currentDoc.select("li[layout] .wrapData");
     Elements productsPid = this.currentDoc.select("li[id]");
     int count = 0;
     
@@ -63,10 +62,10 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
     Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero > span.value");
     
     if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTrace(e));
+      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
+      
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
       }
       
       this.log("Total da busca: " + this.totalProducts);
@@ -77,21 +76,24 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
     String internalPid = null;
     
     if (e != null) {
-      String getInfo = e.attr("id");
-      internalPid = MathUtils.parseInt(getInfo).toString();
+      String id = e.attr("id");
+      
+      if (id.contains("_")) {
+        internalPid = CommonMethods.getLast(id.split("_"));
+      }
     }
     return internalPid;
   }
   
   private String crawlProductUrl(Element e) {
     String productUrl = null;
-    Element urlElement = e.selectFirst(".image > a");
+    Element urlElement = e.selectFirst("a");
     
     if (urlElement != null) {
       productUrl = urlElement.attr("href");
       
       if (!productUrl.contains("fravega.com")) {
-        productUrl = ("https://www.farmacity.com/" + urlElement.attr("href")).replace(".com//", ".com/");
+        productUrl = ("https://www.fravega.com/" + urlElement.attr("href")).replace(".com//", ".com/");
       }
     }
     
