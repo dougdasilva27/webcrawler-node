@@ -79,12 +79,10 @@ public class SaopauloDicicoCrawler extends CrawlerRankingKeywords {
     
     if (urlElement != null) {
       productUrl = urlElement.attr("href");
-      System.out.println(productUrl);
       
-      if (!productUrl.startsWith("http://")) {
-        productUrl = "https://www.dicico.com.br" + productUrl;
+      if (!productUrl.contains("dicico.com.br")) {
+        productUrl = "https://www.dicico.com.br" + productUrl.replace(".com//", ".com/");
       }
-      System.out.println(productUrl);
     }
     return productUrl;
   }
