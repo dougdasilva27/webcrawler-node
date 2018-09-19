@@ -8,6 +8,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 
 public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
   
@@ -24,31 +25,30 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
     this.pageSize = 24;
     
     String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "https://www.fravega.com/busca?ft=" + keyword + "#" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
+    String url = "https://www.fravega.com/" + keyword + "#" + this.currentPage;
     
+    this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
     
-    Elements products = this.currentDoc.select(".shelf-resultado > div > ul");
+    Elements products = this.currentDoc.select("li[layout] .image");
+    Elements productsPid = this.currentDoc.select("li[id]");
+    int count = 0;
     
-    if (products.size() >= 1) {
+    if (!products.isEmpty()) {
       if (this.totalProducts == 0)
         setTotalProducts();
       
       for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
+        String internalPid = crawlInternalPid(productsPid.get(count));
         
-        // String internalId = crawlInternalId(e);
+        String productUrl = crawlProductUrl(e);
         
-        // String productUrl = crawlProductUrl(e);
+        saveDataProduct(null, internalPid, productUrl);
+        count++;
         
-        // saveDataProduct(internalId, internalPid, productUrl);
-        
-        // this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " +
-        // internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
-        
       }
     } else {
       this.result = false;
@@ -76,12 +76,25 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(Element e) {
     String internalPid = null;
     
-    Element getInfo = e.selectFirst(".image > a[href]");
-    
-    if (getInfo != null) {
-      // image has sku ID- Think about a better logic to get it
+    if (e != null) {
+      String getInfo = e.attr("id");
+      internalPid = MathUtils.parseInt(getInfo).toString();
     }
     return internalPid;
   }
   
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+    Element urlElement = e.selectFirst(".image > a");
+    
+    if (urlElement != null) {
+      productUrl = urlElement.attr("href");
+      
+      if (!productUrl.contains("fravega.com")) {
+        productUrl = ("https://www.farmacity.com/" + urlElement.attr("href")).replace(".com//", ".com/");
+      }
+    }
+    
+    return productUrl;
+  }
 }
