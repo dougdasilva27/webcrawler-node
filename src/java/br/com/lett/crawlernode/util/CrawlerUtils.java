@@ -560,7 +560,8 @@ public class CrawlerUtils {
   }
 
   /**
-   * @deprecated
+   * use crawlCategories(Document document, String selector, boolean ignoreFirstChild)
+   * 
    * @param document
    * @param selector
    * @return
