@@ -104,7 +104,7 @@ public class CrawlerUtils {
 
     Element elementPrimaryImage = doc.selectFirst(cssSelector);
     if (elementPrimaryImage != null) {
-      image = sanitizeImageUrl(elementPrimaryImage, attributes, protocol, host);
+      image = sanitizeUrl(elementPrimaryImage, attributes, protocol, host);
     }
 
     return image;
@@ -127,7 +127,7 @@ public class CrawlerUtils {
 
     Elements images = doc.select(cssSelector);
     for (Element e : images) {
-      String image = sanitizeImageUrl(e, attributes, protocol, host);
+      String image = sanitizeUrl(e, attributes, protocol, host);
 
       if (primaryImage == null || !primaryImage.equals(image)) {
         secondaryImagesArray.put(image);
@@ -143,38 +143,40 @@ public class CrawlerUtils {
 
 
   /**
+   * Append host and protocol if url needs
+   * Scroll through all the attributes in the list sent in sequence to find a url
    * 
-   * @param imageElement
-   * @param attributes
-   * @param protocol
-   * @param host
-   * @return
+   * @param element - code block that contains url (Jsoup Element)
+   * @param attributes - ex: "href", "src"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
    */
-  public static String sanitizeImageUrl(Element imageElement, List<String> attributes, String protocol, String host) {
-    StringBuilder sanitizedImage = new StringBuilder();
+  public static String sanitizeUrl(Element element, List<String> attributes, String protocol, String host) {
+    StringBuilder sanitizedUrl = new StringBuilder();
 
     for (String att : attributes) {
-      String imageUrl = imageElement.attr(att).trim();
+      String url = element.attr(att).trim();
 
-      if (!imageUrl.isEmpty()) {
+      if (!url.isEmpty()) {
 
-        if (!imageUrl.startsWith("http") && imageUrl.contains(host)) {
-          sanitizedImage.append(protocol).append(imageUrl);
-        } else if (!imageUrl.contains(host)) {
-          sanitizedImage.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(imageUrl);
+        if (!url.startsWith("http") && url.contains(host)) {
+          sanitizedUrl.append(protocol).append(url);
+        } else if (!url.contains(host)) {
+          sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
         } else {
-          sanitizedImage.append(imageUrl);
+          sanitizedUrl.append(url);
         }
 
         break;
       }
     }
 
-    if (sanitizedImage.toString().isEmpty()) {
+    if (sanitizedUrl.toString().isEmpty()) {
       return null;
     }
 
-    return sanitizedImage.toString();
+    return sanitizedUrl.toString();
   }
 
   /**
