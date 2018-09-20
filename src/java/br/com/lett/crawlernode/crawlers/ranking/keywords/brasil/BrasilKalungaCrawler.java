@@ -67,16 +67,6 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    // se os produtos cadastrados não atingiram o total tem proxima pagina
-    if (this.arrayProducts.size() < this.totalProducts) {
-      return true;
-    }
-
-    return false;
-  }
-
 
   protected void setTotalBusca(JSONObject apiSearch) {
     if (apiSearch.has("quantidade")) {
