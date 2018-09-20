@@ -56,14 +56,33 @@ public class CrawlerUtils {
    * @param document
    * @param cssSelector
    * @param ownText
-   * @return
+   * @return Float
    */
-  public static Float scrapSimplePrice(Document document, String cssSelector, boolean ownText) {
+  public static Float scrapSimplePriceFloat(Document document, String cssSelector, boolean ownText) {
     Float price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
       price = MathUtils.parseFloat(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * @return Double
+   */
+  public static Double scrapSimplePriceDouble(Document document, String cssSelector, boolean ownText) {
+    Double price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseDouble(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
     return price;
@@ -143,8 +162,8 @@ public class CrawlerUtils {
 
 
   /**
-   * Append host and protocol if url needs
-   * Scroll through all the attributes in the list sent in sequence to find a url
+   * Append host and protocol if url needs Scroll through all the attributes in the list sent in
+   * sequence to find a url
    * 
    * @param element - code block that contains url (Jsoup Element)
    * @param attributes - ex: "href", "src"
@@ -562,7 +581,7 @@ public class CrawlerUtils {
   }
 
   /**
-   * use crawlCategories(Document document, String selector, boolean ignoreFirstChild)
+   * @deprecated use crawlCategories(Document document, String selector, boolean ignoreFirstChild)
    * 
    * @param document
    * @param selector

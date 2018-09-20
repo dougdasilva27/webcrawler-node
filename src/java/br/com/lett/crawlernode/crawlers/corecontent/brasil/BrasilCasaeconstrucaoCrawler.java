@@ -44,7 +44,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=name]", true);
-      Float price = CrawlerUtils.scrapSimplePrice(doc, ".product-price .price strong", true);
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-price .price strong", true);
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", false);
