@@ -19,14 +19,14 @@ public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.unicaarcondicionado.com.br/catalogsearch/result/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
+    String url = "https://www.unicaarcondicionado.com.br/catalogsearch/result/index/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
 
     // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#products-list > li.item > span");
+    Elements products = this.currentDoc.select(".products-grid > li.item > span");
     Element emptySearch = this.currentDoc.select(".suggest").first();
     Element suggestSearch = this.currentDoc.select(".note-msg").first();
 
