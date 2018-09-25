@@ -24,7 +24,7 @@ import models.prices.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.ricardoeletro.com.br/";
+  private static final String HOME_PAGE = "https://www.ricardoeletro.com.br/";
   private static final String SELLER_NAME = "ricardo eletro";
 
   public BrasilRicardoeletroCrawler(Session session) {
@@ -40,9 +40,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = new ArrayList<Product>();
+    List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
@@ -175,15 +175,15 @@ public class BrasilRicardoeletroCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    return url.startsWith("http://www.ricardoeletro.com.br/Produto/");
+  private boolean isProductPage(Document doc) {
+    return !doc.select("#ProdutoDetalhesCodigoProduto").isEmpty();
   }
 
   private Document crawlDocMarketplaces(String internalPid) {
     Document docMarketplace = new Document("");
 
     if (internalPid != null) {
-      String url = "http://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
+      String url = "https://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
 
       docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
     }
