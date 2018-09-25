@@ -58,6 +58,8 @@ public abstract class CrawlerRanking extends Task {
   protected int productsLimit;
   protected int pageLimit;
 
+  protected List<Cookie> cookies = new ArrayList<>();
+
   protected CrawlerWebdriver webdriver;
 
   protected int pageSize = 0;
@@ -539,7 +541,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected Document fetchDocument(String url) {
-    return fetchDocument(url, null);
+    return fetchDocument(url, cookies);
   }
 
   /**
@@ -582,7 +584,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected Map<String, String> fetchCookies(String url) {
-    return fetchCookies(url, null);
+    return fetchCookies(url, cookies);
   }
 
   /**
@@ -610,7 +612,7 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    return fetchJSONObject(url, null);
+    return fetchJSONObject(url, cookies);
   }
 
   /**

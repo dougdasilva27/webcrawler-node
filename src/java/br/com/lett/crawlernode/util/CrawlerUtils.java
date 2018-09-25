@@ -337,26 +337,8 @@ public class CrawlerUtils {
       if (!hasToken) {
         object = stringToJson(script.trim());
         break;
-      } else if (script.contains(token)) {
-        int x = script.indexOf(token) + token.length();
-
-        String json = null;
-
-        if (script.contains(finalIndex)) {
-          int y;
-
-          if (lastFinalIndex) {
-            y = script.lastIndexOf(finalIndex);
-          } else {
-            y = script.indexOf(finalIndex, x);
-          }
-          json = script.substring(x, y).trim();
-        } else {
-          json = script.substring(x).trim();
-        }
-
-        object = stringToJson(json);
-
+      } else if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
+        object = stringToJson(extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
         break;
       }
     }
@@ -403,32 +385,47 @@ public class CrawlerUtils {
       if (!hasToken) {
         object = stringToJsonArray(script.trim());
         break;
-      } else if (script.contains(token)) {
-        int x = script.indexOf(token) + token.length();
-
-        String json = null;
-
-        if (script.contains(finalIndex)) {
-          int y;
-
-          if (lastFinalIndex) {
-            y = script.lastIndexOf(finalIndex);
-          } else {
-            y = script.indexOf(finalIndex, x);
-          }
-          json = script.substring(x, y).trim();
-        } else {
-          json = script.substring(x).trim();
-        }
-
-        object = stringToJsonArray(json);
-
+      } else if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
+        object = stringToJsonArray(extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
         break;
       }
     }
 
 
     return object;
+  }
+
+  /**
+   * Extract Json string from script(string) e.g: vtxctx = [{ skus:"825484", searchTerm:"",
+   * categoryId:"38", categoryName:"Leite infantil", departmentyId:"4", departmentName:"Infantil",
+   * url:"www.araujo.com.br" }, {...}];
+   *
+   * token = "vtxctx=" finalIndex = ";"
+   * 
+   * @param token whithout spaces
+   * @param finalIndex if final index is null or is'nt in html, substring will use only the token
+   * @param lastFinalIndex if true, the substring will find last index of finalIndex
+   * @return
+   */
+  public static String extractSpecificStringFromScript(String script, String token, String finalIndex, boolean lastFinalIndex) {
+    String json = null;
+
+    int x = script.indexOf(token) + token.length();
+
+    if (finalIndex != null) {
+      int y;
+
+      if (lastFinalIndex) {
+        y = script.lastIndexOf(finalIndex);
+      } else {
+        y = script.indexOf(finalIndex, x);
+      }
+      json = script.substring(x, y).trim();
+    } else {
+      json = script.substring(x).trim();
+    }
+
+    return json;
   }
 
   public static JSONObject stringToJson(String str) {

@@ -122,8 +122,8 @@ public class BrasilCassolCrawler extends Crawler {
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("id")) {
-      internalPid = json.get("id").toString();
+    if (json.has("erpId")) {
+      internalPid = json.get("erpId").toString();
     }
 
     return internalPid;
