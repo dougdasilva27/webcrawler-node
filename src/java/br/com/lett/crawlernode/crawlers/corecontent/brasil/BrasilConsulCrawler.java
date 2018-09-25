@@ -57,8 +57,8 @@ public class BrasilConsulCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String description = crawlDescription(doc, apiJSON);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);

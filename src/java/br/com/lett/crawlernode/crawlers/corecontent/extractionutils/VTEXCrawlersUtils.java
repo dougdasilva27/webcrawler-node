@@ -30,6 +30,7 @@ public class VTEXCrawlersUtils {
   private static final String PRODUCT_ID = "productId";
   private static final String SKU_NAME = "skuname";
   private static final String PRODUCT_NAME = "name";
+  private static final String PRODUCT_MODEL = "Reference";
   private static final String PRICE_FROM = "ListPrice";
   private static final String IMAGES = "Images";
   private static final String IS_PRINCIPAL_IMAGE = "IsMain";
@@ -101,6 +102,38 @@ public class VTEXCrawlersUtils {
     }
 
     return name;
+  }
+
+  /**
+   * Capture name with product model
+   * 
+   * @param jsonSku
+   * @param skuJson
+   * @param apiJson
+   * @return
+   */
+  public String crawlName(JSONObject jsonSku, JSONObject skuJson, JSONObject apiJson) {
+    StringBuilder name = new StringBuilder();
+
+    String nameVariation = jsonSku.has(SKU_NAME) ? jsonSku.getString(SKU_NAME) : null;
+
+    if (skuJson.has(PRODUCT_NAME)) {
+      name.append(skuJson.getString(PRODUCT_NAME));
+
+      if (nameVariation != null) {
+        if (name.length() > nameVariation.length()) {
+          name.append(" ").append(nameVariation);
+        } else {
+          name = new StringBuilder(nameVariation);
+        }
+      }
+    }
+
+    if (apiJson.has(PRODUCT_MODEL)) {
+      name.append(" ").append(apiJson.get(PRODUCT_MODEL));
+    }
+
+    return name.toString();
   }
 
   /**
@@ -328,9 +361,9 @@ public class VTEXCrawlersUtils {
         if (value != null) {
           installmentPriceMap.put(jsonSku.getInt(BEST_INSTALLMENT_NUMBER), value);
         }
-        
-        if(jsonSku.has("ListPrice") && jsonSku.get("ListPrice") instanceof Double) {
-        	prices.setPriceFrom(jsonSku.getDouble("ListPrice"));
+
+        if (jsonSku.has("ListPrice") && jsonSku.get("ListPrice") instanceof Double) {
+          prices.setPriceFrom(jsonSku.getDouble("ListPrice"));
         }
       }
 

@@ -55,7 +55,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String description = crawlDescription(internalId, apiJSON, vtexUtil, doc);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
