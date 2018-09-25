@@ -2,99 +2,98 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords{
+public class BrasilUnicaarcondicionadoCrawler extends CrawlerRankingKeywords {
 
-	public BrasilUnicaarcondicionadoCrawler(Session session) {
-		super(session);
-	}
+  public BrasilUnicaarcondicionadoCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 36;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 36;
 
-		this.log("Página "+ this.currentPage);
+    this.log("Página " + this.currentPage);
 
-		//monta a url com a keyword e a página
-		String url = "http://www.unicaarcondicionado.com.br/catalogsearch/result/?q="+ this.keywordEncoded +"&p="+ this.currentPage; 
+    // monta a url com a keyword e a página
+    String url = "https://www.unicaarcondicionado.com.br/catalogsearch/result/index/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
 
-		this.log("Link onde são feitos os crawlers: "+url);	
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+    // chama função de pegar a url
+    this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select("#products-list > li.item > span");		
-		Element emptySearch = this.currentDoc.select(".suggest").first();
-		Element suggestSearch = this.currentDoc.select(".note-msg").first();
-		
-		if(products.size() >= 1 && emptySearch == null && suggestSearch == null) {			
-			for(Element e : products) {
+    Elements products = this.currentDoc.select(".products-grid > li.item > span");
+    Element emptySearch = this.currentDoc.select(".suggest").first();
+    Element suggestSearch = this.currentDoc.select(".note-msg").first();
 
-				// InternalPid
-				String internalPid = null;
+    if (products.size() >= 1 && emptySearch == null && suggestSearch == null) {
+      for (Element e : products) {
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+        // InternalPid
+        String internalPid = null;
 
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+        // InternalId
+        String internalId = crawlInternalId(e);
 
-				saveDataProduct(internalId, internalPid, productUrl);
+        // Url do produto
+        String productUrl = crawlProductUrl(e);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
-				}
+        saveDataProduct(internalId, internalPid, productUrl);
 
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("a.next.i-next").first();
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-		//se  elemeno page não obtiver nenhum resultado
-		if(page == null){
-			//não tem próxima página
-			return false;
-		} 
+  @Override
+  protected boolean hasNextPage() {
+    Element page = this.currentDoc.select("a.next.i-next").first();
 
-		return true;
-	}
+    // se elemeno page não obtiver nenhum resultado
+    if (page == null) {
+      // não tem próxima página
+      return false;
+    }
 
-	private String crawlInternalId(Element e){
-		Element img = e.select("img[id^=product-collection-image-]").first();
-		
-		if(img != null) {
-			String[] tokens = img.attr("id").split("-");
+    return true;
+  }
 
-			if(!tokens[tokens.length-1].trim().isEmpty()) {
-				return tokens[tokens.length-1];
-			}
-		}
-		
-		return null;
-	}
+  private String crawlInternalId(Element e) {
+    Element img = e.select("img[id^=product-collection-image-]").first();
 
-	private String crawlProductUrl(Element e){
-		String productUrl = null;
+    if (img != null) {
+      String[] tokens = img.attr("id").split("-");
 
-		Element url = e.select(".product-name a").first();
-		
-		if(url != null) {
-			productUrl = url.attr("href");
-		}
+      if (!tokens[tokens.length - 1].trim().isEmpty()) {
+        return tokens[tokens.length - 1];
+      }
+    }
 
-		return productUrl;
-	}
+    return null;
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+
+    Element url = e.select(".product-name a").first();
+
+    if (url != null) {
+      productUrl = url.attr("href");
+    }
+
+    return productUrl;
+  }
 }

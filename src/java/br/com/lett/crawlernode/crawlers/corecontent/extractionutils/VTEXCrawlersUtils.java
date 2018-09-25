@@ -328,6 +328,10 @@ public class VTEXCrawlersUtils {
         if (value != null) {
           installmentPriceMap.put(jsonSku.getInt(BEST_INSTALLMENT_NUMBER), value);
         }
+        
+        if(jsonSku.has("ListPrice") && jsonSku.get("ListPrice") instanceof Double) {
+        	prices.setPriceFrom(jsonSku.getDouble("ListPrice"));
+        }
       }
 
       if (prices.isEmpty()) {
@@ -479,7 +483,7 @@ public class VTEXCrawlersUtils {
 
   /******************************** RATING ****************************************/
 
-  public List<String> crawlIdList(JSONObject skuJson) {
+  public static List<String> crawlIdList(JSONObject skuJson) {
     List<String> idList = new ArrayList<>();
 
     if (skuJson.has("skus")) {

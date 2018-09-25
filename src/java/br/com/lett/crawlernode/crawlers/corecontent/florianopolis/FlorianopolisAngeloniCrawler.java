@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -43,6 +44,8 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/ANGELONI.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
@@ -84,15 +87,25 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
   }
 
   private String crawlInternalId(Document doc) {
+    String id = null;
+
     Element elementInternalId = doc.select("[itemprop=sku]").first();
     if (elementInternalId != null) {
-      return elementInternalId.attr("content").trim();
+      id = elementInternalId.attr("content").trim();
+    } else {
+      Element specialId = doc.selectFirst(".content-codigo");
+
+      if (specialId != null) {
+        id = CommonMethods.getLast(specialId.ownText().trim().split(" "));
+      }
     }
-    return null;
+
+
+    return id;
   }
 
   private String crawlName(Document doc) {
-    Element elementName = doc.select(".box-desc-prod__titulo-produto").first();
+    Element elementName = doc.select(".p-relative  h1").first();
     if (elementName != null) {
       return elementName.text().trim();
     }
@@ -113,7 +126,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Elements descs = doc.select(".prod-info .div__box-info-produto");
+    Elements descs = doc.select(".div__box-info-produto");
     for (Element e : descs) {
       description.append(e.html());
     }
@@ -128,10 +141,16 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
     if (primaryImageElement != null) {
       primaryImage = primaryImageElement.attr("data-zoom-image").trim();
+    } else {
+      Element unnavailabeImage = document.selectFirst(".img-produto-indisponivel img");
 
-      if (!primaryImage.startsWith("http")) {
-        primaryImage = "https:" + primaryImage;
+      if (unnavailabeImage != null) {
+        primaryImage = unnavailabeImage.attr("src");
       }
+    }
+
+    if (primaryImage != null && !primaryImage.startsWith("http")) {
+      primaryImage = "https:" + primaryImage;
     }
 
     return primaryImage;

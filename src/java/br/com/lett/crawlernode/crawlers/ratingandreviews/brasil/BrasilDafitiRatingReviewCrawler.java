@@ -73,6 +73,14 @@ public class BrasilDafitiRatingReviewCrawler extends RatingReviewCrawler {
         }
       }
     }
+
+    if (rating.getAverageOverallRating() == null) {
+      rating.setAverageOverallRating(0d);
+    }
+
+    if (rating.getTotalReviews() == null) {
+      rating.setTotalRating(0);
+    }
   }
 
   private List<String> crawlIdList(Document doc) {

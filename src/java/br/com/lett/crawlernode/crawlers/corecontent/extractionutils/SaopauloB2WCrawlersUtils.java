@@ -172,7 +172,8 @@ public class SaopauloB2WCrawlersUtils {
           sku.put("internalId", skuJson.getString("id"));
 
           if (skuJson.has("name")) {
-            String name = "";
+            StringBuilder name = new StringBuilder();
+            sku.put("name", skuJson.getString("name"));
 
             if (skuJson.has("diffs")) {
               JSONArray diffs = skuJson.getJSONArray("diffs");
@@ -181,11 +182,11 @@ public class SaopauloB2WCrawlersUtils {
                 JSONObject variation = diffs.getJSONObject(j);
 
                 if (variation.has("value")) {
-                  name += " " + variation.getString("value").trim();
+                  name.append(" " + variation.getString("value").trim());
                 }
               }
 
-              sku.put("variationName", name);
+              sku.put("variationName", name.toString().trim());
             }
           }
         }

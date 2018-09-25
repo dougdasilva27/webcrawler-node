@@ -194,7 +194,7 @@ public class BrasilEnutriCrawler extends Crawler {
       description.append(elementShortdescription.html());
     }
 
-    Element elementDescription = doc.selectFirst(".product-collateral");
+    Element elementDescription = doc.selectFirst(".product-view > .product-collateral");
 
     if (elementDescription != null) {
       description.append(elementDescription.html());

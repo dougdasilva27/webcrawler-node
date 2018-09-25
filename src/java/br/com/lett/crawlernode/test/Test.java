@@ -106,10 +106,10 @@ public class Test {
       if (testType.equals(KEYWORDS_TEST)) {
         session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
-        session =
-            SessionFactory.createTestRankingCategoriesSession("https://www.nutrii.com.br/nutren-senior-mix-de-frutas-200ml", market, "Aparelhos");
+        session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
+            market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.epocacosmeticos.com.br/power-paste-keune-pomada-para-os-cabelos/p", market);
+        session = SessionFactory.createTestSession("https://www.paguemenos.com.br/carga-gillette-mach3-com-4-unidades/p", market);
       }
       
       Task task = TaskFactory.createTask(session);

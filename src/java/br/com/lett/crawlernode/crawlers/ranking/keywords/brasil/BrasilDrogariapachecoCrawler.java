@@ -7,118 +7,85 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
-	public BrasilDrogariapachecoCrawler(Session session) {
-		super(session);
-	}
+  public BrasilDrogariapachecoCrawler(Session session) {
+    super(session);
+  }
 
-	private Elements id;
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 18;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 15;
 
-		this.log("Página " + this.currentPage);
+    this.log("Página " + this.currentPage);
+    String url = "https://www.drogariaspacheco.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PS=50&PageNumber=" + this.currentPage;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		// se a key contiver o +, substitui por %20, pois nesse market a pesquisa na url é assim
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+    this.currentDoc = fetchDocument(url);
 
-		// monta a url com a keyword e a página
-		String url =
-				"https://www.drogariaspacheco.com.br/" + key + "?PS=50&PageNumber=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: " + url);
+    Elements products = this.currentDoc.select(".vitrine.resultItemsWrapper ul > li[layout]");
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-		this.id =
-				this.currentDoc.select("div.vitrine.resultItemsWrapper div.prateleira > ul > li[layout]");
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(e);
+        String productUrl = crawlProductUrl(e);
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if (this.id.size() >= 1) {
-			// se o total de busca não foi setado ainda, chama a função para setar
-			if (this.totalProducts == 0) {
-				setTotalProducts();
-			}
+        saveDataProduct(null, internalPid, productUrl);
 
-			for (Element e : this.id) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-				if (internalId != null || internalPid != null) {
-					saveDataProduct(internalId, internalPid, productUrl);
+  }
 
-					this.log("Position: " + this.position + " - InternalId: " + internalId
-							+ " - InternalPid: " + internalPid + " - Url: " + productUrl);
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
 
-					if (this.arrayProducts.size() == productsLimit)
-						break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+    if (totalElement != null) {
+      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
+    }
 
-	}
+    this.log("Total da busca: " + this.totalProducts);
+  }
 
-	@Override
-	protected boolean hasNextPage() {
-		// se o número de produtos pegos for menor que o resultado total da busca, existe proxima pagina
-		if (this.arrayProducts.size() < this.totalProducts)
-			return true;
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
 
-		return false;
-	}
+    Element ids = e.select(".idSku").first();
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
+    if (ids != null) {
+      internalPid = ids.text().trim();
+    }
 
-		try {
-			if (totalElement != null)
-				this.totalProducts = Integer.parseInt(totalElement.text());
-		} catch (Exception e) {
-			this.logError(e.getMessage());
-		}
+    return internalPid;
+  }
 
-		this.log("Total da busca: " + this.totalProducts);
-	}
+  private String crawlProductUrl(Element e) {
+    String urlProduct = null;
+    Element urlElement = e.selectFirst("a.productPrateleira");
 
-	private String crawlInternalId(Element e) {
-		String internalId = null;
-		Element ids = e.select("ul.product-info li.product-id").first();
+    if (urlElement != null) {
+      urlProduct = urlElement.attr("href");
+    }
 
-		if (ids != null) {
-			internalId = ids.text().trim();
-		}
-
-		return internalId;
-	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element urlElement = e.select("> a.productPrateleira").first();
-
-		if (urlElement != null) {
-			urlProduct = urlElement.attr("href");
-		}
-
-		return urlProduct;
-	}
+    return urlProduct;
+  }
 }

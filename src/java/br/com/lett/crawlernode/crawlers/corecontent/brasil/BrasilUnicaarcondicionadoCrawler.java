@@ -47,7 +47,7 @@ import models.prices.Prices;
 
 public class BrasilUnicaarcondicionadoCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.unicaarcondicionado.com.br/";
+  private static final String HOME_PAGE = "https://www.unicaarcondicionado.com.br/";
 
   public BrasilUnicaarcondicionadoCrawler(Session session) {
     super(session);
@@ -63,7 +63,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = new ArrayList<Product>();
+    List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

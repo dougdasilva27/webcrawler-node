@@ -131,10 +131,10 @@ public class SaopauloTendadriveCrawler extends Crawler {
       description.append(skuInfo.getString("description") + "<br><br>");
     }
 
-    Element info = doc.select("#caracteristicas table.Informacoes-Tecnicas").first();
+    Element info = doc.select("#caracteristicas").first();
 
     if (info != null) {
-      description.append("<h4 class=\"group Informacoes-Tecnicas\">Informações Técnicas</h4>");
+      info.select(".Avancado, .Caracteristicas").remove();
       description.append(info.html());
     }
 

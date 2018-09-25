@@ -40,7 +40,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL(), doc)) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
@@ -146,9 +146,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url, Document document) {
-    Element elementInternalID = document.select("#details .col-2 .data-table tr .data").first();
-    return elementInternalID != null;
+  private boolean isProductPage(Document document) {
+    return !document.select(".product-name h1").isEmpty();
   }
 
   private String crawlName(Document doc) {
@@ -197,7 +196,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
   private String crawlPrimaryImage(Document doc) {
     String primaryImage = null;
 
-    Element elementPrimaryImage = doc.select(".product-image-gallery img#image-main").first();
+    Element elementPrimaryImage = doc.select(".product-image-gallery img.gallery-image").first();
     if (elementPrimaryImage != null) {
       primaryImage = elementPrimaryImage.attr("data-zoom-image");
     }
@@ -226,6 +225,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
   }
 
   private boolean isPrimaryImage(String image, String primaryImage) {
+	if(primaryImage == null) {
+		return false;
+	}
+	
     String x = CommonMethods.getLast(image.split("/"));
     String y = CommonMethods.getLast(primaryImage.split("/"));
 

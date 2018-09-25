@@ -233,8 +233,6 @@ public class BrasilCentralarCrawler extends Crawler {
   private String crawlDescription(JSONObject json) {
     StringBuilder description = new StringBuilder();
 
-    System.err.println(json);
-
     if (json.has("productInformations") && json.get("productInformations") instanceof JSONArray) {
       JSONArray productInformations = json.getJSONArray("productInformations");
 

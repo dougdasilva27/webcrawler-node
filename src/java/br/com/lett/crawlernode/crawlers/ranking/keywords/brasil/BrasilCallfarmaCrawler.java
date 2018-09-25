@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,8 +13,6 @@ public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords {
   public BrasilCallfarmaCrawler(Session session) {
     super(session);
   }
-
-  private List<Cookie> cookies = new ArrayList<>();
 
   @Override
   protected void processBeforeFetch() {

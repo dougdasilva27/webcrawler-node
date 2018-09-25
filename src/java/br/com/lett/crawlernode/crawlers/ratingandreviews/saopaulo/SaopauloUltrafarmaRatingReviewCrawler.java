@@ -2,11 +2,13 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
@@ -19,11 +21,11 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(doc, session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = crawlRatingReviews(doc);
-      ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
+      ratingReviews.setInternalId(crawlInternalId(doc));
 
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
@@ -34,14 +36,27 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
     return ratingReviewsCollection;
   }
 
-  private boolean isProductPage(Document doc, String url) {
-    return url.startsWith("http://www.ultrafarma.com.br/produto/detalhes");
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".div_prod_qualidade > span") != null;
   }
 
-  private String crawlInternalId(String url) {
-    String id = url.split("/")[4];
+  private String crawlInternalId(Document doc) {
+    String internalId = null;
 
-    return id.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
+    Element id = doc.selectFirst(".div_prod_qualidade > span");
+    if (id != null) {
+      String text = id.ownText();
+
+      if (text.contains(":")) {
+        internalId = CommonMethods.getLast(text.split(":"));
+
+        if (internalId.contains("-")) {
+          internalId = internalId.split("-")[0].trim();
+        }
+      }
+    }
+
+    return internalId;
   }
 
   private RatingsReviews crawlRatingReviews(Document doc) {
@@ -49,29 +64,35 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
 
     ratingReviews.setDate(session.getDate());
     ratingReviews.setTotalRating(computeTotalReviewsCount(doc));
+    ratingReviews.setTotalWrittenReviews(computeTotalWrittenReviewsCount(doc));
     ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
 
     return ratingReviews;
   }
 
   private Integer computeTotalReviewsCount(Document doc) {
-    return doc.select(".desc_inf_prod.cont_btn_avalie").size();
+    return doc.select(".cont-div-avalia .div_estrela_comentario").size();
+  }
+
+  private Integer computeTotalWrittenReviewsCount(Document doc) {
+    return doc.select(".cont-div-avalia .txt-coment").size();
   }
 
   private Double crawlAverageOverallRating(Document document) {
-    Double avgOverallRating = null;
+    Double avgOverallRating = 0d;
+    Double values = 0d;
 
-    Element percentageElement = document.select("#avaliacao img").first();
-    if (percentageElement != null) {
-      try {
-        String avgString = CommonMethods.getLast(percentageElement.attr("src").split("/")).replaceAll("[^0-9.]", "");
+    Elements ratings = document.select(".cont-div-avalia .div_estrela_comentario img");
+    for (Element e : ratings) {
+      String avgString = CommonMethods.getLast(e.attr("src").split("/")).replaceAll("[^0-9.]", "");
 
-        if (!avgString.isEmpty()) {
-          avgOverallRating = Double.parseDouble(avgString);
-        }
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      if (!avgString.isEmpty()) {
+        values += Double.parseDouble(avgString);
       }
+    }
+
+    if (!ratings.isEmpty()) {
+      avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(values / ratings.size());
     }
 
     return avgOverallRating;

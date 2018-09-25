@@ -33,11 +33,11 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(document)) {
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
+
+    if (skuJson.length() > 0) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
-
-      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
@@ -52,7 +52,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 
         List<String> idList = crawlIdList(skuJson);
         for (String internalId : idList) {
-          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }
@@ -75,7 +75,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
   private Document crawlPageRatings(String internalPid) {
     Document doc = new Document("");
 
-    String url = "https://service.yourviews.com.br/review/GetReview?storeKey=f36ed866-d7ee-41b9-ad61-2d4ad29da507&" + "productStoreId=" + internalPid
+    String url = "https://service.yourviews.com.br/review/GetReview?storeKey=87b2aa32-fdcb-4f1d-a0b9-fd6748df725a&" + "productStoreId=" + internalPid
         + "&extendedField=&callback=_jqjsp&_1516980244481=";
 
     String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
@@ -149,12 +149,5 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
     }
 
     return idList;
-  }
-
-  private boolean isProductPage(Document document) {
-    Element body = document.select("body").first();
-    Element elementId = document.select("div.productReference").first();
-
-    return body.hasClass("produto") && elementId != null;
   }
 }

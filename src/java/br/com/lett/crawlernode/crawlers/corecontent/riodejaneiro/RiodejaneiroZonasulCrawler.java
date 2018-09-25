@@ -40,7 +40,10 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (!doc.select(".carrinho_vitrine div").isEmpty()) {
+      RiodejaneiroNewZonasulCrawler zs = new RiodejaneiroNewZonasulCrawler();
+      products.addAll(zs.extractInformation(doc, session, logger));
+    } else if (isProductPage(this.session.getOriginalURL())) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
