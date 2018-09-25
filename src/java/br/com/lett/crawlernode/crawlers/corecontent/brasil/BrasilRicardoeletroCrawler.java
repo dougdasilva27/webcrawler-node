@@ -308,7 +308,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       prices.setBankTicketPrice(price);
 
       if (principalSeller) {
-        String url = "http://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
+        String url = "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
         Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
         Elements installmentsElements = docPrices.select(".lista-parcelas tr");
