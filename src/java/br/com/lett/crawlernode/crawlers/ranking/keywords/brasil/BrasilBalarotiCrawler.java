@@ -21,8 +21,8 @@ public class BrasilBalarotiCrawler extends CrawlerRankingKeywords {
     this.pageSize = 16;
     int productsCount = this.arrayProducts.size();
 
-    String url =
-        "https://www.balaroti.com.br/api/catalog_system/pub/products/search/janela?map=ft&_from=" + productsCount + "&_to=" + (productsCount + 49);
+    String url = "https://www.balaroti.com.br/api/catalog_system/pub/products/search/" + this.keywordWithoutAccents.replace(" ", "%20")
+        + "?map=ft&_from=" + productsCount + "&_to=" + (productsCount + 49);
 
     this.log("Página " + this.currentPage);
     JSONArray products = new JSONArray();
