@@ -28,7 +28,7 @@ public class SaopauloLeroymerlinCrawler extends CrawlerRankingKeywords {
 
       this.currentDoc = fetchDocument(url, null);
 
-      this.nextUrl = getNextUrl(this.nextUrl);
+      this.nextUrl = getNextUrl(url);
       if (!url.equals(this.nextUrl)) {
         this.currentDoc = fetchDocument(this.nextUrl);
       }
@@ -50,9 +50,6 @@ public class SaopauloLeroymerlinCrawler extends CrawlerRankingKeywords {
 
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
       for (Element e : products) {
         String productUrl = e.attr("href");
         String internalId = crawlInternalId(productUrl);
@@ -75,7 +72,8 @@ public class SaopauloLeroymerlinCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return this.currentDoc.select("a.pagination-item.disabled > i.glyph-arrow-right").isEmpty();
+    return !this.currentDoc.select("a.pagination-item").isEmpty()
+        && this.currentDoc.select("a.pagination-item.disabled > i.glyph-arrow-right").isEmpty();
   }
 
   private String crawlInternalId(String url) {
