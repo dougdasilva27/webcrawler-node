@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.Arrays;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
 
@@ -14,21 +16,17 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 42;
-
     this.log("Página " + this.currentPage);
-
-    // monta a url com a keyword e a página
     String url = "https://www.zattini.com.br/busca?nsCat=Natural&q=" + this.keywordEncoded + "&page=" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
+    this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#item-list .card[parent-sku]");
+    Elements products = this.currentDoc.select("#item-list .item[parent-sku]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
-        setTotalProductsCarrefour();
+        setTotalProducts();
       }
 
       for (Element e : products) {
@@ -51,11 +49,12 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  protected void setTotalProductsCarrefour() {
-    Element totalElement = this.currentDoc.select(".items-info .block").first();
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst(".items-info .block");
 
     if (totalElement != null) {
-      String text = totalElement.ownText();
+      String text = totalElement.ownText().toLowerCase();
 
       if (text.contains("de")) {
         String total = text.split("de")[1].replaceAll("[^0-9]", "").trim();
@@ -72,14 +71,10 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(Element e) {
     String productUrl = null;
 
-    Element url = e.select("> a").first();
+    Element url = e.selectFirst("> a");
 
     if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.startsWith("http")) {
-        productUrl = "https:" + productUrl;
-      }
+      productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("href"), "https:", "");;
     }
 
     return productUrl;
