@@ -521,9 +521,9 @@ public class CrawlerUtils {
   }
 
   /**
-   * AssembleMarketplaceFromMap
+   * @deprecated Because you need to send paramater card after sellerNameLowerList
    * 
-   * Return object Marketplaces only with sellers of the market
+   *             AssembleMarketplaceFromMap Return object Marketplaces only with sellers of the market
    * 
    * @param marketplaceMap -> map of sellerName - Prices
    * @param sellerNameLowerList -> list of principal sellers
@@ -532,35 +532,67 @@ public class CrawlerUtils {
    * @return Marketplace
    */
   public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Session session) {
+    return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Card.VISA, session);
+  }
+
+  /**
+   * AssembleMarketplaceFromMap
+   * 
+   * Return object Marketplaces only with sellers of the market
+   * 
+   * @param marketplaceMap -> map of sellerName - Prices
+   * @param sellerNameLowerList -> list of principal sellers
+   * @param card -> models.Card like Card.VISA
+   * @param session -> session of crawler
+   * 
+   * @return Marketplace
+   */
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Card card,
+      Session session) {
     Marketplace marketplace = new Marketplace();
 
-    for (String sellerName : marketplaceMap.keySet()) {
-      if (!sellerNameLowerList.contains(sellerName)) {
+    for (Entry<String, Prices> entry : marketplaceMap.entrySet()) {
+      if (!sellerNameLowerList.contains(entry.getKey())) {
         JSONObject sellerJSON = new JSONObject();
-        sellerJSON.put("name", sellerName);
+        sellerJSON.put("name", entry.getKey());
 
-        Prices prices = marketplaceMap.get(sellerName);
+        Prices prices = entry.getValue();
 
-        if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-          // Pegando o preço de uma vez no cartão
-          Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
-          Float priceFloat = price.floatValue();
+        if (prices != null && !prices.isEmpty()) {
+          Float price = extractPriceFromPrices(prices, card);
+          sellerJSON.put("price", price);
+          sellerJSON.put("prices", prices.toJSON());
 
-          sellerJSON.put("price", priceFloat); // preço de boleto é o mesmo de preço uma vez.
-        }
-
-        sellerJSON.put("prices", marketplaceMap.get(sellerName).toJSON());
-
-        try {
-          Seller seller = new Seller(sellerJSON);
-          marketplace.add(seller);
-        } catch (Exception e) {
-          Logging.printLogError(LOGGER, session, Util.getStackTraceString(e));
+          try {
+            Seller seller = new Seller(sellerJSON);
+            marketplace.add(seller);
+          } catch (Exception e) {
+            Logging.printLogError(LOGGER, session, Util.getStackTraceString(e));
+          }
         }
       }
     }
 
     return marketplace;
+  }
+
+  /**
+   * 
+   * Extract 1x price from model prices
+   * 
+   * @param prices - model.Prices
+   * @param card - model.Card
+   * @return
+   */
+  public static Float extractPriceFromPrices(Prices prices, Card card) {
+    Float price = null;
+
+    if (!prices.isEmpty() && prices.getCardPaymentOptions(card.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(card.toString()).get(1);
+      price = priceDouble.floatValue();
+    }
+
+    return price;
   }
 
   /**

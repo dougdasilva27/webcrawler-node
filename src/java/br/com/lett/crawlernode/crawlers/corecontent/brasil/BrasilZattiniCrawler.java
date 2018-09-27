@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,15 +19,15 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
 
 /**
- * date: 27/03/2018
+ * date: 27/09/2018
  * 
  * @author gabriel
  *
@@ -36,6 +37,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.zattini.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "zattini";
+  private static final String PROTOCOL = "https:";
 
   public BrasilZattiniCrawler(Session session) {
     super(session);
@@ -58,8 +60,8 @@ public class BrasilZattiniCrawler extends Crawler {
       JSONObject chaordicJson = crawlChaordicJson(doc);
 
       String internalPid = crawlInternalPid(chaordicJson);
-      CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a span", false);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#features"));
 
       // sku data in json
       JSONArray arraySkus = chaordicJson != null && chaordicJson.has("skus") ? chaordicJson.getJSONArray("skus") : new JSONArray();
@@ -68,17 +70,19 @@ public class BrasilZattiniCrawler extends Crawler {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = crawlInternalId(jsonSku);
-        String name = crawlName(chaordicJson, jsonSku);
-        boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equals("available");
+        String name = crawlName(doc, jsonSku);
+        boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available");
 
         Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(doc) : new HashMap<>();
-        boolean available = availableToBuy ? marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) : false;
+        boolean available = availableToBuy && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
 
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = crawlPrice(prices);
-        String primaryImage = crawlPrimaryImage(doc);
-        String secondaryImages = crawlSecondaryImages(doc);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
+        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".photo-figure > img", Arrays.asList("data-large-img-url", "src"), PROTOCOL,
+            "static.zattini.com.br");
+        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".swiper-slide:not(.active) img",
+            Arrays.asList("data-src-large", "src"), PROTOCOL, "static.zattini.com.br", primaryImage);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -128,11 +132,12 @@ public class BrasilZattiniCrawler extends Crawler {
     return internalPid;
   }
 
-  private String crawlName(JSONObject chaordicJson, JSONObject skuJson) {
+  private String crawlName(Document doc, JSONObject skuJson) {
     StringBuilder name = new StringBuilder();
 
-    if (chaordicJson.has("name")) {
-      name.append(chaordicJson.getString("name"));
+    Element nameElement = doc.selectFirst("h1[itemprop=name]");
+    if (nameElement != null) {
+      name.append(nameElement.ownText());
 
       if (skuJson.has("specs")) {
         JSONObject specs = skuJson.getJSONObject("specs");
@@ -140,7 +145,9 @@ public class BrasilZattiniCrawler extends Crawler {
         Set<String> keys = specs.keySet();
 
         for (String key : keys) {
-          name.append(" " + specs.get(key));
+          if (!key.equalsIgnoreCase("color")) {
+            name.append(" " + specs.get(key));
+          }
         }
       }
     }
@@ -148,65 +155,11 @@ public class BrasilZattiniCrawler extends Crawler {
     return name.toString();
   }
 
-  private Float crawlPrice(Prices prices) {
-    Float price = null;
-
-    if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
-      price = priceDouble.floatValue();
-    }
-
-    return price;
-  }
-
-  private String crawlPrimaryImage(Document doc) {
-    String primaryImage = null;
-
-    Element image = doc.select(".active img.zoom-img").first();
-
-    if (image != null) {
-      primaryImage = image.attr("data-large-img-url");
-
-      if (!primaryImage.startsWith("http")) {
-        primaryImage = "https:" + primaryImage;
-      }
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements images = doc.select(".swiper-slide:not(.active) img");
-
-    for (Element e : images) {
-      String image = e.attr("data-src-large").trim();
-
-      if (image.isEmpty()) {
-        image = e.attr("src");
-      }
-
-      if (!image.startsWith("http")) {
-        image = "https:" + image;
-      }
-
-      secondaryImagesArray.put(image);
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
   private Map<String, Prices> crawlMarketplace(Document doc) {
     Map<String, Prices> marketplace = new HashMap<>();
 
     String sellerName = MAIN_SELLER_NAME_LOWER;
-    Element sellerNameElement = doc.select(".product-seller-name").first();
+    Element sellerNameElement = doc.selectFirst(".product-seller-name");
 
     if (sellerNameElement != null) {
       sellerName = sellerNameElement.ownText().toLowerCase();
@@ -216,57 +169,6 @@ public class BrasilZattiniCrawler extends Crawler {
 
     return marketplace;
 
-  }
-
-  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-    Marketplace marketplace = new Marketplace();
-
-    for (String seller : marketplaceMap.keySet()) {
-      if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) {
-        Prices prices = marketplaceMap.get(seller);
-
-        JSONObject sellerJSON = new JSONObject();
-        sellerJSON.put("name", seller);
-        sellerJSON.put("price", crawlPrice(prices));
-        sellerJSON.put("prices", prices.toJSON());
-
-        try {
-          Seller s = new Seller(sellerJSON);
-          marketplace.add(s);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, Util.getStackTraceString(e));
-        }
-      }
-    }
-
-    return marketplace;
-  }
-
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb-item[itemprop] a span");
-
-    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
-  }
-
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Element shortDescription = doc.select("#product-technical-features").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
-    }
-
-    Element elementInformation = doc.select("p[itemprop=description]").first();
-    if (elementInformation != null) {
-      description.append(elementInformation.html());
-    }
-
-    return description.toString();
   }
 
   /**
@@ -280,7 +182,11 @@ public class BrasilZattiniCrawler extends Crawler {
   private Prices crawlPrices(Document doc) {
     Prices prices = new Prices();
 
-    Element priceElement = doc.select(".price.normal span[itemprop=price]").first();
+    Element priceElement = doc.selectFirst(".price.normal [itemprop=price]");
+
+    if (priceElement == null) {
+      priceElement = doc.selectFirst(".price [itemprop=price]");
+    }
 
     if (priceElement != null) {
       Float price = MathUtils.parseFloat(priceElement.ownText());
@@ -289,26 +195,14 @@ public class BrasilZattiniCrawler extends Crawler {
       Map<Integer, Float> mapInstallments = new HashMap<>();
       mapInstallments.put(1, price);
 
-      Element priceFrom = doc.select(".price.reduce").first();
+      Element priceFrom = doc.selectFirst(".buy-box .reduce");
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
       }
 
-      Element installmentsElement = doc.select(".block.prices .installments").first();
-
-      if (installmentsElement != null) {
-        String text = installmentsElement.ownText().toLowerCase();
-
-        if (text.contains("x")) {
-          int x = text.indexOf('x');
-
-          String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float priceInstallment = MathUtils.parseFloat(text.substring(x));
-
-          if (!installment.isEmpty() && priceInstallment != null) {
-            mapInstallments.put(Integer.parseInt(installment), priceInstallment);
-          }
-        }
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".block.prices .installments .installments-price", doc, true);
+      if (!pair.isAnyValueNull()) {
+        mapInstallments.put(pair.getFirst(), pair.getSecond());
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
