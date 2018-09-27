@@ -70,17 +70,17 @@ public class BrasilSephoraCrawler extends Crawler {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = crawlInternalId(jsonSku);
-        Element variantElement = crawlVariationElement(doc, jsonSku);
+        Element variantElement = crawlVariationElement(doc, i);
         String name = crawlName(chaordicJson, variantElement);
 
         Map<String, Prices> marketplaceMap = crawlMarketplace(jsonSku, doc);
         boolean available = jsonSku.has("availability") && jsonSku.get("availability").toString().contains("InStock")
             && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
 
-        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), session);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
         Float price = crawlPrice(prices);
-        String primaryImage = crawlPrimaryImage(doc, crawlVariationId(variantElement));
+        String primaryImage = crawlPrimaryImage(doc, variantElement);
         String secondaryImages = crawlSecondaryImages(doc);
 
         // Creating the product
@@ -121,16 +121,6 @@ public class BrasilSephoraCrawler extends Crawler {
     return internalId;
   }
 
-  private String crawlReferenceId(JSONObject skuJson) {
-    String referenceId = null;
-
-    if (skuJson.has("gtin13")) {
-      referenceId = skuJson.getString("gtin13");
-    }
-
-    return referenceId;
-  }
-
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
@@ -145,23 +135,13 @@ public class BrasilSephoraCrawler extends Crawler {
     return variantElement.attr("data-productid");
   }
 
-  private Element crawlVariationElement(Document doc, JSONObject jsonSku) {
+  private Element crawlVariationElement(Document doc, int productPosition) {
     Element variantElement = new Element("<div></div>");
 
-    String referenceId = crawlReferenceId(jsonSku);
+    Elements variations = doc.select("#product-info-grouped li[id]");
 
-    Elements variations = doc.select("#product-info-grouped li");
-    for (Element e : variations) {
-      Element reference = e.selectFirst("label p.reference:not(.info)");
-
-      if (reference != null) {
-        String text = reference.ownText().replace("REF:#", "").trim();
-
-        if (text.equals(referenceId)) {
-          variantElement = e;
-          break;
-        }
-      }
+    if (variations.size() > productPosition) {
+      variantElement = doc.selectFirst("#product-info-grouped li[id=add-product-option-" + (productPosition + 1) + "]");
     }
 
     return variantElement;
@@ -194,25 +174,19 @@ public class BrasilSephoraCrawler extends Crawler {
     return price;
   }
 
-  private String crawlPrimaryImage(Document doc, String variantId) {
+  private String crawlPrimaryImage(Document doc, Element variantElement) {
     String primaryImage = null;
 
-    Element image = doc.selectFirst("#variant" + variantId + "[data-zoom-image]");
+    String variationImage = variantElement.attr("data-base-image").trim();
+    String variantId = crawlVariationId(variantElement);
+    Element image = doc.selectFirst("#variant-" + variantId + "[data-zoom-image]");
 
-    if (image == null) {
+    if (image == null || variationImage.isEmpty()) {
       image = doc.selectFirst("#image-main[data-zoom-image]");
     }
 
     if (image != null) {
-      primaryImage = image.attr("data-zoom-image");
-
-      if (primaryImage.isEmpty()) {
-        primaryImage = image.attr("src");
-      }
-
-      if (!primaryImage.startsWith("http")) {
-        primaryImage = "https:" + primaryImage;
-      }
+      primaryImage = CrawlerUtils.sanitizeUrl(image, Arrays.asList("data-zoom-image", "src"), "https:", "sephora-resize.s3.amazonaws.com");
     }
 
     return primaryImage;
