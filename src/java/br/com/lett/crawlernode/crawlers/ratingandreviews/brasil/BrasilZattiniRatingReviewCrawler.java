@@ -37,10 +37,10 @@ public class BrasilZattiniRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(getTotalAvgRating(doc));
 
       List<String> idList = crawlIdList(doc);
       for (String internalId : idList) {
@@ -86,10 +86,10 @@ public class BrasilZattiniRatingReviewCrawler extends RatingReviewCrawler {
    */
   private Integer getTotalNumOfRatings(Document doc) {
     Integer totalRating = 0;
-    Element rating = doc.select("#total-reviews").first();
+    Element rating = doc.selectFirst("#reviews > :first-child");
 
     if (rating != null) {
-      String votes = rating.val();
+      String votes = rating.ownText().replaceAll("[^0-9]", "");
 
       if (!votes.isEmpty()) {
         totalRating = Integer.parseInt(votes);
@@ -106,10 +106,10 @@ public class BrasilZattiniRatingReviewCrawler extends RatingReviewCrawler {
    */
   private Double getTotalAvgRating(Document docRating) {
     Double avgRating = 0d;
-    Element rating = docRating.select("#product-general-rating .average strong").first();
+    Element rating = docRating.selectFirst(".rating [itemprop=ratingValue]");
 
     if (rating != null) {
-      String text = rating.text().trim();
+      String text = rating.text().replaceAll("[^0-9.]", "").trim();
 
       if (!text.isEmpty()) {
         avgRating = Double.parseDouble(text);
