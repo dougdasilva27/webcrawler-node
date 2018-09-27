@@ -198,7 +198,7 @@ public abstract class CrawlerRanking extends Task {
       } while (checkIfHasNextPage());
 
       // Total de produtos retornados pelo site
-      if (this.totalProducts < 1) {
+      if (this.totalProducts < 1 && !this.arrayProducts.isEmpty()) {
         setTotalProducts();
       }
 
@@ -558,7 +558,7 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    if (cookies != null) {
+    if (cookies != null && !cookies.isEmpty()) {
       StringBuilder string = new StringBuilder();
       string.append("Cookies been used: ");
 
