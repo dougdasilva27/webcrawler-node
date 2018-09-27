@@ -60,7 +60,7 @@ public class BrasilSephoraCrawler extends Crawler {
       JSONObject chaordicJson = crawlChaordicJson(doc);
 
       String internalPid = crawlInternalPid(chaordicJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a", false);
       String description = crawlDescription(doc);
 
       // sku data in json
