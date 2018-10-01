@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -101,7 +100,11 @@ public class BrasilSephoraRatingReviewCrawler extends RatingReviewCrawler {
     Element rating = docRating.selectFirst("#customer-reviews .average span");
 
     if (rating != null) {
-      avgRating = MathUtils.parseDouble(rating.ownText());
+      String text = rating.ownText().replaceAll("[^0-9.]", "").trim();
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
     }
 
     return avgRating;
