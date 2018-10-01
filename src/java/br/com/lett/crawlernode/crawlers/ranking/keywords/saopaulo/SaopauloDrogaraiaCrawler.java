@@ -1,159 +1,89 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
-	public SaopauloDrogaraiaCrawler(Session session) {
-		super(session);
-	}
+  public SaopauloDrogaraiaCrawler(Session session) {
+    super(session);
+  }
 
-	private String crawlInternalId(List<String> internalIds, int index) {
-		String internalId = internalIds.get(index);
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 12;
 
-		return internalId;
-	}
+    this.log("Página " + this.currentPage);
+    String url = "https://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt=" + this.arrayProducts.size();
+    this.log("Link onde são feitos os crawlers: " + url);
 
-	private List<String> crawlInternalIdsFromScript(Document doc) {
-		List<String> internalIds = new ArrayList<>();
-		Elements scripts = doc.select("script[language=javascript][type=text/javascript]");
+    this.currentDoc = fetchDocument(url);
 
-		for (Element e : scripts) {
-			String script = e.outerHtml().toLowerCase();
+    Elements products = this.currentDoc.select(".item div.container:not(.min-limit)");
 
-			if (script.contains("spark.addpagesku")) {
-				int x = script.indexOf(");spark.addpagesku");
-				int y = script.indexOf("spark.write", x + 2);
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-				script = script.substring(x + 2, y).trim();
+      for (Element e : products) {
+        String internalId = crawlInternalId(e);
+        String productUrl = crawlProductUrl(e);
 
-				String[] tokens = script.split(";");
+        saveDataProduct(internalId, null, productUrl);
 
-				for (String s : tokens) {
-					internalIds.add(s.replaceAll("[^0-9]", "").trim());
-				}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-				break;
-			}
-		}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    if (!(hasNextPage()))
+      setTotalProducts();
+  }
 
-		return internalIds;
-	}
 
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-		Element pid = e.select("> a > img[id]").first();
+  private String crawlInternalId(Element e) {
+    String internalId = null;
+    Element id = e.selectFirst(".trustvox-shelf-container[data-trustvox-product-code]");
 
-		if (pid != null) {
-			String[] tokens = pid.attr("id").split("-");
-			internalPid = tokens[tokens.length - 1];
-		}
+    if (id != null) {
+      internalId = id.attr("data-trustvox-product-code");
+    }
 
-		return internalPid;
-	}
+    return internalId;
+  }
 
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element urlElement = e.select("div.product-info div > a").first();
+  private String crawlProductUrl(Element e) {
+    String urlProduct = null;
+    Element urlElement = e.selectFirst(".product-name.sli_title a");
 
-		if (urlElement != null) {
-			urlProduct = urlElement.attr("title");
-		}
+    if (urlElement != null) {
+      urlProduct = urlElement.attr("title");
+    }
 
-		return urlProduct;
-	}
+    return urlProduct;
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 12;
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst("p.amount");
 
-		this.log("Página " + this.currentPage);
-		// monta a url com a keyword e a página
-		String url = "http://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt="
-				+ this.arrayProducts.size();
-		this.log("Link onde são feitos os crawlers: " + url);
+    if (totalElement != null) {
+      String token = totalElement.text().replaceAll("[^0-9]", "").trim();
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+      if (!token.isEmpty()) {
+        this.totalProducts = Integer.parseInt(token);
+      }
 
-		List<String> internalIds = crawlInternalIdsFromScript(this.currentDoc);
-
-		Elements id = this.currentDoc.select("div.container:not(.min-limit)");
-
-		int indexOfProduct = 0;
-
-		// se obter 1 ou mais links de produtos e essa página tiver resultado
-		// faça:
-		if (id.size() >= 1) {
-			for (Element e : id) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
-
-				// InternalId
-				String internalId = crawlInternalId(internalIds, indexOfProduct);
-
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
-
-				saveDataProduct(internalId, internalPid, productUrl);
-
-				indexOfProduct++;
-
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-		if (!(hasNextPage()))
-			setTotalProducts();
-	}
-
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("a.next.i-next.button2.btn-more").first();
-
-		// se elemeno page obtiver algum resultado
-		if (page != null) {
-			// tem próxima página
-			return true;
-		}
-
-		return false;
-
-	}
-
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("p.amount").first();
-
-		if (totalElement != null) {
-			try {
-
-				String token = totalElement.text().replaceAll("[^0-9]", "").trim();
-
-				this.totalProducts = Integer.parseInt(token);
-			} catch (Exception e) {
-				this.logError(e.getMessage());
-			}
-
-			this.log("Total da busca: " + this.totalProducts);
-		}
-	}
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
 }
