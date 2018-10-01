@@ -452,17 +452,21 @@ public class VTEXCrawlersUtils {
 
       if (installmentElement != null) {
         String textInstallment = installmentElement.text().toLowerCase();
-        Integer installment;
+        Integer installment = null;
 
         if (textInstallment.contains("vista")) {
           installment = 1;
         } else {
-          installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
+          String text = textInstallment.replaceAll("[^0-9]", "").trim();
+
+          if (!text.isEmpty()) {
+            installment = Integer.parseInt(text);
+          }
         }
 
         Element valueElement = i.select("td:not(.parcelas)").first();
 
-        if (valueElement != null) {
+        if (valueElement != null && installment != null) {
           Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);

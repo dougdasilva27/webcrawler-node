@@ -1,17 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.Arrays;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
 
@@ -19,140 +13,68 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private List<Cookie> cookies = new ArrayList<>();
-
-  @Override
-  protected void processBeforeFetch() {
-    Map<String, String> cookiesMap = fetchCookies("https://www.jumbo.com.ar/Comprar/Home.aspx?");
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain("www.jumbo.com.ar");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
-  }
-
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
-    JSONArray products = new JSONArray();
+    this.pageSize = 18;
 
-    if (jsonSearch.has("ResultadosBusquedaLevex")) {
-      products = jsonSearch.getJSONArray("ResultadosBusquedaLevex");
-    }
+    String url = "https://www.jumbo.com.ar/busca/?ft=" + this.keywordWithoutAccents.replace(" ", "%20") + "&PageNumber=" + this.currentPage;
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (products.length() >= 1) {
-      // se o total de busca não foi setado ainda, chama a função para setar
-      if (this.totalProducts == 0) {
-        this.totalProducts = products.length();
-      }
+    this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url, cookies);
 
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
+    Elements products = this.currentDoc.select("li[layout] .product-item");
 
-        // InternalPid
-        String internalPid = crawlInternalPid(product);
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0)
+        setTotalProducts();
 
-        // InternalId
-        String internalId = crawlInternalId(product);
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(e);
+        String productUrl = crawlProductUrl(e);
 
-        // Url do produto
-        String urlProduct = crawlProductUrl(product);
+        saveDataProduct(null, internalPid, productUrl);
 
-        saveDataProduct(internalId, internalPid, urlProduct);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-        if (this.arrayProducts.size() == productsLimit) {
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit)
           break;
-        }
-
       }
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
     }
 
-    // número de produtos por página do market
-    this.pageSize = this.totalProducts;
-
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
-  protected boolean hasNextPage() {
-    // Nesse market não existe proximas páginas
-    return false;
-  }
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero");
 
-  private String crawlInternalId(JSONObject product) {
-    String internalId = null;
+    if (totalElement != null) {
+      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
 
-    if (product.has("IdArticulo")) {
-      internalId = product.getString("IdArticulo");
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
+
+      this.log("Total da busca: " + this.totalProducts);
     }
-
-    return internalId;
   }
 
-  private String crawlInternalPid(JSONObject product) {
-    String internalPid = null;
-
-    return internalPid;
+  private String crawlInternalPid(Element e) {
+    return e.attr("data-id");
   }
 
-  private String crawlProductUrl(JSONObject product) {
+  private String crawlProductUrl(Element e) {
     String productUrl = null;
+    Element urlElement = e.selectFirst(".product-item__name a");
 
-    if (product.has("DescripcionArticulo")) {
-      String name = product.getString("DescripcionArticulo");
-
-      productUrl = "https://www.jumbo.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + CommonMethods.encondeStringURLToISO8859(name, logger, session);
+    if (urlElement != null) {
+      productUrl = CrawlerUtils.sanitizeUrl(urlElement, Arrays.asList("href"), "https:", "www.jumbo.com.ar");
     }
 
     return productUrl;
-  }
-
-  /**
-   * Crawl api of search when probably has only one product
-   * 
-   * @param url
-   * @return
-   */
-  private JSONObject crawlProductsApi(String keyword) {
-    JSONObject json = new JSONObject();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
-
-    String urlSearch = "https://www.jumbo.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-    String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\","
-        + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
-
-    this.log("Payload: " + payload);
-    this.log("Cookies: " + this.cookies);
-
-    String jsonString = fetchStringPOST(urlSearch, payload, headers, this.cookies);
-
-    if (jsonString != null && jsonString.startsWith("{")) {
-      json = parseJsonLevex(new JSONObject(jsonString));
-    }
-
-    return json;
-  }
-
-  private JSONObject parseJsonLevex(JSONObject json) {
-    JSONObject jsonD = new JSONObject();
-
-    if (json.has("d")) {
-      String dParser = JSONObject.stringToValue(json.getString("d")).toString();
-      jsonD = new JSONObject(dParser);
-    }
-
-    return jsonD;
   }
 }
