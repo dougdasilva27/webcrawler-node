@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -46,7 +47,7 @@ public class BrasilCobasiCrawler extends Crawler {
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
       String description = crawlDescription(doc);
-      String primaryImage = null;
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a", Arrays.asList("href"), "https:", "cobasi.vteximg.com.br");
       String secondaryImages = null;
 
       // sku data in json
