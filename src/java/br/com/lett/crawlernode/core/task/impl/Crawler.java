@@ -571,7 +571,7 @@ public class Crawler extends Task {
   }
 
   private void printCrawledInformation(Product product) {
-    Logging.printLogDebug(logger, session, "Crawled information: " + product.toString());
+    Logging.printLogDebug(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
   }
 
   /**
