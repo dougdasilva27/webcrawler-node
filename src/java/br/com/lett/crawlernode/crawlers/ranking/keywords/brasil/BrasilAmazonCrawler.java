@@ -55,11 +55,6 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    return this.totalProducts > this.arrayProducts.size();
-  }
-
-  @Override
   protected void setTotalProducts() {
     JSONObject totalJson = CrawlerUtils.selectJsonFromHtml(currentDoc, "script[data-a-state=\"{\"key\":\"s-metadata\"}\"]", null, null, true);
 
