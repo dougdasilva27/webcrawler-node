@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,8 +36,8 @@ import models.prices.Prices;
  */
 public class BrasilAmazonCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.amazon.com";
-  private static final String SELLER_NAME_LOWER = "amazon.com";
+  private static final String HOME_PAGE = "https://www.amazon.com.br";
+  private static final String SELLER_NAME_LOWER = "amazon.com.br";
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
@@ -68,9 +70,6 @@ public class BrasilAmazonCrawler extends Crawler {
       Integer stock = null;
 
       List<Document> docMarketPlaces = fetchDocumentMarketPlace(doc, internalId);
-      // CommonMethods.saveDataToAFile(
-      // docMarketPlaces.get(0) == null ? "ERROU" : docMarketPlaces.get(0),
-      // "/home/gabriel/htmls/c.html");
       Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketPlaces, doc);
       Marketplace marketplace = crawlMarketplace(marketplaceMap);
 
@@ -102,9 +101,12 @@ public class BrasilAmazonCrawler extends Crawler {
     String internalId = null;
 
     Element internalIdElement = doc.select("input[name^=ASIN]").first();
+    Element internalIdElementSpecial = doc.select("input.askAsin").first();
 
     if (internalIdElement != null) {
       internalId = internalIdElement.val();
+    } else if (internalIdElementSpecial != null) {
+      internalId = internalIdElementSpecial.val();
     }
 
     return internalId;
@@ -113,12 +115,15 @@ public class BrasilAmazonCrawler extends Crawler {
 
   private String crawlName(Document document) {
     String name = null;
+
     Element nameElement = document.select("#centerCol h1#title").first();
+    Element nameElementSpecial = document.select("#productTitle").first();
 
     if (nameElement != null) {
       name = nameElement.text().trim();
+    } else if (nameElementSpecial != null) {
+      name = nameElementSpecial.text().trim();
     }
-
 
     return name;
   }
@@ -132,7 +137,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";");
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
@@ -156,7 +161,7 @@ public class BrasilAmazonCrawler extends Crawler {
       prices = marketplaces.get(SELLER_NAME_LOWER);
     }
 
-    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
@@ -180,7 +185,8 @@ public class BrasilAmazonCrawler extends Crawler {
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
     Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
-    Element specialPrice = document.select("#priceblock_ourprice").first();
+    Element specialPrice = document.select("#priceblock_dealprice").first();
+    Element foodPrice = document.select("#priceblock_ourprice").first();
 
     if (salePriceElement != null) {
       price = MathUtils.parseFloat(salePriceElement.text().trim());
@@ -194,6 +200,8 @@ public class BrasilAmazonCrawler extends Crawler {
 
     if (price == null && specialPrice != null) {
       price = MathUtils.parseFloat(specialPrice.ownText().trim());
+    } else if (price == null && foodPrice != null) {
+      price = MathUtils.parseFloat(foodPrice.ownText());
     }
 
     return price;
@@ -322,7 +330,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
         Prices prices = marketplaceEntry.getValue();
 
-        if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+        if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
           // Pegando o preço de uma vez no cartão
           Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
           Float priceFloat = price.floatValue();
@@ -350,15 +358,15 @@ public class BrasilAmazonCrawler extends Crawler {
     if (images.length() > 0) {
       JSONObject image = images.getJSONObject(0);
 
-      if (image.has("mainUrl")) {
+      if (image.has("mainUrl") && image.get("mainUrl") instanceof String) {
         primaryImage = image.get("mainUrl").toString().trim();
-      } else if (image.has("thumbUrl")) {
+      } else if (image.has("thumbUrl") && image.get("thumbUrl") instanceof String) {
         primaryImage = image.get("thumbUrl").toString().trim();
-      } else if (image.has("hiRes")) {
+      } else if (image.has("hiRes") && image.get("hiRes") instanceof String) {
         primaryImage = image.get("hiRes").toString().trim();
-      } else if (image.has("large")) {
+      } else if (image.has("large") && image.get("large") instanceof String) {
         primaryImage = image.get("large").toString().trim();
-      } else if (image.has("thumb")) {
+      } else if (image.has("thumb") && image.get("thumb") instanceof String) {
         primaryImage = image.get("thumb").toString().trim();
       }
 
@@ -436,34 +444,11 @@ public class BrasilAmazonCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select("#bookDescription_feature_div").first();
+    Elements elementsDescription =
+        doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    Element elementDescription1 = doc.select("#descriptionAndDetails").first();
-
-    if (elementDescription1 != null) {
-      description.append(elementDescription1.html());
-    }
-
-    Element elementDescription2 = doc.select("#product-description-iframe").first();
-
-    if (elementDescription2 != null) {
-      description.append(elementDescription2.html());
-    }
-
-    Element elementDetails = doc.select("#detail_bullets_id").first();
-
-    if (elementDetails != null) {
-      description.append(elementDetails.html());
-    }
-
-    Element bookDetails = doc.select("#bookDescription_feature_div").first();
-
-    if (bookDetails != null) {
-      description.append(bookDetails.html());
+    for (Element e : elementsDescription) {
+      description.append(e.html().replace("noscript", "div"));
     }
 
     Elements longDescription = doc.select(".feature[id^=btfContent]");
@@ -476,10 +461,28 @@ public class BrasilAmazonCrawler extends Crawler {
       }
     }
 
-    Element info = doc.select("#productDetails_feature_div").first();
+    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+    String token = "var iframeContent =";
 
-    if (info != null) {
-      description.append(info.html());
+    for (Element e : scripts) {
+      String script = e.html();
+
+      if (script.contains(token)) {
+
+        if (script.contains("iframeDocument.getElementById")) {
+          continue;
+        }
+
+        String iframeDesc = CrawlerUtils.extractSpecificStringFromScript(script, token, ";", false);
+
+        try {
+          description.append(URLDecoder.decode(iframeDesc, "UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
+        }
+
+        break;
+      }
     }
 
     return description.toString();
