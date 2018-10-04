@@ -38,7 +38,6 @@ public class CompraCertaCrawlerUtils {
 
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:last-child > a", false);
-    String description = crawlDescription(doc);
 
     // sku data in json
     JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -48,6 +47,7 @@ public class CompraCertaCrawlerUtils {
 
       String internalId = vtexUtil.crawlInternalId(jsonSku);
       JSONObject apiJSON = vtexUtil.crawlApi(internalId);
+      String description = crawlDescription(doc, apiJSON);
       String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
       Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
       Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
@@ -70,8 +70,34 @@ public class CompraCertaCrawlerUtils {
     return products;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, JSONObject apiJson) {
     StringBuilder description = new StringBuilder();
+
+    Element especificDescriptionTitle = doc.selectFirst("#especificacoes > h2");
+    if (especificDescriptionTitle != null) {
+      description.append(especificDescriptionTitle.html());
+    }
+
+    if (apiJson.has("RealHeight")) {
+      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
+          .append("<td>").append("\n" + apiJson.getFloat("RealHeight")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJson.has("RealWidth")) {
+      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
+          .append("<td>").append("\n" + apiJson.getFloat("RealWidth")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJson.has("RealLength")) {
+      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
+          .append("<td>").append("\n" + apiJson.getFloat("RealLength")).append("</td>").append("</tbody>").append("</table>");
+    }
+
+    if (apiJson.has("RealWeightKg")) {
+      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
+          .append("<td>").append("\n" + apiJson.getFloat("RealWeightKg")).append("</td>").append("</tbody>").append("</table>");
+    }
+
 
     Element caracteristicas = doc.select("#caracteristicas").first();
 
@@ -93,16 +119,10 @@ public class CompraCertaCrawlerUtils {
 
     }
 
-    Element shortDescription = doc.select(".productDescription").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
-    }
-
-    Element especificDescriptionTitle = doc.selectFirst("#especificacoes > h2");
-    if (especificDescriptionTitle != null) {
-      description.append(especificDescriptionTitle.html());
-
-    }
+    // Element shortDescription = doc.select(".productDescription").first();
+    // if (shortDescription != null) {
+    // description.append(shortDescription.html());
+    // }
 
     return description.toString();
   }
