@@ -1,13 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -57,7 +57,7 @@ public class BrasilBrastempCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String description = crawlDescription(doc, apiJSON);
+        String description = crawlDescription(doc, apiJSON, vtexUtil, internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
@@ -97,31 +97,64 @@ public class BrasilBrastempCrawler extends Crawler {
    * @param apiJSON
    * @return
    */
-  private String crawlDescription(Document document, JSONObject apiJSON) {
+  private String crawlDescription(Document document, JSONObject apiJSON, VTEXCrawlersUtils vtexCrawlersUtils, String internalId) {
     StringBuilder description = new StringBuilder();
 
-    Element desc = document.select("div.productDescription").first();
-    if (desc != null) {
-      description.append(desc.html());
+    JSONObject descriptionJson = vtexCrawlersUtils.crawlDescriptionAPI(internalId, "skuId");
+
+    if (descriptionJson.has("description")) {
+      description.append("<div>");
+      description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("description")));
+      description.append("</div>");
     }
 
-    Element specElement = document.select("#caracteristicas").first();
+    List<String> specs = new ArrayList<>();
 
-    if (specElement != null) {
-      Element specTemp = specElement.clone();
-      specTemp.select(".group.Prateleira").remove();
-
-      Elements nameFields = specElement.select(".name-field, h4");
-      for (Element e : nameFields) {
-        String classString = e.attr("class");
-
-        if (classString.toLowerCase().contains("modulo") || classString.toLowerCase().contains("foto")) {
-          specTemp.select("." + classString.trim().replace(" ", ".")).remove();
+    if (descriptionJson.has("Caracteristícas Técnicas")) {
+      JSONArray keys = descriptionJson.getJSONArray("Caracteristícas Técnicas");
+      for (Object o : keys) {
+        if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+          specs.add(o.toString());
         }
       }
+    }
 
-      specTemp.select(".Galeria, .Video, .Manual-do-Produto, h4.Arquivos").remove();
-      description.append(specTemp.html());
+    List<Integer> modules = Arrays.asList(1, 2, 3, 4);
+
+
+    for (int i : modules) {
+      if (descriptionJson.has("Texto modulo 0" + i)) {
+        description.append("<div>");
+
+        if (descriptionJson.has("Título modulo 0" + i)) {
+          description.append("<h4>");
+          description.append(descriptionJson.get("Título modulo 0" + i).toString().replace("[\"", "").replace("\"]", ""));
+          description.append("</h4>");
+        }
+
+        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("Texto modulo 0" + i)));
+        description.append("</div>");
+      }
+    }
+
+    for (String spec : specs) {
+      if (descriptionJson.has(spec)) {
+
+        String label = spec;
+
+        if (spec.equals("Tipo do produto")) {
+          label = "Tipo";
+        } else if (spec.equalsIgnoreCase("Garantia do Fornecedor (mês)")) {
+          label = "Garantia";
+        } else if (spec.equalsIgnoreCase("Mais Informações")) {
+          label = "Informações";
+        }
+
+        description.append("<div>");
+        description.append("<h4>").append(label).append("</h4>");
+        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec)));
+        description.append("</div>");
+      }
     }
 
     Element manual = document.selectFirst(".value-field.Manual-do-Produto");
