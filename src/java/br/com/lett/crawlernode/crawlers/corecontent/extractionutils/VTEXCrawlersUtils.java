@@ -515,7 +515,7 @@ public class VTEXCrawlersUtils {
   }
 
   public static Document sanitizeDescription(Object obj) {
-    return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\", ""));
+    return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\r\\n\\r\\n\\r\\n", "").replace("\\", ""));
   }
 
   /******************************** RATING ****************************************/

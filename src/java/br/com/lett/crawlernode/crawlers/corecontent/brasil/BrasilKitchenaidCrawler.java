@@ -20,7 +20,7 @@ import models.prices.Prices;
 
 public class BrasilKitchenaidCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.kitchenaid.com.br/";
+  private static final String HOME_PAGE = "https://www.kitchenaid.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "kitchenaid";
 
 
@@ -99,10 +99,9 @@ public class BrasilKitchenaidCrawler extends Crawler {
 
     JSONObject descriptionJson = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
 
-    if (descriptionJson.has("description")) {
-      description.append("<div>");
-      description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("description")));
-      description.append("</div>");
+    Element desc = doc.selectFirst("td.Descricao-curta-topo");
+    if (desc != null) {
+      description.append(desc.html());
     }
 
     for (int i = 1; i < 4; i++) {
@@ -118,6 +117,12 @@ public class BrasilKitchenaidCrawler extends Crawler {
         description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("Texto modulo 0" + i)));
         description.append("</div>");
       }
+    }
+
+    if (descriptionJson.has("Diferenciais")) {
+      description.append("<div>");
+      description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("Diferenciais")));
+      description.append("</div>");
     }
 
     if (descriptionJson.has("Características Técnicas")) {
