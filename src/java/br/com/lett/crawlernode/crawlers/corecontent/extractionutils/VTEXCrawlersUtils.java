@@ -428,6 +428,14 @@ public class VTEXCrawlersUtils {
           Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
           prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
+        } else if (text.contains("naranja")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.NARANJA.toString(), installmentPriceMap);
+
+        } else if (text.contains("cabal")) {
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
+
         }
       }
     } else {

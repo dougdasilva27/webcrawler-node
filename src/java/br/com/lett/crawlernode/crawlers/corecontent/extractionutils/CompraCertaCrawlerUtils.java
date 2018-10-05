@@ -70,7 +70,7 @@ public class CompraCertaCrawlerUtils {
     return products;
   }
 
-  private String crawlDescription(Document doc, JSONObject apiJson) {
+  private String crawlDescription(Document doc, JSONObject apiJSON) {
     StringBuilder description = new StringBuilder();
 
     Element especificDescriptionTitle = doc.selectFirst("#especificacoes > h2");
@@ -78,24 +78,24 @@ public class CompraCertaCrawlerUtils {
       description.append(especificDescriptionTitle.html());
     }
 
-    if (apiJson.has("RealHeight")) {
+    if (apiJSON.has("RealHeight")) {
       description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-          .append("<td>").append("\n" + apiJson.getFloat("RealHeight")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealHeight") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
-    if (apiJson.has("RealWidth")) {
+    if (apiJSON.has("RealWidth")) {
       description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-          .append("<td>").append("\n" + apiJson.getFloat("RealWidth")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWidth") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
-    if (apiJson.has("RealLength")) {
+    if (apiJSON.has("RealLength")) {
       description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-          .append("<td>").append("\n" + apiJson.getFloat("RealLength")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealLength") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
-    if (apiJson.has("RealWeightKg")) {
+    if (apiJSON.has("RealWeightKg")) {
       description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-          .append("<td>").append("\n" + apiJson.getFloat("RealWeightKg")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWeightKg") + "kg").append("</td>").append("</tbody>").append("</table>");
     }
 
 

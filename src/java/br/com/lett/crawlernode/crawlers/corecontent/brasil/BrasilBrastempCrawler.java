@@ -152,7 +152,7 @@ public class BrasilBrastempCrawler extends Crawler {
 
         description.append("<div>");
         description.append("<h4>").append(label).append("</h4>");
-        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec)));
+        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec)) + (label.equals("Garantia") ? " meses" : ""));
         description.append("</div>");
       }
     }
@@ -166,22 +166,22 @@ public class BrasilBrastempCrawler extends Crawler {
 
     if (apiJSON.has("RealHeight")) {
       description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.getFloat("RealHeight")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealHeight") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWidth")) {
       description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.getFloat("RealWidth")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWidth") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealLength")) {
       description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-          .append("<td>").append("\n" + apiJSON.getFloat("RealLength")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealLength") + "cm").append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWeightKg")) {
       description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-          .append("<td>").append("\n" + apiJSON.getFloat("RealWeightKg")).append("</td>").append("</tbody>").append("</table>");
+          .append("<td>").append("\n" + apiJSON.getFloat("RealWeightKg") + "kg").append("</td>").append("</tbody>").append("</table>");
     }
 
     return description.toString();
