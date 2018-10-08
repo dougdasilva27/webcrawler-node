@@ -59,8 +59,8 @@ public class ArgentinaRibeiroCrawler extends Crawler {
 
       boolean available = !doc.select("#tableComprarButtom .atg_store_productAvailability").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#atg_store_breadcrumbs_mod li:not(:first-child) > a", false);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".atg_store_productImage #imgAux > a", Arrays.asList("data-zoom-image", "src"),
-          "https:", "minicuotas.ribeiro.com.ar");
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, ".contImg > img", Arrays.asList("data-zoom-image", "src"), "https:", "minicuotas.ribeiro.com.ar");
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".atg_store_productImage #imgAux > a",
           Arrays.asList("data-zoom-image", "data-image"), "https:", "minicuotas.ribeiro.com.ar", primaryImage);
       String description = crawlDescription(doc);
@@ -102,7 +102,8 @@ public class ArgentinaRibeiroCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
-    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".atg_store_productDescription", "#ContenedorDescripciones")));
+    description.append(CrawlerUtils.scrapSimpleDescription(doc,
+        Arrays.asList(".atg_store_productDescription", "#detallesTecnicos", "#ContenedorDescripciones", ".template-aires")));
 
     Element ean = doc.selectFirst("#ArtEan");
     if (ean != null) {
