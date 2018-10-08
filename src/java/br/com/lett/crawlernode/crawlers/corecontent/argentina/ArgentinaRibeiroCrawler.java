@@ -185,7 +185,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
 
     Element priceFrom = doc.selectFirst("div[itemprop=offers] .precio_big_indivGris");
     if (priceFrom != null) {
-      prices.setPriceFrom(MathUtils.parseDoubleWithDot(priceFrom.ownText()));
+      prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseDoubleWithDot(priceFrom.ownText())));
     }
 
     Elements parcels = doc.select("#planLista li");
@@ -198,7 +198,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
         String textInstallmentValue = installmentValue.val().replaceAll("[^0-9.]", "").trim();
 
         if (!textInstallment.isEmpty() && !textInstallmentValue.isEmpty()) {
-          installmentPriceMap.put(Integer.parseInt(textInstallment), Float.parseFloat(textInstallmentValue));
+          installmentPriceMap.put(Integer.parseInt(textInstallment), MathUtils.normalizeTwoDecimalPlaces(Float.parseFloat(textInstallmentValue)));
         }
       }
     }

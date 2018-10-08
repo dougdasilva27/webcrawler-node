@@ -728,14 +728,29 @@ public class CrawlerUtils {
    * @return Pair<Integer, Float>
    */
   public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
+    return crawlSimpleInstallment(cssSelector, html, ownText, "x");
+  }
+
+  /**
+   * Crawl simple installment with this text example:
+   * 
+   * 2 (@param delimiter) R$12,90
+   * 
+   * @param cssSelector - if null, you must pass the specific element in the html parameter
+   * @param html - document html or element html
+   * @param ownText - if the returned text of the element is taken from the first child
+   * @param delimiter - string to separate a intallment from your value
+   * @return Pair<Integer, Float>
+   */
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter) {
     Pair<Integer, Float> pair = new Pair<>();
 
     Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
 
     if (installment != null) {
       String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
-      if (text.contains("x")) {
-        int x = text.indexOf('x');
+      if (text.contains(delimiter)) {
+        int x = text.indexOf(delimiter);
 
         String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
         Float value = MathUtils.parseFloatWithComma(text.substring(x));
