@@ -199,6 +199,38 @@ public class CrawlerUtils {
   }
 
   /**
+   * Append host and protocol if url needs Scroll through all the attributes in the list sent in
+   * sequence to find a url
+   * 
+   * @param element - code block that contains url (Jsoup Element)
+   * @param attribute - ex: "href"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
+   */
+  public static String sanitizeUrl(Element element, String att, String protocol, String host) {
+    StringBuilder sanitizedUrl = new StringBuilder();
+
+    String url = element.attr(att).trim();
+
+    if (!url.isEmpty()) {
+      if (!url.startsWith("http") && url.contains(host)) {
+        sanitizedUrl.append(protocol).append(url);
+      } else if (!url.contains(host)) {
+        sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
+      } else {
+        sanitizedUrl.append(url);
+      }
+    }
+
+    if (sanitizedUrl.toString().isEmpty()) {
+      return null;
+    }
+
+    return sanitizedUrl.toString();
+  }
+
+  /**
    * Crawl cookies from a page
    * 
    * @param url - page where are cookies
