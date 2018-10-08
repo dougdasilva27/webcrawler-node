@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -112,6 +114,12 @@ public class BrasilNutriiCrawler extends Crawler {
 
     if (nameElement != null) {
       name = nameElement.ownText().trim();
+    } else {
+      Element nameSpecial = document.selectFirst(".product-title");
+
+      if (nameSpecial != null) {
+        name = nameSpecial.ownText();
+      }
     }
 
     return name;
@@ -138,10 +146,16 @@ public class BrasilNutriiCrawler extends Crawler {
 
   private String crawlPrimaryImage(Document doc) {
     String primaryImage = null;
-    Element elementPrimaryImage = doc.select(".product-image >a").first();
+    Element elementPrimaryImage = doc.select(".product-image > a").first();
 
     if (elementPrimaryImage != null) {
       primaryImage = elementPrimaryImage.attr("href");
+    } else {
+      Element imageSpecial = doc.selectFirst("#slider img");
+
+      if (imageSpecial != null) {
+        primaryImage = imageSpecial.attr("src");
+      }
     }
 
     return primaryImage;
@@ -190,10 +204,11 @@ public class BrasilNutriiCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element elementDescription = doc.select(".description-new-prod").first();
+    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-new-prod", ".desc.hidden-mobile")));
 
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
+    Elements specialDesc = doc.select(".product-custom-layout .product-nav, .product-custom-layout .featured-banner, .product-custom-layout section");
+    for (Element e : specialDesc) {
+      description.append(e.html());
     }
 
     return description.toString();
