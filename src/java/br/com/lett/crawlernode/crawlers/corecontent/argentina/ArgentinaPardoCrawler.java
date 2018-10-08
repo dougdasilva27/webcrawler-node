@@ -7,6 +7,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -26,6 +27,7 @@ public class ArgentinaPardoCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.pardo.com.ar/";
   private static final String MAIN_SELLER_NAME_LOWER = "pardo | acá podes";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "pardo hogar";
 
   @Override
   public boolean shouldVisit() {
@@ -58,11 +60,12 @@ public class ArgentinaPardoCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
+        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Prices prices = getPrices(marketplaceMap);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
@@ -82,6 +85,18 @@ public class ArgentinaPardoCrawler extends Crawler {
     return products;
   }
 
+
+  private Prices getPrices(Map<String, Prices> marketplaceMap) {
+    Prices prices = new Prices();
+
+    if (marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)) {
+      prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
+    } else if (marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2)) {
+      prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER_2);
+    }
+
+    return prices;
+  }
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
