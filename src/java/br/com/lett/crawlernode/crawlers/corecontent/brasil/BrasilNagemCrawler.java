@@ -111,7 +111,7 @@ public class BrasilNagemCrawler extends Crawler {
       String priceText = salePriceElement.ownText();
 
       if (!priceText.isEmpty()) {
-        price = MathUtils.parseFloat(priceText);
+        price = MathUtils.parseFloatWithComma(priceText);
       }
     }
 
@@ -230,7 +230,7 @@ public class BrasilNagemCrawler extends Crawler {
       Element boleto = docPrincipal.select(".valor_boleto strong").first();
 
       if (boleto != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(boleto.ownText()));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(boleto.ownText()));
       }
 
       String urlParameters = "codigoProduto=" + internalId;
@@ -288,7 +288,7 @@ public class BrasilNagemCrawler extends Crawler {
 
             if (text.contains("x")) {
               Integer installmentNumber = Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
-              Float installmentValue = MathUtils.parseFloat(text.split("x")[1]);
+              Float installmentValue = MathUtils.parseFloatWithComma(text.split("x")[1]);
 
               installmentPriceMap.put(installmentNumber, installmentValue);
             }

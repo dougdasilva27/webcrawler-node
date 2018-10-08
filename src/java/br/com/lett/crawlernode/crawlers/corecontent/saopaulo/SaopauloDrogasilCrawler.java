@@ -253,7 +253,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       Element priceFrom = doc.select(".old-price span[id=old-price-" + internalPid + "]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       installmentPriceMap.put(1, price);

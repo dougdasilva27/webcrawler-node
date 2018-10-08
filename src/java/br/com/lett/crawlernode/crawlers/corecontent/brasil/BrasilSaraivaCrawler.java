@@ -193,7 +193,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         JSONObject priceJson = priceBlock.getJSONObject("price");
 
         if (priceJson.has("final")) {
-          price = MathUtils.parseFloat(priceJson.getString("final"));
+          price = MathUtils.parseFloatWithComma(priceJson.getString("final"));
         }
       }
     }
@@ -238,7 +238,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       JSONObject billetJson = priceBlock.getJSONObject("billet");
 
       if (billetJson.has("has_discount") && billetJson.getInt("has_discount") > 0 && billetJson.has("value_with_discount")) {
-        billet = MathUtils.parseFloat(billetJson.getString("value_with_discount"));
+        billet = MathUtils.parseFloatWithComma(billetJson.getString("value_with_discount"));
       }
     }
 
@@ -261,7 +261,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_without_fee");
 
         if (installment > 0) {
-          installments.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_without_fee")));
+          installments.put(installment, MathUtils.parseFloatWithComma(priceJson.getString("value_installments_without_fee")));
         }
       }
 
@@ -269,7 +269,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_with_fee");
 
         if (installment > 0) {
-          installments.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_with_fee")));
+          installments.put(installment, MathUtils.parseFloatWithComma(priceJson.getString("value_installments_with_fee")));
         }
       }
     }
@@ -281,10 +281,10 @@ public class BrasilSaraivaCrawler extends Crawler {
           && creditCard.has("qty_installments_with_discount")) {
 
         installments.put(creditCard.getInt("qty_installments_with_discount"),
-            MathUtils.parseFloat(creditCard.getString("installment_with_discount")));
+            MathUtils.parseFloatWithComma(creditCard.getString("installment_with_discount")));
 
         if (creditCard.has("value_with_discount")) {
-          installments.put(1, MathUtils.parseFloat(creditCard.getString("value_with_discount")));
+          installments.put(1, MathUtils.parseFloatWithComma(creditCard.getString("value_with_discount")));
         }
       }
 
@@ -313,7 +313,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_without_fee");
 
         if (installment > 0) {
-          installmentsShopcardMap.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_without_fee")));
+          installmentsShopcardMap.put(installment, MathUtils.parseFloatWithComma(priceJson.getString("value_installments_without_fee")));
         }
       }
 
@@ -321,7 +321,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         Integer installment = priceJson.getInt("qty_installments_with_fee");
 
         if (installment > 0) {
-          installmentsShopcardMap.put(installment, MathUtils.parseFloat(priceJson.getString("value_installments_with_fee")));
+          installmentsShopcardMap.put(installment, MathUtils.parseFloatWithComma(priceJson.getString("value_installments_with_fee")));
         }
       }
 
@@ -329,14 +329,14 @@ public class BrasilSaraivaCrawler extends Crawler {
           && priceJson.has("qty_installments_with_discount")) {
 
         installmentsShopcardMap.put(priceJson.getInt("qty_installments_with_discount"),
-            MathUtils.parseFloat(priceJson.getString("installment_with_discount")));
+            MathUtils.parseFloatWithComma(priceJson.getString("installment_with_discount")));
       }
 
       if (priceJson.has("discount_percent") && priceJson.has("value_with_discount")) {
-        Double discount = MathUtils.parseDouble(priceJson.get("discount_percent").toString());
+        Double discount = MathUtils.parseDoubleWithComma(priceJson.get("discount_percent").toString());
 
         if (discount != null && discount > 0) {
-          installmentsShopcardMap.put(1, MathUtils.parseFloat(priceJson.getString("value_with_discount")));
+          installmentsShopcardMap.put(1, MathUtils.parseFloatWithComma(priceJson.getString("value_with_discount")));
         }
       }
     }

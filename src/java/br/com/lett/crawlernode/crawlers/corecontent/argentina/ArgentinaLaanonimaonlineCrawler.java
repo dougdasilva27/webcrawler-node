@@ -137,9 +137,9 @@ public class ArgentinaLaanonimaonlineCrawler extends Crawler {
     Element specialPrice = doc.select(".precio.destacado").first();
 
     if (specialPrice != null) {
-      price = MathUtils.parseFloat(specialPrice.ownText());
+      price = MathUtils.parseFloatWithComma(specialPrice.ownText());
     } else if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -217,7 +217,7 @@ public class ArgentinaLaanonimaonlineCrawler extends Crawler {
 
     Element from = doc.select(".precio.anterior").first();
     if (from != null) {
-      price = MathUtils.parseDouble(from.ownText());
+      price = MathUtils.parseDoubleWithComma(from.ownText());
     }
 
     return price;

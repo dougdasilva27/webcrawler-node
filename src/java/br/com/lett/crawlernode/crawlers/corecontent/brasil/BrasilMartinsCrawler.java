@@ -234,7 +234,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
     Element elementPrice = doc.select(".ctnValorUnitario span").first();
     if (elementPrice != null) {
-      price = MathUtils.parseFloat(elementPrice.text());
+      price = MathUtils.parseFloatWithComma(elementPrice.text());
     }
 
     return price;

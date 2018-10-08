@@ -295,7 +295,7 @@ public class BrasilFarmCrawler extends Crawler {
 
       if (installmentElement.size() > 1) {
         String installment = installmentElement.get(0).ownText().replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloat(installmentElement.get(1).ownText());
+        Float value = MathUtils.parseFloatWithComma(installmentElement.get(1).ownText());
 
         if (!installment.isEmpty() && value != null) {
           mapInstallments.put(Integer.parseInt(installment), value);
@@ -326,7 +326,7 @@ public class BrasilFarmCrawler extends Crawler {
 
     Element e = doc.select(".price-old span").first();
     if (e != null) {
-      Float price = MathUtils.parseFloat(e.ownText());
+      Float price = MathUtils.parseFloatWithComma(e.ownText());
       priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
     }
 

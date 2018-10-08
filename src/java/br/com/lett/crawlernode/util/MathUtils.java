@@ -36,7 +36,7 @@ public class MathUtils {
    * @param input
    * @return
    */
-  public static Float parseFloat(String input) {
+  public static Float parseFloatWithComma(String input) {
     String floatText = input.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
 
     if (!floatText.isEmpty()) {
@@ -55,7 +55,7 @@ public class MathUtils {
    * @param input
    * @return
    */
-  public static Float parseFloatUSA(String input) {
+  public static Float parseFloatWithDots(String input) {
     String floatText = input.replaceAll("[^0-9.]+", "");
 
     if (!floatText.isEmpty()) {
@@ -74,8 +74,27 @@ public class MathUtils {
    * @param input
    * @return
    */
-  public static Double parseDouble(String input) {
+  public static Double parseDoubleWithComma(String input) {
     String doubleText = input.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
+
+    if (!doubleText.isEmpty()) {
+      return Double.parseDouble(doubleText);
+    }
+
+    return null;
+  }
+
+  /**
+   * Parses a Double from an input String. It will parse only the first match. If there is more than
+   * one float in the string, the others occurrences after the first will be disconsidered.
+   * 
+   * e.g: R$ 2.779,20 returns the Float 2779.2
+   * 
+   * @param input
+   * @return
+   */
+  public static Double parseDoubleWithDot(String input) {
+    String doubleText = input.replaceAll("[^0-9.]+", "");
 
     if (!doubleText.isEmpty()) {
       return Double.parseDouble(doubleText);

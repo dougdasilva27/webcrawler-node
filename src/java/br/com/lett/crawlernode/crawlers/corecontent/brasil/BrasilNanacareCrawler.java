@@ -122,7 +122,7 @@ public class BrasilNanacareCrawler extends Crawler {
     Element salePriceElement = document.select(".sale.product_price").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
 
     return price;
@@ -257,7 +257,7 @@ public class BrasilNanacareCrawler extends Crawler {
     if (price != null) {
       Element priceFrom = doc.select(".slash.product_price").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();

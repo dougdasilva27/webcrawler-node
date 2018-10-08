@@ -107,7 +107,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
       Element priceFrom = doc.selectFirst(".nproduct-price-max");
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".nproduct-price-installments", doc, false);

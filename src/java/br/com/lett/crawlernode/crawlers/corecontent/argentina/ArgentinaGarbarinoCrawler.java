@@ -100,7 +100,7 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
     Element specialPrice = doc.selectFirst("#final-price");
     
     if (specialPrice != null) {
-      price = MathUtils.parseFloat(specialPrice.ownText());
+      price = MathUtils.parseFloatWithComma(specialPrice.ownText());
     }
     return price;
   }
@@ -130,7 +130,7 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
     
     Element from = doc.selectFirst(".value-note > del");
     if (from != null) {
-      price = MathUtils.parseDouble(from.ownText());
+      price = MathUtils.parseDoubleWithComma(from.ownText());
     }
     return price;
   }

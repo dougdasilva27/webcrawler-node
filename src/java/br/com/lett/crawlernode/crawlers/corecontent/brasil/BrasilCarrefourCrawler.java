@@ -202,7 +202,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
       if (name != null && price != null) {
         String sellerName = name.ownText().trim().toLowerCase();
-        Float sellerPrice = MathUtils.parseFloat(price.ownText());
+        Float sellerPrice = MathUtils.parseFloatWithComma(price.ownText());
 
         if (sellerPrice != null && !sellerName.isEmpty()) {
           marketplaces.put(sellerName, crawlPrices(sellerPrice, e, idOffer));
@@ -254,7 +254,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
     Element priceFrom = e.select(".price-old").first();
     if (priceFrom != null) {
-      price = MathUtils.parseDouble(priceFrom.text());
+      price = MathUtils.parseDoubleWithComma(priceFrom.text());
     }
 
     return price;

@@ -153,7 +153,7 @@ public class ArgentinaMusimundoCrawler extends Crawler {
     Element salePriceElement = doc.selectFirst(".prices.online > span.value");
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
 
     return price;
@@ -184,7 +184,7 @@ public class ArgentinaMusimundoCrawler extends Crawler {
 
     Element from = doc.select(".prices.cash > span.value").first();
     if (from != null) {
-      price = MathUtils.parseDouble(from.text());
+      price = MathUtils.parseDoubleWithComma(from.text());
     }
 
     return price;

@@ -253,7 +253,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       Element priceFrom = doc.select(".old-price span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);

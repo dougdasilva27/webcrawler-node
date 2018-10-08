@@ -281,7 +281,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 		if (bankSlipPriceElement != null) {
 			String bankSlipPriceText = bankSlipPriceElement.ownText();
 			if (!bankSlipPriceText.isEmpty()) {
-				bankSlipPrice = MathUtils.parseFloat(bankSlipPriceText);
+				bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceText);
 			}
 		}
 		
@@ -311,7 +311,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathUtils.parseFloat(installmentPriceText);
+				Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}
@@ -328,7 +328,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 				
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathUtils.parseFloat(installmentPriceText);
+				Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceText);
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

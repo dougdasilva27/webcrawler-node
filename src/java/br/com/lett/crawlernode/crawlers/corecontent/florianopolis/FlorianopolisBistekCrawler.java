@@ -232,7 +232,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 					Element valueElement = installments.select("#lblParcelamento2 > strong").first();
 					
 					if(valueElement != null) {
-						Float value = MathUtils.parseFloat(valueElement.text());
+						Float value = MathUtils.parseFloatWithComma(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);
 					}

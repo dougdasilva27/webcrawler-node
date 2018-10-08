@@ -240,7 +240,7 @@ public class BrasilFarmaciamixCrawler extends Crawler {
 
       Element priceFrom = doc.select(".preco-de span[content]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Elements installmentsElements = doc.select(".col-condicoes-and-frete .list-padrao li");
@@ -252,7 +252,7 @@ public class BrasilFarmaciamixCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String parcel = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (!parcel.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(parcel), value);

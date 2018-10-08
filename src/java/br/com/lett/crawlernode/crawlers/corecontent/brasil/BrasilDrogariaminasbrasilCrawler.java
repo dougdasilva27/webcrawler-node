@@ -124,7 +124,7 @@ public class BrasilDrogariaminasbrasilCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     return price;
@@ -238,7 +238,7 @@ public class BrasilDrogariaminasbrasilCrawler extends Crawler {
 
       Element priceFrom = doc.select(".PrecoDe span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Elements cards = doc.select(".CartoesParcelamento .CartaoParcelamento");

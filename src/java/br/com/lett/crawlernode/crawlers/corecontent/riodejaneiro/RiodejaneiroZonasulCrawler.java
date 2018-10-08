@@ -216,7 +216,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
       Element priceFrom = doc.select(".top .prod_preco .preco_de").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       installmentPriceMap.put(1, price);

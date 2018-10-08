@@ -359,7 +359,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       
       Element priceFrom = doc.select(".skuListPrice").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
       
       Element installmentElement = doc.select(".skuBestInstallmentNumber").first();
@@ -370,7 +370,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
         Element valueElement = doc.select(".skuBestInstallmentValue").first();
         
         if (valueElement != null) {
-          Float value = MathUtils.parseFloat(valueElement.text());
+          Float value = MathUtils.parseFloatWithComma(valueElement.text());
           
           installmentPriceMap.put(installment, value);
         }

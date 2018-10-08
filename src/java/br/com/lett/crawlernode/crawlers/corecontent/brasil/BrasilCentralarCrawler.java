@@ -156,7 +156,7 @@ public class BrasilCentralarCrawler extends Crawler {
       JSONObject prices = json.getJSONObject("prices");
 
       if (prices.has("priceToText")) {
-        price = MathUtils.parseFloat(prices.getString("priceToText"));
+        price = MathUtils.parseFloatWithComma(prices.getString("priceToText"));
       }
     }
 
@@ -294,11 +294,11 @@ public class BrasilCentralarCrawler extends Crawler {
         JSONObject pricesJson = jsonSku.getJSONObject("prices");
 
         if (pricesJson.has("priceBilletText")) {
-          prices.setBankTicketPrice(MathUtils.parseDouble(pricesJson.get("priceBilletText").toString()));
+          prices.setBankTicketPrice(MathUtils.parseDoubleWithComma(pricesJson.get("priceBilletText").toString()));
         }
 
         if (pricesJson.has("priceFromText")) {
-          prices.setPriceFrom(MathUtils.parseDouble(pricesJson.get("priceFromText").toString()));
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(pricesJson.get("priceFromText").toString()));
         }
       }
 
@@ -312,7 +312,7 @@ public class BrasilCentralarCrawler extends Crawler {
             int x = text.indexOf('x');
 
             String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloat(text.substring(x));
+            Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
             if (!installment.isEmpty() && value != null) {
               installmentPriceMap.put(Integer.parseInt(installment), value);

@@ -81,7 +81,7 @@ public class BrasilColomboCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select(".parcelas-produto-table .parcelas-produto-table-valor").first();
       if (elementPrice != null) {
-        price = MathUtils.parseFloat(elementPrice.ownText());
+        price = MathUtils.parseFloatWithComma(elementPrice.ownText());
       }
 
       // Prices

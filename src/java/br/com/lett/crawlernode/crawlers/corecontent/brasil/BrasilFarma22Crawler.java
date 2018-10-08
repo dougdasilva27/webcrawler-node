@@ -146,7 +146,7 @@ public class BrasilFarma22Crawler extends Crawler {
     Float price = null;
 
     if (json.has("bestPriceFormated") && available) {
-      price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
+      price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
     }
 
     return price;
@@ -241,11 +241,11 @@ public class BrasilFarma22Crawler extends Crawler {
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
       }
 
       if (jsonSku.has("listPriceFormated")) {
-        prices.setPriceFrom(MathUtils.parseDouble(jsonSku.get("listPriceFormated").toString()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));
       }
 
       Elements cardsElements = doc.select("#ddlCartao option");

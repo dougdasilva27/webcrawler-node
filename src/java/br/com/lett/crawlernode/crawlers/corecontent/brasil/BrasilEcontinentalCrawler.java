@@ -277,7 +277,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     if (jsonPrice.has("valor")) {
       String priceString = jsonPrice.getString("valor");
       if (!priceString.isEmpty()) {
-        price = MathUtils.parseFloat(priceString);
+        price = MathUtils.parseFloatWithComma(priceString);
       }
     }
     return price;
@@ -306,7 +306,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     if (jsonPrice.has("valor") && jsonPrice.has("parcelaSemJuros")) {
       String priceString = jsonPrice.getString("valor");
       if (!priceString.isEmpty()) {
-        Float basePrice = MathUtils.parseFloat(priceString);
+        Float basePrice = MathUtils.parseFloatWithComma(priceString);
         Integer maxInstallmentNumber = jsonPrice.getInt("parcelaSemJuros");
 
         for (int i = 1; i < maxInstallmentNumber; i++) { // calculate each installment price
@@ -437,7 +437,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
       if (installmentNumberElement != null && installmentPriceElement != null) {
         Integer installmentNumber = Integer.parseInt(installmentNumberElement.text());
-        Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+        Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
 
         installments.put(installmentNumber, installmentPrice);
       }
@@ -459,7 +459,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     Float bankSlipPrice = null;
     Element bankSlipPriceElement = document.select(".product-info .new-value.ctrValorArea span.billet-value").first();
     if (bankSlipPriceElement != null) {
-      bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+      bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
     }
     return bankSlipPrice;
   }

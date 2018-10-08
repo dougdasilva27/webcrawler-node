@@ -116,7 +116,7 @@ public class BrasilDrogariaprimusRatingReviewCrawler extends RatingReviewCrawler
 
     Element ratingAverage = doc.selectFirst(".product-rating .rating .average");
     if (ratingAverage != null) {
-      avgRating = MathUtils.parseDouble(ratingAverage.ownText());
+      avgRating = MathUtils.parseDoubleWithComma(ratingAverage.ownText());
     }
 
     return new Pair<>(ratingNumber, avgRating);

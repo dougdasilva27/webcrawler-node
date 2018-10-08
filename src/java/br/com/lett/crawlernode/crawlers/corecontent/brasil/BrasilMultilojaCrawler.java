@@ -354,9 +354,9 @@ public class BrasilMultilojaCrawler extends Crawler {
 		Float price = null;
 
 		if(jsonPrices.has("price")){
-			price = MathUtils.parseFloat(jsonPrices.getString("price"));
+			price = MathUtils.parseFloatWithComma(jsonPrices.getString("price"));
 		} else if(jsonPrices.has("priceVista")){
-			price = MathUtils.parseFloat(jsonPrices.getString("priceVista"));
+			price = MathUtils.parseFloatWithComma(jsonPrices.getString("priceVista"));
 		}
 
 		return price;
@@ -536,7 +536,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 			Map<Integer,Float> installmentPriceMap = new HashMap<>();
 
 			if(jsonPrices.has("priceVista")){
-				Float vistaPrice = MathUtils.parseFloat(jsonPrices.getString("priceVista"));
+				Float vistaPrice = MathUtils.parseFloatWithComma(jsonPrices.getString("priceVista"));
 
 				// 1x no cartão e boleto são o mesmo preço
 				installmentPriceMap.put(1, vistaPrice);
@@ -548,7 +548,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 
 				if(parcels.has("installment") && parcels.has("installmentValue")){
 					Integer installment = Integer.parseInt(parcels.getString("installment"));
-					Float value = MathUtils.parseFloat(parcels.getString("installmentValue"));
+					Float value = MathUtils.parseFloatWithComma(parcels.getString("installmentValue"));
 
 					installmentPriceMap.put(installment, value);
 				}

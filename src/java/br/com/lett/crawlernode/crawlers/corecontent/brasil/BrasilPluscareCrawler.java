@@ -110,7 +110,7 @@ public class BrasilPluscareCrawler extends Crawler {
     Element salePriceElement = document.select(".precoPor").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -227,7 +227,7 @@ public class BrasilPluscareCrawler extends Crawler {
 
       Element priceFrom = doc.select(".precoDe #PrecoProduto").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Element parc = doc.select("#ParcelamentoProduto").first();
@@ -237,7 +237,7 @@ public class BrasilPluscareCrawler extends Crawler {
         Element valueElement = parc.select("span").first();
 
         if (parcText.isEmpty() && valueElement != null) {
-          Float value = MathUtils.parseFloat(valueElement.ownText());
+          Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
           Integer parcel = Integer.parseInt(parcText);
 
           if (parcel > 1 && value != null) {

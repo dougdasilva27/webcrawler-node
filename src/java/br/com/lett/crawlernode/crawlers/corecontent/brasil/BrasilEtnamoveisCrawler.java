@@ -350,7 +350,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
 				
 				if(text.contains("x")){
 					Integer installment = Integer.parseInt(text.split("x")[0].trim());
-					Float value = MathUtils.parseFloat(text.split("x")[1].trim());
+					Float value = MathUtils.parseFloatWithComma(text.split("x")[1].trim());
 					
 					installmentPriceMap.put(installment, value);
 					

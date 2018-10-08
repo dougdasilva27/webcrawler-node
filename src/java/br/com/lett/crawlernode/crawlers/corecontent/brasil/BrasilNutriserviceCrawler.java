@@ -201,7 +201,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
     }
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -322,7 +322,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
       Element installmentsElement = doc.select(".preco_por_texto label").first();
 
       if (installmentsElement != null) {
-        Float aprazo = MathUtils.parseFloat(installmentsElement.ownText());
+        Float aprazo = MathUtils.parseFloatWithComma(installmentsElement.ownText());
         if (aprazo != null) {
           installmentPriceMap.put(1, aprazo);
         }
@@ -330,7 +330,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
         installmentsElement = doc.select(".preco_por").first();
 
         if (installmentsElement != null) {
-          Float aprazo = MathUtils.parseFloat(installmentsElement.ownText());
+          Float aprazo = MathUtils.parseFloatWithComma(installmentsElement.ownText());
           if (aprazo != null) {
             installmentPriceMap.put(1, aprazo);
           }

@@ -389,7 +389,7 @@ public class VTEXCrawlersUtils {
 
     Element bank = doc.select("#ltlPrecoWrapper em").first();
     if (bank != null) {
-      prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+      prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
     } else {
       prices.setBankTicketPrice(price);
     }

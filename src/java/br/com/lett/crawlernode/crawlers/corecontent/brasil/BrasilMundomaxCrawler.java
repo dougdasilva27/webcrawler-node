@@ -221,7 +221,7 @@ public class BrasilMundomaxCrawler extends Crawler {
 		// bank slip
 		Element bankSlipPriceElement = document.select(".desconto label").first();
 		if (bankSlipPriceElement != null) {
-			Float bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+			Float bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 			prices.setBankTicketPrice(bankSlipPrice);
 		}
 		
@@ -235,7 +235,7 @@ public class BrasilMundomaxCrawler extends Crawler {
 			if (installmentNumberElement != null && installmentPriceElement != null) {
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberElement.text());
 				Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+				Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
 				
 				installments.put(installmentNumber, installmentPrice);
 			}

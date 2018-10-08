@@ -159,7 +159,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       // In this site some products appear like this: R$ 54,90
       // and others appear like this: R$ 54.90
       if (priceText.contains(",")) {
-        price = MathUtils.parseFloat(priceText);
+        price = MathUtils.parseFloatWithComma(priceText);
       } else {
         price = Float.parseFloat(priceText.replaceAll("[^0-9.]", ""));
       }
@@ -215,7 +215,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
         String priceText = priceFrom.ownText();
 
         if (priceText.contains(",")) {
-          prices.setPriceFrom(MathUtils.parseDouble(priceText));
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceText));
         } else {
           prices.setPriceFrom(Double.parseDouble(priceText.replaceAll("[^0-9.]", "")));
         }

@@ -149,7 +149,7 @@ public class BrasilAmbientairCrawler extends Crawler {
     Double priceFrom = null;
 
     if (jsonSku.has("listPriceFormated")) {
-      Float price = MathUtils.parseFloat(jsonSku.get("listPriceFormated").toString());
+      Float price = MathUtils.parseFloatWithComma(jsonSku.get("listPriceFormated").toString());
       priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
     }
 
@@ -240,7 +240,7 @@ public class BrasilAmbientairCrawler extends Crawler {
       String nameSeller = json.getString("seller").toLowerCase().trim();
 
       if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
-        Float price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
+        Float price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
         marketplace.put(nameSeller, price);
       }
     }

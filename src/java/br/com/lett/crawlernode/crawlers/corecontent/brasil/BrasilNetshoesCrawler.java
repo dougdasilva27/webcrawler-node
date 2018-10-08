@@ -347,7 +347,7 @@ public class BrasilNetshoesCrawler extends Crawler {
     Element priceElement = doc.select(".price > strong").first();
 
     if (priceElement != null) {
-      Float price = MathUtils.parseFloat(priceElement.ownText());
+      Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
       prices.setBankTicketPrice(price);
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
@@ -362,7 +362,7 @@ public class BrasilNetshoesCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float priceInstallment = MathUtils.parseFloat(text.substring(x));
+          Float priceInstallment = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (!installment.isEmpty() && priceInstallment != null) {
             mapInstallments.put(Integer.parseInt(installment), priceInstallment);

@@ -360,7 +360,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
       Element priceFrom = doc.select(".precoDe span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       installmentPriceMap.put(1, price);
@@ -378,7 +378,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
             Element valueElement = installments.select("span").first();
 
             if (valueElement != null) {
-              Float value = MathUtils.parseFloat(valueElement.text());
+              Float value = MathUtils.parseFloatWithComma(valueElement.text());
 
               installmentPriceMap.put(installment, value);
             }

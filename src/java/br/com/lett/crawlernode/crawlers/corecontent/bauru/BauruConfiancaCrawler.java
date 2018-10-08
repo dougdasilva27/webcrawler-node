@@ -135,7 +135,7 @@ public class BauruConfiancaCrawler extends Crawler {
     }
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -238,7 +238,7 @@ public class BauruConfiancaCrawler extends Crawler {
 
       Element priceFrom = doc.select(".product-shop .price-box .old-price .price").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
 
       prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);

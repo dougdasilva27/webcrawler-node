@@ -237,7 +237,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
       Element vistaPrice = doc.select("div.prices > div > strong").first();
 
       if (vistaPrice != null) {
-        Float bankTicketPrice = MathUtils.parseFloat(vistaPrice.ownText());
+        Float bankTicketPrice = MathUtils.parseFloatWithComma(vistaPrice.ownText());
         prices.setBankTicketPrice(bankTicketPrice);
       }
 
@@ -251,7 +251,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
           int x = text.indexOf("de") + 2;
 
           String installment = text.substring(0, x).replaceAll("[^0-9]", "");
-          Float value = MathUtils.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (!installment.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installment), value);

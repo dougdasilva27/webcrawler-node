@@ -183,7 +183,7 @@ public class BrasilClimarioCrawler extends Crawler {
     Double priceFrom = null;
 
     if (jsonSku.has("listPriceFormated")) {
-      Float price = MathUtils.parseFloat(jsonSku.get("listPriceFormated").toString());
+      Float price = MathUtils.parseFloatWithComma(jsonSku.get("listPriceFormated").toString());
       priceFrom = MathUtils.normalizeTwoDecimalPlaces(price.doubleValue());
     }
 
@@ -277,7 +277,7 @@ public class BrasilClimarioCrawler extends Crawler {
       String nameSeller = json.getString("seller").toLowerCase().trim();
 
       if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
-        Float price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
+        Float price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
         marketplace.put(nameSeller, price);
       }
     }
@@ -370,7 +370,7 @@ public class BrasilClimarioCrawler extends Crawler {
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        Float boleto = MathUtils.parseFloat(bank.text());
+        Float boleto = MathUtils.parseFloatWithComma(bank.text());
 
         if (discount > 0) {
           boleto = MathUtils.normalizeTwoDecimalPlaces(boleto - (boleto * (discount / 100f)));

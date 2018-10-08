@@ -249,7 +249,7 @@ public class BrasilIbyteCrawler extends Crawler {
       Element boleto = doc.select(".boletoBox .price").first();
 
       if (boleto != null) {
-        Float value = MathUtils.parseFloat(boleto.ownText());
+        Float value = MathUtils.parseFloatWithComma(boleto.ownText());
 
         if (value != null) {
           prices.setBankTicketPrice(value);
@@ -286,7 +286,7 @@ public class BrasilIbyteCrawler extends Crawler {
 
           if (valueElement != null && installmentElement != null) {
             String installment = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloat(valueElement.ownText());
+            Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
 
             if (!installment.isEmpty() && value != null) {
               int installmentNumber = Integer.parseInt(installment);

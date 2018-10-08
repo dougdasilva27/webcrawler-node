@@ -116,7 +116,7 @@ public class BrasilDrogalCrawler extends Crawler {
     Element mainPagePriceElement = document.select(".sale_price").first();
 
     if (mainPagePriceElement != null) {
-      price = MathUtils.parseFloat(mainPagePriceElement.text());
+      price = MathUtils.parseFloatWithComma(mainPagePriceElement.text());
     }
 
     return price;
@@ -210,14 +210,14 @@ public class BrasilDrogalCrawler extends Crawler {
 
       Element priceFrom = doc.select(".unit_price").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
 
       Elements installments = doc.select(".get_installments > span strong");
 
       if (installments.size() > 1) {
         String number = installments.get(0).ownText().replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloat(installments.get(1).ownText());
+        Float value = MathUtils.parseFloatWithComma(installments.get(1).ownText());
 
         if (!number.isEmpty() && value != null) {
           installmentPriceMap.put(Integer.parseInt(number), value);

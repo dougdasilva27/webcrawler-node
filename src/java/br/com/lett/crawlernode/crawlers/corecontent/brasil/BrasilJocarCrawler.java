@@ -211,12 +211,12 @@ public class BrasilJocarCrawler extends Crawler {
 
       Element bank = doc.select("#FormPagamento_repFormaRec_ctl00_lbl_AVista").first();
       if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseDouble(CommonMethods.getLast(bank.ownText().split(":"))));
+        prices.setBankTicketPrice(MathUtils.parseDoubleWithComma(CommonMethods.getLast(bank.ownText().split(":"))));
       }
 
       Element vista = doc.select("#FormPagamento_repFormaRec_ctl02_lbl_AVista").first();
       if (vista != null) {
-        installmentPriceMap.put(1, MathUtils.parseFloat(CommonMethods.getLast(vista.ownText().split(":"))));
+        installmentPriceMap.put(1, MathUtils.parseFloatWithComma(CommonMethods.getLast(vista.ownText().split(":"))));
       }
 
       Element installments = doc.select("#FormPagamento_repFormaRec_ctl02_lbl_ParSJu").first();
@@ -228,7 +228,7 @@ public class BrasilJocarCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (!installment.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installment), value);

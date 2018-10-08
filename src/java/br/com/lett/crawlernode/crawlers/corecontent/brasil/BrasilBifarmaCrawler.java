@@ -157,7 +157,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       String priceText = salePriceElement.ownText().trim();
 
       if (!priceText.isEmpty()) {
-        price = MathUtils.parseFloat(priceText);
+        price = MathUtils.parseFloatWithComma(priceText);
       }
     }
 
@@ -275,7 +275,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
       Element priceFrom = doc.select(".product_previous_price").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       if (info.has("installment")) {

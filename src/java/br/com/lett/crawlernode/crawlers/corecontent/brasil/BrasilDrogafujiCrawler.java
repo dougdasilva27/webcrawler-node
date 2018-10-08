@@ -124,7 +124,7 @@ public class BrasilDrogafujiCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     return price;
@@ -236,7 +236,7 @@ public class BrasilDrogafujiCrawler extends Crawler {
 
       Element priceFrom = doc.select(".old-price span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Elements installmentsElement = doc.select("#parcelamento table tr");

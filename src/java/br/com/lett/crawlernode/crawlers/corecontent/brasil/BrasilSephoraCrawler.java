@@ -318,7 +318,7 @@ public class BrasilSephoraCrawler extends Crawler {
             JSONArray installments = (JSONArray) o;
 
             if (installments.length() > 1) {
-              Float value = MathUtils.parseFloat(installments.get(0).toString());
+              Float value = MathUtils.parseFloatWithComma(installments.get(0).toString());
               Integer installmentNumber = MathUtils.parseInt(installments.get(1).toString());
 
               if (value != null && installmentNumber != null) {

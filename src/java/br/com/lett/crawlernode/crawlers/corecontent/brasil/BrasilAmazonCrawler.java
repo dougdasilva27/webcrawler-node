@@ -189,19 +189,19 @@ public class BrasilAmazonCrawler extends Crawler {
     Element foodPrice = document.select("#priceblock_ourprice").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text().trim());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text().trim());
     } else {
       salePriceElement = document.select("#buybox .a-color-price").first();
 
       if (salePriceElement != null) {
-        price = MathUtils.parseFloat(salePriceElement.ownText().trim());
+        price = MathUtils.parseFloatWithComma(salePriceElement.ownText().trim());
       }
     }
 
     if (price == null && specialPrice != null) {
-      price = MathUtils.parseFloat(specialPrice.ownText().trim());
+      price = MathUtils.parseFloatWithComma(specialPrice.ownText().trim());
     } else if (price == null && foodPrice != null) {
-      price = MathUtils.parseFloat(foodPrice.ownText());
+      price = MathUtils.parseFloatWithComma(foodPrice.ownText());
     }
 
     return price;
@@ -300,7 +300,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
         if ((name != null || nameImg != null) && priceS != null) {
           String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase() : name.text().trim().toLowerCase();
-          Float partnerPrice = MathUtils.parseFloat(priceS.ownText());
+          Float partnerPrice = MathUtils.parseFloatWithComma(priceS.ownText());
 
           if (partnerName.equals(principalSellerFrontPage)) {
             marketplace.put(partnerName, crawlPrices(doc, null));
@@ -534,7 +534,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
         if (info.size() > 1) {
           String installment = info.get(0).ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(info.get(1).ownText());
+          Float value = MathUtils.parseFloatWithComma(info.get(1).ownText());
 
           if (!installment.isEmpty() && value != null) {
             installments.put(Integer.parseInt(installment), value);

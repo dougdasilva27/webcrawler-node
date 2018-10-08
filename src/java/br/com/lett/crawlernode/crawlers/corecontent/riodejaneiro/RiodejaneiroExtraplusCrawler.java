@@ -185,7 +185,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 					Element valueElement = installments.select("span").last();
 					
 					if (valueElement != null) {
-						Float value = MathUtils.parseFloat(valueElement.text());
+						Float value = MathUtils.parseFloatWithComma(valueElement.text());
 						
 						installmentPriceMap.put(installment, value);
 					}

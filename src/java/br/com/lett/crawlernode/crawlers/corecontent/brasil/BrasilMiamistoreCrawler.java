@@ -391,7 +391,7 @@ public class BrasilMiamistoreCrawler extends Crawler {
         Element boleto = docJson.select(".instant-price").first();
 
         if (boleto != null) {
-          Float inCashPrice = MathUtils.parseFloat(boleto.ownText());
+          Float inCashPrice = MathUtils.parseFloatWithComma(boleto.ownText());
           prices.setBankTicketPrice(inCashPrice);
         } else {
           prices.setBankTicketPrice(price);
@@ -404,7 +404,7 @@ public class BrasilMiamistoreCrawler extends Crawler {
           Integer installment = parcels.ownText().replaceAll("[^0-9]", "").trim().isEmpty() ? null
               : Integer.parseInt(parcels.ownText().replaceAll("[^0-9]", "").trim());
 
-          Float value = MathUtils.parseFloat(parcelValue.ownText());
+          Float value = MathUtils.parseFloatWithComma(parcelValue.ownText());
 
           if (installment != null && value != null) {
             installmentPriceMap.put(installment, value);

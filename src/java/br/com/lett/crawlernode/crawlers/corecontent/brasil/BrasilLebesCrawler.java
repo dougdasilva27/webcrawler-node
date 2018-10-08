@@ -269,10 +269,10 @@ public class BrasilLebesCrawler extends Crawler {
 			if (installmentTextElement != null && installmentPriceTextElement != null) {
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentTextElement.text());
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, MathUtils.parseFloat(installmentPriceTextElement.text()));
+					installments.put(1, MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				} else {
 					installments.put(Integer.parseInt(parsedNumbers.get(0)),
-							MathUtils.parseFloat(installmentPriceTextElement.text()));
+							MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				}
 			}
 		}
@@ -334,7 +334,7 @@ public class BrasilLebesCrawler extends Crawler {
 
 		if (skuInformationJson.has("bestPriceFormated")) {
 			Float basePrice =
-					MathUtils.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+					MathUtils.parseFloatWithComma(skuInformationJson.getString("bestPriceFormated"));
 			Float discountPercentage = crawlDiscountPercentage(document);
 
 			// apply the discount on base price

@@ -196,7 +196,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
     Element priceElement = doc.select(".product-details__price span[itemprop=price]").first();
 
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
     }
 
     return price;
@@ -287,7 +287,7 @@ public class SaopauloNetfarmaCrawler extends Crawler {
           int x = text.indexOf("x") + 1;
 
           Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", ""));
-          Float value = MathUtils.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (installment > 3) {
             installmentPriceMapAmex.put(installment, value);

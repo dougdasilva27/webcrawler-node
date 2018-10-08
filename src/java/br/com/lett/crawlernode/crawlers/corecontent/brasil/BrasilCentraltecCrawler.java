@@ -121,7 +121,7 @@ public class BrasilCentraltecCrawler extends Crawler {
     Element normalPrice = document.select("#product-price-" + internalId).first();
 
     if (normalPrice != null) {
-      price = MathUtils.parseFloat(normalPrice.text());
+      price = MathUtils.parseFloatWithComma(normalPrice.text());
     }
 
     if (price == null || price <= 0) {
@@ -254,7 +254,7 @@ public class BrasilCentraltecCrawler extends Crawler {
       Element bank = doc.select(".box-central .price-box .boletoBox").first();
 
       if (bank != null) {
-        Float bankTicketPrice = MathUtils.parseFloat(bank.text());
+        Float bankTicketPrice = MathUtils.parseFloatWithComma(bank.text());
 
         if (bankTicketPrice == null || bankTicketPrice <= 0) {
           bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(price - (Float.parseFloat(bank.attr("data-desconto")) * price));
@@ -275,7 +275,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 
           if (parcela != null && priceElement != null) {
             String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloat(priceElement.ownText());
+            Float value = MathUtils.parseFloatWithComma(priceElement.ownText());
 
             if (!text.isEmpty() && value != null && value > 0) {
               installmentPriceMap.put(Integer.parseInt(text), value);
@@ -300,7 +300,7 @@ public class BrasilCentraltecCrawler extends Crawler {
 
           if (parcela != null && priceElement != null) {
             String text = parcela.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloat(priceElement.text());
+            Float value = MathUtils.parseFloatWithComma(priceElement.text());
 
             if (!text.isEmpty() && value != null && value > 0) {
               installmentPriceMap.put(Integer.parseInt(text), value);

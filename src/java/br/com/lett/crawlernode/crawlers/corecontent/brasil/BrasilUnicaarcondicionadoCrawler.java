@@ -215,7 +215,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
       if (firstInstallment != null) {
         String line = firstInstallment.text().trim(); // 1x de R$2.399,00 sem juros
         int indexOfX = line.indexOf('x') + 1;
-        prices.setBankTicketPrice(MathUtils.parseFloat(line.substring(indexOfX, line.length())));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(line.substring(indexOfX, line.length())));
       }
     }
 

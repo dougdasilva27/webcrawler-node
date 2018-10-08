@@ -214,7 +214,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       String nameSeller = json.getString("seller").toLowerCase().trim();
 
       if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
-        Float price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
+        Float price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
         marketplace.put(nameSeller, price);
       }
     }
@@ -294,12 +294,12 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       if (jsonSku.has("listPriceFormated")) {
-        prices.setPriceFrom(MathUtils.parseDouble(jsonSku.get("listPriceFormated").toString()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));
       }
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bank.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
       } else {
         prices.setBankTicketPrice(price);
       }

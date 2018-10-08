@@ -185,7 +185,7 @@ public class SaopauloDicicoCrawler extends Crawler {
 
     Element salePriceElement = doc.selectFirst(".t-black.bold.price");
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;

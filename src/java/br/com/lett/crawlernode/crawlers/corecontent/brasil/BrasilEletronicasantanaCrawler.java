@@ -214,7 +214,7 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 	private Float crawlPrice(JSONObject json, boolean available) {
 		Float price = null;
 		if (json.has("bestPriceFormated") && available) {
-			price = MathUtils.parseFloat(json.getString("bestPriceFormated"));
+			price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
 		}
 		return price;
 	}
@@ -282,7 +282,7 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 		
 		// bank slip
 		if (skuIsAvailable && skuInformationJson.has("bestPriceFormated")) {
-			Float basePrice = MathUtils.parseFloat(skuInformationJson.getString("bestPriceFormated"));
+			Float basePrice = MathUtils.parseFloatWithComma(skuInformationJson.getString("bestPriceFormated"));
 			bankSlipPrice = MathUtils.normalizeTwoDecimalPlacesUp(basePrice - (BANK_SLIP_DISCOUNT_RATE * basePrice));
 		}
 		
@@ -306,9 +306,9 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 			if (installmentTextElement != null && installmentPriceTextElement != null) {
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentTextElement.text());
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, MathUtils.parseFloat(installmentPriceTextElement.text()));
+					installments.put(1, MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceTextElement.text()));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				}
 			}
 		}

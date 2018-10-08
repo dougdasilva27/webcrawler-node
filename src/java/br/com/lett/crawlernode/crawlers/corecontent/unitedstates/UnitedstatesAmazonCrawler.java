@@ -187,19 +187,19 @@ public class UnitedstatesAmazonCrawler extends Crawler {
     Element foodPrice = document.select("#priceblock_ourprice").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloatUSA(salePriceElement.text().trim());
+      price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
       salePriceElement = document.select("#buybox .a-color-price").first();
 
       if (salePriceElement != null) {
-        price = MathUtils.parseFloatUSA(salePriceElement.ownText().trim());
+        price = MathUtils.parseFloatWithDots(salePriceElement.ownText().trim());
       }
     }
 
     if (price == null && specialPrice != null) {
-      price = MathUtils.parseFloatUSA(specialPrice.ownText().trim());
+      price = MathUtils.parseFloatWithDots(specialPrice.ownText().trim());
     } else if (price == null && foodPrice != null) {
-      price = MathUtils.parseFloatUSA(foodPrice.ownText());
+      price = MathUtils.parseFloatWithDots(foodPrice.ownText());
     }
 
     return price;
@@ -298,7 +298,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
         if ((name != null || nameImg != null) && priceS != null) {
           String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase() : name.text().trim().toLowerCase();
-          Float partnerPrice = MathUtils.parseFloatUSA(priceS.ownText());
+          Float partnerPrice = MathUtils.parseFloatWithDots(priceS.ownText());
 
           if (partnerName.equals(principalSellerFrontPage)) {
             marketplace.put(partnerName, crawlPrices(doc, null));
@@ -509,7 +509,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
         if (info.size() > 1) {
           String installment = info.get(0).ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(info.get(1).ownText());
+          Float value = MathUtils.parseFloatWithComma(info.get(1).ownText());
 
           if (!installment.isEmpty() && value != null) {
             installments.put(Integer.parseInt(installment), value);

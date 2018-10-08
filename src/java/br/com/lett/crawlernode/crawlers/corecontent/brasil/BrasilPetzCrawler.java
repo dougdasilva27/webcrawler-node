@@ -229,7 +229,7 @@ public class BrasilPetzCrawler extends Crawler {
     Element priceElement = doc.select(".price-current").first();
 
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
     }
 
     return price;
@@ -327,7 +327,7 @@ public class BrasilPetzCrawler extends Crawler {
       Element priceFrom = doc.select(".de-riscado").first();
 
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloat(priceFrom.ownText()).doubleValue()));
+        prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloatWithComma(priceFrom.ownText()).doubleValue()));
       }
 
       Map<Integer, Float> mapInstallments = new HashMap<>();

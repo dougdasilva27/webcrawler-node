@@ -333,14 +333,14 @@ public class SaopauloWalmartCrawler extends Crawler {
         Element priceElement = e.select(".product-price .product-price-value").first();
 
         if (priceElement != null) {
-          Float price = MathUtils.parseFloat(priceElement.text().trim());
+          Float price = MathUtils.parseFloatWithComma(priceElement.text().trim());
           installmentPriceMap.put(1, price);
           prices.setBankTicketPrice(price);
         }
 
         Element priceFrom = e.select(".product-price-old").first();
         if (priceFrom != null) {
-          prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
         }
 
         Element installmentElement = e.select(".product-price-installment").first();
@@ -352,7 +352,7 @@ public class SaopauloWalmartCrawler extends Crawler {
           Element valueElement = installmentElement.select(".product-price-price").first();
 
           if (valueElement != null) {
-            Float value = MathUtils.parseFloat(valueElement.text());
+            Float value = MathUtils.parseFloatWithComma(valueElement.text());
 
             installmentPriceMap.put(installment, value);
           }

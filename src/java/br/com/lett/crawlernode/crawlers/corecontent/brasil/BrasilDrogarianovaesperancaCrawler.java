@@ -116,7 +116,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     return price;
@@ -219,7 +219,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
     if (price != null) {
       Element priceFrom = doc.select(".preco-de").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       String pricesUrl = "https://www.drogarianovaesperanca.com.br/Funcoes_Ajax.aspx/CarregaFormaPagamento";
@@ -305,7 +305,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
           if (installmentJson.has("TotalParcela")) {
             String parcelText = installmentJson.getString("TotalParcela").trim();
-            Float value = parcelText.isEmpty() ? null : MathUtils.parseFloat(parcelText);
+            Float value = parcelText.isEmpty() ? null : MathUtils.parseFloatWithComma(parcelText);
 
             if (value != null) {
               installmentPriceMap.put(installment, value);

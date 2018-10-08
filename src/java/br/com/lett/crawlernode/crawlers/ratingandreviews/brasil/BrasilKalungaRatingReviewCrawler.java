@@ -71,7 +71,7 @@ public class BrasilKalungaRatingReviewCrawler extends RatingReviewCrawler {
 			String text = rating.ownText().trim();
 			
 			if(!text.isEmpty()) {
-				avgRating = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloat(text).doubleValue());
+				avgRating = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloatWithComma(text).doubleValue());
 			}
 		}
 

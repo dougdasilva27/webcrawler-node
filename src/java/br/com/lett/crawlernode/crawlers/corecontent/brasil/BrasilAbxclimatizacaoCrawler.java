@@ -293,7 +293,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 			Element priceBoleto = doc.select(".precoboleto span").first();
 			
 			if(priceBoleto != null) {
-				prices.setBankTicketPrice(MathUtils.parseFloat(priceBoleto.text()));
+				prices.setBankTicketPrice(MathUtils.parseFloatWithComma(priceBoleto.text()));
 			} else {
 				prices.setBankTicketPrice(price);
 			}
@@ -334,7 +334,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 					Element installmentElement = finalPriceParc.select("span").first();
 					
 					if(installmentElement != null) {
-						Float priceInstallment = MathUtils.parseFloat(installmentElement.text());
+						Float priceInstallment = MathUtils.parseFloatWithComma(installmentElement.text());
 						
 						return new Pair<Integer, Float>(numberInstallments, priceInstallment);
 					} 

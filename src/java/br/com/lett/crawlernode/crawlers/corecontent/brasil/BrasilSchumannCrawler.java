@@ -413,7 +413,7 @@ public class BrasilSchumannCrawler extends Crawler {
       Element boleto = docJson.select(".instant-price").first();
 
       if (boleto != null) {
-        Float inCashPrice = MathUtils.parseFloat(boleto.text());
+        Float inCashPrice = MathUtils.parseFloatWithComma(boleto.text());
         installmentPriceMap.put(1, inCashPrice);
         prices.setBankTicketPrice(inCashPrice);
       }
@@ -423,7 +423,7 @@ public class BrasilSchumannCrawler extends Crawler {
 
       if (parcels != null && parcelValue != null) {
         String installment = parcels.ownText().replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloat(parcelValue.ownText());
+        Float value = MathUtils.parseFloatWithComma(parcelValue.ownText());
 
         if (!installment.isEmpty() && value != null) {
           installmentPriceMap.put(Integer.parseInt(installment), value);
@@ -437,7 +437,7 @@ public class BrasilSchumannCrawler extends Crawler {
 
       Element priceFrom = docJson.select(".list-price > span").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
     }
 

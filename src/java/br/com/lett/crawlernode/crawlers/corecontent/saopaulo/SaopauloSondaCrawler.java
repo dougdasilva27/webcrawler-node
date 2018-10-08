@@ -100,7 +100,7 @@ public class SaopauloSondaCrawler extends Crawler {
     Element salePriceElement = document.select(".price-full .price strong").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -203,7 +203,7 @@ public class SaopauloSondaCrawler extends Crawler {
       Element sondaElement = doc.select(".cartao-sonda .price-full .price strong span").first();
 
       if (sondaElement != null) {
-        Float sondaPrice = MathUtils.parseFloat(sondaElement.ownText());
+        Float sondaPrice = MathUtils.parseFloatWithComma(sondaElement.ownText());
 
         Map<Integer, Float> installmentPriceMapSonda = new TreeMap<>();
         installmentPriceMapSonda.put(1, sondaPrice);

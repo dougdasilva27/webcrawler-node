@@ -211,7 +211,7 @@ public class BrasilWebarcondicionadoCrawler extends Crawler {
       
       Element price1x = price.select("span").first();
       if (price1x != null) {
-        installmentPriceMap.put(1, MathUtils.parseFloat(price1x.ownText()));
+        installmentPriceMap.put(1, MathUtils.parseFloatWithComma(price1x.ownText()));
       }
       
       Element installmentsElement = price.select("span").last();
@@ -223,7 +223,7 @@ public class BrasilWebarcondicionadoCrawler extends Crawler {
           int x = textInstallment.indexOf("de") + 2;
           
           String installment = textInstallment.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(textInstallment.substring(x));
+          Float value = MathUtils.parseFloatWithComma(textInstallment.substring(x));
           
           if (!installment.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installment), value);

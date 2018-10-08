@@ -270,7 +270,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 			Element aVista = doc.select(".preco0 span[itemprop=price]").first();
 			
 			if(aVista != null){
-				Float bankTicketPrice = MathUtils.parseFloat(aVista.text().trim());
+				Float bankTicketPrice = MathUtils.parseFloatWithComma(aVista.text().trim());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
 			
@@ -284,7 +284,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 				int x = text.indexOf("x");
 				
 				Integer installment = Integer.parseInt(text.substring(0,x).replaceAll("[^0-9]", "").trim());
-				Float value = MathUtils.parseFloat(text.substring(x+1));
+				Float value = MathUtils.parseFloatWithComma(text.substring(x+1));
 					
 				installmentPriceMap.put(installment, value);
 			}

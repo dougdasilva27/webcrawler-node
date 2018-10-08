@@ -167,7 +167,7 @@ public class BrasilHpCrawler extends Crawler {
     if (available) {
       Element elementPrice = document.select("i.sale.price").first();
       if (elementPrice != null) {
-        price = MathUtils.parseFloat(elementPrice.ownText());
+        price = MathUtils.parseFloatWithComma(elementPrice.ownText());
       }
     }
     
@@ -192,7 +192,7 @@ public class BrasilHpCrawler extends Crawler {
       Element discount = doc.select(".price.discount").first();
       
       if (discount != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(discount.text()));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(discount.text()));
       } else {
         prices.setBankTicketPrice(price);
       }
@@ -207,7 +207,7 @@ public class BrasilHpCrawler extends Crawler {
         
         if (!parcel.isEmpty() && valueElement != null) {
           Integer installment = Integer.parseInt(parcel);
-          Float value = MathUtils.parseFloat(valueElement.ownText());
+          Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
           
           installmentsMap.put(installment, value);
         }

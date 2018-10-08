@@ -161,7 +161,7 @@ public class BrasilEfacilCrawler extends Crawler {
           Element priceElement = doc.select(".priceby span[itemprop=price]").first();
 
           if (priceElement != null) {
-            priceBank = MathUtils.parseFloat(priceElement.ownText());
+            priceBank = MathUtils.parseFloatWithComma(priceElement.ownText());
           }
 
 

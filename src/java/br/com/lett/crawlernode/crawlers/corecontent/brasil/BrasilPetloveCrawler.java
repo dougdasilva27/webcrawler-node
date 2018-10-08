@@ -264,7 +264,7 @@ public class BrasilPetloveCrawler extends Crawler {
 
         if (bestInstallment.has("count") && bestInstallment.has("display_amount")) {
           Integer installment = bestInstallment.getInt("count");
-          Float value = MathUtils.parseFloat(bestInstallment.getString("display_amount"));
+          Float value = MathUtils.parseFloatWithComma(bestInstallment.getString("display_amount"));
 
           if (value != null) {
             mapInstallments.put(installment, value);

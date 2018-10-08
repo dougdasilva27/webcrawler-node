@@ -143,9 +143,9 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
     Element specialPrice = doc.select(".special-price .price").first();
 
     if (specialPrice != null) {
-      price = MathUtils.parseFloat(specialPrice.ownText());
+      price = MathUtils.parseFloatWithComma(specialPrice.ownText());
     } else if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -228,7 +228,7 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
     if (price != null) {
       Element priceOld = doc.select(".old-price").first();
       if (priceOld != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceOld.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceOld.text()));
       }
 
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();

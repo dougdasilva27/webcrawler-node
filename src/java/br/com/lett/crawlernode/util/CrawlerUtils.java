@@ -63,7 +63,7 @@ public class CrawlerUtils {
 
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
-      price = MathUtils.parseFloat(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+      price = MathUtils.parseFloatWithComma(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
     return price;
@@ -82,7 +82,7 @@ public class CrawlerUtils {
 
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
-      price = MathUtils.parseDouble(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+      price = MathUtils.parseDoubleWithComma(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
     return price;
@@ -738,7 +738,7 @@ public class CrawlerUtils {
         int x = text.indexOf('x');
 
         String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloat(text.substring(x));
+        Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
         if (!installmentNumber.isEmpty() && value != null) {
           pair.set(Integer.parseInt(installmentNumber), value);

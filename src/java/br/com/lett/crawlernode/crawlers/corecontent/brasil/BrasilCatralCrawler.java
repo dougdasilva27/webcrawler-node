@@ -296,9 +296,9 @@ public class BrasilCatralCrawler extends Crawler {
 
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, MathUtils.parseFloat(installPriceText));
+					installments.put(1, MathUtils.parseFloatWithComma(installPriceText));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installPriceText));
 				}
 			}
 		}
@@ -325,7 +325,7 @@ public class BrasilCatralCrawler extends Crawler {
 
 		if (available) {
 			if (jsonSku.has("bestPriceFormated") && available) {
-				Float basePrice = MathUtils.parseFloat(jsonSku.getString("bestPriceFormated"));
+				Float basePrice = MathUtils.parseFloatWithComma(jsonSku.getString("bestPriceFormated"));
 				Float discountPercentage = crawlDiscountPercentage(document);
 
 				// apply the discount on base price

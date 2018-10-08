@@ -245,7 +245,7 @@ public class BrasilDufrioCrawler extends Crawler {
       String priceText = salePriceElement.text().toLowerCase();
 
       if (!priceText.contains("de")) {
-        price = MathUtils.parseFloat(priceText);
+        price = MathUtils.parseFloatWithComma(priceText);
       } else {
         oldPrice = true;
       }
@@ -257,7 +257,7 @@ public class BrasilDufrioCrawler extends Crawler {
       salePriceElement = document.select(".boxComprarNew .boxComprarNew-t2").first();
 
       if (salePriceElement != null) {
-        price = MathUtils.parseFloat(salePriceElement.text());
+        price = MathUtils.parseFloatWithComma(salePriceElement.text());
       }
     }
 
@@ -354,7 +354,7 @@ public class BrasilDufrioCrawler extends Crawler {
           int x = text.indexOf("ou") + 2;
           int y = text.indexOf("no", x);
 
-          Float bankTicketPrice = MathUtils.parseFloat(text.substring(x, y));
+          Float bankTicketPrice = MathUtils.parseFloatWithComma(text.substring(x, y));
           prices.setBankTicketPrice(bankTicketPrice);
         }
       }
@@ -369,7 +369,7 @@ public class BrasilDufrioCrawler extends Crawler {
             int x = text.indexOf("ou") + 2;
             int y = text.indexOf("no", x);
 
-            Float bankTicketPrice = MathUtils.parseFloat(text.substring(x, y));
+            Float bankTicketPrice = MathUtils.parseFloatWithComma(text.substring(x, y));
             prices.setBankTicketPrice(bankTicketPrice);
           }
         }
@@ -388,11 +388,11 @@ public class BrasilDufrioCrawler extends Crawler {
             int x = parcelText.indexOf('x');
             int y = parcelText.indexOf('(');
 
-            Float parcelPrice = MathUtils.parseFloat(parcelText.substring(x, y));
+            Float parcelPrice = MathUtils.parseFloatWithComma(parcelText.substring(x, y));
 
             installmentPriceMap.put(parcel, parcelPrice);
           } else {
-            Float parcelPrice = MathUtils.parseFloat(parcelText.split("x")[1]);
+            Float parcelPrice = MathUtils.parseFloatWithComma(parcelText.split("x")[1]);
             installmentPriceMap.put(parcel, parcelPrice);
           }
         }

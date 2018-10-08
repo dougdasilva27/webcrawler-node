@@ -228,7 +228,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
       // bank ticket
       Element bankTicketPriceElement = document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
       if (bankTicketPriceElement != null) {
-        bankTicketPrice = MathUtils.parseFloat(bankTicketPriceElement.text());
+        bankTicketPrice = MathUtils.parseFloatWithComma(bankTicketPriceElement.text());
       }
 
       // card payment options
@@ -254,7 +254,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
         // installment price is the last <b></b> child element
         Element installmentPriceElement = installmentElement.select("b").last();
         if (installmentPriceElement != null) {
-          installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+          installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
         }
 
         installments.put(installmentNumber, installmentPrice);

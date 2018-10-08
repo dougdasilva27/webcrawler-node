@@ -135,9 +135,9 @@ public class BrasilEnutriCrawler extends Crawler {
     Element elementSpecialPrice = doc.selectFirst(".product-infos .product-discount .price");
 
     if (elementPrice != null) {
-      price = MathUtils.parseFloat(elementPrice.text());
+      price = MathUtils.parseFloatWithComma(elementPrice.text());
     } else if (elementSpecialPrice != null) {
-      price = MathUtils.parseFloat(elementSpecialPrice.ownText());
+      price = MathUtils.parseFloatWithComma(elementSpecialPrice.ownText());
     }
 
     return price;
@@ -220,7 +220,7 @@ public class BrasilEnutriCrawler extends Crawler {
       Element bank = doc.selectFirst(".product-infos .product-discount .price");
 
       if (bank != null) {
-        Float discount = MathUtils.parseFloat(bank.ownText());
+        Float discount = MathUtils.parseFloatWithComma(bank.ownText());
 
         if (discount != null) {
           prices.setBankTicketPrice(discount);

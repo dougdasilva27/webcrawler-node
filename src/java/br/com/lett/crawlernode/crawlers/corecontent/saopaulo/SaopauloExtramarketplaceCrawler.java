@@ -451,7 +451,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
     Element principalSellerPrice = doc.select(".sale.price").first();
     if (principalSellerPrice != null) {
-      marketplace.put(principalSeller, crawlPrices(doc, MathUtils.parseFloat(principalSellerPrice.ownText())));
+      marketplace.put(principalSeller, crawlPrices(doc, MathUtils.parseFloatWithComma(principalSellerPrice.ownText())));
     }
 
     for (Element linePartner : lines) {
@@ -460,7 +460,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
       if (sellerElement != null && sellerValueElement != null) {
         String partnerName = sellerElement.text().trim().toLowerCase();
-        Float partnerPrice = MathUtils.parseFloat(sellerValueElement.text());
+        Float partnerPrice = MathUtils.parseFloatWithComma(sellerValueElement.text());
 
         Prices prices = new Prices();
 
@@ -474,7 +474,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
           if (installments.size() > 1) {
             Integer installment = Integer.parseInt(installments.get(0).text().trim());
-            Float value = MathUtils.parseFloat(installments.get(1).text());
+            Float value = MathUtils.parseFloatWithComma(installments.get(1).text());
 
             installmentPriceMap.put(installment, value);
 

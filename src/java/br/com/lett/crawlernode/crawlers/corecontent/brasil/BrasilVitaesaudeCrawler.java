@@ -157,7 +157,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     // Casos que não tem preço a vista em destaque
@@ -318,7 +318,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
           Element valueElement = installmentsElement.select(".ValorProduto").first();
 
           if (valueElement != null) {
-            Float value = MathUtils.parseFloat(valueElement.ownText());
+            Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
 
             if (value != null) {
               installmentPriceMap.put(installment, value);
@@ -363,7 +363,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
             Element valueElement = installmentsElement.select(".ValorProduto").first();
 
             if (valueElement != null) {
-              Float value = MathUtils.parseFloat(valueElement.ownText());
+              Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
 
               if (value != null) {
                 installmentPriceMap.put(installment, value);

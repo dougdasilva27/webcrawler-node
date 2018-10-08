@@ -207,7 +207,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		// bank ticket
 		Element bankTicketPriceElement = document.select(".box-price div.price strong").first();
 		if (bankTicketPriceElement != null) {
-			bankTicketPrice = MathUtils.parseFloat(bankTicketPriceElement.text().trim());
+			bankTicketPrice = MathUtils.parseFloatWithComma(bankTicketPriceElement.text().trim());
 		}
 		
 		// card payment options
@@ -239,7 +239,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 			} else { // <li>2x</li>
 				installmentNumber = Integer.parseInt(parsedNumbers.get(0));
 			}
-			installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+			installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
 			
 			installments.put(installmentNumber, installmentPrice);
 		}

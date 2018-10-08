@@ -186,7 +186,7 @@ public class BrasilDafitiCrawler extends Crawler {
     Element priceElement = doc.select(".catalog-detail-price-value").first();
 
     if (priceElement != null) {
-      Float price = MathUtils.parseFloat(priceElement.ownText());
+      Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
       prices.setBankTicketPrice(price);
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
@@ -198,7 +198,7 @@ public class BrasilDafitiCrawler extends Crawler {
 
         if (installments.has("count") && installments.has("value")) {
           String installment = installments.get("count").toString().replaceAll("[^0-9]", "").trim();
-          Float priceInstallment = MathUtils.parseFloat(installments.get("value").toString());
+          Float priceInstallment = MathUtils.parseFloatWithComma(installments.get("value").toString());
 
           if (!installment.isEmpty() && priceInstallment != null) {
             mapInstallments.put(Integer.parseInt(installment), priceInstallment);

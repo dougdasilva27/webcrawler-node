@@ -342,7 +342,7 @@ public class BrasilFastshopCrawler extends Crawler {
         JSONObject priceData = jsonPrices.getJSONObject("priceData");
 
         if (priceData.has("offerPrice")) {
-          Float offerPrice = MathUtils.parseFloat(priceData.getString("offerPrice"));
+          Float offerPrice = MathUtils.parseFloatWithComma(priceData.getString("offerPrice"));
 
           // Preço de boleto e 1 vez no cartão são iguais.
           installmentPriceMap.put(1, offerPrice);
@@ -359,7 +359,7 @@ public class BrasilFastshopCrawler extends Crawler {
             int x = text.indexOf("x");
 
             Integer installment = Integer.parseInt(text.substring(0, x));
-            Float value = MathUtils.parseFloat(text.substring(x));
+            Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
             installmentPriceMap.put(installment, value);
           }
@@ -418,7 +418,7 @@ public class BrasilFastshopCrawler extends Crawler {
         if (jsonCatalog.has("totalPrice")) {
           String text = jsonCatalog.getString("totalPrice");
           if (!text.isEmpty()) {
-            price = MathUtils.parseFloat(text);
+            price = MathUtils.parseFloatWithComma(text);
           } else if (jsonCatalog.has("offerPrice")) {
             price =
                 Float.parseFloat(jsonCatalog.getString("offerPrice").trim().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));

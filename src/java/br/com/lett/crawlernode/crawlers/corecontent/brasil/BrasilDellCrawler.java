@@ -222,9 +222,9 @@ public class BrasilDellCrawler extends Crawler {
     Element specialPriceElement = doc.selectFirst("div.dellPricing > h5 > strong > span.pull-right > span"); // caso a pagina do SKU seja diferente
 
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.text());
+      price = MathUtils.parseFloatWithComma(priceElement.text());
     } else if (specialPriceElement != null) {
-      price = MathUtils.parseFloat(specialPriceElement.text());
+      price = MathUtils.parseFloatWithComma(specialPriceElement.text());
     }
 
     return price;
@@ -241,7 +241,7 @@ public class BrasilDellCrawler extends Crawler {
 
     Element priceDiv = doc.selectFirst("div.dell-pricing-total-savings-section > p > span > small");
     if (priceDiv != null) {
-      price = MathUtils.parseDouble(priceDiv.text());
+      price = MathUtils.parseDoubleWithComma(priceDiv.text());
     }
 
     return price;

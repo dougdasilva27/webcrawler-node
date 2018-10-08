@@ -230,7 +230,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
       if (priceElement != null && nameElement != null) {
         String partnerName = nameElement.text().trim().toLowerCase();
-        Float partnerPrice = MathUtils.parseFloat(priceElement.ownText());
+        Float partnerPrice = MathUtils.parseFloatWithComma(priceElement.ownText());
 
         if (!partnerName.isEmpty() && partnerPrice != null) {
           marketplace.put(partnerName, crawlPrices(doc, partnerPrice, partnerName.equals(principalSeller), internalPid));
@@ -242,7 +242,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Element priceElement = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
 
       if (priceElement != null) {
-        Float price = MathUtils.parseFloat(priceElement.ownText());
+        Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
 
         if (price != null) {
           marketplace.put(principalSeller, crawlPrices(doc, price, true, internalPid));
@@ -319,7 +319,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
             if (values.size() > 2) {
               String installment = values.get(0).ownText().replaceAll("[^0-9]", "").trim();
-              Float value = MathUtils.parseFloat(values.get(2).ownText());
+              Float value = MathUtils.parseFloatWithComma(values.get(2).ownText());
 
               if (!installment.isEmpty() && value != null) {
                 installmentsPriceMap.put(Integer.parseInt(installment), value);

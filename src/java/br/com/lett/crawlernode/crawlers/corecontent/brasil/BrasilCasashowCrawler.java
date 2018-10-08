@@ -362,7 +362,7 @@ public class BrasilCasashowCrawler extends Crawler {
 
 			Element bankTicketElement = docPrices.select("#divBoleto em").first();
 			if(bankTicketElement != null){				
-				Float bankTicketPrice = MathUtils.parseFloat(bankTicketElement.text());
+				Float bankTicketPrice = MathUtils.parseFloatWithComma(bankTicketElement.text());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
 

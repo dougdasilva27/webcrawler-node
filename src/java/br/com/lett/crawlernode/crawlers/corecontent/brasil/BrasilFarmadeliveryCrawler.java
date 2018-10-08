@@ -209,7 +209,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     if (elementPrice != null) {
       price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     } else if (elementSpecialPrice != null) {
-      price = MathUtils.parseFloat(elementSpecialPrice.ownText());
+      price = MathUtils.parseFloatWithComma(elementSpecialPrice.ownText());
     }
     
     return price;
@@ -228,13 +228,13 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       Element bankSlip = document.select(".pagamento .boleto > span").first();
       
       if (bankSlip != null) {
-        Float bankSlipPrice = MathUtils.parseFloat(bankSlip.text());
+        Float bankSlipPrice = MathUtils.parseFloatWithComma(bankSlip.text());
         prices.setBankTicketPrice(bankSlipPrice);
       }
       
       Element priceFrom = document.select(".old-price span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
       
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();

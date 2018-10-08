@@ -270,7 +270,7 @@ public class BrasilCopaferCrawler extends Crawler {
 			List<String> parsedNumbers = MathUtils.parsePositiveNumbers(maxInstallmentNumberElement.text());
 			if (parsedNumbers.size() > 0) {
 				Integer maxInstallmentNumber = Integer.parseInt(parsedNumbers.get(0));
-				Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+				Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
 				
 				installments.put(maxInstallmentNumber, installmentPrice);
 			}
@@ -291,7 +291,7 @@ public class BrasilCopaferCrawler extends Crawler {
 		Float bankSlipPrice = null;
 		Element bankSlipPriceElement = document.select("#ContentSite_divAvailable3 div.conteudo_preco_selos_detalhe #ContentSite_divAvailable .text_preco_prod_listagem_por").first();
 		if (bankSlipPriceElement != null) {
-			bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+			bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 		}
 		return bankSlipPrice;
 	}

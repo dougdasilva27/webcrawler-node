@@ -329,7 +329,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 				if (parsedNumbers.size() > 0) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-					Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.text());
+					Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
 
 					installments.put(installmentNumber, installmentPrice);
 				}
@@ -355,7 +355,7 @@ public class BrasilCdiscountCrawler extends Crawler {
 
 		Element priceElement = document.select("#ctl00_Conteudo_ctl22_precoPorValue i").first();
 		if (priceElement != null) {
-			price = MathUtils.parseFloat(priceElement.text());
+			price = MathUtils.parseFloatWithComma(priceElement.text());
 		}
 
 		return price;

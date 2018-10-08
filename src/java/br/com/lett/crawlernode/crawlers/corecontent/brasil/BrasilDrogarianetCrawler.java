@@ -126,7 +126,7 @@ public class BrasilDrogarianetCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     return price;
@@ -223,7 +223,7 @@ public class BrasilDrogarianetCrawler extends Crawler {
 
       Element priceFrom = doc.select(".PrecoDe span[id]").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Elements cards = doc.select(".CartoesParcelamento .CartaoParcelamento");
@@ -257,7 +257,7 @@ public class BrasilDrogarianetCrawler extends Crawler {
 
         if (specialInstallment.size() > 1) {
           String installment = specialInstallment.get(0).ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(specialInstallment.get(1).ownText());
+          Float value = MathUtils.parseFloatWithComma(specialInstallment.get(1).ownText());
 
           if (!installment.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installment), value);

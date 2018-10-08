@@ -305,7 +305,7 @@ public class BrasilLojasbeckerCrawler extends Crawler {
 				Element installmentValue = e.select("strong").first();
 				
 				if(installmentValue != null){
-					Float value = MathUtils.parseFloat(installmentValue.text());
+					Float value = MathUtils.parseFloatWithComma(installmentValue.text());
 					
 					installmentPriceMap.put(installment, value);
 				}

@@ -97,7 +97,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
     Element priceElement = doc.selectFirst(".price .sale[itemprop=\"price\"]");
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
     }
 
     return price;
@@ -316,12 +316,12 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
     Element priceFrom = doc.select(".list-price .list").first();
     if (priceFrom != null) {
-      prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
     }
 
     Element bankTicket = doc.selectFirst(".price .savings b");
     if (bankTicket != null) {
-      prices.setBankTicketPrice(MathUtils.parseFloat(bankTicket.ownText()));
+      prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bankTicket.ownText()));
     } else {
       prices.setBankTicketPrice(price);
     }
@@ -354,14 +354,14 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
           for (Element e : cardPriceElements) {
             String text = e.ownText().toLowerCase();
             if (text.contains("vista")) {
-              installmentPriceMap.put(1, MathUtils.parseFloat(text));
+              installmentPriceMap.put(1, MathUtils.parseFloatWithComma(text));
             } else if (text.contains("x") && text.contains("(")) {
               int x = text.indexOf('x');
               int y = text.indexOf('(');
 
               String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
               if (!installment.isEmpty()) {
-                installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloat(text.substring(x, y)));
+                installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloatWithComma(text.substring(x, y)));
               }
             }
           }

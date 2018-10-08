@@ -261,7 +261,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 			Float bankSlipPrice = null;
 			Element bankSlipPriceElement = document.select("#navpa ul.Menupa div.bcaa b").first();
 			if (bankSlipPriceElement != null) {
-				bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+				bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 				prices.setBankTicketPrice(bankSlipPrice);
 			}
 
@@ -275,7 +275,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 				List<String> parsedNumbers = MathUtils.parsePositiveNumbers(installmentNumberElement.text());				
 				if (!parsedNumbers.isEmpty()) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-					Float installmentPrice = MathUtils.parseFloat(installmentPriceElement.ownText());
+					Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.ownText());
 					
 					installments.put(installmentNumber, installmentPrice);
 				}

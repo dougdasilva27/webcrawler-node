@@ -192,7 +192,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     if (price != null) {
       Element priceFrom = doc.select(".d-block.box-produto__texto-tachado").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
 
       Map<Integer, Float> installmentsPriceMap = new HashMap<>();

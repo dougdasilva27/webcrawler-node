@@ -351,9 +351,9 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 				if (parsedNumbers.size() == 0) {
-					installments.put(1, MathUtils.parseFloat(installmentPriceText));
+					installments.put(1, MathUtils.parseFloatWithComma(installmentPriceText));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceText));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceText));
 				}
 			}
 		}
@@ -489,7 +489,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
 		Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por .microFormatoProduto").first();
 		if(elementPrice != null) {
-			price = MathUtils.parseFloat(elementPrice.text());
+			price = MathUtils.parseFloatWithComma(elementPrice.text());
 		}
 
 		return price;

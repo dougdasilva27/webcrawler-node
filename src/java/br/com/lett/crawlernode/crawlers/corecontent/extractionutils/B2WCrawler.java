@@ -157,7 +157,7 @@ public class B2WCrawler {
 
             if (marketArrays.length() == 1 && seller.has("priceFrom")) {
               String text = seller.get("priceFrom").toString();
-              prices.setPriceFrom(MathUtils.parseDouble(text));
+              prices.setPriceFrom(MathUtils.parseDoubleWithComma(text));
             }
 
             marketplaces.put(sellerName, prices);

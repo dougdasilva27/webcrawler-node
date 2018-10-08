@@ -216,7 +216,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
       Element priceFrom = doc.select(".skuListPrice").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       installmentPriceMap.put(1, price);

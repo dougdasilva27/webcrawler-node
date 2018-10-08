@@ -160,7 +160,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
     Float price = null;
 
     if (json.has("price")) {
-      price = MathUtils.parseFloat(json.getString("discountPrice"));
+      price = MathUtils.parseFloatWithComma(json.getString("discountPrice"));
     }
 
     return price;

@@ -113,7 +113,7 @@ public class BrasilLivrariaculturaCrawler extends Crawler {
 
     Element salePriceElement = document.select(".price").first();
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -211,7 +211,7 @@ public class BrasilLivrariaculturaCrawler extends Crawler {
 
       Element priceFrom = doc.select(".price-original").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
 
       Element installments = doc.select(".installments").first();
@@ -223,7 +223,7 @@ public class BrasilLivrariaculturaCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(text.substring(x).split("sem")[0]);
+          Float value = MathUtils.parseFloatWithComma(text.substring(x).split("sem")[0]);
 
           if (!installment.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(installment), value);

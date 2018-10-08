@@ -121,12 +121,12 @@ public class BrasilRamsonsCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.ownText();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     } else {
       salePriceElement = document.select("#lblPreco.regular").first();
       if (salePriceElement != null) {
         priceText = salePriceElement.ownText();
-        price = MathUtils.parseFloat(priceText);
+        price = MathUtils.parseFloatWithComma(priceText);
       }
     }
 
@@ -237,7 +237,7 @@ public class BrasilRamsonsCrawler extends Crawler {
         String priceVistaString = vista.ownText();
 
         if (!priceVistaString.isEmpty()) {
-          Float priceVista = MathUtils.parseFloat(priceVistaString);
+          Float priceVista = MathUtils.parseFloatWithComma(priceVistaString);
 
           prices.setBankTicketPrice(priceVista);
           installmentPriceMap.put(1, priceVista);
@@ -261,7 +261,7 @@ public class BrasilRamsonsCrawler extends Crawler {
           Element installmentValue = installments.select("#lblParcelamento2 strong").first();
 
           if (installmentValue != null) {
-            Float priceInstallment = MathUtils.parseFloat(installmentValue.ownText());
+            Float priceInstallment = MathUtils.parseFloatWithComma(installmentValue.ownText());
 
             installmentPriceMap.put(installment, priceInstallment);
           }
@@ -271,7 +271,7 @@ public class BrasilRamsonsCrawler extends Crawler {
 
         if (secondInstallment.size() >= 2) {
           Integer installment = Integer.parseInt(secondInstallment.get(0).text().replaceAll("[^0-9]", ""));
-          Float priceInstallment = MathUtils.parseFloat(secondInstallment.get(1).text());
+          Float priceInstallment = MathUtils.parseFloatWithComma(secondInstallment.get(1).text());
 
           installmentPriceMap.put(installment, priceInstallment);
         }

@@ -168,7 +168,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     Element salePriceElement = document.select(".product_price b font").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -265,7 +265,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
       Element priceFrom = doc.select(".product_price s font").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Element installments = doc.select(".product_price > font").first();
@@ -277,7 +277,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
           int x = text.indexOf('x');
 
           String parcel = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(text.substring(x));
+          Float value = MathUtils.parseFloatWithComma(text.substring(x));
 
           if (!parcel.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(parcel), value);

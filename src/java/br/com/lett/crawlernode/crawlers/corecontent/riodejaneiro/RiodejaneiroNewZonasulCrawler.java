@@ -158,12 +158,12 @@ public class RiodejaneiroNewZonasulCrawler {
     Element priceElement = doc.selectFirst(".content_price > div.price_desconto");
 
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
     } else {
       Element normalPrice = doc.selectFirst(".content_price > div.price");
 
       if (normalPrice != null) {
-        price = MathUtils.parseFloat(normalPrice.ownText());
+        price = MathUtils.parseFloatWithComma(normalPrice.ownText());
       }
     }
 
@@ -181,7 +181,7 @@ public class RiodejaneiroNewZonasulCrawler {
 
     Element priceDiv = doc.selectFirst(".oferta .content_price > div.price");
     if (priceDiv != null) {
-      price = MathUtils.parseDouble(priceDiv.ownText());
+      price = MathUtils.parseDoubleWithComma(priceDiv.ownText());
     }
 
     return price;

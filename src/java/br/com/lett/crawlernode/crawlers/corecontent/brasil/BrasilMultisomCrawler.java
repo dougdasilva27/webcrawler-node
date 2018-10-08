@@ -313,7 +313,7 @@ public class BrasilMultisomCrawler extends Crawler {
 				if (!installmentNumberText.isEmpty() && !installmentPriceText.isEmpty()) {
 					List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
 					if (parsedNumbers.size() > 0) {
-						installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceText));
+						installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceText));
 					}
 				}
 			}
@@ -336,7 +336,7 @@ public class BrasilMultisomCrawler extends Crawler {
 		Float bankSlipPrice = null;
 		Element bankSlipPriceElement = document.select(".productRight small strong").first();
 		if (bankSlipPriceElement != null) {
-			bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+			bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 		}
 		return bankSlipPrice;
 	}

@@ -488,7 +488,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 				Element boleto = docJson.select(".instant-price").first();
 				
 				if(boleto != null){
-					Float inCashPrice = MathUtils.parseFloat(boleto.text());
+					Float inCashPrice = MathUtils.parseFloatWithComma(boleto.text());
 					prices.setBankTicketPrice(inCashPrice);
 				}
 				
@@ -568,14 +568,14 @@ public class BrasilEstrela10Crawler extends Crawler {
 				String text = e.text().toLowerCase();
 				
 				if(text.contains("vista")){
-					Float value = MathUtils.parseFloat(text);
+					Float value = MathUtils.parseFloatWithComma(text);
 					mapInstallments.put(1, value);
 				} else {
 					int x = text.indexOf("x")+1;
 					int y = text.indexOf("juros", x);
 					
 					Integer installment = Integer.parseInt(text.substring(0, x).replaceAll("[^0-9]", "").trim());
-					Float value = MathUtils.parseFloat(text.substring(x, y));
+					Float value = MathUtils.parseFloatWithComma(text.substring(x, y));
 					
 					mapInstallments.put(installment, value);
 				}

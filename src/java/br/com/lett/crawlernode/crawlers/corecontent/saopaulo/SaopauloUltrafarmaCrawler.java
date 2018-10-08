@@ -87,7 +87,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select(".preco-por-deta").first();
       if (elementPrice != null) {
-        price = MathUtils.parseFloat(elementPrice.text());
+        price = MathUtils.parseFloatWithComma(elementPrice.text());
       }
 
       // Categorias
@@ -215,7 +215,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
       Element priceFrom = doc.select(".preco-de-deta").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".bloco-produto-detalhe [class^=parcele]", doc, false);

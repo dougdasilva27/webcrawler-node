@@ -244,7 +244,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 			// bank slip
 			Element bankSlipPriceElement = paymentOptionsDocument.select("#divBoleto #ltlPrecoWrapper em").first();
 			if (bankSlipPriceElement != null) {
-				Float bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+				Float bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 				prices.setBankTicketPrice(bankSlipPrice);
 			}
 			
@@ -279,9 +279,9 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 			if (installmentTextElement != null && installmentPriceTextElement != null) {
 				List<String> parsedNumbers = MathUtils.parseNumbers(installmentTextElement.text());
 				if (parsedNumbers.size() == 0) { // à vista
-					installments.put(1, MathUtils.parseFloat(installmentPriceTextElement.text()));
+					installments.put(1, MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				} else {
-					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloat(installmentPriceTextElement.text()));
+					installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceTextElement.text()));
 				}
 			}
 		}

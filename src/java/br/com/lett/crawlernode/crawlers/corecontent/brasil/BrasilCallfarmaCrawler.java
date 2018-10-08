@@ -117,7 +117,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.ownText();
-      price = MathUtils.parseFloat(priceText);
+      price = MathUtils.parseFloatWithComma(priceText);
     }
 
     return price;
@@ -218,7 +218,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
 
       Element priceFrom = doc.select("#preco span").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       prices.setBankTicketPrice(price);

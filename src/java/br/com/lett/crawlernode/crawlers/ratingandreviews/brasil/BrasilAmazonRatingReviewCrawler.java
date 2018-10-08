@@ -86,7 +86,7 @@ public class BrasilAmazonRatingReviewCrawler extends RatingReviewCrawler {
           text = text.split("de")[0];
         }
 
-        Double avgDouble = MathUtils.parseDouble(text);
+        Double avgDouble = MathUtils.parseDoubleWithComma(text);
         if (avgDouble != null) {
           avgRating = avgDouble;
         }

@@ -132,7 +132,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     Element salePriceElement = document.select(".price-container span[data-price-type=finalPrice] .price").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text().trim());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text().trim());
     }
 
     return price;
@@ -254,7 +254,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       Element priceFrom = doc.select(".old-price .price").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Element installmentsElement = doc.select(".parcelamento").first();

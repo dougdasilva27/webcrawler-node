@@ -125,7 +125,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
     Element salePriceElement = document.select(".preco .precoPor").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.ownText());
+      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
     }
 
     return price;
@@ -231,7 +231,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
 
       Element priceFrom = doc.select(".boxPreco .precoDe").first();
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
       Element installmentsElement = doc.select(".precoEm").first();
@@ -239,7 +239,7 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
 
       if (installmentsElement != null && valueElement != null) {
         String parcel = installmentsElement.ownText().replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloat(valueElement.ownText());
+        Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
 
         if (!parcel.isEmpty() && value != null) {
           installmentPriceMap.put(Integer.parseInt(parcel), value);

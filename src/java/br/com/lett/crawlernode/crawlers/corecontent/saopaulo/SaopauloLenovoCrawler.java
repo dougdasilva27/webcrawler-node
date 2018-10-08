@@ -202,7 +202,7 @@ public class SaopauloLenovoCrawler extends Crawler {
 		if(available) {
 			Element elementPrice = document.select(".pricingSummary .lengthy-final-priceText").first();
 			if (elementPrice != null) {
-				price = MathUtils.parseFloat(elementPrice.ownText());
+				price = MathUtils.parseFloatWithComma(elementPrice.ownText());
 			}
 		}
 

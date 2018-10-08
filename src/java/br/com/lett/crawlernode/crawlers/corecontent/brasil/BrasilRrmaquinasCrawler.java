@@ -284,7 +284,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 				List<String> parsedNumbers = MathUtils.parsePositiveNumbers(installmentNumberText);
 				if (parsedNumbers.size() > 0) {
 					Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-					Float installmentPrice = MathUtils.parseFloat(installmentPriceText);
+					Float installmentPrice = MathUtils.parseFloatWithComma(installmentPriceText);
 					
 					installments.put(installmentNumber, installmentPrice);
 				}
@@ -309,7 +309,7 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		if (bankSlipPriceElement != null) {
 			String bankSlipPriceText = bankSlipPriceElement.text();
 			if (!bankSlipPriceText.isEmpty()) {
-				bankSlipPrice = MathUtils.parseFloat(bankSlipPriceElement.text());
+				bankSlipPrice = MathUtils.parseFloatWithComma(bankSlipPriceElement.text());
 			}
 		}
 		return bankSlipPrice;

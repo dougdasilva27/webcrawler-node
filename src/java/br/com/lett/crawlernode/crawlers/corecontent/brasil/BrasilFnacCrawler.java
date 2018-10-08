@@ -198,7 +198,7 @@ public class BrasilFnacCrawler extends Crawler {
     Element discount = doc.select(".x-product-images-group .x-flags .flag").first();
 
     if (discount != null) {
-      Float discountF = MathUtils.parseFloat(discount.ownText());
+      Float discountF = MathUtils.parseFloatWithComma(discount.ownText());
 
       if (discountF != null) {
         prices.setBankTicketPrice(price - (price * (discountF / 100f)));

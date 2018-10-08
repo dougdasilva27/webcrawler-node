@@ -101,7 +101,7 @@ public class BrasilKalungaCrawler extends Crawler {
     Element salePriceElement = document.select(".container-price h4").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
 
     return price;
@@ -209,7 +209,7 @@ public class BrasilKalungaCrawler extends Crawler {
 
         if (installmentElement != null && valueElement != null) {
           String text = installmentElement.text().replaceAll("[^0-9]", "");
-          Float value = MathUtils.parseFloat(valueElement.text());
+          Float value = MathUtils.parseFloatWithComma(valueElement.text());
 
           if (!text.isEmpty() && value != null) {
             installmentsPriceMap.put(Integer.parseInt(text), value);

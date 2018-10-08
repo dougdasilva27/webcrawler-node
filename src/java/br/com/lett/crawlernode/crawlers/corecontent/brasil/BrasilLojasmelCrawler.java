@@ -159,7 +159,7 @@ public class BrasilLojasmelCrawler extends Crawler {
     Element priceElement = doc.select(".sale_price").first();
 
     if (priceElement != null) {
-      price = MathUtils.parseFloat(priceElement.ownText());
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
     }
 
     return price;
@@ -230,7 +230,7 @@ public class BrasilLojasmelCrawler extends Crawler {
     if (price != null) {
       Element bank = doc.select(".get_price_boleto strong").first();
       if (bank != null) {
-        Float bankTicketPrice = MathUtils.parseFloat(bank.ownText());
+        Float bankTicketPrice = MathUtils.parseFloatWithComma(bank.ownText());
 
         prices.setBankTicketPrice(bankTicketPrice);
       }
@@ -252,13 +252,13 @@ public class BrasilLojasmelCrawler extends Crawler {
             int x = msg.indexOf('x');
 
             String installmentString = msg.substring(0, x).replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloat(msg.substring(x));
+            Float value = MathUtils.parseFloatWithComma(msg.substring(x));
 
             if (!installmentString.isEmpty() && value != null) {
               installmentPriceMap.put(Integer.parseInt(installmentString), value);
             }
           } else {
-            Float value = MathUtils.parseFloat(msg);
+            Float value = MathUtils.parseFloatWithComma(msg);
 
             if (value != null) {
               installmentPriceMap.put(1, value);

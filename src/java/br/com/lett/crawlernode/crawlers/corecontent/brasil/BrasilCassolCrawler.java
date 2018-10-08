@@ -204,7 +204,7 @@ public class BrasilCassolCrawler extends Crawler {
     if (price != null) {
       Element bankPrice = doc.selectFirst(".opcaoboleto .precoproduto .product-adjustedPrice");
       if (bankPrice != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloat(bankPrice.ownText()));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bankPrice.ownText()));
       } else {
         prices.setBankTicketPrice(price);
       }

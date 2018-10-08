@@ -119,7 +119,7 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
 
     Elements salePriceElement = document.select(".product-price-tag .to-price .price-integer, .product-price-tag .to-price .price-decimal");
     if (!salePriceElement.isEmpty()) {
-      price = MathUtils.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
 
     return price;
@@ -229,7 +229,7 @@ public class SaopauloLeroymerlinCrawler extends Crawler {
           String value = pricesElements.attr("data-branded-installments-value").trim();
 
           if (!installment.isEmpty() && !value.isEmpty()) {
-            installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloat(value));
+            installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloatWithComma(value));
           }
         }
       }

@@ -167,7 +167,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
     if (totalRating != null && totalRating > 0) {
       Double total = 0d;
       for (Element e : rating) {
-        Double value = MathUtils.parseDouble(e.attr("data-rating"));
+        Double value = MathUtils.parseDoubleWithComma(e.attr("data-rating"));
         
         if (value != null) {
           total += value;

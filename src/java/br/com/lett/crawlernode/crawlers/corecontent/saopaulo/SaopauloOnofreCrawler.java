@@ -264,10 +264,10 @@ public class SaopauloOnofreCrawler extends Crawler {
 
       Element priceFrom = doc.select(".price-box__old strike").first();
       if (priceFrom != null) {
-        Float priceOld = MathUtils.parseFloat(priceFrom.text());
+        Float priceOld = MathUtils.parseFloatWithComma(priceFrom.text());
 
         if (priceOld != null && !priceOld.equals(price)) {
-          prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
         }
       }
 
@@ -278,7 +278,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
         if (installmentNumber != null && installmentValue != null) {
           String parcel = installmentNumber.ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloat(installmentValue.ownText());
+          Float value = MathUtils.parseFloatWithComma(installmentValue.ownText());
 
           if (!parcel.isEmpty() && value != null) {
             installmentPriceMap.put(Integer.parseInt(parcel), value);

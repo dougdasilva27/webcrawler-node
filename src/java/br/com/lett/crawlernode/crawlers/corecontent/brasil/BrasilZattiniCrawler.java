@@ -189,7 +189,7 @@ public class BrasilZattiniCrawler extends Crawler {
     }
 
     if (priceElement != null) {
-      Float price = MathUtils.parseFloat(priceElement.ownText());
+      Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
       prices.setBankTicketPrice(price);
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
@@ -197,7 +197,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
       Element priceFrom = doc.selectFirst(".buy-box .reduce");
       if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDouble(priceFrom.ownText()));
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
       }
 
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".block.prices .installments .installments-price", doc, true);

@@ -111,7 +111,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
     Element salePriceElement = document.select(".prod_box_info_top span[itemprop=price]").first();
 
     if (salePriceElement != null) {
-      price = MathUtils.parseFloat(salePriceElement.text());
+      price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
 
     return price;
@@ -212,7 +212,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
 
     Element priceFrom = doc.select(".prod_valor_de").first();
     if (priceFrom != null) {
-      prices.setPriceFrom(MathUtils.parseDouble(priceFrom.text()));
+      prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
     }
 
     if (pricesUrl != null) {
@@ -264,7 +264,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
         int indexY = text.indexOf("(", indexX);
 
         String installmentText = text.substring(0, indexX).replaceAll("[^0-9]", "");
-        Float value = MathUtils.parseFloat(text.substring(indexX, indexY).trim());
+        Float value = MathUtils.parseFloatWithComma(text.substring(indexX, indexY).trim());
 
         if (!installmentText.isEmpty() && installmentText != "1" && value != null) {
           installmentPriceMap.put(Integer.parseInt(installmentText), value);

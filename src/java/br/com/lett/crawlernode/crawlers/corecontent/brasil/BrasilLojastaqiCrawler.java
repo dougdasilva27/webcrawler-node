@@ -382,7 +382,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 		if (price != null) {
 			Element ePrice = doc.select("#detailsSkuId_" + internalId + "  .valor span").first();
 			if (ePrice != null) {
-				Float bankTicketPrice = MathUtils.parseFloat(ePrice.text());
+				Float bankTicketPrice = MathUtils.parseFloatWithComma(ePrice.text());
 				prices.setBankTicketPrice(bankTicketPrice);
 			}
 
@@ -397,7 +397,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
 					int x = text.indexOf("x");
 
 					Integer installment = Integer.parseInt(text.substring(0, x).trim());
-					Float value = MathUtils.parseFloat(text.substring(x + 1));
+					Float value = MathUtils.parseFloatWithComma(text.substring(x + 1));
 
 					installmentPriceMap.put(installment, value);
 				}

@@ -312,7 +312,7 @@ public class BrasilAmoedoCrawler extends Crawler {
         Element installmentValue = installments.select("> span").first();
 
         if (installmentValue != null) {
-          Float value = MathUtils.parseFloat(installmentValue.text());
+          Float value = MathUtils.parseFloatWithComma(installmentValue.text());
 
           installmentPriceMap.put(installment, value);
         }
