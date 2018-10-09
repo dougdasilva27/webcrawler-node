@@ -25,7 +25,7 @@ public class ArgentinaJumboCrawler extends Crawler {
   }
 
   private static final String HOME_PAGE = "https://www.jumbo.com.ar/";
-  private static final String MAIN_SELLER_NAME_LOWER = "jumboargentina";
+  private static final String MAIN_SELLER_NAME_LOWER = "jumbo argentina";
 
   @Override
   public boolean shouldVisit() {

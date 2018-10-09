@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -29,7 +27,7 @@ public class BrasilBalarotiCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.balaroti.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "balaroti";
-  private static final String MAIN_SELLER_NAME_LOWER_2 = "balaroti comércio de materiais de construção sa";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "balaroti comÃ©rcio de materiais de construÃ§Ã£o sa";
 
   @Override
   public boolean shouldVisit() {
@@ -42,73 +40,73 @@ public class BrasilBalarotiCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-        VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, MAIN_SELLER_NAME_LOWER_2, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, MAIN_SELLER_NAME_LOWER_2, HOME_PAGE, cookies);
 
-        JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
-        String internalPid = vtexUtil.crawlInternalPid(skuJson);
-        CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
-        String description = crawlDescription(internalPid, vtexUtil);
+      String internalPid = vtexUtil.crawlInternalPid(skuJson);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      String description = crawlDescription(internalPid, vtexUtil);
 
-        // sku data in json
-        JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      // sku data in json
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
-        for (int i = 0; i < arraySkus.length(); i++) {
-          JSONObject jsonSku = arraySkus.getJSONObject(i);
+      for (int i = 0; i < arraySkus.length(); i++) {
+        JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-          String internalId = vtexUtil.crawlInternalId(jsonSku);
-          JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-          String name = vtexUtil.crawlName(jsonSku, skuJson);
-          Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-          Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, 
-        		  Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), session);
-          boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
-          String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-          String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-          Prices prices =getPrices(marketplaceMap);
-          Float price = vtexUtil.crawlMainPagePrice(prices);
-          Integer stock = vtexUtil.crawlStock(apiJSON);
+        String internalId = vtexUtil.crawlInternalId(jsonSku);
+        JSONObject apiJSON = vtexUtil.crawlApi(internalId);
+        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+        Marketplace marketplace =
+            CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), session);
+        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        Prices prices = getPrices(marketplaceMap);
+        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Integer stock = vtexUtil.crawlStock(apiJSON);
 
-          // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-              .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-              .setStock(stock).setMarketplace(marketplace).build();
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
-          products.add(product);
-        }
-
-      } else {
-        Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+        products.add(product);
       }
 
-      return products;
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
 
-  	private Prices getPrices(Map<String, Prices> marketplaceMap) {
-  		Prices prices = new Prices();
-  		
-  		if(marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)) {
-  			prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
-  		} else if(marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2)) {
-  			prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER_2);
-  		}
-  		
-  		return prices;
-  	}
+    return products;
+  }
 
-  	private String crawlDescription(String internalPid, VTEXCrawlersUtils vtexUtil) {
-  		StringBuilder description = new StringBuilder();
-  		
-  		JSONObject descriptionApi = vtexUtil.crawlDescriptionAPI(internalPid, "productId");
-  		if(descriptionApi.has("description")) {
-  			description.append(descriptionApi.get("description").toString());
-  		}
-  		
-  		return description.toString();
-  	}
-  	
-    private boolean isProductPage(Document document) {
-      return document.selectFirst(".productName") != null;
+  private Prices getPrices(Map<String, Prices> marketplaceMap) {
+    Prices prices = new Prices();
+
+    if (marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)) {
+      prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
+    } else if (marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2)) {
+      prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER_2);
     }
+
+    return prices;
+  }
+
+  private String crawlDescription(String internalPid, VTEXCrawlersUtils vtexUtil) {
+    StringBuilder description = new StringBuilder();
+
+    JSONObject descriptionApi = vtexUtil.crawlDescriptionAPI(internalPid, "productId");
+    if (descriptionApi.has("description")) {
+      description.append(descriptionApi.get("description").toString());
+    }
+
+    return description.toString();
+  }
+
+  private boolean isProductPage(Document document) {
+    return document.selectFirst(".productName") != null;
+  }
 }
