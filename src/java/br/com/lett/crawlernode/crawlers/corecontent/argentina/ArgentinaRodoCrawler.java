@@ -5,9 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,16 +23,16 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 08/10/2018
+ * Date: 10/10/2018
  * 
  * @author Gabriel Dornelas
  *
  */
-public class ArgentinaCetrogarCrawler extends Crawler {
+public class ArgentinaRodoCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.cetrogar.com.ar/";
+  private static final String HOME_PAGE = "http://www.rodo.com.ar/";
 
-  public ArgentinaCetrogarCrawler(Session session) {
+  public ArgentinaRodoCrawler(Session session) {
     super(session);
   }
 
@@ -49,15 +51,13 @@ public class ArgentinaCetrogarCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name .h1", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, false);
       Prices prices = crawlPrices(doc, price);
-      boolean available = crawlAvailability(doc);
-      CategoryCollection categories = new CategoryCollection(); // has no categories in this market
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery #image-main", Arrays.asList("src"), "https:", "cdn.cetrogar.com.ar");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(.visible):not(:first-child)",
-          Arrays.asList("src"), "https:", "cdn.cetrogar.com.ar", primaryImage);
+      boolean available = !doc.select(".product-shop .availability.in-stock").isEmpty();
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home) > a");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #image", Arrays.asList("src"), "http:", "www.rodo.com.ar");
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral"));
 
       // Creating the product
@@ -91,18 +91,30 @@ public class ArgentinaCetrogarCrawler extends Crawler {
     return internalId;
   }
 
-  private boolean crawlAvailability(Document doc) {
-    boolean available = false;
+  private String crawlSecondaryImages(Document doc, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
 
-    Element stock = doc.selectFirst(".product-shop [itemprop=availability]");
-    if (stock != null) {
-      available = stock.attr("href").toLowerCase().contains("/instock");
+    Elements imagesElement = doc.select(".more-views li img");
+
+    for (Element e : imagesElement) {
+      String image = e.attr("src").replace("thumbnail/56x", "image").replace("/thumbnail/", "/image/").trim();
+
+      if (!image.equalsIgnoreCase(primaryImage)) {
+        secondaryImagesArray.put(image);
+      }
     }
 
-    return available;
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
   }
 
   /**
+   * In the time when this crawler was made, this market hasn't installments informations
+   * 
    * @param doc
    * @param price
    * @return

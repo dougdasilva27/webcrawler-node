@@ -663,18 +663,26 @@ public class CrawlerUtils {
   }
 
   /**
-   * @deprecated use crawlCategories(Document document, String selector, boolean ignoreFirstChild)
+   * 
    * 
    * @param document
    * @param selector
    * @return
    */
   public static CategoryCollection crawlCategories(Document document, String selector) {
-    return crawlCategories(document, selector, true);
+    CategoryCollection categories = new CategoryCollection();
+    Elements elementCategories = document.select(selector);
+
+    for (Element e : elementCategories) {
+      categories.add(e.text().trim());
+    }
+
+    return categories;
   }
 
   /**
-   * 
+   * @deprecated use crawlCategories(Document document, String selector) ue :not(:first-child) to
+   *             ignore first child
    * @param document
    * @param selector
    * @param ignoreFirstChild - ignore first element from cssSelector

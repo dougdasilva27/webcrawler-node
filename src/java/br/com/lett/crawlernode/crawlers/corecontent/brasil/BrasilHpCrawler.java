@@ -18,8 +18,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -69,8 +67,6 @@ public class BrasilHpCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "HP.html");
-
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -80,7 +76,6 @@ public class BrasilHpCrawler extends Crawler {
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       Integer stock = null;
-
       Map<String, Prices> marketplaceMap = crawlMarketplace(doc);
       Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, doc);
       boolean available = crawlAvailability(marketplaceMap);
