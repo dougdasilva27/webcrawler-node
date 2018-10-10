@@ -65,10 +65,11 @@ public class B2WCrawler {
 
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
-        String name = entry.getValue().trim();
         Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
         Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = this.crawlAvailability(marketplaceMap);
+        String name = marketplaceMap.isEmpty() && skuOptions.size() == 1 && infoProductJson.has("name") ? infoProductJson.getString("name")
+            : entry.getValue().trim();
         Float variationPrice = this.crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
         Integer stock = null; // stock só tem na api
