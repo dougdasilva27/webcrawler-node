@@ -30,6 +30,27 @@ public class CrawlerUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
   public static final String CSS_SELECTOR_IGNORE_FIRST_CHILD = ":not(:first-child)";
 
+
+  /**
+   * Get Prices From marketplace Map
+   * 
+   * @param marketplaceMap
+   * @param List<String> sellers
+   * @return
+   */
+  public static Prices getPrices(Map<String, Prices> marketplaceMap, List<String> sellerList) {
+    Prices prices = new Prices();
+
+    for (String seller : sellerList) {
+      if (marketplaceMap.containsKey(seller)) {
+        prices = marketplaceMap.get(seller);
+        break;
+      }
+    }
+
+    return prices;
+  }
+
   /**
    * Scrap simple string from html
    * 
