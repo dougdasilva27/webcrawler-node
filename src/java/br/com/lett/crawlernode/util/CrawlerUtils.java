@@ -674,7 +674,7 @@ public class CrawlerUtils {
     Elements elementCategories = document.select(selector);
 
     for (Element e : elementCategories) {
-      categories.add(e.text().trim());
+      categories.add(e.text().replace(">", "").trim());
     }
 
     return categories;
