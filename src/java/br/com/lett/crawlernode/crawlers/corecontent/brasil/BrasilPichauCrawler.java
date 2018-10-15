@@ -57,7 +57,8 @@ public class BrasilPichauCrawler extends Crawler {
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-images a", Arrays.asList("href"), "https:", "www.pichau.com.br");
       String secondaryImages =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-images a", Arrays.asList("href"), "https:", "www.pichau.com.br", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-attributes", ".product-description"));
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-attributes", ".product-description")).replace("hidemobile", "");
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
