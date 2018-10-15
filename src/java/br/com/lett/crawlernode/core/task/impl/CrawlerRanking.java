@@ -42,7 +42,6 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JsonUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.URLBox;
 import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
@@ -822,22 +821,23 @@ public abstract class CrawlerRanking extends Task {
    * @param url
    */
   protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {
-    if (session instanceof RankingSession && page <= 2 && ((RankingSession) session).mustTakeAScreenshot()) {
-      String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
-
-      switch (this.currentPage) {
-        case 1:
-          this.screenshotsAddress.put(1, printUrl);
-          break;
-
-        case 2:
-          this.screenshotsAddress.put(2, printUrl);
-          break;
-
-        default:
-          break;
-      }
-    }
+    // if (session instanceof RankingSession && page <= 2 && ((RankingSession)
+    // session).mustTakeAScreenshot()) {
+    // String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
+    //
+    // switch (this.currentPage) {
+    // case 1:
+    // this.screenshotsAddress.put(1, printUrl);
+    // break;
+    //
+    // case 2:
+    // this.screenshotsAddress.put(2, printUrl);
+    // break;
+    //
+    // default:
+    // break;
+    // }
+    // }
   }
 
   public void log(String message) {
