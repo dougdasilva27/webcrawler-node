@@ -63,6 +63,10 @@ public class BrasilFastshopNewCrawler {
         if (arraySkus.length() > 1) { // In case the array only has 1 sku.
           skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null,
               session, cookies);
+
+          if (skuAPIJSON.length() < 1) {
+            skuAPIJSON = productAPIJSON;
+          }
         }
 
         String primaryImage = crawlPrimaryImage(skuAPIJSON);
@@ -306,12 +310,17 @@ public class BrasilFastshopNewCrawler {
         if (tag.has("tag")) {
           String tagBoleto = tag.getString("tag");
 
-          if (tagBoleto.contains("_boleto")) {
+          if (tagBoleto.contains("boleto_")) {
             String[] tokens = tagBoleto.split("/");
-            String priceBoleto = tokens[tokens.length - 1].split("_")[0].replaceAll("[^0-9]", "");
+            String[] splitUrl = tokens[tokens.length - 1].split("_");
 
-            if (!priceBoleto.isEmpty()) {
-              prices.setBankTicketPrice(Float.parseFloat(priceBoleto));
+            for (String s : splitUrl) {
+              String priceBoleto = s.replaceAll("[^0-9]", "");
+
+              if (!priceBoleto.isEmpty()) {
+                prices.setBankTicketPrice(Float.parseFloat(priceBoleto));
+                break;
+              }
             }
           }
         }

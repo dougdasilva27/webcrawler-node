@@ -190,7 +190,7 @@ public class BrasilFastshopCrawlerUtils {
     JSONObject jsonPrice = new JSONObject();
 
     if (available) {
-      String url = "http://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
+      String url = "https://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
           + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
 
       String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
