@@ -5,6 +5,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class RiodejaneiroSuperprixCrawler extends CrawlerRankingKeywords {
 
@@ -12,21 +13,31 @@ public class RiodejaneiroSuperprixCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private String categoryUrl;
+
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    // número de produtos por página do market
     this.pageSize = 15;
+    String url = "https://www.superprix.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20");
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+    if (this.currentPage > 1 && this.categoryUrl != null) {
+      url = this.categoryUrl + "?PageNumber=" + this.currentPage;
+    } else if (this.currentPage > 1) {
+      url += "?PageNumber=" + this.currentPage;
+    }
 
-    // monta a url com a keyword e a página
-    String url = "http://www.superprix.com.br/" + keyword + "?PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
-
-    // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
+
+    if (this.currentPage == 1) {
+      String redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
+
+      if (!url.equals(redirectUrl)) {
+        this.categoryUrl = redirectUrl;
+      }
+    }
 
     Elements products = this.currentDoc.select("div div.prateleira > ul > li[layout]");
 
