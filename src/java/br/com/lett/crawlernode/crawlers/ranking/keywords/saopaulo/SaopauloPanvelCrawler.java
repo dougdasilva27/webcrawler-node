@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -20,12 +22,10 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa="
-        + this.keywordWithoutAccents.replace(" ", "+");
+    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa=" + this.keywordEncoded;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
-
+    this.currentDoc = crawlProductsInfo(url);
     Elements products = this.currentDoc.select(".box-produto > a");
 
     if (!products.isEmpty()) {
@@ -65,5 +65,9 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     }
 
     return productUrl;
+  }
+
+  private Document crawlProductsInfo(String url) {
+    return Jsoup.parse(fetchPostFetcher(url, null, null, null));
   }
 }
