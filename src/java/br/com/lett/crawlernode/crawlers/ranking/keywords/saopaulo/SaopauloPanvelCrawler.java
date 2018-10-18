@@ -22,7 +22,8 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa=" + this.keywordEncoded;
+    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa="
+        + this.keywordWithoutAccents.replace(" ", "+");
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = crawlProductsInfo(url);
