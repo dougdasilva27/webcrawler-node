@@ -1,124 +1,107 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords{
+public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
-	public RiodejaneiroZonasulCrawler(Session session) {
-		super(session);
-	}
-	
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 15;
-	
-		// Neste market precisa de um código da busca e um código da keyword.
-		if(this.currentPage == 1){
-			//monta a url com a keyword e a página
-			String url = "https://www.zonasul.com.br/WebForms/Lista-Facetada.aspx?BuscaPor="+this.keywordEncoded;
-			
-			//chama função de pegar a url
-			this.currentDoc = fetchDocument(url);
-		} else {
-			//monta a url com o código da keyword e a página
-			String url = session.getRedirectedToURL(session.getOriginalURL()) + "&Pagina="+this.currentPage;
-			this.log("Link onde são feitos os crawlers: "+url);
-			
-			//chama função de pegar a url
-			this.currentDoc = fetchDocument(url);
-		}
-	
-		this.log("Página "+this.currentPage);
-		
-		Elements products =  this.currentDoc.select("div.prod_info a[href]");
+  public RiodejaneiroZonasulCrawler(Session session) {
+    super(session);
+  }
 
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
-				setTotalProducts();
-			}
-			
-			for(Element e: products) {
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+  @Override
+  protected void processBeforeFetch() {
+    this.cookies =
+        CrawlerUtils.fetchCookiesFromAPage("https://www.zonasul.com.br/", Arrays.asList("ASP.NET_SessionId"), "www.zonasul.com.br", "/", session);
+  }
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 40;
+    this.log("Página " + this.currentPage);
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+    this.currentDoc = fetchSearchPage();
+    Elements products = this.currentDoc.select(".item_vitrine[data-id]");
 
-				saveDataProduct(internalId, internalPid, productUrl);;
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+      for (Element e : products) {
+        String internalId = e.attr("data-id");
+        String productUrl = crawlProductUrl(e);
 
-	@Override
-	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-			
-		return false;
-	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("div.result").first();
-		
-		if(totalElement != null) {
-			try {
-				String token = totalElement.ownText();
-				int x = token.indexOf("de");
-				
-				this.totalProducts = Integer.parseInt(token.substring(x).replaceAll("[^0-9]", "").trim());
-			} catch(Exception e) {
-				this.logError(CommonMethods.getStackTrace(e));
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}	
-	}
+        saveDataProduct(internalId, null, productUrl);
 
-	private String crawlInternalId(Element e){
-		String internalId = null;
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
 
-		String[] tokens = e.attr("href").split("--");
-		internalId = tokens[tokens.length-1];
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-		return internalId;
-	}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-	private String crawlInternalPid(Element e){
-		String internalPid = null;		
-		
-		String[] tokens = e.attr("href").split("--");
-		internalPid = tokens[tokens.length-1];
-		
-		return internalPid;
-	}
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst(".result");
 
-	private String crawlProductUrl(Element e){
-		String urlProduct = e.attr("href");
+    if (totalElement != null) {
+      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
 
-		return urlProduct;
-	}
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+        this.log("Total da busca: " + this.totalProducts);
+      }
+    }
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = null;
+
+    Element link = e.selectFirst("> a");
+    if (link != null) {
+      productUrl = CrawlerUtils.sanitizeUrl(link, "href", "https:", "www.zonasul.com.br");
+    }
+
+    return productUrl;
+  }
+
+  private Document fetchSearchPage() {
+    Document doc;
+
+    String url = "https://www.zonasul.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "%20");
+
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    if (this.currentPage == 1) {
+      doc = fetchDocument(url);
+    } else {
+      String postUrl = "https://www.zonasul.com.br/Global/VitrinePaginada";
+      StringBuilder payload = new StringBuilder().append("codSubSecao=").append("&filtroNomeComposicao=").append("&numeroPagina=")
+          .append(this.currentPage).append("&ordenacao=1").append("&pagina=5").append("&subFiltros=");
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("referer", url);
+      headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+
+      doc = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders(postUrl, session, payload.toString(), cookies, 1, headers, null, null));
+    }
+
+    return doc;
+  }
 }
