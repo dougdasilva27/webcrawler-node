@@ -18,7 +18,6 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
     this.pageSize = 15;
-
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
