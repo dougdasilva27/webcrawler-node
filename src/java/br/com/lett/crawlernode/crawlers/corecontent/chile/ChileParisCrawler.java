@@ -30,10 +30,6 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-/**
- * @author gabriel
- *
- */
 public class ChileParisCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.paris.cl/";
