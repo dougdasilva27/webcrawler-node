@@ -101,27 +101,30 @@ public class ChileParisCrawler extends CrawlerRankingKeywords {
     String payload;
 
     if (this.currentPage == 1) {
-      payload = "{\"query\":{\"function_score\":{\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"function_score\":{\"query\":"
-          + "{\"multi_match\":{\"query\":\"" + this.keywordWithoutAccents
-          + "\",\"fields\":[\"name^1000\",\"brand\",\"cat_3.stop\"],\"type\":\"best_fields\","
-          + "\"operator\":\"and\"}},\"field_value_factor\":{\"field\":\"boost\",\"factor\":6}}},{\"multi_match\":{\"query\":\""
-          + this.keywordWithoutAccents + "\","
-          + "\"fields\":[\"name^8\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"or\"}},{\"span_first\":{\"match\":{\"span_term\":"
-          + "{\"name.dym\":\"" + this.keywordWithoutAccents
-          + "\"}},\"end\":1,\"boost\":2000}}],\"minimum_should_match\":\"1\"}}]}},\"boost_mode\":\"sum\","
-          + "\"field_value_factor\":{\"field\":\"boost\",\"factor\":0}}},\"size\":" + this.productsLimit + ",\"from\":" + this.arrayProducts.size()
-          + ",\"sort\":[{\"_score\":{\"order\":\"desc\"}}],"
-          + "\"aggs\":{\"specs\":{\"nested\":{\"path\":\"specs\"},\"aggs\":{\"key\":{\"terms\":{\"field\":\"specs.key\"},\"aggs\":{\"value\":"
-          + "{\"terms\":{\"field\":\"specs.value\",\"size\":100,\"order\":{\"_key\":\"asc\"}}}}}}},\"brands\":{\"terms\":"
-          + "{\"field\":\"brand.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"price\":{\"range\":{\"field\":\"price\","
-          + "\"ranges\":[{\"to\":5000},{\"from\":5001,\"to\":10000},{\"from\":10001,\"to\":20000},{\"from\":20001,\"to\":50000},"
-          + "{\"from\":50001,\"to\":100000},{\"from\":100001,\"to\":500000},{\"from\":500001,\"to\":1000000},{\"from\":1000001}]}},\"despacho\":"
-          + "{\"terms\":{\"field\":\"delivery.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"cat_1.raw\":{\"terms\":{\"field\":"
-          + "\"cat_1.raw\",\"size\":250,\"order\":{\"_key\":\"asc\"}}}}}";
+      payload = "{\"query\":{\"function_score\":{\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"function_score\":"
+          + "{\"query\":{\"multi_match\":{\"query\":\"" + this.location + "\",\"fields\":[\"name^1000\",\"brand\",\"cat_3.stop\"],"
+          + "\"type\":\"best_fields\",\"operator\":\"and\"}},\"field_value_factor\":{\"field\":\"boost\",\"factor\":6}}},{\"multi_match\":"
+          + "{\"query\":\"" + this.location + "\",\"fields\":[\"name^8\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"or\"}},"
+          + "{\"span_first\":{\"match\":{\"span_term\":{\"name.dym\":\"" + this.location
+          + "\"}},\"end\":1,\"boost\":2000}}],\"minimum_should_match\":"
+          + "\"1\"}}]}},\"boost_mode\":\"sum\",\"field_value_factor\":{\"field\":\"boost\",\"factor\":0}}},\"size\":30,\"from\":0,\"sort\":"
+          + "[{\"_score\":{\"order\":\"desc\"}}],\"aggs\":{\"specs\":{\"nested\":{\"path\":\"specs\"},\"aggs\":{\"key\":{\"terms\":{\"field\":"
+          + "\"specs.key\"},\"aggs\":{\"value\":{\"terms\":{\"field\":\"specs.value\",\"size\":100,\"order\":{\"_key\":\"asc\"}}}}}}},\"brands\":"
+          + "{\"terms\":{\"field\":\"brand.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"price\":{\"range\":{\"field\":\"price\","
+          + "\"ranges\":[{\"to\":5000},{\"from\":5001,\"to\":10000},{\"from\":10001,\"to\":20000},{\"from\":20001,\"to\":50000},{\"from\":50001,"
+          + "\"to\":100000},{\"from\":100001,\"to\":500000},{\"from\":500001,\"to\":1000000},{\"from\":1000001}]}},\"despacho\":{\"terms\":"
+          + "{\"field\":\"delivery.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"cat_1.raw\":{\"terms\":{\"field\":\"cat_1.raw\","
+          + "\"size\":250,\"order\":{\"_key\":\"asc\"}}}}}";
     } else {
       headers.put("Referer", "https://www.paris.cl/store/search?query=smartphone+blanco&sort=_score-desc&cur_pos=28");
       payload =
-          "{\"query\":{\"function_score\":{\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"function_score\":{\"query\":{\"multi_match\":{\"query\":\"smartphone blanco\",\"fields\":[\"name^1000\",\"brand\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"and\"}},\"field_value_factor\":{\"field\":\"boost\",\"factor\":6}}},{\"multi_match\":{\"query\":\"smartphone blanco\",\"fields\":[\"name^8\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"or\"}},{\"span_first\":{\"match\":{\"span_term\":{\"name.dym\":\"smartphone blanco\"}},\"end\":1,\"boost\":2000}}],\"minimum_should_match\":\"1\"}}]}},\"boost_mode\":\"sum\",\"field_value_factor\":{\"field\":\"boost\",\"factor\":0}}},\"size\":30,\"from\":30,\"sort\":[{\"_score\":{\"order\":\"desc\"}}],\"aggs\":{\"specs\":{\"nested\":{\"path\":\"specs\"},\"aggs\":{\"key\":{\"terms\":{\"field\":\"specs.key\"},\"aggs\":{\"value\":{\"terms\":{\"field\":\"specs.value\",\"size\":100,\"order\":{\"_key\":\"asc\"}}}}}}},\"brands\":{\"terms\":{\"field\":\"brand.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"price\":{\"range\":{\"field\":\"price\",\"ranges\":[{\"to\":5000},{\"from\":5001,\"to\":10000},{\"from\":10001,\"to\":20000},{\"from\":20001,\"to\":50000},{\"from\":50001,\"to\":100000},{\"from\":100001,\"to\":500000},{\"from\":500001,\"to\":1000000},{\"from\":1000001}]}},\"despacho\":{\"terms\":{\"field\":\"delivery.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}}}";
+          "{\"query\":{\"function_score\":{\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"function_score\":{\"query\":{\"multi_match\":{\"query\":\""
+              + this.location
+              + "\",\"fields\":[\"name^1000\",\"brand\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"and\"}},\"field_value_factor\":{\"field\":\"boost\",\"factor\":6}}},{\"multi_match\":{\"query\":\""
+              + this.location
+              + "\",\"fields\":[\"name^8\",\"cat_3.stop\"],\"type\":\"best_fields\",\"operator\":\"or\"}},{\"span_first\":{\"match\":{\"span_term\":{\"name.dym\":\""
+              + this.location
+              + "\"}},\"end\":1,\"boost\":2000}}],\"minimum_should_match\":\"1\"}}]}},\"boost_mode\":\"sum\",\"field_value_factor\":{\"field\":\"boost\",\"factor\":0}}},\"size\":30,\"from\":30,\"sort\":[{\"_score\":{\"order\":\"desc\"}}],\"aggs\":{\"specs\":{\"nested\":{\"path\":\"specs\"},\"aggs\":{\"key\":{\"terms\":{\"field\":\"specs.key\"},\"aggs\":{\"value\":{\"terms\":{\"field\":\"specs.value\",\"size\":100,\"order\":{\"_key\":\"asc\"}}}}}}},\"brands\":{\"terms\":{\"field\":\"brand.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}},\"price\":{\"range\":{\"field\":\"price\",\"ranges\":[{\"to\":5000},{\"from\":5001,\"to\":10000},{\"from\":10001,\"to\":20000},{\"from\":20001,\"to\":50000},{\"from\":50001,\"to\":100000},{\"from\":100001,\"to\":500000},{\"from\":500001,\"to\":1000000},{\"from\":1000001}]}},\"despacho\":{\"terms\":{\"field\":\"delivery.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}}}";
     }
 
     String content = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers,
