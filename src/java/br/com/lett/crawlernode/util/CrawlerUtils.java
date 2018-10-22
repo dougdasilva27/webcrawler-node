@@ -199,21 +199,35 @@ public class CrawlerUtils {
       String url = element.attr(att).trim();
 
       if (!url.isEmpty()) {
-
-        if (!url.startsWith("http") && url.contains(host)) {
-          sanitizedUrl.append(protocol).append(url);
-        } else if (!url.contains(host)) {
-          sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
-        } else {
-          sanitizedUrl.append(url);
-        }
-
+        sanitizedUrl.append(completeUrl(url, protocol, host));
         break;
       }
     }
 
     if (sanitizedUrl.toString().isEmpty()) {
       return null;
+    }
+
+    return sanitizedUrl.toString();
+  }
+
+  /**
+   * Complete url with host and protocol if necessary
+   * 
+   * @param url
+   * @param protocol
+   * @param host
+   * @return
+   */
+  public static String completeUrl(String url, String protocol, String host) {
+    StringBuilder sanitizedUrl = new StringBuilder();
+
+    if (!url.startsWith("http") && url.contains(host)) {
+      sanitizedUrl.append(protocol).append(url);
+    } else if (!url.contains(host) && !url.startsWith("http")) {
+      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
+    } else {
+      sanitizedUrl.append(url);
     }
 
     return sanitizedUrl.toString();
@@ -235,13 +249,7 @@ public class CrawlerUtils {
     String url = element.attr(att).trim();
 
     if (!url.isEmpty()) {
-      if (!url.startsWith("http") && url.contains(host)) {
-        sanitizedUrl.append(protocol).append(url);
-      } else if (!url.contains(host)) {
-        sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
-      } else {
-        sanitizedUrl.append(url);
-      }
+      sanitizedUrl.append(completeUrl(url, protocol, host));
     }
 
     if (sanitizedUrl.toString().isEmpty()) {
