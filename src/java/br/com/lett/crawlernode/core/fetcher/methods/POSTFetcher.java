@@ -691,6 +691,36 @@ public class POSTFetcher {
   }
 
   /**
+   * Fetch String using Fetcher
+   * 
+   * @param url
+   * @param cookies
+   * @param headers
+   * @param payload
+   * @param resquestType
+   * @param session
+   * @param dev
+   * @return
+   */
+  public static String requestUsingFetcher(String url, List<Cookie> cookies, Map<String, String> headers, String payload, String resquestType,
+      Session session, boolean dev) {
+    String response = "";
+
+    JSONObject fetcherResponse = fetcherRequest(url, cookies, headers, payload, resquestType, session, dev);
+
+    if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
+        && fetcherResponse.getInt("request_status_code") < 400) {
+      JSONObject responseJson = fetcherResponse.getJSONObject("response");
+
+      if (responseJson.has("body")) {
+        response = responseJson.get("body").toString();
+      }
+    }
+
+    return response;
+  }
+
+  /**
    * 
    * @param url
    * @param cookies
