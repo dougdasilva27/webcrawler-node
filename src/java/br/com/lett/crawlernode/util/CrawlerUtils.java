@@ -724,6 +724,12 @@ public class CrawlerUtils {
         priceDouble = ((Integer) priceObj).doubleValue();
       } else if (priceObj instanceof Double) {
         priceDouble = (Double) priceObj;
+      } else {
+        String text = priceObj.toString().replaceAll("[^0-9.]", "");
+
+        if (!text.isEmpty()) {
+          price = Float.parseFloat(text);
+        }
       }
 
       price = priceDouble != null ? MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue()) : null;
@@ -748,6 +754,12 @@ public class CrawlerUtils {
         price = ((Integer) priceObj).doubleValue();
       } else if (priceObj instanceof Double) {
         price = (Double) priceObj;
+      } else {
+        String text = priceObj.toString().replaceAll("[^0-9.]", "");
+
+        if (!text.isEmpty()) {
+          price = Double.parseDouble(text);
+        }
       }
     }
 
