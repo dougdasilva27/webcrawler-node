@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.util;
 import org.joda.time.DateTimeZone;
 
 public class DateConstants {
-	
-	public static final DateTimeZone timeZone = DateTimeZone.forID("America/Sao_Paulo");
+
+  public static final DateTimeZone timeZone = DateTimeZone.forID("America/Bahia");
 
 }
