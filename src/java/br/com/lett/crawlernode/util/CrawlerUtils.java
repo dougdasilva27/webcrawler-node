@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -646,11 +647,33 @@ public class CrawlerUtils {
    * @return
    */
   public static Float extractPriceFromPrices(Prices prices, Card card) {
+    return extractPriceFromPrices(prices, Arrays.asList(card));
+  }
+
+
+  /**
+   * 
+   * Extract 1x price from model prices
+   * 
+   * @param prices - model.Prices
+   * @param List<Card> - model.Card
+   * @return
+   */
+  public static Float extractPriceFromPrices(Prices prices, List<Card> cards) {
     Float price = null;
 
-    if (!prices.isEmpty() && prices.getCardPaymentOptions(card.toString()).containsKey(1)) {
-      Double priceDouble = prices.getCardPaymentOptions(card.toString()).get(1);
-      price = priceDouble.floatValue();
+    if (!prices.isEmpty()) {
+      Map<String, Map<Integer, Double>> cardsInstallments = prices.getInstallmentPrice();
+      for (Card card : cards) {
+        if (cardsInstallments.containsKey(card.toString())) {
+          Map<Integer, Double> installments = cardsInstallments.get(card.toString());
+          if (installments.containsKey(1)) {
+            Double priceDouble = installments.get(1);
+            price = priceDouble.floatValue();
+            break;
+          }
+        }
+      }
     }
 
     return price;

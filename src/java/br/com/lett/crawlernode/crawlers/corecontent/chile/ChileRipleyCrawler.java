@@ -36,6 +36,8 @@ public class ChileRipleyCrawler extends Crawler {
     super(session);
   }
 
+  private Map<Float, Map<Integer, Float>> installmentsMap = new HashMap<>();
+
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
@@ -70,7 +72,7 @@ public class ChileRipleyCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
         Integer stock = available ? crawlStock(skuJson) : 0;
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER));
-        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.SHOP_CARD);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.AMEX, Card.SHOP_CARD));
         String primaryImage = prodAPI.has("fullImage") ? CrawlerUtils.completeUrl(prodAPI.getString("fullImage"), "https:", "home.ripley.cl") : null;
         String secondaryImages = crawlSecondaryImages(prodAPI.has("images") ? prodAPI.getJSONArray("images") : new JSONArray(), primaryImage);
 
@@ -215,45 +217,90 @@ public class ChileRipleyCrawler extends Crawler {
 
     if (productApi.has("prices")) {
       JSONObject pricesJson = productApi.getJSONObject("prices");
+      boolean hasCardInstallment = false;
 
       if (pricesJson.has("listPrice")) {
         prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(pricesJson, "listPrice"));
       }
 
       if (pricesJson.has("offerPrice")) {
-        Map<Integer, Float> mapInstallments = new HashMap<>();
         Float value = CrawlerUtils.getFloatValueFromJSON(pricesJson, "offerPrice");
 
         if (value != null) {
-          mapInstallments.put(1, value);
+          Map<Integer, Float> mapInstallments = new HashMap<>();
+
+          if (this.installmentsMap.containsKey(value)) {
+            mapInstallments.putAll(this.installmentsMap.get(value));
+          } else {
+            mapInstallments.put(1, value);
+
+            Float value3x = setInstalmentsValeuFromAPI(3, value);
+            if (value3x != null) {
+              mapInstallments.put(3, value3x);
+            }
+
+            Float value48x = setInstalmentsValeuFromAPI(48, value);
+            if (value48x != null) {
+              mapInstallments.put(48, value48x);
+            }
+
+            this.installmentsMap.put(value, mapInstallments);
+          }
+
+          hasCardInstallment = true;
           prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
         }
       }
 
       if (pricesJson.has("cardPrice")) {
-        Map<Integer, Float> mapInstallments = new HashMap<>();
         Float value = CrawlerUtils.getFloatValueFromJSON(pricesJson, "cardPrice");
 
         if (value != null) {
-          mapInstallments.put(1, value);
+          Map<Integer, Float> mapInstallmentsShopCard = new HashMap<>();
 
-          Float value3x = crawlInstallmentValueFromAPI(3, value);
-          if (value3x != null) {
-            mapInstallments.put(3, value3x);
+          if (this.installmentsMap.containsKey(value)) {
+            mapInstallmentsShopCard.putAll(this.installmentsMap.get(value));
+          } else {
+            mapInstallmentsShopCard.put(1, value);
+
+            Float value3x = setInstalmentsValeuFromAPI(3, value);
+            if (value3x != null) {
+              mapInstallmentsShopCard.put(3, value3x);
+            }
+
+            Float value48x = setInstalmentsValeuFromAPI(48, value);
+            if (value48x != null) {
+              mapInstallmentsShopCard.put(48, value48x);
+            }
+
+            this.installmentsMap.put(value, mapInstallmentsShopCard);
           }
 
-          Float value48x = crawlInstallmentValueFromAPI(48, value);
-          if (value48x != null) {
-            mapInstallments.put(48, value48x);
-          }
-
-          prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
+          hasCardInstallment = true;
+          prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallmentsShopCard);
         }
+      }
+
+      if (!hasCardInstallment) {
+        prices = new Prices();
       }
     }
 
     return prices;
 
+  }
+
+  private Float setInstalmentsValeuFromAPI(Integer installment, Float totalValue) {
+    Float value = null;
+
+    String url = "https://simple.ripley.cl/api/v1/products/instalment-simulation?instalments=" + installment + "&amount=" + totalValue.intValue();
+    JSONObject installmentJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (installmentJson.has("instalmentCost")) {
+      value = CrawlerUtils.getFloatValueFromJSON(installmentJson, "instalmentCost");
+    }
+
+    return value;
   }
 
   private Map<String, Prices> crawlMarketplaceMap(JSONObject productApi, JSONObject skuJson) {
@@ -276,19 +323,6 @@ public class ChileRipleyCrawler extends Crawler {
     }
 
     return marketplaceMap;
-  }
-
-  private Float crawlInstallmentValueFromAPI(Integer installment, Float totalValue) {
-    Float value = null;
-
-    String url = "https://simple.ripley.cl/api/v1/products/instalment-simulation?instalments=" + installment + "&amount=" + totalValue.intValue();
-    JSONObject installmentJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-    if (installmentJson.has("instalmentCost")) {
-      value = CrawlerUtils.getFloatValueFromJSON(installmentJson, "instalmentCost");
-    }
-
-    return value;
   }
 
   public JSONObject fetchProductAPI(String internalId) {
