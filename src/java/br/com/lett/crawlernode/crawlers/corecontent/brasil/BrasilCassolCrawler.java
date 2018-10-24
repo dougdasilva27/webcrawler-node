@@ -57,7 +57,7 @@ public class BrasilCassolCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(dataLayer);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > a", true);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > a:not(:first-child)");
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".blocodescricao"));
       String mainProductId = getMainProductId(dataLayer);
 
@@ -72,7 +72,7 @@ public class BrasilCassolCrawler extends Crawler {
 
         Document productAPI = captureImageAndPricesInfo(internalId, internalPid, mainProductId, doc);
 
-        Float price = CrawlerUtils.scrapSimplePriceFloat(productAPI, "#divPrecoProduto > .product-adjustedPrice", true);
+        Float price = CrawlerUtils.scrapSimplePriceFloat(productAPI, "#divPrecoProduto > .product-adjustedPrice:not(.hide)", true);
         boolean available = crawlAvailability(price, jsonSku);
         Prices prices = crawlPrices(productAPI, price);
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
@@ -209,9 +209,11 @@ public class BrasilCassolCrawler extends Crawler {
         prices.setBankTicketPrice(price);
       }
 
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "#divPrecoProduto .product-price", true));
+      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "#divPrecoProduto .product-price:not(.hide)", true));
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
+      mapInstallments.put(1, price);
+
       Elements installments = doc.select(".product-splitPrice-details-info .installments_iten:first-child > ul > li.installments div");
       for (Element e : installments) {
         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, true);
