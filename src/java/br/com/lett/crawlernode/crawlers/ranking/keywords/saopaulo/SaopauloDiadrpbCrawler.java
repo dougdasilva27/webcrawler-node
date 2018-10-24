@@ -1,13 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class SaopauloDiadrpbCrawler extends CrawlerRankingKeywords {
 
@@ -15,47 +13,38 @@ public class SaopauloDiadrpbCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private List<Cookie> cookies = new ArrayList<>();
+  private static final String CEP = "04530000";
 
   @Override
   public void processBeforeFetch() {
-    this.log("Adding cookie...");
-
-    BasicClientCookie cookie = new BasicClientCookie("dia_zv_zipcode",
-        "04530000%3DRua%20Doutor%20Renato%20Paes%20de%20Barros%2C%20Itaim%20Bibi%20-%20S%C3%A3o%20Paulo%20%2F%20SP");
-    cookie.setDomain(".dia.com.br");
-    cookie.setPath("/");
-    this.cookies.add(cookie);
+    Logging.printLogDebug(logger, session, "Adding cookie...");
+    String url = "https://www.dia.com.br/api/checkout/pub/postal-code/BRA/" + CEP;
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(url, null, "www.dia.com.br", "/", session);
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 16;
-
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    String url = "https://delivery.dia.com.br/search/" + this.keywordEncoded + "?page=" + this.currentPage;
+    String url = "https://www.dia.com.br/busca?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
     this.currentDoc = fetchDocument(url, cookies);
 
-    Elements products = this.currentDoc.select(".shelf-content-itens li[data-product-id]");
+    Elements products = this.currentDoc.select("li[layout] .shelf-product[data-product-id]");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
       for (Element e : products) {
         String internalPid = e.attr("data-product-id");
-        String internalId = e.attr("data-sku-id");
-        String productUrl = crawlProductUrl(e);
+        String productUrl = CrawlerUtils.sanitizeUrl(e, "href", "https:", "dia.com.br");
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -71,7 +60,7 @@ public class SaopauloDiadrpbCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".shelf-total-results-qty").first();
+    Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero .value");
 
     if (totalElement != null) {
       String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -82,20 +71,5 @@ public class SaopauloDiadrpbCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element urlElement = e.select(".box-product > a").first();
-
-    if (urlElement != null) {
-      productUrl = urlElement.attr("href");
-
-      if (!productUrl.contains("delivery.dia")) {
-        productUrl = ("https://delivery.dia.com.br/" + productUrl).replace(".br//", ".br/");
-      }
-    }
-
-    return productUrl;
   }
 }

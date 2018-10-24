@@ -277,7 +277,7 @@ public class CrawlerUtils {
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       String cookieName = entry.getKey().trim();
 
-      if (cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieName)) {
+      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieName)) {
         BasicClientCookie cookie = new BasicClientCookie(cookieName, entry.getValue());
         cookie.setDomain(domain);
         cookie.setPath(path);
