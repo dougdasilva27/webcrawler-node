@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -33,7 +34,7 @@ import models.prices.Prices;
  */
 public class MexicoSuperamaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.superama.com.mx/";
+  private static final String HOME_PAGE = "https://www.superama.com.mx/";
 
   public MexicoSuperamaCrawler(Session session) {
     super(session);
@@ -54,23 +55,23 @@ public class MexicoSuperamaCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String internalPid = crawlInternalPid(doc);
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(price);
       boolean available = crawlAvailability(doc);
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadcrumbNav ul li:not(.mobile):not(.hidden-sm):not(:first-child)");
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, ".pdp-preview-image a", Arrays.asList("href", "id"), "https:", "www.superama.com.mx");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".pdp-preview-image a", Arrays.asList("href", "id"), "https:",
+          "www.superama.com.mx", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
-      Marketplace marketplace = crawlMarketplace(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setStock(stock).setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -83,9 +84,7 @@ public class MexicoSuperamaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    if (doc.select("#detalleProductoContainer").first() != null)
-      return true;
-    return false;
+    return !doc.select("#upcProducto").isEmpty();
   }
 
   private String crawlInternalId(Document document) {
@@ -97,18 +96,6 @@ public class MexicoSuperamaCrawler extends Crawler {
     }
 
     return internalId;
-  }
-
-  /**
-   * There is no internalPid.
-   * 
-   * @param document
-   * @return
-   */
-  private String crawlInternalPid(Document document) {
-    String internalPid = null;
-
-    return internalPid;
   }
 
   private String crawlName(Document document) {
@@ -126,7 +113,7 @@ public class MexicoSuperamaCrawler extends Crawler {
     Float price = null;
 
     String priceText = null;
-    Element salePriceElement = document.select(".detail-description-price span").first();
+    Element salePriceElement = document.select(".pdp-price").first();
 
     if (salePriceElement != null) {
       priceText = salePriceElement.ownText();
@@ -139,57 +126,12 @@ public class MexicoSuperamaCrawler extends Crawler {
   private boolean crawlAvailability(Document document) {
     boolean available = false;
 
-    Element outOfStockElement = document.select(".botonAgregarProductoCarritoDetalle").first();
+    Element outOfStockElement = document.select(".btnAddToCarDetail").first();
     if (outOfStockElement != null) {
       available = true;
     }
 
     return available;
-  }
-
-  private Marketplace crawlMarketplace(Document document) {
-    return new Marketplace();
-  }
-
-
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElement = document.select(".sp-wrap > a").first();
-
-    if (primaryImageElement != null) {
-      primaryImage = "https://www.superama.com.mx" + primaryImageElement.attr("href").trim();
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document document) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = document.select(".sp-wrap > a");
-
-    for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-      String image = "https://www.superama.com.mx" + imagesElement.get(i).attr("href").trim();
-      secondaryImagesArray.put(image);
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-
-    Elements elementCategories = document.select(".breadcrumb a");
-    for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
   }
 
   private String crawlDescription(Document document) {
