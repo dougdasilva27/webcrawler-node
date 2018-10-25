@@ -482,7 +482,10 @@ public class CrawlerUtils {
       } else {
         y = script.indexOf(finalIndex, x);
       }
-      json = script.substring(x, y).trim();
+
+      int finalIndexLenght = finalIndex.length();
+
+      json = script.substring(x, y + (finalIndexLenght > 1 ? (finalIndexLenght - 1) : 0)).trim();
     } else {
       json = script.substring(x).trim();
     }
@@ -492,6 +495,8 @@ public class CrawlerUtils {
 
   public static JSONObject stringToJson(String str) {
     JSONObject json = new JSONObject();
+
+    System.err.println(str);
 
     if (str.startsWith("{") && str.endsWith("}")) {
       try {

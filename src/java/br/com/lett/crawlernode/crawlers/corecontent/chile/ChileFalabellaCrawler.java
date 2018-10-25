@@ -17,6 +17,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -53,6 +55,8 @@ public class ChileFalabellaCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject productJson = extractProductJson(doc);
+
+      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "FALABELLA.html");
 
       String internalPid = crawlInternalPid(productJson);
       CategoryCollection categories = crawlCategories(doc);
@@ -111,7 +115,8 @@ public class ChileFalabellaCrawler extends Crawler {
   private JSONObject extractProductJson(Document doc) {
     JSONObject productJson = new JSONObject();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var fbra_browseMainProductConfig =", ";", false, false);
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var fbra_browseMainProductConfig =", "};", false, false);
+
     if (json.has("state")) {
       JSONObject state = json.getJSONObject("state");
 
