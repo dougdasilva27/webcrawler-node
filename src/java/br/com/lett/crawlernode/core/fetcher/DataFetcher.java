@@ -143,9 +143,8 @@ public class DataFetcher {
 
     errorCodes = Arrays.asList("403");
 
-    highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", 
-    		"lacomer", "poupafarma", "unicaarcondicionado",
-        "multisom", "confianca", "medicamentosbrasil");
+    highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma",
+        "unicaarcondicionado", "multisom", "confianca", "medicamentosbrasil");
   }
 
   /**
@@ -864,7 +863,9 @@ public class DataFetcher {
       RequestConfig requestConfig = createRequestConfig(proxy);
 
       List<Header> headers = new ArrayList<>();
-      headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+      if (session.getMarket().getNumber() != 307) {
+        headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+      }
 
       CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
           .setDefaultRequestConfig(requestConfig).setDefaultHeaders(headers).setDefaultCredentialsProvider(credentialsProvider).build();

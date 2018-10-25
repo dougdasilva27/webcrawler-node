@@ -12,7 +12,7 @@
 		<sun.httpserver.version>20070405</sun.httpserver.version>
 		<apache.httpclient.version>4.5.2</apache.httpclient.version>
 		<google.gson.version>2.6.1</google.gson.version>
-		<imageio.version>3.3.2</imageio.version>
+		<imageio.version>3.4.1</imageio.version>
 		<tika.version>1.5</tika.version>
 		<selenium.version>2.47.0</selenium.version>
 		<s3.version>1.11.194</s3.version>
@@ -147,8 +147,8 @@
 			<version>${selenium.version}</version>
 		</dependency>
 
-		<!-- Lett database models 
-		Already contains these dependencies: jooq, postgresql, mongo-java-driver -->
+		<!-- Lett database models Already contains these dependencies: jooq, postgresql, 
+			mongo-java-driver -->
 		<dependency>
 			<groupId>br.com.lett</groupId>
 			<artifactId>db</artifactId>
