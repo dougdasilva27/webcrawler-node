@@ -483,9 +483,13 @@ public class CrawlerUtils {
         y = script.indexOf(finalIndex, x);
       }
 
-      int finalIndexLenght = finalIndex.length();
+      int plusIndex = 0;
 
-      json = script.substring(x, y + (finalIndexLenght > 1 ? (finalIndexLenght - 1) : 0)).trim();
+      if (finalIndex.equals("};")) {
+        plusIndex = 1;
+      }
+
+      json = script.substring(x, y + plusIndex).trim();
     } else {
       json = script.substring(x).trim();
     }
