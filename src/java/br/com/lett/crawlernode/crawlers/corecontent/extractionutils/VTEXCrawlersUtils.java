@@ -47,6 +47,8 @@ public class VTEXCrawlersUtils {
   private Session session;
   private String sellerNameLower;
   private String homePage;
+  private Integer cardDiscount;
+  private Integer bankTicketDiscount;
   private List<Cookie> cookies;
 
   public VTEXCrawlersUtils(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies) {
@@ -55,6 +57,17 @@ public class VTEXCrawlersUtils {
     this.sellerNameLower = store;
     this.homePage = homePage;
     this.cookies = cookies;
+  }
+
+  public VTEXCrawlersUtils(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies, Integer cardDiscount,
+      Integer bankDiscount) {
+    this.session = session;
+    this.logger = logger2;
+    this.sellerNameLower = store;
+    this.homePage = homePage;
+    this.cookies = cookies;
+    this.cardDiscount = cardDiscount;
+    this.bankTicketDiscount = bankDiscount;
   }
 
   public VTEXCrawlersUtils(Session session, Logger logger2, List<Cookie> cookies) {
@@ -367,8 +380,17 @@ public class VTEXCrawlersUtils {
         }
       }
 
+      if (this.cardDiscount != null) {
+        installmentPriceMap.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.cardDiscount / 100f))));
+      }
+
       if (prices.isEmpty()) {
         prices.setBankTicketPrice(price);
+
+        if (this.bankTicketDiscount != null) {
+          prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.bankTicketDiscount / 100f))));
+        }
+
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
@@ -392,6 +414,10 @@ public class VTEXCrawlersUtils {
       prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
     } else {
       prices.setBankTicketPrice(price);
+    }
+
+    if (this.bankTicketDiscount != null) {
+      prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.bankTicketDiscount / 100f))));
     }
 
     Elements cardsElements = doc.select("#ddlCartao option");
