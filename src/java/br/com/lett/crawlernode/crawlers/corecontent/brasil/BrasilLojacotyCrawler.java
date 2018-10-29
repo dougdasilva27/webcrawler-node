@@ -24,7 +24,7 @@ public class BrasilLojacotyCrawler extends Crawler {
   }
 
   private static final String HOME_PAGE = "https://www.lojacoty.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "lojacoty";
+  private static final String MAIN_SELLER_NAME_LOWER = "coty";
 
   @Override
   public boolean shouldVisit() {

@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -90,6 +91,12 @@ public class BrasilElonutricaoCrawler extends Crawler {
     Element internalIdElement = doc.select("#ProdutoId").first();
     if (internalIdElement != null) {
       internalId = internalIdElement.val();
+    } else {
+      Element urlMeta = doc.selectFirst("meta[property=\"og:url\"]");
+
+      if (urlMeta != null) {
+        internalId = CommonMethods.getLast(urlMeta.attr("content").split("/"));
+      }
     }
 
     return internalId;

@@ -862,10 +862,7 @@ public class DataFetcher {
 
       RequestConfig requestConfig = createRequestConfig(proxy);
 
-      List<Header> headers = new ArrayList<>();
-      if (session.getMarket().getNumber() != 307) {
-        headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
-      }
+      List<Header> headers = getHeadersFromMarket(session.getMarket().getNumber());
 
       CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
           .setDefaultRequestConfig(requestConfig).setDefaultHeaders(headers).setDefaultCredentialsProvider(credentialsProvider).build();
@@ -935,6 +932,35 @@ public class DataFetcher {
       }
     }
 
+  }
+
+  private static List<Header> getHeadersFromMarket(Integer marketId) {
+    List<Header> headers = new ArrayList<>();
+
+    if (marketId == 63 || marketId == 62 || marketId == 73) {
+      headers.add(new BasicHeader(HttpHeaders.CONNECTION, "keep-alive"));
+      headers.add(new BasicHeader(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"));
+      headers.add(new BasicHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br"));
+      headers.add(new BasicHeader(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"));
+
+      switch (marketId) {
+        case 63:
+          headers.add(new BasicHeader(HttpHeaders.HOST, "www.pontofrio-imagens.com.br"));
+          break;
+        case 62:
+          headers.add(new BasicHeader(HttpHeaders.HOST, "www.casasbahia-imagens.com.br"));
+          break;
+        case 73:
+          headers.add(new BasicHeader(HttpHeaders.HOST, "www.extra-imagens.com.br"));
+          break;
+        default:
+          break;
+      }
+    } else if (marketId != 307) {
+      headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+    }
+
+    return headers;
   }
 
   /**

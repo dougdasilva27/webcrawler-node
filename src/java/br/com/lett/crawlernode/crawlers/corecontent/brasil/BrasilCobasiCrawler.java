@@ -96,7 +96,7 @@ public class BrasilCobasiCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
-    Element elementDescription = doc.select("#conteudo-produto").first();
+    Element elementDescription = doc.select("#box-DescriptionProduct").first();
     if (elementDescription != null) {
       description.append(elementDescription.html());
     }
