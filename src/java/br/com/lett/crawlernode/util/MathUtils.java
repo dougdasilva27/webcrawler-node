@@ -50,7 +50,7 @@ public class MathUtils {
    * Parses a Float from an input String. It will parse only the first match. If there is more than
    * one float in the string, the others occurrences after the first will be disconsidered.
    * 
-   * e.g: R$ 2.779,20 returns the Float 2779.2
+   * e.g: R$ 2779.20 returns the Float 2779.2
    * 
    * @param input
    * @return

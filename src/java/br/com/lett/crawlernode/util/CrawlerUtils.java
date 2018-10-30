@@ -97,6 +97,25 @@ public class CrawlerUtils {
    * @param document
    * @param cssSelector
    * @param ownText
+   * @return Float
+   */
+  public static Float scrapSimplePriceFloatWithDots(Document document, String cssSelector, boolean ownText) {
+    Float price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseFloatWithDots(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
    * @return Double
    */
   public static Double scrapSimplePriceDouble(Document document, String cssSelector, boolean ownText) {
@@ -105,6 +124,25 @@ public class CrawlerUtils {
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
       price = MathUtils.parseDoubleWithComma(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * @return Double
+   */
+  public static Double scrapSimplePriceDoubleWithDots(Document document, String cssSelector, boolean ownText) {
+    Double price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseDoubleWithDot(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
     return price;
