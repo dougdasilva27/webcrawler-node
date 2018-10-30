@@ -243,8 +243,7 @@ public class BrasilIbyteCrawler extends Crawler {
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
     if (price != null) {
-      Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces(price - (price * 0.07f));
-      installmentPriceMap.put(1, priceWithDiscount);
+      installmentPriceMap.put(1, price);
 
       Element boleto = doc.select(".boletoBox .price").first();
 
@@ -254,10 +253,10 @@ public class BrasilIbyteCrawler extends Crawler {
         if (value != null) {
           prices.setBankTicketPrice(value);
         } else {
-          prices.setBankTicketPrice(priceWithDiscount);
+          prices.setBankTicketPrice(price);
         }
       } else {
-        prices.setBankTicketPrice(priceWithDiscount);
+        prices.setBankTicketPrice(price);
       }
 
       Elements installments = doc.select(".formas li #simularParcelamento tr");
