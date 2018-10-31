@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
@@ -48,17 +50,16 @@ public class BrasilPichauCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".codigo-produto", true);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details h2", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, true);
+      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku .value", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.title h1", true);
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, false);
       Prices prices = crawlPrices(doc, price);
-      boolean available = !doc.select(".product-payment .buy").isEmpty();
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-images a", Arrays.asList("href"), "https:", "www.pichau.com.br");
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-images a", Arrays.asList("href"), "https:", "www.pichau.com.br", primaryImage);
-      String description =
-          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-attributes", ".product-description")).replace("hidemobile", "");
+      boolean available = !doc.select(".stock.available").isEmpty();
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .item:not(.home):not(.product) a");
+      JSONArray images = crawlArrayImages(doc);
+      String primaryImage = crawlPrimaryImage(images);
+      String secondaryImages = crawlSecondaryImages(images);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".form-pichau-product .product.info")).replace("hidemobile", "");
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -77,7 +78,7 @@ public class BrasilPichauCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".product-details").isEmpty();
+    return !doc.select("input[name=product]").isEmpty();
   }
 
   private static String crawlInternalId(Document doc) {
@@ -91,6 +92,68 @@ public class BrasilPichauCrawler extends Crawler {
     return internalId;
   }
 
+  private JSONArray crawlArrayImages(Document doc) {
+    JSONArray images = new JSONArray();
+
+    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+
+    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
+      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
+
+      if (mediaJson.has("mage/gallery/gallery")) {
+        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+
+        if (gallery.has("data")) {
+          JSONArray arrayImages = gallery.getJSONArray("data");
+
+          for (Object o : arrayImages) {
+            JSONObject imageJson = (JSONObject) o;
+
+            if (imageJson.has("full")) {
+              images.put(imageJson.get("full"));
+            } else if (imageJson.has("img")) {
+              images.put(imageJson.get("img"));
+            } else if (imageJson.has("thumb")) {
+              images.put(imageJson.get("thumb"));
+            }
+          }
+        }
+      }
+    }
+
+    return images;
+  }
+
+  private String crawlPrimaryImage(JSONArray images) {
+    String primaryImage = null;
+
+    if (images.length() > 0) {
+      primaryImage = images.getString(0);
+    }
+
+    return primaryImage;
+  }
+
+  /**
+   * @param doc
+   * @return
+   */
+  private String crawlSecondaryImages(JSONArray images) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    if (images.length() > 1) {
+      images.remove(0);
+      secondaryImagesArray = images;
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
   /**
    * @param doc
    * @param price
@@ -100,21 +163,23 @@ public class BrasilPichauCrawler extends Crawler {
     Prices prices = new Prices();
 
     Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    installmentPriceMap.put(1, price);
+    if (price != null) {
+      installmentPriceMap.put(1, price);
 
-    Float bankTicket = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-payment .boleto .valor", true);
-    if (bankTicket != null) {
-      prices.setBankTicketPrice(bankTicket);
-    } else {
-      prices.setBankTicketPrice(price);
+      Float bankTicket = CrawlerUtils.scrapSimplePriceFloat(doc, ".price-boleto > span", true);
+      if (bankTicket != null) {
+        prices.setBankTicketPrice(bankTicket);
+      } else {
+        prices.setBankTicketPrice(price);
+      }
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".price-installments > span", doc, true, "x");
+      if (!pair.isAnyValueNull()) {
+        installmentPriceMap.put(pair.getFirst(), pair.getSecond());
+      }
+
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
     }
-
-    Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".product-payment .pricex", doc, true, "x");
-    if (!pair.isAnyValueNull()) {
-      installmentPriceMap.put(pair.getFirst(), pair.getSecond());
-    }
-
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
     return prices;
   }
