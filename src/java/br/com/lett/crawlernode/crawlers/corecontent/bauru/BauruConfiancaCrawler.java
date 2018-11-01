@@ -1,20 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.bauru;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -45,7 +49,7 @@ public class BauruConfiancaCrawler extends Crawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    BasicClientCookie cookie = new BasicClientCookie("bauru", "lojabauru");
+    BasicClientCookie cookie = new BasicClientCookie("current_website", "bauru");
     cookie.setDomain("www.confianca.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
@@ -59,24 +63,24 @@ public class BauruConfiancaCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
-      String name = crawlName(doc);
-      Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price, doc);
-      boolean available = crawlAvailability(doc);
+      JSONObject json = crawlProductApi(internalPid);
+
+      String internalId = crawlInternalId(json);
+      String name = crawlName(json);
+      Float price = crawlPrice(json);
+      Prices prices = crawlPrices(price, json);
+      Integer stock = crawlStock(json);
+      boolean available = stock != null && stock > 0;
       CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
-      String description = crawlDescription(doc);
-      Integer stock = null;
-      Marketplace marketplace = crawlMarketplace();
+      String primaryImage = crawlPrimaryImage(json);
+      String description = crawlDescription(json);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setStock(stock)
+          .setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -89,166 +93,147 @@ public class BauruConfiancaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.select("input[name=product]").first() != null && doc.select("button[data-target=\"#modal-lista-ingredientes\"]").isEmpty();
+    return doc.selectFirst(".main-container product-essential") != null;
   }
 
-  private String crawlInternalId(Document document) {
+  private JSONObject crawlProductApi(String internalPid) {
+    JSONObject json = new JSONObject();
+
+    if (internalPid != null) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Referer", session.getOriginalURL());
+
+      String url = "https://www.confianca.com.br/bizrest/action/product/id/" + internalPid;
+      json = new JSONObject(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+    }
+
+    return json;
+  }
+
+  private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
-    Element id = document.select("input[name=product]").first();
-    if (id != null) {
-      internalId = id.val();
+    if (json.has("sku")) {
+      internalId = json.getString("sku");
     }
 
     return internalId;
   }
 
-  private String crawlInternalPid(Document document) {
+  private String crawlInternalPid(Document doc) {
     String internalPid = null;
 
-    Element id = document.select("meta[itemprop=productID]").first();
-    if (id != null) {
-      internalPid = id.attr("content");
+    Element pid = doc.selectFirst(".main-container product-essential");
+    if (pid != null) {
+      internalPid = pid.attr(":id");
     }
 
     return internalPid;
   }
 
-  private String crawlName(Document document) {
+  private String crawlName(JSONObject json) {
     String name = null;
-    Element nameElement = document.select(".product-name h1").first();
 
-    if (nameElement != null) {
-      name = nameElement.ownText().trim();
+    if (json.has("name")) {
+      name = json.getString("name");
     }
 
     return name;
   }
 
-  private Float crawlPrice(Document document) {
-    Float price = null;
+  private Integer crawlStock(JSONObject json) {
+    Integer stock = null;
 
-    Element salePriceElement = document.select(".product-shop .price-box .special-price .price").first();
+    if (json.has("max_sale_quantity")) {
+      Object stc = json.get("max_sale_quantity");
 
-    if (salePriceElement == null) {
-      salePriceElement = document.select(".product-shop .price-box .regular-price .price").first();
+      if (stc instanceof Integer) {
+        stock = (Integer) stc;
+      }
     }
 
-    if (salePriceElement != null) {
-      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
+    return stock;
+  }
+
+  private Float crawlPrice(JSONObject json) {
+    Float price = null;
+
+    if (json.has("final_price")) {
+      price = CrawlerUtils.getFloatValueFromJSON(json, "final_price");
     }
 
     return price;
   }
 
-  private boolean crawlAvailability(Document document) {
-    return document.select("#out-of-stock-sub[style^=\"display:none\"]").first() != null || document.select("#out-of-stock-sub").isEmpty();
-  }
-
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
-
-
-  private String crawlPrimaryImage(Document document) {
+  private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
-    Element primaryImageElement = document.select(".product-image img").first();
 
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("data-zoom-image").trim();
+    if (json.has("image")) {
+      primaryImage = json.get("image").toString();
     }
 
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document document) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = document.select(".more-views a[data-zoom-image]");
-
-    for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-      secondaryImagesArray.put(imagesElement.get(i).attr("data-zoom-image").trim());
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
   /**
-   * At the time this crawler was made, wasn't not found any categories in product page
-   * 
    * @param document
    * @return
    */
-  private CategoryCollection crawlCategories(Document document) {
-    // CategoryCollection categories = new CategoryCollection();
-    // Elements elementCategories = document.select(".breadcrumb a:not(.first) > span");
-    // for (Element e : elementCategories) {
-    // categories.add(e.ownText().trim());
-    // }
-    // return categories;
+  private CategoryCollection crawlCategories(Document doc) {
+    CategoryCollection categories = new CategoryCollection();
 
-    return new CategoryCollection();
+    Element categoriesElement = doc.selectFirst(".main-container product-essential");
+    if (categoriesElement != null) {
+      JSONArray array = CrawlerUtils.stringToJsonArray(categoriesElement.attr(":breadcrumb"));
+
+      for (Object o : array) {
+        JSONObject json = (JSONObject) o;
+
+        if (json.has("name")) {
+          categories.add(json.get("name").toString());
+        }
+      }
+    }
+
+    return categories;
   }
 
-  private String crawlDescription(Document document) {
+  private String crawlDescription(JSONObject json) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = document.select(".short-description").first();
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
+    if (json.has("short_description")) {
+      description.append(json.get("short_description"));
     }
 
-    Element desc = document.select("#descricao").first();
-    if (desc != null) {
-      description.append(desc.html());
-    }
-
-    Element ingredientes = document.select("#ingredientes").first();
-    if (ingredientes != null) {
-      description.append(ingredientes.html());
-    }
-
-    Element preparo = document.select("#modo-preparo").first();
-    if (preparo != null) {
-      description.append(preparo.html());
+    if (json.has("description")) {
+      description.append(json.get("description"));
     }
 
     return description.toString();
   }
 
   /**
-   * There is no bankSlip price.
-   * 
    * 
    * @param doc
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices crawlPrices(Float price, JSONObject jsonSku) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      Element priceFrom = doc.select(".product-shop .price-box .old-price .price").first();
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
+      Float priceOld = CrawlerUtils.getFloatValueFromJSON(jsonSku, "price_old");
+      if (!price.equals(priceOld)) {
+        prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(priceOld.doubleValue()));
       }
 
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
 
     return prices;
   }
-
 }

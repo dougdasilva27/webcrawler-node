@@ -786,12 +786,11 @@ public class CrawlerUtils {
 
     if (json.has(key)) {
       Object priceObj = json.get(key);
-      Double priceDouble = null;
 
       if (priceObj instanceof Integer) {
-        priceDouble = ((Integer) priceObj).doubleValue();
+        price = MathUtils.normalizeTwoDecimalPlaces(((Integer) priceObj).floatValue());
       } else if (priceObj instanceof Double) {
-        priceDouble = (Double) priceObj;
+        price = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
       } else {
         String text = priceObj.toString().replaceAll("[^0-9.]", "");
 
@@ -799,8 +798,6 @@ public class CrawlerUtils {
           price = Float.parseFloat(text);
         }
       }
-
-      price = priceDouble != null ? MathUtils.normalizeTwoDecimalPlaces(priceDouble.floatValue()) : null;
     }
 
     return price;
