@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -310,17 +311,13 @@ public class BrasilFastshopNewCrawler {
         if (tag.has("tag")) {
           String tagBoleto = tag.getString("tag");
 
-          if (tagBoleto.contains("boleto_")) {
+          if (tagBoleto.contains("noboleto_")) {
             String[] tokens = tagBoleto.split("/");
-            String[] splitUrl = tokens[tokens.length - 1].split("_");
+            String boleto = CommonMethods.getLast(tokens).split("_noboleto")[0].replaceAll("[^0-9]", "");
 
-            for (String s : splitUrl) {
-              String priceBoleto = s.replaceAll("[^0-9]", "");
-
-              if (!priceBoleto.isEmpty()) {
-                prices.setBankTicketPrice(Float.parseFloat(priceBoleto));
-                break;
-              }
+            if (!boleto.isEmpty()) {
+              prices.setBankTicketPrice(Float.parseFloat(boleto));
+              break;
             }
           }
         }
