@@ -211,7 +211,7 @@ public class BrasilPetzCrawler extends Crawler {
   private String crawlName(Document doc, String nameVariation) {
     StringBuilder name = new StringBuilder();
 
-    Element nameElement = doc.select("h3[itemprop=name]").first();
+    Element nameElement = doc.select("h1[itemprop=name]").first();
 
     if (nameElement != null) {
       name.append(nameElement.ownText());
