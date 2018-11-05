@@ -110,39 +110,41 @@ public class ArgentinaCetrogarCrawler extends Crawler {
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    installmentPriceMap.put(1, price);
+    if(price != null) {
+    	Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+    	installmentPriceMap.put(1, price);
 
-    Element priceFrom = doc.selectFirst(".product-shop .old-price .price");
-    if (priceFrom != null) {
-      prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
+    	Element priceFrom = doc.selectFirst(".product-shop .old-price .price");
+    	if (priceFrom != null) {
+    		prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
+    	}
+
+    	JSONObject installmentsJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataBankingJson=", ";", true, false);
+
+    	if (installmentsJson.has("15")) {
+    		JSONObject credcard = installmentsJson.getJSONObject("15");
+
+    		JSONObject installments = new JSONObject();
+    		if (credcard.has("998")) {
+    			installments = credcard.getJSONObject("998");
+    		} else if (credcard.has("-1")) {
+    			installments = credcard.getJSONObject("-1");
+    		}
+
+    		for (String installmentNumber : installments.keySet()) {
+    			JSONObject parcel = installments.getJSONObject(installmentNumber);
+
+    			Float value = CrawlerUtils.getFloatValueFromJSON(parcel, "monto_cuota");
+    			String text = installmentNumber.replaceAll("[^0-9]", "");
+    			if (value != null && !text.isEmpty()) {
+    				installmentPriceMap.put(Integer.parseInt(text), MathUtils.normalizeTwoDecimalPlaces(value));
+    			}
+    		}
+    	}
+
+    	prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
     }
-
-    JSONObject installmentsJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataBankingJson=", ";", true, false);
-
-    if (installmentsJson.has("15")) {
-      JSONObject credcard = installmentsJson.getJSONObject("15");
-
-      JSONObject installments = new JSONObject();
-      if (credcard.has("998")) {
-        installments = credcard.getJSONObject("998");
-      } else if (credcard.has("-1")) {
-        installments = credcard.getJSONObject("-1");
-      }
-
-      for (String installmentNumber : installments.keySet()) {
-        JSONObject parcel = installments.getJSONObject(installmentNumber);
-
-        Float value = CrawlerUtils.getFloatValueFromJSON(parcel, "monto_cuota");
-        String text = installmentNumber.replaceAll("[^0-9]", "");
-        if (value != null && !text.isEmpty()) {
-          installmentPriceMap.put(Integer.parseInt(text), MathUtils.normalizeTwoDecimalPlaces(value));
-        }
-      }
-    }
-
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-
+    
     return prices;
   }
 
