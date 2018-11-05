@@ -110,7 +110,7 @@ public class SaopauloSubmarinoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element e = this.currentDoc.select(".form-group.display-sm-inline-block span[data-reactid]").first();
+    Element e = this.currentDoc.select(".form-group.display-sm-inline-block span").first();
 
     if (e != null) {
       String total = e.ownText().replaceAll("[^0-9]", "").trim();
