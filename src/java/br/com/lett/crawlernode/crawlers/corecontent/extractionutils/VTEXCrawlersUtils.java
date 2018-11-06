@@ -166,10 +166,14 @@ public class VTEXCrawlersUtils {
   }
 
   public Float crawlMainPagePrice(Prices prices) {
+    return crawlMainPagePrice(prices, Card.VISA);
+  }
+
+  public Float crawlMainPagePrice(Prices prices, Card card) {
     Float price = null;
 
-    if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+    if (!prices.isEmpty() && prices.getCardPaymentOptions(card.toString()).containsKey(1)) {
+      Double priceDouble = prices.getCardPaymentOptions(card.toString()).get(1);
       price = priceDouble.floatValue();
     }
 

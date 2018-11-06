@@ -61,12 +61,12 @@ public class ArgentinaPardoCrawler extends Crawler {
         String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
-            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
+            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.AMEX, session);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = getPrices(marketplaceMap);
-        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Float price = vtexUtil.crawlMainPagePrice(prices, Card.AMEX);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
         // Creating the product
