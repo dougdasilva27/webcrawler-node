@@ -4,7 +4,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilPichauCrawler extends CrawlerRankingKeywords {
@@ -20,7 +19,7 @@ public class BrasilPichauCrawler extends CrawlerRankingKeywords {
     this.pageSize = 16;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.pichau.com.br/catalogsearch/result/index/?limit=48&p=" + this.currentPage + "&q=" + this.keywordEncoded;
+    String url = "https://www.pichau.com.br/catalogsearch/result/index/?product_list_limit=48&p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
     if (this.currentPage > 1 && this.categoryUrl != null) {
       url = this.categoryUrl + "?p=" + this.currentPage;
@@ -28,7 +27,7 @@ public class BrasilPichauCrawler extends CrawlerRankingKeywords {
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".linha-produtos .item");
+    Elements products = this.currentDoc.select(".results .product-item");
 
     if (this.currentPage == 1) {
       String redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
@@ -64,7 +63,7 @@ public class BrasilPichauCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".produtos header p").first();
+    Element totalElement = this.currentDoc.select("#toolbar-amount .toolbar-number").first();
 
     if (totalElement != null) {
       String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -79,19 +78,9 @@ public class BrasilPichauCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(Element e) {
     String internalId = null;
 
-    Element price = e.selectFirst(".price");
+    Element price = e.selectFirst(".product.details [data-product-id]");
     if (price != null) {
-      String text = price.attr("id");
-
-      if (text.contains("-")) {
-        internalId = CommonMethods.getLast(text.split("-"));
-      }
-    } else {
-      Element meAvise = e.selectFirst("[data-produto]");
-
-      if (meAvise != null) {
-        internalId = meAvise.attr("data-produto");
-      }
+      internalId = price.attr("data-product-id");
     }
 
     return internalId;
@@ -100,7 +89,7 @@ public class BrasilPichauCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(Element e) {
     String productUrl = null;
 
-    Element link = e.selectFirst(".title a");
+    Element link = e.selectFirst(".product-item-info > a");
     if (link != null) {
       productUrl = CrawlerUtils.sanitizeUrl(link, "href", "https:", "www.pichau.com.br");
     }
