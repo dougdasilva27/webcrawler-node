@@ -97,34 +97,58 @@ public class ChileParisCrawler extends Crawler {
       String internalPid = crawlInternalPid(productJson);
       CategoryCollection categories = new CategoryCollection();
       String description = crawlDescription(productJson);
+      boolean isPackage = "packagebean".equalsIgnoreCase(crawlType(productJson));
 
       Map<String, List<String>> colorsMap = new HashMap<>();
 
-      JSONArray arraySkus = productJson.has("children") ? productJson.getJSONArray("children") : new JSONArray();
+      // This specific case is for package products
+      if (isPackage) {
+        String internalId = crawlInternalIdPackage(productJson, internalPid);
+        String name = crawlNamePackage(productJson);
+        boolean available = crawlPackageAvailability(productJson);
 
-      for (int i = 0; i < arraySkus.length(); i++) {
-        JSONObject skuJson = arraySkus.getJSONObject(i);
-
-        String internalId = crawlInternalId(skuJson);
-        String name = crawlName(skuJson);
-        Integer stock = crawlStock(skuJson);
-        boolean available = stock != null && stock > 0;
-
-        JSONArray arrayPrices = fetchPrices(skuJson, available);
-        Prices prices = crawlPrices(skuJson, arrayPrices);
+        JSONArray arrayPrices = fetchPrices(productJson, available);
+        Prices prices = crawlPrices(productJson, arrayPrices);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
 
-        List<String> images = crawlImages(skuJson, colorsMap);
+        List<String> images = crawlImages(productJson, colorsMap, internalPid);
         String primaryImage = images.isEmpty() ? null : images.get(0);
         String secondaryImages = crawlSecondaryImages(images, primaryImage);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).build();
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setSecondaryImages(null)
+            .setDescription(description).setStock(null).setMarketplace(new Marketplace()).build();
 
         products.add(product);
+      } else {
+        JSONArray arraySkus = productJson.has("children") ? productJson.getJSONArray("children") : new JSONArray();
+
+        for (int i = 0; i < arraySkus.length(); i++) {
+          JSONObject skuJson = arraySkus.getJSONObject(i);
+
+          String internalId = crawlInternalId(skuJson);
+          String name = crawlName(skuJson);
+          Integer stock = crawlStock(skuJson);
+          boolean available = stock != null && stock > 0;
+
+          List<String> images = crawlImages(skuJson, colorsMap, internalPid);
+          String primaryImage = images.isEmpty() ? null : images.get(0);
+          String secondaryImages = crawlSecondaryImages(images, primaryImage);
+
+          JSONArray arrayPrices = fetchPrices(skuJson, available);
+          Prices prices = crawlPrices(skuJson, arrayPrices);
+          Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
+
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+
+          products.add(product);
+        }
       }
 
     } else {
@@ -141,6 +165,16 @@ public class ChileParisCrawler extends Crawler {
    */
   private boolean isProductPage(JSONObject productJson) {
     return productJson.has("partNumber");
+  }
+
+  private String crawlType(JSONObject skuJson) {
+    String type = null;
+
+    if (skuJson.has("type")) {
+      type = skuJson.getString("type");
+    }
+
+    return type;
   }
 
   /**
@@ -167,6 +201,16 @@ public class ChileParisCrawler extends Crawler {
     return internalId;
   }
 
+  private String crawlInternalIdPackage(JSONObject skuJson, String internalPid) {
+    String internalId = null;
+
+    if (skuJson.has("id_prod")) {
+      internalId = skuJson.getString("id_prod") + "-" + internalPid;
+    }
+
+    return internalId;
+  }
+
 
   private String crawlInternalPid(JSONObject productJson) {
     String internalPid = null;
@@ -176,6 +220,36 @@ public class ChileParisCrawler extends Crawler {
     }
 
     return internalPid;
+  }
+
+  private boolean crawlPackageAvailability(JSONObject productJson) {
+    boolean availability = false;
+
+    JSONArray arraySkus = productJson.has("children") ? productJson.getJSONArray("children") : new JSONArray();
+
+    for (int i = 0; i < arraySkus.length(); i++) {
+      JSONObject skuJson = arraySkus.getJSONObject(i);
+
+      Integer stock = crawlStock(skuJson);
+      if (stock != null && stock > 0) {
+        availability = true;
+      } else {
+        availability = false;
+        break;
+      }
+    }
+
+    return availability;
+  }
+
+  private String crawlNamePackage(JSONObject productJson) {
+    String name = null;
+
+    if (productJson.has("name")) {
+      name = productJson.get("name").toString();
+    }
+
+    return name;
   }
 
   private String crawlName(JSONObject skuJson) {
@@ -216,11 +290,16 @@ public class ChileParisCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private List<String> crawlImages(JSONObject skuJson, Map<String, List<String>> colorsMap) {
+  private List<String> crawlImages(JSONObject skuJson, Map<String, List<String>> colorsMap, String pid) {
     List<String> images = new ArrayList<>();
 
+    String colorId = pid;
+
     if (skuJson.has("ESTILOCOLOR")) {
-      String colorId = skuJson.get("ESTILOCOLOR").toString();
+      colorId = skuJson.get("ESTILOCOLOR").toString();
+    }
+
+    if (colorId != null) {
 
       if (colorsMap.containsKey(colorId)) {
         images = colorsMap.get(colorId);
