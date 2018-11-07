@@ -231,11 +231,16 @@ public class ChileFalabellaCrawler extends Crawler {
         JSONObject set = json.getJSONObject("set");
 
         if (set.has("item")) {
-          JSONArray items = set.getJSONArray("item");
+          JSONArray items = new JSONArray();
+
+          if (set.get("item") instanceof JSONArray) {
+            items = set.getJSONArray("item");
+          } else if (set.get("item") instanceof JSONObject) {
+            items.put(set.get("item"));
+          }
 
           for (Object o : items) {
             JSONObject item = (JSONObject) o;
-
             JSONObject imageJson = new JSONObject();
 
             if (item.has("s")) {
