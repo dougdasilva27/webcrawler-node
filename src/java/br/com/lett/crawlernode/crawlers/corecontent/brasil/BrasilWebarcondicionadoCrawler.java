@@ -209,7 +209,7 @@ public class BrasilWebarcondicionadoCrawler extends Crawler {
         installmentPriceMap.put(1, MathUtils.parseFloatWithComma(price1x.ownText()));
       }
 
-      Element installmentsElement = price.select(".price-stallments").last();
+      Element installmentsElement = price.select(".price-stallments h6").last();
 
       if (installmentsElement != null) {
         installmentsElement.select("span").last().remove();

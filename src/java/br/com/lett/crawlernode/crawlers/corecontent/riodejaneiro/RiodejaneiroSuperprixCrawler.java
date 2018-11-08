@@ -234,11 +234,21 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder str = new StringBuilder();
 
-    Element desc = doc.select(".prod-info").first();
+    Element desc = doc.select(".prod-info .prod-descricao").first();
 
     if (desc != null) {
       desc.select("h4.Conteudo-da-Pagina-de-Produto").remove();
       str.append(desc.html());
+    }
+
+    Element desc2 = doc.select("#caracteristicas table").first();
+
+    if (desc2 != null) {
+      desc2.select("h4.Conteudo-da-Pagina-de-Produto").remove();
+
+      if (!desc2.select(".Tabela-Nutricional").isEmpty()) {
+        str.append(desc2.html());
+      }
     }
 
     return str.toString();
