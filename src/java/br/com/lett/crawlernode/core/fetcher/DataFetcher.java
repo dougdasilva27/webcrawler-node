@@ -958,6 +958,8 @@ public class DataFetcher {
       }
     } else if (marketId != 307) {
       headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, CONTENT_ENCODING));
+    } else if (marketId == 307) {
+      headers.add(new BasicHeader(HttpHeaders.ACCEPT, "image/jpg, image/apng"));
     }
 
     return headers;
