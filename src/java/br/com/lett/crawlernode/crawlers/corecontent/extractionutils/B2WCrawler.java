@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -197,9 +198,12 @@ public class B2WCrawler {
       // Na maioria dos casos a primeira parcela tem desconto e as demais não
       // O preço default seria o preço sem desconto.
       // Para pegar esse preço, dividimos ele por 2 e adicionamos nas parcelas como 2x esse preço
-      if (installments.length() == 1 && seller.has("defaultPrice")) {
-        Double priceD = seller.getDouble("defaultPrice") / 2d;
-        installmentMapPrice.put(2, MathUtils.normalizeTwoDecimalPlaces(priceD.floatValue()));
+      if (!installmentMapPrice.isEmpty() && installmentMapPrice.containsKey(1) && seller.has("defaultPrice")) {
+        Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(seller, "defaultPrice");
+
+        if (!defaultPrice.equals(installmentMapPrice.get(1))) {
+          installmentMapPrice.put(2, MathUtils.normalizeTwoDecimalPlaces(defaultPrice / 2f));
+        }
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);

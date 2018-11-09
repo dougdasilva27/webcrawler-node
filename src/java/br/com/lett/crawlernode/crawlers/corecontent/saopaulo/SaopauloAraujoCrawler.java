@@ -419,7 +419,7 @@ public class SaopauloAraujoCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element rows = doc.selectFirst("#caracteristicas table.Caracteristicas");
+    Element rows = doc.selectFirst("#caracteristicas table.Caracteristica");
 
     if (rows != null) {
       description.append("<h4> Características </h4>");
@@ -429,7 +429,6 @@ public class SaopauloAraujoCrawler extends Crawler {
     Element elementDescriptionMais = doc.select("#caracteristicas table.Saiba-Mais").first();
 
     if (elementDescriptionMais != null) {
-      description.append("<h4> Saiba Mais </h4>");
       description.append(elementDescriptionMais.outerHtml());
     }
 

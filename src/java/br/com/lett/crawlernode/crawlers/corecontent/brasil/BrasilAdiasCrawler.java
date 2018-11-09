@@ -318,6 +318,12 @@ public class BrasilAdiasCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     String description = "";
+
+    Element shortDescription = document.selectFirst("#spnValorReferente");
+    if (shortDescription != null) {
+      description = description + shortDescription.html();
+    }
+
     Element descriptionElement = document.select(".informacao-abas #conteudo-0").first();
     Element specElement = document.select(".informacao-abas #conteudo-1").first();
 

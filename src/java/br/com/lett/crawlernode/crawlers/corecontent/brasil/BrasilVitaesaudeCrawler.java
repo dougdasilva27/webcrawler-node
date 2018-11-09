@@ -308,7 +308,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
-      Element installmentsElement = doc.select(".ProdParcelas strong").first();
+      Element installmentsElement = doc.select(".ProductParcelas").first();
 
       if (installmentsElement != null) {
         String installmentText = installmentsElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -353,7 +353,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       if (variationInfo.has("parcelas")) {
         Document doc = Jsoup.parse(variationInfo.getString("parcelas"));
 
-        Element installmentsElement = doc.select(".ProdParcelas strong").first();
+        Element installmentsElement = doc.select(".ProductParcelas").first();
 
         if (installmentsElement != null) {
           String installmentText = installmentsElement.ownText().replaceAll("[^0-9]", "").trim();

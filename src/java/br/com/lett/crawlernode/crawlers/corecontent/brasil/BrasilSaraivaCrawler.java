@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +75,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(ean, apiJson);
+      String description = crawlDescription(ean, apiJson, doc);
 
       // price is not displayed when sku is unavailable
       // Ex:
@@ -459,34 +460,38 @@ public class BrasilSaraivaCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(String ean, JSONObject apiJson) {
+  private String crawlDescription(String ean, JSONObject apiJson, Document doc) {
     StringBuilder description = new StringBuilder();
 
-    if (apiJson.has("description")) {
-      description.append("<section id=\"description\"> <h4> Descrição </h4>");
-      description.append(apiJson.get("description"));
-      description.append("</section>");
-    }
-
-
-    if (apiJson.has("attributes")) {
-      JSONObject attributes = apiJson.getJSONObject("attributes");
-
-      description.append("<section id=\"description\"> <h4> Características </h4>");
-      description.append("<table id=\"ficha\"> <tbody>");
-      for (String key : attributes.keySet()) {
-        JSONObject attribute = attributes.getJSONObject(key);
-
-        if (attribute.has("label") && attribute.has("value")) {
-          description.append("<tr>");
-          description.append("<td> " + attribute.get("label") + "&nbsp</td>");
-          description.append("<td> " + attribute.get("value") + "</td>");
-          description.append("</tr>");
-        }
+    if (apiJson.length() > 0) {
+      if (apiJson.has("description")) {
+        description.append("<section id=\"description\"> <h4> Descrição </h4>");
+        description.append(apiJson.get("description"));
+        description.append("</section>");
       }
 
-      description.append("</tbody></table>");
-      description.append("</section>");
+
+      if (apiJson.has("attributes")) {
+        JSONObject attributes = apiJson.getJSONObject("attributes");
+
+        description.append("<section id=\"description\"> <h4> Características </h4>");
+        description.append("<table id=\"ficha\"> <tbody>");
+        for (String key : attributes.keySet()) {
+          JSONObject attribute = attributes.getJSONObject(key);
+
+          if (attribute.has("label") && attribute.has("value")) {
+            description.append("<tr>");
+            description.append("<td> " + attribute.get("label") + "&nbsp</td>");
+            description.append("<td> " + attribute.get("value") + "</td>");
+            description.append("</tr>");
+          }
+        }
+
+        description.append("</tbody></table>");
+        description.append("</section>");
+      }
+    } else {
+      description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_attributes", "#product_description")));
     }
 
     description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, session));

@@ -45,7 +45,7 @@ public class BrasilCobasiCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description = crawlDescription(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a", Arrays.asList("href"), "https:", "cobasi.vteximg.com.br");
       String secondaryImages = null;

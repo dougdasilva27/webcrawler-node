@@ -253,7 +253,7 @@ public class BrasilDrogarianetCrawler extends Crawler {
         Map<Integer, Float> installmentPriceMap = new HashMap<>();
         installmentPriceMap.put(1, price);
 
-        Elements specialInstallment = doc.select(".Parcelamento span");
+        Elements specialInstallment = doc.select(".AreaComprar .Parcelamento span");
 
         if (specialInstallment.size() > 1) {
           String installment = specialInstallment.get(0).ownText().replaceAll("[^0-9]", "").trim();

@@ -1,14 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -23,92 +20,48 @@ public class SaopauloOnofreRatingReviewCrawler extends RatingReviewCrawler {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(document)) {
+      String internalId = crawlInternalId(document);
 
-      RatingsReviews ratingReviews = crawlRating(document);
-      ratingReviews.setInternalId(crawlInternalId(document));
-
-      ratingReviewsCollection.addRatingReviews(ratingReviews);
+      ratingReviewsCollection.addRatingReviews(crawlRating(document, internalId));
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
 
     return ratingReviewsCollection;
   }
 
-  private RatingsReviews crawlRating(Document doc) {
+  private RatingsReviews crawlRating(Document doc, String internalId) {
     RatingsReviews ratingReviews = new RatingsReviews();
 
-    ratingReviews.setTotalRating(0);
-    ratingReviews.setAverageOverallRating(0d);
+    YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
+
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063");
+    Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+    Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
     ratingReviews.setDate(session.getDate());
-
-    JSONObject chaordic = crawlChaordicJson(doc);
-
-    if (chaordic.has("product")) {
-      JSONObject product = chaordic.getJSONObject("product");
-
-      if (product.has("details")) {
-        JSONObject details = product.getJSONObject("details");
-
-        if (details.has("rating")) {
-          JSONObject rating = details.getJSONObject("rating");
-
-          if (rating.has("total") && rating.has("value")) {
-            ratingReviews.setTotalRating(Integer.parseInt(rating.getString("total")));
-            ratingReviews.setAverageOverallRating(Double.parseDouble(rating.getString("value")));
-          }
-        }
-      }
-    }
+    ratingReviews.setInternalId(internalId);
 
     return ratingReviews;
   }
 
 
   private boolean isProductPage(Document doc) {
-    Element id = doc.select("#cphConteudo_hf_id_produto").first();
-
-    if (id != null) {
-      return true;
-    }
-
-    return false;
+    return doc.select("#skuId").first() != null;
   }
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    Element id = doc.select("#cphConteudo_hf_id_produto").first();
 
-    if (id != null) {
-      internalId = id.val();
+    Element elementInternalPid = doc.select("#skuId").first();
+    if (elementInternalPid != null) {
+      internalId = elementInternalPid.text();
     }
 
     return internalId;
-  }
-
-  private JSONObject crawlChaordicJson(Document doc) {
-    JSONObject chaordic = new JSONObject();
-    Elements scripts = doc.select("script[language=javascript][type=\"text/javascript\"]");
-
-    for (Element e : scripts) {
-      String script = e.outerHtml().replaceAll(" ", "");
-      String index = "chaordic_meta=";
-
-      if (script.contains(index)) {
-        int x = script.indexOf(index) + index.length();
-        int y = script.indexOf("<", x);
-
-        String json = script.substring(x, y).replace("newDate()", "\"\""); // some cases has new Date() in json
-
-        try {
-          chaordic = new JSONObject(json);
-        } catch (JSONException ex) {
-          Logging.printLogError(logger, CommonMethods.getStackTrace(ex));
-        }
-
-        break;
-      }
-    }
-
-    return chaordic;
   }
 }

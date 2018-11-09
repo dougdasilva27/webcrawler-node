@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -131,6 +135,59 @@ public class ArgentinaMusimundoCrawler extends Crawler {
 
     if (techDesc != null) {
       description.append(techDesc);
+    }
+
+    Element mpn = doc.selectFirst("script[data-flix-mpn]");
+    if (mpn != null) {
+      String mpnText = CommonMethods.removeAccents(mpn.attr("data-flix-mpn")).replace(" ", "%20");
+      String url = "https://media.flixcar.com/delivery/js/inpage/4780/f4/mpn/" + mpnText + "?&=4782&=f4&mpn=" + mpnText + "&ssl=1&ext=.js";
+
+      String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      final String token = "$(\"#flixinpage_\"+i).inPage";
+
+      JSONObject productInfo = new JSONObject();
+
+      if (script.contains(token)) {
+        int x = script.indexOf(token + " (") + token.length() + 2;
+        int y = script.indexOf(");", x);
+
+        String json = script.substring(x, y);
+
+        try {
+          productInfo = new JSONObject(json);
+        } catch (JSONException e) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        }
+      }
+
+      if (productInfo.has("product")) {
+        String id = productInfo.getString("product");
+
+        String urlDesc =
+            "https://media.flixcar.com/delivery/inpage/show/4780/f4/" + id + "/json?c=jsonpcar4782f4" + id + "&complimentary=0&type=.html";
+        String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+
+        if (scriptDesc.contains("({")) {
+          int x = scriptDesc.indexOf("({") + 1;
+          int y = scriptDesc.lastIndexOf("})") + 1;
+
+          String json = scriptDesc.substring(x, y);
+
+          try {
+            JSONObject jsonInfo = new JSONObject(json);
+
+            if (jsonInfo.has("html")) {
+              if (jsonInfo.has("css")) {
+                description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
+              }
+
+              description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
+            }
+          } catch (JSONException e) {
+            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          }
+        }
+      }
     }
 
     return description.toString();

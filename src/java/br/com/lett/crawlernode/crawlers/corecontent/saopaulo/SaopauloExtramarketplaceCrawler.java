@@ -163,9 +163,6 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
 
-      // Seller principal
-      String principalSeller = crawlPrincipalSeller(doc);
-
       if (hasVariations) {
         Elements productVariationElements = crawlSkuOptions(doc);
 
@@ -186,7 +183,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
           if (!unnavailable) {
             Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
-            marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
+            marketplaceMap = crawlMarketplaces(docMarketplace, doc);
           }
 
           Marketplace marketplace = unnavailable ? new Marketplace() : assembleMarketplaceFromMap(marketplaceMap);
@@ -229,7 +226,7 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
 
         // Document marketplace
         Document docMarketplace = fetchDocumentMarketPlace(internalIdSecondPart, modifiedURL);
-        Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, principalSeller, doc);
+        Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, doc);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
         boolean available = crawlAvailability(marketplaceMap, unnavailableForAll);
         Prices prices = crawlPricesForProduct(marketplaceMap);
@@ -444,27 +441,61 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
     return skuOptions;
   }
 
-  private Map<String, Prices> crawlMarketplaces(Document docMarketplaceInfo, String principalSeller, Document doc) {
+  private Map<String, Prices> crawlMarketplaces(Document docMarketplaceInfo, Document doc) {
     Map<String, Prices> marketplace = new HashMap<>();
 
-    Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr");
-
-    Element principalSellerPrice = doc.select(".sale.price").first();
-    if (principalSellerPrice != null) {
-      marketplace.put(principalSeller, crawlPrices(doc, MathUtils.parseFloatWithComma(principalSellerPrice.ownText())));
+    Float principalSellerPrice = null;
+    Element principalSellerPriceElement = doc.select(".sale.price").first();
+    if (principalSellerPriceElement != null) {
+      principalSellerPrice = MathUtils.parseFloatWithComma(principalSellerPriceElement.ownText());
     }
 
-    for (Element linePartner : lines) {
-      Element sellerElement = linePartner.select("a.seller").first();
-      Element sellerValueElement = linePartner.select(".valor").first();
+    Element principalSeller = docMarketplaceInfo.selectFirst("table#sellerList tbody tr:first-child");
+    if (principalSeller != null) {
+      Element sellerElement = principalSeller.select("a.seller").first();
+      Element sellerValueElement = principalSeller.select(".valor").first();
 
       if (sellerElement != null && sellerValueElement != null) {
         String partnerName = sellerElement.text().trim().toLowerCase();
         Float partnerPrice = MathUtils.parseFloatWithComma(sellerValueElement.text());
 
-        Prices prices = new Prices();
+        if (partnerPrice != null && partnerPrice.equals(principalSellerPrice)) {
+          marketplace.put(partnerName, crawlPrices(doc, partnerPrice));
+        } else {
+          Prices prices = new Prices();
+          prices.setBankTicketPrice(partnerPrice);
 
-        if (!principalSeller.equals(partnerName)) {
+          Map<Integer, Float> installmentPriceMap = new HashMap<>();
+          installmentPriceMap.put(1, partnerPrice);
+
+          Elements installments = principalSeller.select(".valorTotal span strong");
+
+          if (installments.size() > 1) {
+            Integer installment = Integer.parseInt(installments.get(0).text().trim());
+            Float value = MathUtils.parseFloatWithComma(installments.get(1).text());
+
+            installmentPriceMap.put(installment, value);
+          }
+          prices.insertCardInstallment("visa", installmentPriceMap);
+
+          Element comprar = principalSeller.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+
+          if (comprar == null || (comprar != null && principalSeller.select(".retirar a.bt-retirar") != null)) {
+            marketplace.put(partnerName, prices);
+          }
+        }
+      }
+
+      Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr:not(:first-child)");
+      for (Element linePartner : lines) {
+        Element sellerElement2 = linePartner.select("a.seller").first();
+        Element sellerValueElement2 = linePartner.select(".valor").first();
+
+        if (sellerElement2 != null && sellerValueElement2 != null) {
+          String partnerName = sellerElement2.text().trim().toLowerCase();
+          Float partnerPrice = MathUtils.parseFloatWithComma(sellerValueElement2.text());
+
+          Prices prices = new Prices();
           prices.setBankTicketPrice(partnerPrice);
 
           Map<Integer, Float> installmentPriceMap = new HashMap<>();
@@ -489,11 +520,12 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
           }
         }
       }
+    } else {
+      marketplace.put(crawlPrincipalSeller(doc), crawlPrices(doc, principalSellerPrice));
     }
 
     return marketplace;
   }
-
 
   private String assembleVariationName(String name, Element sku) {
     String nameV = name;

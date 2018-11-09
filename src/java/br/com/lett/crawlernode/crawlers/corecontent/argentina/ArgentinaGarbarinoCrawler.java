@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,6 +17,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -50,16 +50,17 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".gb-breadcrumb > ul > li:not(:first-child) > a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gb-main-detail-gallery-grid-img-full img", Arrays.asList("src"), "https:",
-          "d3lfzbr90tctqz.cloudfront.net");
-      String secondaryImages = crawlSecondaryImages(doc);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gb-js-main-image-thumbnail > a", Arrays.asList("href", "data-standart"),
+          "https:", "d34zlyc2cp9zm7.cloudfront.net");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".gb-js-main-image-thumbnail > a", Arrays.asList("href", "data-standart"),
+          "https:", "d34zlyc2cp9zm7.cloudfront.net", primaryImage);
       String description = crawlDescription(doc);
       Marketplace marketplace = crawlMarketplace();
 
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(marketplace).build();
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage.replace(".webp_1000", ".jpg"))
+          .setSecondaryImages(secondaryImages.replace(".webp_1000", ".jpg")).setDescription(description).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -116,12 +117,17 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+      Elements installments =
+          doc.select(".payments .payment-method:first-child .gb-detail-fees-detail[data-payment-id=1] .gb-detail-fees-table-body ul li:first-child");
+      for (Element e : installments) {
+        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, true, "de");
+
+        if (!pair.isAnyValueNull()) {
+          installmentPriceMap.put(pair.getFirst(), pair.getSecond());
+        }
+      }
+
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.NARANJA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
 
     return prices;
@@ -146,58 +152,6 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
     }
 
     return available;
-  }
-
-  private String crawlPrimaryImage(Document doc) {
-    String primaryImage = null;
-    Element primaryImageElement = doc.selectFirst(".gb-js-main-image-thumbnail");
-
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("href").trim();
-
-      if (!primaryImage.startsWith("http;")) {
-        primaryImage = "https:" + primaryImage;
-      }
-
-    }
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = doc.select(".gb-main-detail-gallery-thumbs-list > ul > li > a");
-
-    if (!imagesElement.isEmpty()) {
-      for (int i = 1; i < imagesElement.size(); i++) { // first index and last index is the primary image
-        String image = imagesElement.get(i).attr("href").trim();
-
-        if (!image.startsWith("http;")) {
-          image = "https:" + image;
-        }
-        secondaryImagesArray.put(image);
-      }
-    }
-
-    Elements imgElements = doc.select(".gb-main-detail-gallery-grid-list > li > img");
-
-    if (!imgElements.isEmpty()) {
-      for (int i = 1; i < imgElements.size(); i++) { // first index and last index is the primary image
-        String image = imgElements.get(i).attr("src").trim();
-
-        if (!image.startsWith("http;")) {
-          image = "https:" + image;
-        }
-        secondaryImagesArray.put(image);
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   private String crawlDescription(Document doc) {

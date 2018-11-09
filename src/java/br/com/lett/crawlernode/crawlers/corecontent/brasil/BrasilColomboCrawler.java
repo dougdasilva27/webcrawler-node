@@ -147,14 +147,15 @@ public class BrasilColomboCrawler extends Crawler {
       // Marketplace
       Marketplace marketplace = new Marketplace();
 
+      // Disponibilidade
+      boolean available = true;
+      Element elementUnavailable = doc.select("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)").first();
+      if (elementUnavailable != null) {
+        available = false;
+      }
+
       if (selections.size() <= 1) { // sem variações
 
-        // Disponibilidade
-        boolean available = true;
-        Element elementUnavailable = doc.select("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)").first();
-        if (elementUnavailable != null) {
-          available = false;
-        }
         if (!available) {
           price = null;
           prices = new Prices();
@@ -203,13 +204,13 @@ public class BrasilColomboCrawler extends Crawler {
           String variationName = null;
           Element variationElementName = e.select(".dados-itens-table-caracteristicas > label").first();
           if (variationElementName != null) {
-            variationName = name + " " + variationElementName.ownText();
+            variationName = name + " " + variationElementName.ownText().split("- R")[0];
           }
 
           // Available
-          boolean variationAvailable = true;
+          boolean variationAvailable = available;
           Element variationElementAvailable = e.select(".dados-itens-table-estoque").first();
-          if (variationElementAvailable != null) {
+          if (variationElementAvailable != null && variationAvailable) {
             String tmp = variationElementAvailable.text().trim();
             if (tmp.contains("Esgotado")) {
               variationAvailable = false;

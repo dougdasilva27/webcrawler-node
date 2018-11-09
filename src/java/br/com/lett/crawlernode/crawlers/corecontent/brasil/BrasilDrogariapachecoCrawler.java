@@ -2,16 +2,19 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -55,7 +58,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
       Integer stock = null;
 
       // sku data in json
@@ -67,6 +69,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String primaryImage = crawlPrimaryImage(jsonSku);
         String name = crawlName(jsonSku, skuJson);
+        String description = crawlDescription(doc, internalPid, name);
         String secondaryImages = crawlSecondaryImages(internalId, primaryImage);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
@@ -257,7 +260,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalPid, String name) {
     StringBuilder description = new StringBuilder();
 
     Element shortDescription = doc.select(".productDescription").first();
@@ -265,14 +268,83 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
-    Element elementInformation = doc.select(".flt_left.productSpecification #caracteristicas").first();
+    Element elementInformation = doc.select(".productSpecification").first();
     if (elementInformation != null) {
+
+      Element iframe = elementInformation.select("iframe[src]").first();
+      if (iframe != null) {
+        description.append(GETFetcher.fetchPageGET(session, iframe.attr("src"), cookies, 1));
+      }
+
       description.append(elementInformation.html());
+    }
+
+    // Nesse site todo medicamento deve ter a advertencia
+    Elements elementCategories = doc.select(".bread-crumb li > a");
+    for (int i = 1; i < elementCategories.size(); i++) { // first item is the home page
+      String text = elementCategories.get(i).text().trim();
+
+      if (text.equalsIgnoreCase("medicamentos")) {
+        description.append("<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>" + name
+            + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
+        break;
+      }
     }
 
     Element advert = doc.select(".advertencia").first();
     if (advert != null && !advert.select("#___rc-p-id").isEmpty()) {
       description.append(advert.html());
+    }
+
+    String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (skuInfo.length() > 0) {
+      JSONObject product = skuInfo.getJSONObject(0);
+
+      if (product.has("Informações")) {
+        JSONArray infos = product.getJSONArray("Informações");
+
+        for (Object o : infos) {
+          description.append("<div> <strong>" + o.toString() + ":</strong>");
+          JSONArray spec = product.getJSONArray(o.toString());
+
+          for (Object obj : spec) {
+            description.append(obj.toString() + "&nbsp");
+          }
+
+          description.append("</div>");
+        }
+      }
+
+      if (product.has("Especificações")) {
+        JSONArray infos = product.getJSONArray("Especificações");
+
+        for (Object o : infos) {
+          if (!Arrays.asList("Garantia", "Parte do Corpo").contains(o.toString())) {
+            description.append("<div> <strong>" + o.toString() + ":</strong>");
+            JSONArray spec = product.getJSONArray(o.toString());
+
+            for (Object obj : spec) {
+              description.append(obj.toString() + "&nbsp");
+            }
+
+            description.append("</div>");
+          }
+        }
+      }
+
+      if (product.has("Página Especial")) {
+        JSONArray specialPage = product.getJSONArray("Página Especial");
+
+        if (specialPage.length() > 0) {
+          Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
+
+          if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
+            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+          }
+        }
+      }
     }
 
     return description.toString();

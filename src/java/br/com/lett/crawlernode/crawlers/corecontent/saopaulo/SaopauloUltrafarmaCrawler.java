@@ -115,18 +115,13 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       // Descrição
       StringBuilder description = new StringBuilder();
 
-      Elements titles = doc.select(".tablinks");
-      for (Element e : titles) {
-        String text = e.ownText().toLowerCase().trim();
+      Elements infos = doc.select(".tabcontent, .div_anvisa");
+      for (Element e : infos) {
+        String text = e.text().toLowerCase().trim();
 
-        if (!text.equals("comentários")) {
+        if (!text.contains("comentários")) {
           description.append(e.outerHtml());
         }
-      }
-
-      Elements infos = doc.select(".div-det-info, .div_anvisa");
-      for (Element e : infos) {
-        description.append(e.outerHtml());
       }
 
       // Estoque

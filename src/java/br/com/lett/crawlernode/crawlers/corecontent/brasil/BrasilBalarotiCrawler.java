@@ -45,7 +45,7 @@ public class BrasilBalarotiCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description = crawlDescription(internalPid, vtexUtil);
 
       // sku data in json
@@ -101,6 +101,25 @@ public class BrasilBalarotiCrawler extends Crawler {
     JSONObject descriptionApi = vtexUtil.crawlDescriptionAPI(internalPid, "productId");
     if (descriptionApi.has("description")) {
       description.append(descriptionApi.get("description").toString());
+    }
+
+    List<String> specs = new ArrayList<>();
+
+    if (descriptionApi.has("allSpecifications")) {
+      JSONArray keys = descriptionApi.getJSONArray("allSpecifications");
+      for (Object o : keys) {
+        if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+          specs.add(o.toString());
+        }
+      }
+    }
+
+    for (String spec : specs) {
+
+      description.append("<div>");
+      description.append("<h4>").append(spec).append("</h4>");
+      description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionApi.get(spec)));
+      description.append("</div>");
     }
 
     return description.toString();

@@ -59,7 +59,7 @@ public class BrasilApoiomineiroCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = apiJSON.has("Name") ? apiJSON.get("Name").toString() : vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);

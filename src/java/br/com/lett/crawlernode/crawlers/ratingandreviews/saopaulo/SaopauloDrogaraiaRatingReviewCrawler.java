@@ -37,11 +37,15 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setInternalId(internalId);
 
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
+      Integer total = getTotalNumOfRatings(trustVoxResponse);
 
-      ratingReviews.setTotalRating(getTotalNumOfRatings(trustVoxResponse));
+      ratingReviews.setTotalRating(total);
+      ratingReviews.setTotalWrittenReviews(total);
       ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
 
       ratingReviewsCollection.addRatingReviews(ratingReviews);
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
@@ -115,12 +119,12 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private boolean isProductPage(Document document) {
-    return document.select("#details .col-2 .data-table tr .data").first() != null;
+    return !document.select(".product-name h1").isEmpty();
   }
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");");
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
 
     if (json.has("ecommerce")) {
       JSONObject ecommerce = json.getJSONObject("ecommerce");

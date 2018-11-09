@@ -157,7 +157,7 @@ public class SaopauloWalmartCrawler extends Crawler {
     Element elementName = doc.select("h1.product-name").first();
 
     if (elementName != null) {
-      name = elementName.text().replace("'", "").replace("’", "").trim();
+      name = elementName.text().trim();
     }
 
     if (infoProduct.has("name")) {
@@ -295,25 +295,38 @@ public class SaopauloWalmartCrawler extends Crawler {
 
 
   private String crawlDescription(Document doc) {
-    String description = "";
+    StringBuilder description = new StringBuilder();
 
     Element elementDescription = doc.select(".product-description").first();
-    Element elementCharacteristics = doc.select("#product-characteristics-container").first();
-    Element elementDimensions = doc.select(".product-dimensions").first();
-
     if (elementDescription != null) {
-      description = description + elementDescription.html();
+      description.append(elementDescription.html());
     }
 
+    Element supplierDescription = doc.selectFirst(".product-manufacturer");
+    if (supplierDescription != null) {
+
+      Element iframe = supplierDescription.selectFirst("iframe");
+      if (iframe != null) {
+        String url = iframe.attr("src");
+        supplierDescription.selectFirst("iframe").remove();
+        description.append(supplierDescription.html());
+        description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies));
+      } else {
+        description.append(supplierDescription.html());
+      }
+    }
+
+    Element elementCharacteristics = doc.select("#product-characteristics-container").first();
     if (elementCharacteristics != null) {
-      description = description + elementCharacteristics.html();
+      description.append(elementCharacteristics.html());
     }
 
+    Element elementDimensions = doc.select(".product-dimensions").first();
     if (elementDimensions != null) {
-      description = description + elementDimensions.html();
+      description.append(elementDimensions.html());
     }
 
-    return description;
+    return description.toString();
   }
 
   private Map<String, Prices> crawlMarketplace(String productId, String internalPid, Document infoDoc) {

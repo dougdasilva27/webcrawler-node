@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
@@ -32,20 +33,20 @@ public class BrasilThebeautyboxRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, cookies);
+      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        Document docRating = vtexUtil.crawlPageRatingsFromYourViews(internalPid, "31087896-d490-4f03-b64b-5948e3fb52e5");
-        Integer totalNumOfEvaluations = vtexUtil.getTotalNumOfRatingsFromYourViews(docRating);
-        Double avgRating = vtexUtil.getTotalAvgRatingFromYourViews(docRating);
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "31087896-d490-4f03-b64b-5948e3fb52e5");
+        Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+        Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
 
-        List<String> idList = vtexUtil.crawlIdList(skuJson);
+        List<String> idList = VTEXCrawlersUtils.crawlIdList(skuJson);
         for (String internalId : idList) {
           RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);

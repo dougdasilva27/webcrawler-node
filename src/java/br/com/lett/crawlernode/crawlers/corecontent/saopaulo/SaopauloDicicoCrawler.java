@@ -51,7 +51,7 @@ public class SaopauloDicicoCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String[] skuIDs = getJSONArray(doc);
       String description = crawlDescription(doc);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a:not(:first-child)");
 
       if (skuIDs != null) {
         for (String internalId : skuIDs) {

@@ -208,6 +208,12 @@ public class BrasilFarmaciadolemeCrawler extends Crawler {
       description.append(elementDescription.html());
     }
 
+    Element elementDescription2 = doc.selectFirst(".detalhe-produto");
+
+    if (elementDescription2 != null) {
+      description.append(elementDescription2.html());
+    }
+
     return description.toString();
   }
 
