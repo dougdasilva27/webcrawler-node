@@ -57,28 +57,43 @@ public class ChileParisCrawler extends Crawler {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
+      headers.put("Content-Encoding", "");
       headers.put("referer", session.getOriginalURL());
       headers.put("authority", "www.paris.cl");
 
-      String response = POSTFetcher.fetchPagePOSTWithHeaders("https://www.paris.cl/store-api/pyload/_search", session, payload, cookies, 1, headers);
-      JSONObject json = CrawlerUtils.stringToJson(response);
+      JSONObject payloaFetcher =
+          POSTFetcher.fetcherPayloadBuilder("https://www.paris.cl/store-api/pyload/_search", "GET", true, payload, headers, null, null);
+      JSONObject fetcherReponse = new JSONObject();
+      try {
+        fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
 
-      if (json.has("hits")) {
-        JSONObject hits = json.getJSONObject("hits");
+      if (fetcherReponse.has("response") && fetcherReponse.has("request_status_code") && fetcherReponse.getInt("request_status_code") >= 200
+          && fetcherReponse.getInt("request_status_code") < 400) {
+        JSONObject responseJson = fetcherReponse.getJSONObject("response");
 
-        if (hits.has("hits")) {
-          JSONArray productArray = hits.getJSONArray("hits");
+        if (responseJson.has("body")) {
+          JSONObject json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
 
-          if (productArray.length() > 0) {
-            JSONObject product = productArray.getJSONObject(0);
+          if (json.has("hits")) {
+            JSONObject hits = json.getJSONObject("hits");
 
-            if (product.has("_source")) {
-              productJson = product.getJSONObject("_source");
+            if (hits.has("hits")) {
+              JSONArray productArray = hits.getJSONArray("hits");
+
+              if (productArray.length() > 0) {
+                JSONObject product = productArray.getJSONObject(0);
+
+                if (product.has("_source")) {
+                  productJson = product.getJSONObject("_source");
+                }
+              }
             }
           }
         }
       }
-
     } catch (MalformedURLException e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
