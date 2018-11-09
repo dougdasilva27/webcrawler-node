@@ -27,7 +27,7 @@ import models.prices.Prices;
 public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.dia.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "dia brasil sociedade ltda";
+  private static final String MAIN_SELLER_NAME_LOWER = "dia delivery";
 
   public SaopauloDiaavsantacatarinaCrawler(Session session) {
     super(session);
