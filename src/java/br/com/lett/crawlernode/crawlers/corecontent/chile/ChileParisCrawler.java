@@ -62,7 +62,8 @@ public class ChileParisCrawler extends Crawler {
       headers.put("authority", "www.paris.cl");
 
       JSONObject payloaFetcher =
-          POSTFetcher.fetcherPayloadBuilder("https://www.paris.cl/store-api/pyload/_search", "GET", true, payload, headers, null, null);
+          POSTFetcher.fetcherPayloadBuilder("https://www.paris.cl/store-api/pyload/_search", "POST", true, payload, headers, null, null);
+
       JSONObject fetcherReponse = new JSONObject();
       try {
         fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
