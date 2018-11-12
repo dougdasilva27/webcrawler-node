@@ -56,7 +56,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
       String description = crawlDescription(doc);
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
-      boolean available = price != null;
+      boolean available = doc.select(".content-produto-indisponivel").isEmpty();
 
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
