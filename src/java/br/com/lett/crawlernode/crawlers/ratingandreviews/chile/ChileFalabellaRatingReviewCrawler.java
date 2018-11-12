@@ -26,11 +26,12 @@ public class ChileFalabellaRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
+    JSONObject productJson = extractProductJson(doc);
+
     if (isProductPage(doc)) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      JSONObject productJson = extractProductJson(doc);
       JSONArray products = productJson.has("skus") ? productJson.getJSONArray("skus") : new JSONArray();
 
       if (products.length() > 0) {
@@ -60,6 +61,10 @@ public class ChileFalabellaRatingReviewCrawler extends RatingReviewCrawler {
 
     return ratingReviewsCollection;
 
+  }
+
+  private boolean isProductPage(Document doc) {
+    return !doc.select(".fb-product-cta").isEmpty();
   }
 
   private String crawlInternalPid(JSONObject productJson) {
@@ -96,15 +101,6 @@ public class ChileFalabellaRatingReviewCrawler extends RatingReviewCrawler {
       avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
     }
     return avgOverallRating;
-  }
-
-  /**
-   * 
-   * @param doc
-   * @return
-   */
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".fb-product__form").isEmpty();
   }
 
   /**

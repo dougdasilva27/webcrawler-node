@@ -9,7 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -331,6 +331,6 @@ public class ChileRipleyCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
 
-    return CrawlerUtils.stringToJson(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+    return CrawlerUtils.stringToJson(GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1));
   }
 }

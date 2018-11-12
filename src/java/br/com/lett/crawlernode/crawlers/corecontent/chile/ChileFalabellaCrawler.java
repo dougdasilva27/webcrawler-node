@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -56,37 +56,49 @@ public class ChileFalabellaCrawler extends Crawler {
 
       JSONObject productJson = extractProductJson(doc);
 
-      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "FALABELLA.html");
-
-      String internalPid = crawlInternalPid(productJson);
       CategoryCollection categories = crawlCategories(doc);
       String description = crawlDescription(doc);
 
-      JSONArray arraySkus = productJson.has("skus") ? productJson.getJSONArray("skus") : new JSONArray();
 
-      Map<String, List<String>> colorsMap = new HashMap<>();
+      if (productJson.length() > 0) {
+        JSONArray arraySkus = productJson.has("skus") ? productJson.getJSONArray("skus") : new JSONArray();
+        String internalPid = crawlInternalPid(productJson);
+        Map<String, List<String>> colorsMap = new HashMap<>();
 
-      for (int i = 0; i < arraySkus.length(); i++) {
-        JSONObject skuJson = arraySkus.getJSONObject(i);
+        for (int i = 0; i < arraySkus.length(); i++) {
+          JSONObject skuJson = arraySkus.getJSONObject(i);
 
-        String internalId = crawlInternalId(skuJson);
-        String name = crawlName(productJson, skuJson);
-        Integer stock = crawlStock(skuJson);
-        boolean available = stock != null && stock > 0;
+          String internalId = crawlInternalId(skuJson);
+          String name = crawlName(productJson, skuJson);
+          Integer stock = crawlStock(skuJson);
+          boolean available = stock != null && stock > 0;
 
-        JSONObject pricesJson = fetchPrices(internalId, available);
-        Prices prices = available ? crawlPrices(skuJson, pricesJson) : new Prices();
-        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
+          JSONObject pricesJson = fetchPrices(internalId, available);
+          Prices prices = available ? crawlPrices(skuJson, pricesJson) : new Prices();
+          Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
 
-        List<String> images = crawlImages(skuJson, internalId, colorsMap);
-        String primaryImage = images.isEmpty() ? null : images.get(0);
-        String secondaryImages = crawlSecondaryImages(images, primaryImage);
+          List<String> images = crawlImages(skuJson, internalId, colorsMap);
+          String primaryImage = images.isEmpty() ? null : images.get(0);
+          String secondaryImages = crawlSecondaryImages(images, primaryImage);
 
-        // Creating the product
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+
+          products.add(product);
+        }
+      } else {
+        String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".fb-product-cta__title", true);
+        String internalId = crawlInternalId(doc);
+        String internalPid = internalId;
+        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fb-pp-photo img", Arrays.asList("src"), "https:", "falabella.scene7.com");
+
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).build();
+            .setPrice(null).setPrices(new Prices()).setAvailable(false).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description)
+            .setMarketplace(new Marketplace()).build();
 
         products.add(product);
       }
@@ -104,7 +116,18 @@ public class ChileFalabellaCrawler extends Crawler {
    * @return
    */
   private boolean isProductPage(Document doc) {
-    return !doc.select(".fb-product__form").isEmpty();
+    return !doc.select(".fb-product-cta").isEmpty();
+  }
+
+  private String crawlInternalId(Document doc) {
+    String internalId = null;
+
+    String text = CrawlerUtils.scrapStringSimpleInfo(doc, ".fb-product-sets__product-code", true);
+    if (text != null) {
+      internalId = CommonMethods.getLast(text.split(":"));
+    }
+
+    return internalId;
   }
 
   /**
