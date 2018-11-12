@@ -583,7 +583,7 @@ public class POSTFetcher {
       RequestConfig requestConfig = getRequestConfig(proxy);
 
       List<Header> reqHeaders = new ArrayList<>();
-      if (!url.startsWith(SaopauloRappiCrawler.PRODUCTS_API_URL)) {
+      if (!url.startsWith(SaopauloRappiCrawler.PRODUCTS_API_URL) && !session.getMarket().getName().equals("paris")) {
         reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
       }
 

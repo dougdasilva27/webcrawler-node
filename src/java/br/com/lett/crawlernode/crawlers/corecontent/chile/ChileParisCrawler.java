@@ -71,26 +71,33 @@ public class ChileParisCrawler extends Crawler {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
+      JSONObject json = new JSONObject();
+
       if (fetcherReponse.has("response") && fetcherReponse.has("request_status_code") && fetcherReponse.getInt("request_status_code") >= 200
           && fetcherReponse.getInt("request_status_code") < 400) {
         JSONObject responseJson = fetcherReponse.getJSONObject("response");
 
         if (responseJson.has("body")) {
-          JSONObject json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
+          json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
+        }
+      }
 
-          if (json.has("hits")) {
-            JSONObject hits = json.getJSONObject("hits");
+      if (json.length() < 1) {
+        json = new JSONObject(
+            POSTFetcher.fetchPagePOSTWithHeaders("https://www.paris.cl/store-api/pyload/_search", session, payload, cookies, 1, headers));
+      }
 
-            if (hits.has("hits")) {
-              JSONArray productArray = hits.getJSONArray("hits");
+      if (json.has("hits")) {
+        JSONObject hits = json.getJSONObject("hits");
 
-              if (productArray.length() > 0) {
-                JSONObject product = productArray.getJSONObject(0);
+        if (hits.has("hits")) {
+          JSONArray productArray = hits.getJSONArray("hits");
 
-                if (product.has("_source")) {
-                  productJson = product.getJSONObject("_source");
-                }
-              }
+          if (productArray.length() > 0) {
+            JSONObject product = productArray.getJSONObject(0);
+
+            if (product.has("_source")) {
+              productJson = product.getJSONObject("_source");
             }
           }
         }
