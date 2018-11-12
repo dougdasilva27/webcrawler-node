@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -186,7 +188,9 @@ public class SaopauloExtramarketplaceCrawler extends Crawler {
             marketplaceMap = crawlMarketplaces(docMarketplace, doc);
           }
 
-          Marketplace marketplace = unnavailable ? new Marketplace() : assembleMarketplaceFromMap(marketplaceMap);
+          Marketplace marketplace = unnavailable ? new Marketplace()
+              : CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA,
+                  session);
           boolean available = !unnavailable && crawlAvailability(marketplaceMap, unnavailableForAll);
           Prices prices = crawlPricesForProduct(marketplaceMap);
           Float variationPrice = this.crawlPrice(prices);

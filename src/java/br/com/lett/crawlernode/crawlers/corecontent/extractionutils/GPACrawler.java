@@ -34,7 +34,7 @@ public class GPACrawler {
   private String store;
   private List<Cookie> cookies = new ArrayList<>();
 
-  public static final String RIO_DE_JANEIRO_STORE_ID = "7";
+  public static final String RIO_DE_JANEIRO_STORE_ID = "1266";
   public static final String RIO_DE_JANEIRO_STORE_ID_EXTRA = "42";
   public static final String SAO_PAULO_STORE_ID = "501";
   public static final String SAO_PAULO_STORE_ID_EXTRA = "241";

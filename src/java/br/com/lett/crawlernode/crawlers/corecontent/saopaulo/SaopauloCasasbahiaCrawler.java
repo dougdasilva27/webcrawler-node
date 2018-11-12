@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -242,7 +243,8 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = this.crawlMarketplaces(docMarketplace, doc);
 
         // Assemble marketplace from marketplace map
-        Marketplace marketplace = this.assembleMarketplaceFromMap(marketplaceMap);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
 
         // Available
         boolean available = this.crawlAvailability(marketplaceMap);
