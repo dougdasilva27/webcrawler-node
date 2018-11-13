@@ -53,12 +53,12 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = internalId;
       String newUrl = internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
       boolean available = price != null;
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
       String description = crawlDescription(doc);
@@ -156,19 +156,23 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(Document document) {
+  private String crawlSecondaryImages(Document document, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements imagesElement = document.select(".box-galeria img" + CrawlerUtils.CSS_SELECTOR_IGNORE_FIRST_CHILD);// first index is the primary image
+    Elements imagesElement = document.select(".swiper-slide.count-slide img");
 
     for (Element e : imagesElement) {
-      String image = e.attr("data-zoom-image").trim();
+      String image = e.attr("onclick").trim();
 
-      if (!image.startsWith("http")) {
-        image = "https:" + image;
+      int x = image.indexOf("('") + 2;
+      int y = image.indexOf("',", x);
+
+      image = CrawlerUtils.completeUrl(image.substring(x, y), "https:", "img.angeloni.com.br");
+
+      if (!image.equalsIgnoreCase(primaryImage)) {
+        secondaryImagesArray.put(image);
       }
-      secondaryImagesArray.put(image);
     }
 
     if (secondaryImagesArray.length() > 0) {
