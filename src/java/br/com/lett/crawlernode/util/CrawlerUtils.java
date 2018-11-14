@@ -757,8 +757,6 @@ public class CrawlerUtils {
   }
 
   /**
-   * @deprecated use crawlCategories(Document document, String selector) ue :not(:first-child) to
-   *             ignore first child
    * @param document
    * @param selector
    * @param ignoreFirstChild - ignore first element from cssSelector

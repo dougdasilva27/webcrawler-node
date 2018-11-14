@@ -132,26 +132,11 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
 
-      if (product.has("Informações")) {
-        JSONArray infos = product.getJSONArray("Informações");
+      if (product.has("allSpecifications")) {
+        JSONArray infos = product.getJSONArray("allSpecifications");
 
         for (Object o : infos) {
-          description.append("<div> <strong>" + o.toString() + ":</strong>");
-          JSONArray spec = product.getJSONArray(o.toString());
-
-          for (Object obj : spec) {
-            description.append(obj.toString() + "&nbsp");
-          }
-
-          description.append("</div>");
-        }
-      }
-
-      if (product.has("Especificações")) {
-        JSONArray infos = product.getJSONArray("Especificações");
-
-        for (Object o : infos) {
-          if (!Arrays.asList("Garantia", "Parte do Corpo").contains(o.toString())) {
+          if (!Arrays.asList("Garantia", "Parte do Corpo", "Gênero").contains(o.toString().trim())) {
             description.append("<div> <strong>" + o.toString() + ":</strong>");
             JSONArray spec = product.getJSONArray(o.toString());
 

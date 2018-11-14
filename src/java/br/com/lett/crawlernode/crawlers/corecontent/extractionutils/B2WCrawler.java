@@ -62,15 +62,14 @@ public class B2WCrawler {
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
-      Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson);
+      Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
 
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
+        String name = entry.getValue().trim();
         Map<String, Prices> marketplaceMap = this.crawlMarketplace(infoProductJson, internalId);
         Marketplace variationMarketplace = this.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = this.crawlAvailability(marketplaceMap);
-        String name = skuOptions.size() == 1 && marketplaceMap.isEmpty() && infoProductJson.has("name") ? infoProductJson.getString("name")
-            : entry.getValue().trim();
         Float variationPrice = this.crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
         Integer stock = null; // stock só tem na api
@@ -110,8 +109,10 @@ public class B2WCrawler {
     return internalPid;
   }
 
-  private Map<String, String> crawlSkuOptions(JSONObject infoProductJson) {
+  private Map<String, String> crawlSkuOptions(JSONObject infoProductJson, Document doc) {
     Map<String, String> skuMap = new HashMap<>();
+
+    boolean unnavailablePage = !doc.select(".unavailable-informer").isEmpty();
 
     if (infoProductJson.has("skus")) {
       JSONArray skus = infoProductJson.getJSONArray("skus");
@@ -123,12 +124,22 @@ public class B2WCrawler {
           String internalId = sku.getString("internalId");
           StringBuilder name = new StringBuilder();
 
-          if (sku.has("name") && sku.has("variationName")) {
+          String variationName = "";
+          if (sku.has("variationName")) {
+            variationName = sku.getString("variationName");
+          }
+
+          String varationNameWithoutVolts = variationName.replace("volts", "").trim();
+
+          if (unnavailablePage && infoProductJson.has("name")) {
+            name.append(infoProductJson.getString("name"));
+            if (!name.toString().toLowerCase().contains(varationNameWithoutVolts.toLowerCase())) {
+              name.append(" " + variationName);
+            }
+          } else if (sku.has("name")) {
             name.append(sku.getString("name"));
 
-            String variationName = sku.getString("variationName");
-
-            if (!name.toString().toLowerCase().contains(variationName.toLowerCase())) {
+            if (!name.toString().toLowerCase().contains(varationNameWithoutVolts.toLowerCase())) {
               name.append(" " + variationName);
             }
           }
@@ -139,6 +150,7 @@ public class B2WCrawler {
     }
 
     return skuMap;
+
   }
 
   private Map<String, Prices> crawlMarketplace(JSONObject skus, String internalId) {

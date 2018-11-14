@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -142,16 +143,13 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element descHead = doc.selectFirst(".div_line:eq(2)");
+    Elements descs = doc.select(".div_line");
 
-    if (descHead != null) {
-      description.append(descHead.text());
-    }
-
-    Element descBody = doc.selectFirst(".div_line:eq(3)");
-
-    if (descBody != null) {
-      description.append(descBody.outerHtml());
+    if (descs.size() > 2) {
+      description.append(descs.get(1).html());
+      description.append(descs.get(2).html());
+    } else {
+      description.append(descs.html());
     }
 
     return description.toString();

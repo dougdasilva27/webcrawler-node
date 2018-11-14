@@ -60,7 +60,7 @@ public class SaopauloDiaCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription"));
 
       // sku data in json

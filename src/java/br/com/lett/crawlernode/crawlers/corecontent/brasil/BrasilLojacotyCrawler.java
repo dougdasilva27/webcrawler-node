@@ -8,7 +8,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -60,8 +59,8 @@ public class BrasilLojacotyCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, 
-        		Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
@@ -114,6 +113,12 @@ public class BrasilLojacotyCrawler extends Crawler {
     if (descriptionJson.has("Composição")) {
       description.append("<div><h4>Composição</h4>");
       description.append(sanitizeDescription(descriptionJson.get("Composição")));
+      description.append("</div>");
+    }
+
+    if (descriptionJson.has("Gênero")) {
+      description.append("<div><h4>Gênero</h4>");
+      description.append(sanitizeDescription(descriptionJson.get("Gênero")));
       description.append("</div>");
     }
 
