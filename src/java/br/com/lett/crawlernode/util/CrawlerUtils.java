@@ -208,7 +208,7 @@ public class CrawlerUtils {
     for (Element e : images) {
       String image = sanitizeUrl(e, attributes, protocol, host);
 
-      if (primaryImage == null || !primaryImage.equals(image)) {
+      if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
         secondaryImagesArray.put(image);
       }
     }
