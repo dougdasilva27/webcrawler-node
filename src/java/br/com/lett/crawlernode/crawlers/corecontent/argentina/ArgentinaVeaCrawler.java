@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import com.mongodb.util.JSON;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -19,26 +18,15 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-/**
- * Date: 06/12/2016
- * 
- * 1) Only one sku per page.
- * 
- * Price crawling notes: 1 - This crawler has no product pages 2 - To capture the information is
- * accessed a search API that is expected to return only one product 3 - The pages added are search
- * pages where there is only one product, with its specific keyword 4 - This keyword is used to
- * access the api 5 - No payment information 6 - There is no bank slip
- * 
- * @author Gabriel Dornelas
- *
- */
 public class ArgentinaVeaCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.veadigital.com.ar/";
+  private static final String IMAGE_FIRST_PART = HOME_PAGE + "VeaComprasArchivos/Archivos/ArchivosMxM/";
 
   public ArgentinaVeaCrawler(Session session) {
     super(session);
@@ -47,17 +35,8 @@ public class ArgentinaVeaCrawler extends Crawler {
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
-
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
-
-    for (String cookieName : cookiesMap.keySet()) {
-      if ("ASP.NET_SessionId".equals(cookieName)) {
-        BasicClientCookie cookie = new BasicClientCookie(cookieName, cookiesMap.get(cookieName));
-        cookie.setDomain("www.veadigital.com.ar");
-        cookie.setPath("/");
-        this.cookies.add(cookie);
-      }
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Arrays.asList("ASP.NET_SessionId"), "www.veadigital.com.ar",
+        "/", session);
   }
 
   @Override
@@ -69,84 +48,59 @@ public class ArgentinaVeaCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = crawlproducts(session.getOriginalURL());
-
-    if (products.isEmpty()) {
-      String newUrl = crawlNewUrl();
-      products = crawlproducts(newUrl);
-    }
-
-    return products;
-
-  }
-
-  private List<Product> crawlproducts(String url) {
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(url)) {
+    JSONObject apiJson = crawlProductApi(doc);
+
+    if (apiJson.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+      String internalPid = crawlInternalPid(apiJson);
+      String internalId = crawlInternalId(apiJson);
+      String name = crawlName(apiJson);
+      Float price = crawlPrice(apiJson);
+      Integer stock = crawlStock(apiJson);
+      Prices prices = crawlPrices(price);
+      boolean available = stock != null && stock > 0;
+      CategoryCollection categories = new CategoryCollection();
+      String primaryImage = crawlPrimaryImage(apiJson);
+      String secondaryImages = crawlSecondaryImages();
+      String description = crawlDescription(internalId);
 
-      JSONObject searchJson = crawlProductApi(url);
-      JSONArray productsArray = crawlProducts(searchJson);
+      // Creating the product
+      Product product = ProductBuilder.create().setUrl(crawlNewUrl(internalId)).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(new Marketplace()).build();
 
-      for (int i = 0; i < productsArray.length(); i++) {
-        JSONObject productJson = productsArray.getJSONObject(i);
-
-        String internalId = crawlInternalId(productJson);
-        String internalPid = crawlInternalPid();
-        String name = crawlName(productJson);
-        Float price = crawlPrice(productJson);
-        Integer stock = crawlStock(productJson);
-        Prices prices = crawlPrices(price);
-        boolean available = crawlAvailability(stock);
-        CategoryCollection categories = crawlCategories(productJson);
-        String primaryImage = crawlPrimaryImage(productJson);
-        String secondaryImages = crawlSecondaryImages();
-        String description = crawlDescription(internalId);
-        Marketplace marketplace = crawlMarketplace();
-
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
-
-        products.add(product);
-      }
+      products.add(product);
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
 
     return products;
+
   }
 
-  private boolean isProductPage(String url) {
-    if (url.contains("_query")) {
-      return true;
+  private String crawlInternalPid(JSONObject json) {
+    String internalPid = null;
+
+    if (json.has("Codigo")) {
+      internalPid = json.get("Codigo").toString();
     }
-    return false;
+
+    return internalPid;
   }
 
   private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
     if (json.has("IdArticulo")) {
-      internalId = json.getString("IdArticulo");
+      internalId = json.get("IdArticulo").toString();
     }
 
     return internalId;
-  }
-
-  /**
-   * There is no internalPid.
-   * 
-   * @param document
-   * @return
-   */
-  private String crawlInternalPid() {
-    return null;
   }
 
   private String crawlName(JSONObject json) {
@@ -177,49 +131,32 @@ public class ArgentinaVeaCrawler extends Crawler {
     Integer stock = null;
 
     if (json.has("Stock")) {
-      stock = Integer.parseInt(json.getString("Stock"));
+      String stockString = json.get("Stock").toString().replaceAll("[^0-9]", "");
+
+      if (stockString.isEmpty()) {
+        stock = Integer.parseInt(stockString);
+      }
     }
 
     return stock;
   }
 
-  private boolean crawlAvailability(Integer stock) {
-    boolean available = false;
-
-    if (stock != null && stock > 0) {
-      available = true;
-    }
-
-    return available;
-  }
-
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
-
-
   private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
-
 
     if (json.has("IdArchivoBig")) {
       String image = json.getString("IdArchivoBig").trim();
 
       if (!image.isEmpty()) {
-        primaryImage = "https://www.veadigital.com.ar/VeaComprasArchivos/Archivos/" + image;
-      } else if (json.has("IdArchivoSmall")) {
-        image = json.getString("IdArchivoSmall").trim();
-
-        if (!image.isEmpty()) {
-          primaryImage = "https://www.veadigital.com.ar/VeaComprasArchivos/Archivos/" + image;
-        }
+        primaryImage = IMAGE_FIRST_PART + image;
       }
+    }
 
-    } else if (json.has("IdArchivoSmall")) {
+    if ((primaryImage == null || primaryImage.isEmpty()) && json.has("IdArchivoSmall")) {
       String image = json.getString("IdArchivoSmall").trim();
 
       if (!image.isEmpty()) {
-        primaryImage = "https://www.veadigital.com.ar/VeaComprasArchivos/Archivos/" + image;
+        primaryImage = IMAGE_FIRST_PART + image;
       }
     }
 
@@ -231,7 +168,7 @@ public class ArgentinaVeaCrawler extends Crawler {
   }
 
   /**
-   * Has no secondary Images in this market
+   * There is no secondary Images in this market.
    * 
    * @param document
    * @return
@@ -247,23 +184,10 @@ public class ArgentinaVeaCrawler extends Crawler {
     return secondaryImages;
   }
 
-  /**
-   * We don't crawl categories because this market, only have info of categories in categorie page, so
-   * if we need categories information, we will see in share of categories.
-   * 
-   * @param json
-   * @return
-   */
-  private CategoryCollection crawlCategories(JSONObject json) {
-    CategoryCollection categories = new CategoryCollection();
-
-    return categories;
-  }
-
-  private String crawlDescription(String internalId) {
+  private String crawlDescription(String pid) {
     StringBuilder description = new StringBuilder();
-    String url = "https://www.veadigital.com.ar/Comprar/HomeService.aspx/ObtenerDetalleDelArticuloLevex";
-    String payload = "{code:'" + internalId + "'}";
+    String url = HOME_PAGE + "Comprar/HomeService.aspx/ObtenerDetalleDelArticuloLevex";
+    String payload = "{code:'" + pid + "'}";
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
@@ -271,9 +195,13 @@ public class ArgentinaVeaCrawler extends Crawler {
     String response = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
 
     if (response != null && response.contains("descr")) {
-      JSONObject jsonD = parseJsonLevex(new JSONObject(response));
-      if (jsonD.has("descr")) {
-        description.append(jsonD.getString("descr"));
+      JSONObject json = CrawlerUtils.stringToJson(response);
+
+      if (json.has("d")) {
+        JSONObject jsonD = CrawlerUtils.stringToJson(json.get("d").toString());
+        if (jsonD.has("descr")) {
+          description.append(jsonD.getString("descr"));
+        }
       }
     }
 
@@ -308,13 +236,36 @@ public class ArgentinaVeaCrawler extends Crawler {
     return prices;
   }
 
+  private String crawlNewUrl(String internalId) {
+    String url = session.getOriginalURL();
+
+    if (!url.contains("prod/")) {
+      url = HOME_PAGE + "prod/" + internalId;
+    }
+
+    return url;
+  }
+
+  private JSONObject crawlProductApi(Document doc) {
+    JSONObject json = new JSONObject();
+
+    Element e = doc.selectFirst("#hfProductData");
+    if (e != null) {
+      json = CrawlerUtils.stringToJson(e.val());
+    } else if (session.getOriginalURL().contains("_query=")) {
+      json = crawlProductOldApi(session.getOriginalURL());
+    }
+
+    return json;
+  }
+
   /**
    * Crawl api of search when probably has only one product
    * 
    * @param url
    * @return
    */
-  private JSONObject crawlProductApi(String url) {
+  private JSONObject crawlProductOldApi(String url) {
     JSONObject json = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
@@ -325,7 +276,7 @@ public class ArgentinaVeaCrawler extends Crawler {
     // Nome do produto na busca
     String[] tokens = url.split("=");
 
-    String urlSearch = "https://www.veadigital.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
+    String urlSearch = HOME_PAGE + "Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
     String urlParameters = "{IdMenu:\"\",textoBusqueda:\"" + CommonMethods.removeAccents(tokens[tokens.length - 1]) + "\","
         + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
@@ -335,114 +286,18 @@ public class ArgentinaVeaCrawler extends Crawler {
       json = new JSONObject(jsonString);
     }
 
-    return json;
-  }
 
-  /**
-   * Crawl part of json
-   * 
-   * @param json
-   * @return
-   */
-  private JSONArray crawlProducts(JSONObject json) {
-    if (json != null) {
-      JSONObject jsonD = parseJsonLevex(json);
-
+    if (json.has("d")) {
+      JSONObject jsonD = CrawlerUtils.stringToJson(json.get("d").toString());
       if (jsonD.has("ResultadosBusquedaLevex")) {
         JSONArray products = jsonD.getJSONArray("ResultadosBusquedaLevex");
 
-        return products;
-      }
-
-    }
-
-    return new JSONArray();
-  }
-
-  /**
-   * Json comes like this { "d" : {\"articulo\" : {\"descripcion\" : \"Agua\", ....
-   * 
-   * so in this function we get all information in object "d"
-   * 
-   * @param json
-   * @return
-   */
-  private JSONObject parseJsonLevex(JSONObject json) {
-    JSONObject jsonD = new JSONObject();
-
-    if (json.has("d")) {
-      String dParser = JSON.parse(json.getString("d")).toString();
-      jsonD = new JSONObject(dParser);
-    }
-
-    return jsonD;
-  }
-
-  /**
-   * The product url is a search with the exact name of it, when the product has already been
-   * discovered we get its name updated in a "add to cart" api to update your url, this api requires
-   * the internalId of the product
-   * 
-   * @return
-   */
-  private String crawlNewUrl() {
-    String url = session.getOriginalURL();
-
-    if (session.getInternalId() != null && !session.getInternalId().isEmpty()) {
-      String urlFisrtPeace = "https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=";
-      String nameEncoded = crawlNameFromAPI(session.getInternalId());
-
-      if (nameEncoded != null) {
-        url = urlFisrtPeace + nameEncoded;
-      }
-    }
-
-    return url;
-  }
-
-  /**
-   * "add to cart" api
-   * 
-   * {\"Carrito\":{\"Total\":\"0,00\",\"Puntos\":\"0\",\"Mensajes\":\"\",
-   * \"Articulos\":[{\"idArticulo\":\"450570\",\"imagenChica\":\"209001\",\"imagenGrande\":\"209206\",
-   * \"descripcion\":\"Pimienta Negra En Grano X 50Gr-Bsa-Gr.-50\",\"precioDeVenta\":\"59.90\",
-   * \"totalArticulo\":\"59.90\",\"unidadDeMedida\":\"100
-   * Gr\",\"precioUnidadDeMedida\":\"119,80\",\"stockMaximo\":\"43.00\",
-   * \"cantidadPedida\":\"1.00\",\"idMenu\":\"20859\",\"Observaciones\":\"\",\"pesable\":\"False\",\"caracteristicasProducto\":\"\",
-   * \"Grupo_Marca\":\"SIN MARCA\"}]}}
-   * 
-   * @param internalId
-   * @return
-   */
-  private String crawlNameFromAPI(String internalId) {
-    String name = null;
-
-    String url = "https://www.veadigital.com.ar/Comprar/HomeService.aspx/SalvarArticuloEnCarrito";
-    String payload = "{\"accion\": \"agregarProducto\", " + "\"articulos\": '[{\"id\":\"" + internalId
-        + "\",\"cant\":\"1\",\"unidad\":\"\",\"remplazo\":\"0\",\"descripcionLarga\":\"\"," + "\"precioVenta\":\"\",\"strPesable\":\"\"}]'}";
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
-
-    String jsonString = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
-
-    if (jsonString != null && jsonString.startsWith("{") && jsonString.endsWith("}")) {
-      JSONObject jsonCart = new JSONObject();
-      try {
-        jsonCart = parseJsonLevex(new JSONObject(jsonString)).getJSONObject("Carrito");
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      if (jsonCart.has("Articulos")) {
-        JSONObject articulo = jsonCart.getJSONArray("Articulos").getJSONObject(0);
-
-        if (articulo.has("descripcion")) {
-          name = articulo.getString("descripcion").replace(" ", "%20").replace(" ", "%20").replace("´", "%B4");
+        if (products.length() > 0) {
+          json = products.getJSONObject(0);
         }
       }
     }
 
-    return name;
+    return json;
   }
 }

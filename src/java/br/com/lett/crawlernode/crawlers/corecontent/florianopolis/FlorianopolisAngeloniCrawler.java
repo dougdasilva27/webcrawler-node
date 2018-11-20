@@ -45,8 +45,6 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/ANGELONI.html");
-
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 

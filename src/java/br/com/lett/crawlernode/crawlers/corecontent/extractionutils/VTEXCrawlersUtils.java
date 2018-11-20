@@ -76,6 +76,13 @@ public class VTEXCrawlersUtils {
     this.cookies = cookies;
   }
 
+  public void setCardDiscount(Integer cardDiscount) {
+    this.cardDiscount = cardDiscount;
+  }
+
+  public void setBankTicketDiscount(Integer bankTicketDiscount) {
+    this.bankTicketDiscount = bankTicketDiscount;
+  }
 
   public String crawlInternalId(JSONObject json) {
     String internalId = null;
@@ -508,6 +515,10 @@ public class VTEXCrawlersUtils {
           Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
+
+          if (this.cardDiscount != null && installment == 1) {
+            mapInstallments.put(1, MathUtils.normalizeTwoDecimalPlaces(bankPrice - (bankPrice * (this.cardDiscount / 100f))));
+          }
         }
       }
     }
