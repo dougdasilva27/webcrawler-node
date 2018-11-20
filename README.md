@@ -13,31 +13,31 @@ What things you need to install the software and how to install them
 #### Install Java and Eclipse
 1 - Open a terminal (Ctrl-Alt-T) and switch it to root permissions by entering:
 
-```  
+```bash
 $ sudo su
 ```
 
 2 - Make sure Eclipse Indigo is NOT installed in your Ubuntu. You may need to remove both "eclipse" and "eclipse-platform" packages to get rid of it. If it still gets into way when trying to install Luna using this easy way, you may need to look at the "hard way" below.
 
-```    
+```bash
 # apt-get remove eclipse eclipse-platform
 ```
 
 3 - Install a Java 1.8 JDK:
 
-```  
+```bash
 # apt-get install openjdk-8-jdk
 ```
 
 4 - Install Maven:
 
-```    
+```bash
 # apt-get install maven
 ```
 
 5 - Get rid of the root access as you won't need it anymore:
 
-```
+```bash
 # exit
 ```
 
@@ -46,7 +46,7 @@ Currently the file which was tested to work is (note that it is for 64 bit Ubunt
 
 7 - Extract the Eclipse installation tarball into your home directory:
 
-```
+```bash
 $ cd
 $ tar -xzvf <path/to/your-tar-file>
 ```
@@ -59,7 +59,7 @@ $ tar -xzvf <path/to/your-tar-file>
 
 11 - Run Eclipse:
 
-```
+```bash
 $ ~/eclipse/eclipse
 ```
 
@@ -76,7 +76,7 @@ After that you need to add that file to your home's .m2 folder.
 
 Settings.xml example:
 
-```
+```xml
 <?xml version="1.0"?>
 
 <settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/SETTINGS/1.0.0">
@@ -92,8 +92,8 @@ Settings.xml example:
 
 #### Import project from git:
 
-```
-git clone [address]
+```bash
+$ git clone [address]
 ```
 
 #### Configure to maven project:
