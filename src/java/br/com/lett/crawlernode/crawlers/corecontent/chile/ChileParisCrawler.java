@@ -380,6 +380,32 @@ public class ChileParisCrawler extends Crawler {
     if (productJson.has("longDescription")) {
       description.append(Jsoup.parse(productJson.get("longDescription").toString()));
     }
+    
+    if(productJson.has("specs_open")) {
+    	
+    	description.append("Ficha Técnica");
+    	
+    	JSONArray specs = productJson.getJSONArray("specs_open");
+    	
+    	StringBuilder specsTable = new StringBuilder("<table><tbody>");
+    	
+    	for(Object o : specs) {
+    		if(o instanceof JSONObject) {
+    			JSONObject spec = (JSONObject) o;
+        		if(spec.has("key") && spec.has("value")) {
+        			specsTable.append("<tr><td>");
+        			specsTable.append(spec.get("key"));
+        			specsTable.append("</td><td>");
+        			specsTable.append(spec.get("value"));
+        			specsTable.append("</td></tr>");
+        		}	
+    		}
+    	}
+    	
+    	specsTable.append("</tbody></table>");
+    	
+    	description.append(specsTable);
+    }
 
     return description.toString();
   }
