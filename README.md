@@ -26,6 +26,7 @@ $ sudo su
 3 - Install a Java 1.8 JDK:
 
 ```bash
+# apt-get update
 # apt-get install openjdk-8-jdk
 ```
 
@@ -51,16 +52,10 @@ $ cd
 $ tar -xzvf <path/to/your-tar-file>
 ```
 
-8 - Increase the memory for the Eclipse installation by modifying the ~/eclipse/eclipse.ini file.
-
-9 - Change the -Xmx setting (line 20) to be AT least 1G, recommended 2GB. (i.e. -Xmx2048m).
-
-10 - Change the -XX:MaxPermSize (line 18) to at most 512m. If you have the -Xmx setting set to 1G, then I suggest to use a lower value, for example 300m.
-
-11 - Run Eclipse:
+8 - Run Eclipse:
 
 ```bash
-$ ~/eclipse/eclipse
+$ ~/eclipse-installer/eclipse-inst
 ```
 
 #### Connect to VPN:
