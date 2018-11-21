@@ -132,10 +132,10 @@ public class ArgentinaDiscoCrawler extends Crawler {
     Integer stock = null;
 
     if (json.has("Stock")) {
-      String stockString = json.get("Stock").toString().replaceAll("[^0-9]", "");
+      String text = json.get("Stock").toString().replaceAll("[^0-9.]", "");
 
-      if (stockString.isEmpty()) {
-        stock = Integer.parseInt(stockString);
+      if (!text.isEmpty()) {
+        stock = ((Double) Double.parseDouble(text)).intValue();
       }
     }
 
