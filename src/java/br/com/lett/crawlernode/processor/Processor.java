@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
 import exceptions.MalformedPricesException;
 import models.Behavior;
@@ -358,8 +359,10 @@ public class Processor {
       Float discount = (newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f;
 
       if (discount > 20) {
-        DBSlack.reportPriceChanges(session, "O preço do " + newProcessedProduct.getOriginalName() + " caiu " + discount + "%\n" + "Agora está R$"
-            + previousProcessedProduct.getPrice() + " !!!! Corra, no link: " + newProcessedProduct.getUrl());
+        DBSlack.reportPriceChanges(session,
+            "O preço do " + newProcessedProduct.getOriginalName() + " caiu de: R$"
+                + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: R$"
+                + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + " !!!! Corra, no link: " + newProcessedProduct.getUrl());
 
       }
     }

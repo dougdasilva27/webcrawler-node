@@ -52,9 +52,8 @@ public class DBSlack {
       SlackAttachment attach = new SlackAttachment();
       attach.setAuthorName("CRAWLER");
       attach.setThumbUrl("https://94fm.com.br/wp-content/uploads/2018/11/blackfriday.jpg");
-      attach.setTitle("Preço Mudando Galeraaaa");
+      attach.setTitle("PRICE CHANGE");
       attach.setColor("warning");
-      attach.setPretext("<@gabrieldornelas>");
       attach.setText(msg + "\n *SESSION:* " + session.getSessionId());
       attach.addMarkdownAttribute("text");
       attach.addMarkdownAttribute("pretext");
