@@ -59,7 +59,7 @@ public class BrasilColomboCrawler extends Crawler {
 
       // ID interno
       String internalId = null;
-      Element elementInternalID = doc.select("input[type=radio][checked]").first();
+      Element elementInternalID = doc.select("input[type=radio][checked][value]").first();
       if (elementInternalID != null) {
         internalId = elementInternalID.attr("value").trim();
       } else {
@@ -68,7 +68,6 @@ public class BrasilColomboCrawler extends Crawler {
           internalId = elementInternalID.attr("value").trim();
         }
       }
-
 
       // Nome
       String name = null;

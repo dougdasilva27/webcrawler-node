@@ -59,6 +59,8 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
 
+      boolean unnavailableForAll = doc.select("[itemprop=\"availability\"]").isEmpty();
+
       Elements variationsRadio = doc.select(".ProductOptionList li label");
       Elements variationsBox = doc.select(".ProductOptionList option");
 
@@ -78,7 +80,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
                 variationInfo.has("image") && !variationInfo.getString("image").trim().isEmpty() ? variationInfo.getString("image") : primaryImage;
             String internalId = internalPid + "-" + variationId;
             String variationName = name + " " + e.ownText().trim();
-            boolean available = crawlAvailability(variationInfo);
+            boolean available = !unnavailableForAll && crawlAvailability(variationInfo);
             Float price = available ? crawlVariationPrice(variationInfo) : null;
             Prices prices = crawlPrices(price, variationInfo);
 
@@ -99,7 +101,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          * seleção, que com a combinação com o id do produto deixa aquele produto único.
          */
         String internalId = internalPid + "-" + internalPid;
-        boolean available = crawlAvailability(doc);
+        boolean available = !unnavailableForAll && crawlAvailability(doc);
         Float price = available ? crawlPrice(doc) : null;
         Prices prices = crawlPrices(price, doc);
 

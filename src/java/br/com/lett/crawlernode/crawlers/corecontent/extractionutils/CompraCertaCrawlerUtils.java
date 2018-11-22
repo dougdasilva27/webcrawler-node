@@ -33,6 +33,7 @@ public class CompraCertaCrawlerUtils {
     List<Product> products = new ArrayList<>();
 
     VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null);
+    vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cc-bf--desconto-a-vista-cartao-percentual-]", true, false);
 
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
