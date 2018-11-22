@@ -360,9 +360,10 @@ public class Processor {
 
       if (discount > 20) {
         DBSlack.reportPriceChanges(session,
-            "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu de: R$"
-                + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: R$"
-                + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + " !!!! Corra, no link: " + newProcessedProduct.getUrl());
+            "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
+                + MathUtils.normalizeTwoDecimalPlaces(discount) + " \nDe: R$"
+                + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
+                + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: " + newProcessedProduct.getUrl());
 
       }
     }
