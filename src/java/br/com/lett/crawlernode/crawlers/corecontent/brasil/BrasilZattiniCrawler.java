@@ -54,10 +54,10 @@ public class BrasilZattiniCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    JSONObject chaordicJson = crawlChaordicJson(doc);
 
-      JSONObject chaordicJson = crawlChaordicJson(doc);
+    if (chaordicJson.length() > 0) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(chaordicJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a span", false);
@@ -98,14 +98,6 @@ public class BrasilZattiniCrawler extends Crawler {
     }
 
     return products;
-  }
-
-  /*******************************
-   * Product page identification *
-   *******************************/
-
-  private boolean isProductPage(Document document) {
-    return document.select(".reference").first() != null;
   }
 
   /*******************

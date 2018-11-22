@@ -43,7 +43,7 @@ public class BrasilLettvtexCrawler extends Crawler {
     doc = Jsoup.parse(CommonMethods.readFile("/home/gabriel/htmls/LETTVTEX.html"));
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, "lett", HOME_PAGE_HTTPS, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "lett", HOME_PAGE_HTTPS, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 

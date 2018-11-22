@@ -241,13 +241,14 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
       str.append(desc.html());
     }
 
-    Element desc2 = doc.select("#caracteristicas table").first();
+    Elements desc2 = doc.select("#caracteristicas table");
 
-    if (desc2 != null) {
-      desc2.select("h4.Conteudo-da-Pagina-de-Produto").remove();
+    for (Element e : desc2) {
+      e.select("h4.Conteudo-da-Pagina-de-Produto").remove();
 
-      if (!desc2.select(".Tabela-Nutricional").isEmpty()) {
-        str.append(desc2.html());
+      if (!e.select(".Tabela-Nutricional").isEmpty()) {
+        str.append(e.html());
+        break;
       }
     }
 

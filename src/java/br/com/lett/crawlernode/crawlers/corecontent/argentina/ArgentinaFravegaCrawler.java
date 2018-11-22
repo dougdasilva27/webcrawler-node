@@ -19,41 +19,41 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class ArgentinaFravegaCrawler extends Crawler {
-  
+
   public ArgentinaFravegaCrawler(Session session) {
     super(session);
   }
-  
+
   private static final String HOME_PAGE = "https://www.fravega.com/";
   private static final String MAIN_SELLER_NAME_LOWER = "frávega";
-  
+
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
-  
-  
+
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    
+
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
-      
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-      
+
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb ul > li > a", true);
       String description = crawlDescription(doc);
-      
+
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-      
+
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
-        
+
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
@@ -65,43 +65,43 @@ public class ArgentinaFravegaCrawler extends Crawler {
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
-        
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
             .setStock(stock).setMarketplace(marketplace).build();
-        
+
         products.add(product);
       }
-      
+
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
-    
+
     return products;
   }
-  
+
   private boolean isProductPage(Document document) {
     return document.selectFirst(".tracking-product") != null;
   }
-  
+
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
-    
+
     Element productDescription = doc.selectFirst(".fichaProducto__specs__descripcion__first > div.productDescription");
-    
+
     if (productDescription != null) {
       description.append(productDescription.outerHtml());
     }
-    
+
     Element specDescription = doc.selectFirst(".fichaProducto__specs__datostecnicos.active");
-    
+
     if (specDescription != null) {
       description.append(specDescription.outerHtml());
     }
-    
+
     return description.toString();
   }
-  
+
 }

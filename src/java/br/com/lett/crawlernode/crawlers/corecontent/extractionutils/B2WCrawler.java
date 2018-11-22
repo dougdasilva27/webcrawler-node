@@ -390,7 +390,7 @@ public class B2WCrawler {
       }
 
       datasheet.select("iframe, h1.sc-hgHYgh").remove();
-      description.append(datasheet.html());
+      description.append(datasheet.html().replace("hidden", ""));
     }
 
     if (internalPid != null) {

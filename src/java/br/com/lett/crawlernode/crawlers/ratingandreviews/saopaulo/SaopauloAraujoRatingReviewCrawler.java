@@ -132,19 +132,10 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
 
     String response = GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
 
-    JSONObject trustVoxResponse;
-    try {
-      trustVoxResponse = new JSONObject(response);
+    JSONObject trustVoxResponse = CrawlerUtils.stringToJson(response);
 
-      if (trustVoxResponse.has("rate")) {
-        return trustVoxResponse.getJSONObject("rate");
-      }
-
-    } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-
-      trustVoxResponse = new JSONObject();
+    if (trustVoxResponse.has("rate")) {
+      return trustVoxResponse.getJSONObject("rate");
     }
 
     return trustVoxResponse;

@@ -110,7 +110,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, "supermuffato", HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies);
 
       // InternalId
       String internalId = crawlInternalId(doc);

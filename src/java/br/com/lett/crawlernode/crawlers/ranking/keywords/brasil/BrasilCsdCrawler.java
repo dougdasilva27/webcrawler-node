@@ -94,7 +94,11 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
       productUrl = product.getString("url");
 
       if (!productUrl.contains("sitemercado")) {
-        productUrl = HOME_PAGE + "/" + productUrl;
+        productUrl = (HOME_PAGE + "/" + productUrl).replace("//produto/", "/produto/");
+
+        if (productUrl.contains("tiradentes//") && !productUrl.contains("produto")) {
+          productUrl = productUrl.replace("tiradentes//", "tiradentes/produto/");
+        }
       }
     }
 

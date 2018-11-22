@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,16 +12,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
 
 public class VTEXCrawlersUtils {
@@ -43,7 +39,6 @@ public class VTEXCrawlersUtils {
   private static final String BEST_INSTALLMENT_NUMBER = "BestInstallmentNumber";
   private static final String BEST_INSTALLMENT_VALUE = "BestInstallmentValue";
 
-  private Logger logger;
   private Session session;
   private String sellerNameLower;
   private String homePage;
@@ -51,18 +46,15 @@ public class VTEXCrawlersUtils {
   private Integer bankTicketDiscount;
   private List<Cookie> cookies;
 
-  public VTEXCrawlersUtils(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies) {
+  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies) {
     this.session = session;
-    this.logger = logger2;
     this.sellerNameLower = store;
     this.homePage = homePage;
     this.cookies = cookies;
   }
 
-  public VTEXCrawlersUtils(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies, Integer cardDiscount,
-      Integer bankDiscount) {
+  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, Integer cardDiscount, Integer bankDiscount) {
     this.session = session;
-    this.logger = logger2;
     this.sellerNameLower = store;
     this.homePage = homePage;
     this.cookies = cookies;
@@ -70,9 +62,8 @@ public class VTEXCrawlersUtils {
     this.bankTicketDiscount = bankDiscount;
   }
 
-  public VTEXCrawlersUtils(Session session, Logger logger2, List<Cookie> cookies) {
+  public VTEXCrawlersUtils(Session session, List<Cookie> cookies) {
     this.session = session;
-    this.logger = logger2;
     this.cookies = cookies;
   }
 
@@ -308,34 +299,7 @@ public class VTEXCrawlersUtils {
   }
 
   public Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-    Marketplace marketplace = new Marketplace();
-
-    for (Entry<String, Prices> seller : marketplaceMap.entrySet()) {
-      String sellerName = seller.getKey();
-      if (!sellerName.equalsIgnoreCase(sellerNameLower)) {
-        Prices prices = seller.getValue();
-
-        JSONObject sellerJSON = new JSONObject();
-        sellerJSON.put("name", sellerName);
-        sellerJSON.put("prices", prices.toJSON());
-
-        if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-          Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
-          Float priceFloat = MathUtils.normalizeTwoDecimalPlaces(price.floatValue());
-
-          sellerJSON.put("price", priceFloat);
-        }
-
-        try {
-          Seller s = new Seller(sellerJSON);
-          marketplace.add(s);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, Util.getStackTraceString(e));
-        }
-      }
-    }
-
-    return marketplace;
+    return CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(sellerNameLower), Card.VISA, session);
   }
 
   /**

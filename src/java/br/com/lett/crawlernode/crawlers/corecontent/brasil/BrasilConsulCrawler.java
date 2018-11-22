@@ -40,7 +40,8 @@ public class BrasilConsulCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, logger, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      Integer discount = crawlDiscount(doc);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, discount, null);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -85,6 +86,21 @@ public class BrasilConsulCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.select(".productName").first() != null;
+  }
+
+  private Integer crawlDiscount(Document doc) {
+    Integer discount = 0;
+
+    Element discountElement = doc.selectFirst(".prod-selos p[class^=flag cns-e-btp--desconto-a-vista-cartao-percentual-]");
+    if (discountElement != null) {
+      String text = discountElement.ownText().replaceAll("[^0-9]", "");
+
+      if (!text.isEmpty()) {
+        discount = Integer.parseInt(text);
+      }
+    }
+
+    return discount;
   }
 
   private CategoryCollection crawlCategories(Document doc) {

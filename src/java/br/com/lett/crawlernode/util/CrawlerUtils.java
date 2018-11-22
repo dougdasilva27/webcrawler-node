@@ -31,6 +31,49 @@ public class CrawlerUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtils.class);
   public static final String CSS_SELECTOR_IGNORE_FIRST_CHILD = ":not(:first-child)";
 
+  /**
+   * 
+   * This function get all sellers from marketplace map considered own market
+   * 
+   * @param marketplaceMap
+   * @param sellerList
+   * @return
+   */
+  public static List<String> getMainSellers(Map<String, Prices> marketplaceMap, List<String> sellerList) {
+    List<String> mainSellersList = new ArrayList<>();
+
+    for (String seller : sellerList) {
+      for (Entry<String, Prices> entry : marketplaceMap.entrySet()) {
+        if (entry.getKey().toLowerCase().startsWith(seller.toLowerCase())) {
+          mainSellersList.add(entry.getKey());
+        }
+      }
+    }
+
+    return mainSellersList;
+  }
+
+  /**
+   * Get availability from marketplaceMap
+   * 
+   * @param marketplaceMap
+   * @param List<String> sellers
+   * @return
+   */
+  public static boolean getAvailabilityFromMarketplaceMap(Map<String, Prices> marketplaceMap, List<String> sellerList) {
+    boolean availability = false;
+
+    for (String seller : sellerList) {
+      availability = marketplaceMap.containsKey(seller);
+
+      if (availability) {
+        break;
+      }
+    }
+
+    return availability;
+
+  }
 
   /**
    * Get Prices From marketplace Map
