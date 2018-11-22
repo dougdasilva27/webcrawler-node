@@ -59,7 +59,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", "", false, true);
+      JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, true);
       JSONObject productJSON = chaordic.has("product") ? chaordic.getJSONObject("product") : chaordic;
 
       String ean = crawlEan(productJSON);
@@ -67,13 +67,13 @@ public class BrasilSaraivaCrawler extends Crawler {
       String internalPid = crawlInternalPid(productJSON);
 
       String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
-      JSONObject apiJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+      JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies).trim());
 
       String name = crawlName(doc);
       boolean available = crawlAvailability(productJSON);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      Integer stock = null;
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .breadcrumb__item:not(.breadcrumb__item--home)");
       Marketplace marketplace = new Marketplace();
       String description = crawlDescription(ean, apiJson, doc);
 
@@ -83,14 +83,13 @@ public class BrasilSaraivaCrawler extends Crawler {
       Float price = available ? crawlPrice(apiJson) : null;
       Prices prices = crawlPrices(apiJson, price);
 
-      // Categories
-      CategoryCollection categories = crawlCategories(doc);
+
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -446,18 +445,6 @@ public class BrasilSaraivaCrawler extends Crawler {
     }
 
     return secondaryImages;
-  }
-
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumbs ol li");
-
-    for (int i = 1; i < elementCategories.size(); i++) { // start with index 1 because the first
-                                                         // item is the home page
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
   }
 
   private String crawlDescription(String ean, JSONObject apiJson, Document doc) {
