@@ -355,7 +355,7 @@ public class Processor {
 
     if (newProcessedProduct.getPrice() != null && previousProcessedProduct.getPrice() != null
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
-      Float discount = (previousProcessedProduct.getPrice() / newProcessedProduct.getPrice()) * 100f;
+      Float discount = (newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f;
 
       if (discount > 20) {
         DBSlack.reportPriceChanges(session, "O preço do " + newProcessedProduct.getOriginalName() + " caiu " + discount + "%\n" + "Agora está R$"
