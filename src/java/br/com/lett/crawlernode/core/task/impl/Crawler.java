@@ -36,6 +36,7 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import containers.ProcessedComparison;
 import models.Processed;
@@ -368,6 +369,19 @@ public class Crawler extends Task {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             processPersistenceResult(persistenceResult);
             scheduleImages(persistenceResult, newProcessedProduct);
+
+            if (newProcessedProduct.getPrice() != null && previousProcessedProduct.getPrice() != null
+                && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
+              Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
+
+              if (discount > 20 && (newProcessedProduct.getPrice() > 50 || discount > 80)) {
+                DBSlack.reportPriceChanges(session, "Processed ID: " + newProcessedProduct.getId() + "\nO preço do "
+                    + newProcessedProduct.getOriginalName() + " caiu *" + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
+                    + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
+                    + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: " + newProcessedProduct.getUrl());
+
+              }
+            }
 
             return;
           }

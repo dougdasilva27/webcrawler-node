@@ -11,12 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.database.DBSlack;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
 import exceptions.MalformedPricesException;
 import models.Behavior;
@@ -358,12 +356,14 @@ public class Processor {
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-      if (discount > 20) {
-        DBSlack.reportPriceChanges(session,
-            "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
-                + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
-                + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
-                + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: " + newProcessedProduct.getUrl());
+      if (discount > 20 && (newProcessedProduct.getPrice() > 50 || discount > 80)) {
+        // DBSlack.reportPriceChanges(session,
+        // "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " +
+        // newProcessedProduct.getOriginalName() + " caiu *"
+        // + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
+        // + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
+        // + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: "
+        // + newProcessedProduct.getUrl());
 
       }
     }
