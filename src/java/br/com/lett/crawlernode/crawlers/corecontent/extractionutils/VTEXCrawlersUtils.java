@@ -75,6 +75,34 @@ public class VTEXCrawlersUtils {
     this.bankTicketDiscount = bankTicketDiscount;
   }
 
+  /**
+   * Set 1x discount scraping from html
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param card -> if you desire set card discount
+   * @param bank -> if you desire set bank discount
+   */
+  public void setDiscountWithDocument(Document doc, String cssSelector, boolean card, boolean bank) {
+
+    Element discountElement = doc.selectFirst(cssSelector);
+    if (discountElement != null) {
+      String text = discountElement.ownText().replaceAll("[^0-9]", "");
+
+      if (!text.isEmpty()) {
+        Integer discount = Integer.parseInt(text);
+
+        if (card) {
+          setCardDiscount(discount);
+        }
+
+        if (bank) {
+          setBankTicketDiscount(discount);
+        }
+      }
+    }
+  }
+
   public String crawlInternalId(JSONObject json) {
     String internalId = null;
 

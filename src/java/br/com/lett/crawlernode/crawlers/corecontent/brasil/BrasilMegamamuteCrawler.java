@@ -1,334 +1,91 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
 
 
 public class BrasilMegamamuteCrawler extends Crawler {
 
-	private final String HOME_PAGE = "http://www.megamamute.com.br/";
-	private final String MAIN_SELLER_LOWER_CASE = "megamamute";
+  private static final String HOME_PAGE = "http://www.megamamute.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "megamamute";
 
-	public BrasilMegamamuteCrawler(Session session) {
-		super(session);
-	}
+  public BrasilMegamamuteCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<>();
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(doc, this.session.getOriginalURL()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    if (isProductPage(doc)) {
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      vtexUtil.setDiscountWithDocument(doc, ".flagPromos-v1 p[class^=flag desconto-]", false, true);
 
+      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
-			// Pid
-			String internalPid = null;
-			Element elementPid = doc.select("#___rc-p-id").first();
-			if(elementPid != null){
-				internalPid = elementPid.attr("value");
-			}
+      String internalPid = vtexUtil.crawlInternalPid(skuJson);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-qd-v1-description", ".product-qd-v1-description", "#caracteristicas"));
 
-			Element elementInternalId = doc.select("#___rc-p-sku-ids").first();
-			String[] internalIds = null;
-			if (elementInternalId != null) {
-				internalIds = elementInternalId.attr("value").trim().split(",");
-			}
+      // sku data in json
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
-			for (String skuId : internalIds) {
+      for (int i = 0; i < arraySkus.length(); i++) {
+        JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-				// ID interno
-				String internalId = skuId;
+        String internalId = vtexUtil.crawlInternalId(jsonSku);
+        JSONObject apiJSON = vtexUtil.crawlApi(internalId);
+        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
+        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Integer stock = vtexUtil.crawlStock(apiJSON);
 
-				// requisitar informações da API
-				JSONArray jsonArrayAPI = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, ("http://www.megamamute.com.br/produto/sku/" + internalId), null, null);
-				JSONObject productJsonAPI = (JSONObject) jsonArrayAPI.get(0);
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
-				// Nome
-				String name = productJsonAPI.getString("Name");
+        products.add(product);
+      }
 
-				// Categoria
-				String category1 = "";
-				String category2 = "";
-				String category3 = "";
-				Elements elementCategories = doc.select(".bread-crumb ul li:not(.last) a");
-				List<String> categories = new ArrayList<>();
-				for(Element e : elementCategories) {
-					String tmp = e.text().trim();
-					if( !tmp.equalsIgnoreCase("megamamute") ) {
-						categories.add(tmp);
-					}
-				}
-				for (String c : categories) {
-					if (category1.isEmpty()) {
-						category1 = c;
-					} else if (category2.isEmpty()) {
-						category2 = c;
-					} else if (category3.isEmpty()) {
-						category3 = c;
-					}
-				}
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+    }
 
-				// Imagens
-				JSONArray images = productJsonAPI.getJSONArray("Images");
-				String primaryImage = null;
-				String secondaryImages = null;
-				JSONArray secondaryImagesArray = new JSONArray();
-
-				for(int i = 0; i < images.length(); i++) {
-					JSONArray tmpArray = images.getJSONArray(i);
-					JSONObject image = tmpArray.getJSONObject(0);
-					if(primaryImage == null) {
-						primaryImage = image.getString("Path");
-					} else {
-						secondaryImagesArray.put(image.getString("Path"));
-					}
-				}
-				if (secondaryImagesArray.length() > 0) {
-					secondaryImages = secondaryImagesArray.toString();
-				}
-
-				// Descrição
-				String description = "";
-				Element elementDescription = doc.select(".productDescription").first();
-				Element elementEspecification = doc.select("#caracteristicas").first();
-				if(elementDescription != null) {
-					description = description + elementDescription.html();
-				}
-				if(elementEspecification != null) {
-					description = description + elementEspecification.html();
-				}
-
-				// Estoque
-				Integer stock = null;
-
-				// Marketplace map
-				Map<String, Float> marketplaceMap = extractMarketplace(productJsonAPI);
-
-				// Availability
-				boolean available = crawlAvailability(marketplaceMap);
-
-				// Price
-				Float price = crawlPrice(marketplaceMap);
-
-				// Marketplace
-				Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId);
-
-				// Prices
-				Prices prices = crawlPrices(internalId, price);
-
-				Product product = new Product();
-				product.setUrl(this.session.getOriginalURL());
-				product.setInternalId(internalId);
-				product.setInternalPid(internalPid);
-				product.setName(name);
-				product.setAvailable(available);
-				product.setPrice(price);
-				product.setPrices(prices);
-				product.setCategory1(category1);
-				product.setCategory2(category2);
-				product.setCategory3(category3);
-				product.setPrimaryImage(primaryImage);
-				product.setSecondaryImages(secondaryImages);
-				product.setDescription(description);
-				product.setStock(stock);
-				product.setMarketplace(marketplace);
-
-				products.add(product);
-
-			}
-
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
-		}
-
-		return products;
-	}
-
-	private boolean crawlAvailability(Map<String, Float> marketplaceMap) {
-		for (String seller : marketplaceMap.keySet()) {
-			if (seller.equals(MAIN_SELLER_LOWER_CASE)) {
-				if ( marketplaceMap.get(seller).equals(0.0f) ) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	private Float crawlPrice(Map<String, Float> marketplaceMap) {
-		Float price = null;
-
-		for (String seller : marketplaceMap.keySet()) {
-			if (seller.equals(MAIN_SELLER_LOWER_CASE)) {
-				if ( !marketplaceMap.get(seller).equals(0.0f) ) {
-					price = marketplaceMap.get(seller);
-				}
-			}
-		}
-
-		return price;
-	}
-
-	private Map<String, Float> extractMarketplace(JSONObject skuJson) {
-		Map<String, Float> marketplaceMap = new HashMap<String, Float>();
-
-		JSONArray skuSellers = skuJson.getJSONArray("SkuSellersInformation");
-
-		for (int i = 0; i < skuSellers.length(); i++) {
-			JSONObject seller = skuSellers.getJSONObject(i);
-
-			String sellerName = seller.getString("Name").trim().toLowerCase();
-			Float sellerPrice = (float) seller.getDouble("Price");
-
-			marketplaceMap.put(sellerName, sellerPrice);
-		}
-
-		return marketplaceMap;		
-	}
-
-	private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId) {
-		Marketplace marketplace = new Marketplace();
-
-		for (String seller : marketplaceMap.keySet()) {
-			if ( !seller.equals(MAIN_SELLER_LOWER_CASE) ) { 
-				Float price = (float) marketplaceMap.get(seller);
-
-				JSONObject sellerJSON = new JSONObject();
-				sellerJSON.put("name", seller);
-				sellerJSON.put("price", price);
-				sellerJSON.put("prices", crawlPrices(internalId, price).toJSON());
-
-				try {
-					Seller s = new Seller(sellerJSON);
-					marketplace.add(s);
-				} catch (Exception e) {
-					Logging.printLogError(logger, session, Util.getStackTraceString(e));
-				}
-			}
-		}
-
-		return marketplace;
-	}
-
-	private Prices crawlPrices(String internalId, Float price){
-		Prices prices = new Prices();
-
-		if(price != null){
-			String url = "http://www.megamamute.com.br/productotherpaymentsystems/" + internalId;
-
-			Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-			Element bank = doc.select("#ltlPrecoWrapper em").first();
-			if(bank != null){
-				prices.setBankTicketPrice(Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim()));
-			}
-
-			Elements cardsElements = doc.select("#ddlCartao option");
-
-			for(Element e : cardsElements) {
-				String text = e.text().toLowerCase();
-
-				if (text.contains("visa")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-					
-				} else if (text.contains("mastercard")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-					
-				} else if (text.contains("diners")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-					
-				} else if (text.contains("american") || text.contains("amex")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);	
-					
-				} else if (text.contains("hipercard") || text.contains("amex")) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-					
-				} else if (text.contains("credicard") ) {
-					Map<Integer,Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"));
-					prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);					
-				}
-			} 
+    return products;
+  }
 
 
-		}
-
-		return prices;
-	}
-
-	private Map<Integer,Float> getInstallmentsForCard(Document doc, String idCard){
-		Map<Integer,Float> mapInstallments = new HashMap<>();
-
-		Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
-		for(Element i : installmentsCard){
-			Element installmentElement = i.select("td.parcelas").first();
-			
-			if(installmentElement != null){
-				String textInstallment = removeAccents(installmentElement.text().toLowerCase());
-				Integer installment = null;
-				
-				if(textInstallment.contains("vista")){
-					installment = 1;					
-				} else {
-					installment = Integer.parseInt(textInstallment.replaceAll("[^0-9]", "").trim());
-				}
-				
-				Element valueElement = i.select("td:not(.parcelas)").first();
-				
-				if(valueElement != null){
-					Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-					
-					mapInstallments.put(installment, value);
-				}
-			}
-		}
-
-		return mapInstallments;
-	}
-	
-	private String removeAccents(String str) {
-		str = Normalizer.normalize(str, Normalizer.Form.NFD);
-		str = str.replaceAll("[^\\p{ASCII}]", "");
-		return str;
-	}
-
-	/*******************************
-	 * Product page identification *
-	 *******************************/
-
-	private boolean isProductPage(Document document, String url) {
-		return (document.select("#___rc-p-sku-ids").first() != null && url.endsWith("/p"));
-	}
-
+  private boolean isProductPage(Document document) {
+    return document.selectFirst(".productName") != null;
+  }
 }

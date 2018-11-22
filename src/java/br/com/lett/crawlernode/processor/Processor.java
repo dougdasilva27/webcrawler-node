@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.database.DBSlack;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
@@ -351,6 +352,17 @@ public class Processor {
     // detect and register changes
     // an instance of mongo panel must be passed, so we can schedule url to take screenshot
     newProcessedProduct.registerChanges(previousProcessedProduct);
+
+    if (newProcessedProduct.getPrice() != null && previousProcessedProduct.getPrice() != null
+        && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
+      Float discount = (previousProcessedProduct.getPrice() / newProcessedProduct.getPrice()) * 100f;
+
+      if (discount > 20) {
+        DBSlack.reportPriceChanges(session, "O preço do " + newProcessedProduct.getOriginalName() + " caiu " + discount + "%\n" + "Agora está R$"
+            + previousProcessedProduct.getPrice() + " !!!! Corra, no link: " + newProcessedProduct.getUrl());
+
+      }
+    }
   }
 
   private static void updateLMS(Processed newProcessedProduct, Processed previousProcessedProduct, String nowISO) {

@@ -44,6 +44,32 @@ public class DBSlack {
     }
   }
 
+  public static void reportPriceChanges(Session session, String msg) {
+    try {
+      SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
+      SlackMessage message = new SlackMessage("#blackfriday-prices", "CRAWLER", "");
+
+      SlackAttachment attach = new SlackAttachment();
+      attach.setAuthorName("CRAWLER");
+      attach.setThumbUrl("https://94fm.com.br/wp-content/uploads/2018/11/blackfriday.jpg");
+      attach.setTitle("Preço Mudando Galeraaaa");
+      attach.setColor("warning");
+      attach.setPretext("<@gabrieldornelas>");
+      attach.setText(msg + "\n *SESSION:* " + session.getSessionId());
+      attach.addMarkdownAttribute("text");
+      attach.addMarkdownAttribute("pretext");
+      attach.addMarkdownAttribute("fields");
+
+      attach.setFallback("CRAWLER");
+      message.addAttachments(attach);
+
+      api.call(message);
+      Logging.printLogDebug(logger, session, "Send one message to slack.");
+    } catch (Exception ex) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+    }
+  }
+
   public static void reportErrorRanking(String slack_user, String text, String fields, String keyword, String market, String type) {
     try {
       SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
