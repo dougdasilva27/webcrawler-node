@@ -59,7 +59,7 @@ public class BrasilBifarmaCrawler extends Crawler {
     }
 
     String requestHash = DataFetcher.generateRequestHash(session);
-    this.webdriver.waitLoad(9000);
+    this.webdriver.waitLoad(12000);
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
     // saving request content result on Amazon
