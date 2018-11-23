@@ -145,13 +145,15 @@ public class BrasilIbyteCrawler extends Crawler {
 
       // Preço
       Float price = null;
-      Element elementPrice = doc.select(".regular-price .price").first();
-      Element specialPrice = doc.select(".special-price .price").first();
+      if (available) {
+        Element elementPrice = doc.select(".regular-price .price").first();
+        Element specialPrice = doc.select(".special-price .price").first();
 
-      if (specialPrice != null) {
-        price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-      } else if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        if (specialPrice != null) {
+          price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        } else if (elementPrice != null) {
+          price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        }
       }
 
       // Categoria
