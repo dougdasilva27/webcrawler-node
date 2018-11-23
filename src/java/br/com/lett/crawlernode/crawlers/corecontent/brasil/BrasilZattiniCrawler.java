@@ -182,28 +182,31 @@ public class BrasilZattiniCrawler extends Crawler {
 
     if (priceElement != null) {
       Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
-      prices.setBankTicketPrice(price);
 
-      Map<Integer, Float> mapInstallments = new HashMap<>();
-      mapInstallments.put(1, price);
+      if (price != null) {
+        prices.setBankTicketPrice(price);
 
-      Element priceFrom = doc.selectFirst(".buy-box .reduce");
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
+        Map<Integer, Float> mapInstallments = new HashMap<>();
+        mapInstallments.put(1, price);
+
+        Element priceFrom = doc.selectFirst(".buy-box .reduce");
+        if (priceFrom != null) {
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
+        }
+
+        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".block.prices .installments .installments-price", doc, true);
+        if (!pair.isAnyValueNull()) {
+          mapInstallments.put(pair.getFirst(), pair.getSecond());
+        }
+
+        prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
       }
-
-      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".block.prices .installments .installments-price", doc, true);
-      if (!pair.isAnyValueNull()) {
-        mapInstallments.put(pair.getFirst(), pair.getSecond());
-      }
-
-      prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
     }
 
     return prices;

@@ -45,7 +45,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".x-breadcrumb__items .x-breadcrumb__item:not(:first-child) > a");
       String description = crawlDescription(doc);
 
       // sku data in json

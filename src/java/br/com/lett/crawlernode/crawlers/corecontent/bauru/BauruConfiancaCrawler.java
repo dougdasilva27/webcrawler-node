@@ -68,10 +68,10 @@ public class BauruConfiancaCrawler extends Crawler {
 
       String internalId = crawlInternalId(json);
       String name = crawlName(json);
-      Float price = crawlPrice(json);
-      Prices prices = crawlPrices(price, json);
       Integer stock = crawlStock(json);
       boolean available = stock != null && stock > 0;
+      Float price = available ? crawlPrice(json) : null;
+      Prices prices = crawlPrices(price, json);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(json);
       String description = crawlDescription(json);
@@ -189,7 +189,7 @@ public class BauruConfiancaCrawler extends Crawler {
       for (Object o : array) {
         JSONObject json = (JSONObject) o;
 
-        if (json.has("name")) {
+        if (json.has("name") && !json.get("name").toString().trim().equalsIgnoreCase("home")) {
           categories.add(json.get("name").toString());
         }
       }

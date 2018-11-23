@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -25,8 +26,7 @@ public class BrasilNutriiRatingReviewCrawler extends RatingReviewCrawler {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(document)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
@@ -70,7 +70,7 @@ public class BrasilNutriiRatingReviewCrawler extends RatingReviewCrawler {
     Element avg = doc.select("div.rating").first();
 
     if (avg != null) {
-      avgRating = Double.parseDouble(avg.ownText());
+      avgRating = (MathUtils.parseDoubleWithDot(avg.attr("style")) / 100) * 5;
     }
 
     return avgRating;

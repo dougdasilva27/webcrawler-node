@@ -143,7 +143,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Elements descs = doc.select(".div_line");
+    Elements descs = doc.select(".div_line:not(.hide_mobile)");
 
     if (descs.size() > 2) {
       description.append(descs.get(1).html());
