@@ -36,6 +36,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 
   private static final String HOME_PAGE_HTTP = "http://www.saraiva.com.br";
   private static final String HOME_PAGE_HTTPS = "https://www.saraiva.com.br";
+  private static final String SELLER_NAME_LOWER = "saraiva";
 
   private static final int LARGER_IMAGE_DIMENSION = 550;
 
@@ -65,25 +66,20 @@ public class BrasilSaraivaCrawler extends Crawler {
       String ean = crawlEan(productJSON);
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(productJSON);
-
-      String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
-      JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies).trim());
-
       String name = crawlName(doc);
-      boolean available = crawlAvailability(productJSON);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .breadcrumb__item:not(.breadcrumb__item--home)");
-      Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(ean, apiJson, doc);
+      String description = crawlDescription(ean, doc, internalId);
 
-      // price is not displayed when sku is unavailable
-      // Ex:
-      // https://www.saraiva.com.br/notebook-acerr-es1-572-37ep-branco-156-processador-intelr-coretm-i3-6100u-4gb-hd-1tb-windows-10-9400154.html
-      Float price = available ? crawlPrice(apiJson) : null;
-      Prices prices = crawlPrices(apiJson, price);
-
-
+      JSONArray sellerPricesInfo = crawlSellerPricesFromAPI(internalId);
+      boolean availableProduct = crawlAvailability(productJSON);
+      Map<String, Prices> marketplaceMap = availableProduct ? crawlMarketplaceMap(sellerPricesInfo) : new HashMap<>();
+      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER),
+          Arrays.asList(Card.VISA, Card.SHOP_CARD), session);
+      boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
+      Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER));
+      Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.VISA, Card.SHOP_CARD));
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -183,33 +179,48 @@ public class BrasilSaraivaCrawler extends Crawler {
     return name;
   }
 
-  private Float crawlPrice(JSONObject apiJson) {
-    Float price = null;
+  private JSONArray crawlSellerPricesFromAPI(String internalId) {
+    JSONArray api = new JSONArray();
 
-    if (apiJson.has("price_block")) {
-      JSONObject priceBlock = apiJson.getJSONObject("price_block");
+    String url = "https://preco.saraiva.com.br/v3/buyBox/produto/" + internalId + "/lojistaeleito";
+    JSONArray apiJson = CrawlerUtils.stringToJsonArray(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies).trim());
 
-      if (priceBlock.has("price")) {
-        JSONObject priceJson = priceBlock.getJSONObject("price");
-
-        if (priceJson.has("final")) {
-          price = MathUtils.parseFloatWithComma(priceJson.getString("final"));
-        }
-      }
+    if (apiJson.length() > 0) {
+      api = apiJson.getJSONArray(0);
     }
 
-    return price;
+    return api;
   }
 
-  private Prices crawlPrices(JSONObject apiJson, Float price) {
+  private Map<String, Prices> crawlMarketplaceMap(JSONArray sellersApi) {
+    Map<String, Prices> marketplaceMap = new HashMap<>();
+
+    for (Object o : sellersApi) {
+      JSONObject sellerApi = (JSONObject) o;
+      String sellerName = SELLER_NAME_LOWER;
+      if (sellerApi.has("store_name")) {
+        sellerName = sellerApi.get("store_name").toString().toLowerCase().trim();
+      }
+
+      marketplaceMap.put(sellerName, crawlPrices(sellerApi));
+    }
+
+    return marketplaceMap;
+  }
+
+  private Prices crawlPrices(JSONObject apiJson) {
     Prices prices = new Prices();
 
-    if (price != null && apiJson.has("price_block")) {
-      JSONObject priceBlock = apiJson.getJSONObject("price_block");
-      prices.setBankTicketPrice(crawlBilletPrice(priceBlock, price));
+    if (apiJson.has("price")) {
+      JSONObject priceJson = apiJson.getJSONObject("price");
+      if (priceJson.has("nominal")) {
+        prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceJson, "nominal"));
+      }
 
-      Map<Integer, Float> installments = crawlInstallmentsNormalCard(priceBlock, price);
-      Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(priceBlock, price);
+      prices.setBankTicketPrice(crawlBilletPrice(apiJson));
+
+      Map<Integer, Float> installments = crawlInstallmentsNormalCard(apiJson);
+      Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(apiJson);
 
       if (installments.size() > 0) {
         prices.insertCardInstallment(Card.VISA.toString(), installments);
@@ -231,15 +242,20 @@ public class BrasilSaraivaCrawler extends Crawler {
     return prices;
   }
 
-  private Float crawlBilletPrice(JSONObject priceBlock, Float price) {
-    Float billet = price;
+  private Float crawlBilletPrice(JSONObject apiJson) {
+    Float billet = null;
 
-    if (priceBlock.has("billet")) {
-      JSONObject billetJson = priceBlock.getJSONObject("billet");
+    if (apiJson.has("billet")) {
+      JSONObject billetJson = apiJson.getJSONObject("billet");
 
       if (billetJson.has("has_discount") && billetJson.getInt("has_discount") > 0 && billetJson.has("value_with_discount")) {
         billet = MathUtils.parseFloatWithComma(billetJson.getString("value_with_discount"));
       }
+    }
+
+    if ((billet == null || billet == 0f) && apiJson.has("price")) {
+      JSONObject pricesJson = apiJson.getJSONObject("price");
+      billet = CrawlerUtils.getFloatValueFromJSON(pricesJson, "final_standard");
     }
 
     return billet;
@@ -251,7 +267,7 @@ public class BrasilSaraivaCrawler extends Crawler {
    * @param doc
    * @return
    */
-  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock, Float price) {
+  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock) {
     Map<Integer, Float> installments = new HashMap<>();
 
     if (priceBlock.has("price")) {
@@ -290,10 +306,6 @@ public class BrasilSaraivaCrawler extends Crawler {
 
     }
 
-    if (!installments.containsKey(1)) {
-      installments.put(1, price);
-    }
-
     return installments;
   }
 
@@ -303,7 +315,7 @@ public class BrasilSaraivaCrawler extends Crawler {
    * @param doc
    * @return
    */
-  private Map<Integer, Float> crawlInstallmentsShopCard(JSONObject priceBlock, Float price) {
+  private Map<Integer, Float> crawlInstallmentsShopCard(JSONObject priceBlock) {
     Map<Integer, Float> installmentsShopcardMap = new HashMap<>();
 
     if (priceBlock.has("saraiva_card")) {
@@ -339,10 +351,6 @@ public class BrasilSaraivaCrawler extends Crawler {
           installmentsShopcardMap.put(1, MathUtils.parseFloatWithComma(priceJson.getString("value_with_discount")));
         }
       }
-    }
-
-    if (!installmentsShopcardMap.containsKey(1)) {
-      installmentsShopcardMap.put(1, price);
     }
 
     return installmentsShopcardMap;
@@ -447,8 +455,11 @@ public class BrasilSaraivaCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private String crawlDescription(String ean, JSONObject apiJson, Document doc) {
+  private String crawlDescription(String ean, Document doc, String internalId) {
     StringBuilder description = new StringBuilder();
+
+    String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
+    JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies).trim());
 
     if (apiJson.length() > 0) {
       if (apiJson.has("description")) {

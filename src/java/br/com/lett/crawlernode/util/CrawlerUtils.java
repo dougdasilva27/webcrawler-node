@@ -685,6 +685,11 @@ public class CrawlerUtils {
     return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Card.VISA, session);
   }
 
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Card card,
+      Session session) {
+    return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Arrays.asList(card), session);
+  }
+
   /**
    * AssembleMarketplaceFromMap
    * 
@@ -697,7 +702,7 @@ public class CrawlerUtils {
    * 
    * @return Marketplace
    */
-  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Card card,
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, List<Card> cards,
       Session session) {
     Marketplace marketplace = new Marketplace();
 
@@ -709,7 +714,7 @@ public class CrawlerUtils {
         Prices prices = entry.getValue();
 
         if (prices != null && !prices.isEmpty()) {
-          Float price = extractPriceFromPrices(prices, card);
+          Float price = extractPriceFromPrices(prices, cards);
           sellerJSON.put("price", price);
           sellerJSON.put("prices", prices.toJSON());
 
