@@ -60,6 +60,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
     String requestHash = DataFetcher.generateRequestHash(session);
     this.webdriver.waitLoad(12000);
+
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
     // saving request content result on Amazon
@@ -73,10 +74,15 @@ public class BrasilBifarmaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    JSONObject productInfo = crawlProductInfo(doc);
+
+    if (productInfo.length() < 1) {
+      this.webdriver.waitLoad(12000);
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+    }
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      JSONObject productInfo = crawlProductInfo(doc);
 
       String internalId = crawlInternalId(productInfo);
       String internalPid = crawlInternalPid(productInfo);
