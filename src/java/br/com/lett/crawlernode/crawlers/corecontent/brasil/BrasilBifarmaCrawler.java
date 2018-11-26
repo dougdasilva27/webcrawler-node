@@ -77,8 +77,9 @@ public class BrasilBifarmaCrawler extends Crawler {
     JSONObject productInfo = crawlProductInfo(doc);
 
     if (productInfo.length() < 1) {
-      this.webdriver.waitLoad(12000);
+      this.webdriver.waitLoad(10000);
       doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+      productInfo = crawlProductInfo(doc);
     }
 
     if (isProductPage(doc)) {
