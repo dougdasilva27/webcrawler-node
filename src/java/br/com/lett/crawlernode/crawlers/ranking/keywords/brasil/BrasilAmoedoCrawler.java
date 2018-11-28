@@ -13,38 +13,36 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
   
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 32;
+    this.pageSize = 24;
     
     this.log("Página " + this.currentPage);
     
     String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
     
-    // monta a url com a keyword e a página
     String url = "https://www.amoedo.com.br/catalogsearch/result/?q=" + keyword + "&p=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
     
-    // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
     
-    Elements products = this.currentDoc.select(".products-grid .item");
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
+    Elements products = this.currentDoc.select(".products.list.items .product-item");
+
+    // Se existir uma mensagem de "Não foram encontrados resultados exatos para a busca", devemos desconsiderar a lista de produtos retornada.
+    boolean noExactResultsMessage = this.currentDoc.selectFirst(".search.results > .message.notice") != null;
+    
+    if (!products.isEmpty() && !noExactResultsMessage) {
+
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
       
       for (Element e : products) {
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
+        String internalId = crawlInternalId(e);
         
-        // Url do produto
         String urlProduct = crawlProductUrl(e);
         
-        saveDataProduct(null, internalPid, urlProduct);
+        saveDataProduct(internalId, null, urlProduct);
         
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -58,12 +56,12 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
   
   @Override
   protected boolean hasNextPage() {
-    return this.currentDoc.select(".next.i-next").first() != null;
+    return this.currentDoc.selectFirst(".pages-item-next") != null;
   }
   
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".amount").first();
+    Element totalElement = this.currentDoc.selectFirst(".toolbar-amount > span:last-child");
     
     if (totalElement != null) {
       String token = totalElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -75,26 +73,21 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
     }
   }
   
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-    Element pid = e.select(".codSku").first();
+  private String crawlInternalId(Element e) {
+    String internalId = null;
+  
+    Element idElement = e.selectFirst(".price-box");
     
-    if (pid != null) {
-      String pidCandidate = pid.ownText().trim();
-      
-      if (pidCandidate.contains(":")) {
-        internalPid = pidCandidate.split(":")[1].trim();
-      } else {
-        internalPid = pidCandidate;
-      }
+    if (idElement != null) {
+      internalId = idElement.attr("data-product-id").trim();
     }
     
-    return internalPid;
+    return internalId;
   }
   
   private String crawlProductUrl(Element e) {
     String urlProduct = null;
-    Element urlElement = e.select("> a").first();
+    Element urlElement = e.selectFirst(".product-item-link");
     
     if (urlElement != null) {
       urlProduct = urlElement.attr("href");
@@ -102,4 +95,5 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
     
     return urlProduct;
   }
+  
 }
