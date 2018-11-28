@@ -333,7 +333,8 @@ public class BrasilLilianiCrawler extends Crawler {
    */
   private Map<String, String> crawlSkuOptions(String internalIdMainPage, String urlProduct, String token) {
     Map<String, String> skusMap = new HashMap<>();
-    String payload = "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"" + VARIATION_NAME_PAYLOAD + "\": \"0\"}";
+    String payload =
+        "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"" + VARIATION_NAME_PAYLOAD + "\": \"0\", \"isRequiredCustomization\": false}";
 
     JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD, token);
 
@@ -394,7 +395,8 @@ public class BrasilLilianiCrawler extends Crawler {
     JSONObject returnJson = new JSONObject();
 
     String payload = "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"CarValorCodigo1\": \"" + idVariation + "\", "
-        + "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", " + "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\"}";
+        + "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", "
+        + "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\", \"isRequiredCustomization\": false}";
 
     JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD, token);
 
