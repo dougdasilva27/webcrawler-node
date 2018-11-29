@@ -275,22 +275,18 @@ public class CrawlerUtils {
    * @return Url with protocol and host
    */
   public static String sanitizeUrl(Element element, List<String> attributes, String protocol, String host) {
-    StringBuilder sanitizedUrl = new StringBuilder();
+    String sanitizedUrl = null;
 
     for (String att : attributes) {
       String url = element.attr(att).trim();
 
       if (!url.isEmpty()) {
-        sanitizedUrl.append(completeUrl(url, protocol, host));
+        sanitizedUrl = completeUrl(url, protocol, host);
         break;
       }
     }
 
-    if (sanitizedUrl.toString().isEmpty()) {
-      return null;
-    }
-
-    return sanitizedUrl.toString();
+    return sanitizedUrl;
   }
 
   /**
@@ -894,29 +890,61 @@ public class CrawlerUtils {
   /**
    * Crawl simple installment with this text example:
    * 
+   * 2x de R$12,90
+   * 
+   * @param cssSelector - if null, you must pass the specific element in the html parameter
+   * @param html - document html or element html
+   * @param ownText - if the returned text of the element is taken from the first child
+   * @return Pair<Integer, Float>
+   */
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String firstDelimiter) {
+    return crawlSimpleInstallment(cssSelector, html, ownText, firstDelimiter, "", true);
+  }
+
+  /**
+   * Crawl simple installment with this text example:
+   * 
    * 2 (@param delimiter) R$12,90
    * 
    * @param cssSelector - if null, you must pass the specific element in the html parameter
    * @param html - document html or element html
    * @param ownText - if the returned text of the element is taken from the first child
-   * @param delimiter - string to separate a intallment from your value
+   * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
+   *        (2.8%)" delimiter will be "x"
+   * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+   *        lastDelimiter will be "com"
+   * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
    * @return Pair<Integer, Float>
    */
-  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter) {
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
+      boolean lastOccurrenceForLastDelimiter) {
     Pair<Integer, Float> pair = new Pair<>();
 
     Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
 
     if (installment != null) {
       String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
-      if (text.contains(delimiter)) {
+      if (text.contains(delimiter) && text.contains(lastDelimiter)) {
         int x = text.indexOf(delimiter);
+        int y;
+
+        if (lastOccurrenceForLastDelimiter) {
+          y = text.lastIndexOf(lastDelimiter);
+        } else {
+          y = text.indexOf(lastDelimiter, x);
+        }
 
         String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloatWithComma(text.substring(x));
+        Float value = MathUtils.parseFloatWithComma(text.substring(x, y));
 
         if (!installmentNumber.isEmpty() && value != null) {
           pair.set(Integer.parseInt(installmentNumber), value);
+        }
+      } else if (text.contains("vista")) {
+        Float value = MathUtils.parseFloatWithComma(text);
+
+        if (value != null) {
+          pair.set(1, value);
         }
       }
     }
