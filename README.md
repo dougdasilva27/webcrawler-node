@@ -11,27 +11,52 @@ These instructions will get you a copy of the project up and running on your loc
 What things you need to install the software and how to install them
 
 #### Install Java and Eclipse
-1- Open a terminal (Ctrl-Alt-T) and switch it to root permissions by entering:
-    $ sudo su
-2- Make sure Eclipse Indigo is NOT installed in your Ubuntu. You may need to remove both "eclipse" and "eclipse-platform" packages to get rid of it. If it still gets into way when trying to install Luna using this easy way, you may need to look at the "hard way" below.
-    # apt-get remove eclipse eclipse-platform
-3- Install a Java 1.8 JDK:
-    # apt-get install openjdk-8-jdk
-4- Install Maven:
-    # apt-get install maven
-5- Get rid of the root access as you won't need it anymore:
-    # exit
-6- Download Eclipse Oxygeb. The "for Java EE Developers" or "for Java Developers" versions all seem to work. Currently the file which was tested to work is (note that it is for 64 bit Ubuntu version) available at this page
-Extract the Eclipse installation tarball into your home directory:
-    $ cd
-    $ tar -xzvf <path/to/your-tar-file>
+1 - Open a terminal (Ctrl-Alt-T) and switch it to root permissions by entering:
 
-    Increase the memory for the Eclipse installation by modifying the ~/eclipse/eclipse.ini file.
-    Change the -Xmx setting (line 20) to be AT least 1G, recommended 2GB. (i.e. -Xmx2048m).
-    Change the -XX:MaxPermSize (line 18) to at most 512m. If you have the -Xmx setting set to 1G, then I suggest to use a lower value, for example 300m.
+```bash
+$ sudo su
+```
 
-7- Run the Eclipse:
-    [$ ~/eclipse/eclipse]
+2 - Make sure Eclipse Indigo is NOT installed in your Ubuntu. You may need to remove both "eclipse" and "eclipse-platform" packages to get rid of it. If it still gets into way when trying to install Luna using this easy way, you may need to look at the "hard way" below.
+
+```bash
+# apt-get remove eclipse eclipse-platform
+```
+
+3 - Install a Java 1.8 JDK:
+
+```bash
+# apt-get update
+# apt-get install openjdk-8-jdk
+```
+
+4 - Install Maven:
+
+```bash
+# apt-get install maven
+```
+
+5 - Get rid of the root access as you won't need it anymore:
+
+```bash
+# exit
+```
+
+6 - Download Eclipse Oxygen. The "for Java EE Developers" or "for Java Developers" versions all seem to work. 
+Currently the file which was tested to work is (note that it is for 64 bit Ubuntu version) available at this page
+
+7 - Extract the Eclipse installation tarball into your home directory:
+
+```bash
+$ cd
+$ tar -xzvf <path/to/your-tar-file>
+```
+
+8 - Run Eclipse:
+
+```bash
+$ ~/eclipse-installer/eclipse-inst
+```
 
 #### Connect to VPN:
 
@@ -42,8 +67,11 @@ Before running the application, you need to connect to our VPN. If you do not kn
 You need to create a file named settings.xml. This file is for download maven dependencies.
 To create this file, you will need AWS credentials, ask for you leader.
 
-After that you will place that file on your home's .m2 folder.
+After that you need to add that file to your home's .m2 folder.
+
 Settings.xml example:
+
+```xml
 <?xml version="1.0"?>
 
 <settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/SETTINGS/1.0.0">
@@ -55,18 +83,21 @@ Settings.xml example:
         </server>
     </servers>
 </settings>
+```
 
 #### Import project from git:
 
-git clone [address]
+```bash
+$ git clone [address]
+```
 
 #### Configure to maven project:
 
-In your eclipse, set your project for a maven project, after that the repositories will be downloaded.
+In your eclipse, set your project for a maven project, after that the dependencies will be downloaded.
 
 ## Launch Configurations
 
-You can ask your team leader for this configurations, after that you will change the credentials
+You can ask your team leader for this configurations, after that you need to change the credentials
 of the environment variables to your credentials, like postgres, mongo and aws.
 
 ## Running the tests
