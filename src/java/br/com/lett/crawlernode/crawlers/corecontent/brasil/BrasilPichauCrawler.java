@@ -56,7 +56,7 @@ public class BrasilPichauCrawler extends Crawler {
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select(".stock.available").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .item:not(.home):not(.product) a");
-      JSONArray images = crawlArrayImages(doc);
+      JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
       String primaryImage = crawlPrimaryImage(images);
       String secondaryImages = crawlSecondaryImages(images);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".form-pichau-product .product.info")).replace("hidemobile", "");
@@ -90,38 +90,6 @@ public class BrasilPichauCrawler extends Crawler {
     }
 
     return internalId;
-  }
-
-  private JSONArray crawlArrayImages(Document doc) {
-    JSONArray images = new JSONArray();
-
-    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
-
-    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
-      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
-
-      if (mediaJson.has("mage/gallery/gallery")) {
-        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
-
-        if (gallery.has("data")) {
-          JSONArray arrayImages = gallery.getJSONArray("data");
-
-          for (Object o : arrayImages) {
-            JSONObject imageJson = (JSONObject) o;
-
-            if (imageJson.has("full")) {
-              images.put(imageJson.get("full"));
-            } else if (imageJson.has("img")) {
-              images.put(imageJson.get("img"));
-            } else if (imageJson.has("thumb")) {
-              images.put(imageJson.get("thumb"));
-            }
-          }
-        }
-      }
-    }
-
-    return images;
   }
 
   private String crawlPrimaryImage(JSONArray images) {

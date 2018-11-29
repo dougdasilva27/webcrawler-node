@@ -923,5 +923,42 @@ public class CrawlerUtils {
 
     return pair;
   }
+  
+  /**
+   * Crawls images from a javascript inside the page for Magento markets.
+   * @param doc
+   * @return JSONArray
+   */
+  public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
+	    JSONArray images = new JSONArray();
+
+	    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+
+	    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
+	      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
+
+	      if (mediaJson.has("mage/gallery/gallery")) {
+	        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+
+	        if (gallery.has("data")) {
+	          JSONArray arrayImages = gallery.getJSONArray("data");
+
+	          for (Object o : arrayImages) {
+	            JSONObject imageJson = (JSONObject) o;
+
+	            if (imageJson.has("full")) {
+	              images.put(imageJson.get("full"));
+	            } else if (imageJson.has("img")) {
+	              images.put(imageJson.get("img"));
+	            } else if (imageJson.has("thumb")) {
+	              images.put(imageJson.get("thumb"));
+	            }
+	          }
+	        }
+	      }
+	    }
+
+	    return images;
+  }
 
 }
