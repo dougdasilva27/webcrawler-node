@@ -2,138 +2,80 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilBemolCrawler extends CrawlerRankingKeywords{
-	
-	public BrasilBemolCrawler(Session session) {
-		super(session);
-	}
+public class BrasilBemolCrawler extends CrawlerRankingKeywords {
 
-	private String redirectUrl;
-	
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 20;
-	
-		this.log("Página "+ this.currentPage);
-		
-		String originalUrl = "https://www.bemol.com.br/webapp/wcs/stores/servlet/SearchDisplay?storeId=10001&catalogId=10001&langId=-6"
-				+ "&pageSize=50&beginIndex="+ this.arrayProducts.size() +"&sType=SimpleSearch&showResultsPage=true&searchTerm="+ this.keywordEncoded;
-		
-		// Nesse market uma keyword pode redirecionar para uma categoria
-		// com isso pegamos a url redirecionada e acrescentamos a página.
-		if(this.redirectUrl == null){			
-			this.log("Link onde são feitos os crawlers: "+originalUrl);	
-			
-			//chama função de pegar a url
-			this.currentDoc = fetchDocument(originalUrl);
-			
-			if(this.currentPage == 1) {
-				this.redirectUrl = this.session.getRedirectedToURL(session.getOriginalURL());
-			}
-		} else {
-			String url;
-			
-			if(this.redirectUrl.contains("SearchDisplay")){
-				url = originalUrl;
-			} else {
-				url = this.redirectUrl + "?beginIndex=" + this.arrayProducts.size();
-				this.pageSize = 12;
-			}
-			
-			this.log("Link onde são feitos os crawlers: " + url);	
-			
-			//chama função de pegar a url
-			this.currentDoc = fetchDocument(url);
-		}
-		
+  public BrasilBemolCrawler(Session session) {
+    super(session);
+  }
 
-		Elements products =  this.currentDoc.select(".item-div h3 > a");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
-				setTotalProducts();
-			}
-			for(Element e : products) {
-				
-				// InternalId
-				String internalId 	= crawlInternalId(e);
-				
-				// InternalPid
-				String internalPid 	= crawlInternalPid(internalId);
-				
-				// Url do produto
-				String urlProduct 	= crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
-				
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 32;
 
-	@Override
-	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-			
-		return false;
-		
-	}
-	
-	@Override
-	protected void setTotalProducts()	{
-		Element totalElement = this.currentDoc.select("#pagIndexTitleBottom").first();
-		
-		if(totalElement != null) { 	
-			try	{				
-				String text = totalElement.text();
-				int x = text.indexOf("de");
-				
-				this.totalProducts = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", "").trim());
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
-	
-	private String crawlInternalId(Element e){
-		String internalId = null;
-		String text = e.attr("id");
-		
-		if(text.contains("_")){
-			internalId = text.split("_")[2];
-		}
-		
-		return internalId;
-	}
-	
-	private String crawlInternalPid(String internalId){
-		String internalPid = internalId;
-		
-		return internalPid;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String urlProduct = e.attr("href");
-		
-		return urlProduct;
-	}
+    this.log("Página " + this.currentPage);
+
+    // monta a url com a keyword e a página
+    String url = "https://www.bemol.com.br/pesquisa?pg=" + this.currentPage + "&t=" + this.keywordEncoded;
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    // chama função de pegar o html
+    this.currentDoc = fetchDocument(url, cookies);
+
+    Elements products = this.currentDoc.select("#wd16 .row li .wd-product-line");
+
+    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+      for (Element e : products) {
+        String internalId = e.attr("data-product-id");
+        String productUrl = crawlProductUrl(e);
+
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst(".product-count > span");
+
+    if (totalElement != null) {
+      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
+      }
+    }
+
+    this.log("Total da busca: " + this.totalProducts);
+  }
+
+  private String crawlProductUrl(Element e) {
+    String productUrl = e.attr("href");
+
+    Element href = e.selectFirst(".item-description .name a");
+    if (href != null) {
+      productUrl = CrawlerUtils.completeUrl(href.attr("href"), "https", "www.bemol.com.br");
+    }
+
+    return productUrl;
+  }
 }
