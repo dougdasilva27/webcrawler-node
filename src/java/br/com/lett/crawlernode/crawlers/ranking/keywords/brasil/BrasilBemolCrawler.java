@@ -73,7 +73,7 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords {
 
     Element href = e.selectFirst(".item-description .name a");
     if (href != null) {
-      productUrl = CrawlerUtils.completeUrl(href.attr("href"), "https", "www.bemol.com.br");
+      productUrl = CrawlerUtils.completeUrl(href.attr("href"), "https:", "www.bemol.com.br");
     }
 
     return productUrl;
