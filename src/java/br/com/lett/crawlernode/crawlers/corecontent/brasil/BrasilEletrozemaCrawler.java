@@ -1,238 +1,325 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilEletrozemaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.zema.com";
+  private static final String HOME_PAGE = "https://www.zema.com";
 
   public BrasilEletrozemaCrawler(Session session) {
     super(session);
   }
 
   @Override
+  protected JSONObject fetch() {
+    JSONObject api = new JSONObject();
+
+    String[] tokens = session.getOriginalURL().split("\\?")[0].split("/");
+    String id = CommonMethods.getLast(tokens);
+    String pathName = tokens[tokens.length - 2];
+
+    String apiUrl =
+        "https://www.zema.com/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
+    JSONObject response = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies));
+
+    if (response.has("data")) {
+      api = response.getJSONObject("data");
+    }
+
+    return api;
+  }
+
+  @Override
   public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
+    String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-
   @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<Product>();
+  public List<Product> extractInformation(JSONObject pageJson) throws Exception {
+    super.extractInformation(pageJson);
+    List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    if (pageJson.has("page")) {
+      JSONObject page = pageJson.getJSONObject("page");
 
-      // internalId
-      String internalId = null;
-      Element elementInternalId = doc.select("input#IdProduto").first();
-      if (elementInternalId != null) {
-        internalId = elementInternalId.attr("value").trim();
-      }
+      if (page.has("product")) {
+        JSONObject json = page.getJSONObject("product");
+        Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // internalPid
-      String internalPid = null;
-      Element elementPid = doc.select("p.codigo").first();
-      if (elementPid != null) {
-        String tmp = elementPid.text();
-        internalPid = tmp.substring(tmp.indexOf(":") + 1, tmp.length()).trim();
-      }
+        String internalPid = crawlInternalPid(json);
+        CategoryCollection categories = new CategoryCollection();
+        String primaryImage = crawlPrimaryImage(json);
+        String secondaryImages = crawlSecondaryImages(json, primaryImage);
 
-      // name
-      String name = null;
-      Element elementName = doc.select(".produtoPrincipal .nomeMarca h1.nome").first();
-      if (elementName != null) {
-        name = elementName.text().replace("'", "").replace("’", "").trim();
-      }
+        JSONArray arraySkus = json != null && json.has("childSKUs") ? json.getJSONArray("childSKUs") : new JSONArray();
 
-      // availability
-      Element elementNotifyButton = doc.select(".flagEsgotado").first();
-      boolean available = true;
-      if (elementNotifyButton != null) {
-        if (elementNotifyButton.attr("style").equals("display:block;")) {
-          available = false;
+        for (int i = 0; i < arraySkus.length(); i++) {
+          JSONObject jsonSku = arraySkus.getJSONObject(i);
+          String internalId = crawlInternalId(jsonSku);
+          String name = crawlName(jsonSku);
+          Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "salePrice");
+          Prices prices = crawlPrices(price, jsonSku, pageJson);
+          Integer stock = crawlStock(internalId, internalPid);
+          boolean available = stock != null && stock > 0;
+          String description = crawlDescription(json, jsonSku);
+
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
+
+          products.add(product);
         }
+      } else {
+        Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
       }
-
-      // price
-      Float price = null;
-
-      if (available) {
-        Element elementPrice = doc.select(".valores .preco #PrecoProduto").first();
-        if (elementPrice != null) {
-          price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        }
-      }
-
-      // categories
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      String categories[] = doc.select(".breadCrumbs").text().split("/");
-
-      for (int i = 1; i < categories.length; i++) {
-        if (category1.isEmpty()) {
-          category1 = categories[i].trim();
-        } else if (category2.isEmpty()) {
-          category2 = categories[i].trim();
-        } else if (category3.isEmpty()) {
-          category3 = categories[i].trim();
-        }
-      }
-
-      // images
-      Elements elementSecondaryImages = doc.select("#ListarMultiFotos li a img.foto");
-      String primaryImage = null;
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      for (Element e : elementSecondaryImages) {
-
-        // Tirando o 87x87 para pegar imagem original
-        if (primaryImage == null) {
-          primaryImage = e.attr("src");
-        } else {
-          secondaryImagesArray.put(e.attr("src"));
-        }
-
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
-
-      // Descrição
-      String description = "";
-      Element elementDescription1 = doc.select(".aba1.descResumida").first();
-      Element elementDescription2 = doc.select(".aba2.descricao").first();
-      if (elementDescription1 != null)
-        description = elementDescription1.text().replace(".", ".\n").replace("'", "").replace("’", "").trim();
-      if (elementDescription2 != null)
-        description = description + "\n\n" + elementDescription2.text().replace(".", ".\n").replace("'", "").replace("’", "").trim();
-
-      // Estoque
-      Integer stock = null;
-
-      // Marketplace
-      Marketplace marketplace = new Marketplace();
-
-      // Prices
-      Prices prices = crawlPrices(price);
-
-      Product product = new Product();
-      product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
-
-      products.add(product);
-
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
 
     return products;
+
+  }
+
+  private String crawlInternalId(JSONObject json) {
+    String internalId = null;
+
+    if (json.has("repositoryId")) {
+      internalId = json.get("repositoryId").toString();
+    }
+
+    return internalId;
+  }
+
+  private String crawlInternalPid(JSONObject json) {
+    String internalPid = null;
+
+    if (json.has("id")) {
+      internalPid = json.get("id").toString();
+    }
+
+    return internalPid;
   }
 
 
-  private Prices crawlPrices(Float price) {
+  private String crawlName(JSONObject json) {
+    String name = null;
+
+    if (json.has("displayName")) {
+      name = json.getString("displayName");
+    }
+
+    return name;
+  }
+
+  private Integer crawlStock(String internalId, String internalPid) {
+    Integer stock = 0;
+
+    String url = "https://www.zema.com/ccstoreui/v1/stockStatus/" + internalPid + "?skuId=" + internalId + "&catalogId=";
+    JSONObject stockJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies));
+
+    if (stockJson.has("inStockQuantity") && stockJson.get("inStockQuantity") instanceof Integer) {
+      stock = stockJson.getInt("inStockQuantity");
+    } else if (stockJson.has("orderableQuantity") && stockJson.get("orderableQuantity") instanceof Integer) {
+      stock = stockJson.getInt("orderableQuantity");
+    }
+
+    return stock;
+  }
+
+  private String crawlPrimaryImage(JSONObject json) {
+    String primaryImage = null;
+
+    if (json.has("primaryFullImageURL") && !json.get("primaryFullImageURL").toString().equalsIgnoreCase("null")) {
+      primaryImage = CrawlerUtils.completeUrl(json.get("primaryFullImageURL").toString(), "https:", "www.zema.com");
+    } else if (json.has("primaryLargeImageURL") && !json.get("primaryLargeImageURL").toString().equalsIgnoreCase("null")) {
+      primaryImage = CrawlerUtils.completeUrl(json.get("primaryLargeImageURL").toString(), "https:", "www.zema.com");
+    } else if (json.has("primaryMediumImageURL") && !json.get("primaryMediumImageURL").toString().equalsIgnoreCase("null")) {
+      primaryImage = CrawlerUtils.completeUrl(json.get("primaryMediumImageURL").toString(), "https:", "www.zema.com");
+    } else if (json.has("primarySmallImageURL") && !json.get("primarySmallImageURL").toString().equalsIgnoreCase("null")) {
+      primaryImage = CrawlerUtils.completeUrl(json.get("primarySmallImageURL").toString(), "https:", "www.zema.com");
+    } else if (json.has("primaryThumbImageURL") && !json.get("primaryThumbImageURL").toString().equalsIgnoreCase("null")) {
+      primaryImage = CrawlerUtils.completeUrl(json.get("primaryThumbImageURL").toString(), "https:", "www.zema.com");
+    }
+
+    return primaryImage;
+  }
+
+  /**
+   * @param doc
+   * @return
+   */
+  private String crawlSecondaryImages(JSONObject json, String primaryImage) {
+    String secondaryImages = null;
+
+    JSONArray secondaryImagesArray = new JSONArray();
+    JSONArray images = new JSONArray();
+
+    if (verifyImagesArray(json, "fullImageURLs")) {
+      images = json.getJSONArray("fullImageURLs");
+    } else if (verifyImagesArray(json, "largeImageURLs")) {
+      images = json.getJSONArray("largeImageURLs");
+    } else if (verifyImagesArray(json, "mediumImageURLs")) {
+      images = json.getJSONArray("mediumImageURLs");
+    } else if (verifyImagesArray(json, "smallImageURLs")) {
+      images = json.getJSONArray("smallImageURLs");
+    } else if (verifyImagesArray(json, "thumbImageURLs")) {
+      images = json.getJSONArray("thumbImageURLs");
+    }
+
+    for (Object o : images) {
+      String image = CrawlerUtils.completeUrl(o.toString(), "https:", "www.zema.com");
+
+      if (!image.equalsIgnoreCase(primaryImage)) {
+        secondaryImagesArray.put(image);
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private boolean verifyImagesArray(JSONObject json, String key) {
+    if (json.has(key) && json.get(key) instanceof JSONArray) {
+      JSONArray array = json.getJSONArray(key);
+
+      if (array.length() > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private String crawlDescription(JSONObject json, JSONObject jsonSku) {
+    StringBuilder description = new StringBuilder();
+
+    if (json.has("longDescription")) {
+      description.append(json.get("longDescription").toString());
+    }
+
+    description.append("<table>");
+    Set<String> keys = jsonSku.keySet();
+    for (String key : keys) {
+      if ((key.startsWith("1_") || key.startsWith("x_")) && !key.equalsIgnoreCase("1_informaesAdicionais") && jsonSku.get(key) instanceof String) {
+        description.append("<tr>");
+        description.append("<td>")
+            .append(CommonMethods.upperCaseFirstCharacter(CommonMethods.splitStringWithUpperCase(key.replace("1_", "").replace("x_", ""))))
+            .append("</td>");
+
+        description.append("<td>").append(jsonSku.get(key)).append("</td>");
+        description.append("</tr>");
+      }
+    }
+    description.append("</table>");
+
+    if (jsonSku.has("1_informaesAdicionais")) {
+      description.append("<h4> Informações Adicionais: </h4>\n ").append(jsonSku.get("1_informaesAdicionais").toString());
+    }
+
+    return description.toString();
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param price
+   * @return
+   */
+  private Prices crawlPrices(Float price, JSONObject jsonSku, JSONObject pageJson) {
     Prices prices = new Prices();
 
     if (price != null) {
-      String url = "https://www.zema.com/simulador_parcelas.asp?ValorParcelar=" + price.toString().replace(".", ",");
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
 
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-      Elements formasElements = doc.select(".forma");
+      prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(jsonSku, "listPrice"));
+      prices.setBankTicketPrice(price);
 
-      for (Element e : formasElements) {
-        Element nomeFormaElement = e.select("> p").first();
+      if (pageJson.has("global")) {
+        JSONObject global = pageJson.getJSONObject("global");
 
-        if (nomeFormaElement != null) {
-          String nomeForma = nomeFormaElement.ownText().toLowerCase();
+        if (global.has("site")) {
+          JSONObject site = global.getJSONObject("site");
 
-          if (nomeForma.contains("boleto")) {
-            Element priceElement = e.select(".parcelamento li").first();
+          if (site.has("extensionSiteSettings")) {
+            JSONObject extensionSiteSettings = site.getJSONObject("extensionSiteSettings");
 
-            if (priceElement != null) {
-              Float priceBank = Float.parseFloat(priceElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-              prices.setBankTicketPrice(priceBank);
+            if (extensionSiteSettings.has("discountSettings")) {
+              JSONObject discountSettings = extensionSiteSettings.getJSONObject("discountSettings");
+
+              if (discountSettings.has("descontoBoleto")) {
+                String text = discountSettings.get("descontoBoleto").toString().replaceAll("[^0-9]", "").trim();
+
+                if (!text.isEmpty()) {
+                  prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (Integer.parseInt(text) / 100d))));
+                }
+              }
             }
 
-          } else if (nomeForma.contains("american")) {
-            Map<Integer, Float> installmentPriceMap = crawlInstallments(e);
-            prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+            if (extensionSiteSettings.has("customSiteSettings")) {
+              JSONObject customSiteSettings = extensionSiteSettings.getJSONObject("customSiteSettings");
 
-          } else if (nomeForma.contains("mastercard")) {
-            Map<Integer, Float> installmentPriceMap = crawlInstallments(e);
-            prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+              int minValuePerInstallment = 0;
+              if (customSiteSettings.has("minValuePerInstallment")) {
+                String text = customSiteSettings.get("minValuePerInstallment").toString().replaceAll("[^0-9]", "").trim();
 
-          } else if (nomeForma.contains("visa")) {
-            Map<Integer, Float> installmentPriceMap = crawlInstallments(e);
-            prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+                if (!text.isEmpty()) {
+                  minValuePerInstallment = Integer.parseInt(text);
+                }
+              }
 
+              int maxNumInstallment = 1;
+              if (customSiteSettings.has("maxNumInstallment")) {
+                String text = customSiteSettings.get("maxNumInstallment").toString().replaceAll("[^0-9]", "").trim();
+
+                if (!text.isEmpty()) {
+                  maxNumInstallment = Integer.parseInt(text);
+                }
+              }
+
+              for (int i = 1; i <= maxNumInstallment; i++) {
+                Float priceInstallment = MathUtils.normalizeTwoDecimalPlaces(price / i);
+
+                if (priceInstallment >= minValuePerInstallment) {
+                  installmentPriceMap.put(i, priceInstallment);
+                } else {
+                  break;
+                }
+              }
+            }
           }
         }
       }
 
-      if (prices.getBankTicketPrice() == null) {
-        prices.setBankTicketPrice(price);
-      }
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
     }
 
     return prices;
   }
-
-  private Map<Integer, Float> crawlInstallments(Element e) {
-    Map<Integer, Float> installmentPriceMap = new HashMap<>();
-    Elements priceElements = e.select(".parcelamento li span");
-
-    for (Element l : priceElements) {
-      String text = l.text().toLowerCase();
-      int x = text.indexOf("x");
-
-      Integer installment = Integer.parseInt(text.substring(0, x).trim());
-      Float value = Float.parseFloat(text.substring(x).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-
-      installmentPriceMap.put(installment, value);
-    }
-
-    return installmentPriceMap;
-  }
-
-  /*******************************
-   * Product page identification *
-   *******************************/
-
-  private boolean isProductPage(String url) {
-    return (url.startsWith("https://www.zema.com/produto/") || url.startsWith("http://www.zema.com/produto/"));
-  }
-
 }

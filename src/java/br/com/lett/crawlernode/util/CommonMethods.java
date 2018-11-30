@@ -71,6 +71,10 @@ public class CommonMethods {
     return buf.toString();
   }
 
+  public static String splitStringWithUpperCase(String str) {
+    return str.replaceAll("(?!^)([A-Z])", " $1");
+  }
+
   /**
    * 
    * @param delay
