@@ -43,6 +43,7 @@ public class VTEXCrawlersUtils {
   private String sellerNameLower;
   private String homePage;
   private Integer cardDiscount;
+  private Integer shopCardDiscount;
   private Integer bankTicketDiscount;
   private List<Cookie> cookies;
 
@@ -69,6 +70,14 @@ public class VTEXCrawlersUtils {
 
   public void setCardDiscount(Integer cardDiscount) {
     this.cardDiscount = cardDiscount;
+  }
+
+  public Integer getShopCardDiscount() {
+    return shopCardDiscount;
+  }
+
+  public void setShopCardDiscount(Integer shopCardDiscount) {
+    this.shopCardDiscount = shopCardDiscount;
   }
 
   public void setBankTicketDiscount(Integer bankTicketDiscount) {
@@ -378,9 +387,7 @@ public class VTEXCrawlersUtils {
           installmentPriceMap.put(jsonSku.getInt(BEST_INSTALLMENT_NUMBER), value);
         }
 
-        if (jsonSku.has("ListPrice") && jsonSku.get("ListPrice") instanceof Double) {
-          prices.setPriceFrom(jsonSku.getDouble("ListPrice"));
-        }
+        prices.setPriceFrom(crawlPriceFrom(jsonSku));
       }
 
       if (this.cardDiscount != null) {
@@ -392,6 +399,15 @@ public class VTEXCrawlersUtils {
 
         if (this.bankTicketDiscount != null) {
           prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.bankTicketDiscount / 100f))));
+        }
+
+        if (this.shopCardDiscount != null) {
+          Map<Integer, Float> installmentPriceMapShopCard = new HashMap<Integer, Float>(installmentPriceMap);
+          installmentPriceMapShopCard.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.shopCardDiscount / 100f))));
+
+          prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShopCard);
+        } else {
+          prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
         }
 
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
