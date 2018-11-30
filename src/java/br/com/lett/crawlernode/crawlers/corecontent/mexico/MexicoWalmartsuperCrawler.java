@@ -171,7 +171,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
   private CategoryCollection crawlCategories(JSONObject apiJson) {
     CategoryCollection categories = new CategoryCollection();
 
-    if (apiJson.has("breadcrumb")) {
+    if (apiJson.has("breadcrumb") && apiJson.get("breadcrumb") instanceof JSONObject) {
       JSONObject breadcrumb = apiJson.getJSONObject("breadcrumb");
 
       if (breadcrumb.has("departmentName")) {
