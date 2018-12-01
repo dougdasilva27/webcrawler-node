@@ -26,9 +26,15 @@ public class ChileJumboCrawler {
   public static final String JUMBO_LAREINA_ID = "11";
   public static final String JUMBO_LOSDOMINICOS_ID = "12";
   public static final String JUMBO_VINA_ID = "16";
+  
+  public static final String RANKING_SELECTOR = "li[layout] .product-item";
+  public static final String RANKING_SELECTOR_URL = ".product-item__info a";
+  public static final String RANKING_SELECTOR_TOTAL = ".resultado-busca-numero";
+  public static final String RANKING_ATTRIBUTE_ID = "data-id";
 
   private static final String MAIN_SELLER_NAME_LOWER = "jumbo";
-  private static final String HOME_PAGE = "https://nuevo.jumbo.cl/";
+  public static final String HOME_PAGE = "https://nuevo.jumbo.cl/";
+  public static final String HOST = "nuevo.jumbo.cl";
   private Session session;
   private List<Cookie> cookies = new ArrayList<>();
   private Logger logger;
@@ -44,11 +50,10 @@ public class ChileJumboCrawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies);
-      vtexUtil.setShopCardDiscount(10);
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:last-child > a", false);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a", false);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription", "#caracteristicas table.Ficha-Tecnica"));
 
       // sku data in json

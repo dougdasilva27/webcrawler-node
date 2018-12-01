@@ -11,8 +11,6 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class ChileJumbolosdominicosCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://nuevo.jumbo.cl/";
-
   public ChileJumbolosdominicosCrawler(Session session) {
     super(session);
   }
@@ -20,7 +18,7 @@ public class ChileJumbolosdominicosCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+    return !FILTERS.matcher(href).matches() && (href.startsWith(ChileJumboCrawler.HOME_PAGE));
   }
 
   @Override
@@ -28,7 +26,7 @@ public class ChileJumbolosdominicosCrawler extends Crawler {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
     BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + ChileJumboCrawler.JUMBO_LOSDOMINICOS_ID);
-    cookie.setDomain(".nuevo.jumbo.cl");
+    cookie.setDomain("." + ChileJumboCrawler.HOST);
     cookie.setPath("/");
     this.cookies.add(cookie);
   }
