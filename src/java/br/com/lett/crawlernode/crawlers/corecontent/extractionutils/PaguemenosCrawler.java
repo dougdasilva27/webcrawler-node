@@ -69,7 +69,7 @@ public class PaguemenosCrawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
     }
 
     return products;
