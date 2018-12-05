@@ -16,7 +16,8 @@ public class ChileCornershoplidervitacuraCrawler extends CrawlerRankingKeywords 
   public void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    String url = "https://cornershopapp.com/api/v1/branches/19/search?query=" + this.keywordEncoded;
+    String url = "https://cornershopapp.com/api/v1/branches/"
+        + br.com.lett.crawlernode.crawlers.corecontent.chile.ChileCornershoplidervitacuraCrawler.STORE_ID + "/search?query=" + this.keywordEncoded;
     this.log("Link onde são feitos os crawlers: " + url);
 
     JSONArray categories = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);

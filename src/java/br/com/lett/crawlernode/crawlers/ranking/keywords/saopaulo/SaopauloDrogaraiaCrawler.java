@@ -17,8 +17,12 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
     String url = "https://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt=" + this.arrayProducts.size();
-    this.log("Link onde são feitos os crawlers: " + url);
 
+    if (this.keywordEncoded.equalsIgnoreCase("pantene")) {
+      url = "https://www.drogaraia.com.br/pantene";
+    }
+
+    this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".item div.container:not(.min-limit)");
@@ -45,10 +49,22 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-    if (!(hasNextPage()))
-      setTotalProducts();
   }
 
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst("p.amount");
+
+    if (totalElement != null && !this.keywordEncoded.equalsIgnoreCase("pantene")) {
+      String token = totalElement.text().replaceAll("[^0-9]", "").trim();
+
+      if (!token.isEmpty()) {
+        this.totalProducts = Integer.parseInt(token);
+      }
+
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
 
   private String crawlInternalId(Element e) {
     String internalId = null;
@@ -67,23 +83,14 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
     if (urlElement != null) {
       urlProduct = urlElement.attr("title");
+    } else {
+      urlElement = e.selectFirst(".product-name a");
+
+      if (urlElement != null) {
+        urlProduct = urlElement.attr("href");
+      }
     }
 
     return urlProduct;
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst("p.amount");
-
-    if (totalElement != null) {
-      String token = totalElement.text().replaceAll("[^0-9]", "").trim();
-
-      if (!token.isEmpty()) {
-        this.totalProducts = Integer.parseInt(token);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
   }
 }
