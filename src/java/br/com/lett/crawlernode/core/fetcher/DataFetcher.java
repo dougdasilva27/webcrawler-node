@@ -56,6 +56,7 @@ import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -216,7 +217,7 @@ public class DataFetcher {
    */
   public static JSONObject fetchJSONObject(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
     try {
-      return new JSONObject(fetchJson(reqType, session, url, payload, cookies, 1));
+      return CrawlerUtils.stringToJson(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       return new JSONObject();
@@ -236,7 +237,7 @@ public class DataFetcher {
    */
   public static JSONArray fetchJSONArray(String reqType, Session session, String url, String payload, List<Cookie> cookies) {
     try {
-      return new JSONArray(fetchJson(reqType, session, url, payload, cookies, 1));
+      return CrawlerUtils.stringToJsonArray(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       return new JSONArray();
