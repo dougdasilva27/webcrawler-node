@@ -1,7 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -18,12 +22,13 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
     String url = "https://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt=" + this.arrayProducts.size();
 
-    if (this.keywordEncoded.equalsIgnoreCase("pantene")) {
-      url = "https://www.drogaraia.com.br/pantene";
-    }
+    Map<String, String> headers = new HashMap<>();
+    headers.put("upgrade-insecure-requests", "1");
+    headers.put("accept", "text/html");
+    headers.put("accept-language", "pt-BR");
 
     this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = Jsoup.parse(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, "GET", session, false));
 
     Elements products = this.currentDoc.select(".item div.container:not(.min-limit)");
 
@@ -55,7 +60,7 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
   protected void setTotalProducts() {
     Element totalElement = this.currentDoc.selectFirst("p.amount");
 
-    if (totalElement != null && !this.keywordEncoded.equalsIgnoreCase("pantene")) {
+    if (totalElement != null && this.currentDoc.selectFirst("#pantene") == null) {
       String token = totalElement.text().replaceAll("[^0-9]", "").trim();
 
       if (!token.isEmpty()) {
