@@ -91,7 +91,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
     headers.put("Content-Type", "application/json");
 
     JSONObject json =
-        CrawlerUtils.stringToJson(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+        CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
 
     if (json.has("placements")) {
       JSONArray placements = json.getJSONArray("placements");

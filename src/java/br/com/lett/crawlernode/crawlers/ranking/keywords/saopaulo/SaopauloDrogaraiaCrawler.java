@@ -28,7 +28,7 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
     headers.put("accept-language", "pt-BR");
 
     this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = Jsoup.parse(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, "GET", session, false));
+    this.currentDoc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, "GET", session, false));
 
     Elements products = this.currentDoc.select(".item div.container:not(.min-limit)");
 

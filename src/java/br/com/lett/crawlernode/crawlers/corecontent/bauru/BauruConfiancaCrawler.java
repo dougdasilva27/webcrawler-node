@@ -104,7 +104,7 @@ public class BauruConfiancaCrawler extends Crawler {
       headers.put("Referer", session.getOriginalURL());
 
       String url = "https://www.confianca.com.br/bizrest/action/product/id/" + internalPid;
-      json = new JSONObject(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+      json = new JSONObject(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
     }
 
     return json;

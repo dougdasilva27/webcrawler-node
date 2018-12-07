@@ -358,7 +358,7 @@ public class ChileFalabellaCrawler extends Crawler {
       headers.put("Content-Type", "application/json");
 
       JSONObject json =
-          CrawlerUtils.stringToJson(POSTFetcher.requestUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+          CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
 
       if (json.has("state")) {
         jsonPrice = json.getJSONObject("state");

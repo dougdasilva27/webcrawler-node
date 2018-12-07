@@ -702,7 +702,7 @@ public class POSTFetcher {
    * @param dev
    * @return
    */
-  public static String requestUsingFetcher(String url, List<Cookie> cookies, Map<String, String> headers, String payload, String resquestType,
+  public static String requestStringUsingFetcher(String url, List<Cookie> cookies, Map<String, String> headers, String payload, String resquestType,
       Session session, boolean dev) {
     String response = "";
 
