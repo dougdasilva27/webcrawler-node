@@ -505,6 +505,7 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product void.");
+      Logging.printLogError(logger, session, "InternalId: " + session.getInternalId() + " Market: " + session.getMarket().getNumber());
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -533,6 +534,7 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product LRT.");
+      Logging.printLogError(logger, session, "InternalId: " + session.getInternalId() + " Market: " + session.getMarket().getNumber());
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));

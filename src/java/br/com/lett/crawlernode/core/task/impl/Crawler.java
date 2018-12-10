@@ -658,7 +658,7 @@ public class Crawler extends Task {
         Persistence.updateProcessedLMS(nowISO, session);
 
         Logging.printLogDebug(logger, session, "Updating behavior");
-        Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
+        new Processor().updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
         Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session);
       }
     }

@@ -204,6 +204,73 @@ public class Processor {
    * @param marketplace
    * @param session
    */
+  public void updateBehaviorTest(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
+      Prices prices, Marketplace marketplace, Session session) {
+
+    DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
+    String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+
+    // Get the previous behavior object
+    Behavior oldBehaviour;
+    if (newProcessedProduct.getBehaviour() == null) {
+      oldBehaviour = new Behavior();
+    } else {
+      oldBehaviour = newProcessedProduct.getBehaviour().clone();
+    }
+
+    Behavior newBehavior = new Behavior();
+
+    // Order the old behavior by date ascending
+    oldBehaviour.orderByDateAsc();
+
+    // Add the first behavior element of this day
+    // which is the last behavior element from yesterday
+    addFirstBehaviorElementOfDay(oldBehaviour, newBehavior, startOfDay, startOfDayISO, session);
+
+    // Create the new BehaviorElement
+    try {
+      BehaviorElement behaviorElement = createNewBehaviorElement(nowISO, stock, available, status, price, prices, marketplace);
+
+      newBehavior.add(behaviorElement); // add the behavior from the last crawler that occurred just a few seconds ago
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, Util.getStackTraceString(e));
+    }
+
+    // pegando behavior elements apenas com as datas de hoje e
+    // que possuem os campos obrigatorios
+    List<BehaviorElement> filteredBehaviorElements = oldBehaviour.filterAfter(startOfDay);
+
+    for (BehaviorElement be : filteredBehaviorElements) {
+      newBehavior.add(be);
+    }
+
+    newBehavior.orderByDateAsc();
+
+    newProcessedProduct.setBehaviour(newBehavior);
+  }
+
+  /**
+   * Scan means the same as BehaviorElement. Updates the intra day behavior of the product. When the
+   * processed is being created (has just been discovered), the current behavior will be empty. <br>
+   * In this case, this method creates the first behavior element ever for this behavior, which is the
+   * crawler scanned data that happened just seconds ago. It won't have an artificial scan of the
+   * first moment of day, because this artificial scan is nothing more than the last scan of the
+   * previous day. <br>
+   * So, if the product has just been discovered, it won't have this. On the other side, if the
+   * product already exists, then we will only update the behavior with the last scan data (add a new
+   * behavior element), while preserving the other behavior elements, but in this case we also look
+   * for the first scan of the day. <br>
+   * If we can't find it, then we look for the last scan of the previous, and set it as the first scan
+   * of the current day.
+   * 
+   * @param newProcessedProduct
+   * @param nowISO
+   * @param stock
+   * @param available
+   * @param price
+   * @param marketplace
+   * @param session
+   */
   public static void updateBehavior(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
       Prices prices, Marketplace marketplace, Session session) {
 
