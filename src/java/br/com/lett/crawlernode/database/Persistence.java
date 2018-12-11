@@ -439,7 +439,7 @@ public class Persistence {
    * @param newBehaviour
    * @param session
    */
-  public static void updateProcessedBehaviour(Behavior newBehaviour, Session session) {
+  public static void updateProcessedBehaviour(Behavior newBehaviour, Session session, Long id) {
     dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
     Map<Field<?>, Object> updateSets = new HashMap<>();
@@ -456,7 +456,7 @@ public class Persistence {
 
     try {
       GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
-      Logging.printLogDebug(logger, session, "Processed product behaviour updated with success.");
+      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success.");
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product behaviour.");

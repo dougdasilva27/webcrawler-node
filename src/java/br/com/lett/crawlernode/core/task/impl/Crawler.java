@@ -612,9 +612,9 @@ public class Crawler extends Task {
       Logging.printLogDebug(logger, session, "Updating LRT ...");
       Persistence.updateProcessedLRT(nowISO, session);
 
-      Logging.printLogDebug(logger, session, "Updating behavior");
-      Processor.updateBehavior(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
-      Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session);
+      Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
+      new Processor().updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
+      Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
 
       return product;
     }
@@ -657,9 +657,9 @@ public class Crawler extends Task {
         Logging.printLogDebug(logger, session, "Updating LMS ...");
         Persistence.updateProcessedLMS(nowISO, session);
 
-        Logging.printLogDebug(logger, session, "Updating behavior");
+        Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
         new Processor().updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
-        Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session);
+        Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
       }
     }
 
