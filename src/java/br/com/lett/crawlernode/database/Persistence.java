@@ -456,7 +456,8 @@ public class Persistence {
 
     try {
       GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
-      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success.");
+      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. "
+      		+ "(InternalId: " + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product behaviour.");
