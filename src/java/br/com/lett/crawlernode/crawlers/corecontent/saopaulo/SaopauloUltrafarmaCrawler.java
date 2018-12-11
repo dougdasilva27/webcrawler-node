@@ -61,6 +61,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
+
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
@@ -115,7 +116,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       // Descrição
       StringBuilder description = new StringBuilder();
 
-      Elements infos = doc.select(".tabcontent, .div_anvisa");
+      Elements infos = doc.select(".tabcontent:not(#Comet), .div_anvisa");
       for (Element e : infos) {
         String text = e.text().toLowerCase().trim();
 
