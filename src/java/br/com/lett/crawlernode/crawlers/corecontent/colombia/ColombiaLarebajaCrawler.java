@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -38,21 +37,20 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
-      
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
-      Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
-      
       CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
+
+      
       String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
+      Prices prices = crawlPrices(price, doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(null)
           .setMarketplace(new Marketplace()).build();
 
       products.add(product);
@@ -71,12 +69,12 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
+    Element serchedId = doc.selectFirst(".detPproduct input[data-producto]");
 
-    Element id = doc.selectFirst("input.btn-add-cart");
-    if (id != null) {
-      internalId = id.val();
+    if(serchedId != null) {
+      internalId = serchedId.attr("data-producto").trim();      
     }
-
+    
     return internalId;
   }
   
@@ -86,17 +84,17 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   public static CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb-nav a");
+    Elements elementCategories = document.select(".breadcrumb li + li");
 
     for (Element e : elementCategories) {
       categories.add(e.text().replace(">", "").trim());
     }
 
-    Element lastCategory = document.selectFirst(".breadcrumb-nav h3");
+    Element lastCategory = document.selectFirst(".breadcrumb active");
     if (lastCategory != null) {
-      categories.add(lastCategory.ownText().replace("/", "").trim());
+      categories.add(lastCategory.ownText().trim());
     }
-
+    
     return categories;
   }
 
@@ -111,56 +109,16 @@ public class ColombiaLarebajaCrawler extends Crawler{
     Prices prices = new Prices();
 
     if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-      installmentPriceMap.put(1, price);
-
       Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
       installmentPriceMapShop.put(1, price);
 
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".price-selector .nule-price", false));
-
-      Element discounts = doc.selectFirst(".active-offer .red");
-      if (discounts != null) {
-        if (prices.getPriceFrom() == null) {
-          prices.setPriceFrom(MathUtils.normalizeNoDecimalPlaces(price.doubleValue()));
-        }
-
-        String text = discounts.ownText();
-
-        String[] tokens = text.split(",");
-        Float normalCardDiscount = 0f;
-        Float shopCardDiscount = 0f;
-
-        if (tokens.length > 1) {
-          String shopDiscount = tokens[0].replaceAll("[^0-9]", "");
-          String cardDiscount = tokens[1].replaceAll("[^0-9]", "");
-
-          if (!shopDiscount.isEmpty()) {
-            shopCardDiscount = Integer.parseInt(shopDiscount) / 100f;
-          }
-
-          if (!cardDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardDiscount) / 100f;
-          }
-        } else {
-          String cardsDiscount = text.replaceAll("[^0-9]", "");
-
-          if (!cardsDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardsDiscount) / 100f;
-            shopCardDiscount = normalCardDiscount;
-          }
-        }
-
-        installmentPriceMap.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * normalCardDiscount)));
-        installmentPriceMapShop.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * shopCardDiscount)));
-      }
-
+      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+
     }
 
     return prices;
   }
 
-  
+
 }
