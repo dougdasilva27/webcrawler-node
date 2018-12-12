@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,11 +11,13 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.Marketplace;
 import models.prices.Prices;
 
 public class ColombiaLarebajaCrawler extends Crawler{
@@ -29,17 +32,17 @@ public class ColombiaLarebajaCrawler extends Crawler{
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-
+    
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
-      System.err.println(name);
-      /*
-       *       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".price-selector .active-price", false);
+      
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
       Prices prices = crawlPrices(price, doc);
-      boolean available = doc.select(".product-detail .out-of-stock").isEmpty();
+      boolean available = crawlAvailability(doc);
+      
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
       String secondaryImages =
@@ -54,9 +57,6 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
       products.add(product);
 
-       * 
-       * */
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
@@ -65,8 +65,8 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   }
 
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".product-detail").isEmpty();
+  private boolean isProductPage(Document doc) {    
+    return !doc.select(".product_detail").isEmpty();
   }
 
   private String crawlInternalId(Document doc) {
@@ -78,6 +78,10 @@ public class ColombiaLarebajaCrawler extends Crawler{
     }
 
     return internalId;
+  }
+  
+  private boolean crawlAvailability(Document doc) {    
+    return doc.select("btn btn-primary btn-block") != null;
   }
 
   public static CategoryCollection crawlCategories(Document document) {
