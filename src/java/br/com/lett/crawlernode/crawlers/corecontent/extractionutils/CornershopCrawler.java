@@ -109,6 +109,18 @@ public class CornershopCrawler {
 
     if (json.has("name")) {
       name = json.getString("name");
+
+      if (json.has("brand")) {
+        JSONObject brand = json.getJSONObject("brand");
+
+        if (brand.has("name")) {
+          String brandName = brand.get("name").toString().trim();
+
+          if (!brandName.isEmpty()) {
+            name = brandName + " · " + name;
+          }
+        }
+      }
     }
 
     return name;
