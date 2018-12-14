@@ -131,34 +131,43 @@ public class ChileTottusCrawler extends Crawler {
           prices.setPriceFrom(MathUtils.normalizeNoDecimalPlaces(price.doubleValue()));
         }
 
-        String text = discounts.ownText();
+        String text = discounts.ownText().toLowerCase();
 
-        String[] tokens = text.split(",");
-        Float normalCardDiscount = 0f;
-        Float shopCardDiscount = 0f;
+        if (!text.contains("2 unidades")) {
+          String[] tokens = text.split(",");
+          Float normalCardDiscount = 0f;
+          Float shopCardDiscount = 0f;
 
-        if (tokens.length > 1) {
-          String shopDiscount = tokens[0].replaceAll("[^0-9]", "");
-          String cardDiscount = tokens[1].replaceAll("[^0-9]", "");
+          if (tokens.length > 1) {
+            String shopDiscount = tokens[0].replaceAll("[^0-9]", "");
+            String cardDiscount = tokens[1].replaceAll("[^0-9]", "");
 
-          if (!shopDiscount.isEmpty()) {
-            shopCardDiscount = Integer.parseInt(shopDiscount) / 100f;
+            if (!shopDiscount.isEmpty()) {
+              shopCardDiscount = Integer.parseInt(shopDiscount) / 100f;
+            }
+
+            if (!cardDiscount.isEmpty()) {
+              normalCardDiscount = Integer.parseInt(cardDiscount) / 100f;
+            }
+          } else {
+            String cardsDiscount = text.replaceAll("[^0-9]", "");
+
+            if (!cardsDiscount.isEmpty()) {
+              normalCardDiscount = Integer.parseInt(cardsDiscount) / 100f;
+              shopCardDiscount = normalCardDiscount;
+            }
           }
 
-          if (!cardDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardDiscount) / 100f;
+          Float priceWithDiscount = MathUtils.normalizeNoDecimalPlaces(price - (price * normalCardDiscount));
+          if (priceWithDiscount > 0) {
+            installmentPriceMap.put(1, priceWithDiscount);
           }
-        } else {
-          String cardsDiscount = text.replaceAll("[^0-9]", "");
 
-          if (!cardsDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardsDiscount) / 100f;
-            shopCardDiscount = normalCardDiscount;
+          Float shopPriceWithDiscount = MathUtils.normalizeNoDecimalPlaces(price - (price * shopCardDiscount));
+          if (priceWithDiscount > 0) {
+            installmentPriceMapShop.put(1, shopPriceWithDiscount);
           }
         }
-
-        installmentPriceMap.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * normalCardDiscount)));
-        installmentPriceMapShop.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * shopCardDiscount)));
       }
 
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
