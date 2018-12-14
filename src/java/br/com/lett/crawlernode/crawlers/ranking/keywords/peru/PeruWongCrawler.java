@@ -2,9 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import org.jsoup.nodes.Document;
 
 public class PeruWongCrawler extends CrawlerRankingKeywords {
 	public PeruWongCrawler(Session session) {
@@ -61,13 +61,13 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
 	      this.log("Total da busca: " + this.totalProducts);
 	    }
 	}
-	  
+	
 	private String crawlInternalId(Element e) {
-		return e.attr("data-id");
+		return e.attr("data-sku");
 	}
 	  
 	private String crawlProductPid(Element e) {
-		return e.attr("data-sku");
+		return e.attr("data-id");
 	}
 	
 	private String crawlProductUrl(Element e) {
