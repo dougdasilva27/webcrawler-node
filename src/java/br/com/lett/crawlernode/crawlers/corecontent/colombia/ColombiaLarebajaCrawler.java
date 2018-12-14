@@ -69,11 +69,20 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    Element serchedId = doc.selectFirst(".detPproduct input[data-producto]");
 
-    if(serchedId != null) {
-      internalId = serchedId.attr("data-producto").trim();      
-    }
+    if(doc.selectFirst(".control_cant_detalle input[data-producto]") != null) {
+      
+     Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
+     internalId = serchedId.attr("data-producto").trim();
+     
+   } else {     
+   
+       Element serchedId = doc.selectFirst(".detPproduct input[data-producto]");
+       
+       if(serchedId != null) {
+         internalId = serchedId.attr("data-producto").trim();      
+       }
+   }
     
     return internalId;
   }
