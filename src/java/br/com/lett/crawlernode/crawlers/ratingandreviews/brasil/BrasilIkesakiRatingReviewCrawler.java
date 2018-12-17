@@ -1,10 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,6 +12,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -43,7 +42,7 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler{
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(getTotalAvgRating(docRating, totalNumOfEvaluations));    
       
-      List<String> idList = crawlIdList(skuJson);
+      List<String> idList = VTEXCrawlersUtils.crawlIdList(skuJson);
       for (String internalId : idList) {
         RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(internalId);
@@ -76,10 +75,9 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler{
   
   private Integer getTotalNumOfRatings(Document doc) {
     Integer numOfRatings = 0;
-    Element nRate = doc.selectFirst(".media");
+    Element nRate = doc.selectFirst(".media em > span");
     if(nRate != null) {      
-      String [] arrayNumOfRating = nRate.text().split(" ");
-      String stringNumOfRatings = arrayNumOfRating[3].replaceAll("[^0-9]", "").trim();
+      String stringNumOfRatings = nRate.text().replaceAll("[^0-9]", "").trim();
       numOfRatings = !stringNumOfRatings.isEmpty() ? Integer.parseInt(stringNumOfRatings) : 0;
     }
     return numOfRatings;
@@ -94,15 +92,15 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler{
       for (Element e : rating) {
         Element star = e.selectFirst("div.rating-wrapper div");       
         if (star != null) {
-          if (star.hasClass("rating a50")) {
+          if (star.hasClass("a50")) {
             total += 5;
-          } else if (star.hasClass("rating a40")) {
+          } else if (star.hasClass("a40")) {
             total += 4;
-          } else if (star.hasClass("rating a30")) {
+          } else if (star.hasClass("a30")) {
             total += 3;
-          } else if (star.hasClass("rating a20")) {
+          } else if (star.hasClass("a20")) {
             total += 2;
-          } else if (star.hasClass("rating a10")) {
+          } else if (star.hasClass("a10")) {
             total += 1;
           }
         }
@@ -116,21 +114,4 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler{
     return document.selectFirst(".product-info__name")!= null;
   }
   
-  private List<String> crawlIdList(JSONObject skuJson) {
-    List<String> idList = new ArrayList<>();
-
-    if (skuJson.has("skus")) {
-      JSONArray skus = skuJson.getJSONArray("skus");
-      
-      for (int i = 0; i < skus.length(); i++) {
-        JSONObject sku = skus.getJSONObject(i);
-
-        if (sku.has("sku")) {
-          idList.add(Integer.toString(sku.getInt("sku")));
-        }
-      }
-    }
-
-    return idList;
-  }
 }
