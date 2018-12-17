@@ -145,7 +145,7 @@ public class GETFetcher {
 
           return content;
         } else {
-          Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+          Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
           throw new ResponseCodeException(500);
         }
       }
@@ -278,11 +278,11 @@ public class GETFetcher {
     } catch (Exception e) {
       DataFetcher.sendRequestInfoLog(url, DataFetcher.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session, "Error performing GET request [url: " + session.getOriginalURL() + " , attempt: " + attempt + "]");
-      Logging.printLogError(logger, session, e.getMessage());
+      Logging.printLogWarn(logger, session, "Error performing GET request [url: " + session.getOriginalURL() + " , attempt: " + attempt + "]");
+      Logging.printLogWarn(logger, session, e.getMessage());
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
         return "";
       } else {
         return fetchPageGET(session, url, cookies, userAgent, lettProxy, attempt + 1);
@@ -334,7 +334,7 @@ public class GETFetcher {
 
           return content;
         } else {
-          Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+          Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
           throw new ResponseCodeException(500);
         }
       }
@@ -464,12 +464,12 @@ public class GETFetcher {
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + session.getOriginalURL());
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + session.getOriginalURL());
-        Logging.printLogError(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + session.getOriginalURL());
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
         return "";
       } else {
         return fetchPageGETWithHeaders(session, url, cookies, headers, attempt + 1);

@@ -219,7 +219,7 @@ public class DataFetcher {
     try {
       return CrawlerUtils.stringToJson(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       return new JSONObject();
     }
   }
@@ -239,7 +239,7 @@ public class DataFetcher {
     try {
       return CrawlerUtils.stringToJsonArray(fetchJson(reqType, session, url, payload, cookies, 1));
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       return new JSONArray();
     }
   }
@@ -271,12 +271,12 @@ public class DataFetcher {
       }
 
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Erro ao fazer requisição de JSONObject via " + reqType + ": " + url);
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
       } else {
         return fetchJson(reqType, session, url, payload, cookies, attempt + 1);
       }
@@ -332,20 +332,20 @@ public class DataFetcher {
         if (urlParameters != null) {
           return POSTFetcher.fetchPagePOST(session, url, urlParameters, cookies, attempt);
         } else {
-          Logging.printLogError(logger, session, "Parameter payload is null.");
+          Logging.printLogWarn(logger, session, "Parameter payload is null.");
           return "";
         }
       } else {
-        Logging.printLogError(logger, session, "Invalid reqType parameter.");
+        Logging.printLogWarn(logger, session, "Invalid reqType parameter.");
         return "";
       }
 
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error in " + reqType + " request for URL: " + url);
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
         return "";
 
       } else {
@@ -450,7 +450,7 @@ public class DataFetcher {
 
           return cookiesMap;
         } else {
-          Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+          Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
           throw new ResponseCodeException(500);
         }
       }
@@ -565,11 +565,11 @@ public class DataFetcher {
     } catch (Exception e) {
       sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
-      Logging.printLogError(logger, session, e.getMessage());
+      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
+      Logging.printLogWarn(logger, session, e.getMessage());
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
         return new HashMap<>();
       } else {
         return fetchCookies(session, url, cookies, attempt + 1);
@@ -703,11 +703,11 @@ public class DataFetcher {
     } catch (Exception e) {
       sendRequestInfoLog(url, GET_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength, requestHash);
 
-      Logging.printLogError(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
-      Logging.printLogError(logger, session, e.getMessage());
+      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
+      Logging.printLogWarn(logger, session, e.getMessage());
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
         return "";
       } else {
         return fetchCookie(session, url, cookieName, cookies, attempt + 1);
@@ -732,7 +732,7 @@ public class DataFetcher {
     } catch (SocketTimeoutException e) {
       // do nothing
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -920,13 +920,13 @@ public class DataFetcher {
             "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session,
+        Logging.printLogWarn(logger, session,
             "Attempt " + attempt + " -> Error performing GET request for image download: " + session.getOriginalURL());
-        Logging.printLogError(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
-        Logging.printLogError(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + session.getOriginalURL() + "]");
         return null;
       } else {
         return downloadImageFromMarket(attempt + 1, session);
@@ -1014,13 +1014,13 @@ public class DataFetcher {
           attemptTemp += 1;
 
           if (!ProxyCollection.NO_PROXY.equals(serviceName)) {
-            Logging.printLogError(logger, session,
+            Logging.printLogWarn(logger, session,
                 "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
           }
         }
       } else {
         attemptTemp += 1;
-        Logging.printLogError(logger, session, "Error: trying to use an unknown proxy service. I'll try the next one.");
+        Logging.printLogWarn(logger, session, "Error: trying to use an unknown proxy service. I'll try the next one.");
       }
     }
 

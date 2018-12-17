@@ -112,7 +112,7 @@ public class POSTFetcher {
 
           return content;
         } else {
-          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          Logging.printLogWarn(logger, session, "Fetcher did not return the expected response.");
           throw new ResponseCodeException(500);
         }
       }
@@ -220,8 +220,8 @@ public class POSTFetcher {
         Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + session.getOriginalURL());
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + session.getOriginalURL());
-        Logging.printLogError(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + session.getOriginalURL());
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -256,7 +256,7 @@ public class POSTFetcher {
 
         return content;
       } else {
-        Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+        Logging.printLogWarn(logger, session, "Fetcher did not return the expected response.");
         throw new ResponseCodeException(500);
       }
     }
@@ -311,9 +311,9 @@ public class POSTFetcher {
       try {
         payloadJson = new JSONObject(payload);
       } catch (Exception e) {
-        Logging.printLogError(logger, session,
+        Logging.printLogWarn(logger, session,
             "Tentativa " + attempt + " -> Erro ao fazer requisição POST JSON, pois não consegui converter o payload em json: " + payload);
-        Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
       }
 
       if (payloadJson != null && payloadJson.length() > 0) {
@@ -502,8 +502,8 @@ public class POSTFetcher {
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request: " + url);
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + url);
-        Logging.printLogError(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + url);
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -553,7 +553,7 @@ public class POSTFetcher {
 
           return content;
         } else {
-          Logging.printLogError(logger, session, "Fetcher did not return the expected response.");
+          Logging.printLogWarn(logger, session, "Fetcher did not return the expected response.");
           throw new ResponseCodeException(500);
         }
       }
@@ -676,8 +676,8 @@ public class POSTFetcher {
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request: " + url);
         Logging.printLogWarn(logger, session, e.getMessage());
       } else {
-        Logging.printLogError(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + url);
-        Logging.printLogError(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, "Tentativa " + attempt + " -> Error performing POST request: " + url);
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       if (attempt >= session.getMaxConnectionAttemptsCrawler()) {
@@ -751,7 +751,7 @@ public class POSTFetcher {
     try {
       response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
     }
 
     DataFetcher.setRequestProxyForFetcher(session, response, url);
@@ -952,7 +952,7 @@ public class POSTFetcher {
         }
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Fetcher did not returned the expected response.");
+      Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
     }
 
     return cookiesMap;
