@@ -109,7 +109,7 @@ public class Test {
         session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
             market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.paris.cl/store/producto/cafetera-super-automatica-delonghi-ecam-650-75-723777-ppp-", market);
+        session = SessionFactory.createTestSession("https://www.wong.pe/televisor-panasonic-tc-32es600l-27176/p", market);
       }
       
       Task task = TaskFactory.createTask(session);
