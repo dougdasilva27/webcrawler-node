@@ -123,7 +123,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Float
    */
-  public static Float scrapSimplePriceFloat(Document document, String cssSelector, boolean ownText) {
+  public static Float scrapSimplePriceFloat(Element document, String cssSelector, boolean ownText) {
     Float price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
@@ -161,7 +161,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Double
    */
-  public static Double scrapSimplePriceDouble(Document document, String cssSelector, boolean ownText) {
+  public static Double scrapSimplePriceDouble(Element document, String cssSelector, boolean ownText) {
     Double price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
