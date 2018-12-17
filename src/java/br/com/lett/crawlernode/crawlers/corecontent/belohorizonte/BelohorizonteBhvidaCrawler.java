@@ -39,7 +39,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhes-mini > ul > li h1", true);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", false);
       boolean available = crawlAvailability(doc);
-      CategoryCollection categories = crawlCategories(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
       Prices prices = crawlPrices(price, doc);
       
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
@@ -93,22 +93,6 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
     return doc.select("btn btn-primary btn-block") != null;
   }
 
-  public static CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb li + li");
-
-    for (Element e : elementCategories) {
-      categories.add(e.text().replace(">", "").trim());
-    }
-
-    Element lastCategory = document.selectFirst(".breadcrumb active");
-    if (lastCategory != null) {
-      categories.add(lastCategory.ownText().trim());
-    }
-    
-    return categories;
-  }
-
   /**
    * In the time when this crawler was made, this market hasn't installments informations
    * 
@@ -121,8 +105,9 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-      installmentPriceMapShop.put(1, price);
-      Elements elements = doc.select(".parcelmento ul");
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+      installmentPriceMap.put(1, price);
+      Elements elements = doc.select(".parcelamento ul > li");
       for (Element element : elements) {
         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, element, true);
 
@@ -130,6 +115,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
           installmentPriceMapShop.put(pair.getFirst(), pair.getSecond());
         }
       }
+      prices.setBankTicketPrice(price);
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
     }
 
