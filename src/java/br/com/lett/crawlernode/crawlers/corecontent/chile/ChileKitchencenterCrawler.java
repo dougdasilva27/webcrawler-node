@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,7 +21,7 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 03/12/2018
+ * Date: 10/12/2018
  * 
  * @author Gabriel Dornelas
  *
@@ -48,22 +48,27 @@ public class ChileKitchencenterCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".title h5", false);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".price-selector .active-price", false);
-      Prices prices = crawlPrices(price, doc);
-      boolean available = doc.select(".product-detail .out-of-stock").isEmpty();
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
+      JSONObject skuJson = crawlSkuJson(doc);
+
+      String internalId = crawlInternalId(skuJson);
+      String internalPid = crawlInternalPid(skuJson);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title", false);
+      Float price = crawlPrice(skuJson);
+      Prices prices = crawlPrices(price, skuJson);
+      Integer stock = crawlStock(skuJson);
+      boolean available = stock != null && stock > 0;
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a span", true);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbnails span[data-src]", Arrays.asList("data-src"), "https:",
+          "kitchencenter-production.s3.amazonaws.com");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#thumbnails span[data-src]", Arrays.asList("data-src"), "https:",
+          "kitchencenter-production.s3.amazonaws.com", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".menu-tabs"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+          .setMarketplace(new Marketplace()).setStock(stock).build();
 
       products.add(product);
 
@@ -76,34 +81,75 @@ public class ChileKitchencenterCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".product-detail").isEmpty();
+    return !doc.select("#variant_id").isEmpty();
   }
 
-  private String crawlInternalId(Document doc) {
+  private JSONObject crawlSkuJson(Document doc) {
+    JSONObject jsonSku = new JSONObject();
+
+    JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "#color-form script", "newVariantOptions(", ");", true, true);
+    if (productJson.has("options")) {
+      JSONObject options = productJson.getJSONObject("options");
+
+      if (options.has("1")) {
+        JSONObject option1 = options.getJSONObject("1");
+
+        Set<String> set = option1.keySet();
+        for (String key : set) {
+          JSONObject json = option1.getJSONObject(key);
+
+          if (json.has("sku")) {
+            jsonSku = json;
+          }
+        }
+      }
+    }
+
+    return jsonSku;
+  }
+
+  private String crawlInternalId(JSONObject jsonSku) {
     String internalId = null;
 
-    Element id = doc.selectFirst("input.btn-add-cart");
-    if (id != null) {
-      internalId = id.val();
+    if (jsonSku.has("sku")) {
+      internalId = jsonSku.get("sku").toString();
     }
 
     return internalId;
   }
 
-  public static CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb-nav a");
+  private String crawlInternalPid(JSONObject jsonSku) {
+    String internalPid = null;
 
-    for (Element e : elementCategories) {
-      categories.add(e.text().replace(">", "").trim());
+    if (jsonSku.has("id")) {
+      internalPid = jsonSku.get("id").toString();
     }
 
-    Element lastCategory = document.selectFirst(".breadcrumb-nav h3");
-    if (lastCategory != null) {
-      categories.add(lastCategory.ownText().replace("/", "").trim());
+    return internalPid;
+  }
+
+  private Integer crawlStock(JSONObject jsonSku) {
+    Integer stock = null;
+
+    if (jsonSku.has("stock")) {
+      String text = jsonSku.get("stock").toString().replaceAll("[^0-9]", "");
+
+      if (!text.isEmpty()) {
+        stock = Integer.parseInt(text);
+      }
     }
 
-    return categories;
+    return stock;
+  }
+
+  private Float crawlPrice(JSONObject jsonSku) {
+    Float price = null;
+
+    if (jsonSku.has("price")) {
+      price = MathUtils.parseFloatWithComma(jsonSku.get("price").toString());
+    }
+
+    return price;
   }
 
   /**
@@ -113,55 +159,22 @@ public class ChileKitchencenterCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices crawlPrices(Float price, JSONObject skuJson) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
-      Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-      installmentPriceMapShop.put(1, price);
+      if (skuJson.has("promotion")) {
+        JSONObject promotion = skuJson.getJSONObject("promotion");
 
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".price-selector .nule-price", false));
-
-      Element discounts = doc.selectFirst(".active-offer .red");
-      if (discounts != null) {
-        if (prices.getPriceFrom() == null) {
-          prices.setPriceFrom(MathUtils.normalizeNoDecimalPlaces(price.doubleValue()));
+        if (promotion.has("original_price")) {
+          prices.setPriceFrom(MathUtils.parseDoubleWithComma(promotion.get("original_price").toString()));
         }
-
-        String text = discounts.ownText();
-
-        String[] tokens = text.split(",");
-        Float normalCardDiscount = 0f;
-        Float shopCardDiscount = 0f;
-
-        if (tokens.length > 1) {
-          String shopDiscount = tokens[0].replaceAll("[^0-9]", "");
-          String cardDiscount = tokens[1].replaceAll("[^0-9]", "");
-
-          if (!shopDiscount.isEmpty()) {
-            shopCardDiscount = Integer.parseInt(shopDiscount) / 100f;
-          }
-
-          if (!cardDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardDiscount) / 100f;
-          }
-        } else {
-          String cardsDiscount = text.replaceAll("[^0-9]", "");
-
-          if (!cardsDiscount.isEmpty()) {
-            normalCardDiscount = Integer.parseInt(cardsDiscount) / 100f;
-            shopCardDiscount = normalCardDiscount;
-          }
-        }
-
-        installmentPriceMap.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * normalCardDiscount)));
-        installmentPriceMapShop.put(1, MathUtils.normalizeNoDecimalPlaces(price - (price * shopCardDiscount)));
       }
 
-      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
     }
 
