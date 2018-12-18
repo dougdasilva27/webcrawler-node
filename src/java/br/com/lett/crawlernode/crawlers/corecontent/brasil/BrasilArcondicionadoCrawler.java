@@ -65,7 +65,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       /*
@@ -141,7 +141,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -154,11 +154,8 @@ public class BrasilArcondicionadoCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    if (url.startsWith(HOME_PAGE + "produto/") || url.startsWith(HOME_PAGE_ADIAS + "produto/")) {
-      return true;
-    }
-    return false;
+  private boolean isProductPage(Document doc) {
+    return !doc.select("#hdnProdutoVarianteId").isEmpty();
   }
 
 

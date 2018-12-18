@@ -101,7 +101,7 @@ public class BrasilIbyteCrawler extends Crawler {
           }
 
         } catch (ScriptException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }
@@ -110,7 +110,7 @@ public class BrasilIbyteCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = new ArrayList<Product>();
+    List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

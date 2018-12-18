@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.chile;
+package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import java.util.List;
 import org.jsoup.nodes.Document;
@@ -8,16 +8,16 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TottusCrawler;
 
 /**
- * Date: 03/12/2018
+ * Date: 17/12/2018
  * 
  * @author Gabriel Dornelas
  *
  */
-public class ChileTottusCrawler extends Crawler {
+public class PeruTottusCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.tottus.cl/";
+  private static final String HOME_PAGE = "http://www.tottus.com.pe/";
 
-  public ChileTottusCrawler(Session session) {
+  public PeruTottusCrawler(Session session) {
     super(session);
   }
 
@@ -30,7 +30,7 @@ public class ChileTottusCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    TottusCrawler t = new TottusCrawler(logger, session, true);
+    TottusCrawler t = new TottusCrawler(logger, session, false);
 
     return t.extractInformation(doc);
   }

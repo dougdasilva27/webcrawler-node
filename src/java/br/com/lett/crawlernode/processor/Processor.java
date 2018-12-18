@@ -421,7 +421,7 @@ public class Processor {
     // an instance of mongo panel must be passed, so we can schedule url to take screenshot
     newProcessedProduct.registerChanges(previousProcessedProduct);
 
-    if (newProcessedProduct.getPrice() != null && previousProcessedProduct.getPrice() != null
+    if (newProcessedProduct.getPrice() != null && previousProcessedProduct != null && previousProcessedProduct.getPrice() != null
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
