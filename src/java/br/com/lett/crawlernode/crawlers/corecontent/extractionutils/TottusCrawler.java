@@ -109,7 +109,7 @@ public class TottusCrawler {
     String secondaryImages =
         CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);;
 
-    if (secondaryImages.length() < 1) {
+    if (secondaryImages == null || secondaryImages.length() < 1) {
       JSONArray images = new JSONArray();
 
       String searchString = "varsearch_string_1='";
