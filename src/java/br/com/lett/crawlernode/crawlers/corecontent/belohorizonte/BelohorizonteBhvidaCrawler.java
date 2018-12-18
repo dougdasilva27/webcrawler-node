@@ -30,28 +30,27 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
-      String internalPid =crawlInternalPid(doc);
+      String internalId  = crawlInternalId(doc);
+      String internalPid = crawlInternalPid(doc);
+      
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhes-mini > ul > li h1", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", false);
+      
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
       Prices prices = crawlPrices(price, doc);
-      
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
-
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
+      String description = crawlDescription(doc);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img", Arrays.asList("src"), "https:", "www.bhvida.com/");
 
 
-      // Creating the product
+      // Creating the product   
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(null)
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
           .setMarketplace(new Marketplace()).build();
 
       products.add(product);
@@ -64,11 +63,20 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
   }
 
-  private boolean isProductPage(Document doc) {    
+  private String crawlDescription(Document doc) {
+    List <String> selectors = new ArrayList<>();
+    selectors.add("#detalhes-mini ul li p");
+    selectors.add("#detalhes-mini ul li  .bloco p");
+    selectors.add("#detalhes-mini ul li  .bloco table");
+    
+    return CrawlerUtils.scrapSimpleDescription(doc, selectors);
+  }
+  
+  private boolean isProductPage(Element doc) {    
     return !doc.select(".det_carrinho").isEmpty();
   }
 
-  private String crawlInternalPid(Document doc) {
+  private String crawlInternalPid(Element doc) {
     String internalPid = null;
 
     Element serchedId = doc.selectFirst("#detalhes-mini > ul > li:last-child");
@@ -79,7 +87,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
     return internalPid;
   }
   
-  private String crawlInternalId(Document doc) {
+  private String crawlInternalId(Element doc) {
     String internalId = null;
 
     Element serchedId = doc.selectFirst("#frmcarrinho #codigo");
@@ -89,7 +97,8 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
     return internalId;
   }  
-  private boolean crawlAvailability(Document doc) {    
+  
+  private boolean crawlAvailability(Element doc) {    
     return doc.select("btn btn-primary btn-block") != null;
   }
 
@@ -100,20 +109,28 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices crawlPrices(Float price, Element doc) {
     Prices prices = new Prices();
-
+    Element offer = doc.selectFirst(".preco .oferta");
+    
     if (price != null) {
       Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
+      
       installmentPriceMap.put(1, price);
+      
       Elements elements = doc.select(".parcelamento ul > li");
+      
       for (Element element : elements) {
         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, element, true);
 
         if (!pair.isAnyValueNull()) {
           installmentPriceMapShop.put(pair.getFirst(), pair.getSecond());
         }
+      }
+      
+      if(offer != null) {
+        prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".preco .oferta", false));
       }
       prices.setBankTicketPrice(price);
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);

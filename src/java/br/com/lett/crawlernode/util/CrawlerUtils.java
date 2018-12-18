@@ -103,7 +103,7 @@ public class CrawlerUtils {
    * @param ownText - if must use element.ownText(), if false will be used element.text()
    * @return
    */
-  public static String scrapStringSimpleInfo(Document doc, String cssSelector, boolean ownText) {
+  public static String scrapStringSimpleInfo(Element doc, String cssSelector, boolean ownText) {
     String info = null;
 
     Element infoElement = doc.selectFirst(cssSelector);
@@ -123,7 +123,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Float
    */
-  public static Float scrapSimplePriceFloat(Document document, String cssSelector, boolean ownText) {
+  public static Float scrapSimplePriceFloat(Element document, String cssSelector, boolean ownText) {
     Float price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
@@ -142,7 +142,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Float
    */
-  public static Float scrapSimplePriceFloatWithDots(Document document, String cssSelector, boolean ownText) {
+  public static Float scrapSimplePriceFloatWithDots(Element document, String cssSelector, boolean ownText) {
     Float price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
@@ -161,7 +161,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Double
    */
-  public static Double scrapSimplePriceDouble(Document document, String cssSelector, boolean ownText) {
+  public static Double scrapSimplePriceDouble(Element document, String cssSelector, boolean ownText) {
     Double price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
@@ -221,7 +221,7 @@ public class CrawlerUtils {
    * @param host - www.hostname.com.br
    * @return
    */
-  public static String scrapSimplePrimaryImage(Document doc, String cssSelector, List<String> attributes, String protocol, String host) {
+  public static String scrapSimplePrimaryImage(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
     String image = null;
 
     Element elementPrimaryImage = doc.selectFirst(cssSelector);
