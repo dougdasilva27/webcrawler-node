@@ -4,12 +4,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
 
   public BelohorizonteBhvidaCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -27,11 +28,10 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
     if(products.size() >= 1) {          
       if(this.totalProducts == 0) setTotalProducts();
       for (Element e : products) {
-        String internalId  = crawlInternalId(e);
-        String productUrl  = crawlProductUrl(e);
-        String internalPid = crawlInternalPid(e);
-        saveDataProduct(internalId, internalPid, productUrl);
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        String productUrl  = crawlUrl(e);
+        String internalPid = crawlInternalPid(productUrl);
+        saveDataProduct(null, internalPid, productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if(this.arrayProducts.size() == productsLimit) break;
         
       }
@@ -41,35 +41,32 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
     }
     
   }
-
-  private String crawlProductUrl(Element e) {
-    return e != null ? "https://www.bhvida.com/" + e.selectFirst("li[rel]").attr("rel"): null;
-  }
-
-  private String crawlInternalId(Element doc) {
-    String internalId = null;
-
-    Element serchedId = doc.selectFirst("#frmcarrinho #codigo");
-    if(serchedId != null) {
-      internalId = serchedId.val().trim();
-    }
-
-    return internalId;
-  } 
+ 
+  private String crawlUrl(Element e) {
+    String productUrl = CrawlerUtils.completeUrl(e.attr("rel"), "https:", "www.bhvida.com/");    
+    String newPid = CommonMethods.getLast(e.selectFirst(".moldura-p img").attr("src").split("="));
+    String oldPid = getIdFromUrl(productUrl);
   
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    Element serchedId = e.selectFirst("#detalhes-mini > ul > li:last-child");
-    if(serchedId != null) {
-      internalPid = serchedId.ownText();
-    }
-
-    return internalPid;
+    productUrl = productUrl.replace(oldPid, newPid);
+        
+    return productUrl;
   }
   
-  private String getIdFromUrl (Element e) {
-    return null;
+  
+  private String crawlInternalPid(String url) {
+    return getIdFromUrl(url);
+  }
+
+  private String getIdFromUrl (String url) {
+    String id = null;    
+    String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));    
+    
+    if(lastPart.contains(".")) {
+      id = lastPart.split("\\.")[0];
+    } else {
+      id = lastPart;
+    }
+    return id;
   }
   
 }
