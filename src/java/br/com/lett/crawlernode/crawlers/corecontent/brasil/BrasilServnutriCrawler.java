@@ -3,8 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jsoup.nodes.Document;
@@ -57,13 +55,24 @@ public class BrasilServnutriCrawler extends Crawler {
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".single-blog-post", ".shop_attributes"));
 
-      String[] variations = getVariations(doc);
+      List<String> variations = getVariations(doc);
 
-      for (String s : variations) {
+      if (!variations.isEmpty()) {
+        for (String s : variations) {
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+              .setInternalId(internalId + "-" + s).setInternalPid(internalPid)
+              .setName(name + " - " + s.toUpperCase()).setPrice(price).setPrices(prices)
+              .setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+              .setDescription(description).setMarketplace(new Marketplace()).build();
+
+          products.add(product);
+        }
+      } else {
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId + "-" + s).setInternalPid(internalPid)
-            .setName(name + " - " + s.toUpperCase()).setPrice(price).setPrices(prices)
-            .setAvailable(available).setCategory1(categories.getCategory(0))
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
             .setDescription(description).setMarketplace(new Marketplace()).build();
@@ -82,9 +91,9 @@ public class BrasilServnutriCrawler extends Crawler {
     return !doc.select(".product-details").isEmpty();
   }
 
-  private String[] getVariations(Document doc) {
+  private List<String> getVariations(Document doc) {
     Elements variations = doc.select(".product-information #pa_sabor option");
-    ArrayList<String> vals = new ArrayList<>();
+    List<String> vals = new ArrayList<>();
 
     if (!variations.isEmpty()) {
       variations.remove(0);
@@ -94,7 +103,7 @@ public class BrasilServnutriCrawler extends Crawler {
       }
     }
 
-    return vals.toArray(new String[] {});
+    return vals;
   }
 
   /**
@@ -164,8 +173,6 @@ public class BrasilServnutriCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
     }
 
