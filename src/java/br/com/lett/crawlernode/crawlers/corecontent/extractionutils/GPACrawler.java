@@ -74,7 +74,7 @@ public class GPACrawler {
       String productUrl = session.getOriginalURL();
 
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
-
+      
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
@@ -302,10 +302,11 @@ public class GPACrawler {
       JSONArray shelfList = json.getJSONArray("shelfList");
 
       Set<String> listCategories = new HashSet<>(); // It is a "set" because it has been noticed that there are repeated categories
-
+      
+      // The category fetched by crawler can be in a different ordination than showed on the website and its depends of each product.
       if (shelfList.length() > 0) {
-        JSONObject cat1 = shelfList.getJSONObject(shelfList.length() - 1);
-        JSONObject cat2 = shelfList.getJSONObject(0);
+        JSONObject cat1 = shelfList.getJSONObject(0);
+        JSONObject cat2 = shelfList.getJSONObject(shelfList.length() - 1);
 
         if (cat1.has("name")) {
           listCategories.add(cat1.getString("name"));

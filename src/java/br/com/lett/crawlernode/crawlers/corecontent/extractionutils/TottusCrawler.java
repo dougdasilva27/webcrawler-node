@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -52,8 +55,7 @@ public class TottusCrawler {
       boolean available = doc.select(".product-detail .out-of-stock").isEmpty();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
+      String secondaryImages = crawlSecondaryImagesByScript(doc, internalId, primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
 
       // Creating the product
@@ -103,6 +105,56 @@ public class TottusCrawler {
     return categories;
   }
 
+  private String crawlSecondaryImagesByScript(Document doc, String internalId, String primaryImage) {
+    String secondaryImages =
+        CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);;
+
+    if (secondaryImages == null || secondaryImages.length() < 1) {
+      JSONArray images = new JSONArray();
+
+      String searchString = "varsearch_string_1='";
+      String fpImgCount = "fp_img_count=";
+
+      Elements scripts = doc.select("script[type=text/javascript]");
+      for (Element e : scripts) {
+        String html = e.html().replace(" ", "");
+
+        if (html.contains(searchString) && html.contains(fpImgCount)) {
+          int x = html.indexOf(searchString) + searchString.length();
+          int y = html.indexOf("';", x);
+
+          String match = html.substring(x, y);
+
+          Pattern r = Pattern.compile(match);
+          Matcher m = r.matcher(session.getOriginalURL().toLowerCase());
+
+          if (m.find()) {
+            int firstIndex = html.indexOf(fpImgCount) + fpImgCount.length();
+            int lastIndex = html.indexOf(';', firstIndex);
+
+            String imagesNumberString = html.substring(firstIndex, lastIndex).replaceAll("[^0-9]", "");
+
+            if (!imagesNumberString.isEmpty()) {
+              int imagesNumber = Integer.parseInt(imagesNumberString);
+
+              for (int i = 1; i <= imagesNumber; i++) {
+                images.put("http://s7d2.scene7.com/is/image/TottusPE/" + internalId + "_" + i + "?$S7Product$&wid=458&hei=458&op_sharpen=0");
+              }
+            }
+          }
+          break;
+        }
+      }
+
+      if (images.length() > 0) {
+        secondaryImages = images.toString();
+      }
+    }
+
+    return secondaryImages;
+  }
+
+
   /**
    * In the time when this crawler was made, this market hasn't installments informations
    * 
@@ -120,7 +172,8 @@ public class TottusCrawler {
       Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
       installmentPriceMapShop.put(1, price);
 
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".price-selector .nule-price", false));
+      prices.setPriceFrom(this.priceWithComma ? CrawlerUtils.scrapSimplePriceDouble(doc, ".price-selector .nule-price", false)
+          : CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, ".price-selector .nule-price", false));
 
       Element discounts = doc.selectFirst(".active-offer .red");
       if (discounts != null) {
