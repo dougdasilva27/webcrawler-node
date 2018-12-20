@@ -36,12 +36,12 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
       String internalId  = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
+      boolean available = crawlAvailability(doc);      
       
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhes-mini > ul > li h1", true);
-      
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true);
-      boolean available = crawlAvailability(doc);
+      Float price = available ? CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true) : null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
+      
       Prices prices = crawlPrices(price, doc);
       String description = crawlDescription(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img", Arrays.asList("src"), "https:", "www.bhvida.com/");
@@ -99,7 +99,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
   }  
   
   private boolean crawlAvailability(Element doc) {    
-    return doc.select("btn btn-primary btn-block") != null;
+    return !doc.select("#b_estq").isEmpty();
   }
 
   /**
@@ -132,8 +132,12 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
       if(offer != null) {
         prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".preco .oferta", false));
       }
-      prices.setBankTicketPrice(price);
-      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+      
+      if(crawlAvailability(doc)) {        
+        prices.setBankTicketPrice(price);
+        prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+      }
+      
     }
 
     return prices;
