@@ -29,7 +29,7 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
       if(this.totalProducts == 0) setTotalProducts();
       for (Element e : products) {
         String productUrl  = crawlUrl(e);
-        String internalPid = crawlInternalPid(productUrl);
+        String internalPid = crawlInternalPid(productUrl, e);
         saveDataProduct(null, internalPid, productUrl);
         this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if(this.arrayProducts.size() == productsLimit) break;
@@ -43,28 +43,45 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
   }
  
   private String crawlUrl(Element e) {
-    String productUrl = CrawlerUtils.completeUrl(e.attr("rel"), "https:", "www.bhvida.com/");    
-    String newPid = CommonMethods.getLast(e.selectFirst(".moldura-p img").attr("src").split("="));
-    String oldPid = getIdFromUrl(productUrl);
-  
-    productUrl = productUrl.replace(oldPid, newPid);
-        
+    String productUrl = null;
+    String rel = e.attr("rel");
+    Element imgSrc = e.selectFirst(".moldura-p img");
+    
+    if(imgSrc != null && !rel.isEmpty()) {
+      productUrl = CrawlerUtils.completeUrl(rel, "https:", "www.bhvida.com/");    
+      String newPid = CommonMethods.getLast(imgSrc.attr("src").split("="));
+      String oldPid = getIdFromUrl(productUrl);      
+      productUrl = productUrl.replace(oldPid, newPid);
+    }
+   
     return productUrl;
   }
   
   
-  private String crawlInternalPid(String url) {
-    return getIdFromUrl(url);
+  private String crawlInternalPid(String url, Element e) {
+    String internalPid = null;
+    String rel = e.attr("rel");
+
+    if(!rel.isEmpty() && getIdFromUrl(url).contains("sem_imagem")) {
+      String newUrl = CrawlerUtils.completeUrl(rel, "https:", "www.bhvida.com/");
+      internalPid = getIdFromUrl(newUrl);
+    } else {
+      internalPid = getIdFromUrl(url);
+    }
+    
+    return internalPid;
   }
 
   private String getIdFromUrl (String url) {
     String id = null;    
-    String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));    
     
-    if(lastPart.contains(".")) {
-      id = lastPart.split("\\.")[0];
-    } else {
-      id = lastPart;
+    if(!url.isEmpty()) {
+      String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));         
+      if(lastPart.contains(".")) {
+        id = lastPart.split("\\.")[0];
+      } else {
+        id = lastPart;
+      }      
     }
     return id;
   }
