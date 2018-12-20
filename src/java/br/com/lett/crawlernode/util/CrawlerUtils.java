@@ -213,6 +213,27 @@ public class CrawlerUtils {
   }
 
   /**
+   * Scrap simple description from html
+   * 
+   * @param doc
+   * @param selectors - description css selectors list
+   * @return
+   */
+  public static String scrapElementsDescription(Document doc, List<String> selectors) {
+    StringBuilder description = new StringBuilder();
+
+    for (String selector : selectors) {
+      Elements elements = doc.select(selector);
+
+      for (Element e : elements) {
+        description.append(e.outerHtml());
+      }
+    }
+
+    return description.toString();
+  }
+
+  /**
    * 
    * @param doc
    * @param cssSelector
@@ -951,42 +972,65 @@ public class CrawlerUtils {
 
     return pair;
   }
-  
+
   /**
    * Crawls images from a javascript inside the page for Magento markets.
+   * 
    * @param doc
    * @return JSONArray
    */
   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
-	    JSONArray images = new JSONArray();
+    JSONArray images = new JSONArray();
 
-	    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
 
-	    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
-	      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
+    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
+      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
 
-	      if (mediaJson.has("mage/gallery/gallery")) {
-	        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+      if (mediaJson.has("mage/gallery/gallery")) {
+        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
 
-	        if (gallery.has("data")) {
-	          JSONArray arrayImages = gallery.getJSONArray("data");
+        if (gallery.has("data")) {
+          JSONArray arrayImages = gallery.getJSONArray("data");
 
-	          for (Object o : arrayImages) {
-	            JSONObject imageJson = (JSONObject) o;
+          for (Object o : arrayImages) {
+            JSONObject imageJson = (JSONObject) o;
 
-	            if (imageJson.has("full")) {
-	              images.put(imageJson.get("full"));
-	            } else if (imageJson.has("img")) {
-	              images.put(imageJson.get("img"));
-	            } else if (imageJson.has("thumb")) {
-	              images.put(imageJson.get("thumb"));
-	            }
-	          }
-	        }
-	      }
-	    }
+            if (imageJson.has("full")) {
+              images.put(imageJson.get("full"));
+            } else if (imageJson.has("img")) {
+              images.put(imageJson.get("img"));
+            } else if (imageJson.has("thumb")) {
+              images.put(imageJson.get("thumb"));
+            }
+          }
+        }
+      }
+    }
 
-	    return images;
+    return images;
   }
 
+  /**
+   * Get total products of search in crawler Ranking
+   * 
+   * @param doc
+   * @param selector
+   * @return default value is 0
+   */
+  public static Integer scrapTotalProductsForRanking(Document doc, String selector) {
+    Integer total = 0;
+
+    Element totalElement = doc.select(selector).first();
+
+    if (totalElement != null) {
+      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
 }
