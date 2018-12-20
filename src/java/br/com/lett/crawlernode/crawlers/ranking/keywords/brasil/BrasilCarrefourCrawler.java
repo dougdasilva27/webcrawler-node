@@ -1,10 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
@@ -20,11 +27,11 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.carrefour.com.br/busca/?termo=" + this.keywordEncoded + "&page=" + this.currentPage;
+    String url = "https://www.carrefour.com.br/busca/?termo=" + this.keywordEncoded + "&foodzipzone=na&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     // chama função de pegar o html
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = Jsoup.parse(fetchPage(url));
 
     Elements products = this.currentDoc.select("li.product .prd-info a[title]");
 
@@ -32,7 +39,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     if (!products.isEmpty()) {
       // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
-    	  setTotalProductsCarrefour();
+        setTotalProductsCarrefour();
       }
 
       for (Element e : products) {
@@ -126,15 +133,25 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlProductUrl(Element e) {
-    String productUrl;
+    return CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.carrefour.com.br");
+  }
 
-    productUrl = e.attr("href");
 
-    if (!productUrl.contains("carrefour")) {
-      productUrl = "https://www.carrefour.com.br" + e.attr("href");
+  private String fetchPage(String url) {
+    String response = "";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put("upgrade-insecure-requests", "1");
+
+    String resp = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+    if (!resp.isEmpty()) {
+      response = resp;
+    } else {
+      response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
     }
 
-
-    return productUrl;
+    return response;
   }
 }

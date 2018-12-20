@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -43,6 +46,29 @@ public class BrasilCarrefourCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
+
+  @Override
+  protected Object fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL()));
+  }
+
+  private String fetchPage(String url) {
+    String response = "";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put("upgrade-insecure-requests", "1");
+
+    String resp = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+    if (!resp.isEmpty()) {
+      response = resp;
+    } else {
+      response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    }
+
+    return response;
   }
 
   @Override
@@ -341,7 +367,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       prices.setPriceFrom(crawlPriceFrom(e));
 
       String url = "https://www.carrefour.com.br/installment/creditCard?productPrice=" + price + "&productCode=" + internalId;
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      String json = fetchPage(url);
 
       JSONObject jsonPrices = new JSONObject();
 
