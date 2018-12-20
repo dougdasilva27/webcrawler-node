@@ -73,20 +73,15 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
+    Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
 
-    if(doc.selectFirst(".control_cant_detalle input[data-producto]") != null) {
-      
-     Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
-     internalId = serchedId.attr("data-producto").trim();
-     
-   } else {     
-   
-       Element serchedId = doc.selectFirst(".detPproduct input[data-producto]");
-       
-       if(serchedId != null) {
-         internalId = serchedId.attr("data-producto").trim();      
-       }
-   }
+    if(serchedId == null) {
+      serchedId = doc.selectFirst(".detPproduct input[data-producto]");
+    }
+
+    if(serchedId != null) {
+      internalId = serchedId.attr("data-producto").trim(); 
+    }
     
     return internalId;
   }
@@ -126,15 +121,13 @@ public class ColombiaLarebajaCrawler extends Crawler{
     Element fractioned = doc.selectFirst("div .fraccionado_columns");
     
     if (price != null) {
+      installmentPriceMapShop.put(1, price);
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
       if(fractioned != null) {
-        installmentPriceMapShop.put(1, price);
         prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(fractioned, "td[valign=bottom]:not(.container_gray_fracc) .strike", false));
-        prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
         
       } else {        
-        installmentPriceMapShop.put(1, price);
         prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
-        prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
       }
 
     }

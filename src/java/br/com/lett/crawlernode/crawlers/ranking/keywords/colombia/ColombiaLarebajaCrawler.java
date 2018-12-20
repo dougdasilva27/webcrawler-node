@@ -18,7 +18,6 @@ public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
 
     this.log("Página "+ this.currentPage);
     
-    //monta a url com a keyword e a página
     String url = "https://www.larebajavirtual.com/catalogo/buscar?busqueda=" + this.keywordEncoded;
     this.log("Link onde são feitos os crawlers: "+url); 
     
@@ -26,17 +25,12 @@ public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
         
     Elements products =  this.currentDoc.select(".listaProductos li");
     
-    //se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if(products.size() >= 1) {          
-        //se o total de busca não foi setado ainda, chama a função para setar
+    if(!products.isEmpty()) {          
         if(this.totalProducts == 0) setTotalProducts();
+        
         for(Element e : products) {     
-            // InternalId
             String internalId = crawlInternalId(e);
-            
-            // Url do produto
             String productUrl = crawlProductUrl(e);
-             
             saveDataProduct(internalId, null, productUrl);
             
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
@@ -58,9 +52,10 @@ public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
   
   private String crawlInternalId(Element e) {
     String internalId = null;
-
-    if(e != null && e.selectFirst("input[data-producto]") != null) {
-      internalId = e.selectFirst("input[data-producto]").attr("data-producto").trim();      
+    Element dataProducto = e.selectFirst("input[data-producto]");
+    
+    if(dataProducto != null) {
+      internalId = dataProducto.attr("data-producto").trim();      
     }
     
     return internalId;
