@@ -22,22 +22,22 @@ import models.prices.Prices;
 
 public class VTEXCrawlersUtils {
 
-  private static final String SKU_ID = "sku";
-  private static final String PRODUCT_ID = "productId";
-  private static final String SKU_NAME = "skuname";
-  private static final String PRODUCT_NAME = "name";
-  private static final String PRODUCT_MODEL = "Reference";
-  private static final String PRICE_FROM = "ListPrice";
-  private static final String IMAGES = "Images";
-  private static final String IS_PRINCIPAL_IMAGE = "IsMain";
-  private static final String IMAGE_PATH = "Path";
-  private static final String SELLERS_INFORMATION = "SkuSellersInformation";
-  private static final String SELLER_NAME = "Name";
-  private static final String SELLER_PRICE = "Price";
-  private static final String SELLER_AVAILABLE_QUANTITY = "AvailableQuantity";
-  private static final String IS_DEFAULT_SELLER = "IsDefaultSeller";
-  private static final String BEST_INSTALLMENT_NUMBER = "BestInstallmentNumber";
-  private static final String BEST_INSTALLMENT_VALUE = "BestInstallmentValue";
+  public static final String SKU_ID = "sku";
+  public static final String PRODUCT_ID = "productId";
+  public static final String SKU_NAME = "skuname";
+  public static final String PRODUCT_NAME = "name";
+  public static final String PRODUCT_MODEL = "Reference";
+  public static final String PRICE_FROM = "ListPrice";
+  public static final String IMAGES = "Images";
+  public static final String IS_PRINCIPAL_IMAGE = "IsMain";
+  public static final String IMAGE_PATH = "Path";
+  public static final String SELLERS_INFORMATION = "SkuSellersInformation";
+  public static final String SELLER_NAME = "Name";
+  public static final String SELLER_PRICE = "Price";
+  public static final String SELLER_AVAILABLE_QUANTITY = "AvailableQuantity";
+  public static final String IS_DEFAULT_SELLER = "IsDefaultSeller";
+  public static final String BEST_INSTALLMENT_NUMBER = "BestInstallmentNumber";
+  public static final String BEST_INSTALLMENT_VALUE = "BestInstallmentValue";
 
   private Session session;
   private String sellerNameLower;
@@ -46,6 +46,9 @@ public class VTEXCrawlersUtils {
   private Integer shopCardDiscount;
   private Integer bankTicketDiscount;
   private List<Cookie> cookies;
+  private List<Card> cards;
+  private boolean hasBankTicket = true;
+  private boolean isPriceBasePriceFrom = false;
 
   public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies) {
     this.session = session;
@@ -110,6 +113,26 @@ public class VTEXCrawlersUtils {
         }
       }
     }
+  }
+
+  public List<Card> getCards() {
+    return cards;
+  }
+
+  public void setCards(List<Card> cards) {
+    this.cards = cards;
+  }
+
+  public void setHasBankTicket(boolean hasBankTicket) {
+    this.hasBankTicket = hasBankTicket;
+  }
+
+  public boolean isPriceBasePriceFrom() {
+    return isPriceBasePriceFrom;
+  }
+
+  public void setPriceBasePriceFrom(boolean isPriceBasePriceFrom) {
+    this.isPriceBasePriceFrom = isPriceBasePriceFrom;
   }
 
   public String crawlInternalId(JSONObject json) {
@@ -378,65 +401,75 @@ public class VTEXCrawlersUtils {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
+      prices.setPriceFrom(crawlPriceFrom(jsonSku));
+      Float priceBase = isPriceBasePriceFrom ? MathUtils.normalizeNoDecimalPlaces(prices.getPriceFrom().floatValue()) : price;
+
       if (marketplace && usePriceApi) {
-        crawlPricesFromApi(internalId, jsonSku, prices, price);
+        crawlPricesFromApi(internalId, jsonSku, prices, price, priceBase);
       } else if (marketplace && jsonSku.has(BEST_INSTALLMENT_NUMBER) && jsonSku.has(BEST_INSTALLMENT_VALUE)) {
         Float value = CrawlerUtils.getFloatValueFromJSON(jsonSku, BEST_INSTALLMENT_VALUE);
 
         if (value != null) {
           installmentPriceMap.put(jsonSku.getInt(BEST_INSTALLMENT_NUMBER), value);
         }
-
-        prices.setPriceFrom(crawlPriceFrom(jsonSku));
       }
 
       if (this.cardDiscount != null) {
-        installmentPriceMap.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.cardDiscount / 100f))));
+        installmentPriceMap.put(1, MathUtils.normalizeTwoDecimalPlaces(priceBase - (priceBase * (this.cardDiscount / 100f))));
       }
 
       if (prices.isEmpty()) {
-        prices.setBankTicketPrice(price);
 
-        if (this.bankTicketDiscount != null) {
-          prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.bankTicketDiscount / 100f))));
+        if (hasBankTicket) {
+          prices.setBankTicketPrice(price);
+
+          if (this.bankTicketDiscount != null && this.bankTicketDiscount > 0) {
+            prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(priceBase - (priceBase * (this.bankTicketDiscount / 100f))));
+          }
         }
 
-        if (this.shopCardDiscount != null) {
-          Map<Integer, Float> installmentPriceMapShopCard = new HashMap<Integer, Float>(installmentPriceMap);
-          installmentPriceMapShopCard.put(1, MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.shopCardDiscount / 100f))));
+        if (this.shopCardDiscount != null && this.shopCardDiscount > 0) {
+          Map<Integer, Float> installmentPriceMapShopCard = new HashMap<>(installmentPriceMap);
+          installmentPriceMapShopCard.put(1, MathUtils.normalizeTwoDecimalPlaces(priceBase - (priceBase * (this.shopCardDiscount / 100f))));
 
           prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShopCard);
         } else {
           prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
         }
 
-        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+        if (cards == null) {
+          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+          prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+        } else {
+          for (Card card : cards) {
+            prices.insertCardInstallment(card.toString(), installmentPriceMap);
+          }
+        }
       }
     }
 
     return prices;
   }
 
-  public void crawlPricesFromApi(String internalId, JSONObject jsonSku, Prices prices, Float price) {
+  public void crawlPricesFromApi(String internalId, JSONObject jsonSku, Prices prices, Float price, Float priceBase) {
     String url = homePage + "productotherpaymentsystems/" + internalId;
     Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-    prices.setPriceFrom(crawlPriceFrom(jsonSku));
+    if (hasBankTicket) {
+      Element bank = doc.select("#ltlPrecoWrapper em").first();
+      if (bank != null) {
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
+      } else {
+        prices.setBankTicketPrice(price);
+      }
 
-    Element bank = doc.select("#ltlPrecoWrapper em").first();
-    if (bank != null) {
-      prices.setBankTicketPrice(MathUtils.parseFloatWithComma(bank.text()));
-    } else {
-      prices.setBankTicketPrice(price);
-    }
-
-    if (this.bankTicketDiscount != null) {
-      prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price - (price * (this.bankTicketDiscount / 100f))));
+      if (this.bankTicketDiscount != null) {
+        prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(priceBase - (priceBase * (this.bankTicketDiscount / 100f))));
+      }
     }
 
     Elements cardsElements = doc.select("#ddlCartao option");
@@ -446,39 +479,39 @@ public class VTEXCrawlersUtils {
         String text = e.text().toLowerCase();
 
         if (text.contains("visa")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
         } else if (text.contains("mastercard")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
         } else if (text.contains("diners")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
         } else if (text.contains("american") || text.contains("amex")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
         } else if (text.contains("hipercard") || text.contains("amex")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
 
         } else if (text.contains("credicard")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.CREDICARD.toString(), installmentPriceMap);
 
         } else if (text.contains("elo")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
         } else if (text.contains("naranja")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.NARANJA.toString(), installmentPriceMap);
 
         } else if (text.contains("cabal")) {
-          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price);
+          Map<Integer, Float> installmentPriceMap = getInstallmentsForCard(doc, e.attr("value"), price, priceBase);
           prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
 
         }
@@ -487,16 +520,22 @@ public class VTEXCrawlersUtils {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      if (cards == null) {
+        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      } else {
+        for (Card card : cards) {
+          prices.insertCardInstallment(card.toString(), installmentPriceMap);
+        }
+      }
     }
   }
 
-  public Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard, Float bankPrice) {
+  public Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard, Float bankPrice, Float priceBase) {
     Map<Integer, Float> mapInstallments = new HashMap<>();
 
     Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
@@ -525,7 +564,7 @@ public class VTEXCrawlersUtils {
           mapInstallments.put(installment, value);
 
           if (this.cardDiscount != null && installment == 1) {
-            mapInstallments.put(1, MathUtils.normalizeTwoDecimalPlaces(bankPrice - (bankPrice * (this.cardDiscount / 100f))));
+            mapInstallments.put(1, MathUtils.normalizeTwoDecimalPlaces(priceBase - (priceBase * (this.cardDiscount / 100f))));
           }
         }
       }

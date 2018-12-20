@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -35,12 +36,23 @@ public class BrasilBalarotiCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
   }
 
+  @Override
+  public void handleCookiesBeforeFetch() {
+    Logging.printLogDebug(logger, session, "Adding cookie...");
+
+    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=1");
+    cookie.setDomain(".balaroti.com.br");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+  }
+
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER_2, HOME_PAGE, cookies);
+      vtexUtil.setBankTicketDiscount(5);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 

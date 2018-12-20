@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -7,9 +7,9 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class ChileTottusCrawler extends CrawlerRankingKeywords {
+public class PeruTottusCrawler extends CrawlerRankingKeywords {
 
-  public ChileTottusCrawler(Session session) {
+  public PeruTottusCrawler(Session session) {
     super(session);
   }
 
@@ -20,7 +20,7 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
     this.pageSize = 15;
     this.log("Página " + this.currentPage);
 
-    String url = "http://www.tottus.cl/tottus/search?Ntt=" + this.keywordEncoded;
+    String url = "http://www.tottus.com.pe/tottus/search?Ntt=" + this.keywordEncoded;
 
     if (this.currentPage > 1 && this.redirectUrl != null) {
 
@@ -84,7 +84,7 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
 
     Element eUrl = e.selectFirst(".title a");
     if (eUrl != null) {
-      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "http:", "www.tottus.cl");
+      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "http:", "www.tottus.com.pe");
     }
 
     return url;
