@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -25,11 +27,14 @@ public class CuritibaLefarmaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
     
-    Elements options = doc.select("#ddlVarDef1 option");
+    List<String> selectors = new ArrayList<>();
+    selectors.add(".descricao_texto");
+    
+    Elements options = doc.select("#ddlVarDef1 option:not(:first-child)");
     String internalPid = crawlInternalPid(doc);
     Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "span[itemprop=price]", false);
     Prices prices = crawlPrices(price, doc);
-    String description = crawlDescription(doc);
+    String description = CrawlerUtils.scrapSimpleDescription(doc, selectors);
     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".migalha > a", true);
     boolean available = crawlAvailability(doc);
     
@@ -38,9 +43,9 @@ public class CuritibaLefarmaCrawler extends Crawler {
       
         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
         
-        String internalId = crawlInternalId(e);
-        String name = crawlName(e);
-        String primaryImage = crawlPrimaryImage(e);
+        String name = crawlName(e, doc);
+        String internalId = crawlInternalId(e, doc);
+        String primaryImage = crawlPrimaryImage(e, doc);
   
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
@@ -72,23 +77,31 @@ public class CuritibaLefarmaCrawler extends Crawler {
     return internalPid;
   }
 
-  private String crawlInternalId(Element e) {
-    return null;
-  }
-
-  private String crawlDescription(Element e) {
-    String description = null;
-    Element divDescription =  e.selectFirst(".descricao_texto");
+  private String crawlInternalId(Element e, Document doc) {
+    String internalId = null;
+    String optionInternalId = e.val().trim();
     
-    if(divDescription != null) {
-      description = divDescription.text();
+    if(!optionInternalId.isEmpty()) {
+      internalId = crawlInternalPid(doc) + "-" + optionInternalId;
     }
     
-    return description;
+    return internalId;
   }
 
 
-  private String crawlPrimaryImage(Element e) {
+  private String crawlPrimaryImage(Element e, Document doc) {
+   String url = null;
+   String val = e.val().trim();
+   
+   JSONObject script = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer[0]['product'] = ", ";", false, true);
+   
+   if(script.has("id")) {
+     if(!val.isEmpty()) {
+       url = "https://www.lefarma.com.br/ImagensProduto/CodVariante/"+ val +"/produto_id/"+script.get("id")+"/exibicao/produto/t/10";
+       Document docImg = DataFetcher.fetchDocument("POST_REQUEST", session, url, null, cookies);
+     }
+   }
+   
     return null;
   }
 
@@ -100,18 +113,20 @@ public class CuritibaLefarmaCrawler extends Crawler {
     return null;
   }
 
-  private String crawlName(Element e) {
+  private String crawlName(Element e, Document doc) {
     String name = null;
-    Element spanName = e.selectFirst("#lblNome");
-    Elements selectName = e.select("#ddlVarDef1 option");
+    Element spanName = doc.selectFirst("#lblNome");
+    String variableName = e.text().trim();
     
-    if(spanName != null && selectName != null) {
+    if(spanName != null) {
       name = spanName.text().trim();
-      for (Element option : selectName) {
-        if(option.hasAttr("selected")) {
-          name = name + " " +  option.text().trim();
-        }
+      
+      if(variableName.contains("Indisponível")) {
+       name += " " + variableName.substring(0, variableName.indexOf("Indisponível")-1);
+      } else {        
+        name += " " +  variableName;
       }
+      
     }
     
     return name;
