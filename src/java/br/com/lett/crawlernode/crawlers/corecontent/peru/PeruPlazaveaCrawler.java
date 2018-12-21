@@ -27,7 +27,7 @@ public class PeruPlazaveaCrawler extends Crawler {
     super(session);
   }
 
-  private static final String HOME_PAGE = "https://tienda.plazavea.com.pe/";
+  private static final String HOME_PAGE = "https://www.plazavea.com.pe/";
   private static final String MAIN_SELLER_NAME_LOWER = "plaza vea";
 
   @Override

@@ -103,12 +103,31 @@ public class CrawlerUtils {
    * @param ownText - if must use element.ownText(), if false will be used element.text()
    * @return
    */
-  public static String scrapStringSimpleInfo(Document doc, String cssSelector, boolean ownText) {
+  public static String scrapStringSimpleInfo(Element doc, String cssSelector, boolean ownText) {
     String info = null;
 
     Element infoElement = doc.selectFirst(cssSelector);
     if (infoElement != null) {
       info = ownText ? infoElement.ownText().trim() : infoElement.text().trim();
+    }
+
+    return info;
+  }
+
+  /**
+   * Scrap simple string from html
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @return
+   */
+  public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector, String att) {
+    String info = null;
+
+    Element infoElement = doc.selectFirst(cssSelector);
+    if (infoElement != null) {
+      info = infoElement.hasAttr(att) ? infoElement.attr(att) : null;
     }
 
     return info;

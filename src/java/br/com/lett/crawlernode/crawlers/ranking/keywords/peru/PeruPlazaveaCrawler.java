@@ -12,15 +12,14 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 18;
+    this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url =
-        "https://www.wong.pe/busca/?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
+    String url = "https://www.plazavea.com.pe/Busca/?ft=" + this.keywordEncoded + "&O=OrderByPriceASC&PageNumber=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".product-shelf .product-item");
+    Elements products = this.currentDoc.select(".prateleira ul li[layout] .g-producto[data-prod]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -28,14 +27,12 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
       }
       for (Element e : products) {
 
-        String internalId = crawlInternalId(e);
-        String productPid = crawlProductPid(e);
+        String productPid = e.attr("data-prod");
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, productPid, productUrl);
+        saveDataProduct(null, productPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + productPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + productPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
@@ -45,8 +42,7 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
@@ -64,15 +60,14 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalId(Element e) {
-    return e.attr("data-sku");
-  }
-
-  private String crawlProductPid(Element e) {
-    return e.attr("data-id");
-  }
-
   private String crawlProductUrl(Element e) {
-    return e.attr("data-uri");
+    String productUrl = null;
+
+    Element url = e.selectFirst("a.g-nombre-prod");
+    if (url != null) {
+      productUrl = url.attr("href");
+    }
+
+    return productUrl;
   }
 }
