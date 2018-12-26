@@ -134,26 +134,27 @@ public class BrasilTerabyteCrawler extends Crawler {
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    installmentPriceMap.put(1, price);
-    prices.setBankTicketPrice(price);
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      prices.setBankTicketPrice(price);
 
+      Element parcelUrl = doc.selectFirst("a.parc-pro");
+      if (parcelUrl != null) {
+        String url = CrawlerUtils.sanitizeUrl(parcelUrl, "href", "https:", "www.terabyteshop.com.br");
+        Document parcelsDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-    Element parcelUrl = doc.selectFirst("a.parc-pro");
-    if (parcelUrl != null) {
-      String url = CrawlerUtils.sanitizeUrl(parcelUrl, "href", "https:", "www.terabyteshop.com.br");
-      Document parcelsDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-      Elements parcels = parcelsDoc.select("#verparcelamento ul li");
-      for (Element e : parcels) {
-        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x");
-        if (!pair.isAnyValueNull()) {
-          installmentPriceMap.put(pair.getFirst(), pair.getSecond());
+        Elements parcels = parcelsDoc.select("#verparcelamento ul li");
+        for (Element e : parcels) {
+          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x");
+          if (!pair.isAnyValueNull()) {
+            installmentPriceMap.put(pair.getFirst(), pair.getSecond());
+          }
         }
       }
-    }
 
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+    }
 
     return prices;
   }

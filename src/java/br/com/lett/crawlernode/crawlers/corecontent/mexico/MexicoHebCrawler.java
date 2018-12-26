@@ -217,12 +217,18 @@ public class MexicoHebCrawler extends Crawler {
     if (productName != null) {
       name.append(productName.text());
 
+      Element marca = doc.selectFirst(".product-marca");
+      if (marca != null) {
+        name.append(" ");
+        name.append(marca.text());
+      }
+
       if (skuJson.has("name")) {
         name.append(" ").append(skuJson.get("name"));
       }
     }
 
-    return name.toString();
+    return name.toString().trim();
   }
 
   private String crawlDescription(Document doc) {
