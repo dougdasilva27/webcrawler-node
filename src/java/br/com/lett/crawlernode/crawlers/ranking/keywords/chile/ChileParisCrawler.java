@@ -68,7 +68,7 @@ public class ChileParisCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(this.currentDoc, ".total-products > span");
+    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(this.currentDoc, ".total-products > span", true);
     this.log("Total da busca: " + this.totalProducts);
   }
 

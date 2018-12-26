@@ -1035,15 +1035,17 @@ public class CrawlerUtils {
    * 
    * @param doc
    * @param selector
+   * @parm owntext - if true this function will use element.ownText(), if false will be used
+   *       element.text()
    * @return default value is 0
    */
-  public static Integer scrapTotalProductsForRanking(Document doc, String selector) {
+  public static Integer scrapTotalProductsForRanking(Document doc, String selector, boolean ownText) {
     Integer total = 0;
 
     Element totalElement = doc.select(selector).first();
 
     if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
 
       if (!text.isEmpty()) {
         total = Integer.parseInt(text);
