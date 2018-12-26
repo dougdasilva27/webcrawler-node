@@ -466,7 +466,7 @@ public class Processor {
    *         on processed table.
    * @throws MalformedPricesException
    */
-  public static Processed fetchPreviousProcessed(Product product, Session session) {
+  public Processed fetchPreviousProcessed(Product product, Session session) {
     Logging.printLogInfo(logger, session, "Fetching previous processed product ...");
 
     Processed actualProcessedProduct;

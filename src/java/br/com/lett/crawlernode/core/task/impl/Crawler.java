@@ -308,7 +308,7 @@ public class Crawler extends Task {
     Persistence.persistProduct(product, session);
 
     // fetch the previous processed product stored on database
-    Processed previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+    Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
     if ((previousProcessedProduct == null && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))
         || previousProcessedProduct != null) {
@@ -602,10 +602,12 @@ public class Crawler extends Task {
   private Product activeVoid(Product product) throws Exception {
     String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
+    Processor processor = new Processor();
+
     // fetch the previous processed product
     // if a processed already exists and is void, then
     // we won't perform new attempts to extract the current product
-    Processed previousProcessedProduct = Processor.fetchPreviousProcessed(product, session);
+    Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session);
     if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
       Logging.printLogDebug(logger, session, "The previous processed is void. Returning...");
 
@@ -613,7 +615,7 @@ public class Crawler extends Task {
       Persistence.updateProcessedLRT(nowISO, session);
 
       Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
-      new Processor().updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
+      processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
       Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
 
       return product;
@@ -658,7 +660,7 @@ public class Crawler extends Task {
         Persistence.updateProcessedLMS(nowISO, session);
 
         Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
-        new Processor().updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
+        processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
         Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
       }
     }

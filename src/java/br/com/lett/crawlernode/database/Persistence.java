@@ -451,8 +451,13 @@ public class Persistence {
     }
 
     List<Condition> conditions = new ArrayList<>();
-    conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
-    conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+
+    if (id != null) {
+      conditions.add(processedTable.ID.equal(id));
+    } else {
+      conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+      conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+    }
 
     try {
       GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
