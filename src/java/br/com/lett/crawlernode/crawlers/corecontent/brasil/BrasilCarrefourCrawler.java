@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -46,6 +47,11 @@ public class BrasilCarrefourCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.carrefour.com.br", "/", session);
   }
 
   @Override
@@ -242,7 +248,7 @@ public class BrasilCarrefourCrawler extends Crawler {
   private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
@@ -363,11 +369,11 @@ public class BrasilCarrefourCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(crawlPriceFrom(e));
-
       String url = "https://www.carrefour.com.br/installment/creditCard?productPrice=" + price + "&productCode=" + internalId;
       String json = fetchPage(url);
+
+      prices.setBankTicketPrice(price);
+      prices.setPriceFrom(crawlPriceFrom(e));
 
       JSONObject jsonPrices = new JSONObject();
 
@@ -400,6 +406,10 @@ public class BrasilCarrefourCrawler extends Crawler {
 
       if (jsonPrices.has("visaInstallments")) {
         Map<Integer, Float> installmentPriceMap = crawlInstallment(jsonPrices, "visaInstallments");
+        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      } else {
+        Map<Integer, Float> installmentPriceMap = new HashMap<>();
+        installmentPriceMap.put(1, price);
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       }
 
