@@ -35,13 +35,9 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        Element pid = e.select(".productinfo a[data-product_id]").first();
-        String internalPid = pid.attr("data-product_id");
+        String internalPid = getProductInternalPid(e, ".productinfo a[data-product_id]");
         String internalId = null;
-
-        // monta a url
-        Element eUrl = e.select(".productinfo a[rel]:not([data-product_id])").first();
-        String productUrl = eUrl.attr("href");
+        String productUrl = getProductUrl(e, ".productinfo a[rel]:not([data-product_id])");
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -93,5 +89,27 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
 
       this.log("Total da busca: " + this.totalProducts);
     }
+  }
+
+  private String getProductInternalPid(Element e, String selector) {
+    Element aux = e.selectFirst(selector);
+    String internalPid = null;
+
+    if (aux != null) {
+      internalPid = aux.attr("data-product_id");
+    }
+
+    return internalPid;
+  }
+
+  private String getProductUrl(Element e, String selector) {
+    Element aux = e.selectFirst(selector);
+    String productUrl = null;
+
+    if (aux != null) {
+      productUrl = aux.attr("href");
+    }
+
+    return productUrl;
   }
 }

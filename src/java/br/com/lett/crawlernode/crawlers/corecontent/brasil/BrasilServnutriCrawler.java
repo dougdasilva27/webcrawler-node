@@ -3,8 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -44,7 +42,8 @@ public class BrasilServnutriCrawler extends Crawler {
       String internalId = getIdFromUrl(doc, ".product-information button");
       String internalPid = crawlAttrString(doc, ".product-information button", "data-product_sku");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-information h2", true);
-      Float price = scrapProductPrice(doc, ".product-information .woocommerce-Price-amount");
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc,
+          ".product-information .woocommerce-Price-amount", true);
       Prices prices = crawlPrices(doc, price);
       boolean available = checkAvaliability(doc);
       CategoryCollection categories =
@@ -130,43 +129,19 @@ public class BrasilServnutriCrawler extends Crawler {
 
   private static String getIdFromUrl(Document doc, String selector) {
     String internalId = null;
-
     Element infoElement = doc.selectFirst(selector);
 
     if (infoElement != null) {
       String aux = infoElement.attr("onclick");
       String search = "add-to-cart=";
-      int ini_index = aux.indexOf(search) + search.length();
 
-      internalId = aux.substring(ini_index, ini_index + 3);
-    }
-
-    return internalId;
-  }
-
-  /**
-   * Regex used to parse float from string: [\\.\\d]+,\\d+
-   * 
-   * @param doc
-   * @param selector
-   * @return
-   */
-  private Float scrapProductPrice(Document doc, String selector) {
-    Float price = null;
-    Element infoElement = doc.selectFirst(selector);
-
-    Pattern p = Pattern.compile("[\\.\\d]+,\\d+");
-
-    if (infoElement != null) {
-      Matcher m = p.matcher(infoElement.text().trim());
-
-      if (m.find()) {
-        String doubleText = m.group(0).replace(".", "").replace(',', '.');
-        price = Float.valueOf(doubleText);
+      if (aux.contains(search)) {
+        int ini_index = aux.indexOf(search) + search.length();
+        internalId = aux.substring(ini_index, ini_index + 3);
       }
     }
 
-    return price;
+    return internalId;
   }
 
   private Prices crawlPrices(Document doc, Float price) {
@@ -180,7 +155,6 @@ public class BrasilServnutriCrawler extends Crawler {
   }
 
   private boolean checkAvaliability(Document doc) {
-    Element not_a = doc.selectFirst(".product-information #bbb_cart");
-    return not_a == null;
+    return doc.selectFirst(".product-information .btn-fefault.cart .fa-shopping-cart") != null;
   }
 }
