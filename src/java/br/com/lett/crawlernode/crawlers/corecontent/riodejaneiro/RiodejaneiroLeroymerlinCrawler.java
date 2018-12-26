@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
+package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,11 +17,11 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.LeroymerlinC
  * @author Gabriel Dornelas
  *
  */
-public class SaopauloLeroymerlinCrawler extends LeroymerlinCrawler {
+public class RiodejaneiroLeroymerlinCrawler extends LeroymerlinCrawler {
 
-  private static final String REGION = "grande_sao_paulo";
+  private static final String REGION = "rio_de_janeiro";
 
-  public SaopauloLeroymerlinCrawler(Session session) {
+  public RiodejaneiroLeroymerlinCrawler(Session session) {
     super(session);
   }
 

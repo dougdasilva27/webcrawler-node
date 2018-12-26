@@ -1,16 +1,16 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasilia;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.LeroymerlinCrawler;
 
-public class SaopauloLeroymerlinCrawler extends LeroymerlinCrawler {
+public class BrasiliaLeroymerlinCrawler extends LeroymerlinCrawler {
 
-  public SaopauloLeroymerlinCrawler(Session session) {
+  public BrasiliaLeroymerlinCrawler(Session session) {
     super(session);
   }
 
   @Override
   protected void processBeforeFetch() {
-    this.region = "grande_sao_paulo";
+    this.region = "brasilia";
   }
 }
