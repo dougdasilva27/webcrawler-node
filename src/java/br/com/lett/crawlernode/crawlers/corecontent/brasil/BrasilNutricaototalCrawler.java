@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -40,12 +39,14 @@ public class BrasilNutricaototalCrawler extends Crawler {
       Logging.printLogDebug(logger, session,
           "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = getInternalId(doc, ".product-essential .no-display input[name=product]");
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
+          ".product-essential .no-display input[name=product]", "value");
       String internalPid =
           CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-shop .sku", true);
       String name =
           CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", true);
-      CategoryCollection categories = crawlCategories(doc, ".breadcrumbs li[class^=category]");
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
           ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
           Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br");
@@ -54,8 +55,8 @@ public class BrasilNutricaototalCrawler extends Crawler {
           Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".product-essential .short-description .std",
-              "[id=product_tabs_description_tabbed_contents]",
-              "[id=product_tabs_additional_tabbed_contents]"));
+              "#product_tabs_description_tabbed_contents",
+              "#product_tabs_additional_tabbed_contents"));
       Integer stock = null;
       Float price =
           CrawlerUtils.scrapSimplePriceFloat(doc, ".product-essential .regular-price .price", true);
@@ -81,32 +82,6 @@ public class BrasilNutricaototalCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product-essential") != null;
-  }
-
-  private String getInternalId(Document doc, String selector) {
-    Element e = doc.selectFirst(selector);
-    String internalId = null;
-
-    if (e != null) {
-      internalId = e.attr("value");
-    }
-
-    return internalId;
-  }
-
-  private CategoryCollection crawlCategories(Document doc, String selector) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = doc.select(selector);
-
-    for (Element e : elementCategories) {
-      String cat = e.text().trim();
-
-      if (!cat.isEmpty()) {
-        categories.add(cat);
-      }
-    }
-
-    return categories;
   }
 
   private Prices crawlPrices(Float price, Document doc, String selector) {

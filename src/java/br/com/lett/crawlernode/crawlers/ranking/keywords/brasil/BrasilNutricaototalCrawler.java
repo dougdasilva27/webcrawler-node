@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 
 public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
@@ -58,15 +59,6 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    if (this.arrayProducts.size() < this.totalProducts) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @Override
   protected void setTotalProducts() {
     Element totalElement =
         this.currentDoc.selectFirst(".category-products .toolbar .pager .pager_left .amount");
@@ -111,11 +103,7 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
     String url = null;
 
     if (aux != null) {
-      String attr = aux.attr("href");
-
-      if (!attr.isEmpty()) {
-        url = attr;
-      }
+      url = CrawlerUtils.sanitizeUrl(aux, "href", "https", "www.nutricaototal.com.br");
     }
 
     return url;

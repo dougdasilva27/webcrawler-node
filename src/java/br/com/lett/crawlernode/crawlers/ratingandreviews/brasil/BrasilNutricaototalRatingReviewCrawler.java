@@ -64,7 +64,7 @@ public class BrasilNutricaototalRatingReviewCrawler extends RatingReviewCrawler 
       }
     }
 
-    return null;
+    return 0;
   }
 
   private Double crawlAvgRating(Document doc, String selector) {
@@ -78,6 +78,6 @@ public class BrasilNutricaototalRatingReviewCrawler extends RatingReviewCrawler 
       }
     }
 
-    return null;
+    return 0.0;
   }
 }
