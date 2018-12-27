@@ -79,9 +79,9 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
   private String crawlInternalPid(Element doc) {
     String internalPid = null;
 
-    Element serchedId = doc.selectFirst("#detalhes-mini > ul > li:last-child");
-    if(serchedId != null) {
-      internalPid = serchedId.ownText();
+    Element searchedId = doc.selectFirst("#detalhes-mini > ul > li:last-child");
+    if(searchedId != null) {
+      internalPid = searchedId.ownText();
     }
 
     return internalPid;
@@ -90,9 +90,14 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
   private String crawlInternalId(Element doc) {
     String internalId = null;
 
-    Element serchedId = doc.selectFirst("#frmcarrinho #codigo");
-    if(serchedId != null) {
-      internalId = serchedId.val().trim();
+    Element searchedId = doc.selectFirst("#frmcarrinho #codigo");
+    
+    if(searchedId != null) {
+      internalId = searchedId.val().trim();
+    } else {
+      searchedId = doc.selectFirst(".aviseme button");
+      String input = searchedId.attr("onclick");
+      internalId = input.substring(input.indexOf("'")+1, input.lastIndexOf("'"));
     }
 
     return internalId;
