@@ -4,61 +4,68 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
 
   public ColombiaLarebajaCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 24;  
+    this.pageSize = 24;
 
-    this.log("Página "+ this.currentPage);
-    
+    this.log("Página " + this.currentPage);
+
     String url = "https://www.larebajavirtual.com/catalogo/buscar?busqueda=" + this.keywordEncoded;
-    this.log("Link onde são feitos os crawlers: "+url); 
-    
-    this.currentDoc = fetchDocument(url);      
-        
-    Elements products =  this.currentDoc.select(".listaProductos li");
-    
-    if(!products.isEmpty()) {          
-        if(this.totalProducts == 0) setTotalProducts();
-        
-        for(Element e : products) {     
-            String internalId = crawlInternalId(e);
-            String productUrl = crawlProductUrl(e);
-            saveDataProduct(internalId, null, productUrl);
-            
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if(this.arrayProducts.size() == productsLimit) break;            
-        }
+
+    if (this.currentPage > 1) {
+      url = CrawlerUtils.scrapUrl(currentDoc, ".pager .next a", "href", "https:", "www.larebajavirtual.com");
+    }
+
+    this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url);
+
+    Elements products = this.currentDoc.select(".listaProductos li");
+
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-producto]", "data-producto");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".content_product a", "href", "https:", "larebajavirtual.com");
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
+      }
     } else {
-        this.result = false;
-        this.log("Keyword sem resultado!");
+      this.result = false;
+      this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");  
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
-  
 
-  private String crawlProductUrl(Element e) {    
-    return e != null ? "https://www.larebajavirtual.com/" + e.selectFirst(".content_product a").attr("href"): null;
-  }
-  
-  
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element dataProducto = e.selectFirst("input[data-producto]");
-    
-    if(dataProducto != null) {
-      internalId = dataProducto.attr("data-producto").trim();      
+  @Override
+  protected void setTotalProducts() {
+    Element total = this.currentDoc.selectFirst("#id-productos-list .summary");
+    if (total != null) {
+      String text = total.ownText().toLowerCase();
+
+      if (text.contains("de")) {
+        String totalText = CommonMethods.getLast(text.split("de")).replaceAll("[^0-9]", "");
+
+        if (!totalText.isEmpty()) {
+          this.totalProducts = Integer.parseInt(totalText);
+          this.log("Total da busca: " + this.totalProducts);
+        }
+      }
     }
-    
-    return internalId;
   }
-  
 }

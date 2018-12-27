@@ -303,6 +303,42 @@ public class CrawlerUtils {
     return secondaryImages;
   }
 
+  /**
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
+   * 
+   * @param doc - html
+   * @param cssSelector - Ex: "a.url"
+   * @param attributes - ex: "href", "src"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
+   */
+  public static String scrapUrl(Element doc, String cssSelector, String attribute, String protocol, String host) {
+    return scrapUrl(doc, cssSelector, Arrays.asList(attribute), protocol, host);
+  }
+
+  /**
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
+   * 
+   * @param doc - html
+   * @param cssSelector - Ex: "a.url"
+   * @param attributes - ex: "href", "src"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
+   */
+  public static String scrapUrl(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
+    String url = null;
+
+    Element urlElement = doc.selectFirst(cssSelector);
+    if (urlElement != null) {
+      url = sanitizeUrl(urlElement, attributes, protocol, host);
+    }
+
+    return url;
+  }
 
   /**
    * Append host and protocol if url needs Scroll through all the attributes in the list sent in
