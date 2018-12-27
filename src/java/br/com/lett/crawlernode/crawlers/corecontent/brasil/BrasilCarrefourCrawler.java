@@ -60,18 +60,14 @@ public class BrasilCarrefourCrawler extends Crawler {
   }
 
   private String fetchPage(String url) {
-    String response = "";
-
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
+    String response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
 
-    String resp = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
-    if (!resp.isEmpty()) {
-      response = resp;
-    } else {
-      response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    if (response == null || response.isEmpty()) {
+      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
     }
 
     return response;
@@ -84,7 +80,6 @@ public class BrasilCarrefourCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
 
       String internalPid = crawlInternalPid(session.getOriginalURL());
       String name = crawlName(doc);
