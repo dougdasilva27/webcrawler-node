@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -241,11 +242,7 @@ public class BrasilPetzCrawler extends Crawler {
     Element image = doc.select(".sp-wrap > a").first();
 
     if (image != null) {
-      primaryImage = image.attr("href");
-
-      if (!primaryImage.contains("petz.com")) {
-        primaryImage = "https://www.petz.com.br" + primaryImage;
-      }
+      primaryImage = CrawlerUtils.sanitizeUrl(image, "href", "https:", "www.petz.com.br");
     }
 
     return primaryImage;
@@ -258,11 +255,7 @@ public class BrasilPetzCrawler extends Crawler {
     Elements images = doc.select(".sp-wrap > a");
 
     for (Element e : images) {
-      String image = e.attr("href").trim();
-
-      if (!image.contains("petz.com")) {
-        image = "https://www.petz.com.br" + image;
-      }
+      String image = CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.petz.com.br");
 
       if (!image.equals(primaryImage)) {
         secondaryImagesArray.put(image);
