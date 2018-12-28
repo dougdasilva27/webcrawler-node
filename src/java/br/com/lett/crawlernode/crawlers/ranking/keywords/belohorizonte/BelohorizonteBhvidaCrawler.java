@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -104,11 +103,7 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
   
   @Override
   protected void setTotalProducts() {
-    Document doc = this.currentDoc;
-    
-    String totalProducts = doc.selectFirst("#paginacao .texto strong:first-child").text().trim();
-    
-    this.totalProducts = Integer.parseInt(totalProducts);
+    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(this.currentDoc, "#paginacao .texto strong:first-child", false);
   }
   
 }
