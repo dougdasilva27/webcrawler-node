@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -26,7 +27,10 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
 
     Elements products =  this.currentDoc.select("#produtos li");
     if(products.size() >= 1) {          
-      if(this.totalProducts == 0) setTotalProducts();
+      
+      if(this.totalProducts == 0) 
+        setTotalProducts();
+      
       for (Element e : products) {
         String productUrl  = crawlUrl(e);
         String internalPid = crawlInternalPid(productUrl, e);
@@ -35,7 +39,9 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
         if(this.arrayProducts.size() == productsLimit) break;
         
       }
+      
     } else {
+      
       this.result = false;
       this.log("Keyword sem resultado!");
     }
@@ -63,10 +69,14 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
     String rel = e.attr("rel");
 
     if(!rel.isEmpty() && getIdFromUrl(url).contains("sem_imagem")) {
+      
       String newUrl = CrawlerUtils.completeUrl(rel, "https:", "www.bhvida.com/");
       internalPid = getIdFromUrl(newUrl);
+      
     } else {
+      
       internalPid = getIdFromUrl(url);
+      
     }
     
     return internalPid;
@@ -76,14 +86,29 @@ public class BelohorizonteBhvidaCrawler  extends CrawlerRankingKeywords {
     String id = null;    
     
     if(!url.isEmpty()) {
-      String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));         
+      
+      String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));       
+      
       if(lastPart.contains(".")) {
+        
         id = lastPart.split("\\.")[0];
+        
       } else {
+        
         id = lastPart;
+        
       }      
     }
     return id;
+  }
+  
+  @Override
+  protected void setTotalProducts() {
+    Document doc = this.currentDoc;
+    
+    String totalProducts = doc.selectFirst("#paginacao .texto strong:first-child").text().trim();
+    
+    this.totalProducts = Integer.parseInt(totalProducts);
   }
   
 }
