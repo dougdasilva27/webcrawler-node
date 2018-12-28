@@ -112,7 +112,7 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
     Map<String, String> headers = new HashMap<>();
     headers.put("referer", HOME_PAGE);
     headers.put("sm-b2c",
-        "{\"platform\":1,\"lojaName\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeName\":\"supermercadoscidadecancao\"}");
+        "{\"platform\":1,\"type\":2,\"lojaName\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeName\":\"supermercadoscidadecancao\"}");
     headers.put("sm-mmc", this.apiVersion);
     headers.put("accept", "application/json, text/plain, */*");
     headers.put("Content-Type", "application/json");

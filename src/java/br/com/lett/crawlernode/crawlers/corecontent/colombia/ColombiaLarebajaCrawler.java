@@ -37,15 +37,19 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
+      
+      Float priceUnique = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
+      Float price = priceUnique == null ? 
+          CrawlerUtils.scrapSimplePriceFloat(doc, "div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora", false) : priceUnique;
+      
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
+      Prices prices = crawlPrices(price, doc);
+      
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
 
-      
       String secondaryImages =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
-      Prices prices = crawlPrices(price, doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
@@ -69,20 +73,15 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
+    Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
 
-    if(doc.selectFirst(".control_cant_detalle input[data-producto]") != null) {
-      
-     Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
-     internalId = serchedId.attr("data-producto").trim();
-     
-   } else {     
-   
-       Element serchedId = doc.selectFirst(".detPproduct input[data-producto]");
-       
-       if(serchedId != null) {
-         internalId = serchedId.attr("data-producto").trim();      
-       }
-   }
+    if(serchedId == null) {
+      serchedId = doc.selectFirst(".detPproduct input[data-producto]");
+    }
+
+    if(serchedId != null) {
+      internalId = serchedId.attr("data-producto").trim(); 
+    }
     
     return internalId;
   }
@@ -114,15 +113,22 @@ public class ColombiaLarebajaCrawler extends Crawler{
    * @param price
    * @return
    */
+ 
+  
   private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
-
+    Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
+    Element fractioned = doc.selectFirst("div .fraccionado_columns");
+    
     if (price != null) {
-      Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
       installmentPriceMapShop.put(1, price);
-
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+      if(fractioned != null) {
+        prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(fractioned, "td[valign=bottom]:not(.container_gray_fracc) .strike", false));
+        
+      } else {        
+        prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
+      }
 
     }
 

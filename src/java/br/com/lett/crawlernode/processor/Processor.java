@@ -421,7 +421,7 @@ public class Processor {
     // an instance of mongo panel must be passed, so we can schedule url to take screenshot
     newProcessedProduct.registerChanges(previousProcessedProduct);
 
-    if (newProcessedProduct.getPrice() != null && previousProcessedProduct.getPrice() != null
+    if (newProcessedProduct.getPrice() != null && previousProcessedProduct != null && previousProcessedProduct.getPrice() != null
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
@@ -466,7 +466,7 @@ public class Processor {
    *         on processed table.
    * @throws MalformedPricesException
    */
-  public static Processed fetchPreviousProcessed(Product product, Session session) {
+  public Processed fetchPreviousProcessed(Product product, Session session) {
     Logging.printLogInfo(logger, session, "Fetching previous processed product ...");
 
     Processed actualProcessedProduct;

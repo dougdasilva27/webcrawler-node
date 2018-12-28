@@ -182,7 +182,7 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error inserting product on database!");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
     }
@@ -203,7 +203,7 @@ public class Persistence {
         Logging.printLogDebug(logger, session, "Product persisted in MYSQL.");
       } catch (Exception e) {
         Logging.printLogWarn(logger, session, "Error inserting product on database MYSQL!");
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
   }
@@ -229,7 +229,7 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product rating.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
     }
@@ -422,7 +422,7 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
 
@@ -451,13 +451,18 @@ public class Persistence {
     }
 
     List<Condition> conditions = new ArrayList<>();
-    conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
-    conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+
+    if (id != null) {
+      conditions.add(processedTable.ID.equal(id));
+    } else {
+      conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
+      conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
+    }
 
     try {
       GlobalConfigurations.dbManager.connectionPostgreSQL.runUpdate(processedTable, updateSets, conditions);
-      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. "
-      		+ "(InternalId: " + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
+      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
+          + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product behaviour.");
@@ -700,7 +705,7 @@ public class Persistence {
       }
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -788,7 +793,7 @@ public class Persistence {
       return cat;
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
 
     return null;
@@ -830,7 +835,7 @@ public class Persistence {
 
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
 
     return processeds;
@@ -871,7 +876,7 @@ public class Persistence {
 
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
 
     return processeds;
@@ -907,7 +912,7 @@ public class Persistence {
 
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
 
     return processedIds;
@@ -949,7 +954,7 @@ public class Persistence {
       Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
 
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
       session.registerError(error);
     }
@@ -983,7 +988,7 @@ public class Persistence {
       }
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -1012,7 +1017,7 @@ public class Persistence {
       GlobalConfigurations.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
       Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -1026,7 +1031,7 @@ public class Persistence {
     try {
       return (int) GlobalConfigurations.dbManager.connectionPanel.updateMany(filter, update, MONGO_COLLECTION_CATEGORIES).getModifiedCount();
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
 
     return 0;
@@ -1051,7 +1056,7 @@ public class Persistence {
         arrayCategories.add(categories);
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
     return arrayCategories;
   }
@@ -1068,7 +1073,7 @@ public class Persistence {
     try {
       GlobalConfigurations.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
     }
   }
 }

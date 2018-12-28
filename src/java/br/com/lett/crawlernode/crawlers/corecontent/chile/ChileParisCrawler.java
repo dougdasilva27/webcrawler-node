@@ -1,16 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONArray;
+import java.util.TreeMap;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,15 +23,15 @@ import models.Marketplace;
 import models.prices.Prices;
 
 /**
- * Date: 19/10/2018
+ * Date: 20/12/2018
  * 
  * @author Gabriel Dornelas
  *
  */
 public class ChileParisCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.paris.cl/";
-  private static final String IMAGE_URL_FIRST_PART = "https://imagenes.paris.cl/is/image/";
+  public static final String HOST = "www2.paris.cl";
+  private static final String HOME_PAGE = "https://" + HOST + "/";
 
   public ChileParisCrawler(Session session) {
     super(session);
@@ -46,429 +44,129 @@ public class ChileParisCrawler extends Crawler {
   }
 
   @Override
-  protected Object fetch() {
-    JSONObject productJson = new JSONObject();
-
-    try {
-      URL url = new URL(session.getOriginalURL());
-      String path = CommonMethods.getLast(url.getPath().split("/")).split("\\?")[0];
-      String payload = "{\"query\":{\"bool\":{\"minimum_should_match\":1,\"should\":[{\"term\":" + "{\"url.keyword\":\"" + path + "\"}},"
-          + "{\"term\":{\"children.url.keyword\":\"" + path + "\"" + "}}]}}}";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-      headers.put("Content-Encoding", "");
-      headers.put("referer", session.getOriginalURL());
-      headers.put("authority", "www.paris.cl");
-
-      JSONObject payloaFetcher =
-          POSTFetcher.fetcherPayloadBuilder("https://www.paris.cl/store-api/pyload/_search", "POST", true, payload, headers, null, null);
-
-      JSONObject fetcherReponse = new JSONObject();
-      try {
-        fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      JSONObject json = new JSONObject();
-
-      if (fetcherReponse.has("response") && fetcherReponse.has("request_status_code") && fetcherReponse.getInt("request_status_code") >= 200
-          && fetcherReponse.getInt("request_status_code") < 400) {
-        JSONObject responseJson = fetcherReponse.getJSONObject("response");
-
-        if (responseJson.has("body")) {
-          json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
-        }
-      }
-
-      if (json.length() < 1) {
-        json = new JSONObject(
-            POSTFetcher.fetchPagePOSTWithHeaders("https://www.paris.cl/store-api/pyload/_search", session, payload, cookies, 1, headers));
-      }
-
-      if (json.has("hits")) {
-        JSONObject hits = json.getJSONObject("hits");
-
-        if (hits.has("hits")) {
-          JSONArray productArray = hits.getJSONArray("hits");
-
-          if (productArray.length() > 0) {
-            JSONObject product = productArray.getJSONObject(0);
-
-            if (product.has("_source")) {
-              productJson = product.getJSONObject("_source");
-            }
-          }
-        }
-      }
-    } catch (MalformedURLException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-
-    return productJson;
-  }
-
-  @Override
-  public List<Product> extractInformation(JSONObject productJson) throws Exception {
-    super.extractInformation(productJson);
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(productJson)) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalPid = crawlInternalPid(productJson);
-      CategoryCollection categories = new CategoryCollection();
-      String description = crawlDescription(productJson);
-      boolean isPackage = "packagebean".equalsIgnoreCase(crawlType(productJson));
+      String internalId = crawlInternalId(doc);
+      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-sku", true);
+      String name = crawlName(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "a.breadcrumb-element");
+      Float price = crawlPrice(doc);
+      Prices prices = crawlPrices(price, doc);
+      boolean available = crawlAvailability(doc);
+      String primaryImage = crawlPrimaryImage(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      String description = crawlDescription(doc);
+      String url = CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session);
 
-      Map<String, List<String>> colorsMap = new HashMap<>();
+      Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setMarketplace(new Marketplace()).build();
 
-      // This specific case is for package products
-      if (isPackage) {
-        String internalId = crawlInternalIdPackage(productJson, internalPid);
-        String name = crawlNamePackage(productJson);
-        boolean available = crawlPackageAvailability(productJson);
-
-        JSONArray arrayPrices = fetchPrices(productJson, available);
-        Prices prices = crawlPrices(productJson, arrayPrices);
-        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
-
-        List<String> images = crawlImages(productJson, colorsMap, internalPid);
-        String primaryImage = images.isEmpty() ? null : images.get(0);
-        String secondaryImages = crawlSecondaryImages(images, primaryImage);
-
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setSecondaryImages(null)
-            .setDescription(description).setStock(null).setMarketplace(new Marketplace()).build();
-
-        products.add(product);
-      } else {
-        JSONArray arraySkus = productJson.has("children") ? productJson.getJSONArray("children") : new JSONArray();
-
-        for (int i = 0; i < arraySkus.length(); i++) {
-          JSONObject skuJson = arraySkus.getJSONObject(i);
-
-          String internalId = crawlInternalId(skuJson);
-          String name = crawlName(skuJson);
-          Integer stock = crawlStock(skuJson);
-          boolean available = stock != null && stock > 0;
-
-          List<String> images = crawlImages(skuJson, colorsMap, internalPid);
-          String primaryImage = images.isEmpty() ? null : images.get(0);
-          String secondaryImages = crawlSecondaryImages(images, primaryImage);
-
-          JSONArray arrayPrices = fetchPrices(skuJson, available);
-          Prices prices = crawlPrices(skuJson, arrayPrices);
-          Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
-
-          // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
-
-          products.add(product);
-        }
-      }
+      products.add(product);
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
 
     return products;
+
   }
 
-
-  /**
-   * @param productJson
-   * @return
-   */
-  private boolean isProductPage(JSONObject productJson) {
-    return productJson.has("partNumber");
+  private boolean isProductPage(Document doc) {
+    return doc.select("#pdpMain").first() != null;
   }
 
-  private String crawlType(JSONObject skuJson) {
-    String type = null;
-
-    if (skuJson.has("type")) {
-      type = skuJson.getString("type");
-    }
-
-    return type;
-  }
-
-  /**
-   * @param skuJson
-   * @return
-   */
-  private Integer crawlStock(JSONObject skuJson) {
-    Integer stock = null;
-
-    if (skuJson.has("stocktienda")) {
-      stock = skuJson.getInt("stocktienda");
-    }
-
-    return stock;
-  }
-
-  private String crawlInternalId(JSONObject skuJson) {
+  private String crawlInternalId(Document doc) {
     String internalId = null;
 
-    if (skuJson.has("SKU")) {
-      internalId = skuJson.getString("SKU");
-    }
+    JSONObject product = CrawlerUtils.selectJsonFromHtml(doc, "script", "varproduct=", ";", true, false);
+    if (product.has("sku")) {
+      String sku = product.get("sku").toString().trim();
 
-    return internalId;
-  }
-
-  private String crawlInternalIdPackage(JSONObject skuJson, String internalPid) {
-    String internalId = null;
-
-    if (skuJson.has("id_prod")) {
-      internalId = skuJson.getString("id_prod") + "-" + internalPid;
-    }
-
-    return internalId;
-  }
-
-
-  private String crawlInternalPid(JSONObject productJson) {
-    String internalPid = null;
-
-    if (productJson.has("partNumber")) {
-      internalPid = productJson.get("partNumber").toString().replace("-PPP-", "");
-    }
-
-    return internalPid;
-  }
-
-  private boolean crawlPackageAvailability(JSONObject productJson) {
-    boolean availability = false;
-
-    JSONArray arraySkus = productJson.has("children") ? productJson.getJSONArray("children") : new JSONArray();
-
-    for (int i = 0; i < arraySkus.length(); i++) {
-      JSONObject skuJson = arraySkus.getJSONObject(i);
-
-      Integer stock = crawlStock(skuJson);
-      if (stock != null && stock > 0) {
-        availability = true;
-      } else {
-        availability = false;
-        break;
+      if (!sku.isEmpty()) {
+        internalId = sku;
       }
     }
 
-    return availability;
+    if (internalId == null && product.has("id")) {
+      String id = product.get("id").toString().trim();
+
+      if (!id.isEmpty()) {
+        internalId = id;
+      }
+    }
+
+    return internalId;
   }
 
-  private String crawlNamePackage(JSONObject productJson) {
-    String name = null;
+  private String crawlName(Document doc) {
+    String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-product-name", true);
 
-    if (productJson.has("name")) {
-      name = productJson.get("name").toString();
+    Element colorV = doc.selectFirst(".color .selected a[title]");
+    if (colorV != null) {
+      name += " " + CommonMethods.getLast(colorV.attr("title").split(":")).trim();
     }
 
     return name;
   }
 
-  private String crawlName(JSONObject skuJson) {
-    StringBuilder name = new StringBuilder();
-
-    if (skuJson.has("name")) {
-      name.append(skuJson.get("name"));
-      if (skuJson.has("specs")) {
-        JSONArray specs = skuJson.getJSONArray("specs");
-
-        for (Object o : specs) {
-          JSONObject spec = (JSONObject) o;
-
-          if (spec.has("VALUE")) {
-            name.append(" ").append(spec.get("VALUE"));
-          }
-        }
-      }
-    }
-
-    return name.toString();
+  private String crawlPrimaryImage(Document doc) {
+    return CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbnails li > a", Arrays.asList("href"), "https:", HOST);
   }
 
-  private String crawlSecondaryImages(List<String> images, String primaryImage) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    for (String image : images) {
-      if (!image.equalsIgnoreCase(primaryImage)) {
-        secondaryImagesArray.put(image);
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
+  private String crawlSecondaryImages(Document doc, String primaryImage) {
+    return CrawlerUtils.scrapSimpleSecondaryImages(doc, "#thumbnails li > a", Arrays.asList("href"), "https:", HOST, primaryImage);
   }
 
-  private List<String> crawlImages(JSONObject skuJson, Map<String, List<String>> colorsMap, String pid) {
-    List<String> images = new ArrayList<>();
-
-    String colorId = pid;
-
-    if (skuJson.has("ESTILOCOLOR")) {
-      colorId = skuJson.get("ESTILOCOLOR").toString();
-    }
-
-    if (colorId != null) {
-
-      if (colorsMap.containsKey(colorId)) {
-        images = colorsMap.get(colorId);
-      } else {
-        String url = IMAGE_URL_FIRST_PART + "Cencosud/" + colorId + "?req=set,json";
-
-        String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
-
-        JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "esponse(", ",", true));
-
-        if (json.has("set")) {
-          JSONObject set = json.getJSONObject("set");
-
-          if (set.has("item")) {
-            JSONArray items = new JSONArray();
-
-            if (set.get("item") instanceof JSONArray) {
-              items = set.getJSONArray("item");
-            } else if (set.get("item") instanceof JSONObject) {
-              items.put(set.get("item"));
-            }
-
-            for (Object o : items) {
-              JSONObject item = (JSONObject) o;
-
-              JSONObject imageJson = new JSONObject();
-
-              if (item.has("s")) {
-                imageJson = item.getJSONObject("s");
-              } else if (item.has("i")) {
-                imageJson = item.getJSONObject("i");
-              }
-
-              if (imageJson.has("n")) {
-                images.add(IMAGE_URL_FIRST_PART + imageJson.get("n") + "?wid=1080&fmt=jpg");
-              }
-            }
-
-            colorsMap.put(colorId, images);
-          }
-        }
-      }
-    }
-
-    return images;
+  private Float crawlPrice(Document doc) {
+    return CrawlerUtils.scrapSimplePriceFloat(doc, ".row-price .price-internet, .price .default-price", true);
   }
 
-  private String crawlDescription(JSONObject productJson) {
-    StringBuilder description = new StringBuilder();
-
-    if (productJson.has("shortDescription")) {
-      description.append(productJson.get("shortDescription").toString());
-    }
-
-    if (productJson.has("longDescription")) {
-      description.append(Jsoup.parse(productJson.get("longDescription").toString()));
-    }
-    
-    if(productJson.has("specs_open")) {
-    	
-    	description.append("Ficha Técnica");
-    	
-    	JSONArray specs = productJson.getJSONArray("specs_open");
-    	
-    	StringBuilder specsTable = new StringBuilder("<table><tbody>");
-    	
-    	for(Object o : specs) {
-    		if(o instanceof JSONObject) {
-    			JSONObject spec = (JSONObject) o;
-        		if(spec.has("key") && spec.has("value")) {
-        			specsTable.append("<tr><td>");
-        			specsTable.append(spec.get("key"));
-        			specsTable.append("</td><td>");
-        			specsTable.append(spec.get("value"));
-        			specsTable.append("</td></tr>");
-        		}	
-    		}
-    	}
-    	
-    	specsTable.append("</tbody></table>");
-    	
-    	description.append(specsTable);
-    }
-
-    return description.toString();
-  }
-
-  private Prices crawlPrices(JSONObject skuJson, JSONArray arrayPrices) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
-    if (skuJson.has("price")) {
-      prices.setPriceFrom(MathUtils.parseDoubleWithComma(skuJson.get("price").toString()));
-    }
+    if (price != null) {
+      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".row-price .price-normal s", true));
 
-    for (Object o : arrayPrices) {
-      JSONObject cardJson = (JSONObject) o;
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
 
-      if (cardJson.has("paymentMethodName")) {
-        Map<Integer, Float> mapInstallments = new HashMap<>();
-        String paymentMethodName = cardJson.getString("paymentMethodName");
-        Card card = null;
+      Map<Integer, Float> installmentPriceShopMap = new TreeMap<>();
 
-        if (paymentMethodName.equalsIgnoreCase("amex")) {
-          card = Card.AMEX;
-        } else if (paymentMethodName.equalsIgnoreCase("visa")) {
-          card = Card.VISA;
-        } else if (paymentMethodName.equalsIgnoreCase("master card")) {
-          card = Card.MASTERCARD;
-        }
+      Float priceCencosud = CrawlerUtils.scrapSimplePriceFloat(doc, ".price .cencosud-price", true);
+      installmentPriceShopMap.put(1, priceCencosud != null ? priceCencosud : price);
 
-        if (cardJson.has("installmentOptions")) {
-          for (Object obj : cardJson.getJSONArray("installmentOptions")) {
-            JSONObject installmentJson = (JSONObject) obj;
+      Elements installments = doc.select(".table-fee tbody tr");
+      for (Element e : installments) {
+        Elements tds = e.select("td");
+        if (tds.size() > 2) {
+          String installmentNumber = tds.get(0).ownText().replaceAll("[^0-9]", "").trim();
+          Float value = MathUtils.parseFloatWithComma(tds.get(1).ownText());
 
-            if (installmentJson.has("option") && installmentJson.has("amount")) {
-              String installment = installmentJson.get("option").toString().replaceAll("[^0-9]", "");
-              Float value = MathUtils.parseFloatWithComma(installmentJson.get("amount").toString());
-
-              if (!installment.isEmpty() && value != null) {
-                mapInstallments.put(Integer.parseInt(installment), value);
-              }
-            }
+          if (!installmentNumber.isEmpty() && value != null) {
+            installmentPriceShopMap.put(Integer.parseInt(installmentNumber), value);
           }
         }
-
-        if (card != null) {
-          prices.insertCardInstallment(card.toString(), mapInstallments);
-        }
       }
+
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceShopMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
     }
 
     return prices;
-
   }
 
-  public JSONArray fetchPrices(JSONObject skuJson, boolean available) {
-    JSONArray jsonPrice = new JSONArray();
+  private boolean crawlAvailability(Document doc) {
+    return !doc.select("#add-to-cart").isEmpty();
+  }
 
-    if (available && skuJson.has("price_internet")) {
-      String url = "https://www.paris.cl/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10801"
-          + "&langId=-5&catalogId=40000000629&catalogEntryId=152117851&nonInstallmentPrice=" + skuJson.get("price_internet");
-
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
-      jsonPrice = CrawlerUtils.stringToJsonArray(json.replace("*/", "").replace("/*", "").trim());
-    }
-
-    return jsonPrice;
+  private String crawlDescription(Document doc) {
+    return CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#accordion >:not(.reviews):not(.questions):not(.js-read-review-section)"));
   }
 }

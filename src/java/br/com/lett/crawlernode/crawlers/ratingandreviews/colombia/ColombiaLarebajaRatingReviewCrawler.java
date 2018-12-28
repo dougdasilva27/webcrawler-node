@@ -33,7 +33,7 @@ public class ColombiaLarebajaRatingReviewCrawler extends RatingReviewCrawler{
       String internalId = crawlInternalId(doc);
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc, totalNumOfEvaluations);
+      Double avgRating = getTotalAvgRating(doc);
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -60,23 +60,25 @@ public class ColombiaLarebajaRatingReviewCrawler extends RatingReviewCrawler{
   
   private Integer getTotalNumOfRatings(Document doc) {
     Integer totalNumOfRatings = 0;
-    Element element = doc.selectFirst(".content-resena p");
-    String [] str  = element.text().split(" ");
+    Element pResenha = doc.selectFirst(".content-resena p");
+    String resenha  = pResenha.text().replaceAll("[^0-9]", "").trim();
 
-    if(element != null) {
-      totalNumOfRatings = Integer.parseInt(str[0]);      
+    if(pResenha != null) {
+      totalNumOfRatings = Integer.parseInt(resenha);      
     }
     
     return totalNumOfRatings;
   }
   
-  private Double getTotalAvgRating(Document doc, Integer totalNumOfEvaluations) {
+  private Double getTotalAvgRating(Document doc) {
       Double avgRating = 0.0;
       Element rating = doc.selectFirst("div[data-score]");
+      
       if(rating != null) {
-        avgRating = Double.parseDouble(rating.attr("data-score").trim());
-        
+        String score  = rating.attr("data-score");        
+        avgRating = !score.isEmpty() ? Double.parseDouble(score.trim()) : null;        
       }
+      
       return avgRating;
   }
 

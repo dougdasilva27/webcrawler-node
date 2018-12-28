@@ -114,6 +114,25 @@ public class CrawlerUtils {
     return info;
   }
 
+  /**
+   * Scrap simple string from html
+   * 
+   * @param doc
+   * @param cssSelector
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @return
+   */
+  public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector, String att) {
+    String info = null;
+
+    Element infoElement = doc.selectFirst(cssSelector);
+    if (infoElement != null) {
+      info = infoElement.hasAttr(att) ? infoElement.attr(att) : null;
+    }
+
+    return info;
+  }
+
 
   /**
    * Scrap simple price from html
@@ -213,6 +232,27 @@ public class CrawlerUtils {
   }
 
   /**
+   * Scrap simple description from html
+   * 
+   * @param doc
+   * @param selectors - description css selectors list
+   * @return
+   */
+  public static String scrapElementsDescription(Document doc, List<String> selectors) {
+    StringBuilder description = new StringBuilder();
+
+    for (String selector : selectors) {
+      Elements elements = doc.select(selector);
+
+      for (Element e : elements) {
+        description.append(e.outerHtml());
+      }
+    }
+
+    return description.toString();
+  }
+
+  /**
    * 
    * @param doc
    * @param cssSelector
@@ -263,6 +303,42 @@ public class CrawlerUtils {
     return secondaryImages;
   }
 
+  /**
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
+   * 
+   * @param doc - html
+   * @param cssSelector - Ex: "a.url"
+   * @param attributes - ex: "href", "src"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
+   */
+  public static String scrapUrl(Element doc, String cssSelector, String attribute, String protocol, String host) {
+    return scrapUrl(doc, cssSelector, Arrays.asList(attribute), protocol, host);
+  }
+
+  /**
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
+   * 
+   * @param doc - html
+   * @param cssSelector - Ex: "a.url"
+   * @param attributes - ex: "href", "src"
+   * @param protocol - ex: https: or https:// or http: or http://
+   * @param host - send host in this format: "www.hostname.com.br"
+   * @return Url with protocol and host
+   */
+  public static String scrapUrl(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
+    String url = null;
+
+    Element urlElement = doc.selectFirst(cssSelector);
+    if (urlElement != null) {
+      url = sanitizeUrl(urlElement, attributes, protocol, host);
+    }
+
+    return url;
+  }
 
   /**
    * Append host and protocol if url needs Scroll through all the attributes in the list sent in
@@ -951,42 +1027,67 @@ public class CrawlerUtils {
 
     return pair;
   }
-  
+
   /**
    * Crawls images from a javascript inside the page for Magento markets.
+   * 
    * @param doc
    * @return JSONArray
    */
   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
-	    JSONArray images = new JSONArray();
+    JSONArray images = new JSONArray();
 
-	    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
 
-	    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
-	      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
+    if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
+      JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
 
-	      if (mediaJson.has("mage/gallery/gallery")) {
-	        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+      if (mediaJson.has("mage/gallery/gallery")) {
+        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
 
-	        if (gallery.has("data")) {
-	          JSONArray arrayImages = gallery.getJSONArray("data");
+        if (gallery.has("data")) {
+          JSONArray arrayImages = gallery.getJSONArray("data");
 
-	          for (Object o : arrayImages) {
-	            JSONObject imageJson = (JSONObject) o;
+          for (Object o : arrayImages) {
+            JSONObject imageJson = (JSONObject) o;
 
-	            if (imageJson.has("full")) {
-	              images.put(imageJson.get("full"));
-	            } else if (imageJson.has("img")) {
-	              images.put(imageJson.get("img"));
-	            } else if (imageJson.has("thumb")) {
-	              images.put(imageJson.get("thumb"));
-	            }
-	          }
-	        }
-	      }
-	    }
+            if (imageJson.has("full")) {
+              images.put(imageJson.get("full"));
+            } else if (imageJson.has("img")) {
+              images.put(imageJson.get("img"));
+            } else if (imageJson.has("thumb")) {
+              images.put(imageJson.get("thumb"));
+            }
+          }
+        }
+      }
+    }
 
-	    return images;
+    return images;
   }
 
+  /**
+   * Get total products of search in crawler Ranking
+   * 
+   * @param doc
+   * @param selector
+   * @parm owntext - if true this function will use element.ownText(), if false will be used
+   *       element.text()
+   * @return default value is 0
+   */
+  public static Integer scrapTotalProductsForRanking(Document doc, String selector, boolean ownText) {
+    Integer total = 0;
+
+    Element totalElement = doc.select(selector).first();
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
 }

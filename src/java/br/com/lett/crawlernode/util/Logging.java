@@ -105,6 +105,7 @@ public class Logging {
 		if (session != null) {
 			metadata.put("city", session.getMarket().getCity());
 			metadata.put("market", session.getMarket().getName());
+			metadata.put("market_id", session.getMarket().getNumber());
 			metadata.put("session", session.getSessionId());
 			metadata.put("session_type", session.getClass().getSimpleName());
 

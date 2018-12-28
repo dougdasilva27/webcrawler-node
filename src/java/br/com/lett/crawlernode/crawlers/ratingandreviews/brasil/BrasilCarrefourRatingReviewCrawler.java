@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -19,6 +23,29 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 
   public BrasilCarrefourRatingReviewCrawler(Session session) {
     super(session);
+  }
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL()));
+  }
+
+  private String fetchPage(String url) {
+    String response = "";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put("upgrade-insecure-requests", "1");
+
+    String resp = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+    if (!resp.isEmpty()) {
+      response = resp;
+    } else {
+      response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    }
+
+    return response;
   }
 
   @Override

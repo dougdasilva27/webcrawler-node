@@ -225,11 +225,11 @@ public class MathUtils {
   }
 
   /**
-   * Round and normalize Double to have only two decimal places eg: 23.45123 --> 23.45 If number is
-   * null, the method returns null.
+   * Round and normalize Double to have only two decimal places eg: 23.45123 --> 23 If number is null,
+   * the method returns null.
    * 
    * @param number
-   * @return A rounded Double with only two decimal places
+   * @return A rounded Float with no decimal places (ROUND_HALF_EVEN)
    */
   public static Float normalizeNoDecimalPlaces(Float number) {
     if (number == null)
@@ -242,11 +242,11 @@ public class MathUtils {
   }
 
   /**
-   * Round and normalize Double to have only two decimal places eg: 23.45123 --> 23.45 If number is
-   * null, the method returns null.
+   * Round and normalize Double to have only two decimal places eg: 23.45123 --> 23 If number is null,
+   * the method returns null.
    * 
    * @param number
-   * @return A rounded Double with only two decimal places
+   * @return A rounded Double with no decimal places (ROUND_HALF_EVEN)
    */
   public static Double normalizeNoDecimalPlaces(Double number) {
     if (number == null)
@@ -254,6 +254,74 @@ public class MathUtils {
 
     BigDecimal big = new BigDecimal(number);
     String rounded = big.setScale(0, BigDecimal.ROUND_HALF_EVEN).toString();
+
+    return Double.parseDouble(rounded);
+  }
+
+  /**
+   * Round and normalize Double to have only two decimal places eg: 23.647 --> 23 If number is null,
+   * the method returns null.
+   * 
+   * @param number
+   * @return A rounded Float with no decimal places (ROUND_DOWN)
+   */
+  public static Float normalizeNoDecimalPlacesDown(Float number) {
+    if (number == null)
+      return null;
+
+    BigDecimal big = new BigDecimal(number);
+    String rounded = big.setScale(0, BigDecimal.ROUND_DOWN).toString();
+
+    return Float.parseFloat(rounded);
+  }
+
+  /**
+   * Round and normalize Double to have only two decimal places eg: 23.647 --> 23 If number is null,
+   * the method returns null.
+   * 
+   * @param number
+   * @return A rounded Double with no decimal places (ROUND_DOWN)
+   */
+  public static Double normalizeNoDecimalPlacesDown(Double number) {
+    if (number == null)
+      return null;
+
+    BigDecimal big = new BigDecimal(number);
+    String rounded = big.setScale(0, BigDecimal.ROUND_DOWN).toString();
+
+    return Double.parseDouble(rounded);
+  }
+
+  /**
+   * Round and normalize Double to have only two decimal places eg: 23.347 --> 24 If number is null,
+   * the method returns null.
+   * 
+   * @param number
+   * @return A rounded Float with no decimal places (ROUND_UP)
+   */
+  public static Float normalizeNoDecimalPlacesUp(Float number) {
+    if (number == null)
+      return null;
+
+    BigDecimal big = new BigDecimal(number);
+    String rounded = big.setScale(0, BigDecimal.ROUND_UP).toString();
+
+    return Float.parseFloat(rounded);
+  }
+
+  /**
+   * Round and normalize Double to have only two decimal places eg: 23.347 --> 24 If number is null,
+   * the method returns null.
+   * 
+   * @param number
+   * @return A rounded Double with no decimal places (ROUND_UP)
+   */
+  public static Double normalizeNoDecimalPlacesUp(Double number) {
+    if (number == null)
+      return null;
+
+    BigDecimal big = new BigDecimal(number);
+    String rounded = big.setScale(0, BigDecimal.ROUND_UP).toString();
 
     return Double.parseDouble(rounded);
   }

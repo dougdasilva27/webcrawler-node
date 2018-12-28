@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,6 +20,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -46,13 +50,36 @@ public class BrasilCarrefourCrawler extends Crawler {
   }
 
   @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.carrefour.com.br", "/", session);
+  }
+
+  @Override
+  protected Object fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL()));
+  }
+
+  private String fetchPage(String url) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put("upgrade-insecure-requests", "1");
+    String response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+
+    if (response == null || response.isEmpty()) {
+      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+    }
+
+    return response;
+  }
+
+  @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
 
       String internalPid = crawlInternalPid(session.getOriginalURL());
       String name = crawlName(doc);
@@ -216,7 +243,7 @@ public class BrasilCarrefourCrawler extends Crawler {
   private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    if (prices != null && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
@@ -337,11 +364,11 @@ public class BrasilCarrefourCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
+      String url = "https://www.carrefour.com.br/installment/creditCard?productPrice=" + price + "&productCode=" + internalId;
+      String json = fetchPage(url);
+
       prices.setBankTicketPrice(price);
       prices.setPriceFrom(crawlPriceFrom(e));
-
-      String url = "https://www.carrefour.com.br/installment/creditCard?productPrice=" + price + "&productCode=" + internalId;
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       JSONObject jsonPrices = new JSONObject();
 
@@ -374,6 +401,10 @@ public class BrasilCarrefourCrawler extends Crawler {
 
       if (jsonPrices.has("visaInstallments")) {
         Map<Integer, Float> installmentPriceMap = crawlInstallment(jsonPrices, "visaInstallments");
+        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      } else {
+        Map<Integer, Float> installmentPriceMap = new HashMap<>();
+        installmentPriceMap.put(1, price);
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       }
 

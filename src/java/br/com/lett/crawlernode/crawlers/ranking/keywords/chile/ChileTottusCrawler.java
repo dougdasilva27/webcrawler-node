@@ -4,6 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ChileTottusCrawler extends CrawlerRankingKeywords {
@@ -22,7 +23,16 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
     String url = "http://www.tottus.cl/tottus/search?Ntt=" + this.keywordEncoded;
 
     if (this.currentPage > 1 && this.redirectUrl != null) {
-      url = this.redirectUrl + "&No=" + this.arrayProducts.size();
+
+      if (url.contains("browse")) {
+
+        url = this.redirectUrl.replace("browse", "productListFragment") + "?No=" + this.arrayProducts.size() + "&Nrpp=&currentCatId="
+            + CommonMethods.getLast(this.redirectUrl.split("\\?")[0].split("/"));
+      } else {
+        url = this.redirectUrl + "?No=" + this.arrayProducts.size();
+      }
+    } else if (this.currentPage > 1) {
+      url += "&No=" + this.arrayProducts.size();
     }
 
     this.log("Link onde são feitos os crawlers: " + url);
