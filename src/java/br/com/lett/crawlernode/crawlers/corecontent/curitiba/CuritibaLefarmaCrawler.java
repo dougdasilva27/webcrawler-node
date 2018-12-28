@@ -27,7 +27,7 @@ public class CuritibaLefarmaCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    JSONObject fetchedJson = null;
+    JSONObject fetchedJson = new JSONObject();
     List<Product> products = new ArrayList<>();
     
     if (isProductPage(doc)) {
@@ -38,11 +38,6 @@ public class CuritibaLefarmaCrawler extends Crawler {
         String url = "https://www.lefarma.com.br/public_api/v1/products/" + script.get("id");
         fetchedJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
       }
-      
-      
-      
-      List<String> selectors = new ArrayList<>();
-      selectors.add(".descricao_texto");
       
       String internalPid = crawlInternalPid(fetchedJson);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "span[itemprop=price]", false);
@@ -82,7 +77,9 @@ public class CuritibaLefarmaCrawler extends Crawler {
     if(obj.has("htmlDescriptions")) {
       for (Object objDescriptions : obj.getJSONArray("htmlDescriptions")) {
         JSONObject jsonObject =  (JSONObject) objDescriptions;
-        descprition = jsonObject.getString("description");  
+        if(jsonObject.has("description")) {
+          descprition = jsonObject.getString("description");  
+        }
       }   
     }
     
@@ -94,7 +91,9 @@ public class CuritibaLefarmaCrawler extends Crawler {
     if(obj.has("breadcrumbs")) {
       for (Object category : obj.getJSONArray("breadcrumbs")) {
         JSONObject jsonObjCategory = (JSONObject) category;
-        categories.add(jsonObjCategory.getString("name"));
+        if(jsonObjCategory.has("name")) {          
+          categories.add(jsonObjCategory.getString("name"));
+        }
       }
     }
     return categories;
@@ -140,7 +139,7 @@ public class CuritibaLefarmaCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(JSONObject obj) {
-    return obj.has("available") ? obj.getBoolean("available") : null;
+    return obj.has("available") ? obj.getBoolean("available") : false;
   }
 
   private Prices crawlPrices(JSONObject obj) {
@@ -149,23 +148,23 @@ public class CuritibaLefarmaCrawler extends Crawler {
     
     if(!obj.isNull("discountValue")) {
       if(obj.has("promotionPrice")) {        
-        prices.setBankTicketPrice(obj.getDouble("promotionPrice"));  
-        prices.setPriceFrom(obj.getDouble("price"));
+        prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(obj, "promotionPrice"));  
+        prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(obj, "price"));
       }
     } else {
-      prices.setBankTicketPrice(obj.getDouble("price"));
+      prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(obj, "price"));
     }
     
     if(obj.has("hasInstallmentsWithInterest") && obj.getBoolean("hasInstallmentsWithInterest")) {
       
       if(obj.has("quantityOfInstallmentsWithInterest") && !obj.isNull("quantityOfInstallmentsWithInterest")) {
-        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsWithInterest"),(float) obj.getDouble("valueOfInstallmentsWithInterest"));
+        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsWithInterest"),CrawlerUtils.getFloatValueFromJSON(obj,"valueOfInstallmentsWithInterest"));
       }
       
     } else {
       
       if(obj.has("quantityOfInstallmentsNoInterest") && !obj.isNull("quantityOfInstallmentsNoInterest")) {
-        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsNoInterest"),(float) obj.getDouble("valueOfInstallmentsNoInterest"));
+        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsNoInterest"),CrawlerUtils.getFloatValueFromJSON(obj,"valueOfInstallmentsNoInterest"));
       }
       
     }
