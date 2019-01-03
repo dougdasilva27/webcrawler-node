@@ -2,12 +2,15 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -15,6 +18,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -31,15 +35,27 @@ public class ChileSalcobrandCrawler extends Crawler{
     
     JSONObject json  = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "window.chaordic_meta = ", ";", false, false);
     JSONObject productJson = new JSONObject();
-    JSONObject categoriesJson = new JSONObject();
+    JSONObject pageJson = new JSONObject();
+    JSONObject jsonPrices = CrawlerUtils.selectJsonFromHtml(doc, "script", "var prices = ", ";", false, true);
+    JSONArray categoriesJson = new JSONArray();
+    
+    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#main-image .target-image", Arrays.asList("src"), "https:", "salcobrand.cl");
+    String description = crawlDesciption(doc);
     
     if(json.has("product")) {
+    
       productJson = (JSONObject) json.get("product");
+    
     }
 
     if(json.has("page")) {
-      categoriesJson = (JSONObject) json.get("page");
+      
+      pageJson = (JSONObject) json.get("page");
+      categoriesJson = pageJson.getJSONArray("categories"); 
+    
     }    
+    
+    CategoryCollection categories = crawlCategories(categoriesJson);
     
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -54,25 +70,18 @@ public class ChileSalcobrandCrawler extends Crawler{
         String internalPid  =  crawlInternalPid(sku);
         String name         = crawlName(doc, index);
         boolean available = crawlAvailability(sku);
-        
-        Float priceUnique = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
-        Float price = priceUnique == null ? 
-            CrawlerUtils.scrapSimplePriceFloat(doc, "div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora", false) : priceUnique;
-        
-        CategoryCollection categories = crawlCategories(doc);
-        Prices prices = crawlPrices(price, doc);
-        
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
-        
+        Float price = crawlPrice(jsonPrices, internalId);
+        Prices prices = crawlPrices(jsonPrices, internalId);
         String secondaryImages =
-            CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
- 
+            CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt=" + internalId + "]", Arrays.asList("data-src", "src"), "https:", "salcobrand.cl", primaryImage);
+                
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
                 .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(null)
+                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
                 .setMarketplace(new Marketplace()).build();
 
             products.add(product);
+            
             index++;
       }
 
@@ -87,33 +96,118 @@ public class ChileSalcobrandCrawler extends Crawler{
   
 
 
+  private String crawlDesciption(Document doc) {
+    String description = null;
+    Element descriptionElement = doc.selectFirst(".description");
+    Element descriptionAreaElement = doc.selectFirst(".description-area");
+    List<String> selectors = new ArrayList<>();
+    
+    selectors.add(".description");
+    selectors.add(".description-area");
+    
+    if(descriptionElement != null && descriptionAreaElement != null) {
+      description = CrawlerUtils.scrapSimpleDescription(doc, selectors);
+
+    }
+    
+    return description;
+  }
+
+  private Float crawlPrice(JSONObject jsonPrices, String internalId) {
+    JSONObject priceObj = new JSONObject();
+    Float price = null;
+    
+    if(jsonPrices.has(internalId)) {
+      priceObj = jsonPrices.getJSONObject(internalId);
+      
+      if(priceObj.has("normal") && priceObj.has("oferta")) {
+      
+        if(!priceObj.isNull("oferta")) {
+          price = MathUtils.parseFloatWithComma(priceObj.getString("oferta"));
+
+        } else {
+          price = MathUtils.parseFloatWithComma(priceObj.getString("normal"));
+        }        
+      }
+    }
+    
+    return price;
+  }
+
+  private Prices crawlPrices(JSONObject jsonPrices, String internalId) {
+    Prices prices = new Prices();
+    Map<Integer, Float> installments = new HashMap<>();
+    JSONObject priceObj = new JSONObject();
+    
+    if(jsonPrices.has(internalId)) {
+      priceObj = jsonPrices.getJSONObject(internalId);
+      
+      System.err.println(priceObj);
+      if(priceObj.has("normal")) {
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceObj.getString("normal")));      
+      
+      }
+      
+      if(priceObj.has("tarjeta") && !priceObj.isNull("tarjeta")) {
+          installments.put(1, MathUtils.parseFloatWithComma(priceObj.getString("tarjeta")));
+        
+      } else if (priceObj.has("oferta") && !priceObj.isNull("oferta")) {
+          installments.put(1,MathUtils.parseFloatWithComma(priceObj.getString("oferta")));          
+        
+      } else if (priceObj.has("normal") && !priceObj.isNull("normal")) {
+          installments.put(1,MathUtils.parseFloatWithComma(priceObj.getString("normal")));
+          
+        }
+      }
+    
+    if (!installments.isEmpty()) {
+      prices.insertCardInstallment(Card.VISA.toString(), installments);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+    }
+    
+    return prices;
+  }
+  
   private String crawlName(Document doc, int index) {
     Element nameElement = doc.selectFirst(".product-content .info");
     Elements selectElement = doc.select("#variant_id option");
     String name = null;
     
     if(nameElement != null && selectElement != null) {
+      
       name = nameElement.text() + " " + selectElement.get(index).text().trim();
+      
     }
     
     return name;
   }
 
-  private Prices crawlPrices(Float price, Document doc) {
-    
-    return null;
-  }
 
-  private CategoryCollection crawlCategories(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
+  private CategoryCollection crawlCategories(JSONArray categoriesJson) {
+    CategoryCollection categories = new CategoryCollection();
+    
+    for (Object object : categoriesJson) {
+      
+      JSONObject categorieJson =  (JSONObject) object;
+      
+      if(categorieJson.has("name")) {
+
+        categories.add(categorieJson.getString("name"));
+      
+      }
+    
+    }
+    
+    return categories;
   }
 
   private boolean crawlAvailability(JSONObject sku) {
     boolean availability = false;
     
     if(sku.has("status")) {
-     availability = sku.getString("status") == "available" ? true : false;  
+      
+     availability = sku.getString("status").equals("available") ? true : false;       
+    
     }
     
     return availability;
@@ -121,10 +215,10 @@ public class ChileSalcobrandCrawler extends Crawler{
 
   private String crawlInternalPid(JSONObject sku) {
     String id = null;
-    JSONArray skus = new JSONArray();
-    
     if(sku.has("id")) {
+      
       id = sku.getString("id");
+      
     }
     
     return id;
@@ -136,7 +230,9 @@ public class ChileSalcobrandCrawler extends Crawler{
     JSONArray skus = new JSONArray();
     
     if(sku.has("sku")) {
+      
       id = sku.getString("sku");
+      
     }
     
     return id;
