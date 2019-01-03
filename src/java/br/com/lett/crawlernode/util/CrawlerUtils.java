@@ -413,6 +413,10 @@ public class CrawlerUtils {
     return sanitizedUrl.toString();
   }
 
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
+    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, new ArrayList<>(), session);
+  }
+
   /**
    * Crawl cookies from a page
    * 
@@ -420,13 +424,15 @@ public class CrawlerUtils {
    * @param cookiesToBeCrawled - list(string) of cookies to be crawled
    * @param domain - domain to set in cookie
    * @param path - path to set in cookie
+   * @param cookiesClient
    * @param session - crawler session
    * @return List<Cookie>
    */
-  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
+      List<Cookie> cookiesClient, Session session) {
     List<Cookie> cookies = new ArrayList<>();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookies, 1);
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookiesClient, 1);
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       String cookieName = entry.getKey().trim();
 

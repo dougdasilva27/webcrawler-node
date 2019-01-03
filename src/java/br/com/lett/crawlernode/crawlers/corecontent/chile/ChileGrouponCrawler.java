@@ -142,6 +142,7 @@ public class ChileGrouponCrawler extends Crawler {
   private String crawlSecondaryImages(JSONArray images, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
+    List<String> imagesList = new ArrayList<>();
 
     for (Object o : images) {
       JSONObject imageJson = (JSONObject) o;
@@ -149,7 +150,8 @@ public class ChileGrouponCrawler extends Crawler {
       if (imageJson.has("big")) {
         String image = CrawlerUtils.completeUrl(imageJson.getString("big"), "https:", "cdn.needish.com");
 
-        if (!image.equalsIgnoreCase(primaryImage)) {
+        if (!image.equalsIgnoreCase(primaryImage) && !imagesList.contains(image)) {
+          imagesList.add(image);
           secondaryImagesArray.put(image);
         }
       }
