@@ -21,8 +21,8 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage + "&termoPesquisa="
-        + this.keywordWithoutAccents.replace(" ", "+");
+    String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage
+        + "&termoPesquisa=" + this.keywordWithoutAccents.replace(" ", "+");
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = crawlProductsInfo(url);
@@ -35,7 +35,8 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, null, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -44,7 +45,8 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
@@ -68,6 +70,16 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
   }
 
   private Document crawlProductsInfo(String url) {
-    return Jsoup.parse(fetchPostFetcher(url, null, null, null));
+    String response = fetchPostFetcher(url, null, null, null);
+
+    if (response != null) {
+
+      return Jsoup.parse(response);
+
+    } else {
+
+      return fetchDocument(url);
+
+    }
   }
 }
