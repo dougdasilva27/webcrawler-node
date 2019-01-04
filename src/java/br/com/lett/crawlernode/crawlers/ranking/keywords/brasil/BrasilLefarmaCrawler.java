@@ -1,13 +1,13 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class CuritibaLefarmaCrawler extends CrawlerRankingKeywords {
+public class BrasilLefarmaCrawler extends CrawlerRankingKeywords {
 
-  public CuritibaLefarmaCrawler(Session session) {
+  public BrasilLefarmaCrawler(Session session) {
     super(session);
     // TODO Auto-generated constructor stub
   }

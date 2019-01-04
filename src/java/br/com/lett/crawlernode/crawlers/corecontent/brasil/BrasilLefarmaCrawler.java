@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
+package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +18,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
 
-public class CuritibaLefarmaCrawler extends Crawler {
+public class BrasilLefarmaCrawler extends Crawler {
 
-  public CuritibaLefarmaCrawler(Session session) {
+  public BrasilLefarmaCrawler(Session session) {
     super(session);
   }
 
