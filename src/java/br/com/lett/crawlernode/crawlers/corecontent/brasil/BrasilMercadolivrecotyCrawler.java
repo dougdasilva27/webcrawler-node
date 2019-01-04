@@ -62,7 +62,13 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
         Document docVariation = entry.getValue();
 
         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
+
+        if(variations.size() > 1 && (internalId == null || internalId.trim().isEmpty())) {
+        	continue;
+        }
+        
         internalId = internalId == null && variations.size() < 2 ? internalPid : internalPid + "-" + internalId;
+        
         String name = crawlName(docVariation);
         CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb");
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
@@ -103,11 +109,15 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
 
   private Map<String, Document> getVariationsHtmls(Document doc) {
     Map<String, Document> variations = new HashMap<>();
-    variations.putAll(getSizeVariationsHmtls(doc, session.getOriginalURL()));
+    
+    String originalUrl = session.getOriginalURL();
+    variations.putAll(getSizeVariationsHmtls(doc, originalUrl));
 
-    Elements colors = doc.select(".variation-list--full li:not(.variations-selected) a.ui-list__item-option");
+    Elements colors = doc.select(".variation-list--full li:not(.variations-selected)");
     for (Element e : colors) {
-      String url = CrawlerUtils.completeUrl(e.attr("href"), "https:", "produto.mercadolivre.com.br");
+    	String dataValue = e.attr("data-value");
+    	String url = originalUrl + (originalUrl.contains("?") ? "&" : "?") 
+    			+ "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
       Document docColor = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
       variations.putAll(getSizeVariationsHmtls(docColor, url));
     }
@@ -119,9 +129,10 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
     Map<String, Document> variations = new HashMap<>();
     variations.put(urlColor, doc);
 
-    Elements sizes = doc.select(".variation-list li:not(.variations-selected) .ui-list__item-option");
+    Elements sizes = doc.select(".variation-list li:not(.variations-selected)");
     for (Element e : sizes) {
-      String url = CrawlerUtils.completeUrl(e.attr("href"), "https:", "produto.mercadolivre.com.br");
+    	String dataValue = e.attr("data-value");
+    	String url = urlColor + (urlColor.contains("?") ? "&" : "?") + "variation=" + dataValue;
       Document docSize = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       variations.put(url, docSize);
