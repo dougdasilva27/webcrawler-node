@@ -63,14 +63,14 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
 
         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
 
-        if(variations.size() > 1 && (internalId == null || internalId.trim().isEmpty())) {
-        	continue;
+        if (variations.size() > 1 && (internalId == null || internalId.trim().isEmpty())) {
+          continue;
         }
-        
+
         internalId = internalId == null && variations.size() < 2 ? internalPid : internalPid + "-" + internalId;
-        
+
         String name = crawlName(docVariation);
-        CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb");
+        CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb:not(.shortened)");
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
             "http2.mlstatic.com");
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
@@ -109,15 +109,15 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
 
   private Map<String, Document> getVariationsHtmls(Document doc) {
     Map<String, Document> variations = new HashMap<>();
-    
+
     String originalUrl = session.getOriginalURL();
     variations.putAll(getSizeVariationsHmtls(doc, originalUrl));
 
     Elements colors = doc.select(".variation-list--full li:not(.variations-selected)");
     for (Element e : colors) {
-    	String dataValue = e.attr("data-value");
-    	String url = originalUrl + (originalUrl.contains("?") ? "&" : "?") 
-    			+ "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
+      String dataValue = e.attr("data-value");
+      String url =
+          originalUrl + (originalUrl.contains("?") ? "&" : "?") + "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
       Document docColor = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
       variations.putAll(getSizeVariationsHmtls(docColor, url));
     }
@@ -129,10 +129,18 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
     Map<String, Document> variations = new HashMap<>();
     variations.put(urlColor, doc);
 
-    Elements sizes = doc.select(".variation-list li:not(.variations-selected)");
+    Elements sizes = doc.select(".variation-list li:not(.variations-selected) a.ui-list__item-option");
     for (Element e : sizes) {
-    	String dataValue = e.attr("data-value");
-    	String url = urlColor + (urlColor.contains("?") ? "&" : "?") + "variation=" + dataValue;
+      String attribute = null;
+      String[] parameters = e.attr("href").split("&");
+      for (String p : parameters) {
+        if (p.startsWith("attribute=")) {
+          attribute = p;
+          break;
+        }
+      }
+
+      String url = urlColor + (urlColor.contains("?") ? "&" : "?") + attribute;
       Document docSize = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       variations.put(url, docSize);
