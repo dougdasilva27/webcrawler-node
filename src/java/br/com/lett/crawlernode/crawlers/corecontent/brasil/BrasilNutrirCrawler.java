@@ -42,33 +42,53 @@ public class BrasilNutrirCrawler extends Crawler {
       Logging.printLogDebug(logger, session,
           "Product page identified: " + this.session.getOriginalURL());
 
-      for (Element e : getVariations(doc, ".prod_select #produto_sel option")) {
-        String internalId = e.attr("value");
-        String internalPid = null;
-        String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_title h1", true);
-        CategoryCollection categories =
-            CrawlerUtils.crawlCategories(doc, ".p_info > .p_tags_list .n1");
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".p_img .img_primary img",
-            Arrays.asList("src"), "https", "www.nutrir-sc.com.br");;
-        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-            "[id^=fotos] .galeria li:not(:last-child) a", Arrays.asList("href"), "https://",
-            "www.nutrir-sc.com.br", primaryImage);
-        String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays
-            .asList(".tabs > div#definicao-do-produto", ".tabs > div#caracteristicas-tecnicas"));
-        Integer stock = scrapStock(e);
-        Float price = scrapPrice(e);
-        Prices prices = crawlPrices(price, e);
-        boolean available = checkAvaliability(doc, ".prod_comprar .comprar_d");
+      Elements variations = getVariations(doc, ".prod_select #produto_sel option");
+
+      // scrap everything that is independent of availability
+      String internalPid = null;
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_title h1", true);
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".p_info > .p_tags_list .n1");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".p_img .img_primary img",
+          Arrays.asList("src"), "https", "www.nutrir-sc.com.br");;
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, "[id^=fotos] .galeria li:not(:last-child) a",
+              Arrays.asList("href"), "https://", "www.nutrir-sc.com.br", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays
+          .asList(".tabs > div#definicao-do-produto", ".tabs > div#caracteristicas-tecnicas"));
+
+      if (variations.isEmpty()) {
+        String internalId = scrapInternalId(doc, ".produto.produto_show");
+        boolean available = false;
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).build();
+        Product product =
+            ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
+                .setInternalPid(internalPid).setName(name).setAvailable(available)
+                .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+                .setSecondaryImages(secondaryImages).setDescription(description).build();
 
         products.add(product);
+
+      } else {
+        for (Element e : variations) {
+          String internalId = e.attr("value");
+          Integer stock = scrapStock(e);
+          Float price = scrapPrice(e);
+          Prices prices = crawlPrices(price, e);
+          boolean available = stock != 0;
+
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+              .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+              .setDescription(description).setStock(stock).build();
+
+          products.add(product);
+        }
       }
 
     } else {
@@ -84,6 +104,21 @@ public class BrasilNutrirCrawler extends Crawler {
 
   private Elements getVariations(Document doc, String selector) {
     return doc.select(selector);
+  }
+
+  private String scrapInternalId(Document doc, String selector) {
+    Element e = doc.selectFirst(selector);
+    String internalId = null;
+
+    if (e != null) {
+      String aux = e.id();
+
+      if (!aux.isEmpty()) {
+        internalId = aux.substring(1);
+      }
+    }
+
+    return internalId;
   }
 
   private Integer scrapStock(Element e) {
@@ -148,9 +183,5 @@ public class BrasilNutrirCrawler extends Crawler {
     }
 
     return prices;
-  }
-
-  private boolean checkAvaliability(Document doc, String selector) {
-    return doc.selectFirst(selector) != null;
   }
 }
