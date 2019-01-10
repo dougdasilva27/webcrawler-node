@@ -80,33 +80,46 @@ public class BrasilAgilmedCrawler extends Crawler {
   }
 
   private Float crawlPrice(Document doc) {
-    Element priceElement = doc.selectFirst("meta[itemprop=\"price\"]");
+    Element priceElement = doc.selectFirst("b[class=\"text-parcelas pull-right cor-principal\"]");
     Float price = null;
 
     if (priceElement != null) {
-      price = MathUtils.parseFloatWithDots(priceElement.attr("content").trim());
+      price = MathUtils.parseFloatWithComma(priceElement.text().trim());
     }
 
     return price;
   }
 
   private Prices crawlPrices(Document doc) {
+    Float price = null;
     Prices prices = new Prices();
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
     Elements pricesElements = doc.select(".parcelas-produto .accordion-inner ul li");
-    Element priceElement = doc.selectFirst(".parcelas-produto .text-parcelas");
+    Element priceElement = doc.selectFirst("b[class=\"text-parcelas pull-right cor-principal\"]");
+    Element priceFromElement = doc.selectFirst(".com-promocao .preco-venda");
 
     if (pricesElements != null && !pricesElements.isEmpty()) {
       for (Element element : pricesElements) {
         String priceText = element.text();
 
-        Float price = MathUtils
+        price = MathUtils
             .parseFloatWithComma(priceText.substring(priceText.indexOf("R"), priceText.length()));
+
         Integer quantityInstallments =
             MathUtils.parseInt(priceText.substring(0, priceText.indexOf("x")));
 
+
         installmentPriceMap.put(quantityInstallments, price);
+      }
+
+      if (priceElement != null) {
+        price = MathUtils.parseFloatWithComma(priceElement.text().trim());
+        prices.setBankTicketPrice(price);
+      }
+
+      if (priceFromElement != null) {
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFromElement.text().trim()));
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -116,9 +129,15 @@ public class BrasilAgilmedCrawler extends Crawler {
       prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
 
     } else if (priceElement != null) {
-      Float price = MathUtils.parseFloatWithComma(priceElement.text().trim());
+      price = MathUtils.parseFloatWithComma(priceElement.text().trim());
 
       installmentPriceMap.put(1, price);
+
+      prices.setBankTicketPrice(price);
+
+      if (priceFromElement != null) {
+        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFromElement.text().trim()));
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -135,7 +154,7 @@ public class BrasilAgilmedCrawler extends Crawler {
     boolean availability = false;
 
     if (avaibleElement != null) {
-      availability = avaibleElement.text().trim().equalsIgnoreCase("Disponível");
+      availability = true;
     }
 
     return availability;
