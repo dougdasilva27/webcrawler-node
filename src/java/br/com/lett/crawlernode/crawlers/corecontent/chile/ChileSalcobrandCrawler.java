@@ -77,10 +77,11 @@ public class ChileSalcobrandCrawler extends Crawler {
           String internalPid = crawlInternalPid(sku);
           String name = crawlName(doc, internalId);
           boolean available = crawlAvailability(sku);
+          Integer stock = scrapStock(sku);
           Float price = crawlPrice(jsonPrices, internalId);
           Prices prices = crawlPrices(jsonPrices, internalId);
           String primaryImage =
-              CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt=" + internalId + "]",
+              CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt^=" + internalId + "]",
                   Arrays.asList("data-src", "src"), "https:", "salcobrand.cl");
           String secondaryImages =
               CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]",
@@ -92,7 +93,8 @@ public class ChileSalcobrandCrawler extends Crawler {
               .setAvailable(available).setCategory1(categories.getCategory(0))
               .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
               .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-              .setDescription(description).setMarketplace(new Marketplace()).build();
+              .setDescription(description).setStock(stock).setMarketplace(new Marketplace())
+              .build();
 
           products.add(product);
         }
@@ -225,6 +227,16 @@ public class ChileSalcobrandCrawler extends Crawler {
     }
 
     return availability;
+  }
+
+  private Integer scrapStock(JSONObject sku) {
+    Integer stock = 0;
+
+    if (sku.has("stock")) {
+      stock = sku.getInt("stock");
+    }
+
+    return stock;
   }
 
   private String crawlInternalPid(JSONObject sku) {
