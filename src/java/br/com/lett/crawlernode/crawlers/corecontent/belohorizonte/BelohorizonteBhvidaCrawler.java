@@ -48,8 +48,8 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
       Prices prices = crawlPrices(price, doc);
       String description = crawlDescription(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img", Arrays.asList("src"),
-          "https:", "www.bhvida.com/");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-main",
+          Arrays.asList("src"), "https:", "www.bhvida.com/");
 
 
       // Creating the product
