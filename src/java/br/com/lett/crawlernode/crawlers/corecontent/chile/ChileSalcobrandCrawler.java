@@ -42,9 +42,6 @@ public class ChileSalcobrandCrawler extends Crawler {
         CrawlerUtils.selectJsonFromHtml(doc, "script", "var prices = ", ";", false, true);
     JSONArray categoriesJson = new JSONArray();
 
-    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#main-image .target-image",
-        Arrays.asList("src"), "https:", "salcobrand.cl");
-
     String description = crawlDesciption(doc);
 
     if (json.has("product")) {
@@ -82,8 +79,11 @@ public class ChileSalcobrandCrawler extends Crawler {
           boolean available = crawlAvailability(sku);
           Float price = crawlPrice(jsonPrices, internalId);
           Prices prices = crawlPrices(jsonPrices, internalId);
+          String primaryImage =
+              CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt=" + internalId + "]",
+                  Arrays.asList("data-src", "src"), "https:", "salcobrand.cl");
           String secondaryImages =
-              CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt=" + internalId + "]",
+              CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]",
                   Arrays.asList("data-src", "src"), "https:", "salcobrand.cl", primaryImage);
           String url = buildUrl(session.getOriginalURL(), internalId);
 
