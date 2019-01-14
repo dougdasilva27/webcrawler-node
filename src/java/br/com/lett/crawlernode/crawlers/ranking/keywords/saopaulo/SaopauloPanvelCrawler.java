@@ -72,7 +72,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
   private Document crawlProductsInfo(String url) {
     String response = fetchPostFetcher(url, null, null, null);
 
-    if (response != null) {
+    if (response != null && !response.isEmpty()) {
 
       return Jsoup.parse(response);
 
