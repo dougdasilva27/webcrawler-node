@@ -20,7 +20,8 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
     this.pageSize = 12;
 
     this.log("Página " + this.currentPage);
-    String url = "https://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt=" + this.arrayProducts.size();
+    String url = "https://busca.drogaraia.com.br/search?w=" + this.keywordEncoded + "&cnt=150&srt="
+        + this.arrayProducts.size();
 
     Map<String, String> headers = new HashMap<>();
     headers.put("upgrade-insecure-requests", "1");
@@ -28,7 +29,18 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
     headers.put("accept-language", "pt-BR");
 
     this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, "GET", session, false));
+
+    String response =
+        POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, "GET", session, false);
+
+    if (response != null && !response.isEmpty()) {
+      this.currentDoc = Jsoup.parse(response);
+
+    } else {
+
+      this.currentDoc = fetchDocument(url);
+    }
+
 
     Elements products = this.currentDoc.select(".item div.container:not(.min-limit)");
 
@@ -43,7 +55,8 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -53,7 +66,8 @@ public class SaopauloDrogaraiaCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
