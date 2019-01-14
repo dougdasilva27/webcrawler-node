@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -97,28 +98,22 @@ public class ColombiaExitoCrawler extends Crawler {
       Marketplace marketplace = createMarketplace(seller, prices);
 
       // Creating the product
-      /*
-       * ProductBuilder product =
-       * ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-       * .setInternalPid(internalPid).setName(name).setAvailable(available)
-       * .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-       * .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-       * .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock);
-       * 
-       * if (seller.equals("Éxito")) { product.setPrice(price).setPrices(prices); } else {
-       * product.setPrice(0.0f).setPrices(new Prices());
-       * product.setMarketplace(createMarketplace(seller, prices)); }
-       */
 
-      Product product =
-          ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-              .setInternalPid(internalPid).setName(name).setAvailable(available)
-              .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setPrice(price)
-              .setPrices(prices).setStock(stock).setMarketplace(marketplace).build();
+      ProductBuilder product = ProductBuilder.create().setUrl(session.getOriginalURL())
+          .setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setAvailable(available).setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setPrice(price)
+          .setDescription(description).setStock(stock);
 
-      products.add(product);
+      if (StringUtils.stripAccents(seller).toLowerCase().trim().equals("exito")) {
+        product.setPrices(prices);
+      } else {
+        product.setPrices(new Prices());
+        product.setMarketplace(createMarketplace(seller, prices));
+      }
+
+      products.add(product.build());
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -222,7 +217,7 @@ public class ColombiaExitoCrawler extends Crawler {
   private Marketplace createMarketplace(String name, Prices prices) {
     Map<String, Prices> mktp = new HashMap<String, Prices>();
     mktp.put(name, prices);
-    List<String> nm = Arrays.asList(name);
+    List<String> nm = Arrays.asList(name.toLowerCase());
 
     return CrawlerUtils.assembleMarketplaceFromMap(mktp, nm, Card.AMEX, session);
   }
