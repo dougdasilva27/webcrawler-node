@@ -161,7 +161,7 @@ public class CrawlerUtils {
    * @param ownText
    * @return Float
    */
-  public static Float scrapSimplePriceFloatWithDots(Document document, String cssSelector, boolean ownText) {
+  public static Float scrapSimplePriceFloatWithDots(Element document, String cssSelector, boolean ownText) {
     Float price = null;
 
     Element priceElement = document.selectFirst(cssSelector);
@@ -261,7 +261,7 @@ public class CrawlerUtils {
    * @param host - www.hostname.com.br
    * @return
    */
-  public static String scrapSimplePrimaryImage(Document doc, String cssSelector, List<String> attributes, String protocol, String host) {
+  public static String scrapSimplePrimaryImage(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
     String image = null;
 
     Element elementPrimaryImage = doc.selectFirst(cssSelector);
