@@ -74,7 +74,8 @@ public class ColombiaExitoCrawler extends Crawler {
           "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = scrapInternalId(doc, "#pdp .row.product");
-      String internalPid = scrapInternalPid(doc, ".plu");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
+          ".col-addtocart button.btn", "data-sku");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".row.product .name", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li");
       String primaryImage =

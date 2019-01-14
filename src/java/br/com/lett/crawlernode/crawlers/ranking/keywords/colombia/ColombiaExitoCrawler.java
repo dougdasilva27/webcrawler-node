@@ -64,8 +64,8 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = e.attr("data-prdid");
-        String internalId = null;
+        String internalId = e.attr("data-prdid");
+        String internalPid = e.attr("data-skuid");
         String productUrl = scrapProductUrl(e);
 
         saveDataProduct(internalId, internalPid, productUrl);
