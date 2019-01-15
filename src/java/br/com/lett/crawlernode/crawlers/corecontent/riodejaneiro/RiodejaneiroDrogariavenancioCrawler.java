@@ -93,10 +93,14 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
   private String scrapDescription(VTEXCrawlersUtils vtexUtil, String internalId) {
     StringBuilder sb = new StringBuilder();
-    JSONArray arr = (JSONArray) vtexUtil.crawlDescriptionAPI(internalId, "skuId").get("Descrição");
+    JSONObject obj = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
 
-    for (Object o : arr) {
-      sb.append(o.toString());
+    if (obj.has("Descrição")) {
+      JSONArray arr = obj.getJSONArray("Descrição");
+
+      for (Object o : arr) {
+        sb.append(o.toString());
+      }
     }
 
     return sb.toString();
