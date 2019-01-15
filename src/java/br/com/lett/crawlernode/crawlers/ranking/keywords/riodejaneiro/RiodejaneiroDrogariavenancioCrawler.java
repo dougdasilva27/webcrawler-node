@@ -1,103 +1,92 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
-public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords{
+public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords {
 
-	public RiodejaneiroDrogariavenancioCrawler(Session session) {
-		super(session);
-	}
+  public RiodejaneiroDrogariavenancioCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 20;
-	
-		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-		
-		this.log("Página "+this.currentPage);
-			
-		//monta a url com a keyword e a página
-		String url = "https://www.drogariavenancio.com.br/busca.asp?PalavraChave="+ keyword +"&nrRows=60&idPage=" + this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);			
-			
-			
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
-		
-		Elements products = this.currentDoc.select("div.produtos ul");
-		Elements results = this.currentDoc.select(".resultadoSemelhante");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1 && results.size() < 1) {
-			for(Element e: products) {
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
+  @Override
+  protected void processBeforeFetch() {
+    super.processBeforeFetch();
 
-				// InternalPid
-				String internalPid = crawlInternalPid(productUrl);
+    Logging.printLogDebug(logger, session, "Adding cookie...");
 
-				// InternalId
-				String internalId = crawlInternalId(productUrl);
+    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=1");
+    cookie.setDomain(".drogariavenancio.com.br");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+  }
 
-				saveDataProduct(internalId, internalPid, productUrl);;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 50;
+    this.log("Página " + this.currentPage);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		
-		if(!(hasNextPage())) setTotalProducts();
-	}
+    String url = "https://www.drogariavenancio.com.br/buscapagina?ft=" + this.keywordEncoded
+        + "&PS=" + this.pageSize + "&sl=d8b783e8-6563-7d5f-61f2-2ba298708951&cc=" + this.pageSize
+        + "&sm=0&PageNumber=" + this.currentPage;
 
-	@Override
-	protected boolean hasNextPage() {
-		Element nextPage = this.currentDoc.select(".last").first();
+    this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url);
+    Elements products = this.currentDoc.select(".shelf-product");
 
-		//se  elemento page obtiver algum resultado
-		if(nextPage != null) {
-			if(nextPage.hasClass("inactive")) {
-				return false;
-			} else {
-				return true;
-			}
-		}
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+      for (Element e : products) {
 
-		return false;
-	}
-	
-	private String crawlInternalId(String url){
-		String internalId = null;
+        String internalId = null;
+        String productPid = crawlProductPid(e);
+        String productUrl = crawlProductUrl(e);
 
-		return internalId;
-	}
+        saveDataProduct(internalId, productPid, productUrl);
 
-	private String crawlInternalPid(String url){
-		String internalPid = null;		
-		String[] tokens = url.split("/");
-		
-		internalPid = tokens[tokens.length-2];
-		
-		return internalPid;
-	}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + productPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
 
-	private String crawlProductUrl(Element e){
-		String urlProduct = e.attr("title");
-		Element url = e.select(".nome a").first();
-		
-		if(url != null){
-			urlProduct = url.attr("href");
-		}
-		
-		return urlProduct;
-	}
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  @Override
+  protected boolean hasNextPage() {
+    if (this.currentDoc.select(".shelf-product").size() < this.pageSize) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private String crawlProductPid(Element e) {
+    return e.attr("data-product-id");
+  }
+
+  private String crawlProductUrl(Element e) {
+    Element subE = e.selectFirst("figure.shelf-product__container .shelf-product__image a");
+    String url = null;
+
+    if (subE != null) {
+      url = CrawlerUtils.sanitizeUrl(subE, "href", "https:", "www.drogariavenancio.com.br");
+    }
+
+    return url;
+  }
 }
