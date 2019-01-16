@@ -139,16 +139,23 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
   private String crawlInternalPid(Element e) {
     String internalPid = null;
+    String href = null;
     Element div = e.selectFirst(".erDjqc");
-    String href = div.attr("href");
 
-    if (href.contains("?")) {
-      href = href.split("[?]")[0];
+    if (div != null) {
+      href = div.attr("href");
     }
 
-    if (!href.isEmpty()) {
-      String[] tokens = href.split("/");
-      internalPid = tokens[tokens.length - 1];
+    if (href != null) {
+
+      if (href.contains("?")) {
+        href = href.split("[?]")[0];
+      }
+
+      if (!href.isEmpty()) {
+        String[] tokens = href.split("/");
+        internalPid = tokens[tokens.length - 1];
+      }
     }
 
     return internalPid;
