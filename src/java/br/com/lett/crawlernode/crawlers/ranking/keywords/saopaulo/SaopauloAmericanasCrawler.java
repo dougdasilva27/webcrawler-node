@@ -21,14 +21,16 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.americanas.com.br/busca/" + this.keywordEncoded + "?limite=24&offset=" + this.arrayProducts.size();
+    String url = "https://www.americanas.com.br/busca/" + this.keywordEncoded + "?limite=24&offset="
+        + this.arrayProducts.size();
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url, null);
 
-    Elements products = this.currentDoc.select(".card-product .card-product-url");
+    Elements products = this.currentDoc.select(".product-grid .product-grid-item");
 
-    if (!products.isEmpty()) {
+    if (!products.isEmpty() && products != null) {
+
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
@@ -39,7 +41,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -49,7 +52,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -58,8 +62,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
     String keyword = this.keywordEncoded.replaceAll(" ", "+");
 
-    String urlAPi = "https://mystique-v1-americanas.b2w.io/mystique/search?content=" + keyword + "&offset=" + +this.arrayProducts.size()
-        + "&sortBy=moreRelevant&source=nanook";
+    String urlAPi = "https://mystique-v1-americanas.b2w.io/mystique/search?content=" + keyword
+        + "&offset=" + +this.arrayProducts.size() + "&sortBy=moreRelevant&source=nanook";
 
     JSONObject api = fetchJSONObject(urlAPi);
     JSONArray products = new JSONArray();
@@ -81,7 +85,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -91,7 +96,8 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -133,15 +139,23 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
   private String crawlInternalPid(Element e) {
     String internalPid = null;
-    String href = e.attr("href");
+    String href = null;
+    Element div = e.selectFirst(".erDjqc");
 
-    if (href.contains("?")) {
-      href = href.split("[?]")[0];
+    if (div != null) {
+      href = div.attr("href");
     }
 
-    if (!href.isEmpty()) {
-      String[] tokens = href.split("/");
-      internalPid = tokens[tokens.length - 1];
+    if (href != null) {
+
+      if (href.contains("?")) {
+        href = href.split("[?]")[0];
+      }
+
+      if (!href.isEmpty()) {
+        String[] tokens = href.split("/");
+        internalPid = tokens[tokens.length - 1];
+      }
     }
 
     return internalPid;
