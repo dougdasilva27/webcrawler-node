@@ -1,10 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
@@ -52,6 +58,41 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
   public CuritibaMuffatoCrawler(Session session) {
     super(session);
+  }
+
+  @Override
+  public String handleURLBeforeFetch(String curURL) {
+
+    if (curURL.split("\\?")[0].endsWith("/p")) {
+
+      try {
+        String url = curURL;
+        List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF8");
+        List<NameValuePair> paramsNew = new ArrayList<>();
+
+        for (NameValuePair param : paramsOriginal) {
+          if (!param.getName().equals("sc")) {
+            paramsNew.add(param);
+          }
+        }
+
+        paramsNew.add(new BasicNameValuePair("sc", "13"));
+        URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
+
+        builder.clearParameters();
+        builder.setParameters(paramsNew);
+
+        curURL = builder.build().toString();
+
+        return curURL;
+
+      } catch (URISyntaxException e) {
+        return curURL;
+      }
+    }
+
+    return curURL;
+
   }
 
   @Override
@@ -140,7 +181,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
       if (apiString.isEmpty()) {
         apiString = DataFetcher
-            .fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=10", null, null).trim();
+            .fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
       }
 
       apiResponse = new JSONArray(apiString);
