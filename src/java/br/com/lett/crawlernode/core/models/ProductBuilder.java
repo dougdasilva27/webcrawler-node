@@ -4,7 +4,7 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class ProductBuilder {
-	
+
 	private String 		url;
 	private String 		internalId;
 	private String 		internalPid;
@@ -18,13 +18,14 @@ public class ProductBuilder {
 	private String 		primaryImage;
 	private String 		secondaryImages;
 	private String 		description;
-	private Marketplace 	marketplace;
+	private Marketplace marketplace;
 	private Integer 	stock;
-	
+	private String		ean;
+
 	public static ProductBuilder create() {
 		return new ProductBuilder();
 	}
-	
+
 	public ProductBuilder setUrl(String url) {
 		this.url = url;
 		return this;
@@ -34,66 +35,66 @@ public class ProductBuilder {
 		this.internalId = internalId;
 		return this;
 	}
-	
+
 	public ProductBuilder setInternalPid(String internalPid) {
 		this.internalPid = internalPid;
 		return this;
 	}
-	
+
 	public ProductBuilder setName(String name) {
 		this.name = name;
 		return this;
 	}
-	
+
 	public ProductBuilder setPrice(Float price) {
 		this.price = price;
 		return this;
 	}
-	
+
 	public ProductBuilder setAvailable(boolean available) {
 		this.available = available;
 		return this;
 	}
-	
+
 	public ProductBuilder setCategory1(String category1) {
 		this.category1 = category1;
 		return this;
 	}
-	
+
 	public ProductBuilder setCategory2(String category2) {
 		this.category2 = category2;
 		return this;
 	}
-	
+
 	public ProductBuilder setCategory3(String category3) {
 		this.category3 = category3;
 		return this;
 	}
-	
+
 	public ProductBuilder setPrimaryImage(String primaryImage) {
 		this.primaryImage = primaryImage;
 		return this;
 	}
-	
+
 	public String getSecondaryImages() {
 		return secondaryImages;
 	}
-	
+
 	public ProductBuilder setSecondaryImages(String secondaryImages) {
 		this.secondaryImages = secondaryImages;
 		return this;
 	}
-	
+
 	public ProductBuilder setDescription(String description) {
 		this.description = description;
 		return this;
 	}
-	
+
 	public ProductBuilder setMarketplace(Marketplace marketplace) {
 		this.marketplace = marketplace;
 		return this;
 	}
-	
+
 	public ProductBuilder setStock(Integer stock) {
 		this.stock = stock;
 		return this;
@@ -104,9 +105,14 @@ public class ProductBuilder {
 		return this;
 	}
 	
+	public ProductBuilder setEan(String ean) {
+		this.ean = ean;
+		return this;
+	}
+
 	public Product build() {
 		Product product = new Product();
-		
+
 		product.setUrl(this.url);
 		product.setInternalId(this.internalId);
 		product.setInternalPid(this.internalPid);
@@ -122,8 +128,9 @@ public class ProductBuilder {
 		product.setDescription(this.description);
 		product.setStock(this.stock);
 		product.setMarketplace(this.marketplace);
-		
+		product.setEan(this.ean);
+
 		return product;
 	}
-	
+
 }

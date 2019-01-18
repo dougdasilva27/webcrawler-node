@@ -64,6 +64,7 @@ public class Processor {
     String description = product.getDescription();
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
+    String ean = product.getEan();
 
     // checking fields
     boolean checkResult = checkFields(price, available, internalId, url, name, session);
@@ -114,6 +115,7 @@ public class Processor {
         newProcessedProduct.setOriginalName(name);
         newProcessedProduct.setOriginalDescription(description);
         newProcessedProduct.setInternalPid(internalPid);
+        newProcessedProduct.setEan(ean);
 
       }
 
@@ -122,7 +124,7 @@ public class Processor {
         newProcessedProduct = new Processed(null, internalId, internalPid, name, null, null, null, null, null, null, null, foto, secondaryPics, cat1,
             cat2, cat3, url, session.getMarket().getNumber(), nowISO, nowISO, null, nowISO, nowISO, null, null, description, price, prices, null,
             null, null, false, false, stock, new Behavior(), // behavior - will be update in the updateBehavior method just below
-            marketplace);
+            marketplace, ean);
       }
 
       // run the processor for the new model
@@ -645,7 +647,7 @@ public class Processor {
               rs.getString("cat1"), rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"),
               rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
               rs.getString("original_description"), actualPrice, actualPrices, digitalContent, rs.getLong("lett_id"), similars,
-              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace);
+              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace, rs.getString("ean"));
 
           return actualProcessedProduct;
 
