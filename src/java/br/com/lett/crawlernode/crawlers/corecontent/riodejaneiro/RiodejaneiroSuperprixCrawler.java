@@ -104,7 +104,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+            .setDescription(description).setStock(stock).setMarketplace(new Marketplace())
+            .setEan(ean).build();
 
         products.add(product);
       }
