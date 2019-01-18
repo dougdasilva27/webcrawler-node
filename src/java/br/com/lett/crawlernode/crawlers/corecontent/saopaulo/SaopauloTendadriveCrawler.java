@@ -74,6 +74,9 @@ public class SaopauloTendadriveCrawler extends Crawler {
       JSONArray arraySkus =
           skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
+      // ean data in html
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
@@ -90,7 +93,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
             : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
-        String ean = crawlEan(doc, 0);
+        String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -161,21 +164,5 @@ public class SaopauloTendadriveCrawler extends Crawler {
     }
 
     return info;
-  }
-
-  private static String crawlEan(Document doc, int index) {
-    String ean = null;
-    JSONObject json =
-        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
-
-    if (json.has("productEans")) {
-      JSONArray arr = json.getJSONArray("productEans");
-
-      if (arr.length() > index) {
-        ean = arr.getString(index);
-      }
-    }
-
-    return ean;
   }
 }

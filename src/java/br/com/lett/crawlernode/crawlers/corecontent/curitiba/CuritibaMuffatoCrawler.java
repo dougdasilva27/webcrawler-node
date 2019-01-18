@@ -143,7 +143,10 @@ public class CuritibaMuffatoCrawler extends Crawler {
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
       Prices prices = crawlPrices(doc, price);
-      String ean = crawlEan(doc, 0);
+
+      // ean data in html
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+      String ean = 0 < arrayEan.length() ? arrayEan.getString(0) : null;
 
       // create the product
       Product product = new Product();
@@ -417,21 +420,5 @@ public class CuritibaMuffatoCrawler extends Crawler {
     }
 
     return skuJson;
-  }
-
-  private static String crawlEan(Document doc, int index) {
-    String ean = null;
-    JSONObject json =
-        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
-
-    if (json.has("productEans")) {
-      JSONArray arr = json.getJSONArray("productEans");
-
-      if (arr.length() > index) {
-        ean = arr.getString(index);
-      }
-    }
-
-    return ean;
   }
 }

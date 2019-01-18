@@ -11,7 +11,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -170,7 +169,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
 
       // Ean
-      String ean = crawlEan(doc, 0);
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+      String ean = 0 < arrayEan.length() ? arrayEan.getString(0) : null;
 
       Product product = new Product();
 
@@ -236,21 +236,5 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     }
 
     return prices;
-  }
-
-  private static String crawlEan(Document doc, int index) {
-    String ean = null;
-    JSONObject json =
-        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
-
-    if (json.has("productEans")) {
-      JSONArray arr = json.getJSONArray("productEans");
-
-      if (arr.length() > index) {
-        ean = arr.getString(index);
-      }
-    }
-
-    return ean;
   }
 }
