@@ -39,7 +39,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalId = crawlInternalId(doc);
@@ -49,30 +50,34 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       // Disponibilidade
       boolean available = true;
-      Element elementNotAvailable = doc.select(".product-shop .alert-stock.link-stock-alert a").first();
+      Element elementNotAvailable =
+          doc.select(".product-shop .alert-stock.link-stock-alert a").first();
       if (elementNotAvailable != null) {
         if (elementNotAvailable.attr("title").equals("Avise-me")) {
           available = false;
         }
       }
-
       // Nome
       String name = crawlName(doc);
 
       // Preço
       Float price = null;
-      Element elementSpecialPrice = doc.select(".product-shop .price-info .price-box .special-price").first();
+      Element elementSpecialPrice =
+          doc.select(".product-shop .price-info .price-box .special-price").first();
       Element elementPrice = doc.select(".product-shop .price-info .price-box .price").first();
       if (elementSpecialPrice != null) { // está em promoção
-        price = Float.parseFloat(elementSpecialPrice.select(".price").text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementSpecialPrice.select(".price").text()
+            .replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       } else if (elementPrice != null) { // preço normal sem promoção
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+            .replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       CategoryCollection categories = crawlCategories(doc);
 
       // Imagem primária
-      Elements elementImages = doc.select(".product-img-box .product-image.product-image-zoom .product-image-gallery img");
+      Elements elementImages = doc
+          .select(".product-img-box .product-image.product-image-zoom .product-image-gallery img");
       String primaryImage = null;
       Element elementPrimaryImage = elementImages.first();
       if (elementPrimaryImage != null) {
@@ -112,10 +117,14 @@ public class SaopauloDrogasilCrawler extends Crawler {
       // Prices
       Prices prices = crawlPrices(doc, price, internalPid);
 
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      String ean = scrapEan(doc);
+
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+          .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -133,7 +142,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    return (!document.select(".product-shop").isEmpty() || !document.select(".shipping-quote").isEmpty());
+    return (!document.select(".product-shop").isEmpty()
+        || !document.select(".shipping-quote").isEmpty());
   }
 
   private CategoryCollection crawlCategories(Document document) {
@@ -156,7 +166,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
     String[] tokens = primaryImage.split("/");
     String[] tokens2 = image.split("/");
 
-    return tokens[tokens.length - 1].split("\\?")[0].equals(tokens2[tokens2.length - 1].split("\\?")[0]);
+    return tokens[tokens.length - 1].split("\\?")[0]
+        .equals(tokens2[tokens2.length - 1].split("\\?")[0]);
   }
 
   private String crawlInternalId(Document doc) {
@@ -199,12 +210,15 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
   private String crawlName(Document document) {
     String name = null;
-    Element elementName = document.select(".product-view .limit.columns .col-1 .product-info .product-name h1").first();
+    Element elementName = document
+        .select(".product-view .limit.columns .col-1 .product-info .product-name h1").first();
     if (elementName != null) {
       name = elementName.text().trim();
 
       // brand
-      Element elementBrand = document.select(".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca.show-hover").first();
+      Element elementBrand = document.select(
+          ".product-view .limit.columns .col-1 .product-info .product-attributes ul .marca.show-hover")
+          .first();
       if (elementBrand != null) {
         name = name + " " + elementBrand.text().trim();
       }
@@ -270,4 +284,19 @@ public class SaopauloDrogasilCrawler extends Crawler {
     return prices;
   }
 
+  private String scrapEan(Element e) {
+    String ean = null;
+    Elements trElements = e.select("#details .data-table tr");
+
+    if (trElements != null && !trElements.isEmpty()) {
+      for (Element tr : trElements) {
+        if (tr.text().contains("EAN")) {
+          Element td = tr.selectFirst("td");
+          ean = td != null ? td.text().trim() : null;
+        }
+      }
+    }
+
+    return ean;
+  }
 }

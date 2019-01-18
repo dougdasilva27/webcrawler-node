@@ -93,7 +93,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      System.err.println(scrapEan(doc));
       // Descrição
       String description = "";
       Element shortDescription = doc.select(".product-short-description").first();
@@ -117,6 +116,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       Prices prices = crawlPrices(doc, price);
 
       Product product = new Product();
+
+      String ean = scrapEan(doc);
 
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalID);
