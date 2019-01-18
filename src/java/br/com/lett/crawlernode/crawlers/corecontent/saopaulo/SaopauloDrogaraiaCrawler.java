@@ -115,9 +115,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       // Prices
       Prices prices = crawlPrices(doc, price);
 
+      String ean = scrapEan(doc);
+
       Product product = new Product();
 
-      String ean = scrapEan(doc);
 
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalID);
@@ -134,6 +135,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 

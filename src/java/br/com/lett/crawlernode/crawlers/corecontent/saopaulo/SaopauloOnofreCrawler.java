@@ -45,7 +45,8 @@ public class SaopauloOnofreCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
+    return !FILTERS.matcher(href).matches()
+        && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
   }
 
   @Override
@@ -54,7 +55,8 @@ public class SaopauloOnofreCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
@@ -68,12 +70,16 @@ public class SaopauloOnofreCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
+      String ean = crawlEan(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+          .build();
 
       products.add(product);
 
@@ -140,7 +146,8 @@ public class SaopauloOnofreCrawler extends Crawler {
     Element elementPrice = document.select(".price-box__value").first();
 
     if (elementPrice != null) {
-      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
+          .replaceAll(",", "."));
     }
 
     return price;
@@ -298,6 +305,15 @@ public class SaopauloOnofreCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+
+  private String crawlEan(Element e) {
+    String ean = null;
+    Element td = e.selectFirst("#product-characteristics_sku-barcode");
+    ean = td != null ? td.text().trim() : null;
+
+    return ean;
   }
 
 }
