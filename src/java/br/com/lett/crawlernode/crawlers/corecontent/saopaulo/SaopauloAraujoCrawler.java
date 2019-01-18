@@ -74,6 +74,7 @@ public class SaopauloAraujoCrawler extends Crawler {
         String secondaryImages = crawlSecondaryImages(jsonProduct);
         Prices prices = crawlPrices(internalId, price, jsonSku);
         Integer stock = crawlStock(jsonProduct);
+        String ean = crawlEan(doc, i);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -438,4 +439,19 @@ public class SaopauloAraujoCrawler extends Crawler {
     return description;
   }
 
+  private String crawlEan(Document doc, int index) {
+    String ean = null;
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+
+    if (json.has("productEans")) {
+      JSONArray arr = json.getJSONArray("productEans");
+
+      if (arr.length() > index) {
+        ean = arr.getString(index);
+      }
+    }
+
+    return ean;
+  }
 }
