@@ -134,6 +134,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 
