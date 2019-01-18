@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -142,6 +143,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
       Prices prices = crawlPrices(doc, price);
+      String ean = crawlEan(doc, 0);
 
       // create the product
       Product product = new Product();
@@ -417,4 +419,19 @@ public class CuritibaMuffatoCrawler extends Crawler {
     return skuJson;
   }
 
+  private static String crawlEan(Document doc, int index) {
+    String ean = null;
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+
+    if (json.has("productEans")) {
+      JSONArray arr = json.getJSONArray("productEans");
+
+      if (arr.length() > index) {
+        ean = arr.getString(index);
+      }
+    }
+
+    return ean;
+  }
 }
