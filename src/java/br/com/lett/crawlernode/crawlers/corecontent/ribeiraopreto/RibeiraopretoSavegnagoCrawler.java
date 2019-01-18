@@ -11,6 +11,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,6 +19,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -80,7 +82,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalId = null;
@@ -104,7 +107,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select(".skuBestPrice").first();
       if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+            .replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Disponibilidade
@@ -164,6 +168,9 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
       // Prices
       Prices prices = crawlPrices(price, doc);
+
+      // Ean
+      String ean = crawlEan(doc, 0);
 
       Product product = new Product();
 
@@ -229,5 +236,21 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private static String crawlEan(Document doc, int index) {
+    String ean = null;
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+
+    if (json.has("productEans")) {
+      JSONArray arr = json.getJSONArray("productEans");
+
+      if (arr.length() > index) {
+        ean = arr.getString(index);
+      }
+    }
+
+    return ean;
   }
 }
