@@ -45,16 +45,20 @@ public class BrasilLojasredeCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription"));
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription"));
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -67,15 +71,20 @@ public class BrasilLojasredeCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
+            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
+            : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = crawlEan(doc, i);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -90,5 +99,21 @@ public class BrasilLojasredeCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
+  }
+
+  private String crawlEan(Document doc, int index) {
+    String ean = null;
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+
+    if (json.has("productEans")) {
+      JSONArray arr = json.getJSONArray("productEans");
+
+      if (arr.length() > index) {
+        ean = arr.getString(index);
+      }
+    }
+
+    return ean;
   }
 }
