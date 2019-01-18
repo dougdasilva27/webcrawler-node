@@ -32,7 +32,8 @@ public class PaguemenosCrawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + session.getOriginalURL());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -41,7 +42,8 @@ public class PaguemenosCrawler {
       String description = crawlDescription(doc);
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -49,7 +51,8 @@ public class PaguemenosCrawler {
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, session, logger);
+        Marketplace marketplace =
+            assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, session, logger);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
 
@@ -58,12 +61,15 @@ public class PaguemenosCrawler {
         String secondaryImages = crawlSecondaryImages(jsonProduct);
         Prices prices = crawlPrices(internalId, price, jsonSku, session);
         Integer stock = null;
+        String ean = crawlEan(doc, i);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -227,15 +233,17 @@ public class PaguemenosCrawler {
 
       if (json.has("bestPriceFormated") && json.has("available") && json.getBoolean("available")) {
         Float price = MathUtils.parseFloatWithComma(json.getString("bestPriceFormated"));
-        marketplace.put(nameSeller.contains(MAIN_SELLER_NAME_LOWER) ? MAIN_SELLER_NAME_LOWER : nameSeller, price);
+        marketplace.put(
+            nameSeller.contains(MAIN_SELLER_NAME_LOWER) ? MAIN_SELLER_NAME_LOWER : nameSeller,
+            price);
       }
     }
 
     return marketplace;
   }
 
-  private static Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Session session,
-      Logger logger) {
+  private static Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
+      String internalId, JSONObject jsonSku, Session session, Logger logger) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -293,14 +301,15 @@ public class PaguemenosCrawler {
   }
 
   /**
-   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
-   * à vista R$ 1.790,00
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
+   * Visa à vista R$ 1.790,00
    * 
    * @param internalId
    * @param price
    * @return
    */
-  private static Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Session session) {
+  private static Prices crawlPrices(String internalId, Float price, JSONObject jsonSku,
+      Session session) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -381,7 +390,8 @@ public class PaguemenosCrawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
+              .replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -394,12 +404,29 @@ public class PaguemenosCrawler {
   private static JSONObject crawlApi(String internalId, Session session) {
     String url = "https://www.paguemenos.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
+    JSONArray jsonArray =
+        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);
     }
 
     return new JSONObject();
+  }
+
+  private static String crawlEan(Document doc, int index) {
+    String ean = null;
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+
+    if (json.has("productEans")) {
+      JSONArray arr = json.getJSONArray("productEans");
+
+      if (arr.length() > index) {
+        ean = arr.getString(index);
+      }
+    }
+
+    return ean;
   }
 }
