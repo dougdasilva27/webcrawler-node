@@ -83,7 +83,8 @@ public class BrasilBifarmaCrawler extends Crawler {
     }
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(productInfo);
       String internalPid = crawlInternalPid(productInfo);
@@ -97,12 +98,16 @@ public class BrasilBifarmaCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      String ean = crawlEan(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+          .build();
 
       products.add(product);
 
@@ -255,7 +260,8 @@ public class BrasilBifarmaCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.selectFirst(".accordion .accordion-section:not(.dp-banner)");
+    Element descriptionElement =
+        document.selectFirst(".accordion .accordion-section:not(.dp-banner)");
 
     if (descriptionElement != null) {
       description.append(descriptionElement.html());
@@ -310,15 +316,15 @@ public class BrasilBifarmaCrawler extends Crawler {
   }
 
   /**
-   * Return a json like this: "{\"product\": {\n" + "\t \"id\": \"7748\",\n" + "\t \"name\": \"Mucilon
-   * arroz/aveia 400gr neste\",\n" + "\t \n" + "\t \"url\":
+   * Return a json like this: "{\"product\": {\n" + "\t \"id\": \"7748\",\n" + "\t \"name\":
+   * \"Mucilon arroz/aveia 400gr neste\",\n" + "\t \n" + "\t \"url\":
    * \"/produto/mucilon-arroz-aveia-400gr-neste-7748\",\n" + "\t \"images\": {\n" + "\t \"235x235\":
-   * \"/fotos/PRODUTO_SEM_IMAGEM_mini.png\"\n" + "\t },\n" + "\t \"status\": \"available\",\n" + "\t\t
-   * \n" + "\t \"price\": 12.50,\n" + "\t \"categories\": [{\"name\":\"Mamãe e
+   * \"/fotos/PRODUTO_SEM_IMAGEM_mini.png\"\n" + "\t },\n" + "\t \"status\": \"available\",\n" +
+   * "\t\t \n" + "\t \"price\": 12.50,\n" + "\t \"categories\": [{\"name\":\"Mamãe e
    * Bebê\",\"id\":\"8\"},{\"name\":\"Alimentos\",\"id\":\"89\",\"parents\":[\"8\"]},],\n" + "\t
-   * \"installment\": {\n" + "\t \"count\": 0,\n" + "\t \"price\": 0.00\n" + "\t },\n" + "\t \n" + "\t
-   * \n" + "\t \n" + "\t \t\"skus\": [ {\n" + "\t \t\t\t\"sku\": \"280263\"\n" + "\t \t}],\n" + "\t
-   * \n" + "\t \"details\": {},\n" + "\t \t\t\"published\": \"2017-01-24\"\n" + "\t }}";
+   * \"installment\": {\n" + "\t \"count\": 0,\n" + "\t \"price\": 0.00\n" + "\t },\n" + "\t \n" +
+   * "\t \n" + "\t \n" + "\t \t\"skus\": [ {\n" + "\t \t\t\t\"sku\": \"280263\"\n" + "\t \t}],\n" +
+   * "\t \n" + "\t \"details\": {},\n" + "\t \t\t\"published\": \"2017-01-24\"\n" + "\t }}";
    *
    * @param doc
    * @return
@@ -352,5 +358,16 @@ public class BrasilBifarmaCrawler extends Crawler {
     }
 
     return info;
+  }
+
+  private String crawlEan(Document doc) {
+    Element e = doc.selectFirst("[itemprop=itemOffered] [itemprop=gtin13]");
+    String ean = null;
+
+    if (e != null) {
+      ean = e.attr("content").trim();
+    }
+
+    return ean;
   }
 }
