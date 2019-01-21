@@ -89,7 +89,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }

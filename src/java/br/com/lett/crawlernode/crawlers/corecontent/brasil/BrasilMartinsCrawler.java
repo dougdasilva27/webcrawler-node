@@ -140,6 +140,7 @@ public class BrasilMartinsCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
+      product.setEan(ean);
 
       products.add(product);
 
