@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,7 +17,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
 import models.prices.Prices;
 
 public class BrasilNutrineCrawler extends Crawler {
@@ -43,37 +41,64 @@ public class BrasilNutrineCrawler extends Crawler {
       Logging.printLogDebug(logger, session,
           "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
-          ".halfRight > input#produtoId", "value");
-      String internalPid = crawlInternalPid(doc, "#product .halfRight .prodName .code");
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".halfRight > .prodName > h1", true);
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]",
+          "produto = ", ",\n    urano = ", false, false);
+
+      String name = json.has("nome") ? json.getString("nome") : null;
+      String description = getDescription(json);
       CategoryCollection categories =
           CrawlerUtils.crawlCategories(doc, ".detalheHeader a.nivel1:not(:first-child)");
       String primaryImage = scrapPrimaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery");
       String secondaryImages =
           scrapSecondaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery", primaryImage);
-      String description =
-          CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("li.item_aba", ".conteudo"));
-      Integer stock = null;
-      Float price = null;
-      Prices prices = null;
-      boolean available = checkAvaliability(doc, "#product .preco .btnOrcamento");
 
-      if (available) {
-        price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product .halfRight .preco .por b", true);
-        prices = crawlPrices(price, doc);
+      if (json.has("variacoes")) {
+        JSONArray variations = json.getJSONArray("variacoes");
+
+        if (variations.length() > 0) {
+          for (int i = 0; i < variations.length(); i++) {
+            JSONObject variation = variations.getJSONObject(i);
+
+            String internalId =
+                variation.has("idVariacao") ? variation.get("idVariacao").toString() : null;
+            String internalPid = variation.has("sku") ? variation.getString("sku") : null;
+            Integer stock =
+                variation.has("quantidadeEstoque") ? variation.getInt("quantidadeEstoque") : null;
+            boolean available =
+                variation.has("disponivel") ? variation.getBoolean("disponivel") : false;
+            Float price = variation.has("precoAtual") ? variation.getFloat("precoAtual") : 0.0f;
+            Prices prices = scrapPrices(price, variation);
+
+            // Creating the product
+            Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+                .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+                .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+                .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+                .setDescription(description).setStock(stock).build();
+
+            products.add(product);
+          }
+        } else {
+
+          String internalId = json.has("id") ? json.get("id").toString() : null;
+          String internalPid = json.has("sku") ? json.getString("sku") : null;
+          Integer stock = json.has("quantidadeEstoque") ? json.getInt("quantidadeEstoque") : null;
+          Float price = json.has("precoAtual") ? json.getFloat("precoAtual") : 0.0f;
+          Prices prices = scrapPrices(price, json);
+          boolean available = json.has("disponivel") ? json.getBoolean("disponivel") : false;
+
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+              .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+              .setDescription(description).setStock(stock).build();
+
+          products.add(product);
+        }
       }
-
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).build();
-
-      products.add(product);
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
@@ -85,15 +110,23 @@ public class BrasilNutrineCrawler extends Crawler {
     return doc.selectFirst(".produtoDetalhes") != null;
   }
 
-  private String crawlInternalPid(Document doc, String selector) {
-    String internalPid = null;
-    String aux = CrawlerUtils.scrapStringSimpleInfo(doc, selector, true);
+  private String getDescription(JSONObject json) {
+    StringBuilder sb = new StringBuilder();
+    JSONArray arr = json.has("descricoes") ? json.getJSONArray("descricoes") : new JSONArray();
 
-    if (aux.startsWith("Ref: ")) {
-      internalPid = aux.substring(5);
+    for (int i = 0; i < arr.length(); i++) {
+      JSONObject subObj = arr.getJSONObject(i);
+
+      if (subObj.has("titulo")) {
+        sb.append(subObj.getString("titulo"));
+      }
+
+      if (subObj.has("conteudo")) {
+        sb.append(subObj.getString("conteudo"));
+      }
     }
 
-    return internalPid;
+    return sb.toString();
   }
 
   private String scrapPrimaryImage(Document doc, String selector) {
@@ -140,28 +173,27 @@ public class BrasilNutrineCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices scrapPrices(Float price, JSONObject json) {
     Prices prices = new Prices();
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".floatLeft.ten-column script[type]",
-        "porcentagemDescontoVista=", ",\nusuario", true, false);
-    String key = "valorComDesconto";
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
-      Elements elmnts = doc.select("#product .preco");
 
-      prices.setPriceFrom(price.doubleValue());
-
-      if (!json.isNull(key)) {
-        prices.setBankTicketPrice(CrawlerUtils.getFloatValueFromJSON(json, key));
+      if (json.has("precoVenda")) {
+        prices.setPriceFrom(json.getDouble("precoVenda"));
       }
 
-      for (Element e : elmnts) {
-        Pair<Integer, Float> aux =
-            CrawlerUtils.crawlSimpleInstallment(".formas", e, true, "x", "sem", true);
+      if (json.has("precoAtual")) {
+        prices.setBankTicketPrice(json.getDouble("precoAtual"));
+      }
 
-        installmentPriceMap.put(aux.getFirst(), aux.getSecond());
+      if (json.has("parcelaSemJuros")) {
+        JSONObject o = json.getJSONObject("parcelaSemJuros");
+
+        if (o.has("valor") && o.has("quantidade")) {
+          installmentPriceMap.put(o.getInt("quantidade"), o.getFloat("valor"));
+        }
       }
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -171,9 +203,5 @@ public class BrasilNutrineCrawler extends Crawler {
     }
 
     return prices;
-  }
-
-  private boolean checkAvaliability(Document doc, String selector) {
-    return doc.selectFirst(selector) == null;
   }
 }
