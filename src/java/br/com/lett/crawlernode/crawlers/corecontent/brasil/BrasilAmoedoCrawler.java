@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -89,13 +88,13 @@ public class BrasilAmoedoCrawler extends Crawler {
       Prices prices = crawlPrices(doc, price);
 
       // Availability
-      boolean available = (price != null);
+      boolean available = !doc.select(".stock:not(.unavailable)").isEmpty();
 
       // Categories
       CategoryCollection categories = new CategoryCollection();
 
       JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-      
+
       // Primary image
       String primaryImage = crawlPrimaryImage(images);
 
@@ -109,24 +108,12 @@ public class BrasilAmoedoCrawler extends Crawler {
       Marketplace marketplace = crawlMarketplace();
 
       // Creating the product
-      
-      Product product = ProductBuilder.create()
-    		  .setUrl(session.getOriginalURL())
-    		  .setInternalId(internalId)
-    		  .setInternalPid(internalPid)
-    		  .setName(name)
-    		  .setPrice(price)
-    		  .setPrices(prices)
-    		  .setAvailable(available)
-    		  .setCategory1(categories.getCategory(1))
-    		  .setCategory2(categories.getCategory(2))
-    		  .setCategory3(categories.getCategory(3))
-    		  .setPrimaryImage(primaryImage)
-    		  .setSecondaryImages(secondaryImages)
-    		  .setDescription(description)
-    		  .setMarketplace(marketplace)
-    		  .build();
-      
+
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(1)).setCategory2(categories.getCategory(2))
+          .setCategory3(categories.getCategory(3)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setMarketplace(marketplace).build();
+
       products.add(product);
 
     } else {
@@ -164,14 +151,14 @@ public class BrasilAmoedoCrawler extends Crawler {
   }
 
   private String crawlInternalPid(Document document) {
-	    String internalId = null;
-	    Element internalIdElement = document.selectFirst(".product.attribute.sku .value");
+    String internalId = null;
+    Element internalIdElement = document.selectFirst(".product.attribute.sku .value");
 
-	    if (internalIdElement != null) {
-	      internalId = internalIdElement.ownText().trim();
-	    }
+    if (internalIdElement != null) {
+      internalId = internalIdElement.ownText().trim();
+    }
 
-	    return internalId;
+    return internalId;
   }
 
   private String crawlName(Document document) {
@@ -184,59 +171,63 @@ public class BrasilAmoedoCrawler extends Crawler {
 
     return name;
   }
-  
+
   private Float crawlPrice(Document doc) {
-	  Float price = null;
-	  
-	  Element priceElement = doc.selectFirst(".price");
-	  
-	  if(priceElement != null) {
-		  price = MathUtils.parseFloatWithComma(priceElement.ownText());
-	  }
-	  
-	  return price;
+    Float price = null;
+
+    Element priceElement = doc.selectFirst(".special-price .price");
+
+    if (priceElement == null) {
+      priceElement = doc.selectFirst(".price");
+    }
+
+    if (priceElement != null) {
+      price = MathUtils.parseFloatWithComma(priceElement.ownText());
+    }
+
+    return price;
   }
 
   private Marketplace crawlMarketplace() {
-	  return new Marketplace();
+    return new Marketplace();
   }
-  
+
   private String crawlPrimaryImage(JSONArray images) {
-	    String primaryImage = null;
+    String primaryImage = null;
 
-	    if (images.length() > 0) {
-	      primaryImage = images.getString(0);
-	    }
+    if (images.length() > 0) {
+      primaryImage = images.getString(0);
+    }
 
-	    return primaryImage;
+    return primaryImage;
   }
 
   private String crawlSecondaryImages(JSONArray images) {
-	    String secondaryImages = null;
-	    JSONArray secondaryImagesArray = new JSONArray();
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
 
-	    if (images.length() > 1) {
-	      images.remove(0);
-	      secondaryImagesArray = images;
-	    }
+    if (images.length() > 1) {
+      images.remove(0);
+      secondaryImagesArray = images;
+    }
 
-	    if (secondaryImagesArray.length() > 0) {
-	      secondaryImages = secondaryImagesArray.toString();// É pra ser tostring mesmo? Não era um array?
-	    }
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();// É pra ser tostring mesmo? Não era um array?
+    }
 
-	    return secondaryImages;
+    return secondaryImages;
   }
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-       
+
     Element overviewElement = document.selectFirst(".product.attribute.overview > .value");
     Element descriptionElement = document.selectFirst(".product.attribute.description > .value");
 
     if (overviewElement != null) {
-    	description.append(overviewElement.html());
+      description.append(overviewElement.html());
     }
-    
+
     if (descriptionElement != null)
       description.append(descriptionElement.html());
 
@@ -245,34 +236,34 @@ public class BrasilAmoedoCrawler extends Crawler {
 
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
-    
-    if(price != null) {
-    	Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    	prices.setBankTicketPrice(price);
-        
-    	installmentPriceMap.put(1,  price);
-        
-        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      prices.setBankTicketPrice(price);
+
+      installmentPriceMap.put(1, price);
+
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
     }
-    
+
     prices.setPriceFrom(crawlPriceFrom(doc));
-    
+
     return prices;
-  } 
-  
+  }
+
   private Double crawlPriceFrom(Document doc) {
-	  Double priceFrom = null;
-	  
-	  Element priceFromElement = doc.selectFirst(".old-price .price");
-	  if(priceFromElement != null) {
-		  priceFrom = MathUtils.parseDoubleWithComma(priceFromElement.text());
-	  }
-	  
-	  return priceFrom;
+    Double priceFrom = null;
+
+    Element priceFromElement = doc.selectFirst(".old-price .price");
+    if (priceFromElement != null) {
+      priceFrom = MathUtils.parseDoubleWithComma(priceFromElement.text());
+    }
+
+    return priceFrom;
   }
 
 }
