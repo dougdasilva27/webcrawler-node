@@ -41,7 +41,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalID = crawlInternalId(doc);
@@ -71,7 +72,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
         elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
       }
       if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
+            .replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Categorias
@@ -91,7 +93,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-
       // Descrição
       String description = "";
       Element shortDescription = doc.select(".product-short-description").first();
@@ -116,6 +117,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       Product product = new Product();
 
+      String ean = scrapEan(doc);
+
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalID);
       product.setInternalPid(internalPid);
@@ -131,6 +134,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 
@@ -168,7 +172,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
 
     if (json.has("ecommerce")) {
       JSONObject ecommerce = json.getJSONObject("ecommerce");
@@ -225,10 +230,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
   }
 
   private boolean isPrimaryImage(String image, String primaryImage) {
-	if(primaryImage == null) {
-		return false;
-	}
-	
+    if (primaryImage == null) {
+      return false;
+    }
+
     String x = CommonMethods.getLast(image.split("/"));
     String y = CommonMethods.getLast(primaryImage.split("/"));
 
@@ -265,5 +270,21 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private String scrapEan(Element e) {
+    String ean = null;
+    Elements trElements = e.select(".farmaBox .data-table tr");
+
+    if (trElements != null && !trElements.isEmpty()) {
+      for (Element tr : trElements) {
+        if (tr.text().contains("EAN")) {
+          Element td = tr.selectFirst("td");
+          ean = td != null ? td.text().trim() : null;
+        }
+      }
+    }
+
+    return ean;
   }
 }

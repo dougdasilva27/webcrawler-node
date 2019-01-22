@@ -1,112 +1,137 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class ColombiaExitoCrawler extends CrawlerRankingKeywords{
-	
-	public ColombiaExitoCrawler(Session session) {
-		super(session);
-	}
+public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
+  private List<Cookie> cookies = new ArrayList<>();
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 20;
-	
-		this.log("Página "+ this.currentPage);
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.exito.com/browse?No="+ this.arrayProducts.size() +"&Nrpp=80&Ntt=" + this.keywordEncoded;
-		this.log("Link onde são feitos os crawlers: "+url);	
-		
-		this.currentDoc = fetchDocumentWithWebDriver(url);		
-			
-		Elements products =  this.currentDoc.select(".search.smallProduct");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {			
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			for(Element e : products) {		
-				// InternalId
-				String internalId = crawlInternalId(e);
-				
-				// Url do produto
-				String productUrl = crawlProductUrl(e);
-				
-				// InternalPid
-				String internalPid = crawlInternalPid(productUrl);
-				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
-				
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+  public ColombiaExitoCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected boolean hasNextPage() {
-		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-			
-		return false;
-	}
-	
-	@Override
-	protected void setTotalProducts()	{
-		Element totalElement = this.currentDoc.select(".plpPaginationTop .pull-left").first();
-		
-		if(totalElement != null) { 	
-			try	{
-				String text = totalElement.ownText().toLowerCase().trim();
-				int x = text.indexOf("de")+2;
-				
-				this.totalProducts = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", ""));
-			} catch(Exception e) {
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
-	
-	private String crawlInternalId(Element e){
-		String internalId = e.attr("data-skuId");
-		
-		return internalId;
-	}
-	
-	private String crawlInternalPid(String url){
-		String internalPid = null;
-		
-		String[] tokens = url.split("/");
-		internalPid = tokens[tokens.length-2].replaceAll("[^0-9]", "").trim();
-		
-		return internalPid;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String productUrl = null;
-		Element eUrl = e.select(".productBrand a").first();
-		
-		if(eUrl != null) {
-			productUrl = "http://www.exito.com" + eUrl.attr("href");
-		}
-		
-		return productUrl;
-	}
+  @Override
+  protected void processBeforeFetch() {
+    super.processBeforeFetch();
+
+    Map<String, String> cookiesMap =
+        DataFetcher.fetchCookies(session, "https://www.exito.com/", cookies, 1);
+
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain(".exito.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+  }
+
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // number of products per page
+    this.pageSize = 80;
+
+    this.log("Página " + this.currentPage);
+
+    String keyword = this.keywordWithoutAccents.replace(" ", "%20");
+
+    // builds the url with the keyword and page number
+    String url = "https://www.exito.com/browse?Ntt=" + keyword + "&No="
+        + (this.currentPage - 1) * 80 + "&Nrpp=80";
+
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    // fetch the html
+    this.currentDoc = fetchDocumentWithWebDriver(url);
+
+    Elements products = this.currentDoc.select(".product-list div.product");
+
+    if (products.size() >= 1) {
+      if (totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+        String internalId = e.attr("data-prdid");
+        String internalPid = e.attr("data-skuid");
+        String productUrl = scrapProductUrl(e);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.selectFirst(".plp-pagination-result p strong");
+
+    if (totalElement != null) {
+      Pattern p = Pattern.compile("([0-9]+)");
+
+      // Reverses the string
+      Matcher m = p.matcher(new StringBuilder(totalElement.text().trim()).reverse());
+
+      if (m.find()) {
+        try {
+          // Get the first match on the reversed string and revert it to original
+          this.totalProducts = Integer.parseInt(new StringBuilder(m.group(1)).reverse().toString());
+
+        } catch (Exception e) {
+          this.logError(CommonMethods.getStackTraceString(e));
+        }
+      }
+
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
+
+  @Override
+  protected boolean hasNextPage() {
+    Elements pages = this.currentDoc.select(".desktop ul li:not(:first-child)");
+
+    if (pages.size() > 2) {
+      if (pages.get(pages.size() - 1).hasClass("disabled")
+          && pages.get(pages.size() - 2).hasClass("active")) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private String scrapProductUrl(Element e) {
+    Element element = e.selectFirst(".row a");
+    String productUrl = null;
+
+    if (element != null) {
+      productUrl = CrawlerUtils.sanitizeUrl(element, "href", "https:", "www.exito.com");
+    }
+
+    return productUrl;
+  }
 }

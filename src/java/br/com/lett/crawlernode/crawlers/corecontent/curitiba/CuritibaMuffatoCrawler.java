@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -61,19 +62,13 @@ public class CuritibaMuffatoCrawler extends Crawler {
   }
 
   @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
-
-  @Override
   public String handleURLBeforeFetch(String curURL) {
 
     if (curURL.split("\\?")[0].endsWith("/p")) {
 
       try {
         String url = curURL;
-        List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
+        List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF8");
         List<NameValuePair> paramsNew = new ArrayList<>();
 
         for (NameValuePair param : paramsOriginal) {
@@ -82,7 +77,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
           }
         }
 
-        paramsNew.add(new BasicNameValuePair("sc", "10"));
+        paramsNew.add(new BasicNameValuePair("sc", "13"));
         URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
 
         builder.clearParameters();
@@ -101,6 +96,11 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
   }
 
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -110,7 +110,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies);
 
       // InternalId
       String internalId = crawlInternalId(doc);
@@ -143,6 +144,10 @@ public class CuritibaMuffatoCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
       Prices prices = crawlPrices(doc, price);
 
+      // ean data in html
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+      String ean = 0 < arrayEan.length() ? arrayEan.getString(0) : null;
+
       // create the product
       Product product = new Product();
       product.setUrl(session.getOriginalURL());
@@ -160,6 +165,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 
@@ -176,10 +182,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
     String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
     JSONArray apiResponse = new JSONArray();
     try {
-      String apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
+      String apiString =
+          DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
 
       if (apiString.isEmpty()) {
-        apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=10", null, null).trim();
+        apiString = DataFetcher
+            .fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
       }
 
       apiResponse = new JSONArray(apiString);
@@ -249,7 +257,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
     Float price = null;
     Element elementPrice = document.select(".plugin-preco .preco-a-vista .skuPrice").first();
     if (elementPrice != null) {
-      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
+          .replaceAll(",", "."));
     }
 
     return price;
@@ -308,7 +317,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
   private ArrayList<String> crawlCategories(Document document) {
     ArrayList<String> categories = new ArrayList<>();
-    Elements elementCategories = document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
+    Elements elementCategories =
+        document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
 
     for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
                                                          // is the market name
@@ -403,7 +413,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
+                  .split(Pattern.quote("}]};"))[0]);
 
         }
       }
@@ -411,5 +422,4 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
     return skuJson;
   }
-
 }

@@ -1,21 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -38,46 +29,49 @@ public class BrasilMartinsCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-//  private String userAgent;
-//  private LettProxy proxy;
-//
-//  @Override
-//  public void handleCookiesBeforeFetch() {
-//    this.userAgent = DataFetcher.randUserAgent();
-//
-//    Map<String, String> headers = new HashMap<>();
-//    headers.put("Content-Type", "application/x-www-form-urlencoded");
-//
-//    Map<String, String> cookiesMapHome =
-//        POSTFetcher.fetchCookiesPOSTWithHeaders("https://b.martins.com.br/ajax/ajaxCodigoCliente.aspx?mail=victor.fernandes1@br.nestle.com", session,
-//            "idemail=victor.fernandes1%40br.nestle.com", cookies, proxy, userAgent, 1, headers);
-//
-//    for (Entry<String, String> entry : cookiesMapHome.entrySet()) {
-//      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-//      cookie.setDomain("b.martins.com.br");
-//      cookie.setPath("/");
-//      this.cookies.add(cookie);
-//    }
-//
-//    this.proxy = session.getRequestProxy(HOME_PAGE);
-//
-//    String url = "https://b.martins.com.br/ajax/ajaxLogarUsuario.aspx";
-//    Map<String, String> cookiesMap =
-//        POSTFetcher.fetchCookiesPOSTWithHeaders(url, session, "e=victor.fernandes1@br.nestle.com&p=nestle@2017&c=4041415&t=0", cookies, 1, headers);
-//
-//    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-//      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-//      cookie.setDomain("b.martins.com.br");
-//      cookie.setPath("/");
-//      this.cookies.add(cookie);
-//    }
-//
-//  }
-//
-//  @Override
-//  protected Object fetch() {
-//    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1));
-//  }
+  // private String userAgent;
+  // private LettProxy proxy;
+  //
+  // @Override
+  // public void handleCookiesBeforeFetch() {
+  // this.userAgent = DataFetcher.randUserAgent();
+  //
+  // Map<String, String> headers = new HashMap<>();
+  // headers.put("Content-Type", "application/x-www-form-urlencoded");
+  //
+  // Map<String, String> cookiesMapHome =
+  // POSTFetcher.fetchCookiesPOSTWithHeaders("https://b.martins.com.br/ajax/ajaxCodigoCliente.aspx?mail=victor.fernandes1@br.nestle.com",
+  // session,
+  // "idemail=victor.fernandes1%40br.nestle.com", cookies, proxy, userAgent, 1, headers);
+  //
+  // for (Entry<String, String> entry : cookiesMapHome.entrySet()) {
+  // BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+  // cookie.setDomain("b.martins.com.br");
+  // cookie.setPath("/");
+  // this.cookies.add(cookie);
+  // }
+  //
+  // this.proxy = session.getRequestProxy(HOME_PAGE);
+  //
+  // String url = "https://b.martins.com.br/ajax/ajaxLogarUsuario.aspx";
+  // Map<String, String> cookiesMap =
+  // POSTFetcher.fetchCookiesPOSTWithHeaders(url, session,
+  // "e=victor.fernandes1@br.nestle.com&p=nestle@2017&c=4041415&t=0", cookies, 1, headers);
+  //
+  // for (Entry<String, String> entry : cookiesMap.entrySet()) {
+  // BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+  // cookie.setDomain("b.martins.com.br");
+  // cookie.setPath("/");
+  // this.cookies.add(cookie);
+  // }
+  //
+  // }
+  //
+  // @Override
+  // protected Object fetch() {
+  // return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
+  // this.userAgent, proxy, 1));
+  // }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -85,7 +79,8 @@ public class BrasilMartinsCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       // InternalId
       String internalId = crawlInternalId(doc);
@@ -126,6 +121,9 @@ public class BrasilMartinsCrawler extends Crawler {
       // marketplace
       Marketplace marketplace = new Marketplace();
 
+      // ean
+      String ean = crawlEan(doc);
+
       Product product = new Product();
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalId);
@@ -142,6 +140,7 @@ public class BrasilMartinsCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
+      product.setEan(ean);
 
       products.add(product);
 
@@ -153,6 +152,7 @@ public class BrasilMartinsCrawler extends Crawler {
   }
 
   private boolean isProductPage(String originalURL) {
+    System.err.println(originalURL);
     return (originalURL.startsWith("https://b.martins.com.br/detalhe_produto"));
   }
 
@@ -182,7 +182,8 @@ public class BrasilMartinsCrawler extends Crawler {
       description.append(bodyPostersElement.html());
     }
 
-    Element moreInformationElementTab2 = doc.select("#ctnMaisInfo #dvFieldset #tab2 .ctnZebraListaBranca").first();
+    Element moreInformationElementTab2 =
+        doc.select("#ctnMaisInfo #dvFieldset #tab2 .ctnZebraListaBranca").first();
     if (moreInformationElementTab2 != null) {
       description.append(moreInformationElementTab2.html());
     }
@@ -195,7 +196,8 @@ public class BrasilMartinsCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     Elements secondaryImagesElements = doc.select("#slider .thumbnail > a");
-    for (int i = 1; i < secondaryImagesElements.size(); i++) { // the first is the same as the primary image
+    for (int i = 1; i < secondaryImagesElements.size(); i++) { // the first is the same as the
+                                                               // primary image
       secondaryImagesArray.put(secondaryImagesElements.get(i).attr("href").trim());
     }
 
@@ -277,4 +279,14 @@ public class BrasilMartinsCrawler extends Crawler {
     return "";
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Element e = doc.selectFirst("#ctnDesDetalheProduto #quick-codigo-barras");
+
+    if (e != null) {
+      ean = e.attr("value");
+    }
+
+    return ean;
+  }
 }

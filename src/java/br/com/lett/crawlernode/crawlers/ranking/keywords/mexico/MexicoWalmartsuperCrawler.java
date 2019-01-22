@@ -20,8 +20,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
 
     this.log("Página " + this.currentPage);
-    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=2000&offSet=" + this.arrayProducts.size()
-        + "&storeId=0000009999";
+    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded
+        + "&Nrpp=2000&offSet=" + this.arrayProducts.size() + "&storeId=0000009999";
     this.log("Link onde são feitos os crawlers: " + url);
 
     JSONObject search = fetchJSONApi(url);
@@ -44,7 +44,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
 
           saveDataProduct(internalId, null, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+          this.log("Position: " + this.position + " - InternalId: " + internalId
+              + " - InternalPid: " + null + " - Url: " + productUrl);
         }
 
         if (this.arrayProducts.size() == productsLimit) {
@@ -56,7 +57,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -88,7 +90,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
       JSONArray urls = product.getJSONArray("product.seoURL");
 
       if (urls.length() > 0) {
-        productUrl = "https://super.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
+        productUrl = "https://super.walmart.com.mx"
+            + urls.get(0).toString().replace("[", "").replace("]", "");
       }
     }
 
@@ -99,7 +102,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     JSONObject api = new JSONObject();
     JSONObject response = new JSONObject();
 
-    String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded + "&No=" + this.arrayProducts.size();
+    String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded + "&No="
+        + this.arrayProducts.size();
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Host", "super.walmart.com.mx");
@@ -128,7 +132,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
           JSONArray mainArea = content.getJSONArray("mainArea");
 
           if (mainArea.length() > 0) {
-            api = mainArea.getJSONObject(0);
+            api = mainArea.getJSONObject(1);
           }
         }
       }

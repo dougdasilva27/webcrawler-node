@@ -28,6 +28,7 @@ public class ChileJumboCrawler {
   public static final String JUMBO_LAFLORIDA_ID = "18";
   public static final String JUMBO_LAREINA_ID = "11";
   public static final String JUMBO_LOSDOMINICOS_ID = "12";
+  public static final String JUMBO_LASCONDES_ID = "12";
   public static final String JUMBO_VINA_ID = "16";
 
   public static final String RANKING_SELECTOR = "li[layout] .product-item";

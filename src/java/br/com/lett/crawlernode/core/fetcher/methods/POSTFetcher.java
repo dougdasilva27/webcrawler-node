@@ -47,7 +47,6 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloRappiCrawler;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -583,7 +582,7 @@ public class POSTFetcher {
       RequestConfig requestConfig = getRequestConfig(proxy);
 
       List<Header> reqHeaders = new ArrayList<>();
-      if (!url.startsWith(SaopauloRappiCrawler.PRODUCTS_API_URL) && !session.getMarket().getName().equals("paris")) {
+      if (!url.contains("rappi.com") && !session.getMarket().getName().equals("paris")) {
         reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
       }
 

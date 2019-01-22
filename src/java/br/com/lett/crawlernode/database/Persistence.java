@@ -98,6 +98,7 @@ public class Persistence {
     String description = product.getDescription();
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
+    String ean = product.getEan();
 
     String marketplaceString = null;
 
@@ -286,6 +287,7 @@ public class Persistence {
         insertMap.put(processedTable.PRICE, newProcessedProduct.getPrice());
         insertMap.put(processedTable.STOCK, newProcessedProduct.getStock());
         insertMap.put(processedTable.SECONDARY_PICS, newProcessedProduct.getSecondaryImages());
+        insertMap.put(processedTable.EAN, newProcessedProduct.getEan());
 
         if (prices != null) {
           insertMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));
@@ -368,6 +370,7 @@ public class Persistence {
         updateMap.put(processedTable.PRICE, newProcessedProduct.getPrice());
         updateMap.put(processedTable.STOCK, newProcessedProduct.getStock());
         updateMap.put(processedTable.SECONDARY_PICS, newProcessedProduct.getSecondaryImages());
+        updateMap.put(processedTable.EAN, newProcessedProduct.getEan());
 
         if (prices != null) {
           updateMap.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(prices.toJSON()));

@@ -7,14 +7,16 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CornershopCrawler;
 
-public class MexicoCornershoplidercolinaCrawler extends Crawler {
+public class MexicoCornershophebhumbertoloboCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://web.cornershopapp.com";
-  public static final String STORE_ID = "150";
+  public static final String STORE_ID = "199";
 
-  private CornershopCrawler cornerCrawler = new CornershopCrawler(session, STORE_ID, logger, cookies);
+  private CornershopCrawler cornerCrawler =
+      new CornershopCrawler(session, STORE_ID, logger, cookies);
 
-  public MexicoCornershoplidercolinaCrawler(Session session) {
+
+  public MexicoCornershophebhumbertoloboCrawler(Session session) {
     super(session);
   }
 

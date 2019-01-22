@@ -8,12 +8,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -23,7 +25,8 @@ public class BrasilBrastempCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://loja.brastemp.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "brastemp";
-
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "whirlpool";
+  private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
 
   public BrasilBrastempCrawler(Session session) {
     super(session);
@@ -43,6 +46,7 @@ public class BrasilBrastempCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      vtexUtil.setCardDiscount(getCardDiscount(doc));
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -60,12 +64,12 @@ public class BrasilBrastempCrawler extends Crawler {
         String description = crawlDescription(doc, apiJSON, vtexUtil, internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, SELLERS, Arrays.asList(Card.VISA), session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, SELLERS);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
         // Creating the product
@@ -84,12 +88,23 @@ public class BrasilBrastempCrawler extends Crawler {
     return products;
   }
 
-  /*******************************
-   * Product page identification *
-   *******************************/
-
   private boolean isProductPage(Document document) {
     return document.select(".productName").first() != null;
+  }
+
+  private Integer getCardDiscount(Document doc) {
+    Integer discount = 0;
+
+    Element d = doc.selectFirst(".prod-image p[class^=\"flag btp--desconto-cartao---percentual-\"]");
+    if (d != null) {
+      String text = CommonMethods.getLast(d.attr("class").split("-")).replaceAll("[^0-9]", "");
+
+      if (!text.isEmpty()) {
+        discount = Integer.parseInt(text);
+      }
+    }
+
+    return discount;
   }
 
   /**

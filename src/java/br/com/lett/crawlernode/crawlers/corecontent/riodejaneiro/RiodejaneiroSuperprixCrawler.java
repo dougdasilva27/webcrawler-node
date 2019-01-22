@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -48,7 +49,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       // Pid
       String internalPid = crawlInternalPid(doc);
@@ -67,6 +69,10 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 
       // sku data in json
       JSONArray arraySkus = crawlSkuJsonArray(doc);
+
+      // ean data in html
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -89,11 +95,17 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
         // Stock
         Integer stock = crawlStock(internalId, available);
 
+        // Ean
+        String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(new Marketplace())
+            .setEan(ean).build();
 
         products.add(product);
       }
@@ -165,7 +177,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     Float price = null;
 
     if (json.has("bestPriceFormated") && available) {
-      price = Float.parseFloat(json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "")
+          .replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -200,7 +213,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
 
     Elements imageThumbs = doc.select("#botaoZoom");
 
-    for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image is the primary image
+    for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image
+                                                   // is the primary image
       String url = imageThumbs.get(i).attr("zoom");
 
       if (url == null || url.isEmpty()) {
@@ -223,7 +237,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(".bread-crumb > ul li a");
 
-    for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
+    for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
+                                                         // is the market name
       categories.add(elementCategories.get(i).text().trim());
     }
 
@@ -284,7 +299,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     if (available) {
       String url = HOME_PAGE + "produto/sku/" + internalId;
 
-      JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      JSONArray jsonArray =
+          DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       if (jsonArray.length() > 0) {
         JSONObject skuInfo = jsonArray.getJSONObject(0);
@@ -316,7 +332,8 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
       for (DataNode node : tag.dataNodes()) {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
+                  .split(Pattern.quote("}]};"))[0]);
         }
       }
     }

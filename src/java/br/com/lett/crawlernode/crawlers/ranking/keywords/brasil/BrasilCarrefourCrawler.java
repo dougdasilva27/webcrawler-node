@@ -44,14 +44,9 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
 
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
-
-        // InternalId
-        String internalId = crawlInternalId(e);
-
-        // Url do produto
         String productUrl = crawlProductUrl(e);
+        String internalPid = crawlInternalPid(productUrl);
+        String internalId = crawlInternalId(e);
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -111,16 +106,15 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     return internalId;
   }
 
-  private String crawlInternalPid(Element e) {
+  private String crawlInternalPid(String url) {
     String internalPid = null;
-    String url = e.attr("href");
 
     if (url.contains("?")) {
       url = url.split("?")[0];
     }
 
     if (url.contains("/p/")) {
-      String[] tokens = url.split("p/");
+      String[] tokens = url.split("/p/");
 
       if (tokens.length > 1 && tokens[1].contains("/")) {
         internalPid = tokens[1].split("/")[0];
@@ -138,18 +132,14 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
 
   private String fetchPage(String url) {
-    String response = "";
-
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
+    String response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
 
-    String resp = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
-    if (!resp.isEmpty()) {
-      response = resp;
-    } else {
-      response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    if (response == null || response.isEmpty()) {
+      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
     }
 
     return response;

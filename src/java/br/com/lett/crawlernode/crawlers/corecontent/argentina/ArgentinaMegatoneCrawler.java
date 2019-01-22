@@ -53,16 +53,16 @@ public class ArgentinaMegatoneCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#MainContent_lblCodProducto", true);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mT15 h1", false);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#divPagosTable .mT10:not(.mB10) > span:not(.tdTachado):not(.cajaAhorroAzul)", true);
-      
-      if(price == null) {
-    	  price = CrawlerUtils.scrapSimplePriceFloat(doc, "#divPagosTable .AjusteF50", true);
+
+      if (price == null) {
+        price = CrawlerUtils.scrapSimplePriceFloat(doc, "#divPagosTable .AjusteF50", true);
       }
-      
+
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select(".divBtnComprar > a").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".divTitulos a.nB");
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(doc, "#fotoprincipal img", Arrays.asList("data-zoom-image", "src"), "https:", "www.megatone.net");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#fotoprincipal img#imgNormal", Arrays.asList("data-zoom-image", "src"),
+          "https:", "www.megatone.net");
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#gal1 a", Arrays.asList("data-zoom-image", "data-image"), "https:",
           "www.megatone.net", primaryImage);
       String description = crawlDescription(doc, internalId);
@@ -116,23 +116,23 @@ public class ArgentinaMegatoneCrawler extends Crawler {
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
-    if(price != null) {
-    	Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    	installmentPriceMap.put(1, price);
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
 
-    	prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "#divPagosTable .mT10:not(.mB10) > span.tdTachado", true));
+      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "#divPagosTable .mT10:not(.mB10) > span.tdTachado", true));
 
-    	Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment("#divPagosTable .cE41F13", doc, false);
-    	if (!installment.isAnyValueNull()) {
-    		installmentPriceMap.put(installment.getFirst(), installment.getSecond());
-    	}
-    	
-    	Pair<Integer, Float> installment2 = CrawlerUtils.crawlSimpleInstallment("#divPagosTable .cE41F13.mT10", doc, true, "pago:");
-    	if (!installment2.isAnyValueNull()) {
-    		installmentPriceMap.put(installment2.getFirst(), installment2.getSecond());
-    	}
+      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment("#divPagosTable .cE41F13", doc, false);
+      if (!installment.isAnyValueNull()) {
+        installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+      }
 
-    	prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      Pair<Integer, Float> installment2 = CrawlerUtils.crawlSimpleInstallment("#divPagosTable .cE41F13.mT10", doc, true, "pago:");
+      if (!installment2.isAnyValueNull()) {
+        installmentPriceMap.put(installment2.getFirst(), installment2.getSecond());
+      }
+
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
     }
     return prices;
   }

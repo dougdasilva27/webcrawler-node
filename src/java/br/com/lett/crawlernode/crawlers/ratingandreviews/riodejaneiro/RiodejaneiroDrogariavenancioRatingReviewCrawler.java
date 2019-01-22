@@ -1,130 +1,76 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.riodejaneiro;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
-/**
- * Date: 14/12/16
- * 
- * @author gabriel
- *
- */
+
 public class RiodejaneiroDrogariavenancioRatingReviewCrawler extends RatingReviewCrawler {
+  private static final String HOME_PAGE = "https://www.drogariavenancio.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "venancio produtos farmaceuticos ltda";
 
   public RiodejaneiroDrogariavenancioRatingReviewCrawler(Session session) {
     super(session);
   }
 
   @Override
-  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+  protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+    if (isProductPage(doc)) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
-      Double avgRating = getTotalAvgRating(document);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
+      for (int i = 0; i < arraySkus.length(); i++) {
+        JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-      List<String> idList = crawlInternalIds(document);
-      for (String internalId : idList) {
-        RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
-        clonedRatingReviews.setInternalId(internalId);
-        ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+        String internalId = vtexUtil.crawlInternalId(jsonSku);
+        Integer totalNumOfEvaluations = 0;
+        Double avgRating = scrapAvgRating(doc);
+
+        ratingReviews.setInternalId(internalId);
+        ratingReviews.setTotalRating(totalNumOfEvaluations);
+        ratingReviews.setAverageOverallRating(avgRating);
+
+        ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
     }
 
     return ratingReviewsCollection;
-
   }
 
-  /**
-   * Average is in html element
-   * 
-   * @param document
-   * @return
-   */
-  private Double getTotalAvgRating(Document doc) {
-    Double avgRating = 0d;
-    Element avg = doc.select(".comentarios #nota").last();
-
-    if (avg != null && !avg.val().isEmpty()) {
-      avgRating = Double.parseDouble(avg.val());
-    }
-
-    return avgRating;
+  private boolean isProductPage(Document document) {
+    return document.selectFirst(".productName") != null;
   }
 
-  /**
-   * Number of ratings appear in html Example: Avaliação: ***** Maria de Lourdes Bom
-   * 
-   * @param docRating
-   * @return
-   */
-  private Integer getTotalNumOfRatings(Document docRating) {
-    Integer totalRating = null;
-    Elements totalRatingElements = docRating.select(".comentarios > ul li");
+  private Double scrapAvgRating(Document doc) {
+    Double num = 0.0;
+    Element e = doc.selectFirst(".product__rating .rating-produto");
 
-    if (!totalRatingElements.isEmpty()) {
-      totalRating = totalRatingElements.size();
-    }
+    if (e.hasClass("avaliacao1"))
+      num = 1.0;
+    else if (e.hasClass("avaliacao2"))
+      num = 2.0;
+    else if (e.hasClass("avaliacao3"))
+      num = 3.0;
+    else if (e.hasClass("avaliacao4"))
+      num = 4.0;
+    else if (e.hasClass("avaliacao5"))
+      num = 5.0;
 
-    return totalRating;
+    return num;
   }
-
-  private List<String> crawlInternalIds(Document doc) {
-    List<String> ids = new ArrayList<>();
-
-    // Pre id interno
-    String preInternalId = null;
-    Element elementPreInternalId = doc.select("#miolo .produtoPrincipal .info .codigo").first();
-    if (elementPreInternalId != null) {
-      preInternalId = elementPreInternalId.text().split(":")[1].trim();
-    }
-
-    Element variationElement = doc.select(".variacao").first();
-
-    if (variationElement == null || (variationElement.select(".optionsVariacao li").size() == 0)) {
-
-      // Id interno
-      Element internalIdElement = doc.select("input[name=IdProduto]").first();
-      String internalId = null;
-      if (internalIdElement != null) {
-        internalId = preInternalId + "-" + internalIdElement.attr("value");
-      }
-
-      ids.add(internalId);
-    } else {
-      Elements elementsVariations = doc.select(".optionsVariacao li");
-
-      for (Element elementVariation : elementsVariations) {
-
-        // Id interno
-        String posInternalId = elementVariation.attr("data-value").split("#")[3];
-        String internalId = preInternalId + "-" + posInternalId;
-
-        ids.add(internalId);
-      }
-    }
-
-    return ids;
-  }
-
-  private boolean isProductPage(String url) {
-    return url.contains("/produto/");
-  }
-
 }

@@ -54,14 +54,19 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
     if (skuJson.length() > 0) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
       Integer stock = null;
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      // ean data in html
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -76,12 +81,16 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
         Prices prices = crawlPrices(internalId, price, jsonSku);
+        String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
@@ -165,8 +174,9 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.drogariaspacheco.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
-                                                                                                          // to get
+    String stringJsonImages =
+        DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
+                                                                                    // to get
     JSONObject jsonObjectImages = new JSONObject();
     try {
       jsonObjectImages = new JSONArray(stringJsonImages).getJSONObject(0);
@@ -225,7 +235,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSKu) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
+      String internalId, JSONObject jsonSKu) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -285,8 +296,10 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       String text = elementCategories.get(i).text().trim();
 
       if (text.equalsIgnoreCase("medicamentos")) {
-        description.append("<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>" + name
-            + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
+        description.append(
+            "<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>"
+                + name
+                + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
         break;
       }
     }
@@ -296,8 +309,11 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       description.append(advert.html());
     }
 
-    String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String url =
+        "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search?fq=productId:"
+            + internalPid;
+    JSONArray skuInfo =
+        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
@@ -341,7 +357,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
           if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+                iframe.attr("src"), null, cookies));
           }
         }
       }
@@ -351,8 +368,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
   }
 
   /**
-   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
-   * à vista R$ 1.790,00
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
+   * Visa à vista R$ 1.790,00
    * 
    * @param internalId
    * @param price
@@ -363,10 +380,12 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.drogariaspacheco.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc =
+          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       if (jsonSku.has("listPriceFormated")) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));
+        prices.setPriceFrom(
+            MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));
       }
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
@@ -448,7 +467,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
+              .replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }

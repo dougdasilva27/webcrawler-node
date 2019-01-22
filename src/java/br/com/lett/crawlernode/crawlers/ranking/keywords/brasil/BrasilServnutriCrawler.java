@@ -35,8 +35,8 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = getProductInternalPid(e, ".productinfo a[data-product_id]");
-        String internalId = null;
+        String internalId = getProductInternalId(e, ".productinfo a[data-product_id]");
+        String internalPid = null;
         String productUrl = getProductUrl(e, ".productinfo a[rel]:not([data-product_id])");
 
         saveDataProduct(internalId, internalPid, productUrl);
@@ -91,7 +91,7 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String getProductInternalPid(Element e, String selector) {
+  private String getProductInternalId(Element e, String selector) {
     Element aux = e.selectFirst(selector);
     String internalPid = null;
 

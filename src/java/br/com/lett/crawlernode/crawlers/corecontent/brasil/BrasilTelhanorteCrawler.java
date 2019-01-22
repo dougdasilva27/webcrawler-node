@@ -6,7 +6,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -46,7 +45,6 @@ public class BrasilTelhanorteCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".x-breadcrumb__items .x-breadcrumb__item:not(:first-child) > a");
-      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -57,6 +55,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String description = crawlDescription(vtexUtil, internalId);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -88,19 +87,29 @@ public class BrasilTelhanorteCrawler extends Crawler {
   }
 
 
-  private String crawlDescription(Document document) {
-    String description = "";
-    Element descriptionElement = document.select(".especificacao").first();
-    Element specElement = document.select(".dimensoes").first();
+  private String crawlDescription(VTEXCrawlersUtils vtexUtil, String internalId) {
+    StringBuilder description = new StringBuilder();
 
-    if (descriptionElement != null) {
-      description = description + descriptionElement.html();
-    }
-    if (specElement != null) {
-      description = description + specElement.html();
+    JSONObject descriptionApi = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
+    List<String> specs = new ArrayList<>();
+
+    if (descriptionApi.has("allSpecifications")) {
+      JSONArray keys = descriptionApi.getJSONArray("allSpecifications");
+      for (Object o : keys) {
+        if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+          specs.add(o.toString());
+        }
+      }
     }
 
-    return description;
+    for (String spec : specs) {
+      description.append("<div>");
+      description.append("<h4>").append(spec).append("</h4>");
+      description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionApi.get(spec)));
+      description.append("</div>");
+    }
+
+    return description.toString();
   }
 
 }

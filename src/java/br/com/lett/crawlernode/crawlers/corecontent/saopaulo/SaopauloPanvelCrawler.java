@@ -53,7 +53,7 @@ public class SaopauloPanvelCrawler extends Crawler {
       String name = crawlName(productJson);
       Float price = crawlPrice(productJson);
       Prices prices = crawlPrices(price, productJson);
-      boolean available = crawlAvailability(productJson);
+      boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
@@ -116,8 +116,8 @@ public class SaopauloPanvelCrawler extends Crawler {
     return price;
   }
 
-  private boolean crawlAvailability(JSONObject product) {
-    return product.has("status") && product.get("status").toString().equalsIgnoreCase("available");
+  private boolean crawlAvailability(Document doc) {
+    return !doc.select(".item-detalhe [data-click=\"addToCart\"]").isEmpty();
   }
 
   private Marketplace crawlMarketplace() {
