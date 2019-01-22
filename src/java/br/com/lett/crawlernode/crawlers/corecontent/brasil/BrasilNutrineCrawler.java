@@ -59,6 +59,7 @@ public class BrasilNutrineCrawler extends Crawler {
           for (int i = 0; i < variations.length(); i++) {
             JSONObject variation = variations.getJSONObject(i);
 
+            String varName = name + getVariationName(variation);
             String internalId =
                 variation.has("idVariacao") ? variation.get("idVariacao").toString() : null;
             String internalPid = variation.has("sku") ? variation.getString("sku") : null;
@@ -70,12 +71,13 @@ public class BrasilNutrineCrawler extends Crawler {
             Prices prices = scrapPrices(price, variation);
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-                .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-                .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-                .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-                .setDescription(description).setStock(stock).build();
+            Product product =
+                ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
+                    .setInternalPid(internalPid).setName(varName).setPrice(price).setPrices(prices)
+                    .setAvailable(available).setCategory1(categories.getCategory(0))
+                    .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+                    .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+                    .setDescription(description).setStock(stock).build();
 
             products.add(product);
           }
@@ -108,6 +110,19 @@ public class BrasilNutrineCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".produtoDetalhes") != null;
+  }
+
+  private String getVariationName(JSONObject json) {
+    String name = "";
+    JSONArray opcoes = json.has("opcoes") ? json.getJSONArray("opcoes") : new JSONArray();
+
+    for (int i = 0; i < opcoes.length(); i++) {
+      JSONObject subObj = opcoes.getJSONObject(i);
+
+      name = name + (subObj.has("nome") ? subObj.get("nome") + " " : "");
+    }
+
+    return name;
   }
 
   private String getDescription(JSONObject json) {
