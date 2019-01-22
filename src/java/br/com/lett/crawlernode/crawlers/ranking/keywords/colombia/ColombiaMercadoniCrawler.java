@@ -77,8 +77,8 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("product_simple")) {
-      internalPid = json.getString("product_simple");
+    if (json.has("retailer_sku")) {
+      internalPid = json.getString("retailer_sku");
     }
 
     return internalPid;
@@ -90,7 +90,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
     String url = null;
 
     if (slug != null) {
-      url = "https://www.mercadoni.com.co/tienda/jumbo-colombia/p/" + slug + "?retailer_sku="
+      url = "https://www.mercadoni.com.co/tienda/jumbo-colombia/p/" + slug + "?product_simple="
           + internalId;
     }
 
@@ -100,8 +100,8 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
-    if (json.has("retailer_sku")) {
-      internalId = json.get("retailer_sku").toString();
+    if (json.has("product_simple")) {
+      internalId = json.get("product_simple").toString();
     }
 
     return internalId;

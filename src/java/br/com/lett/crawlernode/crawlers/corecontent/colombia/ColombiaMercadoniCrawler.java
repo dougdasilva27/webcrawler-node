@@ -97,7 +97,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return url.contains("retailer_sku");
+    return url.contains("product_simple");
   }
 
   /*******************
@@ -107,8 +107,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
   private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
-    if (json.has("retailer_sku")) {
-      internalId = json.get("retailer_sku").toString();
+    if (json.has("product_simple")) {
+      internalId = json.get("product_simple").toString();
     }
 
     return internalId;
@@ -118,8 +118,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("product_simple")) {
-      internalPid = json.getString("product_simple");
+    if (json.has("retailer_sku")) {
+      internalPid = json.getString("retailer_sku");
     }
 
     return internalPid;
@@ -220,7 +220,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
       String[] parameters = (productUrl.split("\\?")[1]).split("&");
 
       for (String parameter : parameters) {
-        if (parameter.contains("retailer_sku=")) {
+        if (parameter.contains("product_simple=")) {
           productId = parameter.split("=")[1];
         }
       }
@@ -228,7 +228,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
 
     if (productId != null) {
       String payload =
-          "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22retailer_sku%3A%20"
+          "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22product_simple%3A%20"
               + productId + "%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active"
               + "%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict"
               + "&restrictSearchableAttributes=%5B%22name%22%5D\"}";
@@ -238,6 +238,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
 
       String page = POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload,
           cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
+
+      System.err.println(page);
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
