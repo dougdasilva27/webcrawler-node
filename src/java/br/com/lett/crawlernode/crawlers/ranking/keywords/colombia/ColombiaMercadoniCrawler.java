@@ -26,35 +26,52 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 20;
+    this.pageSize = 15;
     this.log("Página " + this.currentPage);
 
     JSONObject search = fetchProductsFromAPI();
-    System.err.println(search);
+
     JSONArray arraySkus =
         search != null && search.has("hits") ? search.getJSONArray("hits") : new JSONArray();
 
-    for (Object o : arraySkus) {
-      JSONObject jsonSku = (JSONObject) o;
-      String internalId = crawlInternalId(jsonSku);
-      String internalPid = crawlInternalPid(jsonSku);
-      String productUrl = crawlProductUrl(o, internalPid);
-      saveDataProduct(internalId, internalPid, productUrl);
+    if (arraySkus.length() > 0) {
 
-      if (this.arrayProducts.size() == productsLimit) {
-        break;
-
-      } else {
-
-        this.result = false;
-        this.log("Keyword sem resultado!");
+      if (this.totalProducts == 0) {
+        setTotalProducts(search);
       }
+
+      for (Object product : arraySkus) {
+        JSONObject jsonSku = (JSONObject) product;
+        String internalId = crawlInternalId(jsonSku);
+        String internalPid = crawlInternalPid(jsonSku);
+        String productUrl = crawlProductUrl(jsonSku, internalId);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
+
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+
+    } else {
+
+      this.result = false;
+      this.log("Keyword sem resultado!");
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
         + this.arrayProducts.size() + " produtos crawleados");
 
 
+  }
+
+  private void setTotalProducts(JSONObject search) {
+    if (search.has("nbHits")) {
+      this.totalProducts = search.getInt("nbHits");
+    }
   }
 
   private String crawlInternalPid(JSONObject json) {
@@ -67,8 +84,17 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
     return internalPid;
   }
 
-  private String crawlProductUrl(Object o, String internalPid) {
-    return null;
+  // https://www.mercadoni.com.co/tienda/jumbo-colombia/p/Woolite-Detergente-L%C3%ADquido-Todos-Los-Dias-2000Ml-X-2-Bi-Pack?retailer_sku=75009842549
+  private String crawlProductUrl(JSONObject product, String internalId) {
+    String slug = product.has("slug") ? product.getString("slug") : null;
+    String url = null;
+
+    if (slug != null) {
+      url = "https://www.mercadoni.com.co/tienda/jumbo-colombia/p/" + slug + "?retailer_sku="
+          + internalId;
+    }
+
+    return url;
   }
 
   private String crawlInternalId(JSONObject json) {
@@ -84,6 +110,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
   private JSONObject fetchProductsFromAPI() {
     JSONObject products = new JSONObject();
 
+
     String payload = "{\"params\":\"query=" + this.keywordEncoded + "s&hitsPerPage=15&page="
         + this.currentPage
         + "&facets=&facetFilters=%5B%5B%22location%3A%20557b4c374e1d3b1f00793e12%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict&restrictSearchableAttributes=%5B%22name%22%5D\"}";
@@ -95,7 +122,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
 
     if (page.startsWith("{") && page.endsWith("}")) {
       try {
-        System.err.println(page);
+
         // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
         JsonObject JsonParser = new JsonParser().parse(page).getAsJsonObject();
 
