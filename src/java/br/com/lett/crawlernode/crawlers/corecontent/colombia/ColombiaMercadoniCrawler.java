@@ -24,11 +24,11 @@ import models.prices.Prices;
 
 public class ColombiaMercadoniCrawler extends Crawler {
 
+  private static final String LOCATION = "557b4c374e1d3b1f00793e12";
   private static final String HOME_PAGE = "https://www.mercadoni.com.co/";
-  public static final String PRODUCTS_API_URL =
-      "https://j9xfhdwtje-3.algolianet.com/1/indexes/live_products_boost_desc/query"
-          + "?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.30.0&x-algolia-application-id=J9XFHDWTJE"
-          + "&x-algolia-api-key=2065b01208843995dbf34b4c58e8b7be";
+  public static final String PRODUCTS_API_URL = "https://j9xfhdwtje-3.algolianet.com/1/indexes/live_products_boost_desc/query"
+      + "?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.30.0&x-algolia-application-id=J9XFHDWTJE"
+      + "&x-algolia-api-key=2065b01208843995dbf34b4c58e8b7be";
 
   public ColombiaMercadoniCrawler(Session session) {
     super(session);
@@ -51,11 +51,9 @@ public class ColombiaMercadoniCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("hits") ? skuJson.getJSONArray("hits") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("hits") ? skuJson.getJSONArray("hits") : new JSONArray();
 
       for (Object o : arraySkus) {
         JSONObject jsonSku = (JSONObject) o;
@@ -63,24 +61,19 @@ public class ColombiaMercadoniCrawler extends Crawler {
         String internalPid = crawlInternalPid(jsonSku);
         CategoryCollection categories = crawlCategories(jsonSku);
         String description = crawlDescription(jsonSku);
-        Integer stock = jsonSku.has("stock") && jsonSku.get("stock") instanceof Integer
-            ? jsonSku.getInt("stock")
-            : null;
+        Integer stock = jsonSku.has("stock") && jsonSku.get("stock") instanceof Integer ? jsonSku.getInt("stock") : null;
         boolean available = stock != null && stock > 0;
         Float price = available ? CrawlerUtils.getFloatValueFromJSON(jsonSku, "price") : null;
-        Double priceFrom =
-            available ? CrawlerUtils.getDoubleValueFromJSON(jsonSku, "special_price") : null;
+        Double priceFrom = available ? CrawlerUtils.getDoubleValueFromJSON(jsonSku, "special_price") : null;
         String primaryImage = crawlPrimaryImage(jsonSku);
         String name = crawlName(jsonSku);
         Prices prices = crawlPrices(price, priceFrom);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setDescription(description)
-            .setMarketplace(new Marketplace()).setStock(stock).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(new Marketplace())
+            .setStock(stock).build();
 
         products.add(product);
       }
@@ -139,8 +132,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
     String primaryImage = null;
 
     if (json.has("image_url")) {
-      primaryImage = CrawlerUtils.completeUrl(json.get("image_url").toString(), "https:",
-          "catalog.images.mercadoni.com");
+      primaryImage = CrawlerUtils.completeUrl(json.get("image_url").toString(), "https:", "catalog.images.mercadoni.com");
     }
 
     return primaryImage;
@@ -227,19 +219,16 @@ public class ColombiaMercadoniCrawler extends Crawler {
     }
 
     if (productId != null) {
-      String payload =
-          "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22product_simple%3A%20"
-              + productId + "%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active"
-              + "%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict"
-              + "&restrictSearchableAttributes=%5B%22name%22%5D\"}";
+      String payload = "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22product_simple%3A%20" + productId
+          + "%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22location%3A%20" + LOCATION + "%22%2C%22product_simple_active"
+          + "%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict"
+          + "&restrictSearchableAttributes=%5B%22name%22%5D\"}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
 
-      String page = POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload,
-          cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
-
-      System.err.println(page);
+      String page =
+          POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload, cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
