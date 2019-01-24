@@ -31,7 +31,8 @@ public class BrasilApoiomineiroCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTPS));
+    return !FILTERS.matcher(href).matches()
+        && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTPS));
   }
 
 
@@ -41,39 +42,52 @@ public class BrasilApoiomineiroCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description = crawlDescription(doc);
       String primaryImage = null;
       String secondaryImages = null;
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      // ean data in json
+      JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = apiJSON.has("Name") ? apiJSON.get("Name").toString() : vtexUtil.crawlName(jsonSku, skuJson);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
+        String name = apiJSON.has("Name") ? apiJSON.get("Name").toString()
+            : vtexUtil.crawlName(jsonSku, skuJson);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
+            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
+            : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
