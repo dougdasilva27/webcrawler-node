@@ -12,30 +12,27 @@ public class BrasilMaisabracosCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 18;
+    this.pageSize = 10;
     this.log("Página " + this.currentPage);
 
-    String url = "https://loja.maisabracos.com.br/" + this.keywordEncoded
-        + "?&utmi_pc=BuscaFullText&utmi_cp=" + this.keywordEncoded;
+    String url = "https://loja.maisabracos.com.br/comprar-produtos";
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".product-shelf .product-item");
+    Elements products = this.currentDoc.select(".news-shelf ul li[layout]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
       for (Element e : products) {
-
         String internalId = crawlInternalId(e);
-        String productPid = crawlProductPid(e);
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, productPid, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + productPid + " - Url: " + productUrl);
+            + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
@@ -50,29 +47,28 @@ public class BrasilMaisabracosCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".resultado-busca-numero .value").first();
-
-    if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
+  protected boolean hasNextPage() {
+    return false;
   }
 
   private String crawlInternalId(Element e) {
-    return e.attr("data-sku");
-  }
+    Element inputElement = e.selectFirst(".product-variation .pdt-id");
+    String internalId = null;
 
-  private String crawlProductPid(Element e) {
-    return e.attr("data-id");
+    if (inputElement != null) {
+      internalId = inputElement.attr("value").trim();
+    }
+    return internalId;
   }
 
   private String crawlProductUrl(Element e) {
-    return e.attr("data-uri");
+    Element ancorElement = e.selectFirst("li[layout] .highlight");
+    String url = null;
+
+    if (ancorElement != null) {
+      url = ancorElement.attr("href").trim();
+    }
+
+    return url;
   }
 }
