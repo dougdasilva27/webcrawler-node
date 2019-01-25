@@ -47,8 +47,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
-      String description =
-          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-qd-v1-description", ".product-qd-v1-description", "#caracteristicas"));
+      String description = CrawlerUtils.scrapSimpleDescription(doc,
+          Arrays.asList("#product-qd-v1-description", ".product-qd-v1-description", ".productDescription", "#caracteristicas"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();

@@ -94,7 +94,7 @@ public class BrasilFrigelarCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    return document.select(".produto").first() != null;
+    return document.select("#___rc-p-dv-id").first() != null;
   }
 
   /*******************
