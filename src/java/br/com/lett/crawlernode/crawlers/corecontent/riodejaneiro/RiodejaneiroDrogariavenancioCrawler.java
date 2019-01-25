@@ -43,6 +43,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
+      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc,
           ".product__breadcrumb .bread-crumb ul li[typeof=\"v:Breadcrumb\"]", true);
@@ -69,13 +70,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
             .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
