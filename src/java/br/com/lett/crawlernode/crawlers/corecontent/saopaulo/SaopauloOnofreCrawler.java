@@ -310,7 +310,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
   private String crawlEan(Element e) {
     String ean = null;
-    Element td = e.selectFirst("#product-characteristics_sku-barcode");
+    Element td = e.selectFirst("[itemprop=\"gtin13\"]");
     ean = td != null ? td.text().trim() : null;
 
     return ean;
