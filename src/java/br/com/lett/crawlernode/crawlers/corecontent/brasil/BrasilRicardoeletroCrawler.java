@@ -308,6 +308,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       prices.setBankTicketPrice(price);
 
       if (principalSeller) {
+        Float bankPrice = CrawlerUtils.scrapSimplePriceFloat(doc, ".produto-detalhes-preco-destaque-a-vista span[id]", true);
+        if (bankPrice != null) {
+          prices.setBankTicketPrice(bankPrice);
+        }
+
         String url = "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
         Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
@@ -337,7 +342,6 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
       }
 
-      prices.setBankTicketPrice(installmentsPriceMap.get(1));
       prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
       prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
