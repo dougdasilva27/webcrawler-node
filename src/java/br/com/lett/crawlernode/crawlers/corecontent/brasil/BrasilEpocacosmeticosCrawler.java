@@ -53,9 +53,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
       // sku data in json
       JSONArray arraySkus =
           skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-
-      // ean data in json
-      JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
+      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -76,7 +74,8 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
             : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
-        String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
+
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
