@@ -42,14 +42,19 @@ public class BrasilLojacotyCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -61,18 +66,24 @@ public class BrasilLojacotyCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
             Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA, session);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
+        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
+            || marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER_2);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap,
+            Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
@@ -98,7 +109,8 @@ public class BrasilLojacotyCrawler extends Crawler {
       description.append("<div><h4>Descrição</h4>");
 
       if (descriptionJson.has("Título da Descrição")) {
-        description.append(descriptionJson.get("Título da Descrição").toString().replace("[\"", "").replace("\"]", ""));
+        description.append(descriptionJson.get("Título da Descrição").toString().replace("[\"", "")
+            .replace("\"]", ""));
       }
       description.append(sanitizeDescription(descriptionJson.get("description")));
       description.append("</div>");

@@ -76,7 +76,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
       // Marketplace
       Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, doc);
-      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), session);
+      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
 
       // Prices
       Prices prices = crawlPricesPrinciaplSeller(marketplaceMap);
@@ -144,6 +144,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       // Estoque
       Integer stock = crawlStock(doc);
 
+      String ean = crawlEan(doc);
+
       Product product = new Product();
 
       product.setUrl(this.session.getOriginalURL());
@@ -161,6 +163,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 
@@ -297,6 +300,34 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     }
 
     return stock;
+  }
+
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Elements scripts = doc.select("script");
+    JSONObject jsonDataLayer = new JSONObject();
+
+    for (Element e : scripts) {
+      String dataLayer = e.outerHtml().trim();
+
+      if (dataLayer.contains("var dataLayer = [")) {
+        int x = dataLayer.indexOf("= [") + 3;
+        int y = dataLayer.indexOf("];", x);
+
+        try {
+          jsonDataLayer = new JSONObject(dataLayer.substring(x, y));
+        } catch (JSONException jsonException) {
+          Logging.printLogWarn(logger, session, "Data layer is not a Json");
+        }
+      }
+    }
+
+    if (jsonDataLayer.has("productEAN13")) {
+      ean = jsonDataLayer.getString("productEAN13");
+      ean = ean.isEmpty() ? null : ean;
+    }
+
+    return ean;
   }
 
   private Prices crawlPrices(Document doc, Float price, boolean principalSeller, String internalPid) {
