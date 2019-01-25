@@ -30,16 +30,23 @@ public class CompraCertaCrawlerUtils {
   public List<Product> extractProducts(Document doc) {
     List<Product> products = new ArrayList<>();
 
-    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null);
-    vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cc-bf--desconto-a-vista-cartao-]", true, false);
+    VTEXCrawlersUtils vtexUtil =
+        new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null);
+    vtexUtil.setDiscountWithDocument(doc,
+        ".prod-selos p[class^=flag cc-bf--desconto-a-vista-cartao-]", true, false);
 
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
-    CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:last-child > a", false);
+    CategoryCollection categories =
+        CrawlerUtils.crawlCategories(doc, ".breadcrumb li:last-child > a", false);
 
     // sku data in json
-    JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+    JSONArray arraySkus =
+        skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+    // ean data in json
+    JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
 
     for (int i = 0; i < arraySkus.length(); i++) {
       JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -53,15 +60,21 @@ public class CompraCertaCrawlerUtils {
       boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
       String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
       String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-      Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+      Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
+          ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
+          : new Prices();
       Float price = vtexUtil.crawlMainPagePrice(prices);
       Integer stock = vtexUtil.crawlStock(apiJSON);
+      String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+          .build();
 
       products.add(product);
     }
@@ -78,27 +91,31 @@ public class CompraCertaCrawlerUtils {
     }
 
     if (apiJSON.has("RealHeight")) {
-      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Largura").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealHeight").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWidth")) {
-      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Altura").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealWidth").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealLength")) {
-      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Profundidade").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealLength").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWeightKg")) {
-      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Peso").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealWeightKg").toString().replace(".0", "") + " kg")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
 
@@ -112,7 +129,8 @@ public class CompraCertaCrawlerUtils {
       for (Element e : nameFields) {
         String classString = e.attr("class");
 
-        if (classString.toLowerCase().contains("modulo") || classString.toLowerCase().contains("foto")) {
+        if (classString.toLowerCase().contains("modulo")
+            || classString.toLowerCase().contains("foto")) {
           caracTemp.select("th." + classString.trim().replace(" ", ".")).remove();
         }
       }
