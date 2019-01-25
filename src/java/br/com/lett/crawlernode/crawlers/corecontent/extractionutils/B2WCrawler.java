@@ -131,7 +131,7 @@ public class B2WCrawler {
 
           String varationNameWithoutVolts = variationName.replace("volts", "").trim();
 
-          if (unnavailablePage && infoProductJson.has("name")) {
+          if (unnavailablePage || (variationName.isEmpty() && skus.length() < 2) && infoProductJson.has("name")) {
             name.append(infoProductJson.getString("name"));
             if (!name.toString().toLowerCase().contains(varationNameWithoutVolts.toLowerCase())) {
               name.append(" " + variationName);
