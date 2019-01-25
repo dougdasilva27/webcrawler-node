@@ -310,17 +310,18 @@ public class ChileFalabellaCrawler extends Crawler {
           Float price = MathUtils.parseFloatWithComma(priceJson.get("originalPrice").toString());
 
           if (price != null) {
-
             if (priceJson.has("label")) {
               String label = priceJson.get("label").toString().toLowerCase().trim();
+
+              if (label.contains("normal")) {
+                mapInstallments.put(1, price);
+              }
 
               if (label.isEmpty()) {
                 prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()));
               } else if (label.contains("oferta")) {
                 mapInstallments.put(1, price);
               }
-            } else if (mapInstallments.isEmpty()) {
-              mapInstallments.put(1, price);
             }
           }
         }
