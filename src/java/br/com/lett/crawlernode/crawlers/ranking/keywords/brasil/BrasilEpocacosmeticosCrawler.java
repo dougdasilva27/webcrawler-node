@@ -39,7 +39,8 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
+            + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -50,7 +51,8 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -83,15 +85,17 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
   private JSONObject crawlSearchApi() {
     JSONObject searchApi = new JSONObject();
-    String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt" + "&query=" + this.keywordEncoded
-        + "&log=true&userId=&placement=search_page.find" + "&start=" + this.arrayProducts.size() + "&rows=24";
+    String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt"
+        + "&query=" + this.keywordEncoded + "&log=true&userId=&placement=search_page.find"
+        + "&start=" + this.arrayProducts.size() + "&rows=24";
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
+    headers.put("Content-Encoding", "");
 
-    JSONObject json =
-        CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+    JSONObject json = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies,
+        headers, null, DataFetcher.GET_REQUEST, session, false));
 
     if (json.has("placements")) {
       JSONArray placements = json.getJSONArray("placements");
