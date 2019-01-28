@@ -50,8 +50,7 @@ public class LeroymerlinCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = null;
@@ -59,8 +58,7 @@ public class LeroymerlinCrawler extends Crawler {
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child) a .name", false);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child) a .name", false);
       List<String> images = crawlImages(doc);
       String primaryImage = images.isEmpty() ? null : images.get(0);
       String secondaryImages = crawlSecondaryImages(images);
@@ -68,12 +66,10 @@ public class LeroymerlinCrawler extends Crawler {
       Integer stock = null;
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -122,8 +118,7 @@ public class LeroymerlinCrawler extends Crawler {
   private Float crawlPrice(Document document) {
     Float price = null;
 
-    Elements salePriceElement = document.select(
-        ".product-price-tag .to-price .price-integer, .product-price-tag .to-price .price-decimal");
+    Elements salePriceElement = document.select(".product-price-tag .to-price .price-integer, .product-price-tag .to-price .price-decimal");
     if (!salePriceElement.isEmpty()) {
       price = MathUtils.parseFloatWithComma(salePriceElement.text());
     }
@@ -142,13 +137,12 @@ public class LeroymerlinCrawler extends Crawler {
         JSONObject imageJson = (JSONObject) o;
 
         // in this case the image is a video thumbnail
-        if (imageJson.has("youtubeId") && imageJson.get("youtubeId") instanceof String
-            && !imageJson.getString("youtubeId").trim().isEmpty()) {
+        if (imageJson.has("youtubeId") && imageJson.get("youtubeId") instanceof String && !imageJson.getString("youtubeId").trim().isEmpty()) {
           continue;
         }
 
-        if (imageJson.has("shouldLoadImageZoom") && imageJson.getBoolean("shouldLoadImageZoom")
-            && imageJson.has("zoomUrl") && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
+        if (imageJson.has("shouldLoadImageZoom") && imageJson.getBoolean("shouldLoadImageZoom") && imageJson.has("zoomUrl")
+            && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
           images.add(imageJson.get("zoomUrl").toString());
         } else if (imageJson.has("url") && !imageJson.get("url").toString().trim().isEmpty()) {
           images.add(imageJson.get("url").toString());
@@ -177,29 +171,16 @@ public class LeroymerlinCrawler extends Crawler {
   }
 
   private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
+    String description = CrawlerUtils.scrapSimpleDescription(doc,
+        Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container",
+            "[name=descricao-do-produto]"));
 
-    Elements rows = doc.select(
-        ".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container");
-
-    for (Element e : rows) {
-      if (e.attr("name").equals("caracteristicas-tecnicas")) {
-        description.append("<h3>  Características Técnicas </h3>");
-      }
-      description.append(e.html());
-    }
-
-    String desc = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(
-        ".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container",
-        "[name=descricao-do-produto]"));
-    return desc;
+    return description;
   }
 
   private boolean crawlAvailability(Document doc) {
-    return !doc
-        .select(".product-purchase-buttons .buy-button[data-button=ecommerce]:not(.disabled), "
-            + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])")
-        .isEmpty();
+    return !doc.select(".product-purchase-buttons .buy-button[data-button=ecommerce]:not(.disabled), "
+        + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
   }
 
   /**
@@ -219,8 +200,7 @@ public class LeroymerlinCrawler extends Crawler {
       Element pricesElements = doc.selectFirst(".product-price-tag > div");
       if (pricesElements != null) {
 
-        if (pricesElements.hasAttr("data-from-price-integers")
-            && pricesElements.hasAttr("data-from-price-decimals")) {
+        if (pricesElements.hasAttr("data-from-price-integers") && pricesElements.hasAttr("data-from-price-decimals")) {
           String integers = pricesElements.attr("data-from-price-integers").trim();
           String decimals = pricesElements.attr("data-from-price-decimals").trim();
 
@@ -237,14 +217,12 @@ public class LeroymerlinCrawler extends Crawler {
           }
         }
 
-        if (pricesElements.hasAttr("data-branded-installments-amount")
-            && pricesElements.hasAttr("data-branded-installments-value")) {
+        if (pricesElements.hasAttr("data-branded-installments-amount") && pricesElements.hasAttr("data-branded-installments-value")) {
           String installment = pricesElements.attr("data-branded-installments-amount").trim();
           String value = pricesElements.attr("data-branded-installments-value").trim();
 
           if (!installment.isEmpty() && !value.isEmpty()) {
-            installmentPriceMap.put(Integer.parseInt(installment),
-                MathUtils.parseFloatWithComma(value));
+            installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloatWithComma(value));
           }
         }
       }
