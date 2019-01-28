@@ -81,6 +81,7 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      String ean = crawlEan(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -240,4 +241,23 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
     return prices;
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Elements elmnts = doc.select(".data-table tbody tr");
+
+    for (Element e : elmnts) {
+      Element sub = e.selectFirst(".label");
+
+      if (sub != null && sub.text().contains("Código de Barra")) {
+        Element sub2 = e.selectFirst(".data");
+
+        if (sub2 != null) {
+          ean = sub2.text().trim();
+          break;
+        }
+      }
+    }
+
+    return ean;
+  }
 }
