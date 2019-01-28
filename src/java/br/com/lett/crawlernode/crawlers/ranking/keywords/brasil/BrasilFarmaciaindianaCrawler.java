@@ -17,7 +17,7 @@ public class BrasilFarmaciaindianaCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.farmaciaindiana.com.br/" + this.keywordEncoded;
+    String url = "https://www.farmaciaindiana.com.br/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
 
@@ -36,8 +36,7 @@ public class BrasilFarmaciaindianaCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, null, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + null + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -46,8 +45,7 @@ public class BrasilFarmaciaindianaCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
 
