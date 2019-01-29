@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -66,12 +67,13 @@ public class ArgentinaMegatoneCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#gal1 a", Arrays.asList("data-zoom-image", "data-image"), "https:",
           "www.megatone.net", primaryImage);
       String description = crawlDescription(doc, internalId);
+      String ean = crawlEan(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+          .setMarketplace(new Marketplace()).setEan(ean).build();
 
       products.add(product);
 
@@ -137,4 +139,18 @@ public class ArgentinaMegatoneCrawler extends Crawler {
     return prices;
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Element e = doc.selectFirst("script[data-flix-ean]");
+
+    if (e != null) {
+      String aux = e.attr("data-flix-ean");
+
+      if (!aux.isEmpty()) {
+        ean = aux;
+      }
+    }
+
+    return ean;
+  }
 }
