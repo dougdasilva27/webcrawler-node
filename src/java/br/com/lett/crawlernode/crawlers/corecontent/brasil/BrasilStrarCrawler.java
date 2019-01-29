@@ -47,10 +47,12 @@ public class BrasilStrarCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      // ean data in json
+      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -68,11 +70,15 @@ public class BrasilStrarCrawler extends Crawler {
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String finalUrl =
             internalId != null && !internalId.isEmpty() ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+
+        String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
+        String description = crawlDescription(doc, ean);
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(finalUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+            .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
 
         products.add(product);
       }
@@ -100,15 +106,17 @@ public class BrasilStrarCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document document) {
-    String description = "";
+  private String crawlDescription(Document document, String ean) {
+    StringBuilder description = new StringBuilder();
 
     Element shortDesc = document.select(".productSpecification").first();
 
     if (shortDesc != null) {
-      description = description + shortDesc.html().replace("style=\"display: none;\"", "");
+      description.append(shortDesc.html().replace("style=\"display: none;\"", ""));
     }
 
-    return description;
+    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("7034", ean, session));
+
+    return description.toString();
   }
 }

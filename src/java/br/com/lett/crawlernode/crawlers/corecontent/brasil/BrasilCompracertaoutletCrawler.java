@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilCompracertaoutletCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://loja.compracerta.com.br/";
+  private static final String HOME_PAGE = "https://loja.compracerta.com.br/";
 
   public BrasilCompracertaoutletCrawler(Session session) {
     super(session);
@@ -45,12 +45,12 @@ public class BrasilCompracertaoutletCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     String producReference = crawlProductReference(doc).toLowerCase();
-    return doc.select(".main-product").first() != null && producReference.endsWith("_out");
+    return !doc.select(".productName").isEmpty() && producReference.endsWith("_out");
   }
 
   private String crawlProductReference(Document doc) {
     String producReference = "";
-    Element prod = doc.select(".productReference").first();
+    Element prod = doc.select(".skuReference").first();
 
     if (prod != null) {
       producReference = prod.ownText().trim();

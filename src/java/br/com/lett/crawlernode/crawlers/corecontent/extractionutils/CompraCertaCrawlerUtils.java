@@ -20,7 +20,7 @@ import models.prices.Prices;
 public class CompraCertaCrawlerUtils {
 
   private static final String MAIN_SELLER_NAME_LOWER = "compra certa";
-  private static final String HOME_PAGE = "http://loja.compracerta.com.br/";
+  private static final String HOME_PAGE = "https://loja.compracerta.com.br/";
   private Session session;
 
   public CompraCertaCrawlerUtils(Session session, Logger logger2) {
@@ -38,21 +38,23 @@ public class CompraCertaCrawlerUtils {
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
-    CategoryCollection categories =
-        CrawlerUtils.crawlCategories(doc, ".breadcrumb li:last-child > a", false);
+    CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
 
     // sku data in json
     JSONArray arraySkus =
         skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
+    // ean data in json
+    JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+    
     for (int i = 0; i < arraySkus.length(); i++) {
       JSONObject jsonSku = arraySkus.getJSONObject(i);
 
       String internalId = vtexUtil.crawlInternalId(jsonSku);
       JSONObject apiJSON = vtexUtil.crawlApi(internalId);
       String description = crawlDescription(doc, apiJSON);
-      String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
-      Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+      String name = vtexUtil.crawlName(jsonSku, skuJson);
+      Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
       Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
       boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
       String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
@@ -62,14 +64,13 @@ public class CompraCertaCrawlerUtils {
           : new Prices();
       Float price = vtexUtil.crawlMainPagePrice(prices);
       Integer stock = vtexUtil.crawlStock(apiJSON);
+      String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
 
       products.add(product);
     }
