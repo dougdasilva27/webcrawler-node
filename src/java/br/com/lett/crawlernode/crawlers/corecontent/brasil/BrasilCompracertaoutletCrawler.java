@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilCompracertaoutletCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://loja.compracerta.com.br/";
+  private static final String HOME_PAGE = "https://www.compracerta.com.br/";
 
   public BrasilCompracertaoutletCrawler(Session session) {
     super(session);
