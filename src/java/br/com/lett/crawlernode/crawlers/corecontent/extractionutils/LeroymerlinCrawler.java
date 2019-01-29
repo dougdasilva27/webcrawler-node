@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -170,19 +171,11 @@ public class LeroymerlinCrawler extends Crawler {
   }
 
   private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
+    String description = CrawlerUtils.scrapSimpleDescription(doc,
+        Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container",
+            "[name=descricao-do-produto]"));
 
-    Elements rows = doc.select(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container");
-
-    for (Element e : rows) {
-      if (e.attr("name").equals("caracteristicas-tecnicas")) {
-        description.append("<h3>  Características Técnicas </h3>");
-      }
-      description.append(e.html());
-    }
-
-
-    return description.toString();
+    return description;
   }
 
   private boolean crawlAvailability(Document doc) {
