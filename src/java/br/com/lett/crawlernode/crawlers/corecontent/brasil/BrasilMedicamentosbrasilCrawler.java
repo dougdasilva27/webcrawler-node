@@ -59,12 +59,13 @@ public class BrasilMedicamentosbrasilCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      String ean = crawlEan(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
 
       products.add(product);
 
@@ -267,4 +268,20 @@ public class BrasilMedicamentosbrasilCrawler extends Crawler {
     return prices;
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Elements elmnts = doc.select("#regrasAnvisa .container .col-xs-12:not(.col-md-4):not(.col-md-8)");
+
+    for (Element e : elmnts) {
+      if (e.text().contains("EAN")) {
+        ean = e.text().replaceAll("[^0-9]+", "");
+
+        if (ean.isEmpty()) {
+          ean = null;
+        }
+      }
+    }
+
+    return ean;
+  }
 }
