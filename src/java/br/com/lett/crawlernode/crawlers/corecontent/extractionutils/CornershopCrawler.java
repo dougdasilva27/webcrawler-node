@@ -46,7 +46,8 @@ public class CornershopCrawler {
       if (!id.isEmpty()) {
         String urlApi = PRODUCTS_API_URL + storeId + "/products/" + id;
 
-        JSONArray array = new JSONArray(POSTFetcher.requestStringUsingFetcher(urlApi, cookies, null, null, DataFetcher.GET_REQUEST, session, false));
+        JSONArray array = CrawlerUtils
+            .stringToJsonArray(POSTFetcher.requestStringUsingFetcher(urlApi, cookies, null, null, DataFetcher.GET_REQUEST, session, false));
 
         if (array.length() > 0) {
           return array.getJSONObject(0);

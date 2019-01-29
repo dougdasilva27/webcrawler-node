@@ -43,15 +43,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalId = null;
       Element elementInternalID = doc.select("#ProdutoDetalhesCodigoProduto").first();
       if (elementInternalID != null) {
-        internalId =
-            elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
+        internalId = elementInternalID.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").trim();
       }
 
       // Pid
@@ -78,8 +76,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
       // Marketplace
       Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, doc);
-      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
-          Arrays.asList(SELLER_NAME), Card.VISA, session);
+      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
 
       // Prices
       Prices prices = crawlPricesPrinciaplSeller(marketplaceMap);
@@ -91,8 +88,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select("#ProdutoDetalhesPrecoComprarAgoraPrecoDePreco").first();
       if (elementPrice != null && available) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Categorias
@@ -112,8 +108,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
 
       // Imagens
-      Elements elementPrimaryImages =
-          doc.select("#ProdutoDetalhesFotosFotosPequenas").select("a.zoom-gallery img");
+      Elements elementPrimaryImages = doc.select("#ProdutoDetalhesFotosFotosPequenas").select("a.zoom-gallery img");
       String primaryImage = null;
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
@@ -193,8 +188,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     if (internalPid != null) {
       String url = "https://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
 
-      docMarketplace =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
     }
 
     return docMarketplace;
@@ -242,8 +236,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         Float partnerPrice = MathUtils.parseFloatWithComma(priceElement.ownText());
 
         if (!partnerName.isEmpty() && partnerPrice != null) {
-          marketplace.put(partnerName,
-              crawlPrices(doc, partnerPrice, partnerName.equals(principalSeller), internalPid));
+          marketplace.put(partnerName, crawlPrices(doc, partnerPrice, partnerName.equals(principalSeller), internalPid));
         }
       }
     }
@@ -337,8 +330,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     return ean;
   }
 
-  private Prices crawlPrices(Document doc, Float price, boolean principalSeller,
-      String internalPid) {
+  private Prices crawlPrices(Document doc, Float price, boolean principalSeller, String internalPid) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -347,10 +339,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       prices.setBankTicketPrice(price);
 
       if (principalSeller) {
-        String url =
-            "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
-        Document docPrices =
-            DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        Float bankPrice = CrawlerUtils.scrapSimplePriceFloat(doc, ".produto-detalhes-preco-destaque-a-vista span[id]", true);
+        if (bankPrice != null) {
+          prices.setBankTicketPrice(bankPrice);
+        }
+
+        String url = "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
+        Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
         Elements installmentsElements = docPrices.select(".lista-parcelas tr");
 
@@ -378,7 +373,6 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
       }
 
-      prices.setBankTicketPrice(installmentsPriceMap.get(1));
       prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
       prices.insertCardInstallment(Card.DINERS.toString(), installmentsPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentsPriceMap);
@@ -404,10 +398,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       int x = parcela.indexOf("x");
       int y = parcela.indexOf("r$");
 
-      Integer installment =
-          Integer.parseInt(parcela.substring(0, x).replaceAll("[^0-9]", "").trim());
-      Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "")
-          .replaceAll("\\.", "").replaceAll(",", ".").trim());
+      Integer installment = Integer.parseInt(parcela.substring(0, x).replaceAll("[^0-9]", "").trim());
+      Float priceInstallment = Float.parseFloat(parcela.substring(y).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
       installmentsPriceMap.put(installment, priceInstallment);
     }

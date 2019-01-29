@@ -18,19 +18,17 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-
-public class BrasilMegamamuteCrawler extends Crawler {
-
-  private static final String HOME_PAGE = "http://www.megamamute.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "megamamute";
-
-  public BrasilMegamamuteCrawler(Session session) {
+public class BrasilMaisabracosCrawler extends Crawler {
+  public BrasilMaisabracosCrawler(Session session) {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://loja.maisabracos.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "mais abraços";
+
   @Override
   public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
+    String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
@@ -42,16 +40,15 @@ public class BrasilMegamamuteCrawler extends Crawler {
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil =
           new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
-      vtexUtil.setDiscountWithDocument(doc, ".flagPromos-v1 p[class^=flag desconto-]", false, true);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
-      String description =
-          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-qd-v1-description",
-              ".product-qd-v1-description", ".productDescription", "#caracteristicas"));
+
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      String description = CrawlerUtils.scrapSimpleDescription(doc,
+          Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]",
+              ".content-description .value-field.Descripcion", ".title[data-destec=\"tech\"]",
+              ".content-description table.group.Especificaciones-Tecnicas"));
 
       // sku data in json
       JSONArray arraySkus =
@@ -62,9 +59,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        // String name = vtexUtil.crawlName(jsonSku, skuJson);
-        String name = crawlName(jsonSku, skuJson);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
@@ -74,6 +70,9 @@ public class BrasilMegamamuteCrawler extends Crawler {
             : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
+
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -81,7 +80,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
@@ -91,17 +91,6 @@ public class BrasilMegamamuteCrawler extends Crawler {
     }
 
     return products;
-  }
-
-
-  private String crawlName(JSONObject jsonSku, JSONObject skuJson) {
-    String name = null;
-
-    if (jsonSku.has("skuname")) {
-      name = jsonSku.has("skuname") ? jsonSku.getString("skuname") : null;
-    }
-
-    return name;
   }
 
   private boolean isProductPage(Document document) {

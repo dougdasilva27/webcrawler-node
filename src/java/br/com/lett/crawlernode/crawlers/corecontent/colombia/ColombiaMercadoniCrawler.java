@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -22,6 +24,7 @@ import models.prices.Prices;
 
 public class ColombiaMercadoniCrawler extends Crawler {
 
+  private static final String LOCATION = "557b4c374e1d3b1f00793e12";
   private static final String HOME_PAGE = "https://www.mercadoni.com.co/";
   public static final String PRODUCTS_API_URL = "https://j9xfhdwtje-3.algolianet.com/1/indexes/live_products_boost_desc/query"
       + "?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.30.0&x-algolia-application-id=J9XFHDWTJE"
@@ -87,7 +90,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return url.contains("retailer_sku");
+    return url.contains("product_simple");
   }
 
   /*******************
@@ -97,8 +100,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
   private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
-    if (json.has("retailer_sku")) {
-      internalId = json.get("retailer_sku").toString();
+    if (json.has("product_simple")) {
+      internalId = json.get("product_simple").toString();
     }
 
     return internalId;
@@ -108,8 +111,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("product_simple")) {
-      internalPid = json.getString("product_simple");
+    if (json.has("retailer_sku")) {
+      internalPid = json.getString("retailer_sku");
     }
 
     return internalPid;
@@ -209,15 +212,15 @@ public class ColombiaMercadoniCrawler extends Crawler {
       String[] parameters = (productUrl.split("\\?")[1]).split("&");
 
       for (String parameter : parameters) {
-        if (parameter.contains("retailer_sku=")) {
+        if (parameter.contains("product_simple=")) {
           productId = parameter.split("=")[1];
         }
       }
     }
 
     if (productId != null) {
-      String payload = "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22retailer_sku%3A%20" + productId
-          + "%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active"
+      String payload = "{\"params\":\"query=&hitsPerPage=1&page=0&facets=&facetFilters=%5B%5B%22product_simple%3A%20" + productId
+          + "%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22location%3A%20" + LOCATION + "%22%2C%22product_simple_active"
           + "%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict"
           + "&restrictSearchableAttributes=%5B%22name%22%5D\"}";
 
@@ -229,7 +232,10 @@ public class ColombiaMercadoniCrawler extends Crawler {
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
-          products = new JSONObject(page);
+          // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
+          JsonObject JsonParser = new JsonParser().parse(page).getAsJsonObject();
+
+          products = new JSONObject(JsonParser.toString());
         } catch (Exception e) {
           Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
         }

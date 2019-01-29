@@ -154,7 +154,7 @@ public class BrasilZattiniCrawler extends Crawler {
     Element sellerNameElement = doc.selectFirst(".product-seller-name");
 
     if (sellerNameElement != null) {
-      sellerName = sellerNameElement.ownText().toLowerCase();
+      sellerName = sellerNameElement.text().toLowerCase();
     }
 
     marketplace.put(sellerName, crawlPrices(doc));
