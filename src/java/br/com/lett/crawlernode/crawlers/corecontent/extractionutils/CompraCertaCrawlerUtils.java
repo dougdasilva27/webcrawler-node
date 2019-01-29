@@ -20,7 +20,7 @@ import models.prices.Prices;
 public class CompraCertaCrawlerUtils {
 
   private static final String MAIN_SELLER_NAME_LOWER = "compra certa";
-  private static final String HOME_PAGE = "https://loja.compracerta.com.br/";
+  private static final String HOME_PAGE = "https://www.compracerta.com.br/";
   private Session session;
 
   public CompraCertaCrawlerUtils(Session session, Logger logger2) {
