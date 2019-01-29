@@ -51,6 +51,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
+    boolean availableToBuy = false;
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
@@ -71,11 +72,17 @@ public class BrasilZattiniCrawler extends Crawler {
 
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(doc, jsonSku);
-        boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available");
+        Element notAvailable = doc.selectFirst(".showcase .text-not-avaliable");
+
+        if (notAvailable != null) {
+          availableToBuy =
+              jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available") && !notAvailable.hasClass("text-not-avaliable");
+        } else {
+          availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available");
+        }
 
         Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(doc) : new HashMap<>();
         boolean available = availableToBuy && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
