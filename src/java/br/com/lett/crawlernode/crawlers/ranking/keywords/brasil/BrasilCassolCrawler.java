@@ -25,8 +25,7 @@ public class BrasilCassolCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url, cookies);
-    Elements products = this.currentDoc.select(".main-clear .collection > li > .text-center > a:first-child");
-
+    Elements products = this.currentDoc.select(".main-clear .collection > li");
     if (!products.isEmpty()) {
       for (Element e : products) {
         JSONObject info = scrapJsonInfo(e);
@@ -56,11 +55,11 @@ public class BrasilCassolCrawler extends CrawlerRankingKeywords {
 
   private JSONObject scrapJsonInfo(Element e) {
     JSONObject json = new JSONObject();
+    Element ancorElement = e.selectFirst(".boxselosvitrine a");
+    String jsScript = ancorElement.attr("href").replace(" ", "");
 
-    String jsScript = e.attr("href").replace(" ", "");
     if (jsScript.contains("push(")) {
       JSONObject product = new JSONObject(CrawlerUtils.extractSpecificStringFromScript(jsScript, "push(", ";", false));
-
       if (product.has("ecommerce")) {
         JSONObject ecommerce = product.getJSONObject("ecommerce");
 
