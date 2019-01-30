@@ -56,7 +56,11 @@ public class BrasilCassolCrawler extends CrawlerRankingKeywords {
   private JSONObject scrapJsonInfo(Element e) {
     JSONObject json = new JSONObject();
     Element ancorElement = e.selectFirst(".boxselosvitrine a");
-    String jsScript = ancorElement.attr("href").replace(" ", "");
+    String jsScript = null;
+
+    if (ancorElement != null) {
+      jsScript = ancorElement.attr("href").replace(" ", "");
+    }
 
     if (jsScript.contains("push(")) {
       JSONObject product = new JSONObject(CrawlerUtils.extractSpecificStringFromScript(jsScript, "push(", ";", false));
