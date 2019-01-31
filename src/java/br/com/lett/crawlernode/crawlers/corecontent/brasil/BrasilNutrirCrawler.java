@@ -74,6 +74,7 @@ public class BrasilNutrirCrawler extends Crawler {
       } else {
         for (Element e : variations) {
           String internalId = e.attr("value");
+          name = scrapVariationName(e);
           Integer stock = scrapStock(e);
           Float price = scrapPrice(e);
           Prices prices = crawlPrices(price, e);
@@ -121,6 +122,18 @@ public class BrasilNutrirCrawler extends Crawler {
     return internalId;
   }
 
+  private String scrapVariationName(Element e) {
+	  String name = e.ownText();
+	  
+	  if(name.contains("(R$")) {
+		  name = name.split("\\(R\\$")[0].trim();
+	  } else if(name.contains("(de")) {
+		  name = name.split("\\(de")[0].trim();
+	  }
+	  
+	  return name;
+  }
+  
   private Integer scrapStock(Element e) {
     Integer stock = 0;
     String attr = e.attr("qtde");
