@@ -1,26 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.jsoup.Jsoup;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -40,59 +35,61 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     super(session);
   }
 
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+  // @Override
+  // public void handleCookiesBeforeFetch() {
+  // Logging.printLogDebug(logger, session, "Adding cookie...");
+  //
+  // // performing request to get cookie
+  // String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
+  //
+  // BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
+  // cookie.setDomain("www.princesadonorteonline.com.br");
+  // cookie.setPath("/");
+  // this.cookies.add(cookie);
+  // }
 
-    // performing request to get cookie
-    String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
-
-    BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
-    cookie.setDomain("www.princesadonorteonline.com.br");
-    cookie.setPath("/");
-    this.cookies.add(cookie);
-  }
-
-  @Override
-  protected Document fetch() {
-    StringBuilder str = new StringBuilder();
-    str.append("<html><body>");
-    String url = session.getOriginalURL();
-
-    if (url.contains("detalhes_produto/")) {
-      String id = url.split("detalhes_produto/")[1].split("/")[0];
-
-      String payload = "arrapara=[\"Carregar_Detalhes_Produto\",\"" + id + "\",\"\",\"detalhe_pagina\"]&origem=site&controle=navegacao";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded");
-
-      String page = POSTFetcher
-          .fetchPagePOSTWithHeaders("https://www.princesadonorteonline.com.br/ct/atende_geral.php", session, payload, cookies, 1, headers).trim();
-
-      if (page != null && page.startsWith("[") && page.endsWith("]")) {
-        try {
-          JSONArray infos = new JSONArray(page);
-
-          if (infos.length() > 6) {
-            JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
-
-            if (productInfo.length() >= 3) {
-              str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
-              str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
-              str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
-            }
-          }
-        } catch (JSONException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-        }
-      }
-    }
-
-    str.append("</body></html>");
-
-    return Jsoup.parse(str.toString());
-  }
+  // @Override
+  // protected Document fetch() {
+  // StringBuilder str = new StringBuilder();
+  // str.append("<html><body>");
+  // String url = session.getOriginalURL();
+  //
+  // if (url.contains("detalhes_produto/")) {
+  // String id = url.split("detalhes_produto/")[1].split("/")[0];
+  //
+  // String payload = "arrapara=[\"Carregar_Detalhes_Produto\",\"" + id +
+  // "\",\"\",\"detalhe_pagina\"]&origem=site&controle=navegacao";
+  //
+  // Map<String, String> headers = new HashMap<>();
+  // headers.put("Content-Type", "application/x-www-form-urlencoded");
+  //
+  // String page = POSTFetcher
+  // .fetchPagePOSTWithHeaders("https://www.princesadonorteonline.com.br/ct/atende_geral.php",
+  // session, payload, cookies, 1, headers).trim();
+  //
+  // if (page != null && page.startsWith("[") && page.endsWith("]")) {
+  // try {
+  // JSONArray infos = new JSONArray(page);
+  //
+  // if (infos.length() > 6) {
+  // JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
+  //
+  // if (productInfo.length() >= 3) {
+  // str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
+  // str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
+  // str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
+  // }
+  // }
+  // } catch (JSONException e) {
+  // Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+  // }
+  // }
+  // }
+  //
+  // str.append("</body></html>");
+  //
+  // return Jsoup.parse(str.toString());
+  // }
 
   @Override
   public boolean shouldVisit() {
@@ -105,9 +102,10 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    if (isProductPage(doc)) {
 
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      JSONObject jsonProduct = CrawlerUtils.selectJsonFromHtml(doc, "script", "", finalIndex, withoutSpaces, lastFinalIndex);
       String internalId = crawlInternalId(doc);
       String internalPid = null;
       String name = crawlName(doc);
@@ -137,8 +135,8 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
   }
 
-  private boolean isProductPage(String url) {
-    return url.contains("detalhes_produto/");
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".product-view") != null;
   }
 
   private String crawlInternalId(Document doc) {
