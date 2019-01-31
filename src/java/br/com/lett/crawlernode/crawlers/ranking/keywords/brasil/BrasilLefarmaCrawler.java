@@ -14,31 +14,32 @@ public class BrasilLefarmaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 24;  
+    this.pageSize = 24;
 
-    this.log("Página "+ this.currentPage);
-    
-    String url = "https://www.lefarma.com.br/resultadopesquisa?pag="+ this.currentPage + "&departamento=&buscarpor=" + this.keywordEncoded + "&smart=0";
-    
-    this.log("Link onde são feitos os crawlers: " + url); 
-    
-    this.currentDoc = fetchDocument(url);      
-    Elements elements = this.currentDoc.select(".vitrine_geral #scroller li");
-    if(elements.size() > 0) {    
-      
-      if(totalProducts == 0) {
-        this.totalProducts = elements.size() > 0 ? elements.size(): 0;
+    this.log("Página " + this.currentPage);
+
+    String url =
+        "https://www.lefarma.com.br/resultadopesquisa?pag=" + this.currentPage + "&departamento=&buscarpor=" + this.keywordEncoded + "&smart=0";
+
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    this.currentDoc = fetchDocument(url);
+    Elements elements = this.currentDoc.select(".vitrine_geral .produto");
+    if (elements.size() > 0) {
+
+      if (totalProducts == 0) {
+        this.totalProducts = elements.size() > 0 ? elements.size() : 0;
         this.log("Total: " + this.totalProducts);
       }
-      
-      if(elements != null) {
-        for (Element e: elements) {
-          
+
+      if (elements != null) {
+        for (Element e : elements) {
+
           String internalPid = crawlInternalPid(e);
           String productUrl = crawlProductUrl(e);
-          
+
           saveDataProduct(null, internalPid, productUrl);
-          
+
           this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         }
       }
@@ -48,12 +49,12 @@ public class BrasilLefarmaCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(Element e) {
     String url = null;
     String text = e.selectFirst(".titulo a").attr("href").trim();
-    
-    if(text != null) {
+
+    if (text != null) {
       text = text.substring(text.indexOf("=") + 2, text.lastIndexOf("'"));
       url = text;
     }
-    
+
     return url;
   }
 
@@ -61,14 +62,14 @@ public class BrasilLefarmaCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(Element e) {
     String internalPid = null;
     String text = e.selectFirst(".collection-product-code a").text().trim();
- 
-    if(text != null) {
+
+    if (text != null) {
       internalPid = text;
     }
 
     return internalPid;
   }
-  
+
   @Override
   protected boolean hasNextPage() {
     return this.currentDoc.select(".prox-page") != null;
