@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -15,7 +14,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -105,7 +103,8 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     if (isProductPage(doc)) {
 
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      JSONObject jsonProduct = CrawlerUtils.selectJsonFromHtml(doc, "script", "", finalIndex, withoutSpaces, lastFinalIndex);
+      Elements scripts = doc.select("script[type=\"application/ld+json\"]");
+      System.err.println();
       String internalId = crawlInternalId(doc);
       String internalPid = null;
       String name = crawlName(doc);
