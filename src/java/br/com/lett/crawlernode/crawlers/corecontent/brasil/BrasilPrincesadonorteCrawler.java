@@ -104,7 +104,14 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       Elements scripts = doc.select("script[type=\"application/ld+json\"]");
-      System.err.println();
+
+      for (Element script : scripts) {
+        System.out.println(script.outerHtml());
+        String strJson = extractJsonFromScriptTag(script);
+      }
+
+
+
       String internalId = crawlInternalId(doc);
       String internalPid = null;
       String name = crawlName(doc);
@@ -132,6 +139,14 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private String extractJsonFromScriptTag(Element script) {
+    String strJson = script.toString();
+    if (strJson.contains("{")) {
+      strJson = strJson.substring(strJson.indexOf("{"), strJson.lastIndexOf("}"));
+    }
+    return strJson;
   }
 
   private boolean isProductPage(Document doc) {
