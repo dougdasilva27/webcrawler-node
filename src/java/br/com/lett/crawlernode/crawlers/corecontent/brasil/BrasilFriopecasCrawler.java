@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -126,6 +127,10 @@ public class BrasilFriopecasCrawler extends Crawler {
       // Prices
       Prices prices = crawlPrices(internalId, price, doc);
 
+      // Ean
+      JSONArray arr = CrawlerUtils.scrapEanFromVTEX(doc);
+      String ean = 0 < arr.length() ? arr.getString(0) : null;
+
       // Creating the product
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
@@ -143,6 +148,7 @@ public class BrasilFriopecasCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
+      product.setEan(ean);
 
       products.add(product);
 
