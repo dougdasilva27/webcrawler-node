@@ -53,6 +53,9 @@ public class BrasilHavanCrawler extends Crawler {
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
+      // ean data in json
+      JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
+
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
@@ -67,12 +70,13 @@ public class BrasilHavanCrawler extends Crawler {
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+            .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
 
         products.add(product);
       }
