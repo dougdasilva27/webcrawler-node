@@ -78,12 +78,13 @@ public class BrasilCassolCrawler extends Crawler {
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
             "https:", "www.cassol.com.br");
         String secondaryImages = crawlSecondaryImages(doc);
+        String ean = crawlEan(jsonSku);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(new Marketplace()).build();
+            .setMarketplace(new Marketplace()).setEan(ean).build();
 
         products.add(product);
       }
@@ -239,5 +240,19 @@ public class BrasilCassolCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private String crawlEan(JSONObject json) {
+    String ean = null;
+
+    if (json.has("ean")) {
+      Object obj = json.get("ean");
+
+      if (obj != null) {
+        ean = obj.toString();
+      }
+    }
+
+    return ean;
   }
 }

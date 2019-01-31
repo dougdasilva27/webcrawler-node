@@ -53,6 +53,8 @@ public class PeruWongCrawler extends Crawler {
       // sku data in json
       JSONArray arraySkus =
           skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
+
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -70,6 +72,7 @@ public class PeruWongCrawler extends Crawler {
             : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -77,7 +80,8 @@ public class PeruWongCrawler extends Crawler {
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }

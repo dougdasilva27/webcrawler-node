@@ -51,32 +51,43 @@ public class MexicoHebCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(doc);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product)");
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product)");
       boolean available = !doc.select(".availability.in-stock").isEmpty();
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img:not(#image-main)",
-          Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(#image-main)",
-          Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/", primaryImage);
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img:not(#image-main)",
+              Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
+          ".product-image-gallery img:not(#image-main)", Arrays.asList("data-zoom-image", "src"),
+          "https:", "www.heb.com.mx/", primaryImage);
       String description = crawlDescription(doc);
+      String ean = scrapEan(doc, ".extra-info span span[data-upc]");
 
       Map<String, JSONObject> productsMap = extractProductsJson(doc);
 
       if (productsMap.isEmpty()) {
         String internalId = internalPid;
         String name = crawlName(doc, new JSONObject());
-        Map<String, Prices> marketplaceMap = available ? crawlMarketplace(doc, new JSONObject(), internalPid) : new HashMap<>();
-        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
-        Prices prices = marketplaceMap.containsKey(SELLER_NAME_LOWER) ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
+        Map<String, Prices> marketplaceMap =
+            available ? crawlMarketplace(doc, new JSONObject(), internalPid) : new HashMap<>();
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
+        Prices prices =
+            marketplaceMap.containsKey(SELLER_NAME_LOWER) ? marketplaceMap.get(SELLER_NAME_LOWER)
+                : new Prices();
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.AMEX));
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(null).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(null).setMarketplace(marketplace).build();
 
         products.add(product);
       } else {
@@ -85,16 +96,22 @@ public class MexicoHebCrawler extends Crawler {
           JSONObject skuJson = entry.getValue();
           String internalId = entry.getKey();
           String name = crawlName(doc, skuJson);
-          Map<String, Prices> marketplaceMap = available ? crawlMarketplace(doc, skuJson, internalPid) : new HashMap<>();
-          Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
-          Prices prices = marketplaceMap.containsKey(SELLER_NAME_LOWER) ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
+          Map<String, Prices> marketplaceMap =
+              available ? crawlMarketplace(doc, skuJson, internalPid) : new HashMap<>();
+          Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+              Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
+          Prices prices =
+              marketplaceMap.containsKey(SELLER_NAME_LOWER) ? marketplaceMap.get(SELLER_NAME_LOWER)
+                  : new Prices();
           Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.AMEX));
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setStock(null).setMarketplace(marketplace).build();
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+              .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+              .setDescription(description).setStock(null).setMarketplace(marketplace).build();
 
           products.add(product);
         }
@@ -114,7 +131,8 @@ public class MexicoHebCrawler extends Crawler {
   private Map<String, JSONObject> extractProductsJson(Document doc) {
     Map<String, JSONObject> productsMap = new HashMap<>();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "Product.Config(", ");", false, true);
+    JSONObject json =
+        CrawlerUtils.selectJsonFromHtml(doc, "script", "Product.Config(", ");", false, true);
     if (json.has("attributes")) {
       JSONObject attributes = json.getJSONObject("attributes");
 
@@ -146,11 +164,13 @@ public class MexicoHebCrawler extends Crawler {
                     productInfo.put("name", name + " " + product.get("label"));
                   }
 
-                  if (!productInfo.has("price") && product.has("price") && !product.get("price").toString().equals("0")) {
+                  if (!productInfo.has("price") && product.has("price")
+                      && !product.get("price").toString().equals("0")) {
                     productInfo.put("price", product.get("price"));
                   }
 
-                  if (!productInfo.has("oldPrice") && product.has("oldPrice") && !product.get("oldPrice").toString().equals("0")) {
+                  if (!productInfo.has("oldPrice") && product.has("oldPrice")
+                      && !product.get("oldPrice").toString().equals("0")) {
                     productInfo.put("oldPrice", product.get("oldPrice"));
                   }
 
@@ -182,7 +202,8 @@ public class MexicoHebCrawler extends Crawler {
     return productsMap;
   }
 
-  private Map<String, Prices> crawlMarketplace(Document doc, JSONObject jsonSku, String internalPid) {
+  private Map<String, Prices> crawlMarketplace(Document doc, JSONObject jsonSku,
+      String internalPid) {
     Map<String, Prices> marketplace = new HashMap<>();
 
     String sellerName;
@@ -247,16 +268,19 @@ public class MexicoHebCrawler extends Crawler {
   private Prices crawlPrices(Document doc, JSONObject jsonSku, String internalPid) {
     Prices prices = new Prices();
 
-    Float price = CrawlerUtils.scrapSimplePriceFloatWithDots(doc, "#product-price-" + internalPid, false);
+    Float price =
+        CrawlerUtils.scrapSimplePriceFloatWithDots(doc, "#product-price-" + internalPid, false);
     if (price == null) {
-      price = CrawlerUtils.scrapSimplePriceFloatWithDots(doc, ".price-info .special-price .price", false);
+      price = CrawlerUtils.scrapSimplePriceFloatWithDots(doc, ".price-info .special-price .price",
+          false);
     }
 
     if (jsonSku.has("price")) {
       price = MathUtils.parseFloatWithDots(jsonSku.get("price").toString());
     }
 
-    prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#old-price-" + internalPid, false));
+    prices.setPriceFrom(
+        CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#old-price-" + internalPid, false));
     if (jsonSku.has("oldPrice")) {
       prices.setPriceFrom(MathUtils.parseDoubleWithDot(jsonSku.get("oldPrice").toString()));
     }
@@ -271,5 +295,17 @@ public class MexicoHebCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private String scrapEan(Document doc, String selector) {
+    String ean = null;
+    Element e = doc.selectFirst(selector);
+
+    if (e != null) {
+      String aux = e.attr("data-upc");
+      ean = aux.length() == 12 ? "0" + aux : aux;
+    }
+
+    return ean;
   }
 }

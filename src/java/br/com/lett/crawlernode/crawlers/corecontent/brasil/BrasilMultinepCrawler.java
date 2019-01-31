@@ -55,12 +55,13 @@ public class BrasilMultinepCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".produto-imagem-miniaturas a", Arrays.asList("href"), "https:",
           "images.tcdn.com.br", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description"));
+      String ean = crawlEan(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+          .setMarketplace(new Marketplace()).setEan(ean).build();
 
       products.add(product);
 
@@ -109,4 +110,18 @@ public class BrasilMultinepCrawler extends Crawler {
     return prices;
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    JSONArray arr = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "dataLayer=", null, true, false);
+
+    if (arr.length() > 0) {
+      JSONObject obj = arr.getJSONObject(0);
+
+      if (obj.has("EAN")) {
+        ean = obj.getString("EAN");
+      }
+    }
+
+    return ean;
+  }
 }

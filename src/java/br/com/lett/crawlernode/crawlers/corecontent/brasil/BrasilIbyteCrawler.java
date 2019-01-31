@@ -213,6 +213,9 @@ public class BrasilIbyteCrawler extends Crawler {
       // Prices
       Prices prices = crawlPrices(doc, price);
 
+      // Ean
+      String ean = crawlEan(doc);
+
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
       product.setInternalId(internalId);
@@ -229,6 +232,7 @@ public class BrasilIbyteCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
+      product.setEan(ean);
 
       products.add(product);
 
@@ -321,5 +325,26 @@ public class BrasilIbyteCrawler extends Crawler {
   private boolean isProductPage(Document document) {
     Element elementProduct = document.select(".view-sku").first();
     return (elementProduct != null);
+  }
+
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Elements elmnts = doc.select(".infoEanGarantia b");
+
+    for (Element e : elmnts) {
+      String aux = e.text();
+
+      if (aux.contains("EAN")) {
+        aux = aux.replaceAll("[^0-9]+", "");
+
+        if (!aux.isEmpty()) {
+          ean = aux;
+        }
+
+        break;
+      }
+    }
+
+    return ean;
   }
 }

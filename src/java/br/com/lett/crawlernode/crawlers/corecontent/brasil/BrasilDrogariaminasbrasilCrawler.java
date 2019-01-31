@@ -59,12 +59,13 @@ public class BrasilDrogariaminasbrasilCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      String ean = crawlEan(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
 
       products.add(product);
 
@@ -328,4 +329,14 @@ public class BrasilDrogariaminasbrasilCrawler extends Crawler {
     }
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Element e = doc.selectFirst("[itemprop=\"gtin13\"]");
+
+    if (e != null) {
+      ean = e.text().trim();
+    }
+
+    return ean;
+  }
 }

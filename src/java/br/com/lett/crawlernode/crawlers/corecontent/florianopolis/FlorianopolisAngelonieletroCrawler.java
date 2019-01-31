@@ -219,6 +219,8 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
     String category2 = getCategory(categories, 1);
     String category3 = getCategory(categories, 2);
 
+    String ean = crawlEan(document);
+
     product.setUrl(session.getOriginalURL());
     product.setInternalId(internalId);
     product.setInternalPid(internalPid);
@@ -234,6 +236,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
     product.setStock(stock);
     product.setMarketplace(marketplace);
     product.setAvailable(available);
+    product.setEan(ean);
 
     return product;
   }
@@ -564,6 +567,24 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
   }
 
+  private String crawlEan(Document doc) {
+    String ean = null;
+    Elements elmnts = doc.select(".tab-content .tab-pane .caracteristicas tbody tr");
+
+    for (Element e : elmnts) {
+      String aux = e.text();
+
+      if (aux.contains("EAN")) {
+        aux = aux.replaceAll("[^0-9]+", "");
+
+        if (!aux.isEmpty()) {
+          ean = aux;
+        }
+      }
+    }
+
+    return ean;
+  }
 }
 
 

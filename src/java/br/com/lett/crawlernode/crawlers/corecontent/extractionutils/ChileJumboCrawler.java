@@ -56,19 +56,17 @@ public class ChileJumboCrawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil =
-          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies);
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a", false);
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".productDescription", "#caracteristicas table.Ficha-Tecnica"));
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a", false);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription", "#caracteristicas table.Ficha-Tecnica"));
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -82,25 +80,22 @@ public class ChileJumboCrawler {
         if (pricePromotion != null) {
           setPricePromotionInMarketplaceMap(pricePromotion, marketplaceMap);
         }
-        List<String> mainSellers =
-            CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
-        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
-            mainSellers, Card.AMEX, session);
-        boolean available =
-            CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, mainSellers);
+        List<String> mainSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, mainSellers, Card.AMEX, session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, mainSellers);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, mainSellers);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -137,8 +132,7 @@ public class ChileJumboCrawler {
 
   private JSONObject crawlPromotionsAPI() {
     return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session,
-        "https://nuevo.jumbo.cl/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid", null,
-        cookies);
+        "https://nuevo.jumbo.cl/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid", null, cookies);
   }
 
   private Float getPromotionShopCardPrice(JSONObject descriptionApi, String id) {
@@ -164,22 +158,18 @@ public class ChileJumboCrawler {
           this.promotionsJson = crawlPromotionsAPI();
         }
 
-        JSONObject promotionsList =
-            this.promotionsJson.has("value") ? this.promotionsJson.getJSONObject("value")
-                : new JSONObject();
+        JSONObject promotionsList = this.promotionsJson.has("value") ? this.promotionsJson.getJSONObject("value") : new JSONObject();
 
         if (promotionsData.has("promotions")) {
           for (Object o : promotionsData.getJSONArray("promotions")) {
             if (promotionsList.has(o.toString())) {
               JSONObject promotionJson = promotionsList.getJSONObject(o.toString());
 
-              if (promotionJson.has("group") && promotionJson.has("discountType")
-                  && promotionJson.has("value")) {
+              if (promotionJson.has("group") && promotionJson.has("discountType") && promotionJson.has("value")) {
                 String group = promotionJson.get("group").toString();
                 String discountType = promotionJson.get("discountType").toString();
 
-                if (group.equalsIgnoreCase("t-cenco")
-                    && !discountType.equalsIgnoreCase("percentual")) {
+                if (group.equalsIgnoreCase("t-cenco") && !discountType.equalsIgnoreCase("percentual")) {
                   pricePromotion = CrawlerUtils.getFloatValueFromJSON(promotionJson, "value");
                   break;
                 }

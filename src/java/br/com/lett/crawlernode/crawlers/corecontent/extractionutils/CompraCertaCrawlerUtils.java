@@ -36,10 +36,15 @@ public class CompraCertaCrawlerUtils {
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
+
     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+
 
     // sku data in json
     JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+    // ean data in json
+    JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
 
     // ean data in json
     JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -59,6 +64,7 @@ public class CompraCertaCrawlerUtils {
       Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
       Float price = vtexUtil.crawlMainPagePrice(prices);
       Integer stock = vtexUtil.crawlStock(apiJSON);
+
       String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
       // Creating the product

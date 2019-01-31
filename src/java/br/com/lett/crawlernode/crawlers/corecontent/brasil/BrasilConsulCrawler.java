@@ -40,8 +40,10 @@ public class BrasilConsulCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
-      vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cns-e-btp--desconto-a-vista-cartao-percentual-]", true, false);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      vtexUtil.setDiscountWithDocument(doc,
+          ".prod-selos p[class^=flag cns-e-btp--desconto-a-vista-cartao-percentual-]", true, false);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -49,7 +51,11 @@ public class BrasilConsulCrawler extends Crawler {
       CategoryCollection categories = crawlCategories(doc);
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+
+      // ean data in json
+      JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -63,15 +69,21 @@ public class BrasilConsulCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
+            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
+            : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .build();
 
         products.add(product);
       }
@@ -104,7 +116,8 @@ public class BrasilConsulCrawler extends Crawler {
    * @param apiJSON
    * @return
    */
-  private String crawlDescription(Document document, JSONObject apiJSON, VTEXCrawlersUtils vtexCrawlersUtils, String internalId) {
+  private String crawlDescription(Document document, JSONObject apiJSON,
+      VTEXCrawlersUtils vtexCrawlersUtils, String internalId) {
     StringBuilder description = new StringBuilder();
 
     JSONObject descriptionJson = vtexCrawlersUtils.crawlDescriptionAPI(internalId, "skuId");
@@ -120,7 +133,8 @@ public class BrasilConsulCrawler extends Crawler {
     if (descriptionJson.has("Caracteristícas Técnicas")) {
       JSONArray keys = descriptionJson.getJSONArray("Caracteristícas Técnicas");
       for (Object o : keys) {
-        if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+        if (!o.toString().equalsIgnoreCase("Informações para Instalação")
+            && !o.toString().equalsIgnoreCase("Portfólio")) {
           specs.add(o.toString());
         }
       }
@@ -141,7 +155,8 @@ public class BrasilConsulCrawler extends Crawler {
 
         description.append("<div>");
         description.append("<h4>").append(label).append("</h4>");
-        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec)) + (label.equals("Garantia") ? " meses" : ""));
+        description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec))
+            + (label.equals("Garantia") ? " meses" : ""));
         description.append("</div>");
       }
     }
@@ -149,32 +164,36 @@ public class BrasilConsulCrawler extends Crawler {
     Element manual = document.selectFirst(".value-field.Manual-do-Produto");
     if (manual != null) {
 
-      description
-          .append("<a href=\"" + manual.ownText() + "\" title=\"Baixar manual\" class=\"details__manual\" target=\"_blank\">Baixar manual</a>");
+      description.append("<a href=\"" + manual.ownText()
+          + "\" title=\"Baixar manual\" class=\"details__manual\" target=\"_blank\">Baixar manual</a>");
     }
 
     if (apiJSON.has("RealHeight")) {
-      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Largura").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealHeight").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWidth")) {
-      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Altura").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealWidth").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealLength")) {
-      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Profundidade").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealLength").toString().replace(".0", "") + " cm")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     if (apiJSON.has("RealWeightKg")) {
-      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-          .append("<td>").append("\n" + apiJSON.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
-          .append("</table>");
+      description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>")
+          .append("<tr>").append("<th>Peso").append("</th>").append("<td>")
+          .append("\n" + apiJSON.get("RealWeightKg").toString().replace(".0", "") + " kg")
+          .append("</td>").append("</tbody>").append("</table>");
     }
 
     return description.toString();
