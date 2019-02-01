@@ -24,7 +24,7 @@ public class PeruWongCrawler extends Crawler {
   }
 
   private static final String HOME_PAGE = "https://www.wong.pe/";
-  private static final String MAIN_SELLER_NAME_LOWER = "wong";
+  private static final String MAIN_SELLER_NAME_LOWER = "wongfood";
 
   @Override
   public boolean shouldVisit() {
@@ -44,7 +44,7 @@ public class PeruWongCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]",
               ".content-description .value-field.Descripcion", ".title[data-destec=\"tech\"]",
