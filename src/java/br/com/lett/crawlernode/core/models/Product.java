@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.util.List;
+
 import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,6 +27,7 @@ public class Product {
 	private Marketplace marketplace;
 	private Integer stock;
 	private String ean;
+	private List<String> eans;
 
 	public Product() {
 		this.description = "";
@@ -199,6 +202,14 @@ public class Product {
 	public void setEan(String ean) {
 		this.ean = ean;
 	}
+	
+	public List<String> getEans() {
+		return this.eans;
+	}
+	
+	public void setEans(List<String> eans) {
+		this.eans = eans;
+	}
 
 	@Override
 	public String toString() {
@@ -229,6 +240,7 @@ public class Product {
 		sb.append("description: " + "html code with " + this.description.length() + " characters" + "\n");
 		sb.append("stock: " + this.stock + "\n");
 		sb.append("ean: " + this.ean + "\n");
+		sb.append("eans: " + (this.eans == null ? this.eans : this.eans.toString()) + "\n");
 
 		return sb.toString();
 	}
