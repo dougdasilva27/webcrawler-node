@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -14,9 +16,9 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
 import models.prices.Prices;
 
 /**
@@ -33,61 +35,6 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     super(session);
   }
 
-  // @Override
-  // public void handleCookiesBeforeFetch() {
-  // Logging.printLogDebug(logger, session, "Adding cookie...");
-  //
-  // // performing request to get cookie
-  // String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
-  //
-  // BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
-  // cookie.setDomain("www.princesadonorteonline.com.br");
-  // cookie.setPath("/");
-  // this.cookies.add(cookie);
-  // }
-
-  // @Override
-  // protected Document fetch() {
-  // StringBuilder str = new StringBuilder();
-  // str.append("<html><body>");
-  // String url = session.getOriginalURL();
-  //
-  // if (url.contains("detalhes_produto/")) {
-  // String id = url.split("detalhes_produto/")[1].split("/")[0];
-  //
-  // String payload = "arrapara=[\"Carregar_Detalhes_Produto\",\"" + id +
-  // "\",\"\",\"detalhe_pagina\"]&origem=site&controle=navegacao";
-  //
-  // Map<String, String> headers = new HashMap<>();
-  // headers.put("Content-Type", "application/x-www-form-urlencoded");
-  //
-  // String page = POSTFetcher
-  // .fetchPagePOSTWithHeaders("https://www.princesadonorteonline.com.br/ct/atende_geral.php",
-  // session, payload, cookies, 1, headers).trim();
-  //
-  // if (page != null && page.startsWith("[") && page.endsWith("]")) {
-  // try {
-  // JSONArray infos = new JSONArray(page);
-  //
-  // if (infos.length() > 6) {
-  // JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
-  //
-  // if (productInfo.length() >= 3) {
-  // str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
-  // str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
-  // str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
-  // }
-  // }
-  // } catch (JSONException e) {
-  // Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-  // }
-  // }
-  // }
-  //
-  // str.append("</body></html>");
-  //
-  // return Jsoup.parse(str.toString());
-  // }
 
   @Override
   public boolean shouldVisit() {
@@ -105,33 +52,34 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       Elements scripts = doc.select("script[type=\"application/ld+json\"]");
 
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_tabs_description_contents", "#product_tabs_additional_contents"));
+
+      CategoryCollection categories = crawlCategories(doc);
+
       for (Element script : scripts) {
-        System.out.println(script.outerHtml());
-        String strJson = extractJsonFromScriptTag(script);
+        JSONObject json = extractJsonFromScriptTag(script);
+        if (json.has("@type")) {
+          if (json.getString("@type").equalsIgnoreCase("product")) {
+            String internalId = crawlInternalId(json);
+            String name = crawlName(json);
+            Float price = crawlPrice(json);
+            Prices prices = crawlPrices(price, doc);
+            boolean available = price != null;
+            String primaryImage = crawlPrimaryImage(json);
+
+            // Creating the product
+            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(null).setName(name)
+                .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+                .setSecondaryImages(null).setDescription(description).setStock(null).setMarketplace(null).build();
+
+            products.add(product);
+          }
+        }
       }
 
 
-
-      String internalId = crawlInternalId(doc);
-      String internalPid = null;
-      String name = crawlName(doc);
-      Float price = crawlPrice(doc);
-      Prices prices = crawlPrices(price, doc);
-      boolean available = price != null;
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
-      String description = crawlDescription(doc);
-      Integer stock = null;
-      Marketplace marketplace = crawlMarketplace();
-
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
-
-      products.add(product);
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
@@ -141,94 +89,69 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
   }
 
-  private String extractJsonFromScriptTag(Element script) {
+  private JSONObject extractJsonFromScriptTag(Element script) {
     String strJson = script.toString();
-    if (strJson.contains("{")) {
-      strJson = strJson.substring(strJson.indexOf("{"), strJson.lastIndexOf("}"));
+    JSONObject json = new JSONObject();
+    if (strJson.contains("{") && strJson.contains("}")) {
+      strJson = strJson.substring(strJson.indexOf("{"), strJson.lastIndexOf("}") + 1);
+      json = new JSONObject(strJson);
     }
-    return strJson;
+
+    return json;
   }
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product-view") != null;
   }
 
-  private String crawlInternalId(Document doc) {
+  private String crawlInternalId(JSONObject json) {
     String internalId = null;
-    Element internalIdElement = doc.select("h2.cod").first();
-
-    if (internalIdElement != null) {
-      internalId = internalIdElement.ownText();
+    if (json.has("sku")) {
+      internalId = json.get("sku").toString();
     }
-
     return internalId;
   }
 
-  private String crawlName(Document document) {
+  private String crawlName(JSONObject json) {
     String name = null;
-    Element nameElement = document.select("h1.name").first();
 
-    if (nameElement != null) {
-      name = nameElement.ownText().trim();
+    if (json.has("name")) {
+      name = json.getString("name");
     }
 
     return name;
   }
 
-  private Float crawlPrice(Document document) {
+  private Float crawlPrice(JSONObject json) {
     Float price = null;
-    Element salePriceElement = document.select(".product_price b font").first();
+    JSONArray prices = new JSONArray();
+    JSONObject value = new JSONObject();
 
-    if (salePriceElement != null) {
-      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
+    if (json.has("offers")) {
+      prices = json.getJSONArray("offers");
+      for (Object offer : prices) {
+        if (offer instanceof JSONObject) {
+          value = (JSONObject) offer;
+          if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer")) {
+            price = value.getFloat("price");
+          }
+        }
+
+      }
     }
 
     return price;
   }
 
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
 
-
-  private String crawlPrimaryImage(Document doc) {
+  private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
-    Element elementPrimaryImage = doc.select("#img_zoom").first();
 
-    if (elementPrimaryImage != null) {
-      String image = elementPrimaryImage.attr("data-zoom-image").trim();
-
-      if (image.isEmpty()) {
-        image = elementPrimaryImage.attr("src").trim();
-      }
-
-      if (image.contains("../")) {
-        primaryImage = HOME_PAGE + image.replace("../", "").trim();
-      } else if (image.startsWith(HOME_PAGE)) {
-        primaryImage = image;
-      } else {
-        primaryImage = HOME_PAGE + image;
-      }
+    if (json.has("image")) {
+      primaryImage = json.getString("image");
     }
 
     return primaryImage;
-  }
-
-  /**
-   * No momento que o crawler foi feito não achei produto com imagens secundárias
-   * 
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**
@@ -237,7 +160,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumbCustomizado ul li > a");
+    Elements elementCategories = document.select(" .breadcrumbs ul li > a");
 
     for (int i = 1; i < elementCategories.size(); i++) {
       String cat = elementCategories.get(i).ownText().trim();
@@ -250,16 +173,6 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Elements elementsDescription = doc.select(".description_section");
-    for (Element e : elementsDescription) {
-      description.append(e.html());
-    }
-
-    return description.toString();
-  }
 
   /**
    * 
@@ -275,12 +188,12 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
-      Element priceFrom = doc.select(".product_price s font").first();
+      Element priceFrom = doc.selectFirst(".old-price .price");
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
-      Element installments = doc.select(".product_price > font").first();
+      Element installments = doc.selectFirst(".special-price .price");
 
       if (installments != null) {
         String text = installments.ownText().toLowerCase();
