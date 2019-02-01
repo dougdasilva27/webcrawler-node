@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -61,9 +63,9 @@ public class BrasilBemolCrawler extends Crawler {
             Arrays.asList("data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net");
       }
 
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img",
+      String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img",
           Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net",
-          "https://d8xabijtzlaac.cloudfront.net/Custom/Content");
+          primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
 
@@ -97,7 +99,43 @@ public class BrasilBemolCrawler extends Crawler {
 
     return internalId;
   }
+  
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector,
+	      List<String> attributes, String protocol, String host, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
 
+    Elements images = doc.select(cssSelector);
+    for (Element e : images) {
+      String image = sanitizeUrl(e, attributes, protocol, host);
+
+      if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
+        secondaryImagesArray.put(image);
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  public static String sanitizeUrl(Element element, List<String> attributes, String protocol, String host) {
+    String sanitizedUrl = null;
+
+    for (String att : attributes) {
+      String url = element.attr(att).trim();
+
+      if (!url.isEmpty() && !url.equalsIgnoreCase("https://d8xabijtzlaac.cloudfront.net/Custom/Content")) {
+        sanitizedUrl = CrawlerUtils.completeUrl(url, protocol, host);
+        break;
+      }
+    }
+
+    return sanitizedUrl;
+  }
+  
   /**
    * @param doc
    * @param price

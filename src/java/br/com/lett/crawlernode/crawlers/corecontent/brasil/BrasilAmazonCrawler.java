@@ -76,7 +76,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
       Float price = crawlPrice(marketplaceMap);
       Prices prices = crawlPrices(marketplaceMap);
-      boolean available = crawlAvailability(marketplaceMap);
+      boolean available = crawlAvailability(marketplaceMap) && price != null;
       String ean = crawlEan(doc);
 
       // Creating the product
