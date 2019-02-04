@@ -11,10 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -52,19 +54,7 @@ public class BrasilEfacilCrawler extends Crawler {
       }
 
       // Categorias
-      Elements elementsCategories = doc.select("#widget_breadcrumb ul li a");
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      for (int i = 1; i < elementsCategories.size(); i++) {
-        if (category1.isEmpty()) {
-          category1 = elementsCategories.get(i).text().trim();
-        } else if (category2.isEmpty()) {
-          category2 = elementsCategories.get(i).text().trim();
-        } else if (category3.isEmpty()) {
-          category3 = elementsCategories.get(i).text().trim();
-        }
-      }
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb ul li a", true);
 
       // Imagem primária
       Element elementPrimaryImage = doc.select("div.product-photo a").first();
@@ -185,9 +175,9 @@ public class BrasilEfacilCrawler extends Crawler {
           product.setAvailable(available);
           product.setPrice(price);
           product.setPrices(prices);
-          product.setCategory1(category1);
-          product.setCategory2(category2);
-          product.setCategory3(category3);
+          product.setCategory1(categories.getCategory(0));
+          product.setCategory2(categories.getCategory(1));
+          product.setCategory3(categories.getCategory(2));
           product.setPrimaryImage(primaryImage);
           product.setSecondaryImages(secondaryImages);
           product.setDescription(description);
@@ -286,9 +276,9 @@ public class BrasilEfacilCrawler extends Crawler {
               product.setAvailable(available);
               product.setPrice(price);
               product.setPrices(prices);
-              product.setCategory1(category1);
-              product.setCategory2(category2);
-              product.setCategory3(category3);
+              product.setCategory1(categories.getCategory(0));
+              product.setCategory2(categories.getCategory(1));
+              product.setCategory3(categories.getCategory(2));
               product.setPrimaryImage(primaryImage);
               product.setSecondaryImages(secondaryImages);
               product.setDescription(description);
