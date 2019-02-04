@@ -26,6 +26,7 @@ public class BrasilLojastaqiRatingReviewCrawler extends RatingReviewCrawler {
 
       Integer totalNumOfEvaluations = scrapNumOfEval(doc);
       Double avgRating = scrapAvgRating(doc);
+      String internalPid = scrapInternalPid(doc);
 
       Elements variations = doc.select(".atributos .item_atributo input");
 
@@ -42,7 +43,7 @@ public class BrasilLojastaqiRatingReviewCrawler extends RatingReviewCrawler {
         }
 
       } else {
-        String internalId = scrapInternalId(doc);
+        String internalId = scrapInternalId(doc, internalPid);
 
         ratingReviews.setInternalId(internalId);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -60,18 +61,33 @@ public class BrasilLojastaqiRatingReviewCrawler extends RatingReviewCrawler {
     return doc.selectFirst(".content_protudo") != null;
   }
 
-  private String scrapInternalId(Document doc) {
+  private String scrapInternalPid(Document document) {
+    String internalPid = null;
+
+    Element internalIdElement = document.selectFirst("meta[itemprop=sku]");
+
+    if (internalIdElement != null) {
+      internalPid = internalIdElement.attr("content");
+    }
+
+    return internalPid;
+  }
+
+  private String scrapInternalId(Document document, String pid) {
     String internalId = null;
-    Element e = doc.selectFirst("div.detalhes_valor[id^=detailsSkuId]");
 
-    if (e != null) {
-      String aux = e.id();
-      aux = aux.replaceAll("[^0-9]+", "");
+    Element id = document.selectFirst("input#productSkuId_" + pid);
 
-      if (!aux.isEmpty()) {
-        internalId = aux;
+    if (id != null) {
+      internalId = id.attr("value");
+    } else {
+      id = document.select("#skuSelected").first();
+
+      if (id != null) {
+        internalId = id.attr("value");
       }
     }
+
 
     return internalId;
   }
