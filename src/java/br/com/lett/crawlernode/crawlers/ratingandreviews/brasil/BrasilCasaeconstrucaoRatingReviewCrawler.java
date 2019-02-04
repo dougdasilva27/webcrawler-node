@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -26,16 +27,47 @@ public class BrasilCasaeconstrucaoRatingReviewCrawler extends RatingReviewCrawle
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "53f7df57-db2b-4521-b829-617abf75405");
-      Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
-      Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "53f7df57-db2b-4521-b829-617abf75405d");
+
+      Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating, "p[itemprop=\"count\"]");
+
+      Double avgRating = getTotalAvgRatingFromYourViews(docRating, ".rating-number .yv-count-stars1");
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviewsCollection.addRatingReviews(ratingReviews);
     }
 
     return ratingReviewsCollection;
+  }
+
+
+
+  private Double getTotalAvgRatingFromYourViews(Document docRating, String cssSelector) {
+    Double avgRating = 0d;
+    Element rating = docRating.select(cssSelector).first();
+
+    if (rating != null) {
+      avgRating = Double.parseDouble(rating.text().trim());
+    }
+
+    return avgRating;
+  }
+
+  private Integer getTotalNumOfRatingsFromYourViews(Document doc, String cssSelector) {
+    Integer totalRating = 0;
+    Element totalRatingElement = doc.select(cssSelector).first();
+
+    if (totalRatingElement != null) {
+      String totalText = totalRatingElement.text().replaceAll("[^0-9]", "").trim();
+
+      if (!totalText.isEmpty()) {
+        totalRating = Integer.parseInt(totalText);
+      }
+    }
+
+    return totalRating;
   }
 
   private boolean isProductPage(Document doc) {
