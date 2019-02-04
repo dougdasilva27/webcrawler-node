@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class BrasilCasaeconstrucaoRatingReviewCrawler extends RatingReviewCrawler {
@@ -49,7 +50,7 @@ public class BrasilCasaeconstrucaoRatingReviewCrawler extends RatingReviewCrawle
     Element rating = docRating.select(cssSelector).first();
 
     if (rating != null) {
-      avgRating = Double.parseDouble(rating.text().trim());
+      avgRating = MathUtils.parseDoubleWithDot(rating.text().trim());
     }
 
     return avgRating;
