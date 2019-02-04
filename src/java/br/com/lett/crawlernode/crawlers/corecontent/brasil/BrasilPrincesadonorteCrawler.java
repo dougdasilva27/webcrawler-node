@@ -22,9 +22,8 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
 
 /**
- * Date: 21/08/2017
  * 
- * @author Gabriel Dornelas
+ * @author Joao Pedro
  *
  */
 public class BrasilPrincesadonorteCrawler extends Crawler {
@@ -160,7 +159,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(" .breadcrumbs ul li > a");
+    Elements elementCategories = document.select(".breadcrumbs ul li > a");
 
     for (int i = 1; i < elementCategories.size(); i++) {
       String cat = elementCategories.get(i).ownText().trim();

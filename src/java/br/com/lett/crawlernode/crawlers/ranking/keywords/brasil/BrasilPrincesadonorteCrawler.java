@@ -81,8 +81,11 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
       total = amount.text().trim();
       total = total.substring(total.indexOf("de"), total.length());
       total = total.replaceAll("[^0-9]", "");
+      if (!total.isEmpty()) {
+        this.totalProducts = Integer.parseInt(total);
+      }
 
-      this.totalProducts = Integer.parseInt(total);
+      this.log("Total da busca: " + this.totalProducts);
     }
   }
 
