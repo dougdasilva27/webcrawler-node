@@ -1,138 +1,94 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
-public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords{
+public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
-	public BrasilPrincesadonorteCrawler(Session session) {
-		super(session);
-	}
+  public BrasilPrincesadonorteCrawler(Session session) {
+    super(session);
+  }
 
-	private static final String HOME_PAGE = "https://www.princesadonorteonline.com.br/";
-	private List<Cookie> cookies = new ArrayList<>();
-	
-	@Override
-	protected void processBeforeFetch() {
-		super.processBeforeFetch();
-		this.log("Adding cookie ...");		
-		
-		// Request para pegar o cookie
-		Map<String, String> cookiesMap = fetchCookies(HOME_PAGE);
-		
-		for(Entry<String, String> entry : cookiesMap.entrySet()) {
-			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-			cookie.setDomain("www.princesadonorteonline.com.br");
-			cookie.setPath("/");
-			this.cookies.add(cookie);
-		}
-	
-		String payload = "origem=site&controle=navegacao&arrapara=[\"Carregar_Home\"]";
-		
-		Map<String, String> headers = new HashMap<>();
-		headers.put("Content-Type", "application/x-www-form-urlencoded");
-		
-		// Request para validar o cookie para requests de busca 
-		fetchCookiesPOST("https://www.princesadonorteonline.com.br/ct/atende_geral.php", payload, headers, cookies);
-	}
-	
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
-	
-		this.log("Página "+ this.currentPage);
-		
-		JSONObject productsInfo = crawlProductInfo();
-		JSONArray products = productsInfo.has("products") ? productsInfo.getJSONArray("products") : new JSONArray();
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.length() > 0) {
-			if(totalProducts == 0) {
-				this.totalProducts = productsInfo.has("total") ? productsInfo.getInt("total") : 0;
-			}
-			
-			for(int i = 0; i < products.length(); i++) {
-				JSONArray product = products.getJSONArray(i);
-				
-				if(product.length() > 1) {
-					String internalPid = null;
-					String internalId = product.getString(0);
-					String productUrl = crawlProductUrl(product.getString(1).trim(), internalId);
-					
-					saveDataProduct(internalId, internalPid, productUrl);
-					
-					this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-					if(this.arrayProducts.size() == productsLimit) {
-						break;
-					}
-				}
-				
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-		
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+  private List<Cookie> cookies = new ArrayList<>();
 
-	@Override
-	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-			
-		return false;
-	}	
-	
-	private String crawlProductUrl(String name, String internalId){
-		String productUrl = null;
-		
-		if(!name.isEmpty()) {
-			productUrl = HOME_PAGE + "detalhes_produto/" + internalId + "/" + 
-					name.toLowerCase().replace(" ", "-").replace("%", "").replace("&", "") + ".html";
-		}
-		
-		return productUrl;
-	}
-	
-	private JSONObject crawlProductInfo() {
-		JSONObject products = new JSONObject();
-		String payload = "origem=site&controle=navegacao&arrapara=[\"Busca_Produtos\",\""+ this.location +"\",\"" + this.currentPage + "\",\"\",\"\",\"\",\"\",\"\"]";
-		
-		Map<String, String> headers = new HashMap<>();
-		headers.put("Content-Type", "application/x-www-form-urlencoded");
-		headers.put("Referer", HOME_PAGE);
-		
-		String page = fetchStringPOST("https://www.princesadonorteonline.com.br/ct/atende_geral.php", payload, headers, cookies).trim();
-		
-		if(page != null && page.startsWith("[") && page.endsWith("]")) {
-			try {
-				JSONArray infos = new JSONArray(page);
-				
-				if(infos.length() > 1) {
-					products.put("products", infos.getJSONArray(0)); //First position of array has products info
-					products.put("total", infos.getInt(1)); //First position of array has products info
-				}
-			} catch (JSONException e) {
-				logError(CommonMethods.getStackTrace(e));
-			}
-		}
-		
-		return products;
-	}
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    String url = "https://www.princesadonorteonline.com.br//catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+
+    this.pageSize = 9;
+
+    this.log("Página " + this.currentPage);
+
+    Document doc = fetchDocument(url);
+
+    Elements products = doc.select(".category-products .products-grid.row .item");
+
+    if (products.size() > 0) {
+      if (totalProducts == 0) {
+        setTotalProducts(doc);
+      }
+
+      for (Element product : products) {
+
+        String internalPid = null;
+        String internalId = scrapInternalId(product);
+        String productUrl = scrapProductUrl(product);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  private String scrapInternalId(Element product) {
+    Element ancorElement = product.selectFirst(".view-detail");
+    String internalId = null;
+
+    if (ancorElement != null) {
+      internalId = ancorElement.attr("id").replaceAll("[^0-9]", "");
+    }
+
+    return internalId;
+  }
+
+
+  private String scrapProductUrl(Element product) {
+    String productUrl = null;
+    Element ancorElement = product.selectFirst(".product-name a");
+
+    if (ancorElement != null) {
+      productUrl = ancorElement.attr("href");
+    }
+
+    return productUrl;
+  }
+
+  private void setTotalProducts(Document doc) {
+    Element amount = doc.selectFirst(".amount");
+    String total = null;
+    if (amount != null) {
+      total = amount.text().trim();
+      total = total.substring(total.indexOf("de"), total.length());
+      total = total.replaceAll("[^0-9]", "");
+
+      this.totalProducts = Integer.parseInt(total);
+    }
+  }
+
 }
