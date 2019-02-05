@@ -1,0 +1,83 @@
+package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
+
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import models.RatingsReviews;
+
+public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
+
+  public LeroymerlinRatingReviewCrawler(Session session) {
+    super(session);
+    // TODO Auto-generated constructor stub
+  }
+
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+    String internalId = crawlInternalId(document);
+
+    if (isProductPage(document)) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, "caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc");
+      JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+      JSONObject reviewSummary = ratingReviewsEndpointResponse.getJSONObject("reviewSummary");
+      JSONObject primaryRating = reviewSummary.getJSONObject("primaryRating");
+
+      ratingReviews.setTotalRating(reviewSummary.getInt("numReviews"));
+      ratingReviews.setAverageOverallRating(primaryRating.getDouble("average"));
+      ratingReviews.setTotalWrittenReviews(reviewSummary.getInt("numReviews"));
+
+      ratingReviewsCollection.addRatingReviews(ratingReviews);
+    }
+
+    return ratingReviewsCollection;
+  }
+
+  private boolean isProductPage(Document doc) {
+    return !doc.select(".product-code").isEmpty();
+  }
+
+  private String crawlInternalId(Document doc) {
+    String internalId = null;
+
+    Element internalIdElement = doc.selectFirst(".product-code");
+    if (internalIdElement != null) {
+      String text = internalIdElement.text();
+
+      if (text.contains(".")) {
+        internalId = CommonMethods.getLast(text.split("\\.")).trim();
+      } else if (text.contains("digo")) {
+        internalId = CommonMethods.getLast(text.split("digo")).trim();
+      } else {
+        internalId = text.trim();
+      }
+    }
+
+    return internalId;
+  }
+
+  // https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?PassKey=caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc&productid=88100915
+  // &contentType=reviews,questions&reviewDistribution=primaryRating,recommended&rev=0&contentlocale=pt_BR
+
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalId, String bazaarVoiceEnpointPassKey) {
+    StringBuilder request = new StringBuilder();
+
+    request.append("https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?");
+    request.append("&Passkey=" + bazaarVoiceEnpointPassKey);
+    request.append("&productid=" + skuInternalId);
+    request.append("&contentType=reviews,questions");
+    request.append("&reviewDistribution=primaryRating,recommended");
+    request.append("&rev=0");
+    request.append("&contentlocale=pt_BR");
+
+    return request.toString();
+  }
+}

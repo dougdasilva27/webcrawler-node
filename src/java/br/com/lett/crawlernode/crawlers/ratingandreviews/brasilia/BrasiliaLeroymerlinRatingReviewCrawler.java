@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
+package br.com.lett.crawlernode.crawlers.ratingandreviews.brasilia;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,13 +11,13 @@ import org.apache.http.message.BasicNameValuePair;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.LeroymerlinRatingReviewCrawler;
 
-public class SaopauloLeroymerlinRatingReviewCrawler extends LeroymerlinRatingReviewCrawler {
+public class BrasiliaLeroymerlinRatingReviewCrawler extends LeroymerlinRatingReviewCrawler {
 
-  public SaopauloLeroymerlinRatingReviewCrawler(Session session) {
+  public BrasiliaLeroymerlinRatingReviewCrawler(Session session) {
     super(session);
   }
 
-  private static final String REGION = "grande_sao_paulo";
+  private static final String REGION = "brasilia";
 
   @Override
   public String handleURLBeforeFetch(String curURL) {
