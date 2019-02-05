@@ -78,6 +78,9 @@ public class SaopauloAraujoCrawler extends Crawler {
         Prices prices = crawlPrices(internalId, price, jsonSku);
         Integer stock = crawlStock(jsonProduct);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
+        
+        List<String> eans = new ArrayList<>();
+        if (ean != null && !ean.isEmpty()) eans.add(ean);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
@@ -85,7 +88,7 @@ public class SaopauloAraujoCrawler extends Crawler {
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
+            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean).setEans(eans)
             .build();
 
         products.add(product);
