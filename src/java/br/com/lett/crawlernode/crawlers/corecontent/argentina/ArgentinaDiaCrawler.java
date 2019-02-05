@@ -46,7 +46,7 @@ public class ArgentinaDiaCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:first-child) > a");
       String description =
           CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription"));
 

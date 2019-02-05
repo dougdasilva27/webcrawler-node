@@ -105,21 +105,25 @@ public class ArgentinaRibeiroCrawler extends Crawler {
     description.append(CrawlerUtils.scrapSimpleDescription(doc,
         Arrays.asList(".atg_store_productDescription", "#detallesTecnicos", "#ContenedorDescripciones", ".template-aires")));
 
-    Element ean = doc.selectFirst("#ArtEan");
-    if (ean != null) {
-      description.append(crawlDescriptionFromFlixMedia(ean.val().trim(), session));
-    }
+      description.append(crawlDescriptionFromFlixMedia(doc, session));
 
     return description.toString();
   }
 
-  public static String crawlDescriptionFromFlixMedia(String ean, Session session) {
+  public static String crawlDescriptionFromFlixMedia(Document doc, Session session) {
     StringBuilder description = new StringBuilder();
 
-    if (!ean.isEmpty()) {
+    Element ean = doc.selectFirst("script[data-flix-ean]");
+    if (ean != null) {
 
-      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean + "?&=4782&=f4&ean=" + ean + "&ssl=1&ext=.js";
+      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean.attr("data-flix-ean") 
+      	+ "?&=4782&=f4&ean=" + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
 
+      if(!ean.attr("data-flix-mpn").isEmpty()) {
+    	  url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") 
+    			  + "&mpn=" +ean.attr("data-flix-mpn");
+      }
+      
       String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
       final String token = "$(\"#flixinpage_\"+i).inPage";
 
