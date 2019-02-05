@@ -40,6 +40,7 @@ public class BrasilLefarmaCrawler extends Crawler {
       }
       
       String internalPid = crawlInternalPid(fetchedJson);
+      String mainName = fetchedJson.has("name") ? fetchedJson.get("name").toString().trim() : null;
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "span[itemprop=price]", false);
       String description = crawlDescription(fetchedJson);
       CategoryCollection categories = crawlCategories(fetchedJson);
@@ -49,6 +50,11 @@ public class BrasilLefarmaCrawler extends Crawler {
         JSONObject jsonObject =  (JSONObject) obj;
 
         String name = crawlName(jsonObject);
+        
+        if(mainName != null && !mainName.toLowerCase().contains(name.toLowerCase())) {
+        	name = mainName + " " + name;
+        }
+        
         String internalId = crawlInternalId(jsonObject);
         String primaryImage = crawlPrimaryImage(jsonObject);
         boolean available = crawlAvailability(jsonObject);
@@ -101,9 +107,11 @@ public class BrasilLefarmaCrawler extends Crawler {
 
   private String crawlName(JSONObject obj) {
     String name = null;
+    
     if(obj.has("definition1Value")) {
-      name = obj.getString("definition1Value");
+      name = obj.getString("definition1Value").trim();
     }
+    
     return name;
   }
   

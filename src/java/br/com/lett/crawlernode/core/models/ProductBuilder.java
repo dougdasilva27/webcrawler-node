@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.util.List;
+
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -21,6 +23,7 @@ public class ProductBuilder {
 	private Marketplace marketplace;
 	private Integer 	stock;
 	private String		ean;
+	private List<String> eans;
 
 	public static ProductBuilder create() {
 		return new ProductBuilder();
@@ -109,6 +112,11 @@ public class ProductBuilder {
 		this.ean = ean;
 		return this;
 	}
+	
+	public ProductBuilder setEans(List<String> eans) {
+		this.eans = eans;
+		return this;
+	}
 
 	public Product build() {
 		Product product = new Product();
@@ -129,6 +137,7 @@ public class ProductBuilder {
 		product.setStock(this.stock);
 		product.setMarketplace(this.marketplace);
 		product.setEan(this.ean);
+		product.setEans(this.eans);
 
 		return product;
 	}

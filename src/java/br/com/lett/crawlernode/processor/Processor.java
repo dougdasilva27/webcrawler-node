@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.processor;
 
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -65,6 +68,17 @@ public class Processor {
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
     String ean = product.getEan();
+    List<String> eans = null;
+    
+    List<String> crawledEans = product.getEans();
+    if (crawledEans != null) {
+    	for (String eanTmp : crawledEans) {
+    		if (eanTmp != null && !eanTmp.isEmpty()) {
+    			if (eans == null) eans = new ArrayList<>();
+    			eans.add(eanTmp);
+    		}
+    	}
+    }
 
     // checking fields
     boolean checkResult = checkFields(price, available, internalId, url, name, session);
@@ -116,6 +130,7 @@ public class Processor {
         newProcessedProduct.setOriginalDescription(description);
         newProcessedProduct.setInternalPid(internalPid);
         newProcessedProduct.setEan(ean);
+        newProcessedProduct.setEans(eans);
 
       }
 
@@ -124,7 +139,7 @@ public class Processor {
         newProcessedProduct = new Processed(null, internalId, internalPid, name, null, null, null, null, null, null, null, foto, secondaryPics, cat1,
             cat2, cat3, url, session.getMarket().getNumber(), nowISO, nowISO, null, nowISO, nowISO, null, null, description, price, prices, null,
             null, null, false, false, stock, new Behavior(), // behavior - will be update in the updateBehavior method just below
-            marketplace, ean);
+            marketplace, ean, eans);
       }
 
       // run the processor for the new model
@@ -637,6 +652,15 @@ public class Processor {
           if (actualPrice == 0) {
             actualPrice = null;
           }
+          
+          /*
+           * Array of eans
+           */
+          List<String> eans = null;
+          Array eansArray = rs.getArray("eans");
+          if (eansArray != null) {
+        	  eans = Arrays.asList((String[])eansArray.getArray());
+          }
 
           /*
            * Create the Processed model
@@ -647,7 +671,7 @@ public class Processor {
               rs.getString("cat1"), rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"),
               rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
               rs.getString("original_description"), actualPrice, actualPrices, digitalContent, rs.getLong("lett_id"), similars,
-              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace, rs.getString("ean"));
+              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace, rs.getString("ean"), eans);
 
           return actualProcessedProduct;
 

@@ -74,7 +74,7 @@ public class BrasilCassolCrawler extends Crawler {
 
         Float price = CrawlerUtils.scrapSimplePriceFloat(productAPI, "#divPrecoProduto > .product-adjustedPrice:not(.hide)", true);
         boolean available = crawlAvailability(price, jsonSku);
-        Prices prices = crawlPrices(productAPI, price);
+        Prices prices = available ? crawlPrices(productAPI, price) : new Prices();
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
             "https:", "www.cassol.com.br");
         String secondaryImages = crawlSecondaryImages(doc);

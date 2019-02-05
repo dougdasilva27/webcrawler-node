@@ -390,6 +390,10 @@ public class CrawlerUtils {
   public static String completeUrl(String url, String protocol, String host) {
     StringBuilder sanitizedUrl = new StringBuilder();
 
+    if(!protocol.endsWith(":") && !protocol.endsWith("//")) {
+    	protocol += ":";
+    }
+    
     if (!url.startsWith("http") && url.contains(host)) {
       sanitizedUrl.append(protocol).append(url);
     } else if (!url.contains(host) && !url.startsWith("http")) {

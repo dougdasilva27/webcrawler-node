@@ -319,6 +319,8 @@ public class BrasilMultisomCrawler extends Crawler {
 			}
 		}
 		
+		installments.put(1, bankSlipPrice);
+		
 		if (installments.size() > 0) {
 			prices.insertCardInstallment(Card.VISA.toString(), installments);
 			prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);

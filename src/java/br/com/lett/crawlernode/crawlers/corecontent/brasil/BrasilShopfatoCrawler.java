@@ -86,7 +86,7 @@ public class BrasilShopfatoCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
-      setDiscounts(doc, vtexUtil);
+      vtexUtil.setBankTicketDiscount(5);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -130,18 +130,5 @@ public class BrasilShopfatoCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
-  }
-
-  private static void setDiscounts(Document doc, VTEXCrawlersUtils vtexUtil) {
-    vtexUtil.setCardDiscount(5);
-
-    Element flags = doc.select(".HightLight .flag").last();
-    if (flags != null && flags.ownText().toLowerCase().contains("off")) {
-      String text = flags.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        vtexUtil.setBankTicketDiscount(Integer.parseInt(text));
-      }
-    }
   }
 }

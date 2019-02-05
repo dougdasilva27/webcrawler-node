@@ -148,10 +148,10 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements images = doc.select(".more-views-list > li:not([class=active]) a");
+    Elements images = doc.select("#thumbs-produto > a:not([class=active])");
 
     for (Element e : images) {
-      secondaryImagesArray.put(e.attr("href"));
+      secondaryImagesArray.put(e.attr("rel"));
     }
 
     if (secondaryImagesArray.length() > 0) {
