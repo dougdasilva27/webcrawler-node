@@ -41,8 +41,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalID = crawlInternalId(doc);
@@ -72,8 +71,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
         elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
       }
       if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Categorias
@@ -116,6 +114,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       Prices prices = crawlPrices(doc, price);
 
       String ean = scrapEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       Product product = new Product();
 
@@ -135,7 +135,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 
@@ -173,8 +173,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    JSONObject json =
-        CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
 
     if (json.has("ecommerce")) {
       JSONObject ecommerce = json.getJSONObject("ecommerce");
