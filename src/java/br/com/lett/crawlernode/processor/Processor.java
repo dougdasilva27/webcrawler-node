@@ -68,7 +68,17 @@ public class Processor {
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
     String ean = product.getEan();
-    List<String> eans = product.getEans();
+    List<String> eans = null;
+    
+    List<String> crawledEans = product.getEans();
+    if (crawledEans != null) {
+    	for (String eanTmp : crawledEans) {
+    		if (eanTmp != null && !eanTmp.isEmpty()) {
+    			if (eans == null) eans = new ArrayList<>();
+    			eans.add(eanTmp);
+    		}
+    	}
+    }
 
     // checking fields
     boolean checkResult = checkFields(price, available, internalId, url, name, session);

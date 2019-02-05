@@ -79,8 +79,8 @@ public class SaopauloAraujoCrawler extends Crawler {
         Integer stock = crawlStock(jsonProduct);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
         
-        List<String> eans = new ArrayList<>();
-        if (ean != null && !ean.isEmpty()) eans.add(ean);
+        List<String> eans = null;
+        eans.add(ean);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
