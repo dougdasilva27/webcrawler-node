@@ -58,7 +58,7 @@ public class ChileJumboCrawler {
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies);
       vtexUtil.setHasBankTicket(false);
-      
+
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
@@ -93,11 +93,14 @@ public class ChileJumboCrawler {
 
         String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
