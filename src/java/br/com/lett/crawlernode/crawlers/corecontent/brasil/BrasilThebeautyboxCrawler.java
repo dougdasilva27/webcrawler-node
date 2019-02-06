@@ -41,8 +41,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil =
-          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -50,8 +49,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
       String description = null;
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
       // ean data in json
       JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
 
@@ -59,8 +57,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
-        description =
-            description == null ? crawlDescription(internalId, doc, vtexUtil) : description;
+        description = description == null ? crawlDescription(internalId, doc, vtexUtil) : description;
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
@@ -68,21 +65,19 @@ public class BrasilThebeautyboxCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
-            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
-            : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-            .build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -114,8 +109,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       description.append("<div><h4>Descrição</h4>");
 
       if (descriptionJson.has("Título da Descrição")) {
-        description.append(descriptionJson.get("Título da Descrição").toString().replace("[\"", "")
-            .replace("\"]", ""));
+        description.append(descriptionJson.get("Título da Descrição").toString().replace("[\"", "").replace("\"]", ""));
       }
 
       description.append(sanitizeDescription(descriptionJson.get("description")));
