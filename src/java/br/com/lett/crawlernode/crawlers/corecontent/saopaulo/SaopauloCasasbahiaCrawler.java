@@ -113,8 +113,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
   private String fetchPage(String url) {
     Map<String, String> headers = new HashMap<>();
-    headers.put("Accept",
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Cache-Control", "no-cache");
     headers.put("Connection", "keep-alive");
@@ -132,8 +131,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc, session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // Pegando url padrão no doc da página, para lidar com casos onde tem url em formato diferente
       // no
@@ -162,8 +160,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       String primaryImage = this.crawlPrimaryImage(doc);
 
       // Secondary images
-      String secondaryImages = this.crawlSecondaryImages(doc,
-          doc.select(".textoIndisponivel").first() != null, primaryImage);
+      String secondaryImages = this.crawlSecondaryImages(doc, doc.select(".textoIndisponivel").first() != null, primaryImage);
 
       // Description
       String description = this.crawlDescription(doc);
@@ -178,12 +175,10 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
         Elements productVariationElements = this.crawlSkuOptions(doc);
 
         // Array de ids para url para pegar marketplace
-        List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(modifiedURL, doc,
-            productVariationElements, unnavailableForAll);
+        List<String> idsForUrlMarketPlace = this.identifyIDForUrlLojistas(modifiedURL, doc, productVariationElements, unnavailableForAll);
 
         // Pegando os documents das páginas de marketPlace para produtos especiais
-        Map<String, Document> documentsMarketPlaces =
-            this.fetchDocumentMarketPlacesToProductSpecial(idsForUrlMarketPlace, modifiedURL);
+        Map<String, Document> documentsMarketPlaces = this.fetchDocumentMarketPlacesToProductSpecial(idsForUrlMarketPlace, modifiedURL);
 
         for (int i = 0; i < productVariationElements.size(); i++) {
 
@@ -195,22 +190,21 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
           Map<String, Prices> marketplaceMap = new HashMap<>();
 
           if (!unnavailable) {
-            Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces,
-                variationName, sku, modifiedURL);
+            Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
             marketplaceMap = crawlMarketplaces(docMarketplace, doc);
           }
 
           Marketplace marketplace = unnavailable ? new Marketplace()
-              : CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
-                  Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA,
+              : CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2), Card.VISA,
                   session);
           boolean available = !unnavailable && crawlAvailability(marketplaceMap);
           Prices prices = crawlPricesForProduct(marketplaceMap);
           Float variationPrice = this.crawlPrice(prices);
-          String ean = crawlEan(sku.hasAttr("selected") ? doc
-              : Jsoup.parse(fetchPage(
-                  CrawlerUtils.sanitizeUrl(sku, "data-url", "https:", "www.casasbahia.com.br"))));
+          String ean = crawlEan(
+              sku.hasAttr("selected") ? doc : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", "https:", "www.casasbahia.com.br"))));
 
+          List<String> eans = new ArrayList<>();
+          eans.add(ean);
 
           Product product = new Product();
 
@@ -229,7 +223,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
           product.setStock(stock);
           product.setMarketplace(marketplace);
           product.setAvailable(available);
-          product.setEan(ean);
+          product.setEans(eans);
 
           products.add(product);
 
@@ -400,25 +394,18 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
    * Multiple product page methods *
    *********************************/
 
-  private Map<String, Document> fetchDocumentMarketPlacesToProductSpecial(
-      List<String> idsForUrlMarketPlace, String url) {
+  private Map<String, Document> fetchDocumentMarketPlacesToProductSpecial(List<String> idsForUrlMarketPlace, String url) {
     Map<String, Document> documentsMarketPlaces = new HashMap<>();
 
     if (idsForUrlMarketPlace != null) {
-      Document docMarketPlaceProdOne =
-          this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(0), url);
-      String[] namev =
-          docMarketPlaceProdOne.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
-      documentsMarketPlaces.put(namev[namev.length - 1].trim().toLowerCase(),
-          docMarketPlaceProdOne);
+      Document docMarketPlaceProdOne = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(0), url);
+      String[] namev = docMarketPlaceProdOne.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
+      documentsMarketPlaces.put(namev[namev.length - 1].trim().toLowerCase(), docMarketPlaceProdOne);
 
       if (idsForUrlMarketPlace.size() == 2) {
-        Document docMarketPlaceProdTwo =
-            this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(1), url);
-        String[] namev2 =
-            docMarketPlaceProdTwo.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
-        documentsMarketPlaces.put(namev2[namev2.length - 1].trim().toLowerCase(),
-            docMarketPlaceProdTwo);
+        Document docMarketPlaceProdTwo = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(1), url);
+        String[] namev2 = docMarketPlaceProdTwo.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
+        documentsMarketPlaces.put(namev2[namev2.length - 1].trim().toLowerCase(), docMarketPlaceProdTwo);
       }
     }
 
@@ -426,8 +413,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
   }
 
 
-  private List<String> identifyIDForUrlLojistas(String url, Document doc, Elements skuOptions,
-      boolean unnavailableForAll) {
+  private List<String> identifyIDForUrlLojistas(String url, Document doc, Elements skuOptions, boolean unnavailableForAll) {
     if (!unnavailableForAll) {
       List<String> ids = new ArrayList<>();
 
@@ -436,8 +422,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       String firstIdMainPage = tokens[tokens.length - 1].replaceAll("[^0-9]", "").trim();
 
       // second ID
-      String secondIdMainPage =
-          doc.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first().attr("value").trim();
+      String secondIdMainPage = doc.select("#ctl00_Conteudo_hdnIdSkuSelecionado").first().attr("value").trim();
 
       ids.add(firstIdMainPage);
 
@@ -496,8 +481,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       principalSellerPrice = MathUtils.parseFloatWithComma(principalSellerPriceElement.ownText());
     }
 
-    Element principalSeller =
-        docMarketplaceInfo.selectFirst("table#sellerList tbody tr:first-child");
+    Element principalSeller = docMarketplaceInfo.selectFirst("table#sellerList tbody tr:first-child");
     if (principalSeller != null) {
       Element sellerElement = principalSeller.select("a.seller").first();
       Element sellerValueElement = principalSeller.select(".valor").first();
@@ -525,11 +509,9 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
           }
           prices.insertCardInstallment("visa", installmentPriceMap);
 
-          Element comprar =
-              principalSeller.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+          Element comprar = principalSeller.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
 
-          if (comprar == null
-              || (comprar != null && principalSeller.select(".retirar a.bt-retirar") != null)) {
+          if (comprar == null || (comprar != null && principalSeller.select(".retirar a.bt-retirar") != null)) {
             marketplace.put(partnerName, prices);
           }
         }
@@ -562,11 +544,9 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
           prices.insertCardInstallment("visa", installmentPriceMap);
 
-          Element comprar =
-              linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
+          Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
 
-          if (comprar == null
-              || (comprar != null && linePartner.select(".retirar a.bt-retirar") != null)) {
+          if (comprar == null || (comprar != null && linePartner.select(".retirar a.bt-retirar") != null)) {
             marketplace.put(partnerName, prices);
           }
         }
@@ -630,8 +610,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
     boolean available = false;
 
     for (String seller : marketplaces.keySet()) {
-      if (seller.equals(MAIN_SELLER_NAME_LOWER)
-          || seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2)) {
+      if (seller.equals(MAIN_SELLER_NAME_LOWER) || seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER_2)) {
         available = true;
       }
     }
@@ -647,8 +626,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
     Element primaryImageElements = document.select(".carouselBox .thumbsImg li a").first();
 
     if (primaryImageElements != null) {
-      if (!primaryImageElements.attr("rev").isEmpty()
-          && primaryImageElements.attr("rev").startsWith("http")) {
+      if (!primaryImageElements.attr("rev").isEmpty() && primaryImageElements.attr("rev").startsWith("http")) {
         primaryImage = primaryImageElements.attr("rev");
       } else {
         primaryImage = primaryImageElements.attr("href");
@@ -669,8 +647,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
   }
 
 
-  private String crawlSecondaryImages(Document document, boolean unnavailableForAll,
-      String primaryImage) {
+  private String crawlSecondaryImages(Document document, boolean unnavailableForAll, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -745,8 +722,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
 
     Element ean = document.select(".productEan").first();
     if (ean != null) {
-      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779",
-          ean.ownText().replaceAll("[^0-9]", "").trim(), session));
+      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), session));
     }
 
     return description.toString();
@@ -774,8 +750,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
       Element priceDiscount = doc.select(".price.discount").first();
 
       if (priceDiscount != null) {
-        Float priceVista = Float.parseFloat(priceDiscount.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", "."));
+        Float priceVista = Float.parseFloat(priceDiscount.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
         prices.setBankTicketPrice(priceVista);
         installmentPriceMap.put(1, priceVista);
       } else {
@@ -799,14 +774,12 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
             String parcelaText = parcela.text().toLowerCase();
             int x = parcelaText.indexOf("x");
 
-            Integer installment =
-                Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
+            Integer installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
 
             Element valor = e.select("> td").first();
 
             if (valor != null) {
-              Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "")
-                  .replaceAll("\\.", "").replaceAll(",", "."));
+              Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
               installmentPriceMap.put(installment, value);
             }
@@ -833,15 +806,13 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
           if (parcelaText.contains("x")) {
             int x = parcelaText.indexOf("x");
 
-            installment =
-                Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
+            installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
           }
 
           Element valor = e.select("> td").first();
 
           if (valor != null) {
-            Float value = Float.parseFloat(
-                valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
             installmentPriceMap.put(installment, value);
           }
@@ -870,8 +841,7 @@ public class SaopauloCasasbahiaCrawler extends Crawler {
   }
 
 
-  private Document getDocumentMarketpalceForSku(Map<String, Document> documentsMarketPlaces,
-      String name, Element sku, String url) {
+  private Document getDocumentMarketpalceForSku(Map<String, Document> documentsMarketPlaces, String name, Element sku, String url) {
     Document docMarketplaceInfo = new Document(url);
     if (documentsMarketPlaces.size() > 0) {
 

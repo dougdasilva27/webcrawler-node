@@ -44,21 +44,18 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil =
-          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description = crawlDescription(doc, internalPid);
       String primaryImage = null;
       String secondaryImages = null;
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       // ean data in json
       JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -74,21 +71,19 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
-            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
-            : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-            .build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -138,11 +133,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
       description.append(advert.html());
     }
 
-    String url =
-        "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search?fq=productId:"
-            + internalPid;
-    JSONArray skuInfo =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String url = "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
@@ -151,8 +143,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         JSONArray infos = product.getJSONArray("allSpecifications");
 
         for (Object o : infos) {
-          if (!Arrays.asList("Garantia", "Parte do Corpo", "Gênero")
-              .contains(o.toString().trim())) {
+          if (!Arrays.asList("Garantia", "Parte do Corpo", "Gênero").contains(o.toString().trim())) {
             description.append("<div> <strong>" + o.toString() + ":</strong>");
             JSONArray spec = product.getJSONArray(o.toString());
 
@@ -172,8 +163,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
           if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-                iframe.attr("src"), null, cookies));
+            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
           }
         }
       }
