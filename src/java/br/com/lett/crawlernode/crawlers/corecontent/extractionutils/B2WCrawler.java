@@ -47,14 +47,14 @@ public class B2WCrawler {
   public List<Product> extractProducts(Document doc) {
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    // Json da pagina principal
+    JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
+
+    // Pega só o que interessa do json da api
+    JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+
+    if (infoProductJson.has("skus")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      // Json da pagina principal
-      JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
-
-      // Pega só o que interessa do json da api
-      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
       String internalPid = this.crawlInternalPid(infoProductJson);
       CategoryCollection categories = crawlCategories(infoProductJson);
@@ -94,10 +94,6 @@ public class B2WCrawler {
   /*******************************
    * Product page identification *
    *******************************/
-
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".product-info-area").isEmpty() || !doc.select(".product-page").isEmpty();
-  }
 
   private String crawlInternalPid(JSONObject assembleJsonProduct) {
     String internalPid = null;
