@@ -21,6 +21,8 @@ public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
     String internalId = crawlInternalId(document);
+    JSONObject reviewSummary = new JSONObject();
+    JSONObject primaryRating = new JSONObject();
 
     if (isProductPage(document)) {
       RatingsReviews ratingReviews = new RatingsReviews();
@@ -28,8 +30,14 @@ public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
 
       String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, "caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc");
       JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
-      JSONObject reviewSummary = ratingReviewsEndpointResponse.getJSONObject("reviewSummary");
-      JSONObject primaryRating = reviewSummary.getJSONObject("primaryRating");
+
+      if (ratingReviewsEndpointResponse.has("reviewSummary")) {
+        reviewSummary = ratingReviewsEndpointResponse.getJSONObject("reviewSummary");
+
+        if (reviewSummary.has("primaryRating")) {
+          primaryRating = reviewSummary.getJSONObject("primaryRating");
+        }
+      }
 
       ratingReviews.setTotalRating(reviewSummary.getInt("numReviews"));
       ratingReviews.setAverageOverallRating(primaryRating.getDouble("average"));
