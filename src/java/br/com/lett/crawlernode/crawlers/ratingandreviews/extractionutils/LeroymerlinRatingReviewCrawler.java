@@ -39,14 +39,34 @@ public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
         }
       }
 
-      ratingReviews.setTotalRating(reviewSummary.getInt("numReviews"));
-      ratingReviews.setAverageOverallRating(primaryRating.getDouble("average"));
-      ratingReviews.setTotalWrittenReviews(reviewSummary.getInt("numReviews"));
+      ratingReviews.setTotalRating(getTotalRating(reviewSummary));
+      ratingReviews.setAverageOverallRating(getAverageOverallRating(primaryRating));
+      ratingReviews.setTotalWrittenReviews(getTotalRating(reviewSummary));
 
       ratingReviewsCollection.addRatingReviews(ratingReviews);
     }
 
     return ratingReviewsCollection;
+  }
+
+  private Integer getTotalRating(JSONObject reviewSummary) {
+    Integer total = 0;
+
+    if (reviewSummary.has("numReviews") && reviewSummary.get("numReviews") instanceof Integer) {
+      total = reviewSummary.getInt("numReviews");
+    }
+
+    return total;
+  }
+
+  private Double getAverageOverallRating(JSONObject primaryRating) {
+    Double average = 0d;
+
+    if (primaryRating.has("average") && primaryRating.get("average") instanceof Double) {
+      average = primaryRating.getDouble("average");
+    }
+
+    return average;
   }
 
   private boolean isProductPage(Document doc) {
