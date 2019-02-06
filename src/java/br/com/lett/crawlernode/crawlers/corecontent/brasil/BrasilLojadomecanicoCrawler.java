@@ -53,7 +53,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
           "www.lojadomecanico.com.br");
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"),
           "https:", "www.lojadomecanico.com.br", primaryImage);
-      Float price = jsonIdSkuPrice.has("price") ? jsonIdSkuPrice.getFloat("price") : null;
+      Float price = CrawlerUtils.getFloatValueFromJSON(jsonIdSkuPrice, "price");
       Prices prices = scrapPrices(doc, price, jsonIdSkuPrice);
       boolean available = doc.selectFirst("#btn-comprar-product") != null;
       Integer stock = scrapStock(doc, available);;
