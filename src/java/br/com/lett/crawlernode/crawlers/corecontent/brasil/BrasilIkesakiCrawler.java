@@ -46,8 +46,7 @@ public class BrasilIkesakiCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -56,8 +55,7 @@ public class BrasilIkesakiCrawler extends Crawler {
       String description = crawlDescription(doc);
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       // ean data in html
       JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -79,14 +77,14 @@ public class BrasilIkesakiCrawler extends Crawler {
         Integer stock = crawlStock(jsonProduct);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-            .build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -257,8 +255,7 @@ public class BrasilIkesakiCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
-      String internalId, JSONObject jsonSku) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -296,8 +293,7 @@ public class BrasilIkesakiCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription =
-        doc.select(".product-characteristics table.Abas-de-informacao").first();
+    Element shortDescription = doc.select(".product-characteristics table.Abas-de-informacao").first();
     if (shortDescription != null) {
       description.append(shortDescription.html());
     }
@@ -306,8 +302,8 @@ public class BrasilIkesakiCrawler extends Crawler {
   }
 
   /**
-   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
-   * Visa à vista R$ 1.790,00
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
+   * à vista R$ 1.790,00
    * 
    * @param internalId
    * @param price
@@ -318,8 +314,7 @@ public class BrasilIkesakiCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.ikesaki.com.br/productotherpaymentsystems/" + internalId;
-      Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -402,8 +397,7 @@ public class BrasilIkesakiCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-              .replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -416,8 +410,7 @@ public class BrasilIkesakiCrawler extends Crawler {
   private JSONObject crawlApi(String internalId) {
     String url = "https://www.ikesaki.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);
