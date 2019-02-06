@@ -260,6 +260,11 @@ public class SaopauloPontofrioCrawler extends Crawler {
         // Price
         Float price = this.crawlPrice(prices);
 
+        String ean = crawlEan(doc);
+
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         Product product = new Product();
 
         product.setUrl(session.getOriginalURL());
@@ -277,6 +282,7 @@ public class SaopauloPontofrioCrawler extends Crawler {
         product.setStock(stock);
         product.setMarketplace(marketplace);
         product.setAvailable(available);
+        product.setEans(eans);
 
         products.add(product);
       }
