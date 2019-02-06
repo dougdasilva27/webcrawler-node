@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -25,7 +24,9 @@ public class BrasilLojadomecanicoRatingReviewCrawler extends RatingReviewCrawler
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      String internalId = scrapInternalId(doc);
+      JSONObject jsonId = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
+
+      String internalId = jsonId.has("pid") ? jsonId.getString("pid") : null;
       Integer totalNumOfEvaluations = 0;
       Double avgRating = 0.0;
 
@@ -49,17 +50,6 @@ public class BrasilLojadomecanicoRatingReviewCrawler extends RatingReviewCrawler
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product-page") != null;
-  }
-
-  private String scrapInternalId(Document doc) {
-    String internalId = null;
-    Element internalIdElement = doc.selectFirst("meta[itemprop=sku]");
-
-    if (internalIdElement != null) {
-      internalId = internalIdElement.attr("content").toString().trim();
-    }
-
-    return internalId;
   }
 
   private Integer scrapNumOfEval(JSONObject json) {
