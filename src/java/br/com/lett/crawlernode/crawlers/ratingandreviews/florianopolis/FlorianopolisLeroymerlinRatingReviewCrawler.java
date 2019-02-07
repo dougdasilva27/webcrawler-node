@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
+package br.com.lett.crawlernode.crawlers.ratingandreviews.florianopolis;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,13 +11,13 @@ import org.apache.http.message.BasicNameValuePair;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.LeroymerlinRatingReviewCrawler;
 
-public class SaopauloLeroymerlinRatingReviewCrawler extends LeroymerlinRatingReviewCrawler {
+public class FlorianopolisLeroymerlinRatingReviewCrawler extends LeroymerlinRatingReviewCrawler {
 
-  public SaopauloLeroymerlinRatingReviewCrawler(Session session) {
+  private static final String REGION = "santa_catarina";
+
+  public FlorianopolisLeroymerlinRatingReviewCrawler(Session session) {
     super(session);
   }
-
-  private static final String REGION = "grande_sao_paulo";
 
   @Override
   public String handleURLBeforeFetch(String curURL) {
@@ -47,4 +47,6 @@ public class SaopauloLeroymerlinRatingReviewCrawler extends LeroymerlinRatingRev
       return curURL;
     }
   }
+
+
 }
