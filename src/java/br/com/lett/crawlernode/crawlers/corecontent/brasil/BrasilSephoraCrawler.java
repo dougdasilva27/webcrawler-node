@@ -372,7 +372,7 @@ public class BrasilSephoraCrawler extends Crawler {
   private String crawlEan(JSONObject json) {
     String ean = null;
 
-    if (json.has("gtin13")) {
+    if (json.has("gtin13") && json.get("gtin13") instanceof String) {
       ean = json.getString("gtin13");
     }
 
