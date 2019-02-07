@@ -79,8 +79,7 @@ public class BrasilMartinsCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // InternalId
       String internalId = crawlInternalId(doc);
@@ -124,6 +123,9 @@ public class BrasilMartinsCrawler extends Crawler {
       // ean
       String ean = crawlEan(doc);
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       Product product = new Product();
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalId);
@@ -140,7 +142,7 @@ public class BrasilMartinsCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 
@@ -182,8 +184,7 @@ public class BrasilMartinsCrawler extends Crawler {
       description.append(bodyPostersElement.html());
     }
 
-    Element moreInformationElementTab2 =
-        doc.select("#ctnMaisInfo #dvFieldset #tab2 .ctnZebraListaBranca").first();
+    Element moreInformationElementTab2 = doc.select("#ctnMaisInfo #dvFieldset #tab2 .ctnZebraListaBranca").first();
     if (moreInformationElementTab2 != null) {
       description.append(moreInformationElementTab2.html());
     }
