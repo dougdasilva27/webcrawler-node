@@ -81,8 +81,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
       String internalId = null;
@@ -106,8 +105,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       Float price = null;
       Element elementPrice = doc.select(".skuBestPrice").first();
       if (elementPrice != null) {
-        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
       }
 
       // Disponibilidade
@@ -172,6 +170,9 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
       String ean = 0 < arrayEan.length() ? arrayEan.getString(0) : null;
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       Product product = new Product();
 
       product.setUrl(session.getOriginalURL());
@@ -189,7 +190,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 

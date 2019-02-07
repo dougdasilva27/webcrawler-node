@@ -134,11 +134,14 @@ public class BrasilKoerichCrawler extends Crawler {
         // Ean
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(category1).setCategory2(category2).setCategory3(category3)
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
-            .setEan(ean).build();
+            .setEans(eans).build();
 
         products.add(product);
       }

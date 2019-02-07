@@ -55,20 +55,16 @@ public class BrasilSephoraCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject chaordicJson = crawlChaordicJson(doc);
 
       String internalPid = crawlInternalPid(chaordicJson);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a", false);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a", false);
       String description = crawlDescription(doc);
 
       // sku data in json
-      JSONArray arraySkus =
-          chaordicJson != null && chaordicJson.has("offers") ? chaordicJson.getJSONArray("offers")
-              : new JSONArray();
+      JSONArray arraySkus = chaordicJson != null && chaordicJson.has("offers") ? chaordicJson.getJSONArray("offers") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -78,25 +74,24 @@ public class BrasilSephoraCrawler extends Crawler {
         String name = crawlName(chaordicJson, variantElement);
 
         Map<String, Prices> marketplaceMap = crawlMarketplace(jsonSku, doc);
-        boolean available = jsonSku.has("availability")
-            && jsonSku.get("availability").toString().contains("InStock")
+        boolean available = jsonSku.has("availability") && jsonSku.get("availability").toString().contains("InStock")
             && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
 
-        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
-            Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
         Float price = crawlPrice(prices);
         String primaryImage = crawlPrimaryImage(doc, variantElement);
         String secondaryImages = crawlSecondaryImages(doc);
         String ean = crawlEan(jsonSku);
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setMarketplace(marketplace).setEan(ean).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -150,8 +145,7 @@ public class BrasilSephoraCrawler extends Crawler {
     Elements variations = doc.select("#product-info-grouped li[id]");
 
     if (variations.size() > productPosition) {
-      variantElement = doc.selectFirst(
-          "#product-info-grouped li[id=add-product-option-" + (productPosition + 1) + "]");
+      variantElement = doc.selectFirst("#product-info-grouped li[id=add-product-option-" + (productPosition + 1) + "]");
     }
 
     return variantElement;
@@ -196,8 +190,7 @@ public class BrasilSephoraCrawler extends Crawler {
     }
 
     if (image != null) {
-      primaryImage = CrawlerUtils.sanitizeUrl(image, Arrays.asList("data-zoom-image", "src"),
-          "https:", "sephora-resize.s3.amazonaws.com");
+      primaryImage = CrawlerUtils.sanitizeUrl(image, Arrays.asList("data-zoom-image", "src"), "https:", "sephora-resize.s3.amazonaws.com");
     }
 
     return primaryImage;
@@ -254,8 +247,7 @@ public class BrasilSephoraCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Elements elementsInformation =
-        doc.select("#section-description, #neemu-how-to-use, #neemu-look, .info-content#brand");
+    Elements elementsInformation = doc.select("#section-description, #neemu-how-to-use, #neemu-look, .info-content#brand");
     for (Element e : elementsInformation) {
       description.append(e.html());
     }
@@ -300,8 +292,7 @@ public class BrasilSephoraCrawler extends Crawler {
         }
       }
 
-      mapInstallments.put(installmentsNumber,
-          MathUtils.normalizeTwoDecimalPlaces(price / installmentsNumber));
+      mapInstallments.put(installmentsNumber, MathUtils.normalizeTwoDecimalPlaces(price / installmentsNumber));
 
       prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
@@ -381,7 +372,7 @@ public class BrasilSephoraCrawler extends Crawler {
   private String crawlEan(JSONObject json) {
     String ean = null;
 
-    if (json.has("gtin13")) {
+    if (json.has("gtin13") && json.get("gtin13") instanceof String) {
       ean = json.getString("gtin13");
     }
 

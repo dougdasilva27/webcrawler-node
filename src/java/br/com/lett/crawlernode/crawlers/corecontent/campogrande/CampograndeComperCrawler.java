@@ -51,8 +51,7 @@ public class CampograndeComperCrawler extends Crawler {
 
     this.userAgent = DataFetcher.randUserAgent();
 
-    Map<String, String> cookiesMap =
-        DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
@@ -61,9 +60,8 @@ public class CampograndeComperCrawler extends Crawler {
       this.cookies.add(cookie);
     }
 
-    Map<String, String> cookiesMap2 = DataFetcher.fetchCookies(session,
-        "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent,
-        1);
+    Map<String, String> cookiesMap2 =
+        DataFetcher.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
     for (Entry<String, String> entry : cookiesMap2.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
@@ -74,10 +72,8 @@ public class CampograndeComperCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    LettProxy proxy =
-        session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
-    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
-        this.userAgent, proxy, 1);
+    LettProxy proxy = session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
+    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1);
 
     return Jsoup.parse(page);
   }
@@ -88,11 +84,9 @@ public class CampograndeComperCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject productJson =
-          CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", false, false);
+      JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", false, false);
 
       String internalId = crawlInternalId(productJson);
       String internalPid = crawlInternalPid(productJson);
@@ -106,17 +100,16 @@ public class CampograndeComperCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
-      String ean =
-          productJson.has("RKProductEan13") ? productJson.getString("RKProductEan13") : null;
+      String ean = productJson.has("RKProductEan13") ? productJson.getString("RKProductEan13") : null;
+
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-          .build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
@@ -259,8 +252,7 @@ public class CampograndeComperCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(JSONObject product) {
-    return product.has("RKProductAvailable")
-        && product.get("RKProductAvailable").toString().equals("1");
+    return product.has("RKProductAvailable") && product.get("RKProductAvailable").toString().equals("1");
   }
 
   /**

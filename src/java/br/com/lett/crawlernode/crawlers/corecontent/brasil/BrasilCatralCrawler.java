@@ -80,8 +80,7 @@ public class BrasilCatralCrawler extends Crawler {
     List<Product> products = new ArrayList<Product>();
 
     if (isProductPage(this.session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       /*
        * *********************************** crawling data of only one product *
@@ -142,12 +141,13 @@ public class BrasilCatralCrawler extends Crawler {
         // Ean
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
-        Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(category1)
-            .setCategory2(category2).setCategory3(category3).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock)
-            .setMarketplace(marketplace).setEan(ean).build();
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
+        Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+            .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(category1).setCategory2(category2)
+            .setCategory3(category3).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock)
+            .setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -205,8 +205,7 @@ public class BrasilCatralCrawler extends Crawler {
   private Float crawlPrice(JSONObject jsonSku, boolean available) {
     Float price = null;
     if (jsonSku.has("bestPriceFormated") && available) {
-      price = Float.parseFloat(jsonSku.getString("bestPriceFormated").replaceAll("[^0-9,]+", "")
-          .replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(jsonSku.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -232,17 +231,14 @@ public class BrasilCatralCrawler extends Crawler {
       // fetch the page with payment options
       String skuId = Integer.toString(jsonSku.getInt("sku"));
       String paymentOptionsURL = "http://www.catral.com.br/productotherpaymentsystems/" + skuId;
-      Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-          paymentOptionsURL, null, null);
+      Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
 
       // get all cards brands
       List<String> cardBrands = new ArrayList<String>();
-      Elements cardsBrandsElements =
-          paymentOptionsDocument.select(".div-card-flag #ddlCartao option");
+      Elements cardsBrandsElements = paymentOptionsDocument.select(".div-card-flag #ddlCartao option");
       for (Element cardBrandElement : cardsBrandsElements) {
         String cardBrandText = cardBrandElement.text().toLowerCase();
-        if (cardBrandText.contains("american express")
-            || cardBrandText.contains(Card.AMEX.toString()))
+        if (cardBrandText.contains("american express") || cardBrandText.contains(Card.AMEX.toString()))
           cardBrands.add(Card.AMEX.toString());
         else if (cardBrandText.contains(Card.VISA.toString()))
           cardBrands.add(Card.VISA.toString());
@@ -256,8 +252,7 @@ public class BrasilCatralCrawler extends Crawler {
 
       // get each table payment option in the same sequence as we got the cards brands (the html
       // logic was this way)
-      Elements paymentElements =
-          paymentOptionsDocument.select("#divCredito .tbl-payment-system tbody");
+      Elements paymentElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system tbody");
 
       for (int i = 0; i < cardBrands.size(); i++) {
         if (paymentElements.size() > i) {
@@ -275,13 +270,13 @@ public class BrasilCatralCrawler extends Crawler {
   /**
    * Extract all installments from a table html element.
    * 
-   * e.g: Nº de Parcelas Valor de cada parcela American Express à vista R$ 1.799,00 American Express
-   * 2 vezes sem juros R$ 899,50 American Express 3 vezes sem juros R$ 599,66 American Express 4
-   * vezes sem juros R$ 449,75 American Express 5 vezes sem juros R$ 359,80 American Express 6 vezes
-   * sem juros R$ 299,83 American Express 7 vezes sem juros R$ 257,00 American Express 8 vezes sem
-   * juros R$ 224,87 American Express 9 vezes sem juros R$ 199,88 American Express 10 vezes sem
-   * juros R$ 179,90 American Express 11 vezes com juros R$ 173,41 American Express 12 vezes com
-   * juros R$ 159,73
+   * e.g: Nº de Parcelas Valor de cada parcela American Express à vista R$ 1.799,00 American Express 2
+   * vezes sem juros R$ 899,50 American Express 3 vezes sem juros R$ 599,66 American Express 4 vezes
+   * sem juros R$ 449,75 American Express 5 vezes sem juros R$ 359,80 American Express 6 vezes sem
+   * juros R$ 299,83 American Express 7 vezes sem juros R$ 257,00 American Express 8 vezes sem juros
+   * R$ 224,87 American Express 9 vezes sem juros R$ 199,88 American Express 10 vezes sem juros R$
+   * 179,90 American Express 11 vezes com juros R$ 173,41 American Express 12 vezes com juros R$
+   * 159,73
    *
    * @param tableElement
    * @return
@@ -303,8 +298,7 @@ public class BrasilCatralCrawler extends Crawler {
         if (parsedNumbers.size() == 0) { // à vista
           installments.put(1, MathUtils.parseFloatWithComma(installPriceText));
         } else {
-          installments.put(Integer.parseInt(parsedNumbers.get(0)),
-              MathUtils.parseFloatWithComma(installPriceText));
+          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installPriceText));
         }
       }
     }
@@ -313,8 +307,8 @@ public class BrasilCatralCrawler extends Crawler {
   }
 
   /**
-   * Computes the bank slip price by applying a discount on the base price. The base price is the
-   * same that is crawled on crawlPrice method.
+   * Computes the bank slip price by applying a discount on the base price. The base price is the same
+   * that is crawled on crawlPrice method.
    * 
    * @param document
    * @param jsonSku
@@ -336,8 +330,7 @@ public class BrasilCatralCrawler extends Crawler {
 
         // apply the discount on base price
         if (discountPercentage != null) {
-          bankSlipPrice =
-              MathUtils.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
+          bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(basePrice - (discountPercentage * basePrice));
         }
       }
     }
@@ -358,8 +351,7 @@ public class BrasilCatralCrawler extends Crawler {
    */
   private Float crawlDiscountPercentage(Document document) {
     Float discountPercentage = null;
-    Element discountElement =
-        document.select(".product-discount-hight-light p[class^=flag boleto]").first();
+    Element discountElement = document.select(".product-discount-hight-light p[class^=flag boleto]").first();
     if (discountElement != null) {
       List<String> parsedNumbers = MathUtils.parsePositiveNumbers(discountElement.attr("class"));
       if (parsedNumbers.size() > 0) {
@@ -368,8 +360,7 @@ public class BrasilCatralCrawler extends Crawler {
           Float discountFloat = new Float(discount);
           discountPercentage = MathUtils.normalizeTwoDecimalPlaces(discountFloat / 100);
         } catch (NumberFormatException e) {
-          Logging.printLogError(logger, session,
-              "Error parsing integer from String in CrawlDiscountPercentage method.");
+          Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
         }
       }
     }
@@ -468,8 +459,7 @@ public class BrasilCatralCrawler extends Crawler {
       for (DataNode node : tag.dataNodes()) {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-                  .split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
 
         }
       }
