@@ -45,8 +45,8 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String productUrl = crawlProductUrl(e);
-        String internalPid = crawlInternalPid(productUrl);
-        String internalId = crawlInternalId(e);
+        String internalPid = crawlInternalPid(e);
+        String internalId = crawlInternalId(productUrl);
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -94,7 +94,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalId(Element e) {
+  private String crawlInternalPid(Element e) {
     String internalId = null;
 
     Element id = e.select("input[name=productCodePost]").first();
@@ -106,7 +106,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     return internalId;
   }
 
-  private String crawlInternalPid(String url) {
+  private String crawlInternalId(String url) {
     String internalPid = null;
 
     if (url.contains("?")) {

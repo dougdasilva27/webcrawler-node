@@ -86,14 +86,14 @@ public class BrasilCarrefourCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalPid = crawlInternalPid(session.getOriginalURL());
+      String internalPid = crawlInternalId(session.getOriginalURL());
       String name = crawlName(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       String description = crawlDescription(doc);
       Integer stock = null;
-      String internalId = crawlInternalId(doc);
+      String internalId = crawlInternalPid(doc);
       Elements marketplacesElements = doc.select(".list-group-item");
       Map<String, Prices> marketplaceMap;
 
@@ -142,7 +142,7 @@ public class BrasilCarrefourCrawler extends Crawler {
    * General methods *
    *******************/
 
-  private String crawlInternalId(Document document) {
+  private String crawlInternalPid(Document document) {
     String internalId = null;
     Element internalIdElement = document.select("#productCod").first();
 
@@ -153,7 +153,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     return internalId;
   }
 
-  private String crawlInternalPid(String url) {
+  private String crawlInternalId(String url) {
     String internalPid = null;
 
     if (url.contains("?")) {

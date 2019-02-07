@@ -56,7 +56,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = crawlRatingReviews(document);
-      ratingReviews.setInternalId(crawlInternalId(document));
+      ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
 
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
@@ -73,15 +73,23 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
     return false;
   }
 
-  private String crawlInternalId(Document document) {
-    String internalId = null;
-    Element internalIdElement = document.select("#productCod").first();
+  private String crawlInternalId(String url) {
+    String internalPid = null;
 
-    if (internalIdElement != null) {
-      internalId = internalIdElement.attr("value").trim();
+    if (url.contains("?")) {
+      url = url.split("\\?")[0];
     }
 
-    return internalId;
+    if (url.contains("/p/")) {
+      String[] tokens = url.split("p/");
+
+      if (tokens.length > 1 && tokens[1].contains("/")) {
+        internalPid = tokens[1].split("/")[0];
+      } else if (tokens.length > 1) {
+        internalPid = tokens[1];
+      }
+    }
+    return internalPid;
   }
 
   private RatingsReviews crawlRatingReviews(Document document) {
