@@ -117,8 +117,10 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       // Marketplace
       Marketplace marketplace = new Marketplace();
 
-      // Ean
+      // Eans
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
@@ -136,7 +138,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 

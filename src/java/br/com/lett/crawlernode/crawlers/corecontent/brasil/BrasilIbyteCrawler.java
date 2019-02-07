@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -215,24 +216,13 @@ public class BrasilIbyteCrawler extends Crawler {
 
       // Ean
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
-      Product product = new Product();
-      product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
-      product.setEan(ean);
+      Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+          .setName(name).setPrice(price).setPrices(prices).setCategory1(category1).setCategory2(category2).setCategory3(category3)
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
+          .setAvailable(available).setEans(eans).build();
 
       products.add(product);
 

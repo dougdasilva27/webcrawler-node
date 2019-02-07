@@ -163,7 +163,7 @@ public class RatingReviewCrawler extends Task {
   }
 
   private void printRatingsReviews(RatingsReviews ratingReviews) {
-    Logging.printLogDebug(logger, session, ratingReviews.toString());
+    Logging.printLogDebug(logger, session, "Internal Id: " + ratingReviews.getInternalId() + " " + ratingReviews.toString());
   }
 
   /**

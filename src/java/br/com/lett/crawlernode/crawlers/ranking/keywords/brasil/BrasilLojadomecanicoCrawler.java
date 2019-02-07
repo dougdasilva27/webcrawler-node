@@ -2,95 +2,73 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilLojadomecanicoCrawler extends CrawlerRankingKeywords{
+public class BrasilLojadomecanicoCrawler extends CrawlerRankingKeywords {
+  public BrasilLojadomecanicoCrawler(Session session) {
+    super(session);
+  }
 
-	public BrasilLojadomecanicoCrawler(Session session) {
-		super(session);
-	}
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 96;
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 72;
-			
-		this.log("Página "+ this.currentPage);
-		
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-		
-		//monta a url com a keyword e a página
-		String url = "http://busca.lojadomecanico.com.br/?q="+ key +"&page="+this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-			
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
-		
-		Elements products =  this.currentDoc.select("div.cs-product-container > a");
+    this.log("Página " + this.currentPage);
 
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			
-			for(Element e: products) {
-				//seta o id com o seletor
-				String internalPid 	= null;
-				String internalId 	= e.attr("data-pid");
-				
-				//monta a url
-				String productUrl = e.attr("href");
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+    String url = "https://busca.lojadomecanico.com.br/busca?q=" + key + "&results_per_page=96&page=" + this.currentPage;
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+    this.log("Url: " + url);
 
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select("div.cs-disabled a.next").first();
-		
-		//se  elemeno page não obtiver nenhum resultado
-		if(page != null)
-		{
-			//não tem próxima página
-			return false;
-		}
-		else
-		{
-			//tem próxima página
-			return true;
-			
-		}
-	}
-	
-	@Override
-	protected void setTotalProducts()
-	{
-		Element totalElement = this.currentDoc.select("span.cs-result-count.u-float-left").first();
-		
-		if(totalElement != null)
-		{ 	
-			try
-			{
-				String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
-				
-				this.totalProducts = Integer.parseInt(token);
-			}
-			catch(Exception e)
-			{
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
+    this.currentDoc = fetchDocument(url);
+
+    Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
+
+    if (products.size() >= 1) {
+
+      for (Element e : products) {
+        String internalId = e.id().replace("nm-product-", "").trim();
+        String internalPid = null;
+        String productUrl = CrawlerUtils.scrapUrl(e, "a[itemprop=\"url\"]", "href", "https:", "www.lojadomecanico.com.br");
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+
+
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
+
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  @Override
+  protected boolean hasNextPage() {
+    return (this.currentPage * this.pageSize) >= this.totalProducts;
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    Element e = this.currentDoc.selectFirst(".nm-search-settings .neemu-total-products-container");
+
+    if (e != null) {
+      String aux = e.text();
+      aux = aux.replaceAll("[^0-9]+", "");
+
+      if (!aux.isEmpty()) {
+        this.totalProducts = Integer.parseInt(aux);
+      }
+    }
+
+    this.log("Total da busca: " + this.totalProducts);
+  }
 }
