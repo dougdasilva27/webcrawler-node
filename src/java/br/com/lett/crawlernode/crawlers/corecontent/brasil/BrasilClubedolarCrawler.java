@@ -80,8 +80,7 @@ public class BrasilClubedolarCrawler extends Crawler {
     List<Product> products = new ArrayList<Product>();
 
     if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // Pid
       String internalPid = crawlInternalPid(doc);
@@ -140,13 +139,14 @@ public class BrasilClubedolarCrawler extends Crawler {
         // Ean
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(category1)
-            .setCategory2(category2).setCategory3(category3).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock)
-            .setMarketplace(marketplace).setEan(ean).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(category1).setCategory2(category2).setCategory3(category3)
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
+            .setEans(eans).build();
 
         products.add(product);
       }
@@ -217,8 +217,7 @@ public class BrasilClubedolarCrawler extends Crawler {
     Float price = null;
 
     if (json.has("bestPriceFormated") && available) {
-      price = Float.parseFloat(json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "")
-          .replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -340,17 +339,14 @@ public class BrasilClubedolarCrawler extends Crawler {
     if (price != null) {
       String url = "http://www.clubedolar.com.br/productotherpaymentsystems/" + internalId;
 
-      Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
-        Float bankTicketPrice = Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", ".").trim());
+        Float bankTicketPrice = Float.parseFloat(bank.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
         if (discountBoleto != null) {
-          Float result =
-              (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue() / 100.0)));
+          Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue() / 100.0)));
           bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(result);
         }
 
@@ -419,8 +415,7 @@ public class BrasilClubedolarCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-              .replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -451,8 +446,7 @@ public class BrasilClubedolarCrawler extends Crawler {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-                  .split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
 
         }
       }

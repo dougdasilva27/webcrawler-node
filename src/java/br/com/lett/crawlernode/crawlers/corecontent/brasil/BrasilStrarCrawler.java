@@ -72,13 +72,17 @@ public class BrasilStrarCrawler extends Crawler {
             internalId != null && !internalId.isEmpty() ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
 
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
+
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         String description = crawlDescription(doc, ean);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(finalUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }

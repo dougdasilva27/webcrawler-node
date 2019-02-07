@@ -131,6 +131,9 @@ public class BrasilFriopecasCrawler extends Crawler {
       JSONArray arr = CrawlerUtils.scrapEanFromVTEX(doc);
       String ean = 0 < arr.length() ? arr.getString(0) : null;
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       // Creating the product
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
@@ -148,7 +151,7 @@ public class BrasilFriopecasCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 
