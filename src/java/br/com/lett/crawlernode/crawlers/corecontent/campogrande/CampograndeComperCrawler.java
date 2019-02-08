@@ -2,12 +2,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -96,7 +96,8 @@ public class CampograndeComperCrawler extends Crawler {
       Prices prices = available ? crawlPrices(price, doc) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https",
+          "www.comperdelivery.com.br", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
@@ -195,23 +196,6 @@ public class CampograndeComperCrawler extends Crawler {
     }
 
     return primaryImage;
-  }
-
-  /**
-   * at the time this crawler was made,there was no secondary images
-   * 
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**
