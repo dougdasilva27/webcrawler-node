@@ -682,9 +682,9 @@ public class CrawlerUtils {
   public static JSONObject stringToJson(String str) {
     JSONObject json = new JSONObject();
 
-    if (str.startsWith("{") && str.endsWith("}")) {
+    if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
       try {
-        json = new JSONObject(str);
+        json = new JSONObject(str.trim());
       } catch (Exception e1) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
       }
@@ -696,9 +696,9 @@ public class CrawlerUtils {
   public static JSONArray stringToJsonArray(String str) {
     JSONArray json = new JSONArray();
 
-    if (str.startsWith("[") && str.endsWith("]")) {
+    if (str.trim().startsWith("[") && str.trim().endsWith("]")) {
       try {
-        json = new JSONArray(str);
+        json = new JSONArray(str.trim());
       } catch (Exception e1) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
       }
@@ -922,13 +922,19 @@ public class CrawlerUtils {
     return categories;
   }
 
+  public static Float getFloatValueFromJSON(JSONObject json, String key) {
+    return getFloatValueFromJSON(json, key, true, null);
+  }
+
   /**
    * 
    * @param json
    * @param key
+   * @param stringWithFloatLayout -> if price string is a float in a string format like "23.99"
+   * @param priceWithComma -> e.g: R$ 2.779,20 returns the Float 2779.2
    * @return
    */
-  public static Float getFloatValueFromJSON(JSONObject json, String key) {
+  public static Float getFloatValueFromJSON(JSONObject json, String key, boolean stringWithFloatLayout, Boolean priceWithComma) {
     Float price = null;
 
     if (json.has(key)) {
@@ -939,10 +945,19 @@ public class CrawlerUtils {
       } else if (priceObj instanceof Double) {
         price = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
       } else {
-        String text = priceObj.toString().replaceAll("[^0-9.]", "");
+        if (stringWithFloatLayout) {
+          String text = priceObj.toString().replaceAll("[^0-9.]", "");
 
-        if (!text.isEmpty()) {
-          price = Float.parseFloat(text);
+          if (!text.isEmpty()) {
+            price = Float.parseFloat(text);
+          }
+        } else {
+
+          if (priceWithComma) {
+            price = MathUtils.parseFloatWithComma(priceObj.toString());
+          } else {
+            price = MathUtils.parseFloatWithDots(priceObj.toString());
+          }
         }
       }
     }
@@ -957,6 +972,18 @@ public class CrawlerUtils {
    * @return
    */
   public static Double getDoubleValueFromJSON(JSONObject json, String key) {
+    return getDoubleValueFromJSON(json, key, true, null);
+  }
+
+  /**
+   * 
+   * @param json
+   * @param key
+   * @param stringWithDoubleLayout -> if price string is a double in a string format like "23.99"
+   * @param priceWithComma -> e.g: R$ 2.779,20 returns the Double 2779.2
+   * @return
+   */
+  public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout, Boolean priceWithComma) {
     Double price = null;
 
     if (json.has(key)) {
@@ -967,10 +994,20 @@ public class CrawlerUtils {
       } else if (priceObj instanceof Double) {
         price = (Double) priceObj;
       } else {
-        String text = priceObj.toString().replaceAll("[^0-9.]", "");
 
-        if (!text.isEmpty()) {
-          price = Double.parseDouble(text);
+        if (stringWithDoubleLayout) {
+          String text = priceObj.toString().replaceAll("[^0-9.]", "");
+
+          if (!text.isEmpty()) {
+            price = Double.parseDouble(text);
+          }
+        } else {
+
+          if (priceWithComma) {
+            price = MathUtils.parseDoubleWithComma(priceObj.toString());
+          } else {
+            price = MathUtils.parseDoubleWithDot(priceObj.toString());
+          }
         }
       }
     }

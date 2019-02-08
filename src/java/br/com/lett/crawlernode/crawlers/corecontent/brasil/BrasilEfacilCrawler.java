@@ -159,7 +159,7 @@ public class BrasilEfacilCrawler extends Crawler {
           JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank, doc);
 
           // Prices
-          prices = crawlPrices(priceBank, jsonPrices);
+          prices = crawlPrices(priceBank, internalId, internalPid, jsonPrices);
 
           // Price
           price = crawlPrice(jsonPrices);
@@ -259,7 +259,7 @@ public class BrasilEfacilCrawler extends Crawler {
               JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank, doc);
 
               // Prices
-              prices = crawlPrices(priceBank, jsonPrices);
+              prices = crawlPrices(priceBank, internalId, internalPid, jsonPrices);
 
               // Price
               price = crawlPrice(jsonPrices);
@@ -348,12 +348,15 @@ public class BrasilEfacilCrawler extends Crawler {
     return price;
   }
 
-  private Prices crawlPrices(Float price, JSONArray jsonPrices) {
+  private Prices crawlPrices(Float price, String internalId, String internalPid, JSONArray jsonPrices) {
     Prices prices = new Prices();
 
     if (price != null) {
 
-      prices.setBankTicketPrice(price);
+      JSONObject priceSimpleJson = crawlPriceFromApi(internalId, internalPid);
+      System.err.println(priceSimpleJson);
+      prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "offerPriceAV", false, true));
+      prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "listPrice", false, true));
 
       try {
         for (int i = 0; i < jsonPrices.length(); i++) {
@@ -432,26 +435,42 @@ public class BrasilEfacilCrawler extends Crawler {
       priceApi = Float.parseFloat(priceOffer.val());
     }
 
-    String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
+    String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
         + "&catalogEntryId=" + internalId + "&nonInstallmentPrice=" + priceApi;
 
     String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-    int x = json.indexOf("/*");
-    int y = json.indexOf("*/", x + 2);
+    if (json.contains("/*") && json.contains("*/")) {
+      int x = json.indexOf("/*");
+      int y = json.indexOf("*/", x + 2);
 
-    json = json.substring(x + 2, y);
-
-
-    JSONArray jsonPrice;
-    try {
-      jsonPrice = new JSONArray(json);
-    } catch (Exception e) {
-      jsonPrice = new JSONArray();
-      e.printStackTrace();
+      json = json.substring(x + 2, y);
     }
 
+    return CrawlerUtils.stringToJsonArray(json);
+  }
 
-    return jsonPrice;
+  private JSONObject crawlPriceFromApi(String internalId, String internalPid) {
+    JSONObject priceJson = new JSONObject();
+
+    String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10154&langId=-6&catalogId=10051"
+        + "&catalogEntryId=" + internalId + "&productId=" + internalPid + "&parcelaEmDestaque=";
+
+    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    if (json.contains("/*") && json.contains("*/")) {
+      int x = json.indexOf("/*");
+      int y = json.lastIndexOf("*/");
+
+      json = json.substring(x + 2, y);
+    }
+
+    JSONObject catalog = CrawlerUtils.stringToJson(json);
+
+    if (catalog.has("catalogEntry")) {
+      priceJson = catalog.getJSONObject("catalogEntry");
+    }
+
+    return priceJson;
   }
 }
