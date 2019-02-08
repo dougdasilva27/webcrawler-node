@@ -428,7 +428,7 @@ public class SaopauloAraujoCrawler extends Crawler {
 
     List<String> selectors = new ArrayList<>();
 
-    selectors.add("#caracteristicas table[class=\"group Caracteristicas\"]");
+    selectors.add("#caracteristicas table.Caracteristica");
     selectors.add(".value-field.Informe-Ministerio-Saude-01");
     selectors.add("#caracteristicas table.Saiba-Mais");
 
