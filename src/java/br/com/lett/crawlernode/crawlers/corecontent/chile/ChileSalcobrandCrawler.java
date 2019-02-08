@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -97,12 +96,12 @@ public class ChileSalcobrandCrawler extends Crawler {
 
   private String crawlName(Document doc, String internalId) {
     Element nameElement = doc.selectFirst(".product-content .info");
-    Elements selectElement = doc.select("#variant_id option[sku=" + internalId + "]");
-    Elements variations = null;
+    Element selectElement = doc.selectFirst("#variant_id option[sku=" + internalId + "]");
+    Element variations = null;
     String name = null;
 
-    if (!selectElement.isEmpty()) {
-      variations = doc.select(".input-group .first option[data-values-ids~=" + selectElement.val() + "]");
+    if (selectElement != null) {
+      variations = doc.selectFirst(".input-group .first option[data-values-ids~=" + selectElement.val() + "]");
     }
 
     if (nameElement != null && selectElement != null && variations != null) {
