@@ -173,7 +173,7 @@ public class LeroymerlinCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     String description = CrawlerUtils.scrapSimpleDescription(doc,
         Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container",
-            "[name=descricao-do-produto]"));
+            "[name=descricao-do-produto]", ".product-info-details"));
 
     return description;
   }
