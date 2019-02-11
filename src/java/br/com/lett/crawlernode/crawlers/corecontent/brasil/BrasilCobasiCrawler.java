@@ -92,7 +92,7 @@ public class BrasilCobasiCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document document) {
-    return document.select("#produto").first() != null;
+    return document.selectFirst(".container.container--prod") != null;
   }
 
   private String crawlDescription(Document doc) {
