@@ -39,10 +39,10 @@ public class ColombiaMerqueoCrawler extends Crawler {
       boolean available = doc.select("#modal-add-button") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb [itemprop=item]");
       Prices prices = crawlPrices(price, doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".modal-product-image-gallery img", Arrays.asList("data-zoom-image", "src"),
-          "https:", "d50xhnwqnrbqk.cloudfront.net");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".modal-product-image-gallery img",
-          Arrays.asList("data-zoom-image", "src"), "https:", "d50xhnwqnrbqk.cloudfront.net", primaryImage);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.modal-product-image", Arrays.asList("data-zoom-image", "src"), "https:",
+          "d50xhnwqnrbqk.cloudfront.net");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img.modal-product-image", Arrays.asList("data-zoom-image", "src"),
+          "https:", "d50xhnwqnrbqk.cloudfront.net", primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product-description"));
 
       // Creating the product
