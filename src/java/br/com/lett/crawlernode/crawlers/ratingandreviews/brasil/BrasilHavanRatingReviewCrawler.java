@@ -31,6 +31,7 @@ public class BrasilHavanRatingReviewCrawler extends RatingReviewCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
+      String internalId = vtexUtil.crawlInternalId(jsonSku);
       String internalPid = vtexUtil.crawlInternalPid(jsonSku);
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
@@ -41,6 +42,7 @@ public class BrasilHavanRatingReviewCrawler extends RatingReviewCrawler {
 
       Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 
+      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
