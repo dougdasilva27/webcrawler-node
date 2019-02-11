@@ -10,9 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -202,11 +200,11 @@ public class BauruConfiancaCrawler extends Crawler {
   private String crawlDescription(JSONObject json) {
     StringBuilder description = new StringBuilder();
 
-    if (json.has("short_description")) {
+    if (json.has("short_description") && !json.isNull("short_description")) {
       description.append(json.get("short_description"));
     }
 
-    if (json.has("description")) {
+    if (json.has("description") && !json.isNull("description")) {
       description.append(json.get("description"));
     }
 

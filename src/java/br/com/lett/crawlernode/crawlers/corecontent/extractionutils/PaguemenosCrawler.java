@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -24,11 +25,23 @@ import models.Seller;
 import models.Util;
 import models.prices.Prices;
 
-public class PaguemenosCrawler {
+public class PaguemenosCrawler extends Crawler {
 
+  public PaguemenosCrawler(Session session) {
+    super(session);
+  }
+
+  private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "pague menos";
 
-  public static List<Product> extractInformation(Document doc, Logger logger, Session session) {
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
+
+  @Override
+  public List<Product> extractInformation(Document doc) {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
@@ -38,7 +51,7 @@ public class PaguemenosCrawler {
 
       String internalPid = crawlInternalPid(skuJson);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalPid);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -86,7 +99,7 @@ public class PaguemenosCrawler {
    * Product page identification *
    *******************************/
 
-  private static boolean isProductPage(Document document) {
+  private boolean isProductPage(Document document) {
     return document.select(".product-main").first() != null;
   }
 
@@ -94,7 +107,7 @@ public class PaguemenosCrawler {
    * General methods *
    *******************/
 
-  private static String crawlInternalId(JSONObject json) {
+  private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
     if (json.has("sku")) {
@@ -104,7 +117,7 @@ public class PaguemenosCrawler {
     return internalId;
   }
 
-  private static String crawlInternalPid(JSONObject skuJson) {
+  private String crawlInternalPid(JSONObject skuJson) {
     String internalPid = null;
 
     if (skuJson.has("productId")) {
@@ -114,7 +127,7 @@ public class PaguemenosCrawler {
     return internalPid;
   }
 
-  private static String crawlName(JSONObject jsonSku, JSONObject skuJson) {
+  private String crawlName(JSONObject jsonSku, JSONObject skuJson) {
     String name = null;
 
     String nameVariation = jsonSku.getString("skuname");
@@ -138,7 +151,7 @@ public class PaguemenosCrawler {
    * @param jsonSku
    * @return
    */
-  private static Double crawlPriceFrom(JSONObject jsonSku) {
+  private Double crawlPriceFrom(JSONObject jsonSku) {
     Double priceFrom = null;
 
     if (jsonSku.has("listPriceFormated")) {
@@ -149,7 +162,7 @@ public class PaguemenosCrawler {
     return priceFrom;
   }
 
-  private static Float crawlMainPagePrice(Map<String, Float> marketplace) {
+  private Float crawlMainPagePrice(Map<String, Float> marketplace) {
     Float price = null;
 
     if (marketplace.containsKey(MAIN_SELLER_NAME_LOWER)) {
@@ -159,7 +172,7 @@ public class PaguemenosCrawler {
     return price;
   }
 
-  private static String crawlPrimaryImage(JSONObject json) {
+  private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
 
     if (json.has("Images")) {
@@ -179,7 +192,7 @@ public class PaguemenosCrawler {
     return primaryImage;
   }
 
-  private static String crawlSecondaryImages(JSONObject apiInfo) {
+  private String crawlSecondaryImages(JSONObject apiInfo) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -216,7 +229,7 @@ public class PaguemenosCrawler {
    * @param url
    * @return
    */
-  private static String changeImageSizeOnURL(String url) {
+  private String changeImageSizeOnURL(String url) {
     String[] tokens = url.trim().split("/");
     String dimensionImage = tokens[tokens.length - 2]; // to get dimension image and the image id
 
@@ -226,7 +239,7 @@ public class PaguemenosCrawler {
     return url.replace(dimensionImage, dimensionImageFinal); // The image size is changed
   }
 
-  private static Map<String, Float> crawlMarketplace(JSONObject json) {
+  private Map<String, Float> crawlMarketplace(JSONObject json) {
     Map<String, Float> marketplace = new HashMap<>();
 
     if (json.has("seller")) {
@@ -241,7 +254,7 @@ public class PaguemenosCrawler {
     return marketplace;
   }
 
-  private static Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Session session,
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Session session,
       Logger logger) {
     Marketplace marketplace = new Marketplace();
 
@@ -266,7 +279,7 @@ public class PaguemenosCrawler {
     return marketplace;
   }
 
-  private static CategoryCollection crawlCategories(Document document) {
+  private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(".bread-crumb li > a");
 
@@ -277,7 +290,7 @@ public class PaguemenosCrawler {
     return categories;
   }
 
-  private static String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalPid) {
     StringBuilder description = new StringBuilder();
 
     Element shortDescription = doc.select(".productDescription").first();
@@ -296,6 +309,18 @@ public class PaguemenosCrawler {
       description.append(advert.html());
     }
 
+    String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session,
+        "https://scontent.webcollage.net/paguemenos-br-pt/power-page?ird=true&channel-product-id=" + internalPid, null, cookies);
+
+    JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "_wccontent = ", "};", false));
+    if (json.has("aplus")) {
+      JSONObject aplus = json.getJSONObject("aplus");
+
+      if (aplus.has("html")) {
+        description.append(aplus.get("html"));
+      }
+    }
+
     return description.toString();
   }
 
@@ -307,7 +332,7 @@ public class PaguemenosCrawler {
    * @param price
    * @return
    */
-  private static Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Session session) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Session session) {
     Prices prices = new Prices();
 
     if (price != null) {
@@ -368,7 +393,7 @@ public class PaguemenosCrawler {
     return prices;
   }
 
-  private static Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard) {
+  private Map<Integer, Float> getInstallmentsForCard(Document doc, String idCard) {
     Map<Integer, Float> mapInstallments = new HashMap<>();
 
     Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
@@ -398,7 +423,7 @@ public class PaguemenosCrawler {
     return mapInstallments;
   }
 
-  private static JSONObject crawlApi(String internalId, Session session) {
+  private JSONObject crawlApi(String internalId, Session session) {
     String url = "https://www.paguemenos.com.br/produto/sku/" + internalId;
 
     JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
