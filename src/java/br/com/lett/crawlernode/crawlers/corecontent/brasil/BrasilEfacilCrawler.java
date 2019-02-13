@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -57,36 +57,12 @@ public class BrasilEfacilCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb ul li a", true);
 
       // Imagem primária
-      Element elementPrimaryImage = doc.select("div.product-photo a").first();
-      String primaryImage = null;
-      if (elementPrimaryImage != null) {
-        primaryImage = "http:" + elementPrimaryImage.attr("href").trim();
-      }
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.product-photo a", 
+    		  Arrays.asList("href"), "https:", "www.efacil.com.br");
 
       // Imagem secundária
-      Elements elementImages = doc.select("div.thumbnails a");
-      JSONArray secondaryImagesArray = new JSONArray();
-      String secondaryImages = null;
-      if (elementImages.size() > 1) {
-        for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
-          String image = elementImages.get(i).attr("data-original").trim();
-
-          if (image.isEmpty()) {
-            image = elementImages.get(i).attr("href").trim();
-          }
-
-          if (!image.isEmpty()) {
-            if (!image.startsWith("http")) {
-              image = "http:" + image;
-            }
-
-            secondaryImagesArray.put(image);
-          }
-        }
-      }
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "div.thumbnails a", 
+    		  Arrays.asList("data-original", "href"), "https:", "www.efacil.com.br", primaryImage);
 
       // Descrição
       String description = "";
