@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,11 +9,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -82,25 +81,26 @@ public class TottusCrawler {
   private String crawlDescription(Document doc, String internalId) {
     String id = internalId.substring(1);
     StringBuilder description = new StringBuilder();
-    try {
-      JSONObject skuDescription =
-          new JSONObject(Jsoup.connect("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id)
-              .ignoreContentType(true).execute().body());
+    Map<String, String> headers = new HashMap<String, String>();
+    headers.put("Content-Encoding", "");
+    headers.put("Accept", "");
 
-      JSONObject jsonDescription = skuDescription.getJSONObject(id);
-      description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
 
-      if (jsonDescription.has("TIPO")) {
-        description.append(
-            scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
-      }
 
-      if (jsonDescription.has("DESCRIPCION_CORTA")) {
-        description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
-      }
+    JSONObject skuDescription =
+        new JSONObject(POSTFetcher.requestStringUsingFetcher("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id,
+            null, headers, null, "GET", session, false));
 
-    } catch (IOException e) {
-      e.printStackTrace();
+    JSONObject jsonDescription = skuDescription.getJSONObject(id);
+    description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
+
+    if (jsonDescription.has("TIPO")) {
+      description.append(
+          scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
+    }
+
+    if (jsonDescription.has("DESCRIPCION_CORTA")) {
+      description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
     }
 
     return description.toString();
