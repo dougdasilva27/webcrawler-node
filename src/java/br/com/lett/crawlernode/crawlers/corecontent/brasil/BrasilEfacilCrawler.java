@@ -354,7 +354,7 @@ public class BrasilEfacilCrawler extends Crawler {
     if (price != null) {
 
       JSONObject priceSimpleJson = crawlPriceFromApi(internalId, internalPid);
-      System.err.println(priceSimpleJson);
+
       prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "offerPriceAV", false, true));
       prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "listPrice", false, true));
 
