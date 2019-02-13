@@ -58,8 +58,6 @@ public class TottusCrawler {
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
       String secondaryImages = crawlSecondaryImagesByScript(doc, internalId, primaryImage);
-      // String description = CrawlerUtils.scrapSimpleDescription(doc,
-      // Arrays.asList(".wrap-text-descriptions"));
       String description = crawlDescription(doc, internalId);
 
       // Creating the product
