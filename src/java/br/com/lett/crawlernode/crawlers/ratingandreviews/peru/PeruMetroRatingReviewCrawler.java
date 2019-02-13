@@ -51,13 +51,14 @@ public class PeruMetroRatingReviewCrawler extends RatingReviewCrawler {
 
   private RatingsReviews extractReviews(Document doc, String internalId) {
     RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
 
     Integer totalNumOfEvaluations = 0;
     Double avgRating = 0.0;
 
     Element aux = doc.selectFirst("body");
 
-    if (aux != null) {
+    if (aux != null && !aux.text().isEmpty()) {
       JSONObject outterJson = new JSONObject(aux.text());
 
       if (outterJson.has("reviews")) {
@@ -82,8 +83,6 @@ public class PeruMetroRatingReviewCrawler extends RatingReviewCrawler {
         if (totalNumOfEvaluations != 0) {
           avgRating /= totalNumOfEvaluations;
         }
-
-        ratingReviews.setDate(session.getDate());
       }
     }
 

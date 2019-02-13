@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -56,7 +58,7 @@ public class TottusCrawler {
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
       String secondaryImages = crawlSecondaryImagesByScript(doc, internalId, primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
+      String description = crawlDescription(doc, internalId);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
@@ -72,6 +74,72 @@ public class TottusCrawler {
 
     return products;
 
+  }
+
+  private String crawlDescription(Document doc, String internalId) {
+    String id = internalId.substring(1);
+    StringBuilder description = new StringBuilder();
+    Map<String, String> headers = new HashMap<String, String>();
+    headers.put("Content-Encoding", "");
+    headers.put("Accept", "");
+
+
+
+    JSONObject skuDescription =
+        new JSONObject(POSTFetcher.requestStringUsingFetcher("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id,
+            null, headers, null, "GET", session, false));
+
+    JSONObject jsonDescription = skuDescription.getJSONObject(id);
+    description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
+
+    if (jsonDescription.has("TIPO")) {
+      description.append(
+          scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
+    }
+
+    if (jsonDescription.has("DESCRIPCION_CORTA")) {
+      description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
+    }
+
+    return description.toString();
+  }
+
+  private StringBuilder scrapTechnicDescription(Elements elements, JSONObject jsonDescription) {
+    StringBuilder description = new StringBuilder();
+    if (!elements.isEmpty()) {
+      description.append("<table>");
+      for (Element element : elements) {
+        String str = element.text();
+
+        if (str.contains("{{")) {
+          if (str.contains("item.")) {
+            String aux = str.substring(str.lastIndexOf("item"), str.indexOf("}}"));
+            String keysHtml = aux.replace("item.", "").trim();
+
+            if (jsonDescription.has(keysHtml)) {
+              description.append("<td>");
+              description.append(jsonDescription.get(keysHtml).toString());
+              description.append("</td></tr>");
+            }
+          } else {
+            String aux = str.substring(str.lastIndexOf("{"), str.indexOf("}"));
+            String keysHtml = aux.replace("{", "").trim();
+
+            if (jsonDescription.has(keysHtml)) {
+              description.append("<td>");
+              description.append(jsonDescription.get(keysHtml).toString());
+              description.append("</td></tr>");
+            }
+          }
+        } else {
+          description.append("<tr><td>");
+          description.append(str);
+          description.append("</td>");
+        }
+      }
+      description.append("</table>");
+    }
+    return description;
   }
 
   private boolean isProductPage(Document doc) {

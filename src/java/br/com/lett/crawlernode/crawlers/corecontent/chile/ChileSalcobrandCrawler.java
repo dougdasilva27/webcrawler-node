@@ -113,16 +113,11 @@ public class ChileSalcobrandCrawler extends Crawler {
 
   private String crawlDesciption(Document doc) {
     String description = null;
-    Element descriptionElement = doc.selectFirst(".description");
-    Element descriptionAreaElement = doc.selectFirst(".description-area");
     List<String> selectors = new ArrayList<>();
 
     selectors.add(".description");
-    selectors.add(".description-area");
-
-    if (descriptionElement != null && descriptionAreaElement != null) {
-      description = CrawlerUtils.scrapSimpleDescription(doc, selectors);
-    }
+    selectors.add("#description .description-area");
+    description = CrawlerUtils.scrapSimpleDescription(doc, selectors);
 
     return description;
   }

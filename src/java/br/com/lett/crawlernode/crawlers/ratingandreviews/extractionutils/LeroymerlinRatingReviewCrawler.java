@@ -38,7 +38,7 @@ public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
           primaryRating = reviewSummary.getJSONObject("primaryRating");
         }
       }
-
+      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(getTotalRating(reviewSummary));
       ratingReviews.setAverageOverallRating(getAverageOverallRating(primaryRating));
       ratingReviews.setTotalWrittenReviews(getTotalRating(reviewSummary));
