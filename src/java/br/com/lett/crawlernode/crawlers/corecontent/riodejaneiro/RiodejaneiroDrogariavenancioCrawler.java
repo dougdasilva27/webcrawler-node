@@ -43,6 +43,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
+      String name = skuJson.has("name") ? skuJson.get("name").toString() : null; // because this site always show the principal name
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product__breadcrumb .bread-crumb ul li[typeof=\"v:Breadcrumb\"]", true);
 
@@ -54,7 +55,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);

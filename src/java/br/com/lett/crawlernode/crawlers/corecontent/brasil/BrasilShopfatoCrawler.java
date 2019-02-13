@@ -7,7 +7,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -91,7 +90,7 @@ public class BrasilShopfatoCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".prd-accordion-description-holder", "#caracteristicas"));
 
       // sku data in json

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -204,6 +205,21 @@ public class BrasilDrogarianetCrawler extends Crawler {
 
     if (medico != null) {
       description.append(medico.html());
+    }
+
+    String apiUrl = null;
+    Elements scripts = doc.select("script");
+    for (Element e : scripts) {
+      String text = e.html().replace(" ", "");
+
+      if (text.contains("functionwriteStandout")) {
+        apiUrl = CrawlerUtils.completeUrl(CrawlerUtils.extractSpecificStringFromScript(text, "src=\"", "\"", false), "https", "www.standout.com.br");
+        break;
+      }
+    }
+
+    if (apiUrl != null) {
+      description.append(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies));
     }
 
     return description.toString();
