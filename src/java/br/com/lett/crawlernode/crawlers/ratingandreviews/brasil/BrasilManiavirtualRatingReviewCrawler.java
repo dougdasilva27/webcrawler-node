@@ -20,12 +20,14 @@ public class BrasilManiavirtualRatingReviewCrawler extends RatingReviewCrawler {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(document)) {
+      String internalId = crawlInternalId(document);
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(document, "span[itemprop=\"reviewCount\"]");
       Double avgRating = getTotalAvgRatingFromYourViews(document, "span[itemprop=\"ratingValue\"]");
 
+      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
@@ -36,6 +38,16 @@ public class BrasilManiavirtualRatingReviewCrawler extends RatingReviewCrawler {
   }
 
 
+  private String crawlInternalId(Document document) {
+    String internalId = null;
+    Element internalIdElement = document.select(".sku .value").first();
+
+    if (internalIdElement != null) {
+      internalId = internalIdElement.ownText().trim();
+    }
+
+    return internalId;
+  }
 
   private Double getTotalAvgRatingFromYourViews(Document doc, String cssSelector) {
     Double avgRating = 0d;

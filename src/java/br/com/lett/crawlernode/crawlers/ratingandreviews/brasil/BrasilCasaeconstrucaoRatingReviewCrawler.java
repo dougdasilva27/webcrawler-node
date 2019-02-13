@@ -34,6 +34,7 @@ public class BrasilCasaeconstrucaoRatingReviewCrawler extends RatingReviewCrawle
 
       Double avgRating = getTotalAvgRatingFromYourViews(docRating, ".rating-number .yv-count-stars1");
 
+      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
