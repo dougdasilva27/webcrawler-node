@@ -77,28 +77,42 @@ public class TottusCrawler {
   }
 
   private String crawlDescription(Document doc, String internalId) {
-    String id = internalId.substring(1);
+    String id = internalId;
+
+    if (internalId.startsWith("0")) {
+      id = internalId.substring(1);
+    }
+
     StringBuilder description = new StringBuilder();
-    Map<String, String> headers = new HashMap<String, String>();
+    Map<String, String> headers = new HashMap<>();
+    String docDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
+
     headers.put("Content-Encoding", "");
     headers.put("Accept", "");
-
-
 
     JSONObject skuDescription =
         new JSONObject(POSTFetcher.requestStringUsingFetcher("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id,
             null, headers, null, "GET", session, false));
 
-    JSONObject jsonDescription = skuDescription.getJSONObject(id);
-    description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
+    if (skuDescription.has(id)) {
+      JSONObject jsonDescription = skuDescription.getJSONObject(id);
 
-    if (jsonDescription.has("TIPO")) {
-      description.append(
-          scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
+      description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
+
+      if (jsonDescription.has("TIPO")) {
+        description.append(
+            scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
+      }
+
+      if (jsonDescription.has("DESCRIPCION_CORTA")) {
+        description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
+      }
+
     }
 
-    if (jsonDescription.has("DESCRIPCION_CORTA")) {
-      description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
+
+    if (!docDescription.isEmpty()) {
+      description.append(docDescription);
     }
 
     return description.toString();
