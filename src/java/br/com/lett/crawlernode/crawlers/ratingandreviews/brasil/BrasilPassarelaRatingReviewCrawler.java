@@ -67,8 +67,6 @@ public class BrasilPassarelaRatingReviewCrawler extends RatingReviewCrawler {
             }
           }
         }
-      } else {
-        System.err.println(json);
       }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
