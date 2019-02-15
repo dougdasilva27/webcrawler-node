@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -59,6 +60,8 @@ public class BrasilPassarelaCrawler extends Crawler {
       String name = json.has("displayName") ? json.getString("displayName") : null;
       String description = getDescription(json);
 
+      Map<String, Integer> stocks = getStocks(internalPid);
+
       if (json.has("childSKUs")) {
         JSONArray variations = json.getJSONArray("childSKUs");
         Map<String, String> primaryImagesByVariation = new HashMap<String, String>();
@@ -93,6 +96,8 @@ public class BrasilPassarelaCrawler extends Crawler {
           String secondaryImages = null;
           Prices prices = getPrices(sku, price);
           String productName = name + " - " + variationName;
+          Integer stock = stocks.get(internalId);
+          boolean available = stock > 0;
 
           if (sku.has("tamanho")) {
             productName += " " + sku.getString("tamanho");
@@ -106,7 +111,7 @@ public class BrasilPassarelaCrawler extends Crawler {
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
               .setName(productName).setDescription(description).setPrice(price).setPrices(prices).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).build();
+              .setSecondaryImages(secondaryImages).setStock(stock).setAvailable(available).build();
 
           products.add(product);
         }
@@ -202,5 +207,22 @@ public class BrasilPassarelaCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  protected Map<String, Integer> getStocks(String productPid) {
+    Map<String, Integer> stocks = new HashMap<String, Integer>();
+    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+        "https://www.passarela.com.br/ccstoreui/v1/stockStatus/?products=" + productPid, null, cookies);
+
+    JSONObject json = new JSONObject(doc.text());
+    JSONArray items = json.getJSONArray("items");
+    json = (JSONObject) items.get(0);
+    json = json.has("productSkuInventoryStatus") ? json.getJSONObject("productSkuInventoryStatus") : new JSONObject();
+
+    for (int i = 0; i < json.names().length(); i++) {
+      stocks.put(json.names().getString(i), json.getInt(json.names().getString(i)));
+    }
+
+    return stocks;
   }
 }
