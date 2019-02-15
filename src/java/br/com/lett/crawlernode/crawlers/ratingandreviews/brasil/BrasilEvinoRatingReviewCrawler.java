@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import models.RatingsReviews;
 
 public class BrasilEvinoRatingReviewCrawler extends RatingReviewCrawler {
 
@@ -22,10 +23,12 @@ public class BrasilEvinoRatingReviewCrawler extends RatingReviewCrawler {
     TrustvoxRatingCrawler trustvox = new TrustvoxRatingCrawler(session, "79779", logger);
     JSONObject skuJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "var TC = ", null, false, false);
     JSONObject productBiggyJson = skuJson.has("productBiggyJson") ? new JSONObject(skuJson.get("productBiggyJson").toString()) : new JSONObject();
-
     String internalId = crawlInternalId(productBiggyJson);
 
-    ratingReviewsCollection.addRatingReviews(trustvox.extractRatingAndReviews(internalId, doc));
+    RatingsReviews ratingReviews = trustvox.extractRatingAndReviews(internalId, doc);
+
+    ratingReviews.setInternalId(internalId);
+    ratingReviewsCollection.addRatingReviews(ratingReviews);
 
     return ratingReviewsCollection;
   }

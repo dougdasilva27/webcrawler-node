@@ -71,7 +71,6 @@ public class TrustvoxRatingCrawler {
     Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
     Double avgRating = getTotalRating(trustVoxResponse);
 
-    ratingReviews.setInternalId(id);
     ratingReviews.setTotalRating(totalNumOfEvaluations);
     ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
