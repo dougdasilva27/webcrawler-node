@@ -35,26 +35,31 @@ public class BrasilEvinoCrawler extends Crawler {
 
       JSONObject skuJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "var TC = ", null, false, false);
       JSONObject productBiggyJson = skuJson.has("productBiggyJson") ? new JSONObject(skuJson.get("productBiggyJson").toString()) : new JSONObject();
+      JSONArray biggyJson = productBiggyJson.has("skus") ? productBiggyJson.getJSONArray("skus") : new JSONArray();
 
-      String internalPid = crawlInternalPid(productBiggyJson);
       String name = crawlName(productBiggyJson);
-      String internalId = crawlInternalId(productBiggyJson);
-      Boolean available = crawlAvailability(productBiggyJson);
       String primaryImage = crawlPrimaryImage(productBiggyJson);
       Float price = crawlPrice(productBiggyJson);
       CategoryCollection categories = crawlCategories(productBiggyJson);
       Prices prices = crawlPrices(productBiggyJson);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".Product__details"));
-      Integer stock = crawlStock(productBiggyJson);
+      String internalPid = crawlInternalPid(productBiggyJson);
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description).setStock(stock)
-          .setMarketplace(null).setEans(null).build();
+      for (Object object : biggyJson) {
+        JSONObject variation = (JSONObject) object;
 
-      products.add(product);
+        String internalId = crawlInternalId(variation);
+        Boolean available = crawlAvailability(variation);
+        Integer stock = crawlStock(variation);
 
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
+            .setStock(stock).setMarketplace(null).setEans(null).build();
+
+        products.add(product);
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
     }
@@ -62,19 +67,8 @@ public class BrasilEvinoCrawler extends Crawler {
     return products;
   }
 
-  private Integer crawlStock(JSONObject productBiggyJson) {
-    Integer stock = null;
-    JSONArray sku = productBiggyJson.getJSONArray("skus");
-
-    for (Object object : sku) {
-      JSONObject skuJson = (JSONObject) object;
-
-      if (skuJson.has("stockQuantity")) {
-        stock = skuJson.getInt("stockQuantity");
-      }
-    }
-
-    return stock;
+  private Integer crawlStock(JSONObject variation) {
+    return variation.has("stockQuantity") ? variation.getInt("stockQuantity") : null;
   }
 
   private Prices crawlPrices(JSONObject productBiggyJson) {
@@ -116,42 +110,27 @@ public class BrasilEvinoCrawler extends Crawler {
   }
 
   private String crawlPrimaryImage(JSONObject productBiggyJson) {
+    String primaryImage = null;
     JSONObject images = productBiggyJson.has("images") ? productBiggyJson.getJSONObject("images") : new JSONObject();
-    return images.has("large") ? images.getString("large") : null;
+
+    if (images.has("extralarge")) {
+      primaryImage = images.getString("extralarge");
+    } else if (images.has("large")) {
+      primaryImage = images.getString("large");
+    } else if (images.has("medium")) {
+      primaryImage = images.getString("medium");
+    } else if (images.has("small")) {
+      primaryImage = images.getString("small");
+    }
+    return primaryImage;
   }
 
-  private Boolean crawlAvailability(JSONObject product) {
-    Boolean availability = null;
-
-    JSONArray sku = product.has("skus") ? product.getJSONArray("skus") : new JSONArray();
-
-    for (Object object : sku) {
-      JSONObject skuJson = (JSONObject) object;
-
-      if (skuJson.has("status")) {
-        String status = skuJson.getString("status");
-        availability = status.equalsIgnoreCase("available");
-      }
-    }
-
-    return availability;
-
+  private Boolean crawlAvailability(JSONObject variation) {
+    return variation.has("status") && variation.get("status").toString().equalsIgnoreCase("available");
   }
 
-  private String crawlInternalId(JSONObject product) {
-    String internalId = null;
-    JSONArray sku = product.getJSONArray("skus");
-
-    for (Object object : sku) {
-      JSONObject skuJson = (JSONObject) object;
-
-      if (skuJson.has("sku")) {
-        internalId = skuJson.get("sku").toString();
-      }
-
-    }
-
-    return internalId;
+  private String crawlInternalId(JSONObject variation) {
+    return variation.has("sku") ? variation.get("sku").toString() : null;
   }
 
   private String crawlName(JSONObject skuJson) {

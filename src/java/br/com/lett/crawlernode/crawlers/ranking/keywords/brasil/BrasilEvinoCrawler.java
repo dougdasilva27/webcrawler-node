@@ -20,7 +20,6 @@ public class BrasilEvinoCrawler extends CrawlerRankingKeywords {
     String url = HOME_PAGE + "/api/product-list/slug/?q=" + this.keywordEncoded + "&perPage=51&page=" + this.currentPage;
     JSONObject productsJson = fetchJSONObject(url);
     JSONObject data = productsJson.has("data") ? productsJson.getJSONObject("data") : new JSONObject();
-    JSONObject meta = data.has("meta") ? data.getJSONObject("meta") : new JSONObject();
     JSONArray products = data.has("products") ? data.getJSONArray("products") : new JSONArray();
 
     this.log("Página " + this.currentPage);
@@ -30,7 +29,7 @@ public class BrasilEvinoCrawler extends CrawlerRankingKeywords {
     if (productsJson.length() != 0) {
 
       if (this.totalProducts == 0) {
-        setTotalProducts(meta);
+        setTotalProducts(data);
       }
 
       for (Object object : products) {
@@ -56,7 +55,9 @@ public class BrasilEvinoCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private void setTotalProducts(JSONObject meta) {
+  private void setTotalProducts(JSONObject data) {
+    JSONObject meta = data.has("meta") ? data.getJSONObject("meta") : new JSONObject();
+
     if (meta.has("total")) {
       this.totalProducts = meta.getInt("total");
     }
