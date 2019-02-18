@@ -3,14 +3,16 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -27,7 +29,7 @@ import models.prices.Prices;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.ultrafarma.com.br/";
+  private static final String HOME_PAGE = "http://www.ultrafarma.com.br/";
 
   public SaopauloUltrafarmaCrawler(Session session) {
     super(session);
@@ -40,6 +42,34 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
   }
 
   @Override
+  protected Object fetch() {
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+    Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    Element script = doc.select("head script").last();
+    Element robots = doc.select("meta[name=robots]").first();
+
+    if (script != null && robots != null) {
+      String eval = script.html().trim();
+
+      if (!eval.isEmpty()) {
+        Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
+        this.webdriver.executeJavascript(eval);
+      }
+    }
+
+    String requestHash = DataFetcher.generateRequestHash(session);
+    this.webdriver.waitLoad(12000);
+
+    doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    // saving request content result on Amazon
+    S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+
+    return doc;
+  }
+
+  @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
@@ -47,21 +77,11 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     cookie.setDomain(".ultrafarma.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
-
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie2 = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie2.setDomain(".ultrafarma.com.br");
-      cookie2.setPath("/");
-      this.cookies.add(cookie2);
-    }
   }
 
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
-
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
