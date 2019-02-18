@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -102,15 +104,7 @@ public class BrasilColomboCrawler extends Crawler {
       }
 
       // Descrição
-      String description = "";
-      Element elementDescription = doc.select("#produto-descricao").first();
-      Element elementSpecs = doc.select("#produto-caracteristicas").first();
-      if (elementDescription != null) {
-        description = description + elementDescription.html().trim();
-      }
-      if (elementSpecs != null) {
-        description = description + elementSpecs.html();
-      }
+      String description = scrapDescription(doc);
 
       Element elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=0]").first();
       String primaryImage = null;
@@ -275,6 +269,21 @@ public class BrasilColomboCrawler extends Crawler {
     }
 
     return sanitizedURL;
+  }
+
+  private String scrapDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Elements titles = doc.select(".ancoras .ancoras-item");
+    for (Element e : titles) {
+      if (e.select(".ci-duvidas, [class~=ci-star]").isEmpty()) {
+        description.append(e.html());
+      }
+    }
+
+    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas")));
+
+    return description.toString();
   }
 
   private Prices crawlPrices(Document doc, Float price) {
