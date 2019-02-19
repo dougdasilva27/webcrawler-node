@@ -11,6 +11,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -1173,5 +1174,38 @@ public class CrawlerUtils {
     }
 
     return arr;
+  }
+
+
+  /**
+   * This function scrap standout html for markets descriptions
+   * 
+   * @param slugMarket - Ex: gpa, ikesaki (you need analyse the site to find this slug)
+   * @param session
+   * @param cookies
+   * @return
+   */
+  public static String scrapStandoutDescription(String slugMarket, Session session, List<Cookie> cookies) {
+    StringBuilder str = new StringBuilder();
+
+    String url = "https://standout.com.br/" + slugMarket + "/catchtag.php?distributor=" + slugMarket + "sku=&url=" + session.getOriginalURL();
+    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcher.fetchString("GET", session, url, null, cookies));
+
+    if (specialDesc.has("div")) {
+      Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("[id^=standout]");
+
+      if (e != null) {
+        StringBuilder descriptionUrl = new StringBuilder();
+        descriptionUrl.append("https://www.standout.com.br/");
+        descriptionUrl.append(e.attr("i")).append("/");
+        descriptionUrl.append("p/").append("WmZEhtkrUJQ,/");
+        descriptionUrl.append(e.attr("x")).append("/");
+        descriptionUrl.append(e.attr("y"));
+
+        str.append(DataFetcher.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
+      }
+    }
+
+    return str.toString();
   }
 }

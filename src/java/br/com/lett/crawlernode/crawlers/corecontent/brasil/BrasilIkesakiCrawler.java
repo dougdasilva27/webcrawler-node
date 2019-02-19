@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -299,25 +298,7 @@ public class BrasilIkesakiCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
-
-    String url = "https://standout.com.br/ikesaki/catchtag.php?distributor=ikesakisku=&url=" + session.getOriginalURL();
-    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcher.fetchString("GET", session, url, null, cookies));
-
-    if (specialDesc.has("div")) {
-      Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("#standoutDivConteudo");
-
-      if (e != null) {
-        StringBuilder descriptionUrl = new StringBuilder();
-        descriptionUrl.append("https://www.standout.com.br/");
-        descriptionUrl.append(e.attr("i")).append("/");
-        descriptionUrl.append("p/").append("WmZEhtkrUJQ,/");
-        descriptionUrl.append(e.attr("x")).append("/");
-        descriptionUrl.append(e.attr("y"));
-
-        description.append(DataFetcher.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
-      }
-    }
-
+    description.append(CrawlerUtils.scrapStandoutDescription("ikesaki", session, cookies));
 
     return description.toString();
   }
