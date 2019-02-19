@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
@@ -208,8 +207,10 @@ public class ColombiaMercadoniCrawler extends Crawler {
 
     String productId = null;
 
-    if (productUrl.contains("?")) {
-      String[] parameters = (productUrl.split("\\?")[1]).split("&");
+    if (productUrl.contains("?") && productUrl.contains("&")) {
+      String parametersUrl = productUrl.split("\\?")[1];
+
+      String[] parameters = parametersUrl.split("&");
 
       for (String parameter : parameters) {
         if (parameter.contains("product_simple=")) {
@@ -233,9 +234,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
           // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
-          JsonObject JsonParser = new JsonParser().parse(page).getAsJsonObject();
-
-          products = new JSONObject(JsonParser.toString());
+          products = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
         } catch (Exception e) {
           Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
         }
