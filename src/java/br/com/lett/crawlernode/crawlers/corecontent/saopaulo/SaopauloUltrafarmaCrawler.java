@@ -13,6 +13,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -33,6 +34,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
   public SaopauloUltrafarmaCrawler(Session session) {
     super(session);
+    super.config.setFetcher(Fetcher.WEBDRIVER);
   }
 
   @Override
