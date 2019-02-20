@@ -364,13 +364,18 @@ public class DataFetcher {
     return new SSLConnectionSocketFactory(sslContext);
   }
 
-
   public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, int attempt) {
     return fetchCookies(session, url, cookies, null, attempt);
   }
 
   public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, int attempt) {
     return fetchCookies(session, url, cookies, userAgent, null, attempt);
+  }
+
+  @Deprecated
+  public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, LettProxy lettProxy,
+      int attempt) {
+    return fetchCookies(session, url, cookies, userAgent, lettProxy, attempt, null);
   }
 
   /**
@@ -382,10 +387,11 @@ public class DataFetcher {
    * @param cookies
    * @param user agent
    * @param attempt
+   * @param headers
    * @return the header value. Will return an empty string if the cookie wasn't found.
    */
   public static Map<String, String> fetchCookies(Session session, String url, List<Cookie> cookies, String userAgent, LettProxy lettProxy,
-      int attempt) {
+      int attempt, Map<String, String> headers) {
 
     LettProxy randProxy = null;
     String randUserAgent = null;
@@ -397,7 +403,9 @@ public class DataFetcher {
       Logging.printLogDebug(logger, session, "Performing GET request to fetch cookie: " + url);
 
       if (DataFetcher.mustUseFetcher(attempt, session)) {
-        Map<String, String> headers = new HashMap<>();
+        if (headers == null) {
+          headers = new HashMap<>();
+        }
 
         if (cookies != null && !cookies.isEmpty()) {
           StringBuilder cookiesHeader = new StringBuilder();
@@ -409,7 +417,7 @@ public class DataFetcher {
           headers.put("Cookie", cookiesHeader.toString());
         }
 
-        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
+        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, new ArrayList<>(), null);
         JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
 
         if (response.has("response")) {
@@ -478,6 +486,13 @@ public class DataFetcher {
       RequestConfig requestConfig = createRequestConfig(proxy);
 
       List<Header> reqHeaders = new ArrayList<>();
+
+      if (headers != null) {
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+          reqHeaders.add(new BasicHeader(header.getKey(), header.getValue()));
+        }
+      }
+
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, "compress, gzip"));
 
       // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
@@ -545,9 +560,9 @@ public class DataFetcher {
       Map<String, String> cookiesMap = new HashMap<>();
 
       // get all cookie headers
-      Header[] headers = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
+      Header[] cookieHeaders = closeableHttpResponse.getHeaders(HTTP_COOKIE_HEADER);
 
-      for (Header header : headers) {
+      for (Header header : cookieHeaders) {
         String cookieHeader = header.getValue();
         String cookieName = cookieHeader.split("=")[0].trim();
 
