@@ -7,8 +7,11 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -19,29 +22,38 @@ import models.prices.Prices;
 
 public class BrasilPassarelaCrawler extends Crawler {
   private static final String HOME_PAGE = "https://www.passarela.com.br/";
+  private String apiUrl = null;
 
   public BrasilPassarelaCrawler(Session session) {
     super(session);
+
+    transformUrl(session.getOriginalURL());
   }
 
   /**
    * Method to tranform the product url into the api url
    * 
    * @param oldUrl
-   * @return
    */
-  private String transformUrl(String oldUrl) {
-    String newUrl = oldUrl;
+  private void transformUrl(String oldUrl) {
     String urlEnding = oldUrl.substring(oldUrl.indexOf(HOME_PAGE) + HOME_PAGE.length());
-
-    newUrl = HOME_PAGE + "ccstoreui/v1/pages/" + urlEnding + "&dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
-    return newUrl;
+    apiUrl = HOME_PAGE + "ccstoreui/v1/pages/" + urlEnding + "&dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
   }
 
   @Override
   protected Object fetch() {
-    session.setOriginalURL(transformUrl(session.getOriginalURL()));
-    return super.fetch();
+    String html = "";
+    if (config.getFetcher() == Fetcher.STATIC) {
+      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+    } else {
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(apiUrl, session);
+
+      if (webdriver != null) {
+        html = webdriver.getCurrentPageSource();
+      }
+    }
+
+    return Jsoup.parse(html);
   }
 
   @Override
@@ -64,8 +76,8 @@ public class BrasilPassarelaCrawler extends Crawler {
 
       if (json.has("childSKUs")) {
         JSONArray variations = json.getJSONArray("childSKUs");
-        Map<String, String> primaryImagesByVariation = new HashMap<String, String>();
-        Map<String, String> secondaryImagesByVariation = new HashMap<String, String>();
+        Map<String, String> primaryImagesByVariation = new HashMap<>();
+        Map<String, String> secondaryImagesByVariation = new HashMap<>();
 
         // Getting images by variation
         for (Object o : variations) {
@@ -90,7 +102,7 @@ public class BrasilPassarelaCrawler extends Crawler {
           JSONObject sku = (JSONObject) o;
 
           String internalId = sku.has("repositoryId") ? sku.getString("repositoryId") : null;
-          Float price = sku.has("salePrice") ? sku.getFloat("salePrice") : null;
+          Float price = getPrice(sku);
           String variationName = sku.has("cor") ? sku.getString("cor") : null;
           String primaryImage = null;
           String secondaryImages = null;
@@ -185,6 +197,22 @@ public class BrasilPassarelaCrawler extends Crawler {
     return images;
   }
 
+  protected Float getPrice(JSONObject json) {
+    Float price = null;
+    String salePrice = "salePrice";
+
+    if (json.has(salePrice)) {
+      if (!json.isNull(salePrice)) {
+        price = json.getFloat(salePrice);
+      } else {
+        price = json.has("listPrice") ? json.getFloat("listPrice") : null;
+      }
+    }
+
+
+    return price;
+  }
+
   protected Prices getPrices(JSONObject json, Float price) {
     Prices prices = new Prices();
 
@@ -210,17 +238,23 @@ public class BrasilPassarelaCrawler extends Crawler {
   }
 
   protected Map<String, Integer> getStocks(String productPid) {
-    Map<String, Integer> stocks = new HashMap<String, Integer>();
+    Map<String, Integer> stocks = new HashMap<>();
     Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
         "https://www.passarela.com.br/ccstoreui/v1/stockStatus/?products=" + productPid, null, cookies);
 
     JSONObject json = new JSONObject(doc.text());
-    JSONArray items = json.getJSONArray("items");
-    json = (JSONObject) items.get(0);
-    json = json.has("productSkuInventoryStatus") ? json.getJSONObject("productSkuInventoryStatus") : new JSONObject();
 
-    for (int i = 0; i < json.names().length(); i++) {
-      stocks.put(json.names().getString(i), json.getInt(json.names().getString(i)));
+    if (json.has("items")) {
+      JSONArray items = json.getJSONArray("items");
+
+      if (items.length() > 0) {
+        json = (JSONObject) items.get(0);
+        json = json.has("productSkuInventoryStatus") ? json.getJSONObject("productSkuInventoryStatus") : new JSONObject();
+
+        for (int i = 0; i < json.names().length(); i++) {
+          stocks.put(json.names().getString(i), json.getInt(json.names().getString(i)));
+        }
+      }
     }
 
     return stocks;

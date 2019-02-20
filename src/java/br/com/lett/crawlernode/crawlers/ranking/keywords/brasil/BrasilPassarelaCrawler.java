@@ -24,9 +24,7 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
         + "&No=0&Nrpp=300&Nr=product.x_visibilidade:1,sku.availabilityStatus:INSTOCK&language=pt_BR&searchType=simple";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
-
-    JSONObject json = new JSONObject(this.currentDoc.text());
+    JSONObject json = fetchJSONObject(url);
     json = json.has("searchEventSummary") ? json.getJSONObject("searchEventSummary") : new JSONObject();
     JSONArray products = json.has("resultsSummary") ? json.getJSONArray("resultsSummary") : new JSONArray();
 
@@ -35,21 +33,25 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
 
     if (products.length() > 0) {
       if (this.totalProducts == 0) {
-        setTotalProducts();
+        setTotalProducts(json);
       }
 
       for (Object o : products) {
         JSONObject product = (JSONObject) o;
 
-        String internalId = null;
-        String internalPid = product.has("productId") ? product.getString("productId") : null;
-        String productUrlEnding = product.has("id") ? product.getString("id") : null;
+        if (product.has("record.id") && product.has("sku.listingId")) {
+          String internalId = null;
 
-        String productUrl = BASE_URL + productUrlEnding.replace("..", "/");
+          String internalPid = product.getString("sku.listingId");
+          internalPid = internalPid.substring(0, internalPid.indexOf("--"));
 
-        saveDataProduct(internalId, internalPid, productUrl);
+          String productUrlEnding = product.getString("record.id");
+          String productUrl = BASE_URL + productUrlEnding.replace("..", "/");
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+          saveDataProduct(internalId, internalPid, productUrl);
+
+          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        }
       }
     } else {
       this.result = false;
@@ -59,8 +61,10 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected void setTotalProducts() {
-
+  protected void setTotalProducts(JSONObject json) {
+    if (json.has("totalMatchingRecords")) {
+      this.totalProducts = json.getInt("totalMatchingRecords");
+      this.log("Total products: " + this.totalProducts);
+    }
   }
 }
