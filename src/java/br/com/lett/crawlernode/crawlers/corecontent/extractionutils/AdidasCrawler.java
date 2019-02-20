@@ -55,12 +55,8 @@ public class AdidasCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      String name = null;
-      Integer stock = null;
       String id = scrapId(doc);
       String apiUrl = HOME_PAGE + "/api/products/" + id;
-      Boolean availability = null;
-      String internalId = null;
 
       JSONObject productJson = fecthJson(apiUrl);
       JSONObject pricingInformation = productJson.has("pricing_information") ? productJson.getJSONObject("pricing_information") : new JSONObject();
@@ -77,10 +73,10 @@ public class AdidasCrawler extends Crawler {
 
       for (Object object : variations) {
         JSONObject variation = (JSONObject) object;
-        name = scrapName(productJson, variation);
-        stock = variation.has("availability") ? variation.getInt("availability") : null;
-        availability = scrapAvailability(variation);
-        internalId = scrapInternalId(variation);
+        String name = scrapName(productJson, variation);
+        Integer stock = variation.has("availability") ? variation.getInt("availability") : null;
+        boolean availability = scrapAvailability(variation);
+        String internalId = scrapInternalId(variation);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -166,8 +162,8 @@ public class AdidasCrawler extends Crawler {
     return categories;
   }
 
-  private Boolean scrapAvailability(JSONObject available) {
-    return available.has("availability_status") ? available.getInt("availability") > 0 : null;
+  private boolean scrapAvailability(JSONObject available) {
+    return available.has("availability_status") && available.getInt("availability") > 0;
   }
 
   private Float scrapPrice(JSONObject pricingInformation) {
@@ -198,6 +194,14 @@ public class AdidasCrawler extends Crawler {
 
     if (jsonSku.has("name")) {
       name.append(jsonSku.getString("name"));
+    }
+
+    if (jsonSku.has("attribute_list")) {
+      JSONObject attributeList = jsonSku.getJSONObject("attribute_list");
+      if (attributeList.has("color")) {
+        name.append(" ");
+        name.append(attributeList.getString("color"));
+      }
     }
 
     if (variation.has("size")) {
@@ -237,4 +241,3 @@ public class AdidasCrawler extends Crawler {
   }
 
 }
-
