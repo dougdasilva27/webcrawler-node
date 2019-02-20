@@ -22,18 +22,18 @@ import models.prices.Prices;
 public class UnitedstatesNikeCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.nike.com";
-  private final Map<String, String> DEFAULT_HEADERS;
+  private final Map<String, String> defaultHeaders;
 
   public UnitedstatesNikeCrawler(Session session) {
     super(session);
 
-    DEFAULT_HEADERS = new HashMap<>();
-    DEFAULT_HEADERS.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    DEFAULT_HEADERS.put("accept-encoding", "gzip, deflate, br");
-    DEFAULT_HEADERS.put("accept-language", "en-US,en;q=0.9");
-    DEFAULT_HEADERS.put("cache-control", "max-age=0");
-    DEFAULT_HEADERS.put("upgrade-insecure-requests", "1");
-    DEFAULT_HEADERS.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+    defaultHeaders = new HashMap<>();
+    defaultHeaders.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    defaultHeaders.put("accept-encoding", "gzip, deflate, br");
+    defaultHeaders.put("accept-language", "en-US,en;q=0.9");
+    defaultHeaders.put("cache-control", "max-age=0");
+    defaultHeaders.put("upgrade-insecure-requests", "1");
+    defaultHeaders.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
   }
 
   @Override
@@ -44,12 +44,12 @@ public class UnitedstatesNikeCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() { // cookies =
-    CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "/us/en_us/", null, ".nike.com", "/", null, session, DEFAULT_HEADERS);
+    CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "/us/en_us/", null, ".nike.com", "/", null, session, defaultHeaders);
   }
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, DEFAULT_HEADERS, null, 1));
+    return Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, defaultHeaders, null, 1));
   }
 
   @Override
@@ -111,11 +111,18 @@ public class UnitedstatesNikeCrawler extends Crawler {
   }
 
   protected String getDescription(JSONObject json) {
-    String description = "";
-    description += json.has("descriptionPreview") ? (json.getString("descriptionPreview") + "<br>") : "";
-    description += json.has("description") ? json.getString("description") : "";
+    StringBuilder sb = new StringBuilder();
 
-    return description;
+    if (json.has("descriptionPreview")) {
+      sb.append(json.getString("descriptionPreview"));
+      sb.append("<br>");
+    }
+
+    if (json.has("description")) {
+      sb.append(json.getString("description"));
+    }
+
+    return sb.toString();
   }
 
   protected Prices getPrices(JSONObject json, Float price) {
@@ -151,19 +158,21 @@ public class UnitedstatesNikeCrawler extends Crawler {
         JSONObject imageJson = array.getJSONObject(i);
 
         // check if propertie is a image
-        if (imageJson.has("subType") && imageJson.getString("subType").equals("image")) {
-          if (imageJson.has("properties")) {
-            imageJson = imageJson.getJSONObject("properties");
+        if (imageJson.has("subType") && imageJson.getString("subType").equals("image") && imageJson.has("properties")) {
+          imageJson = imageJson.getJSONObject("properties");
 
-            if (imageJson.has("portraitURL")) {
-              secondaryImages.put(imageJson.getString("portraitURL"));
-            }
+          if (imageJson.has("portraitURL")) {
+            secondaryImages.put(imageJson.getString("portraitURL"));
           }
         }
       }
     }
 
-    return secondaryImages.toString();
+    if (secondaryImages.length() > 0) {
+      return secondaryImages.toString();
+    }
+
+    return null;
   }
 
   protected boolean getAvailability(JSONArray availabilityArray, String skuId) {
