@@ -458,7 +458,7 @@ public class Crawler extends Task {
   public List<Product> extract() throws Exception {
 
     // in cases we are running a truco iteration
-    if (webdriver != null) {
+    if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
       webdriver.terminate();
     }
 
