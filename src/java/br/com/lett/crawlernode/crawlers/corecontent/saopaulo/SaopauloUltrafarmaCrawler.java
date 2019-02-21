@@ -44,29 +44,35 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
   }
 
   @Override
-  protected Object fetch() {
+  protected Document fetch() {
+    Document doc = new Document("");
     this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-    Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    Element script = doc.select("head script").last();
-    Element robots = doc.select("meta[name=robots]").first();
+    if (this.webdriver != null) {
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    if (script != null && robots != null) {
-      String eval = script.html().trim();
+      Element script = doc.select("head script").last();
+      Element robots = doc.select("meta[name=robots]").first();
 
-      if (!eval.isEmpty()) {
-        Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
-        this.webdriver.executeJavascript(eval);
+      if (script != null && robots != null) {
+        String eval = script.html().trim();
+
+        if (!eval.isEmpty()) {
+          Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
+          this.webdriver.executeJavascript(eval);
+        }
       }
+
+      String requestHash = DataFetcher.generateRequestHash(session);
+      this.webdriver.waitLoad(12000);
+
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+      Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
+      this.webdriver.terminate();
+
+      // saving request content result on Amazon
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
     }
-
-    String requestHash = DataFetcher.generateRequestHash(session);
-    this.webdriver.waitLoad(12000);
-
-    doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-    // saving request content result on Amazon
-    S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
 
     return doc;
   }

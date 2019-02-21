@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -119,10 +120,8 @@ public class Crawler extends Task {
   public void onFinish() {
 
     try {
-      // Logging.printLogDebug(logger, session, "Running crawler onFinish() method...");
-
       // close the webdriver
-      if (webdriver != null) {
+      if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
         Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
         webdriver.terminate();
       }
