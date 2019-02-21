@@ -7,7 +7,9 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
 public class FalabellaRatingReviewCrawler extends RatingReviewCrawler {
@@ -30,33 +32,28 @@ public class FalabellaRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject productJson = extractProductJson(doc);
 
     if (isProductPage(doc)) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
       JSONArray products = productJson.has("skus") ? productJson.getJSONArray("skus") : new JSONArray();
 
       if (products.length() > 0) {
 
         String internalPid = crawlInternalPid(productJson);
-        String endpointRequest = assembleBazaarVoiceEndpointRequest(internalPid, 0, 50);
-
-        JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
-        JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalPid);
-
-        Integer totalNumOfEvaluations = getTotalReviewCount(reviewStatistics);
-        Double avgRating = getAverageOverallRating(reviewStatistics);
-
-        ratingReviews.setTotalRating(totalNumOfEvaluations);
-        ratingReviews.setAverageOverallRating(avgRating);
-        ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+        RatingsReviews ratingReviews = crawlRating(internalPid);
 
         for (int i = 0; i < products.length(); i++) {
           RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(crawlInternalId(products.getJSONObject(i)));
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }
+      } else {
+        String internalId = crawlInternalId(doc);
+        RatingsReviews ratingReviews = crawlRating(internalId);
+        ratingReviews.setInternalId(internalId);
+
+        ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
 
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
@@ -65,6 +62,36 @@ public class FalabellaRatingReviewCrawler extends RatingReviewCrawler {
 
   private boolean isProductPage(Document doc) {
     return !doc.select(".fb-product-cta").isEmpty();
+  }
+
+  private RatingsReviews crawlRating(String id) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(id, 0, 50);
+
+    JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+    JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, id);
+
+    Integer totalNumOfEvaluations = getTotalReviewCount(reviewStatistics);
+    Double avgRating = getAverageOverallRating(reviewStatistics);
+
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+    return ratingReviews;
+  }
+
+  protected String crawlInternalId(Document doc) {
+    String internalId = null;
+
+    String text = CrawlerUtils.scrapStringSimpleInfo(doc, ".fb-product-sets__product-code", true);
+    if (text != null) {
+      internalId = CommonMethods.getLast(text.split(":"));
+    }
+
+    return internalId;
   }
 
   private String crawlInternalPid(JSONObject productJson) {

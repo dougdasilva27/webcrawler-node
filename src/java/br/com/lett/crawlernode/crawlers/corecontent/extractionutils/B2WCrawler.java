@@ -108,7 +108,7 @@ public class B2WCrawler {
   private Map<String, String> crawlSkuOptions(JSONObject infoProductJson, Document doc) {
     Map<String, String> skuMap = new HashMap<>();
 
-    boolean unnavailablePage = !doc.select(".unavailable-informer").isEmpty();
+    boolean unnavailablePage = !doc.select("#title-stock").isEmpty();
 
     if (infoProductJson.has("skus")) {
       JSONArray skus = infoProductJson.getJSONArray("skus");
