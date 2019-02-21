@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,7 +21,7 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
     this.HOME_PAGE = HOME_PAGE;
   }
 
-  private JSONObject fecthJson(String url) {
+  protected JSONObject fecthJson(String url) {
     JSONObject jsonSku = new JSONObject();
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtmlxml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
@@ -47,13 +49,7 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
     JSONObject rankingJson = fecthJson(url);
     this.log("Link onde são feitos os crawlers: " + url);
 
-
-    if (rankingJson.has("redirect-url")) {
-      String slug = rankingJson.getString("redirect-url").replace("/", "");
-      url = HOME_PAGE + "/api/search/taxonomy?query=" + slug + "&start=" + arrayProducts.size();
-      rankingJson = fecthJson(url);
-      this.log("Link onde são feitos os crawlers: " + url);
-    }
+    rankingJson = redirectUrl(rankingJson);
 
     JSONObject itemList = rankingJson.has("itemList") ? rankingJson.getJSONObject("itemList") : new JSONObject();
 
@@ -88,14 +84,49 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
 
   }
 
+  protected JSONObject redirectUrl(JSONObject rankingJson) {
+    if (rankingJson.has("redirect-url")) {
+      String slug = buildSlug(rankingJson);
+
+      String url = HOME_PAGE + "/api/search/taxonomy?query=" + slug + "&start=" + arrayProducts.size();
+      rankingJson = fecthJson(url);
+      this.log("Link onde são feitos os crawlers: " + url);
+    }
+
+    return rankingJson;
+  }
+
+  protected String buildSlug(JSONObject rankingJson) {
+    String slug = rankingJson.getString("redirect-url");
+    // ".[^0-9]./" we can try use this regex to remove "/us/"
+
+    Matcher regSlug = Pattern.compile(".[^0-9]./").matcher(slug);
+    if (regSlug.find()) {
+
+      if (slug.contains("?")) {
+        slug = slug.substring(regSlug.end(), slug.indexOf('?'));
+      }
+    } else {
+      slug = slug.replace("/", "");
+    }
+
+    return slug;
+  }
+
   private void setTotalProducts(JSONObject rankingJson) {
     if (rankingJson.has("count")) {
       this.totalProducts = rankingJson.getInt("count");
+      this.log("Total da busca: " + this.totalProducts);
     }
   }
 
-  private String scrapUrl(JSONObject item) {
-    return item.has("link") ? CrawlerUtils.completeUrl(item.getString("link"), "https", "www.adidas.com.br") : null;
+  protected String extractHostFromHomePage(String HOME_PAGE) {
+    return HOME_PAGE.replace("https://", "");
+  }
+
+  protected String scrapUrl(JSONObject item) {
+    String host = extractHostFromHomePage(HOME_PAGE);
+    return item.has("link") ? CrawlerUtils.completeUrl(item.getString("link"), "https", host) : null;
   }
 
   private String scrapInternalPid(JSONObject item) {
