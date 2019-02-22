@@ -5,6 +5,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -728,6 +730,50 @@ public class DataFetcher {
         return fetchCookie(session, url, cookieName, cookies, attempt + 1);
       }
 
+    }
+  }
+
+  /**
+   * This function do a get request with jsoup library using storm proxies
+   * 
+   * @param url
+   * @param headers
+   * @param session
+   * @param attempt
+   * @return
+   */
+  public static String fetchPageWithJsoup(String url, Map<String, String> headers, Session session, int attempt) {
+    try {
+      Logging.printLogDebug(logger, session, "Performing GET request with Jsoup: " + url);
+      List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
+
+      String content = "";
+
+      if (!proxyStorm.isEmpty() && attempt < 3) {
+        Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_US + " for this request.");
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
+
+        content =
+            Jsoup.connect(url).headers(headers).ignoreContentType(true).proxy(proxy).timeout(1000 * 20).userAgent(randUserAgent()).execute().body();
+      } else {
+        Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + url);
+        content = Jsoup.connect(url).headers(headers).ignoreContentType(true).timeout(1000 * 20).userAgent(randUserAgent()).execute().body();
+      }
+
+      String requestHash = generateRequestHash(session);
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+
+      return content;
+    } catch (IOException e) {
+      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+
+      if (attempt < 4) {
+        return fetchPageWithJsoup(url, headers, session, attempt + 1);
+      } else {
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        return "";
+      }
     }
   }
 

@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +9,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,11 +21,11 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
 
 public class AdidasCrawler extends Crawler {
-  private String HOME_PAGE = "";
+  private String homePage = "";
 
-  public AdidasCrawler(Session session, String HOME_PAGE) {
+  public AdidasCrawler(Session session, String homePage) {
     super(session);
-    this.HOME_PAGE = HOME_PAGE;
+    this.homePage = homePage;
   }
 
   @Override
@@ -41,11 +41,11 @@ public class AdidasCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       String id = scrapId(doc);
-      String apiUrl = HOME_PAGE + "/api/products/" + id;
+      String apiUrl = homePage + "/api/products/" + id;
 
       JSONObject productJson = CrawlerUtils.stringToJson(fetchApi(apiUrl));
       JSONObject pricingInformation = productJson.has("pricing_information") ? productJson.getJSONObject("pricing_information") : new JSONObject();
-      JSONObject available = new JSONObject(fetchApi(apiUrl + "/availability"));
+      JSONObject available = CrawlerUtils.stringToJson(fetchApi(apiUrl + "/availability"));
       JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
 
       String internalPid = scrapInternalPid(productJson);
@@ -213,13 +213,7 @@ public class AdidasCrawler extends Crawler {
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    try {
-      return Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    return null;
+    return DataFetcher.fetchPageWithJsoup(url, headers, session, 1);
   }
 
 
