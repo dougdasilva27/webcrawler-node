@@ -30,6 +30,7 @@ import models.prices.Prices;
 public class UnitedstatesWalgreensCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.walgreens.com/";
+  private static final String HOST_IMAGES = "pics.drugstore.com";
 
   public UnitedstatesWalgreensCrawler(Session session) {
     super(session);
@@ -65,7 +66,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select("#receiveing-addToCartbtn").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".nav__bread-crumbs .breadcrumbspdp a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productImg", Arrays.asList("src", "content"), "https:", "pics.drugstore.com");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productImg", Arrays.asList("src", "content"), "https:", HOST_IMAGES);
       String secondaryImages = crawlSecondaryImages(productInfo, primaryImage);
       String description = crawlDescription(doc, internalPid);
 
@@ -117,11 +118,11 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
         String image = null;
 
         if (imageJson.has("zoomImageUrl" + i) && !imageJson.isNull("zoomImageUrl" + i)) {
-          image = CrawlerUtils.completeUrl(imageJson.getString("zoomImageUrl" + i), "https", "pics.drugstore.com");
+          image = CrawlerUtils.completeUrl(imageJson.getString("zoomImageUrl" + i), "https", HOST_IMAGES);
         } else if (imageJson.has("largeImageUrl" + i) && !imageJson.isNull("largeImageUrl" + i)) {
-          image = CrawlerUtils.completeUrl(imageJson.getString("largeImageUrl" + i), "https", "pics.drugstore.com");
+          image = CrawlerUtils.completeUrl(imageJson.getString("largeImageUrl" + i), "https", HOST_IMAGES);
         } else if (imageJson.has("stripUrl" + i) && !imageJson.isNull("stripUrl" + i)) {
-          image = CrawlerUtils.completeUrl(imageJson.getString("stripUrl" + i), "https", "pics.drugstore.com");
+          image = CrawlerUtils.completeUrl(imageJson.getString("stripUrl" + i), "https", HOST_IMAGES);
         }
 
         if (image != null && !image.equalsIgnoreCase(primaryImage)) {
