@@ -3,10 +3,12 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -27,33 +29,40 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
 
   @Override
   protected Document fetch() {
-    return Jsoup.parse(fecthApi(session.getOriginalURL()));
+    return Jsoup.parse(fetchApi(session.getOriginalURL()));
   }
 
   @Override
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
     String internalPid = crawlInternalPid(document);
-    String url = HOME_PAGE + "/api/models/" + internalPid + "/ratings";
-    JSONObject ratingJson = CrawlerUtils.stringToJson(fecthApi(url));
+    String ratingUrl = HOME_PAGE + "/api/models/" + internalPid + "/ratings";
+    String id = scrapId(document);
+    String apiUrl = HOME_PAGE + "/api/products/" + id;
+
+    JSONObject available = new JSONObject(fetchApi(apiUrl + "/availability"));
+    JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
+    JSONObject ratingJson = CrawlerUtils.stringToJson(fetchApi(ratingUrl));
 
     if (isProductPage(document)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalPid(document);
+      for (Object object : variations) {
+        RatingsReviews clone = ratingReviews.clone();
+        JSONObject variation = (JSONObject) object;
+        String internalId = scrapInternalId(variation);
+        Integer totalNumOfEvaluations = getTotalNumOfRatings(ratingJson);
+        Double avgRating = getTotalAvgRating(ratingJson);
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(ratingJson);
-      Double avgRating = getTotalAvgRating(ratingJson);
+        clone.setInternalId(internalId);
+        clone.setTotalRating(totalNumOfEvaluations);
+        clone.setTotalWrittenReviews(totalNumOfEvaluations);
+        clone.setAverageOverallRating(avgRating);
 
-      ratingReviews.setInternalId(internalId);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-
-      ratingReviewsCollection.addRatingReviews(ratingReviews);
+        ratingReviewsCollection.addRatingReviews(clone);
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -106,7 +115,11 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     return internalPid;
   }
 
-  private String fecthApi(String url) {
+  private String scrapInternalId(JSONObject variation) {
+    return variation.has("sku") ? variation.getString("sku") : null;
+  }
+
+  private String fetchApi(String url) {
     String response = null;
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
@@ -124,6 +137,16 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     return response;
+  }
+
+  private String scrapId(Document doc) {
+    String internalId = null;
+    Element metaElement = doc.selectFirst("meta[itemprop=\"sku\"]");
+
+    if (metaElement != null) {
+      internalId = metaElement.attr("content");
+    }
+    return internalId;
   }
 
 
