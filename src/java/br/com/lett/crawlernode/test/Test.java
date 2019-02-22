@@ -104,14 +104,12 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
+        session = SessionFactory.createTestRankingKeywordsSession("chuteiras", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
-        session = SessionFactory.createTestRankingCategoriesSession(
-            "https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p", market,
-            "Aparelhos");
+        session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
+            market, "Aparelhos");
       } else {
-        session = SessionFactory
-            .createTestSession("http://www.servnutri.com.br/produto/nutren-1-5-200ml/", market);
+        session = SessionFactory.createTestSession("https://www.adidas.mx/tenis-superstar/C77124.html?pr=home_rr&slot=1", market);
       }
 
       Task task = TaskFactory.createTask(session);
