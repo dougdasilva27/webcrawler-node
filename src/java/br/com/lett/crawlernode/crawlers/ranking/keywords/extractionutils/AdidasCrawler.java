@@ -80,8 +80,9 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
   }
 
   /**
+   * This function redirects the url if the api return is a redirect key.
    * 
-   * @return this function redirects the url if the api return is a redirect key
+   * @return JSONObject
    */
 
   private JSONObject fecthApi() {
