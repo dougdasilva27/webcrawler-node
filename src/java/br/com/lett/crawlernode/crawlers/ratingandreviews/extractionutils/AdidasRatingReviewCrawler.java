@@ -89,12 +89,15 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
 
   private Integer getTotalNumOfRatings(JSONObject ratingJson) {
     Integer total = 0;
+    Object totalObject;
     if (ratingJson.has("reviewCount")) {
-      total = ratingJson.getInt("reviewCount");
-      if (!(total instanceof Integer)) {
-        total = 0;
+      totalObject = ratingJson.get("reviewCount");
+
+      if (totalObject instanceof Integer) {
+        total = Integer.parseInt(totalObject.toString());
       }
     }
+
     return total;
   }
 

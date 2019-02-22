@@ -14,11 +14,11 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class AdidasCrawler extends CrawlerRankingKeywords {
-  private String HOME_PAGE = "";
+  private String host = "";
 
-  public AdidasCrawler(Session session, String HOME_PAGE) {
+  public AdidasCrawler(Session session, String host) {
     super(session);
-    this.HOME_PAGE = HOME_PAGE;
+    this.host = host;
   }
 
   protected JSONObject fecthJson(String url) {
@@ -44,12 +44,7 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 48;
-
-    String url = HOME_PAGE + "/api/search/query?query=" + this.location + "&start=" + arrayProducts.size();
-    JSONObject rankingJson = fecthJson(url);
-    this.log("Link onde são feitos os crawlers: " + url);
-
-    rankingJson = redirectUrl(rankingJson);
+    JSONObject rankingJson = fecthApi();
 
     JSONObject itemList = rankingJson.has("itemList") ? rankingJson.getJSONObject("itemList") : new JSONObject();
 
@@ -84,16 +79,34 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
 
   }
 
-  protected JSONObject redirectUrl(JSONObject rankingJson) {
-    if (rankingJson.has("redirect-url")) {
-      String slug = buildSlug(rankingJson);
+  /**
+   * 
+   * @return this function redirects the url if the api return is a redirect key
+   */
 
-      String url = HOME_PAGE + "/api/search/taxonomy?query=" + slug + "&start=" + arrayProducts.size();
-      rankingJson = fecthJson(url);
-      this.log("Link onde são feitos os crawlers: " + url);
+  private JSONObject fecthApi() {
+
+    String url = "https://".concat(host).concat("/api/search/query?query=").concat(this.location).concat("&start=")
+        .concat(Integer.toString(arrayProducts.size()));
+    JSONObject rankingJson = fecthJson(url);
+
+    if (rankingJson.has("redirect-url")) {
+      rankingJson = accessRedirect(rankingJson);
     }
 
+    this.log("Link onde são feitos os crawlers: " + url);
+
     return rankingJson;
+  }
+
+  protected JSONObject accessRedirect(JSONObject rankingJson) {
+    String slug = buildSlug(rankingJson);
+
+    String url =
+        "https://".concat(host).concat("/api/search/taxonomy?query=").concat(slug).concat("&start=").concat(Integer.toString(arrayProducts.size()));
+    this.log("Redirecionando: " + url);
+
+    return fecthJson(url);
   }
 
   protected String buildSlug(JSONObject rankingJson) {
@@ -120,12 +133,8 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  protected String extractHostFromHomePage(String HOME_PAGE) {
-    return HOME_PAGE.replace("https://", "");
-  }
 
   protected String scrapUrl(JSONObject item) {
-    String host = extractHostFromHomePage(HOME_PAGE);
     return item.has("link") ? CrawlerUtils.completeUrl(item.getString("link"), "https", host) : null;
   }
 

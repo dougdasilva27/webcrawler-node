@@ -8,30 +8,25 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.AdidasC
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesAdidasCrawler extends AdidasCrawler {
-  private static String HOME_PAGE = "https://www.adidas.com";
+  private static String HOST = "www.adidas.com";
 
   public UnitedstatesAdidasCrawler(Session session) {
-    super(session, HOME_PAGE);
-    // TODO Auto-generated constructor stub
+    super(session, HOST);
   }
 
   @Override
   protected String scrapUrl(JSONObject item) {
-    String host = super.extractHostFromHomePage(HOME_PAGE);
-    return item.has("link") ? CrawlerUtils.completeUrl(item.getString("link"), "https", host.concat("/us")) : null;
+    return item.has("link") ? CrawlerUtils.completeUrl(item.getString("link"), "https", HOST.concat("/us")) : null;
   }
 
   @Override
-  protected JSONObject redirectUrl(JSONObject rankingJson) {
-    if (rankingJson.has("redirect-url")) {
-      String slug = buildSlug(rankingJson);
+  protected JSONObject accessRedirect(JSONObject rankingJson) {
+    String slug = buildSlug(rankingJson);
+    String url =
+        "https://".concat(HOST).concat("/api/search/taxonomy?query=").concat(slug).concat("&start=").concat(Integer.toString(arrayProducts.size()));
 
-      String url = HOME_PAGE + "/api/search/taxonomy?query=" + slug + "&start=" + arrayProducts.size();
-      rankingJson = super.fecthJson(url);
-      this.log("Link onde são feitos os crawlers: " + url);
-    }
-
-    return rankingJson;
+    this.log("Link onde são feitos os crawlers: " + url);
+    return super.fecthJson(url);
   }
 
   @Override

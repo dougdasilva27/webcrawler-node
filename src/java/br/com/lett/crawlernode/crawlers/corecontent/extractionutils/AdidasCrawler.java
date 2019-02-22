@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
 
@@ -30,22 +30,7 @@ public class AdidasCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    try {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtmlxml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-      headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-      headers.put("cache-control", "max-age=0");
-      headers.put("upgrade-insecure-requests", "1");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
-
-      return Jsoup.connect(session.getOriginalURL()).headers(headers).get();
-
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-      return null;
-    }
+    return Jsoup.parse(fetchApi(session.getOriginalURL()));
   }
 
   @Override
@@ -58,9 +43,9 @@ public class AdidasCrawler extends Crawler {
       String id = scrapId(doc);
       String apiUrl = HOME_PAGE + "/api/products/" + id;
 
-      JSONObject productJson = fecthJson(apiUrl);
+      JSONObject productJson = new JSONObject(fetchApi(apiUrl));
       JSONObject pricingInformation = productJson.has("pricing_information") ? productJson.getJSONObject("pricing_information") : new JSONObject();
-      JSONObject available = fecthJson(apiUrl + "/availability");
+      JSONObject available = new JSONObject(fetchApi(apiUrl + "/availability"));
       JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
 
       String internalPid = scrapInternalPid(productJson);
@@ -172,8 +157,7 @@ public class AdidasCrawler extends Crawler {
 
   private Prices scrapPrices(JSONObject pricingInformation, Float price) {
     Prices prices = new Prices();
-    prices.setPriceFrom(
-        pricingInformation.has("standard_price") ? MathUtils.parseDoubleWithDot(pricingInformation.get("standard_price").toString()) : null);
+    prices.setPriceFrom(pricingInformation.has("standard_price") ? CrawlerUtils.getDoubleValueFromJSON(pricingInformation, "standard_price") : null);
 
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
     installmentPriceMap.put(1, price);
@@ -220,8 +204,7 @@ public class AdidasCrawler extends Crawler {
     return doc.selectFirst(".pdpBar  > div[data-auto-id=\"product-information\"]") != null;
   }
 
-  private JSONObject fecthJson(String url) {
-    JSONObject jsonSku = new JSONObject();
+  private String fetchApi(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtmlxml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-encoding", "gzip, deflate, br");
@@ -229,15 +212,15 @@ public class AdidasCrawler extends Crawler {
     headers.put("cache-control", "max-age=0");
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+
     try {
-      jsonSku = new JSONObject(Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body());
-    } catch (JSONException e) {
-      e.printStackTrace();
+      return Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body();
     } catch (IOException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
-
-    return jsonSku;
+    return null;
   }
+
 
 }
