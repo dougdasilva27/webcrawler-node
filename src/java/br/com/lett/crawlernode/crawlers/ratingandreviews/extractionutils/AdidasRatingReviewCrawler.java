@@ -27,29 +27,15 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
 
   @Override
   protected Document fetch() {
-    try {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-      headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-      headers.put("cache-control", "max-age=0");
-      headers.put("upgrade-insecure-requests", "1");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
-
-      return Jsoup.connect(session.getOriginalURL()).headers(headers).get();
-
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-      return null;
-    }
+    return Jsoup.parse(fecthApi(session.getOriginalURL()));
   }
 
+  @Override
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
     String internalPid = crawlInternalPid(document);
     String url = HOME_PAGE + "/api/models/" + internalPid + "/ratings";
-    JSONObject ratingJson = fecthJson(url);
+    JSONObject ratingJson = CrawlerUtils.stringToJson(fecthApi(url));
 
     if (isProductPage(document)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -120,8 +106,8 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     return internalPid;
   }
 
-  private JSONObject fecthJson(String url) {
-    JSONObject jsonSku = new JSONObject();
+  private String fecthApi(String url) {
+    String response = null;
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-encoding", "gzip, deflate, br");
@@ -130,14 +116,14 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
     try {
-      jsonSku = new JSONObject(Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body());
+      response = Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body();
     } catch (JSONException e) {
       e.printStackTrace();
     } catch (IOException e) {
       e.printStackTrace();
     }
 
-    return jsonSku;
+    return response;
   }
 
 

@@ -43,7 +43,7 @@ public class AdidasCrawler extends Crawler {
       String id = scrapId(doc);
       String apiUrl = HOME_PAGE + "/api/products/" + id;
 
-      JSONObject productJson = new JSONObject(fetchApi(apiUrl));
+      JSONObject productJson = CrawlerUtils.stringToJson(fetchApi(apiUrl));
       JSONObject pricingInformation = productJson.has("pricing_information") ? productJson.getJSONObject("pricing_information") : new JSONObject();
       JSONObject available = new JSONObject(fetchApi(apiUrl + "/availability"));
       JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
