@@ -110,7 +110,7 @@ public class MathUtils {
    * @return
    */
   public static List<String> parseNumbers(String s) {
-    List<String> numbers = new ArrayList<String>();
+    List<String> numbers = new ArrayList<>();
     Pattern p = Pattern.compile("-?\\d+");
     Matcher m = p.matcher(s);
     while (m.find()) {

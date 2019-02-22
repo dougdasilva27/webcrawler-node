@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
@@ -34,6 +36,11 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
   }
 
   @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".walgreens.com", "/", cookies, session, new HashMap<>());
+  }
+
+  @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
@@ -59,8 +66,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
       boolean available = !doc.select("#receiveing-addToCartbtn").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".nav__bread-crumbs .breadcrumbspdp a");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productImg", Arrays.asList("src", "content"), "https:", "pics.drugstore.com");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#gal1 a", Arrays.asList("data-zoom-image", "data-image"), "https:",
-          "www.megatone.net", primaryImage);
+      String secondaryImages = crawlSecondaryImages(productInfo, primaryImage);
       String description = crawlDescription(doc, internalPid);
 
       String ean = crawlEan(results);
@@ -98,6 +104,39 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
     return productInfo;
   }
 
+  private String crawlSecondaryImages(JSONObject prodInfo, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    if (prodInfo.has("filmStripUrl")) {
+      JSONArray filmStripUrl = prodInfo.getJSONArray("filmStripUrl");
+
+      for (int i = 1; i <= filmStripUrl.length(); i++) {
+        JSONObject imageJson = filmStripUrl.getJSONObject(i - 1);
+
+        String image = null;
+
+        if (imageJson.has("zoomImageUrl" + i) && !imageJson.isNull("zoomImageUrl" + i)) {
+          image = CrawlerUtils.completeUrl(imageJson.getString("zoomImageUrl" + i), "https", "pics.drugstore.com");
+        } else if (imageJson.has("largeImageUrl" + i) && !imageJson.isNull("largeImageUrl" + i)) {
+          image = CrawlerUtils.completeUrl(imageJson.getString("largeImageUrl" + i), "https", "pics.drugstore.com");
+        } else if (imageJson.has("stripUrl" + i) && !imageJson.isNull("stripUrl" + i)) {
+          image = CrawlerUtils.completeUrl(imageJson.getString("stripUrl" + i), "https", "pics.drugstore.com");
+        }
+
+        if (image != null && !image.equalsIgnoreCase(primaryImage)) {
+          secondaryImagesArray.put(image);
+        }
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
   private Float crawlPrice(JSONObject results) {
     Float price = null;
 
@@ -123,7 +162,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
     String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
     if (script.contains("_wccontent =")) {
-      JSONObject content = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(script, "_wccontent =", ";", false));
+      JSONObject content = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(script, "_wccontent = ", "};", false));
 
       if (content.has("aplus")) {
         JSONObject aplus = content.getJSONObject("aplus");

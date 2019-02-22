@@ -1026,6 +1026,33 @@ public class CrawlerUtils {
   }
 
   /**
+   * 
+   * @param json
+   * @param key
+   * @param defaultValue - return this value if key not exists
+   * @return
+   */
+  public static Integer getIntegerValueFromJSON(JSONObject json, String key, Integer defaultValue) {
+    Integer value = defaultValue;
+
+    if (json.has(key)) {
+      Object valueObj = json.get(key);
+
+      if (valueObj instanceof Integer) {
+        value = (Integer) valueObj;
+      } else {
+        String text = valueObj.toString().replaceAll("[^0-9]", "");
+
+        if (!text.isEmpty()) {
+          value = Integer.parseInt(text);
+        }
+      }
+    }
+
+    return value;
+  }
+
+  /**
    * Crawl simple installment with this text example:
    * 
    * 2x de R$12,90
