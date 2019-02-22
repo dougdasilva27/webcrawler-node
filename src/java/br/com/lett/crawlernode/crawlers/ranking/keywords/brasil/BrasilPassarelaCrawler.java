@@ -7,8 +7,6 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
 
-  private final String BASE_URL = "https://www.passarela.com.br/produto/";
-
   public BrasilPassarelaCrawler(Session session) {
     super(session);
   }
@@ -24,12 +22,8 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
         + "&No=0&Nrpp=300&Nr=product.x_visibilidade:1,sku.availabilityStatus:INSTOCK&language=pt_BR&searchType=simple";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    JSONObject json = fetchJSONObject(url);
-    json = json.has("searchEventSummary") ? json.getJSONObject("searchEventSummary") : new JSONObject();
-    JSONArray products = json.has("resultsSummary") ? json.getJSONArray("resultsSummary") : new JSONArray();
-
-    json = products.length() > 0 ? (JSONObject) products.get(0) : new JSONObject();
-    products = json.has("records") ? json.getJSONArray("records") : new JSONArray();
+    JSONObject json = getJSON(url);
+    JSONArray products = json.has("records") ? json.getJSONArray("records") : new JSONArray();
 
     if (products.length() > 0) {
       if (this.totalProducts == 0) {
@@ -41,12 +35,8 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
 
         if (product.has("record.id") && product.has("sku.listingId")) {
           String internalId = null;
-
-          String internalPid = product.getString("sku.listingId");
-          internalPid = internalPid.substring(0, internalPid.indexOf("--"));
-
-          String productUrlEnding = product.getString("record.id");
-          String productUrl = BASE_URL + productUrlEnding.replace("..", "/");
+          String internalPid = getInternalPid(product);
+          String productUrl = getUrl(product);
 
           saveDataProduct(internalId, internalPid, productUrl);
 
@@ -66,5 +56,35 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
       this.totalProducts = json.getInt("totalMatchingRecords");
       this.log("Total products: " + this.totalProducts);
     }
+  }
+
+  protected JSONObject getJSON(String url) {
+    JSONObject json = fetchJSONObject(url);
+
+    if (json.has("searchEventSummary")) {
+      json = json.getJSONObject("searchEventSummary");
+
+      if (json.has("resultsSummary")) {
+        JSONArray products = json.getJSONArray("resultsSummary");
+
+        if (products.length() > 0) {
+          json = (JSONObject) products.get(0);
+        }
+      }
+    }
+
+    return json;
+  }
+
+  protected String getInternalPid(JSONObject json) {
+    String internalPid = json.getString("sku.listingId");
+
+    return internalPid.substring(0, internalPid.indexOf("--"));
+  }
+
+  protected String getUrl(JSONObject json) {
+    String productUrlEnding = json.getString("record.id");
+
+    return "https://www.passarela.com.br/produto/" + productUrlEnding.replace("..", "/");
   }
 }

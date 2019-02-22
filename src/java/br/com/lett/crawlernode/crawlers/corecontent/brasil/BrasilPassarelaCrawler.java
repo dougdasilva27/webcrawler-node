@@ -7,11 +7,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -42,26 +39,16 @@ public class BrasilPassarelaCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    String html = "";
-    if (config.getFetcher() == Fetcher.STATIC) {
-      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
-    } else {
-      webdriver = DynamicDataFetcher.fetchPageWebdriver(apiUrl, session);
-
-      if (webdriver != null) {
-        html = webdriver.getCurrentPageSource();
-      }
-    }
-
-    return Jsoup.parse(html);
+    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
   }
 
   @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
+  public List<Product> extractInformation(JSONObject json) throws Exception {
+    super.extractInformation(json);
     List<Product> products = new ArrayList<>();
 
-    JSONObject json = new JSONObject(doc.text());
+    System.err.println(json);
+
     json = json.has("data") ? json.getJSONObject("data") : new JSONObject();
     json = json.has("page") ? json.getJSONObject("page") : new JSONObject();
 
@@ -115,7 +102,10 @@ public class BrasilPassarelaCrawler extends Crawler {
             productName += " " + sku.getString("tamanho");
           }
 
+          // evading null pointers
           if (variationName != null) {
+
+            // getting images from images JSONArray
             primaryImage = primaryImagesByVariation.get(variationName);
             secondaryImages = secondaryImagesByVariation.get(variationName);
           }
@@ -164,33 +154,36 @@ public class BrasilPassarelaCrawler extends Crawler {
   protected JSONArray getImages(JSONObject json) {
     JSONArray images = new JSONArray();
 
+    // size without the last character: '/'
+    int homePageSizeWithoutBar = HOME_PAGE.length() - 1;
+
     if (json.has("fullImageURLs")) {
       JSONArray subArray = json.getJSONArray("fullImageURLs");
       for (Object o : subArray) {
         String str = (String) o;
 
-        images.put(HOME_PAGE.substring(0, HOME_PAGE.length() - 1) + str);
+        images.put(HOME_PAGE.substring(0, homePageSizeWithoutBar) + str);
       }
     } else if (json.has("sourceImageURLs")) {
       JSONArray subArray = json.getJSONArray("sourceImageURLs");
       for (Object o : subArray) {
         String str = (String) o;
 
-        images.put(HOME_PAGE.substring(0, HOME_PAGE.length() - 1) + str);
+        images.put(HOME_PAGE.substring(0, homePageSizeWithoutBar) + str);
       }
     } else if (json.has("largeImageURLs")) {
       JSONArray subArray = json.getJSONArray("largeImageURLs");
       for (Object o : subArray) {
         String str = (String) o;
 
-        images.put(HOME_PAGE.substring(0, HOME_PAGE.length() - 1) + str);
+        images.put(HOME_PAGE.substring(0, homePageSizeWithoutBar) + str);
       }
     } else if (json.has("mediumImageURLs")) {
       JSONArray subArray = json.getJSONArray("mediumImageURLs");
       for (Object o : subArray) {
         String str = (String) o;
 
-        images.put(HOME_PAGE.substring(0, HOME_PAGE.length() - 1) + str);
+        images.put(HOME_PAGE.substring(0, homePageSizeWithoutBar) + str);
       }
     }
 
@@ -205,7 +198,7 @@ public class BrasilPassarelaCrawler extends Crawler {
       if (!json.isNull(salePrice)) {
         price = json.getFloat(salePrice);
       } else {
-        price = json.has("listPrice") ? json.getFloat("listPrice") : null;
+        price = json.has("listPrice") && !json.isNull("listPrice") ? json.getFloat("listPrice") : null;
       }
     }
 
@@ -222,7 +215,7 @@ public class BrasilPassarelaCrawler extends Crawler {
 
       prices.setBankTicketPrice(price);
 
-      if (json.has("listPrice")) {
+      if (json.has("listPrice") && !json.isNull("listPrice")) {
         prices.setPriceFrom(json.getDouble("listPrice"));
       }
 
