@@ -308,9 +308,12 @@ public class SaopauloWalmartCrawler extends Crawler {
       Element iframe = supplierDescription.selectFirst("iframe");
       if (iframe != null) {
         String url = iframe.attr("src");
-        supplierDescription.selectFirst("iframe").remove();
-        description.append(supplierDescription.html());
-        description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies));
+
+        if (!url.endsWith(".jpg") && !url.endsWith(".jpeg") && !url.endsWith(".png") && !url.endsWith(".gif")) {
+          supplierDescription.selectFirst("iframe").remove();
+          description.append(supplierDescription.html());
+          description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies));
+        }
       } else {
         description.append(supplierDescription.html());
       }
