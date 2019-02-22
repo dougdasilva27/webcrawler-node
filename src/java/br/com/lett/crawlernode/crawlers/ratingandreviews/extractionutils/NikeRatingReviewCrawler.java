@@ -74,11 +74,12 @@ public class NikeRatingReviewCrawler extends RatingReviewCrawler {
               Integer totalNumOfEvaluations = reviewsJson.getInt("total");
               Double avgRating = reviewsJson.getDouble("averageRating");
 
-              ratingReviews.setInternalId(internalId);
-              ratingReviews.setTotalRating(totalNumOfEvaluations);
-              ratingReviews.setAverageOverallRating(avgRating);
+              RatingsReviews clone = ratingReviews.clone();
+              clone.setInternalId(internalId);
+              clone.setTotalRating(totalNumOfEvaluations);
+              clone.setAverageOverallRating(avgRating);
 
-              ratingReviewsCollection.addRatingReviews(ratingReviews);
+              ratingReviewsCollection.addRatingReviews(clone);
             }
           }
         }
