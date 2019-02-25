@@ -1,14 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -24,8 +23,6 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     super(session);
     this.HOME_PAGE = HOME_PAGE;
   }
-
-
 
   @Override
   protected Document fetch() {
@@ -120,23 +117,15 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private String fetchApi(String url) {
-    String response = null;
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    headers.put("accept-encoding", "gzip, deflate, br");
+    // headers.put("accept-encoding", "gzip, deflate, br");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("cache-control", "max-age=0");
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
-    try {
-      response = Jsoup.connect(url).headers(headers).ignoreContentType(true).execute().body();
-    } catch (JSONException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
 
-    return response;
+    return DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1);
   }
 
   private String scrapId(Document doc) {
