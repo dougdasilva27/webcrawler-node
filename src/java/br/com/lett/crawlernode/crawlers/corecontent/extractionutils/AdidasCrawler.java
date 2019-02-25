@@ -16,6 +16,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
@@ -38,6 +40,8 @@ public class AdidasCrawler extends Crawler {
     super.extractInformation(doc);
 
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "OPA.html");
 
     if (isProductPage(doc)) {
       String id = scrapId(doc);
@@ -207,13 +211,12 @@ public class AdidasCrawler extends Crawler {
   private String fetchApi(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtmlxml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    headers.put("accept-encoding", "gzip, deflate, br");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("cache-control", "max-age=0");
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    return DataFetcher.fetchPageWithJsoup(url, headers, session, 1);
+    return DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1);
   }
 
 

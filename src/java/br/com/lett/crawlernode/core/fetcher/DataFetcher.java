@@ -2,12 +2,17 @@ package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -15,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -734,7 +740,11 @@ public class DataFetcher {
   }
 
   /**
-   * This function do a get request with jsoup library using storm proxies
+   * This function do a get request with HttpURLConnection library using storm proxies
+   * 
+   * Attempts: 4;
+   * 
+   * Last attempt will use no proxy
    * 
    * @param url
    * @param headers
@@ -742,36 +752,56 @@ public class DataFetcher {
    * @param attempt
    * @return
    */
-  public static String fetchPageWithJsoup(String url, Map<String, String> headers, Session session, int attempt) {
+  public static String fetchPageWithHttpURLConnectionUsingStormProxies(String targetURL, Map<String, String> headers, Session session, int attempt) {
     try {
-      Logging.printLogDebug(logger, session, "Performing GET request with Jsoup: " + url);
+      Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
       List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
 
       String content = "";
+      Proxy proxy = null;
 
-      if (!proxyStorm.isEmpty() && attempt < 3) {
+      if (!proxyStorm.isEmpty() && attempt < 4) {
         Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_US + " for this request.");
-        Proxy proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
-
-        content =
-            Jsoup.connect(url).headers(headers).ignoreContentType(true).proxy(proxy).timeout(1000 * 20).userAgent(randUserAgent()).execute().body();
+        proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
       } else {
-        Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + url);
-        content = Jsoup.connect(url).headers(headers).ignoreContentType(true).timeout(1000 * 20).userAgent(randUserAgent()).execute().body();
+        Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
       }
+
+      URL url = new URL(targetURL);
+      HttpURLConnection connection = proxy != null ? (HttpURLConnection) url.openConnection(proxy) : (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod(DataFetcher.GET_REQUEST);
+      connection.setInstanceFollowRedirects(true);
+      connection.setUseCaches(false);
+      connection.setReadTimeout(DEFAULT_CONNECT_TIMEOUT);
+
+      for (Entry<String, String> entry : headers.entrySet()) {
+        connection.setRequestProperty(entry.getKey(), entry.getValue());
+      }
+
+      // Get Response
+      InputStream is = connection.getInputStream();
+      BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+      StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+      String line;
+      while ((line = rd.readLine()) != null) {
+        response.append(line);
+        response.append('\r');
+      }
+      rd.close();
+      content = response.toString();
 
       String requestHash = generateRequestHash(session);
       S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
 
       return content;
-    } catch (IOException e) {
-      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + url);
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    } catch (Exception e) {
+      Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + targetURL);
+      Logging.printLogWarn(logger, session, e.getMessage());
 
       if (attempt < 4) {
-        return fetchPageWithJsoup(url, headers, session, attempt + 1);
+        return fetchPageWithHttpURLConnectionUsingStormProxies(targetURL, headers, session, attempt + 1);
       } else {
-        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + url + "]");
+        Logging.printLogWarn(logger, session, "Reached maximum attempts for URL [" + targetURL + "]");
         return "";
       }
     }
