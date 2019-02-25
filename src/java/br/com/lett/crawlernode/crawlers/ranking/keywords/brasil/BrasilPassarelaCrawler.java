@@ -79,7 +79,11 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
   protected String getInternalPid(JSONObject json) {
     String internalPid = json.getString("sku.listingId");
 
-    return internalPid.substring(0, internalPid.indexOf("--"));
+    if (internalPid.contains("--")) {
+      internalPid = internalPid.substring(0, internalPid.indexOf("--"));
+    }
+
+    return internalPid;
   }
 
   protected String getUrl(JSONObject json) {
