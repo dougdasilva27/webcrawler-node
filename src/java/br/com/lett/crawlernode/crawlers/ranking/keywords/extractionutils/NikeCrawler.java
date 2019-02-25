@@ -1,11 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import java.io.IOException;
+import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class NikeCrawler extends CrawlerRankingKeywords {
 
@@ -22,16 +23,10 @@ public class NikeCrawler extends CrawlerRankingKeywords {
     String url = buildUrl();
     this.log("Url: " + url);
 
-    JSONObject json = new JSONObject();
-
-    try {
-      String docString = Jsoup.connect(url).ignoreContentType(true).execute().body();
-      json = new JSONObject(docString);
-    } catch (IOException e) {
-      e.printStackTrace();
+    JSONObject json = CrawlerUtils.stringToJson(DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, new HashMap<>(), session, 1));
+    if (this.totalProducts == 0) {
+      setTotalProducts(json);
     }
-
-    setTotalProducts(json);
 
     if (json.has("foundResults") && json.getBoolean("foundResults") && json.has("sections")) {
       JSONArray array = json.getJSONArray("sections");

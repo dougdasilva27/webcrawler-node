@@ -772,7 +772,7 @@ public class DataFetcher {
       connection.setRequestMethod(DataFetcher.GET_REQUEST);
       connection.setInstanceFollowRedirects(true);
       connection.setUseCaches(false);
-      connection.setReadTimeout(DEFAULT_CONNECT_TIMEOUT);
+      connection.setReadTimeout(DEFAULT_CONNECT_TIMEOUT * 2);
 
       for (Entry<String, String> entry : headers.entrySet()) {
         connection.setRequestProperty(entry.getKey(), entry.getValue());
