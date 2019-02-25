@@ -78,7 +78,7 @@ public class TottusCrawler {
 
   private String crawlDescription(Document doc, String internalId) {
     String id = internalId;
-
+    Element descriptionHtml = doc.selectFirst(".wrap-text-descriptions");
     if (id != null && id.startsWith("0")) {
       id = id.substring(1);
     }
@@ -92,6 +92,10 @@ public class TottusCrawler {
     JSONObject skuDescription =
         new JSONObject(POSTFetcher.requestStringUsingFetcher("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id,
             null, headers, null, "GET", session, false));
+
+    if (descriptionHtml != null) {
+      description.append(descriptionHtml.text());
+    }
 
     if (skuDescription.has(id)) {
       JSONObject jsonDescription = skuDescription.getJSONObject(id);
