@@ -70,25 +70,16 @@ public class NikeRatingReviewCrawler extends RatingReviewCrawler {
 
             JSONObject reviewsJson = json.has("reviews") ? json.getJSONObject("reviews") : new JSONObject();
 
-            if (reviewsJson.has("total") && reviewsJson.has("averageRating")) {
-              Integer totalNumOfEvaluations = reviewsJson.getInt("total");
-              Double avgRating = reviewsJson.getDouble("averageRating");
+            Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(reviewsJson, "total", 0);
+            Double avgRating = CrawlerUtils.getDoubleValueFromJSON(reviewsJson, "averageRating");
 
-              RatingsReviews clone = ratingReviews.clone();
-              clone.setInternalId(internalId);
-              clone.setTotalRating(totalNumOfEvaluations);
-              clone.setAverageOverallRating(avgRating);
 
-              ratingReviewsCollection.addRatingReviews(clone);
+            RatingsReviews clone = ratingReviews.clone();
+            clone.setInternalId(internalId);
+            clone.setTotalRating(totalNumOfEvaluations);
+            clone.setAverageOverallRating(avgRating == null ? 0.0 : avgRating);
 
-            } else {
-              RatingsReviews clone = ratingReviews.clone();
-              clone.setInternalId(internalId);
-              clone.setTotalRating(0);
-              clone.setAverageOverallRating(0.0);
-
-              ratingReviewsCollection.addRatingReviews(clone);
-            }
+            ratingReviewsCollection.addRatingReviews(clone);
           }
         }
       }
