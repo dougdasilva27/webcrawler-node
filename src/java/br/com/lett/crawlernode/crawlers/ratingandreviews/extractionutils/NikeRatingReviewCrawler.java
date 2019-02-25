@@ -80,6 +80,14 @@ public class NikeRatingReviewCrawler extends RatingReviewCrawler {
               clone.setAverageOverallRating(avgRating);
 
               ratingReviewsCollection.addRatingReviews(clone);
+
+            } else {
+              RatingsReviews clone = ratingReviews.clone();
+              clone.setInternalId(internalId);
+              clone.setTotalRating(0);
+              clone.setAverageOverallRating(0.0);
+
+              ratingReviewsCollection.addRatingReviews(clone);
             }
           }
         }
