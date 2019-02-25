@@ -24,7 +24,6 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
   public BelohorizonteBhvidaCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -33,31 +32,24 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
       boolean available = crawlAvailability(doc);
 
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhes-mini > ul > li h1", true);
-      Float price =
-          available ? CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true) : null;
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
+      Float price = available ? CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true) : null;
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
 
       Prices prices = crawlPrices(price, doc);
       String description = crawlDescription(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-main",
-          Arrays.asList("src"), "https:", "www.bhvida.com/");
-
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-main", Arrays.asList("src"), "https:", "www.bhvida.com/");
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
           .setMarketplace(new Marketplace()).build();
 
       products.add(product);
@@ -72,9 +64,8 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     List<String> selectors = new ArrayList<>();
-    selectors.add("#detalhes-mini ul li p");
-    selectors.add("#detalhes-mini ul li  .bloco p");
-    selectors.add("#detalhes-mini ul li  .bloco table");
+    selectors.add(".barra.especificacao");
+    selectors.add("#detalhes-mini.descricao");
 
     return CrawlerUtils.scrapSimpleDescription(doc, selectors);
   }

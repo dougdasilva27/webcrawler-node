@@ -11,6 +11,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -436,8 +437,16 @@ public class CrawlerUtils {
     return sanitizedUrl.toString();
   }
 
+  @Deprecated
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
     return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, new ArrayList<>(), session);
+  }
+
+  @Deprecated
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
+      List<Cookie> cookiesClient, Session session) {
+
+    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, cookiesClient, session, null);
   }
 
   /**
@@ -449,13 +458,14 @@ public class CrawlerUtils {
    * @param path - path to set in cookie
    * @param cookiesClient
    * @param session - crawler session
+   * @param headers - request headers
    * @return List<Cookie>
    */
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
-      List<Cookie> cookiesClient, Session session) {
+      List<Cookie> cookiesClient, Session session, Map<String, String> headers) {
     List<Cookie> cookies = new ArrayList<>();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookiesClient, 1);
+    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookiesClient, null, null, 1, headers);
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       String cookieName = entry.getKey().trim();
 
@@ -1016,6 +1026,33 @@ public class CrawlerUtils {
   }
 
   /**
+   * 
+   * @param json
+   * @param key
+   * @param defaultValue - return this value if key not exists
+   * @return
+   */
+  public static Integer getIntegerValueFromJSON(JSONObject json, String key, Integer defaultValue) {
+    Integer value = defaultValue;
+
+    if (json.has(key)) {
+      Object valueObj = json.get(key);
+
+      if (valueObj instanceof Integer) {
+        value = (Integer) valueObj;
+      } else {
+        String text = valueObj.toString().replaceAll("[^0-9]", "");
+
+        if (!text.isEmpty()) {
+          value = Integer.parseInt(text);
+        }
+      }
+    }
+
+    return value;
+  }
+
+  /**
    * Crawl simple installment with this text example:
    * 
    * 2x de R$12,90
@@ -1173,5 +1210,38 @@ public class CrawlerUtils {
     }
 
     return arr;
+  }
+
+
+  /**
+   * This function scrap standout html for markets descriptions
+   * 
+   * @param slugMarket - Ex: gpa, ikesaki (you need analyse the site to find this slug)
+   * @param session
+   * @param cookies
+   * @return
+   */
+  public static String scrapStandoutDescription(String slugMarket, Session session, List<Cookie> cookies) {
+    StringBuilder str = new StringBuilder();
+
+    String url = "https://standout.com.br/" + slugMarket + "/catchtag.php?distributor=" + slugMarket + "sku=&url=" + session.getOriginalURL();
+    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcher.fetchString("GET", session, url, null, cookies));
+
+    if (specialDesc.has("div")) {
+      Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("[id^=standout]");
+
+      if (e != null) {
+        StringBuilder descriptionUrl = new StringBuilder();
+        descriptionUrl.append("https://www.standout.com.br/");
+        descriptionUrl.append(e.attr("i")).append("/");
+        descriptionUrl.append("p/").append("WmZEhtkrUJQ,/");
+        descriptionUrl.append(e.attr("x")).append("/");
+        descriptionUrl.append(e.attr("y"));
+
+        str.append(DataFetcher.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
+      }
+    }
+
+    return str.toString();
   }
 }

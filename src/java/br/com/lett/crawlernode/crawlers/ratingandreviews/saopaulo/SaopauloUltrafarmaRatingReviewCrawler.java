@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -15,6 +19,34 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
 
   public SaopauloUltrafarmaRatingReviewCrawler(Session session) {
     super(session);
+  }
+
+  @Override
+  protected Document fetch() {
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+    Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    Element script = doc.select("head script").last();
+    Element robots = doc.select("meta[name=robots]").first();
+
+    if (script != null && robots != null) {
+      String eval = script.html().trim();
+
+      if (!eval.isEmpty()) {
+        Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
+        this.webdriver.executeJavascript(eval);
+      }
+    }
+
+    String requestHash = DataFetcher.generateRequestHash(session);
+    this.webdriver.waitLoad(12000);
+
+    doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+    // saving request content result on Amazon
+    S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+
+    return doc;
   }
 
   @Override

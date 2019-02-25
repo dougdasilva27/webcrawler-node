@@ -11,6 +11,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -43,22 +45,32 @@ public class ColombiaExitoCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
+    Document doc = new Document("");
     this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-    Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    Element script = doc.select("script").first();
-    Element robots = doc.select("meta[name=robots]").first();
+    if (this.webdriver != null) {
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    if (script != null && robots != null) {
-      String eval = script.html().trim();
-      if (!eval.isEmpty()) {
-        Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
-        this.webdriver.executeJavascript(eval);
+      Element script = doc.select("script").first();
+      Element robots = doc.select("meta[name=robots]").first();
+
+      if (script != null && robots != null) {
+        String eval = script.html().trim();
+        if (!eval.isEmpty()) {
+          Logging.printLogDebug(logger, session, "Escution of incapsula js script...");
+          this.webdriver.executeJavascript(eval);
+        }
+
+        String requestHash = DataFetcher.generateRequestHash(session);
+        this.webdriver.waitLoad(9000);
+
+        doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+        Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
+        this.webdriver.terminate();
+
+        // saving request content result on Amazon
+        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
       }
-
-      this.webdriver.waitLoad(9000);
-
-      return Jsoup.parse(this.webdriver.getCurrentPageSource());
     }
 
     return doc;
@@ -70,25 +82,19 @@ public class ColombiaExitoCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = scrapInternalId(doc, "#pdp .row.product");
-      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
-          ".col-addtocart button.btn", "data-sku");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".col-addtocart button.btn", "data-sku");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".row.product .name", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li");
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(doc, ".col-image .image #slide-image-pdp .item img",
-              Arrays.asList("data-src"), "https:", "www.exito.com");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-          ".col-image .image #slide-image-pdp .item img", Arrays.asList("data-src"), "https:",
-          "www.exito.com", primaryImage);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".col-image .image #slide-image-pdp .item img", Arrays.asList("data-src"),
+          "https:", "www.exito.com");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".col-image .image #slide-image-pdp .item img", Arrays.asList("data-src"),
+          "https:", "www.exito.com", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".tabs-pdp [data-target=\"#tabDescription\"]",
-              ".tabs-pdp #tabDescription .tab-content-body",
-              ".tabs-pdp [data-target=\"#tabFeature\"]", ".tabs-pdp #tabFeature .tab-content-body",
-              ".tabs-pdp [data-target=\"#tabSpecifications\"]",
+          Arrays.asList(".tabs-pdp [data-target=\"#tabDescription\"]", ".tabs-pdp #tabDescription .tab-content-body",
+              ".tabs-pdp [data-target=\"#tabFeature\"]", ".tabs-pdp #tabFeature .tab-content-body", ".tabs-pdp [data-target=\"#tabSpecifications\"]",
               ".tabs-pdp #tabSpecifications .tab-content-body"));
       Integer stock = scrapStock(doc, ".input-group input[data-stock]");
       boolean available = scrapAvaliability(doc, ".col-addtocart button[disabled]");
@@ -96,15 +102,11 @@ public class ColombiaExitoCrawler extends Crawler {
       Prices prices = scrapPrices(price, doc, ".col-price p");
 
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, ".seller-name strong", true);
-      Marketplace marketplace = createMarketplace(seller, prices);
-
       // Creating the product
 
-      ProductBuilder product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setPrice(price)
+      ProductBuilder product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+          .setName(name).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setPrice(price)
           .setDescription(description).setStock(stock);
 
       if (StringUtils.stripAccents(seller).toLowerCase().trim().equals("exito")) {
@@ -135,16 +137,6 @@ public class ColombiaExitoCrawler extends Crawler {
     }
 
     return internalId;
-  }
-
-  private String scrapInternalPid(Document doc, String selector) {
-    String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, selector, true);
-
-    if (internalPid != null && internalPid.startsWith("PLU:")) {
-      internalPid = internalPid.substring(4).trim();
-    }
-
-    return internalPid;
   }
 
   private Integer scrapStock(Document doc, String selector) {
