@@ -274,6 +274,17 @@ public class BrasilCentralarCrawler extends Crawler {
       }
     }
 
+    if (json.has("dimensionImages")) {
+      JSONArray dimensionImages = json.getJSONArray("dimensionImages");
+      for (Object o : dimensionImages) {
+        JSONObject dimension = (JSONObject) o;
+
+        if (dimension.has("url")) {
+          description.append(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, dimension.get("url").toString(), null, cookies));
+        }
+      }
+    }
+
     return description.toString();
   }
 

@@ -298,6 +298,8 @@ public class BrasilIkesakiCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
+    description.append(CrawlerUtils.scrapStandoutDescription("ikesaki", session, cookies));
+
     return description.toString();
   }
 

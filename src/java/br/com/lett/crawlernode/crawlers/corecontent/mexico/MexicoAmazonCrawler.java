@@ -356,15 +356,15 @@ public class MexicoAmazonCrawler extends Crawler {
     if (images.length() > 0) {
       JSONObject image = images.getJSONObject(0);
 
-      if (image.has("mainUrl")) {
+      if (image.has("mainUrl") && !image.isNull("mainUrl")) {
         primaryImage = image.get("mainUrl").toString().trim();
-      } else if (image.has("thumbUrl")) {
+      } else if (image.has("thumbUrl") && !image.isNull("thumbUrl")) {
         primaryImage = image.get("thumbUrl").toString().trim();
-      } else if (image.has("hiRes")) {
+      } else if (image.has("hiRes") && !image.isNull("hiRes")) {
         primaryImage = image.get("hiRes").toString().trim();
-      } else if (image.has("large")) {
+      } else if (image.has("large") && !image.isNull("large")) {
         primaryImage = image.get("large").toString().trim();
-      } else if (image.has("thumb")) {
+      } else if (image.has("thumb") && !image.isNull("thumb")) {
         primaryImage = image.get("thumb").toString().trim();
       }
 

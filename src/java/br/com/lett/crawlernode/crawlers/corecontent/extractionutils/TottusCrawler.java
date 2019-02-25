@@ -79,13 +79,12 @@ public class TottusCrawler {
   private String crawlDescription(Document doc, String internalId) {
     String id = internalId;
 
-    if (internalId.startsWith("0")) {
-      id = internalId.substring(1);
+    if (id != null && id.startsWith("0")) {
+      id = id.substring(1);
     }
 
     StringBuilder description = new StringBuilder();
     Map<String, String> headers = new HashMap<>();
-    String docDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrap-text-descriptions"));
 
     headers.put("Content-Encoding", "");
     headers.put("Accept", "");
@@ -100,20 +99,16 @@ public class TottusCrawler {
       description.append(scrapTechnicDescription(doc.select("v-container > v-layout > v-flex:not([v-if]) v-list-tile-content"), jsonDescription));
 
       if (jsonDescription.has("TIPO")) {
-        description.append(
-            scrapTechnicDescription(doc.select("[v-if~=\"'" + jsonDescription.getString("TIPO") + "'\"] v-list-tile-content"), jsonDescription));
+        description.append(scrapTechnicDescription(doc.select("[v-if~='" + jsonDescription.getString("TIPO") + "'] v-list-tile-content, [v-if~='"
+            + jsonDescription.getString("TIPO") + "'] [v-if~=tieneSellos]"), jsonDescription));
       }
 
       if (jsonDescription.has("DESCRIPCION_CORTA")) {
-        description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex"), jsonDescription));
+        description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex:first-child"), jsonDescription));
       }
 
     }
 
-
-    if (!docDescription.isEmpty()) {
-      description.append(docDescription);
-    }
 
     return description.toString();
   }
