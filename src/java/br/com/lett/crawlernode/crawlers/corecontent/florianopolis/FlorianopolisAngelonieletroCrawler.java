@@ -269,7 +269,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
   private String crawlName(Document document) {
     String name = null;
 
-    Element elementName = document.select("#titulo h1[itemprop=name]").first();
+    Element elementName = document.select("#titulo [itemprop=name]").first();
     if (elementName != null) {
       name = elementName.text();
     }
