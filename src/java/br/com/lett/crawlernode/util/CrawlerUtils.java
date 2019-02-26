@@ -1177,9 +1177,35 @@ public class CrawlerUtils {
    * @parm owntext - if true this function will use element.ownText(), if false will be used
    *       element.text()
    * @return default value is 0
+   * @deprecated
    */
-  public static Integer scrapTotalProductsForRanking(Document doc, String selector, boolean ownText) {
+  public static Integer scrapIntegerFromHtml(Document doc, String selector, boolean ownText) {
     Integer total = 0;
+
+    Element totalElement = doc.select(selector).first();
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param selector
+   * @param ownText - if true this function will use element.ownText(), if false will be used
+   *        element.text()
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtml(Document doc, String selector, boolean ownText, Integer defaultValue) {
+    Integer total = defaultValue;
 
     Element totalElement = doc.select(selector).first();
 
