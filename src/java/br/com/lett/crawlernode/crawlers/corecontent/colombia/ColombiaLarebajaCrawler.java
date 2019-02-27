@@ -19,42 +19,45 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class ColombiaLarebajaCrawler extends Crawler{
+public class ColombiaLarebajaCrawler extends Crawler {
 
   public ColombiaLarebajaCrawler(Session session) {
     super(session);
     // TODO Auto-generated constructor stub
   }
-  
+
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
-      
+
       Float priceUnique = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
-      Float price = priceUnique == null ? 
-          CrawlerUtils.scrapSimplePriceFloat(doc, "div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora", false) : priceUnique;
-      
+      Float price = priceUnique == null
+          ? CrawlerUtils.scrapSimplePriceFloat(doc, "div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora", false)
+          : priceUnique;
+
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       Prices prices = crawlPrices(price, doc);
-      
+
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
 
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:",
+          "www.larebajavirtual.com", primaryImage);
+
+      String description = crawlDescription(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(null)
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
           .setMarketplace(new Marketplace()).build();
 
       products.add(product);
@@ -67,7 +70,23 @@ public class ColombiaLarebajaCrawler extends Crawler{
 
   }
 
-  private boolean isProductPage(Document doc) {    
+  private String crawlDescription(Document doc) {
+    Elements sections = doc.select("#main-content > section > .container");
+    String description = null;
+    for (Element element : sections) {
+      String token = CrawlerUtils.scrapStringSimpleInfo(element, "h4", true);
+      if (token != null && token.equalsIgnoreCase("Características")) {
+        description = element.html();
+        break;
+      }
+
+    }
+
+    return description;
+  }
+
+
+  private boolean isProductPage(Document doc) {
     return !doc.select(".product_detail").isEmpty();
   }
 
@@ -75,18 +94,18 @@ public class ColombiaLarebajaCrawler extends Crawler{
     String internalId = null;
     Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
 
-    if(serchedId == null) {
+    if (serchedId == null) {
       serchedId = doc.selectFirst(".detPproduct input[data-producto]");
     }
 
-    if(serchedId != null) {
-      internalId = serchedId.attr("data-producto").trim(); 
+    if (serchedId != null) {
+      internalId = serchedId.attr("data-producto").trim();
     }
-    
+
     return internalId;
   }
-  
-  private boolean crawlAvailability(Document doc) {    
+
+  private boolean crawlAvailability(Document doc) {
     return doc.select("btn btn-primary btn-block") != null;
   }
 
@@ -102,7 +121,7 @@ public class ColombiaLarebajaCrawler extends Crawler{
     if (lastCategory != null) {
       categories.add(lastCategory.ownText().trim());
     }
-    
+
     return categories;
   }
 
@@ -113,20 +132,20 @@ public class ColombiaLarebajaCrawler extends Crawler{
    * @param price
    * @return
    */
- 
-  
+
+
   private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
     Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
     Element fractioned = doc.selectFirst("div .fraccionado_columns");
-    
+
     if (price != null) {
       installmentPriceMapShop.put(1, price);
       prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
-      if(fractioned != null) {
+      if (fractioned != null) {
         prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(fractioned, "td[valign=bottom]:not(.container_gray_fracc) .strike", false));
-        
-      } else {        
+
+      } else {
         prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
       }
 
