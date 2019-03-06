@@ -900,7 +900,7 @@ public class POSTFetcher {
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
       Map<String, String> headers, List<String> anyProxies, LettProxy specificProxy) {
 
-    FetcherRequest payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(specificProxy == null).setRequestType(method)
+    FetcherRequest payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(false).setRequestType(method)
         .setRetrieveStatistics(retrieveStatistics).setForcedProxies(new FetcherRequestForcedProxies().setAny(anyProxies).setSpecific(specificProxy))
         .setParameters(new FetcherRequestsParameters().setHeaders(headers).setPayload(payloadPOSTRequest)).build();
 
