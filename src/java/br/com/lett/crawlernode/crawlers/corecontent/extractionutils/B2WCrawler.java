@@ -1,22 +1,29 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
+import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -25,26 +32,68 @@ import models.Seller;
 import models.Util;
 import models.prices.Prices;
 
-public class B2WCrawler {
+public class B2WCrawler extends Crawler {
 
-  private static final String MAIN_B2W_NAME_LOWER = "b2w";
-  private Logger logger;
-  private Session session;
-  private String sellerNameLower;
-  private List<String> subSellers;
-  private String homePage;
-  private List<Cookie> cookies;
-
-  public B2WCrawler(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies, List<String> subSellers) {
-    this.session = session;
-    this.logger = logger2;
-    this.sellerNameLower = store;
-    this.subSellers = subSellers;
-    this.homePage = homePage;
-    this.cookies = cookies;
+  public B2WCrawler(Session session) {
+    super(session);
   }
 
-  public List<Product> extractProducts(Document doc) {
+  private static final String MAIN_B2W_NAME_LOWER = "b2w";
+  protected String sellerNameLower;
+  protected List<String> subSellers;
+  protected String homePage;
+
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
+  }
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(B2WCrawler.fetchPage(session.getOriginalURL(), session, logger));
+  }
+
+  public static String fetchPage(String url, Session session, Logger logger) {
+    String content = "";
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Content-Encoding", "");
+    headers.put("Accept-Encoding", "");
+    headers.put("User-Agent", "");
+
+    JSONObject fetcherPayload =
+        POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU), null);
+
+    try {
+      JSONObject fetcherResponse = POSTFetcher.requestWithFetcher(session, fetcherPayload, false);
+
+      if (fetcherResponse.has("response")) {
+        JSONObject responseJSON = fetcherResponse.getJSONObject("response");
+        DataFetcher.setRequestProxyForFetcher(session, fetcherResponse, fetcherPayload.getString("url"));
+        session.addRedirection(fetcherPayload.getString("url"), fetcherResponse.getJSONObject("response").getString("redirect_url"));
+
+        content = responseJSON.getString("body");
+        S3Service.uploadCrawlerSessionContentToAmazon(session, DataFetcher.generateRequestHash(session), content);
+
+        if (fetcherResponse.has("request_status_code")) {
+          int responseCode = fetcherResponse.getInt("request_status_code");
+          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+            throw new ResponseCodeException(responseCode);
+          }
+        }
+      }
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return content;
+  }
+
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
 
     // Json da pagina principal
@@ -85,7 +134,7 @@ public class B2WCrawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -378,7 +427,7 @@ public class B2WCrawler {
       Element iframe = datasheet.selectFirst("iframe");
 
       if (iframe != null) {
-        Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies);
+        Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), session, logger));
         if (docDescriptionFrame != null) {
           alreadyCapturedHtmlSlide = true;
           description.append(docDescriptionFrame.html());
@@ -394,7 +443,7 @@ public class B2WCrawler {
 
       if (desc2 != null && !alreadyCapturedHtmlSlide) {
         String urlDesc2 = homePage + "product-description/acom/" + internalPid;
-        Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
+        Document docDescriptionFrame = Jsoup.parse(fetchPage(urlDesc2, session, logger));
         if (docDescriptionFrame != null) {
           description.append(docDescriptionFrame.html());
         }
