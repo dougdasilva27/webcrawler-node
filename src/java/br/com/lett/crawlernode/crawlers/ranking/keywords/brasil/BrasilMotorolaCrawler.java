@@ -51,7 +51,7 @@ public class BrasilMotorolaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(currentDoc, ".resultado-busca-numero .value", true);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".resultado-busca-numero .value", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 }
