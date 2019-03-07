@@ -66,7 +66,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 
       doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
       Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
-      this.webdriver.terminate();
 
       // saving request content result on Amazon
       S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
@@ -341,7 +340,7 @@ public class BrasilBifarmaCrawler extends Crawler {
     for (Element e : scripts) {
       String text = e.html();
 
-      String varChaordic = "chaordicProduct =";
+      String varChaordic = "chaordicProduct=";
 
       if (text.contains(varChaordic)) {
         int x = text.indexOf(varChaordic) + varChaordic.length();
