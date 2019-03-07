@@ -69,15 +69,16 @@ public class Processor {
     Integer stock = product.getStock();
     String ean = product.getEan();
     List<String> eans = null;
-    
+
     List<String> crawledEans = product.getEans();
     if (crawledEans != null) {
-    	for (String eanTmp : crawledEans) {
-    		if (eanTmp != null && !eanTmp.isEmpty()) {
-    			if (eans == null) eans = new ArrayList<>();
-    			eans.add(eanTmp);
-    		}
-    	}
+      for (String eanTmp : crawledEans) {
+        if (eanTmp != null && !eanTmp.isEmpty()) {
+          if (eans == null)
+            eans = new ArrayList<>();
+          eans.add(eanTmp);
+        }
+      }
     }
 
     // checking fields
@@ -652,14 +653,14 @@ public class Processor {
           if (actualPrice == 0) {
             actualPrice = null;
           }
-          
+
           /*
            * Array of eans
            */
           List<String> eans = null;
           Array eansArray = rs.getArray("eans");
           if (eansArray != null) {
-        	  eans = Arrays.asList((String[])eansArray.getArray());
+            eans = Arrays.asList((String[]) eansArray.getArray());
           }
 
           /*
@@ -670,8 +671,10 @@ public class Processor {
               rs.getInt("multiplier"), rs.getString("unit"), rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"),
               rs.getString("cat1"), rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"),
               rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
-              rs.getString("original_description"), actualPrice, actualPrices, digitalContent, rs.getLong("lett_id"), similars,
-              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace, rs.getString("ean"), eans);
+              rs.getString("original_description"), actualPrice, actualPrices, digitalContent,
+              rs.getObject("lett_id") instanceof Long ? rs.getLong("lett_id") : null,
+              rs.getObject("master_id") instanceof Long ? rs.getLong("master_id") : null, similars, rs.getBoolean("available"), rs.getBoolean("void"),
+              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans);
 
           return actualProcessedProduct;
 

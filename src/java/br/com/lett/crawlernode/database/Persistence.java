@@ -1103,8 +1103,9 @@ public class Persistence {
         .append("status", newProcessedProduct.getStatus());
 
     if (previousProcessedProduct != null) {
-      result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId()).append("masterId", null)
-          .append("oldName", previousProcessedProduct.getOriginalName()).append("isNew", false);
+      result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
+          .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
+          .append("isNew", false);
     } else {
       result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
     }
@@ -1115,7 +1116,7 @@ public class Persistence {
       GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
           new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -1143,7 +1144,7 @@ public class Persistence {
       GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
           new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -1160,7 +1161,7 @@ public class Persistence {
       GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())), taskDocument,
           MONGO_COLLECTION_SERVER_TASK);
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 }
