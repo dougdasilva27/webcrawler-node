@@ -7,7 +7,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -46,7 +45,8 @@ public class BrasilCobasiCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
-      String description = crawlDescription(doc);
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescriptionShort", ".productDescription", "#caracteristicas"));
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a", Arrays.asList("href"), "https:", "cobasi.vteximg.com.br");
       String secondaryImages = null;
 
@@ -95,19 +95,5 @@ public class BrasilCobasiCrawler extends Crawler {
     return document.selectFirst(".container.container--prod") != null;
   }
 
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.selectFirst(".productDescriptionShort");
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
-    }
-
-    Element elementDescription = doc.select("#box-DescriptionProduct").first();
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    return description.toString();
-  }
 }

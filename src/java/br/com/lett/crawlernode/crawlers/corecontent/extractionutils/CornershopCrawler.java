@@ -111,6 +111,10 @@ public class CornershopCrawler {
     if (json.has("name")) {
       name = json.getString("name");
 
+      if (json.has("package") && json.get("package") instanceof String) {
+        name = name.concat(" ").concat(json.getString("package"));
+      }
+
       if (json.has("brand")) {
         JSONObject brand = json.getJSONObject("brand");
 
@@ -120,6 +124,8 @@ public class CornershopCrawler {
           if (!brandName.isEmpty()) {
             name = brandName + " · " + name;
           }
+
+
         }
       }
     }

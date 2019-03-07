@@ -53,7 +53,7 @@ public class BrasilTerabyteCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.tit-prod", false);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".val-prod", true);
+      Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select(".product-payment .buy").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a strong");
@@ -77,6 +77,16 @@ public class BrasilTerabyteCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private Float crawlPrice(Document doc) {
+    Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".val-prod", true);
+
+    if (price == null) {
+      price = CrawlerUtils.scrapSimplePriceFloat(doc, ".p3", false);
+    }
+
+    return price;
   }
 
   private boolean isProductPage(Document doc) {

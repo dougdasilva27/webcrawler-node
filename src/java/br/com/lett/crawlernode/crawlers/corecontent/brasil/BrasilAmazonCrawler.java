@@ -492,6 +492,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+    Element prodInfoElement = doc.selectFirst("#prodDetails");
 
     Elements elementsDescription =
         doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
@@ -532,6 +533,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
         break;
       }
+    }
+
+    if (prodInfoElement != null) {
+      description.append(prodInfoElement.toString());
     }
 
     return description.toString();

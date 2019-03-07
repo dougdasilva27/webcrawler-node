@@ -48,7 +48,7 @@ public class PeruGrouponCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(currentDoc, ".total-deals", false);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".total-deals", false);
     this.log("Total da busca: " + this.totalProducts);
   }
 

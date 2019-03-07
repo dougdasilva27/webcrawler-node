@@ -81,7 +81,7 @@ public class MexicoSuperamaRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Integer getTotalReviewCount(JSONObject reviewStatistics) {
-    Integer totalReviewCount = null;
+    Integer totalReviewCount = 0;
     if (reviewStatistics.has("TotalReviewCount")) {
       totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
     }
@@ -89,7 +89,7 @@ public class MexicoSuperamaRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Double getAverageOverallRating(JSONObject reviewStatistics) {
-    Double avgOverallRating = null;
+    Double avgOverallRating = 0d;
     if (reviewStatistics.has("AverageOverallRating")) {
       avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
     }

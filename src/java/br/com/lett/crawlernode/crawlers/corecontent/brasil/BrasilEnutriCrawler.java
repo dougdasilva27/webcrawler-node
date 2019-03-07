@@ -239,6 +239,10 @@ public class BrasilEnutriCrawler extends Crawler {
         installmentPriceMap.put(pair.getFirst(), pair.getSecond());
       }
 
+      if (installmentPriceMap.isEmpty()) {
+        installmentPriceMap.put(1, price);
+      }
+
       if (!installmentPriceMap.isEmpty()) {
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
