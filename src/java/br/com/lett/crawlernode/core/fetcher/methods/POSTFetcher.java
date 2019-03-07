@@ -900,7 +900,29 @@ public class POSTFetcher {
   public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
       Map<String, String> headers, List<String> anyProxies, LettProxy specificProxy) {
 
-    FetcherRequest payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(false).setRequestType(method)
+    return fetcherPayloadBuilder(url, method, retrieveStatistics, payloadPOSTRequest, headers, anyProxies, specificProxy, specificProxy == null);
+  }
+
+  /**
+   * Build payload to request 'FETCHER'
+   * 
+   * @param url Url to be request
+   * @param method Get OR Post
+   * @param retrieveStatistics if you need the statistics of all requests to return your answer
+   * @param payloadPOSTRequest Payload to post requests -- if doesn't needed put null
+   * @param headers Map<String,String> with all headers to be used -- if doesn't needed put null
+   * @inactive anyProxies List<String> with name of proxies to be used -- if doesn't needed put null
+   * @param specificProxy JSONObject Ex:
+   *        {"source":"proxy_5","host":"1.1.1.1.1","port":89745,"location":"England","user":"crawler","pass":"12345"}
+   *        -- if doesn't needed put null
+   * @param useMovingAverage - if you need to use moving average to select proxy
+   * 
+   * @return JSONObject with all parameters for request 'FETCHER'
+   */
+  public static JSONObject fetcherPayloadBuilder(String url, String method, boolean retrieveStatistics, String payloadPOSTRequest,
+      Map<String, String> headers, List<String> anyProxies, LettProxy specificProxy, boolean useMovingAverage) {
+
+    FetcherRequest payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(useMovingAverage).setRequestType(method)
         .setRetrieveStatistics(retrieveStatistics).setForcedProxies(new FetcherRequestForcedProxies().setAny(anyProxies).setSpecific(specificProxy))
         .setParameters(new FetcherRequestsParameters().setHeaders(headers).setPayload(payloadPOSTRequest)).build();
 

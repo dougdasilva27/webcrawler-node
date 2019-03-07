@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,13 +14,18 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -49,10 +55,52 @@ public class BrasilAmazonCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>()));
+  }
+
+  public String fetchPage(String url, Map<String, String> headers) {
+    String content = "";
+
+    headers.put("Content-Encoding", "");
+    headers.put("Accept-Encoding", "no");
+
+    JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers,
+        Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU), null, false);
+
+    try {
+      JSONObject fetcherResponse = POSTFetcher.requestWithFetcher(session, fetcherPayload, false);
+
+      if (fetcherResponse.has("response")) {
+        JSONObject responseJSON = fetcherResponse.getJSONObject("response");
+        DataFetcher.setRequestProxyForFetcher(session, fetcherResponse, fetcherPayload.getString("url"));
+        session.addRedirection(fetcherPayload.getString("url"), fetcherResponse.getJSONObject("response").getString("redirect_url"));
+
+        content = responseJSON.getString("body");
+        S3Service.uploadCrawlerSessionContentToAmazon(session, DataFetcher.generateRequestHash(session), content);
+
+        if (fetcherResponse.has("request_status_code")) {
+          int responseCode = fetcherResponse.getInt("request_status_code");
+          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+            throw new ResponseCodeException(responseCode);
+          }
+        }
+      }
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return content;
+  }
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "AMAZON.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -233,7 +281,7 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, urlMarketPlace, cookies, headers, 1));
+      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -244,7 +292,7 @@ public class BrasilAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, nextUrl, cookies, headers, 1));
+        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers));
         docs.add(nextDocMarketPlace);
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
         headers.put("referer", nextUrl);

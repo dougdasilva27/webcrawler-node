@@ -65,7 +65,7 @@ public class B2WCrawler extends Crawler {
     headers.put("User-Agent", "");
 
     JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers,
-        Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY), null);
+        Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY), null, false);
 
     try {
       JSONObject fetcherResponse = POSTFetcher.requestWithFetcher(session, fetcherPayload, false);
