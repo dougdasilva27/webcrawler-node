@@ -173,13 +173,27 @@ public class Crawler extends Task {
     // session.getMaxConnectionAttemptsImages());
     // }
 
+    if (session instanceof SeedCrawlerSession) {
+      Persistence.updateFrozenServerTaskProgress(session, 50);
+    }
+
     // crawl informations and create a list of products
     List<Product> products = null;
     try {
       products = extract();
+
+      if (session instanceof SeedCrawlerSession) {
+        Persistence.updateFrozenServerTaskProgress(session, 75);
+      }
+
     } catch (Exception e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       products = new ArrayList<>();
+    }
+
+    // This happen if a error ocurred on seed scrap information or if the seed is not a product page
+    if (session instanceof SeedCrawlerSession && products.isEmpty()) {
+      Persistence.updateFrozenServerTask(session);
     }
 
     Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
@@ -301,64 +315,28 @@ public class Crawler extends Task {
    * @param product
    */
   private void processProduct(Product product) throws Exception {
-    boolean mustEnterTrucoMode = false;
-
-    // persist the product
     Persistence.persistProduct(product, session);
-
-    // fetch the previous processed product stored on database
     Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
     if ((previousProcessedProduct == null && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))
         || previousProcessedProduct != null) {
 
-      // create the new processed product
       Processed newProcessedProduct =
           Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
 
-      // the product doesn't exists yet
-      if (previousProcessedProduct == null) {
-
-        // if a new processed product was created
-        if (newProcessedProduct != null) {
-
-          // persist the new created processed product
+      if (newProcessedProduct != null) {
+        if (previousProcessedProduct == null) {
           PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
           processPersistenceResult(persistenceResult);
           scheduleImages(persistenceResult, newProcessedProduct);
-
-          return;
-        }
-
-        // the new processed product is null. Indicates that it occurred some faulty information
-        // crawled in the product
-        // this isn't supposed to happen in insights mode, because previous to this process we ran
-        // into
-        // the active void analysis. This case will only happen in with discovery url or seed url,
-        // where we probably doesn't
-        // have the product on the database yet.
-        else {
-          // if we haven't a previous processed, and the new processed was null,
-          // we don't have anything to give a trucada!
-          Logging.printLogDebug(logger, session,
-              "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
-          return;
-        }
-      }
-
-
-      else { // we already have a processed product, so we must decide if we update
-
-        if (newProcessedProduct != null) {
-
-          // the two processed are different, so we must enter in truco mode
+        } else {
           if (compare(previousProcessedProduct, newProcessedProduct)) {
-            mustEnterTrucoMode = true;
-            Logging.printLogDebug(logger, session, "Must enter in truco mode.");
-          }
 
-          // the two processed are equals, so we can update it
-          else {
+            // Truco !
+            Logging.printLogDebug(logger, session, "Entering truco mode...");
+            truco(newProcessedProduct, previousProcessedProduct);
+
+          } else { // the two processed are equals, so we can update it
 
             // get the id of the processed product on database
             // if it was only updated it will be the id of the previous existent processed product
@@ -367,16 +345,18 @@ public class Crawler extends Task {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             processPersistenceResult(persistenceResult);
             scheduleImages(persistenceResult, newProcessedProduct);
-            return;
           }
         }
 
-      }
+        if (session instanceof SeedCrawlerSession) {
+          Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, session);
+        }
 
-      // truco!
-      if (mustEnterTrucoMode) {
-        Logging.printLogDebug(logger, session, "Entering truco mode...");
-        truco(newProcessedProduct, previousProcessedProduct);
+      } else if (previousProcessedProduct == null) {
+        // if we haven't a previous processed, and the new processed was null,
+        // we don't have anything to give a trucada!
+        Logging.printLogDebug(logger, session,
+            "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
       }
     }
   }

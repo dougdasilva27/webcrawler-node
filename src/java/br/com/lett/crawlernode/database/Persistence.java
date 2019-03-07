@@ -65,6 +65,7 @@ public class Persistence {
   private static final String MONGO_COLLECTION_CATEGORIES = "Categories";
   private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
   private static final String MONGO_COLLECTION_TASK = "Task";
+  private static final String MONGO_COLLECTION_SERVER_TASK = "ServerTask";
 
   public static final String MONGO_TASK_STATUS_DONE = "done";
   public static final String MONGO_TASK_STATUS_FAILED = "failed";
@@ -98,8 +99,8 @@ public class Persistence {
     String description = product.getDescription();
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
-    //String ean = product.getEan();
-    //List<String> eans = product.getEans();
+    // String ean = product.getEan();
+    // List<String> eans = product.getEans();
 
     String marketplaceString = null;
 
@@ -336,8 +337,12 @@ public class Persistence {
           id = (long) 0;
         }
 
-        if (persistenceResult instanceof ProcessedModelPersistenceResult && id != 0) {
-          ((ProcessedModelPersistenceResult) persistenceResult).addCreatedId(id);
+        if (id != 0) {
+          newProcessedProduct.setId(id);
+
+          if (persistenceResult instanceof ProcessedModelPersistenceResult) {
+            ((ProcessedModelPersistenceResult) persistenceResult).addCreatedId(id);
+          }
         }
 
       } else {
@@ -1080,6 +1085,83 @@ public class Persistence {
       GlobalConfigurations.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    }
+  }
+
+  /**
+   * Update frozen server task
+   * 
+   * @param previousProcessedProduct
+   * @param newProcessedProduct
+   * @param session
+   */
+  public static void updateFrozenServerTask(Processed previousProcessedProduct, Processed newProcessedProduct, Session session) {
+    Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+
+    Document result = new Document().append("processedId", newProcessedProduct.getId()).append("originalName", newProcessedProduct.getOriginalName())
+        .append("internalId", newProcessedProduct.getInternalId()).append("url", newProcessedProduct.getUrl())
+        .append("status", newProcessedProduct.getStatus());
+
+    if (previousProcessedProduct != null) {
+      result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
+          .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
+          .append("isNew", false);
+    } else {
+      result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
+    }
+
+    taskDocument.append("result", result);
+
+    try {
+      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
+          new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+  }
+
+  /**
+   * Update frozen server task
+   * 
+   * @param session
+   */
+  public static void updateFrozenServerTask(Session session) {
+    Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+
+    StringBuilder errors = new StringBuilder();
+
+    if (!session.getErrors().isEmpty()) {
+      for (SessionError error : session.getErrors()) {
+        errors.append(error.getErrorContent()).append("\n");
+      }
+    } else {
+      errors.append("Not a product page!");
+    }
+
+    taskDocument.append("result", new Document().append("error", errors.toString()));
+
+    try {
+      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
+          new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+  }
+
+  /**
+   * Update frozen server task progress
+   * 
+   * @param session
+   * @param progress
+   */
+  public static void updateFrozenServerTaskProgress(Session session, int progress) {
+    Document taskDocument = new Document("$set", new Document().append("updated", new Date()).append("progress", progress));
+
+    try {
+      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())), taskDocument,
+          MONGO_COLLECTION_SERVER_TASK);
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 }
