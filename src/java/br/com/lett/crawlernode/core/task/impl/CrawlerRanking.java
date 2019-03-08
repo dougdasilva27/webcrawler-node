@@ -71,7 +71,6 @@ public abstract class CrawlerRanking extends Task {
   protected int marketId;
   protected String location;
   private String rankType;
-  private String schedulerNameDiscoverProducts;
 
   private Integer doubleCheck;
 
@@ -80,11 +79,10 @@ public abstract class CrawlerRanking extends Task {
   // variável que identifica se há resultados na página
   protected boolean result;
 
-  public CrawlerRanking(Session session, String rankType, String schedulerName, Logger logger) {
+  public CrawlerRanking(Session session, String rankType, Logger logger) {
     this.session = session;
 
     this.logger = logger;
-    this.schedulerNameDiscoverProducts = schedulerName;
     this.marketId = session.getMarket().getNumber();
     this.rankType = rankType;
 
@@ -142,10 +140,6 @@ public abstract class CrawlerRanking extends Task {
         Logging.printLogError(logger, error.getErrorContent());
       }
 
-      if (!(session instanceof TestRankingSession)) {
-        Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session, GlobalConfigurations.dbManager.connectionPanel);
-      }
-
       session.setTaskStatus(Task.STATUS_FAILED);
     }
 
@@ -153,9 +147,6 @@ public abstract class CrawlerRanking extends Task {
     // and if we are not testing, because when testing there is no message processing
     else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
       Logging.printLogDebug(logger, session, "Task completed.");
-
-      Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_DONE, session, GlobalConfigurations.dbManager.connectionPanel);
-
       session.setTaskStatus(Task.STATUS_COMPLETED);
     }
 
@@ -492,8 +483,6 @@ public abstract class CrawlerRanking extends Task {
         // crawler
         String messageId = resultEntry.getMessageId();
         this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
-
-        Persistence.insertPanelTask(messageId, this.schedulerNameDiscoverProducts, this.marketId, entries.get(count).getMessageBody(), this.location);
         count++;
       }
 
