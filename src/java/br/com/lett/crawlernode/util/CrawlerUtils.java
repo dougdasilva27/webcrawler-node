@@ -677,7 +677,7 @@ public class CrawlerUtils {
 
       int plusIndex = 0;
 
-      if (finalIndex.equals("};")) {
+      if (finalIndex.equals("};") || finalIndex.equals("},")) {
         plusIndex = 1;
       }
 
