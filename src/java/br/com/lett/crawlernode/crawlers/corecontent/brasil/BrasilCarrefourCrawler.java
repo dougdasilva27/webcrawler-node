@@ -100,7 +100,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       Double priceFrom = crawlPriceFrom(doc);
 
       if (marketplacesElements.isEmpty()) {
-        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalId);
+        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalPid);
       } else {
         marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
       }
@@ -194,10 +194,10 @@ public class BrasilCarrefourCrawler extends Crawler {
     return price;
   }
 
-  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalId) {
+  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalPid) {
     Map<String, Prices> marketplaces = new HashMap<>();
 
-    Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalId).first();
+    Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalPid).first();
     Element oneMarketplace = document.select(".block-add-cart > span").first();
     Element notifyMeElement = document.select(".text-not-product-avisme").first();
 

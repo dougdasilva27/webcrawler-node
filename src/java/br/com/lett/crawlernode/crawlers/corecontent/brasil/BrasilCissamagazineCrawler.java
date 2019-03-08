@@ -169,7 +169,7 @@ public class BrasilCissamagazineCrawler extends Crawler {
     if (json.has("formasPagamento")) {
       Document doc = Jsoup.parse(json.get("formasPagamento").toString());
 
-      Elements parcels = doc.select(".price-formas-list li:not(.coluna)");
+      Elements parcels = doc.select(".price-formas-list tr td:first-child");
       for (Element e : parcels) {
         Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, true, "x");
 
