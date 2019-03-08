@@ -5,14 +5,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Query;
@@ -24,9 +20,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.model.Filters;
-import br.com.lett.crawlernode.core.models.Categories;
 import br.com.lett.crawlernode.core.models.CategoriesRanking;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
@@ -45,7 +38,6 @@ import dbmodels.tables.Crawler;
 import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerRanking;
 import generation.PostgresJsonBinding;
-import managers.MongoDB;
 import models.Behavior;
 import models.Marketplace;
 import models.Processed;
@@ -62,9 +54,7 @@ public class Persistence {
   public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD = "new_skus";
   public static final String MONGO_TASK_COLLECTION_STATUS_FIELD = "status";
 
-  private static final String MONGO_COLLECTION_CATEGORIES = "Categories";
   private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
-  private static final String MONGO_COLLECTION_TASK = "Task";
   private static final String MONGO_COLLECTION_SERVER_TASK = "ServerTask";
 
   public static final String MONGO_TASK_STATUS_DONE = "done";
@@ -617,110 +607,6 @@ public class Persistence {
   }
 
   /**
-   * Set the status field of the task document.
-   * 
-   * @param status
-   * @param session
-   * @param mongoDatabase
-   */
-  public static void setTaskStatusOnMongo(String status, Session session, MongoDB panelDatabase) {
-    try {
-      if (panelDatabase != null) {
-        String documentId = String.valueOf(session.getSessionId());
-        panelDatabase.updateOne(new Document("_id", documentId), new Document("$set", new Document(MONGO_TASK_COLLECTION_STATUS_FIELD, status)),
-            MONGO_TASKS_COLLECTION);
-      } else {
-        Logging.printLogError(logger, session, "Mongo database is null.");
-      }
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-    }
-  }
-
-  /**
-   * 
-   * @param processedId
-   * @param session
-   * @param mongoDatabase
-   */
-  public static void appendProcessedIdOnMongo(Long processedId, Session session, MongoDB panelDatabase) {
-    try {
-      if (panelDatabase != null) {
-        String documentId = String.valueOf(session.getSessionId());
-
-        Document search = new Document("_id", documentId);
-        Document modification = new Document("$addToSet", new Document(MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD, processedId));
-
-        panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
-
-        Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
-      }
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-
-    }
-  }
-
-  /**
-   * 
-   * @param processedId
-   * @param session
-   * @param mongoDatabase
-   */
-  public static void appendCreatedProcessedIdOnMongo(Long processedId, Session session, MongoDB panelDatabase) {
-    try {
-      if (panelDatabase != null) {
-        String documentId = String.valueOf(session.getSessionId());
-
-        Document search = new Document("_id", documentId);
-        Document modification = new Document("$push", new Document(MONGO_TASK_COLLECTION_NEW_SKUS_FIELD, processedId));
-
-        panelDatabase.updateOne(search, modification, MONGO_TASKS_COLLECTION);
-
-        Logging.printLogDebug(logger, session, "Mongo task document updated with success!");
-      }
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-  }
-
-  /**
-   * 
-   * @param session
-   * @param mongoDatabase
-   */
-  public static void insertProcessedIdOnMongo(Session session, MongoDB panelDatabase) {
-    try {
-      if (panelDatabase != null) {
-        String documentId = String.valueOf(session.getSessionId());
-
-        // if processedId inside the session is null, it means
-        // we are processing a task that was inserted manually
-        // or a task from an URL scheduled by the webcrawler discover
-        // in these two cases, the field processedId on Mongo must be null, because it can
-        // get more than one product during extraction
-        if (session.getProcessedId() == null) {
-          panelDatabase.updateOne(new Document("_id", documentId), new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, null)),
-              MONGO_TASKS_COLLECTION);
-        }
-
-        // in this case we are processing a task from insights queue
-        else {
-          panelDatabase.updateOne(new Document("_id", documentId),
-              new Document("$set", new Document(MONGO_TASK_COLLECTION_PROCESSEDID_FIELD, session.getProcessedId())), MONGO_TASKS_COLLECTION);
-        }
-      } else {
-        Logging.printLogError(logger, session, "MongoDatabase is null.");
-      }
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error updating collection on Mongo.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-  }
-
-  /**
    * 
    * @param markets
    */
@@ -1003,90 +889,6 @@ public class Persistence {
     }
   }
 
-  // insere dados do categories no mongo
-  public void insertPanelCategories(Categories cg) {
-    Document categories = new Document();
-    categories.put("market", cg.getMarket());
-    categories.put("cat1", cg.getCat1());
-    categories.put("cat1_name", cg.getCat1Name());
-
-    if (cg.getCat2() != null) {
-      categories.put("cat2", cg.getCat2());
-      categories.put("cat2_name", cg.getCat2Name());
-
-      if (cg.getCat3() != null) {
-        categories.put("cat3", cg.getCat3());
-        categories.put("cat3_name", cg.getCat3Name());
-      }
-    }
-
-    categories.put("url", cg.getUrl());
-    categories.put("ect", cg.getDataCreated());
-    categories.put("lmt", cg.getDataUpdated());
-
-    try {
-      GlobalConfigurations.dbManager.connectionPanel.insertOne(categories, MONGO_COLLECTION_CATEGORIES);
-      Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-    } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-    }
-  }
-
-  // insere dados do categories no mongo
-  public int updatePanelCategories(Categories cg) {
-    Document filter = new Document("cat1", cg.getCat1()).append("cat2", cg.getCat2()).append("cat3", cg.getCat3()).append("market", cg.getMarket());
-
-    String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss");
-    Document update = new Document("$set", new Document("lmt", nowISO).append("url", cg.getUrl()));
-
-    try {
-      return (int) GlobalConfigurations.dbManager.connectionPanel.updateMany(filter, update, MONGO_COLLECTION_CATEGORIES).getModifiedCount();
-    } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-    }
-
-    return 0;
-  }
-
-  // insere as categorias no mongo
-  public Set<CategoriesRanking> extractCategories(String id) {
-    Set<CategoriesRanking> arrayCategories = new HashSet<>();
-
-    try {
-      FindIterable<Document> iterable =
-          GlobalConfigurations.dbManager.connectionPanel.runFind(Filters.and(Filters.eq("_id", new ObjectId(id))), MONGO_COLLECTION_CATEGORIES);
-
-      for (Document e : iterable) {
-        CategoriesRanking categories = new CategoriesRanking();
-
-        categories.setCat1(e.getString("cat1"));
-        categories.setCat2(e.getString("cat2"));
-        categories.setCat3(e.getString("cat3"));
-        categories.setUrl(e.getString("url"));
-
-        arrayCategories.add(categories);
-      }
-    } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-    }
-    return arrayCategories;
-  }
-
-  // insere dados da task
-  public static void insertPanelTask(String sessionId, String schedullerName, int marketID, String url, String location) {
-    String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
-
-    Document taskDocument = new Document().append("_id", sessionId).append("scheduler", schedullerName).append("date", nowISO)
-        .append("status", "queued").append("url", url).append("market", marketID).append("location", location)
-        // .append("processed_id", null)
-        .append("found_skus", new ArrayList<String>());
-
-    try {
-      GlobalConfigurations.dbManager.connectionPanel.insertOne(taskDocument, MONGO_COLLECTION_TASK);
-    } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-    }
-  }
 
   /**
    * Update frozen server task

@@ -18,14 +18,12 @@ public class DatabaseManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseManager.class);
 
-  public MongoDB connectionPanel;
   public MongoDB connectionFrozen;
   public MongoDB connectionFetcher;
   public SupervisedPgSQL connectionPostgreSQL;
   public SupervisedMYSQL connectionMySQL;
 
   public DatabaseManager(DBCredentials credentials) {
-    setMongoPanel(credentials);
     setMongoFrozen(credentials);
     setMongoFetcher(credentials);
 
@@ -47,30 +45,6 @@ public class DatabaseManager {
         Logging.printLogWarn(LOGGER, "Error establishing connection with MYSQL.");
         Logging.printLogWarn(LOGGER, CommonMethods.getStackTraceString(e));
       }
-    }
-  }
-
-  private void setMongoPanel(DBCredentials credentials) {
-    MongoCredentials credentialsPanel = credentials.getMongoPanelCredentials();
-    connectionPanel = new MongoDB();
-
-    try {
-      connectionPanel.openConnection(credentialsPanel);
-      Logging.printLogDebug(LOGGER, "Connection with database Mongo Panel performed successfully!");
-
-      ReplicaSetStatus replicaSetStatus = connectionPanel.getReplicaSetStatus();
-      if (replicaSetStatus != null) {
-        Logging.printLogDebug(LOGGER, "Connection mode: multiple");
-        Logging.printLogDebug(LOGGER, replicaSetStatus.toString());
-      } else {
-        Logging.printLogDebug(LOGGER, "Connection mode: single");
-        ServerAddress masterServerAddress = connectionPanel.getServerAddress();
-        Logging.printLogDebug(LOGGER, masterServerAddress.toString());
-      }
-
-    } catch (Exception e) {
-      Logging.printLogError(LOGGER, "Erro ao conectar com o Mongo Panel.");
-      Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
     }
   }
 
