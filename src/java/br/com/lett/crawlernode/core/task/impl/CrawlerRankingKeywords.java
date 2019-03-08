@@ -16,15 +16,12 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
   protected static Logger logger = LoggerFactory.getLogger(CrawlerRankingKeywords.class);
 
   private static final String RANK_TYPE = "keywords";
-
-  public static final String SCHEDULER_NAME_DISCOVER_KEYWORDS = "discover_keywords";
-
   protected String keywordEncoded;
   protected String keywordWithoutAccents;
 
 
   public CrawlerRankingKeywords(Session session) {
-    super(session, RANK_TYPE, SCHEDULER_NAME_DISCOVER_KEYWORDS, logger);
+    super(session, RANK_TYPE, logger);
 
     if (session instanceof RankingKeywordsSession) {
       this.location = ((RankingKeywordsSession) session).getLocation();
