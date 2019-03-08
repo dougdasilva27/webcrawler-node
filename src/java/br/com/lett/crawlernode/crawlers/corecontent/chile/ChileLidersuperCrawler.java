@@ -51,7 +51,7 @@ public class ChileLidersuperCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=productID]", true);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info h1", false);
+      String name = scrapName(doc);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#productPrice .price", true);
       Prices prices = crawlPrices(price, doc);
       Integer stock = crawlStock(internalId);
@@ -80,6 +80,17 @@ public class ChileLidersuperCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return !doc.select(".product-info").isEmpty();
+  }
+
+  private String scrapName(Document doc) {
+    StringBuilder name = new StringBuilder();
+
+    Elements names = doc.select(".product-info h1 span");
+    for (Element e : names) {
+      name.append(e.ownText().trim()).append(" ");
+    }
+
+    return name.toString().trim();
   }
 
   private List<String> crawlImages(String id) {

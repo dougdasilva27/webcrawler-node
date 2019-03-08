@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.chile;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,8 +21,7 @@ public class ChileSalcobrandRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]",
-        "window.chaordic_meta = ", ";", false, false);
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "window.chaordic_meta = ", ";", false, false);
     JSONObject productJson = new JSONObject();
 
     if (json.has("product")) {
@@ -32,8 +30,7 @@ public class ChileSalcobrandRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
@@ -67,7 +64,7 @@ public class ChileSalcobrandRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Double getTotalAvgRating(Document doc) {
-    Double totalAvg = null;
+    Double totalAvg = 0d;
     Elements totalAvgElements = doc.select(".write-review .review .selected");
 
     if (totalAvgElements != null) {
@@ -79,7 +76,7 @@ public class ChileSalcobrandRatingReviewCrawler extends RatingReviewCrawler {
 
   private Integer getTotalNumOfRatings(Document doc) {
     Element totalRatingsElement = doc.selectFirst(".number-of-reviews");
-    Integer totalRatings = null;
+    Integer totalRatings = 0;
 
     if (totalRatingsElement != null) {
       totalRatings = MathUtils.parseInt(totalRatingsElement.text().trim());
@@ -90,14 +87,9 @@ public class ChileSalcobrandRatingReviewCrawler extends RatingReviewCrawler {
 
   private String crawlInternalId(JSONObject sku) {
     String id = null;
-    JSONArray skus = new JSONArray();
-
     if (sku.has("sku")) {
-
       id = sku.get("sku").toString().trim();
-
     }
-
     return id;
   }
 

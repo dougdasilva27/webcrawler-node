@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
 
 public class BrasilNutrineCrawler extends Crawler {
@@ -38,19 +39,15 @@ public class BrasilNutrineCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]",
-          "produto = ", ",\n    urano = ", false, false);
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "produto = ", ",\n    urano = ", false, false);
 
       String name = json.has("nome") ? json.getString("nome") : null;
       String description = getDescription(json);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".detalheHeader a.nivel1:not(:first-child)");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".detalheHeader a.nivel1:not(:first-child)");
       String primaryImage = scrapPrimaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery");
-      String secondaryImages =
-          scrapSecondaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery", primaryImage);
+      String secondaryImages = scrapSecondaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery", primaryImage);
 
       if (json.has("variacoes")) {
         JSONArray variations = json.getJSONArray("variacoes");
@@ -60,24 +57,18 @@ public class BrasilNutrineCrawler extends Crawler {
             JSONObject variation = variations.getJSONObject(i);
 
             String varName = name + getVariationName(variation);
-            String internalId =
-                variation.has("idVariacao") ? variation.get("idVariacao").toString() : null;
+            String internalId = variation.has("idVariacao") ? variation.get("idVariacao").toString() : null;
             String internalPid = variation.has("sku") ? variation.getString("sku") : null;
-            Integer stock =
-                variation.has("quantidadeEstoque") ? variation.getInt("quantidadeEstoque") : null;
-            boolean available =
-                variation.has("disponivel") ? variation.getBoolean("disponivel") : false;
+            Integer stock = variation.has("quantidadeEstoque") ? variation.getInt("quantidadeEstoque") : null;
+            boolean available = variation.has("disponivel") ? variation.getBoolean("disponivel") : false;
             Float price = variation.has("precoAtual") ? variation.getFloat("precoAtual") : 0.0f;
-            Prices prices = scrapPrices(price, variation);
+            Prices prices = scrapPrices(price, variation, doc);
 
             // Creating the product
-            Product product =
-                ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-                    .setInternalPid(internalPid).setName(varName).setPrice(price).setPrices(prices)
-                    .setAvailable(available).setCategory1(categories.getCategory(0))
-                    .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-                    .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-                    .setDescription(description).setStock(stock).build();
+            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+                .setName(varName).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+                .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).build();
 
             products.add(product);
           }
@@ -87,16 +78,14 @@ public class BrasilNutrineCrawler extends Crawler {
           String internalPid = json.has("sku") ? json.getString("sku") : null;
           Integer stock = json.has("quantidadeEstoque") ? json.getInt("quantidadeEstoque") : null;
           Float price = json.has("precoAtual") ? json.getFloat("precoAtual") : 0.0f;
-          Prices prices = scrapPrices(price, json);
+          Prices prices = scrapPrices(price, json, doc);
           boolean available = json.has("disponivel") ? json.getBoolean("disponivel") : false;
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-              .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-              .setDescription(description).setStock(stock).build();
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).build();
 
           products.add(product);
         }
@@ -152,8 +141,7 @@ public class BrasilNutrineCrawler extends Crawler {
       JSONObject json = CrawlerUtils.stringToJson(e.attr("data-cloudzoom"));
 
       if (json.has("zoomImage")) {
-        imageUrl =
-            CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
+        imageUrl = CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
       }
     }
 
@@ -171,8 +159,7 @@ public class BrasilNutrineCrawler extends Crawler {
         JSONObject json = CrawlerUtils.stringToJson(e.attr("data-cloudzoom"));
 
         if (json.has("zoomImage")) {
-          String img =
-              CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
+          String img = CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
 
           if ((primaryImage == null || !primaryImage.equals(img)) && img != null) {
             secondaryImagesArray.put(img);
@@ -188,18 +175,18 @@ public class BrasilNutrineCrawler extends Crawler {
     return secondaryImages;
   }
 
-  private Prices scrapPrices(Float price, JSONObject json) {
+  private Prices scrapPrices(Float price, JSONObject json, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      if (json.has("precoVenda")) {
-        prices.setPriceFrom(json.getDouble("precoVenda"));
-      }
-
-      if (json.has("precoAtual")) {
+      JSONObject descontoPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "porcentagemDescontoVista=", ",", true, false);
+      if (descontoPrice.has("valorComDesconto")) {
+        prices.setBankTicketPrice(
+            MathUtils.normalizeTwoDecimalPlaces(CrawlerUtils.getDoubleValueFromJSON(descontoPrice, "valorComDesconto", true, false)));
+      } else if (json.has("precoAtual")) {
         prices.setBankTicketPrice(json.getDouble("precoAtual"));
       }
 
