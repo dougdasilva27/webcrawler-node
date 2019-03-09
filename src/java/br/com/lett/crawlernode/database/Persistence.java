@@ -166,26 +166,6 @@ public class Persistence {
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
     }
-
-    if (GlobalConfigurations.dbManager.connectionMySQL != null) {
-      try {
-        Map<Field<?>, Object> mysqlInsertMap = new HashMap<>();
-        mysqlInsertMap.put(DSL.field("url"), url);
-        mysqlInsertMap.put(DSL.field("name"), name);
-        mysqlInsertMap.put(DSL.field("cat1"), cat1);
-        mysqlInsertMap.put(DSL.field("cat2"), cat2);
-        mysqlInsertMap.put(DSL.field("cat3"), cat3);
-        mysqlInsertMap.put(DSL.field("market"), session.getMarket().getNumber());
-        mysqlInsertMap.put(DSL.field("description"), url);
-        mysqlInsertMap.put(DSL.field("html"), (session.getProductPageResponse().toString()));
-
-        GlobalConfigurations.dbManager.connectionMySQL.runInsert(DSL.table("teste_ped"), mysqlInsertMap);
-        Logging.printLogDebug(logger, session, "Product persisted in MYSQL.");
-      } catch (Exception e) {
-        Logging.printLogWarn(logger, session, "Error inserting product on database MYSQL!");
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
-    }
   }
 
 
