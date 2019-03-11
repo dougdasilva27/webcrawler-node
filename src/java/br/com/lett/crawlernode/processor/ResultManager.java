@@ -21,7 +21,7 @@ import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 import models.Processed;
@@ -149,7 +149,7 @@ public class ResultManager {
 		// fetch md5 of the image
 		String primaryMd5 = S3Service.fetchOriginalImageMd5(session, primaryImageAmazonKey); // the supposed new image
 
-		String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+		String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 		
 		if ( primaryMd5 == null ) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
 			Logging.printLogDebug(LOGGER, session, "Amazon md5 of the last downloaded image is null");

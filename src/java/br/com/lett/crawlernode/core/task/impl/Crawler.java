@@ -35,7 +35,7 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import containers.ProcessedComparison;
@@ -68,7 +68,7 @@ public class Crawler extends Task {
   protected CrawlerConfig config;
 
   protected CrawlerWebdriver webdriver;
-
+  
   /**
    * Cookies that must be used to fetch the sku page this attribute is set by the
    * handleCookiesBeforeFetch method.
@@ -79,7 +79,6 @@ public class Crawler extends Task {
   public Crawler(Session session) {
     this.session = session;
     this.cookies = new ArrayList<>();
-
     createDefaultConfig();
   }
 
@@ -175,6 +174,10 @@ public class Crawler extends Task {
     List<Product> products = null;
     try {
       products = extract();
+      
+      for (Product p : products) {
+    	  
+      }
 
       if (session instanceof SeedCrawlerSession) {
         Persistence.updateFrozenServerTaskProgress(session, 75);
@@ -274,7 +277,7 @@ public class Crawler extends Task {
 
     for (Product p : products) {
       if (Test.pathWrite != null) {
-        TestHtmlBuilder.buildProductHtml(p.toJSON(), Test.pathWrite, session);
+        TestHtmlBuilder.buildProductHtml(p, Test.pathWrite, session);
       }
 
       printCrawledInformation(p);
@@ -551,7 +554,7 @@ public class Crawler extends Task {
    * @return The resultant product from the analysis
    */
   private Product activeVoid(Product product) throws Exception {
-    String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     Processor processor = new Processor();
 
@@ -631,7 +634,7 @@ public class Crawler extends Task {
     Processed currentTruco = newProcessed;
     Processed next;
 
-    String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     while (true) {
       session.incrementTrucoAttemptsCounter();

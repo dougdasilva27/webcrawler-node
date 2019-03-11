@@ -17,6 +17,7 @@
 		<selenium.version>2.47.0</selenium.version>
 		<s3.version>1.11.194</s3.version>
 		<sqs.version>1.11.194</sqs.version>
+		<kinesis.version>0.12.11</kinesis.version>
 		<db.version>5.2.0</db.version>
 		<jsoup.version>1.11.3</jsoup.version>
 		<models.version>2.2.2</models.version>
@@ -193,6 +194,11 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-sqs</artifactId>
 			<version>${sqs.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-kinesis-producer</artifactId>
+			<version>${kinesis.version}</version>
 		</dependency>
 
 		<!-- Joda time required for Amazon -->

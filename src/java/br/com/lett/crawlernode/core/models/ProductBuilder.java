@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.core.models;
 
 import java.util.List;
 
+import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -24,6 +25,7 @@ public class ProductBuilder {
 	private Integer 	stock;
 	private String		ean;
 	private List<String> eans;
+	private String timestamp;
 
 	public static ProductBuilder create() {
 		return new ProductBuilder();
@@ -77,10 +79,6 @@ public class ProductBuilder {
 	public ProductBuilder setPrimaryImage(String primaryImage) {
 		this.primaryImage = primaryImage;
 		return this;
-	}
-
-	public String getSecondaryImages() {
-		return secondaryImages;
 	}
 
 	public ProductBuilder setSecondaryImages(String secondaryImages) {
@@ -138,6 +136,9 @@ public class ProductBuilder {
 		product.setMarketplace(this.marketplace);
 		product.setEan(this.ean);
 		product.setEans(this.eans);
+		
+		// Timestamp is only created here, there is no public method to set timestamp 
+		product.setTimestamp(DateUtils.newTimestamp());
 
 		return product;
 	}

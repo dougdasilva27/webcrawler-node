@@ -14,13 +14,13 @@ import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 
 public class Session {
 
   protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-  protected DateTime date = new DateTime(DateConstants.timeZone);
+  protected DateTime date = new DateTime(DateUtils.timeZone);
 
   protected String taskStaus;
 
