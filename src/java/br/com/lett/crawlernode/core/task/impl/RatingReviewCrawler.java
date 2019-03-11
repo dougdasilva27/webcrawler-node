@@ -39,7 +39,7 @@ public class RatingReviewCrawler extends Task {
 
   public RatingReviewCrawler(Session session) {
     this.session = session;
-    cookies = new ArrayList<>();
+    this.cookies = new ArrayList<>();
 
     createDefaultConfig();
   }
@@ -96,7 +96,7 @@ public class RatingReviewCrawler extends Task {
   }
 
   public void runProduction() {
-    if (!cookies.isEmpty()) {
+    if (cookies.isEmpty()) {
       handleCookiesBeforeFetch();
     }
 

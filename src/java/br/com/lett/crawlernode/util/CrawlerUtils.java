@@ -504,7 +504,18 @@ public class CrawlerUtils {
     return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, new ArrayList<>(), session);
   }
 
-  @Deprecated
+
+  /**
+   * Crawl cookies from a page
+   * 
+   * @param url - page where are cookies
+   * @param cookiesToBeCrawled - list(string) of cookies to be crawled
+   * @param domain - domain to set in cookie
+   * @param path - path to set in cookie
+   * @param cookiesClient
+   * @param session - crawler session
+   * @return List<Cookie>
+   */
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
       List<Cookie> cookiesClient, Session session) {
 

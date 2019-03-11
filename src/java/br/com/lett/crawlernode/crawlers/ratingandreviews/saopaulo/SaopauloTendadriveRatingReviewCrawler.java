@@ -33,7 +33,6 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
     super(session);
   }
 
-
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
@@ -61,6 +60,7 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
         Double avgRating = getTotalRating(trustVoxResponse);
 
         ratingReviews.setTotalRating(totalNumOfEvaluations);
+        ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
         ratingReviews.setDate(session.getDate());
 
@@ -72,6 +72,8 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
         }
       }
 
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
