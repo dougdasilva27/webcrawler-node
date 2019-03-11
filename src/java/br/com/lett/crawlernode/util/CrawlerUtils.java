@@ -100,14 +100,14 @@ public class CrawlerUtils {
    * Scrap simple string from html
    * 
    * @param doc
-   * @param cssSelector
+   * @param cssSelector - if null will scrap info from doc
    * @param ownText - if must use element.ownText(), if false will be used element.text()
    * @return
    */
   public static String scrapStringSimpleInfo(Element doc, String cssSelector, boolean ownText) {
     String info = null;
 
-    Element infoElement = doc.selectFirst(cssSelector);
+    Element infoElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
     if (infoElement != null) {
       info = ownText ? infoElement.ownText().trim() : infoElement.text().trim();
     }
@@ -118,15 +118,21 @@ public class CrawlerUtils {
   /**
    * Scrap simple string from html
    * 
+   * Element: <div class="name">
+   * 
+   * Att: class
+   * 
+   * Return: name
+   * 
    * @param doc
-   * @param cssSelector
-   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param cssSelector - if null will scrap info from doc
+   * @param att - ex: class, id, value, content
    * @return
    */
   public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector, String att) {
     String info = null;
 
-    Element infoElement = doc.selectFirst(cssSelector);
+    Element infoElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
     if (infoElement != null) {
       info = infoElement.hasAttr(att) ? infoElement.attr(att) : null;
     }
@@ -136,11 +142,58 @@ public class CrawlerUtils {
 
 
   /**
+   * 
+   * Scrap simple price from html
+   * 
+   * @param doc - html
+   * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
+   *        doc.selectFirst(cssSelector) : doc)
+   * @param att - ex: class, id, value, content
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @return
+   */
+  public static Float scrapFloatPriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
+    Float price = null;
+
+    String priceStr = att != null ? scrapStringSimpleInfoByAttribute(doc, cssSelector, att) : scrapStringSimpleInfo(doc, cssSelector, ownText);
+    if (priceStr != null) {
+      if (priceFormat == '.') {
+        price = MathUtils.parseFloatWithDots(priceStr);
+      } else if (priceFormat == ',') {
+        price = MathUtils.parseFloatWithComma(priceStr);
+      }
+    }
+
+    return price;
+  }
+
+  /**
+   * 
+   * Scrap simple price from html
+   * 
+   * @param doc - html
+   * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
+   *        doc.selectFirst(cssSelector) : doc)
+   * @param att - ex: class, id, value, content
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @return
+   */
+  public static Double scrapDoublePriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
+    Float price = scrapFloatPriceFromHtml(doc, cssSelector, att, ownText, priceFormat);
+    return price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
+  }
+
+  /**
    * Scrap simple price from html
    * 
    * @param document
    * @param cssSelector
    * @param ownText
+   * 
+   * @deprecated use scrapFloatPriceFromHtml
+   * 
    * @return Float
    */
   public static Float scrapSimplePriceFloat(Element document, String cssSelector, boolean ownText) {
@@ -160,6 +213,9 @@ public class CrawlerUtils {
    * @param document
    * @param cssSelector
    * @param ownText
+   * 
+   * @deprecated use scrapFloatPriceFromHtml
+   * 
    * @return Float
    */
   public static Float scrapSimplePriceFloatWithDots(Element document, String cssSelector, boolean ownText) {
@@ -179,6 +235,9 @@ public class CrawlerUtils {
    * @param document
    * @param cssSelector
    * @param ownText
+   * 
+   * @deprecated use scrapDoublePriceFromHtml
+   * 
    * @return Double
    */
   public static Double scrapSimplePriceDouble(Element document, String cssSelector, boolean ownText) {
@@ -198,6 +257,9 @@ public class CrawlerUtils {
    * @param document
    * @param cssSelector
    * @param ownText
+   * 
+   * @deprecated use scrapDoublePriceFromHtml
+   * 
    * @return Double
    */
   public static Double scrapSimplePriceDoubleWithDots(Document document, String cssSelector, boolean ownText) {
@@ -231,7 +293,7 @@ public class CrawlerUtils {
   }
 
   /**
-   * Scrap simple description from html
+   * Scrap simple description from html for the first result based on selectors
    * 
    * @param doc
    * @param selectors - description css selectors list
@@ -252,7 +314,7 @@ public class CrawlerUtils {
   }
 
   /**
-   * Scrap simple description from html
+   * Scrap simple description from html for all results based on selectors
    * 
    * @param doc
    * @param selectors - description css selectors list
