@@ -85,7 +85,7 @@ public class ChileLidersuperCrawler extends Crawler {
   private String scrapName(Document doc) {
     StringBuilder name = new StringBuilder();
 
-    Elements names = doc.select(".product-info h1 span");
+    Elements names = doc.select(".product-info h1 span, .product-profile h1 span");
     for (Element e : names) {
       name.append(e.ownText().trim()).append(" ");
     }

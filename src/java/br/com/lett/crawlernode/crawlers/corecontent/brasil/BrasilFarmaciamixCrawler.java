@@ -112,8 +112,8 @@ public class BrasilFarmaciamixCrawler extends Crawler {
 
   private Float crawlPrice(Document document) {
     Float price = null;
-    Element salePriceElement = document.select("p[itemprop=price]").first();
-    Element lowPrice = document.select("span[itemprop=lowPrice]").first();
+    Element salePriceElement = document.select("[itemprop=price]").first();
+    Element lowPrice = document.select("[itemprop=lowPrice]").first();
 
     if (salePriceElement != null) {
       price = Float.parseFloat(salePriceElement.attr("content"));
