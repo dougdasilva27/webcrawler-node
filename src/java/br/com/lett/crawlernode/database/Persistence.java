@@ -47,18 +47,8 @@ import models.prices.Prices;
 public class Persistence {
   private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
 
-  public static final String MONGO_TASKS_COLLECTION = "Task";
-
-  public static final String MONGO_TASK_COLLECTION_PROCESSEDID_FIELD = "processed_id";
-  public static final String MONGO_TASK_COLLECTION_FOUND_SKUS_FIELD = "found_skus";
-  public static final String MONGO_TASK_COLLECTION_NEW_SKUS_FIELD = "new_skus";
-  public static final String MONGO_TASK_COLLECTION_STATUS_FIELD = "status";
-
   private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
   private static final String MONGO_COLLECTION_SERVER_TASK = "ServerTask";
-
-  public static final String MONGO_TASK_STATUS_DONE = "done";
-  public static final String MONGO_TASK_STATUS_FAILED = "failed";
 
   // Class generated in project DB to convert an object to gson because dialect postgres not accepted
   // this type
@@ -163,13 +153,10 @@ public class Persistence {
       // List of tables for batch insert
       List<Table<?>> tables = new ArrayList<>();
       tables.add(crawler);
-      // tables.add(crawlerOld);
 
       // Map of Table - FieldsOfTable
       Map<Table<?>, Map<Field<?>, Object>> tablesMap = new HashMap<>();
       tablesMap.put(crawler, insertMapCrawler);
-      // tablesMap.put(crawlerOld, insertMapCrawlerOld); // Comentando temporariamente inserção na
-      // crawler_old
 
       GlobalConfigurations.dbManager.connectionPostgreSQL.runBatchInsertWithNTables(tables, tablesMap);
 
@@ -178,26 +165,6 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
-    }
-
-    if (GlobalConfigurations.dbManager.connectionMySQL != null) {
-      try {
-        Map<Field<?>, Object> mysqlInsertMap = new HashMap<>();
-        mysqlInsertMap.put(DSL.field("url"), url);
-        mysqlInsertMap.put(DSL.field("name"), name);
-        mysqlInsertMap.put(DSL.field("cat1"), cat1);
-        mysqlInsertMap.put(DSL.field("cat2"), cat2);
-        mysqlInsertMap.put(DSL.field("cat3"), cat3);
-        mysqlInsertMap.put(DSL.field("market"), session.getMarket().getNumber());
-        mysqlInsertMap.put(DSL.field("description"), url);
-        mysqlInsertMap.put(DSL.field("html"), (session.getProductPageResponse().toString()));
-
-        GlobalConfigurations.dbManager.connectionMySQL.runInsert(DSL.table("teste_ped"), mysqlInsertMap);
-        Logging.printLogDebug(logger, session, "Product persisted in MYSQL.");
-      } catch (Exception e) {
-        Logging.printLogWarn(logger, session, "Error inserting product on database MYSQL!");
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
     }
   }
 

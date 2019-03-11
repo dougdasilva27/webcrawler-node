@@ -21,7 +21,6 @@ public class DatabaseManager {
   public MongoDB connectionFrozen;
   public MongoDB connectionFetcher;
   public SupervisedPgSQL connectionPostgreSQL;
-  public SupervisedMYSQL connectionMySQL;
 
   public DatabaseManager(DBCredentials credentials) {
     setMongoFrozen(credentials);
@@ -34,17 +33,6 @@ public class DatabaseManager {
       Logging.printLogError(LOGGER, "Error establishing connection with PostgreSQL.");
       Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
       System.exit(0);
-    }
-
-    MysqlCredentials mysqlCredentials = credentials.getMysqlCredentials();
-    if (mysqlCredentials.isValid()) {
-      try {
-        connectionMySQL = new SupervisedMYSQL(mysqlCredentials);
-        Logging.printLogDebug(LOGGER, "Connection with database MYSQL performed successfully!");
-      } catch (Exception e) {
-        Logging.printLogWarn(LOGGER, "Error establishing connection with MYSQL.");
-        Logging.printLogWarn(LOGGER, CommonMethods.getStackTraceString(e));
-      }
     }
   }
 
