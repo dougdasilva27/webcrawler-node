@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -335,29 +336,9 @@ public class BrasilBifarmaCrawler extends Crawler {
   private JSONObject crawlProductInfo(Document doc) {
     JSONObject info = new JSONObject();
 
-    Elements scripts = doc.select("script");
-
-    for (Element e : scripts) {
-      String text = e.html();
-
-      String varChaordic = "chaordicProduct=";
-
-      if (text.contains(varChaordic)) {
-        int x = text.indexOf(varChaordic) + varChaordic.length();
-        int y = text.indexOf(';', x);
-
-        String json = text.substring(x, y).trim();
-
-        if (json.startsWith("{") && json.endsWith("}")) {
-          JSONObject product = new JSONObject(json);
-
-          if (product.has("product")) {
-            info = product.getJSONObject("product");
-          }
-        }
-
-        break;
-      }
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct = ", "};", false, false);
+    if (json.has("product")) {
+      info = json.getJSONObject("product");
     }
 
     return info;
