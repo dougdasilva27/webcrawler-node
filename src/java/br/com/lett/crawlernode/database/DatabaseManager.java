@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.database;
 
-import java.sql.Connection;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -21,21 +20,11 @@ public class DatabaseManager {
 
   public MongoDB connectionFrozen;
   public MongoDB connectionFetcher;
-  public Connection connectionPostgreSQL;
   public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
   public DatabaseManager(DBCredentials credentials) {
     setMongoFrozen(credentials);
     setMongoFetcher(credentials);
-
-    try {
-      connectionPostgreSQL = JdbcConnectionFactory.getInstance().getConnection();
-      Logging.printLogDebug(LOGGER, "Connection with database PostgreSQL performed successfully!");
-    } catch (Exception e) {
-      Logging.printLogError(LOGGER, "Error establishing connection with PostgreSQL.");
-      Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
-      System.exit(0);
-    }
   }
 
   private void setMongoFrozen(DBCredentials credentials) {

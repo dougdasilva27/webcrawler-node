@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.database;
 
 import java.io.File;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -148,15 +149,21 @@ public class Persistence {
       insertMapCrawler.put(crawler.MARKETPLACE, marketplaceString);
     }
 
-    // persisting on crawler and crawler_old
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL
-        .prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED));
+
       pstmt.executeUpdate();
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error inserting product on database!");
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 
@@ -175,8 +182,12 @@ public class Persistence {
     List<Condition> conditions = new ArrayList<>();
     conditions.add(processedTable.ID.equal(((RatingReviewsCrawlerSession) session).getProcessedId()));
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
@@ -186,6 +197,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
   }
@@ -278,8 +292,12 @@ public class Persistence {
         insertMap.put(processedTable.SIMILARS, null);
       }
 
-      try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres
-          .insertInto(processedTable).set(insertMap).returning(processedTable.ID).getSQL(ParamType.INLINED))) {
+      Connection conn = null;
+      PreparedStatement pstmt = null;
+      try {
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap)
+            .returning(processedTable.ID).getSQL(ParamType.INLINED));
         ResultSet rs = pstmt.executeQuery();
         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -307,6 +325,9 @@ public class Persistence {
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
 
         return null;
+      } finally {
+        JdbcConnectionFactory.closeResource(pstmt);
+        JdbcConnectionFactory.closeResource(conn);
       }
 
     } else {
@@ -391,8 +412,12 @@ public class Persistence {
       }
 
 
-      try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED))) {
+      Connection conn = null;
+      PreparedStatement pstmt = null;
+      try {
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        pstmt = conn.prepareStatement(
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED));
 
         pstmt.executeUpdate();
       } catch (Exception e) {
@@ -402,6 +427,9 @@ public class Persistence {
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
 
         return null;
+      } finally {
+        JdbcConnectionFactory.closeResource(pstmt);
+        JdbcConnectionFactory.closeResource(conn);
       }
     }
 
@@ -439,8 +467,12 @@ public class Persistence {
       conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
     }
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
@@ -451,6 +483,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 
@@ -487,8 +522,12 @@ public class Persistence {
     conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
@@ -499,6 +538,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 
@@ -518,8 +560,12 @@ public class Persistence {
     conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
@@ -530,6 +576,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 
@@ -549,8 +598,12 @@ public class Persistence {
     conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
@@ -560,6 +613,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
   }
@@ -580,8 +636,12 @@ public class Persistence {
     conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
     conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
-    try (PreparedStatement pstmt = GlobalConfigurations.dbManager.connectionPostgreSQL.prepareStatement(
-        GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      pstmt = conn.prepareStatement(
+          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
@@ -591,6 +651,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    } finally {
+      JdbcConnectionFactory.closeResource(pstmt);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
   }
@@ -664,8 +727,14 @@ public class Persistence {
     List<Condition> conditions = new ArrayList<>();
     conditions.add(crawlerCategories.ID.equal((long) id));
 
-    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement().executeQuery(
-        GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(crawlerCategories).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(
+          GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(crawlerCategories).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -682,6 +751,10 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return null;
@@ -703,8 +776,13 @@ public class Persistence {
     conditions.add(processed.MARKET.equal(market));
     conditions.add(processed.INTERNAL_ID.equal(id));
 
-    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement()
-        .executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -726,6 +804,10 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return processeds;
@@ -746,8 +828,13 @@ public class Persistence {
     conditions.add(processed.MARKET.equal(market));
     conditions.add(processed.INTERNAL_PID.equal(pid));
 
-    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement()
-        .executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -769,6 +856,10 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return processeds;
@@ -789,8 +880,13 @@ public class Persistence {
     conditions.add(processed.MARKET.equal(market));
     conditions.add(processed.URL.equal(url));
 
-    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement()
-        .executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -807,6 +903,10 @@ public class Persistence {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return processedIds;
@@ -814,7 +914,12 @@ public class Persistence {
 
 
   public static void insertProductsRanking(Ranking ranking, Session session) {
-    try (Statement sta = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement()) {
+    Connection conn = null;
+    Statement sta = null;
+
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
 
       CrawlerRanking crawlerRanking = Tables.CRAWLER_RANKING;
 
@@ -849,6 +954,9 @@ public class Persistence {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
       session.registerError(error);
+    } finally {
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 

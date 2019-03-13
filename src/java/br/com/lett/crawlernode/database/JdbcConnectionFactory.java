@@ -83,6 +83,20 @@ public class JdbcConnectionFactory {
     this.ds.close();
   }
 
+  public static void closeResource(AutoCloseable r) {
+    if (r != null) {
+      try {
+        r.close();
+
+        if (r instanceof Connection) {
+          Logging.printLogInfo(LOGGER, "Connection has been closed");
+        }
+      } catch (Exception e) {
+        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
+      }
+    }
+  }
+
   private DBCredentials setCredentials() {
     DBCredentialsSetter st = new DBCredentialsSetter();
     List<String> databases = new ArrayList<>();

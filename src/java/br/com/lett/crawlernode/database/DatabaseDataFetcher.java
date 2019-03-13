@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.database;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +20,6 @@ import com.mongodb.client.FindIterable;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
@@ -63,8 +64,15 @@ public class DatabaseDataFetcher {
     List<Condition> conditions = new ArrayList<>();
     conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
 
-    try (ResultSet rs = this.databaseManager.connectionPostgreSQL.createStatement()
-        .executeQuery(this.databaseManager.jooqPostgres.select(fields).from(marketTable).where(conditions).getSQL(ParamType.INLINED))) {
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+
+    try {
+
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(this.databaseManager.jooqPostgres.select(fields).from(marketTable).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = this.databaseManager.jooqPostgres.fetch(rs);
 
@@ -91,7 +99,12 @@ public class DatabaseDataFetcher {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
+
     return null;
   }
 
@@ -113,12 +126,22 @@ public class DatabaseDataFetcher {
         .append(" AND crawler_ranking.location = '").append(location).append("' AND crawler_ranking.date BETWEEN '").append(yesterday)
         .append("' AND '").append(today).append("'");
 
-    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement().executeQuery(sql.toString())) {
+    Connection conn = null;
+    ResultSet rs = null;
+    Statement sta = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(sql.toString());
 
       count = (Long) rs.getObject("count");
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return count;

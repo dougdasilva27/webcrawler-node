@@ -1,27 +1,32 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
-import br.com.lett.crawlernode.database.DatabaseManager;
+import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 
 public class Markets {
 
   private List<Market> marketsList;
-  private DatabaseManager dbManager;
 
-  public Markets(DatabaseManager dbManager) {
+  public Markets() {
     this.marketsList = new ArrayList<>();
-    this.dbManager = dbManager;
 
     init();
   }
 
   public void init() {
-    try (ResultSet rs = this.dbManager.connectionPostgreSQL.createStatement()
-        .executeQuery("SELECT id, city, name, crawler_webdriver, proxies, proxies_images FROM market")) {
+    Connection conn = null;
+    ResultSet rs = null;
+    Statement sta = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery("SELECT id, city, name, crawler_webdriver, proxies, proxies_images FROM market");
 
       while (rs.next()) {
         int marketId = rs.getInt("id");
@@ -54,6 +59,10 @@ public class Markets {
 
     } catch (SQLException e) {
       e.printStackTrace();
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
   }
 

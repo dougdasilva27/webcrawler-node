@@ -15,7 +15,6 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -115,11 +114,6 @@ public class Test {
       Task task = TaskFactory.createTask(session);
 
       task.process();
-      try {
-        GlobalConfigurations.dbManager.connectionPostgreSQL.close();
-      } catch (Exception e) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
-      }
     } else {
       System.err.println("Market não encontrado no banco!");
     }

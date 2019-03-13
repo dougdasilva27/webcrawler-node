@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.processor;
 
 import java.sql.Array;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DBSlack;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
@@ -514,8 +516,15 @@ public class Processor {
       query.append(internalId);
       query.append("' LIMIT 1");
 
-      try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement().executeQuery(query.toString())) {
+      Connection conn = null;
+      Statement sta = null;
+      ResultSet rs = null;
 
+      try {
+
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        sta = conn.createStatement();
+        rs = sta.executeQuery(query.toString());
 
         while (rs.next()) {
 
@@ -672,6 +681,10 @@ public class Processor {
 
       } catch (SQLException e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      } finally {
+        JdbcConnectionFactory.closeResource(rs);
+        JdbcConnectionFactory.closeResource(sta);
+        JdbcConnectionFactory.closeResource(conn);
       }
     }
 
