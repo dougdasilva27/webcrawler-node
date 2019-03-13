@@ -104,19 +104,19 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("chuteiras", market);
+        session = SessionFactory.createTestRankingKeywordsSession("nestle", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
             market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession("https://www.adidas.mx/tenis-superstar/C77124.html?pr=home_rr&slot=1", market);
+        session = SessionFactory.createTestSession("https://www.bifarma.com.br//produto/aparelho-de-barbear-gillette-mach3-32779", market);
       }
 
       Task task = TaskFactory.createTask(session);
 
       task.process();
       try {
-        GlobalConfigurations.dbManager.connectionPostgreSQL.closeConnection();
+        GlobalConfigurations.dbManager.connectionPostgreSQL.close();
       } catch (Exception e) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
       }
