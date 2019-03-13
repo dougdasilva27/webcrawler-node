@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.database;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +10,7 @@ import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.conf.ParamType;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,23 +51,26 @@ public class DatabaseDataFetcher {
    * @return
    */
   public Market fetchMarket(String marketCity, String marketName) {
-    try {
+    dbmodels.tables.Market marketTable = Tables.MARKET;
 
-      dbmodels.tables.Market marketTable = Tables.MARKET;
+    List<Field<?>> fields = new ArrayList<>();
+    fields.add(marketTable.ID);
+    fields.add(marketTable.CITY);
+    fields.add(marketTable.NAME);
+    fields.add(marketTable.PROXIES);
+    fields.add(marketTable.PROXIES_IMAGES);
 
-      List<Field<?>> fields = new ArrayList<>();
-      fields.add(marketTable.ID);
-      fields.add(marketTable.CITY);
-      fields.add(marketTable.NAME);
-      fields.add(marketTable.PROXIES);
-      fields.add(marketTable.PROXIES_IMAGES);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
 
-      List<Condition> conditions = new ArrayList<>();
-      conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
+    try (ResultSet rs = this.databaseManager.connectionPostgreSQL.createStatement()
+        .executeQuery(this.databaseManager.jooqPostgres.select(fields).from(marketTable).where(conditions).getSQL(ParamType.INLINED))) {
 
-      Result<Record> records = (Result<Record>) databaseManager.connectionPostgreSQL.runSelect(marketTable, fields, conditions);
+      Result<Record> records = this.databaseManager.jooqPostgres.fetch(rs);
 
-      for (Record r : records) {
+      if (!records.isEmpty()) {
+        Record r = records.get(0);
+
         // get the proxies used in this market
         ArrayList<String> proxies = new ArrayList<>();
         JSONArray proxiesJSONArray = new JSONArray(r.getValue(marketTable.PROXIES));
@@ -101,12 +106,16 @@ public class DatabaseDataFetcher {
   public static Long fetchCountOfProcessedsFromCrawlerRanking(String location, int market, String today, String yesterday) {
     Long count = 0l;
 
-    try {
-      String sql = "SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed " + "WHERE crawler_ranking.processed_id = processed_id "
-          + "AND processed.market = " + market + " " + "AND crawler_ranking.location = '" + location + "' " + "AND crawler_ranking.date BETWEEN '"
-          + yesterday + "' AND '" + today + "'";
+    StringBuilder sql = new StringBuilder();
 
-      count = (Long) GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql).get(0).get("count");
+    sql.append("SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed ")
+        .append("WHERE crawler_ranking.processed_id = processed_id ").append("AND processed.market = ").append(market)
+        .append(" AND crawler_ranking.location = '").append(location).append("' AND crawler_ranking.date BETWEEN '").append(yesterday)
+        .append("' AND '").append(today).append("'");
+
+    try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement().executeQuery(sql.toString())) {
+
+      count = (Long) rs.getObject("count");
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTrace(e));

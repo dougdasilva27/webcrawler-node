@@ -507,25 +507,15 @@ public class Processor {
 
     if (internalId != null && !internalId.isEmpty()) {
 
-      try {
-        // Processed processedTable = Tables.PROCESSED;
-        //
-        // List<Condition> conditions = new ArrayList<>();
-        // conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
-        // .and(processedTable.INTERNAL_ID.equal(internalId)));
+      StringBuilder query = new StringBuilder();
+      query.append("SELECT * FROM processed WHERE market = ");
+      query.append(session.getMarket().getNumber());
+      query.append(" AND internal_id = '");
+      query.append(internalId);
+      query.append("' LIMIT 1");
 
-        // TODO hotfix for query
-        // estava falhando aqui
-        // voltei do jeito antigo pra apagar o fogo
-        StringBuilder query = new StringBuilder();
-        query.append("SELECT * FROM processed WHERE market = ");
-        query.append(session.getMarket().getNumber());
-        query.append(" AND internal_id = '");
-        query.append(internalId);
-        query.append("' LIMIT 1");
+      try (ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.createStatement().executeQuery(query.toString())) {
 
-        // ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-        ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
 
         while (rs.next()) {
 

@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.database;
 
+import java.sql.Connection;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.ReplicaSetStatus;
@@ -8,10 +12,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
 import credentials.models.MongoCredentials;
-import credentials.models.MysqlCredentials;
 import managers.MongoDB;
-import managers.SupervisedMYSQL;
-import managers.SupervisedPgSQL;
 
 
 public class DatabaseManager {
@@ -20,14 +21,15 @@ public class DatabaseManager {
 
   public MongoDB connectionFrozen;
   public MongoDB connectionFetcher;
-  public SupervisedPgSQL connectionPostgreSQL;
+  public Connection connectionPostgreSQL;
+  public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
   public DatabaseManager(DBCredentials credentials) {
     setMongoFrozen(credentials);
     setMongoFetcher(credentials);
 
     try {
-      connectionPostgreSQL = new SupervisedPgSQL(credentials.getPostgresCredentials());
+      connectionPostgreSQL = JdbcConnectionFactory.getInstance().getConnection();
       Logging.printLogDebug(LOGGER, "Connection with database PostgreSQL performed successfully!");
     } catch (Exception e) {
       Logging.printLogError(LOGGER, "Error establishing connection with PostgreSQL.");

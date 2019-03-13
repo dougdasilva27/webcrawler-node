@@ -26,6 +26,7 @@
 		<json.version>20171018</json.version>
 		<phantomjs.version>1.2.1</phantomjs.version>
 		<slack.webhook.version>1.2.1</slack.webhook.version>
+		<hikaricp.version>3.3.0</hikaricp.version>
 	</properties>
 
 	<build>
@@ -181,6 +182,12 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+			<version>${hikaricp.version}</version>
 		</dependency>
 
 		<!-- AWS -->
