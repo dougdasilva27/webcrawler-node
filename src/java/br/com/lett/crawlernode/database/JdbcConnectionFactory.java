@@ -45,7 +45,7 @@ public class JdbcConnectionFactory {
     props.setProperty("dataSource.user", credentials.getPostgresCredentials().getUsername());
     props.setProperty("dataSource.password", credentials.getPostgresCredentials().getPass());
     props.setProperty("dataSource.databaseName", credentials.getPostgresCredentials().getDatabase());
-    props.setProperty("dataSource.serverName", credentials.getPostgresCredentials().getHost());
+    props.setProperty("dataSource.serverName", credentials.getPostgresCredentials().getHost() + ":" + credentials.getPostgresCredentials().getPort());
     props.setProperty("dataSource.ApplicationName", APPLICATION_NAME);
 
     HikariConfig config = new HikariConfig(props);
