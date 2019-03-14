@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 
 /**
  * This class contains static methods to print log messages using the logback lib.
@@ -108,6 +109,7 @@ public class Logging {
 			metadata.put("market_id", session.getMarket().getNumber());
 			metadata.put("session", session.getSessionId());
 			metadata.put("session_type", session.getClass().getSimpleName());
+			metadata.put("env", GlobalConfigurations.executionParameters.getEnvironment());
 
 			if (session instanceof RankingKeywordsSession) {
 				metadata.put("location", ((RankingKeywordsSession)session).getLocation());
