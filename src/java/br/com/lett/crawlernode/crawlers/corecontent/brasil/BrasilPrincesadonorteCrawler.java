@@ -150,13 +150,21 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
   private boolean crawlAvailability(JSONObject json) {
     boolean available = false;
 
-    if (json.has("availability")) {
-      String availability = json.get("availability").toString().toLowerCase();
+    if (json.has("offers")) {
+      JSONArray offers = json.getJSONArray("offers");
 
-      if (availability.endsWith("outofstock")) {
-        available = false;
-      } else {
-        available = true;
+      for (Object o : offers) {
+        JSONObject offer = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
+        if (offer.has("availability")) {
+          String availability = offer.get("availability").toString().toLowerCase();
+
+          if (availability.endsWith("outofstock")) {
+            available = false;
+          } else {
+            available = true;
+          }
+          break;
+        }
       }
     }
 
