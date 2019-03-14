@@ -18,6 +18,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
+
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -1000,28 +1002,32 @@ public class Persistence {
    * @param newProcessedProduct
    * @param session
    */
-  public static void updateFrozenServerTask(Processed previousProcessedProduct, Processed newProcessedProduct, Session session) {
-    Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+  public static void updateFrozenServerTask(Processed previousProcessedProduct, Processed newProcessedProduct, SeedCrawlerSession session) {
+    String taskId = session.getTaskId();
 
-    Document result = new Document().append("processedId", newProcessedProduct.getId()).append("originalName", newProcessedProduct.getOriginalName())
-        .append("internalId", newProcessedProduct.getInternalId()).append("url", newProcessedProduct.getUrl())
-        .append("status", newProcessedProduct.getStatus());
+    if (taskId != null) {
+      Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
 
-    if (previousProcessedProduct != null) {
-      result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
-          .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
-          .append("isNew", false);
-    } else {
-      result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
-    }
+      Document result = new Document().append("processedId", newProcessedProduct.getId())
+          .append("originalName", newProcessedProduct.getOriginalName()).append("internalId", newProcessedProduct.getInternalId())
+          .append("url", newProcessedProduct.getUrl()).append("status", newProcessedProduct.getStatus());
 
-    taskDocument.append("result", result);
+      if (previousProcessedProduct != null) {
+        result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
+            .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
+            .append("isNew", false);
+      } else {
+        result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
+      }
 
-    try {
-      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
-          new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      taskDocument.append("result", result);
+
+      try {
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
+            MONGO_COLLECTION_SERVER_TASK);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
     }
   }
 
@@ -1030,26 +1036,30 @@ public class Persistence {
    * 
    * @param session
    */
-  public static void updateFrozenServerTask(Session session) {
-    Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+  public static void updateFrozenServerTask(SeedCrawlerSession session) {
+    String taskId = session.getTaskId();
 
-    StringBuilder errors = new StringBuilder();
+    if (taskId != null) {
+      Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
 
-    if (!session.getErrors().isEmpty()) {
-      for (SessionError error : session.getErrors()) {
-        errors.append(error.getErrorContent()).append("\n");
+      StringBuilder errors = new StringBuilder();
+
+      if (!session.getErrors().isEmpty()) {
+        for (SessionError error : session.getErrors()) {
+          errors.append(error.getErrorContent()).append("\n");
+        }
+      } else {
+        errors.append("Not a product page!");
       }
-    } else {
-      errors.append("Not a product page!");
-    }
 
-    taskDocument.append("result", new Document().append("error", errors.toString()));
+      taskDocument.append("result", new Document().append("error", errors.toString()));
 
-    try {
-      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())),
-          new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      try {
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
+            MONGO_COLLECTION_SERVER_TASK);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
     }
   }
 
@@ -1059,14 +1069,17 @@ public class Persistence {
    * @param session
    * @param progress
    */
-  public static void updateFrozenServerTaskProgress(Session session, int progress) {
-    Document taskDocument = new Document("$set", new Document().append("updated", new Date()).append("progress", progress));
+  public static void updateFrozenServerTaskProgress(SeedCrawlerSession session, int progress) {
+    String taskId = session.getTaskId();
 
-    try {
-      GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(session.getSessionId())), taskDocument,
-          MONGO_COLLECTION_SERVER_TASK);
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    if (taskId != null) {
+      Document taskDocument = new Document("$set", new Document().append("updated", new Date()).append("progress", progress));
+      try {
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), taskDocument,
+            MONGO_COLLECTION_SERVER_TASK);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
     }
   }
 }

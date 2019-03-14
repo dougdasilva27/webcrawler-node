@@ -168,7 +168,7 @@ public class Crawler extends Task {
     // }
 
     if (session instanceof SeedCrawlerSession) {
-      Persistence.updateFrozenServerTaskProgress(session, 50);
+      Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 50);
     }
 
     // crawl informations and create a list of products
@@ -177,7 +177,7 @@ public class Crawler extends Task {
       products = extract();
 
       if (session instanceof SeedCrawlerSession) {
-        Persistence.updateFrozenServerTaskProgress(session, 75);
+        Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 75);
       }
 
     } catch (Exception e) {
@@ -187,7 +187,7 @@ public class Crawler extends Task {
 
     // This happen if a error ocurred on seed scrap information or if the seed is not a product page
     if (session instanceof SeedCrawlerSession && products.isEmpty()) {
-      Persistence.updateFrozenServerTask(session);
+      Persistence.updateFrozenServerTask(((SeedCrawlerSession) session));
     }
 
     Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
@@ -341,7 +341,7 @@ public class Crawler extends Task {
         }
 
         if (session instanceof SeedCrawlerSession) {
-          Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, session);
+          Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
         }
 
       } else if (previousProcessedProduct == null) {
