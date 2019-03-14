@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -50,8 +49,8 @@ public class BrasilBemolCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".reference [itemprop=productID]", true);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.name", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".buy-box .sale-price", false);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".information .name", true);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".buy-box .sale-price", null, false, ',');
       Prices prices = crawlPrices(price, internalId, doc);
       boolean available = doc.selectFirst(".wd-buy-button  > div:not([style$=none])") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrum-product li:not(.first) a span");
@@ -64,8 +63,7 @@ public class BrasilBemolCrawler extends Crawler {
       }
 
       String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img",
-          Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net",
-          primaryImage);
+          Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
 
@@ -99,9 +97,9 @@ public class BrasilBemolCrawler extends Crawler {
 
     return internalId;
   }
-  
-  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector,
-	      List<String> attributes, String protocol, String host, String primaryImage) {
+
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+      String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -135,7 +133,7 @@ public class BrasilBemolCrawler extends Crawler {
 
     return sanitizedUrl;
   }
-  
+
   /**
    * @param doc
    * @param price
