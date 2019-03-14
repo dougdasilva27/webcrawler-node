@@ -51,10 +51,10 @@ public class B2WCrawler extends Crawler {
 
   @Override
   protected Document fetch() {
-    return Jsoup.parse(B2WCrawler.fetchPage(session.getOriginalURL(), session, logger));
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), session, logger));
   }
 
-  public static String fetchPage(String url, Session session, Logger logger) {
+  public String fetchPage(String url, Session session, Logger logger) {
     String content = "";
 
     Map<String, String> headers = new HashMap<>();
@@ -86,7 +86,11 @@ public class B2WCrawler extends Crawler {
         }
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    if (content.isEmpty()) {
+      content = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
     }
 
     return content;
