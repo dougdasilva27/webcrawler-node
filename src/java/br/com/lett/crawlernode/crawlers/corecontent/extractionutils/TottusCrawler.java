@@ -79,9 +79,11 @@ public class TottusCrawler {
   private String crawlDescription(Document doc, String internalId) {
     String id = internalId;
     Element descriptionHtml = doc.selectFirst(".wrap-text-descriptions");
-    if (id != null && id.startsWith("0")) {
+
+    while (id != null && id.startsWith("0")) {
       id = id.substring(1);
     }
+
 
     StringBuilder description = new StringBuilder();
     Map<String, String> headers = new HashMap<>();
@@ -162,9 +164,21 @@ public class TottusCrawler {
   private String crawlInternalId(Document doc) {
     String internalId = null;
 
-    Element id = doc.selectFirst("input.btn-add-cart");
-    if (id != null) {
-      internalId = id.val();
+    JSONObject jsonHtml = CrawlerUtils.selectJsonFromHtml(doc, "script", "varjson=$.parseJSON('", "');", true, false);
+
+    if (jsonHtml.has("ecommerce")) {
+      JSONObject ecommerce = jsonHtml.getJSONObject("ecommerce");
+      if (ecommerce.has("impressions")) {
+
+        JSONArray impressions = ecommerce.getJSONArray("impressions");
+        for (Object object : impressions) {
+          JSONObject impression = (JSONObject) object;
+          if (impression.has("id")) {
+            internalId = impression.getString("id");
+          }
+
+        }
+      }
     }
 
     return internalId;

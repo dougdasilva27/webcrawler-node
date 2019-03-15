@@ -5,20 +5,20 @@
 	<!-- This appender must only go to production. 
 	We don't want logs generated locally to go to syslog -->
 
-	<!-- <appender name="SYSLOG"
+	<appender name="SYSLOG"
 		class="ch.qos.logback.classic.net.SyslogAppender">
 		<syslogHost>10.1.253.89</syslogHost>
 		<port>514</port>
 		<facility>USER</facility>
 		<suffixPattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</suffixPattern>
 		<filter class="br.com.lett.crawlernode.util.CustomLevelFilter"> </filter>
-	</appender> -->
+	</appender>
 
 	<appender name="STDOUT"
 		class="ch.qos.logback.core.ConsoleAppender">
 		<filter class="br.com.lett.crawlernode.util.CustomLevelFilter"> </filter>
 		<encoder>
-			<pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ", ${logback.timezone:UTC}}[%-5level][WEBCRAWLER]: [MSG]%msg%n</pattern>
+			<pattern>[%-5level] [MSG]%msg%n</pattern>
 		</encoder>
 	</appender>
 

@@ -2,180 +2,230 @@ package br.com.lett.crawlernode.main;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ExecutionParameters {
 
-	private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
+  private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
 
-	public static final String ENVIRONMENT_DEVELOPMENT	= "development";
-	public static final String ENVIRONMENT_PRODUCTION	= "production";
-	public static final String DEFAULT_CRAWLER_VERSION = "-1";
-	
+  public static final String ENVIRONMENT_DEVELOPMENT = "development";
+  public static final String ENVIRONMENT_PRODUCTION = "production";
+  public static final String DEFAULT_CRAWLER_VERSION = "-1";
 
-	/** 
-	 * In case we want to force image update on Amazon bucket, when downloading images
-	 * In some cases the crawler must update the redimensioned versions of images, and we must use
-	 * this option in case we want to force this, even if the image on market didn't changed. 
-	 */
-	private boolean forceImageUpdate;
-	
 
-	private String tmpImageFolder;
-	private String phantomjsPath;
-	private int nthreads;
-	private int coreThreads;
-	private String environment;
-	private String version;
-	private Boolean debug;
-	private Boolean useFetcher;
+  /**
+   * In case we want to force image update on Amazon bucket, when downloading images In some cases the
+   * crawler must update the redimensioned versions of images, and we must use this option in case we
+   * want to force this, even if the image on market didn't changed.
+   */
+  private boolean forceImageUpdate;
 
-	public ExecutionParameters() {
-		debug = null;
-	}
+  private int hikariCpMinIdle;
+  private int hikariCpMaxPoolSize;
+  private int hikariCpValidationTimeout;
+  private int hikariCpConnectionTimeout;
+  private int hikariCpIdleTimeout;
 
-	public void setUpExecutionParameters() {
-		nthreads = getEnvNumOfThreads();
-		coreThreads = getEnvCoreThreads();
-		debug = getEnvDebug();
-		forceImageUpdate = getEnvForceImgUpdate();
-		environment = getEnvEnvironment();
-		tmpImageFolder = getEnvTmpImagesFolder();
-		setPhantomjsPath(getEnvPhantomjsPath());
-		setUseFetcher(getEnvUseFetcher());
-		version = DEFAULT_CRAWLER_VERSION;
+  private String tmpImageFolder;
+  private String phantomjsPath;
+  private int nthreads;
+  private int coreThreads;
+  private String environment;
+  private String version;
+  private Boolean debug;
+  private Boolean useFetcher;
 
-		Logging.printLogDebug(logger, this.toString());
-	}
+  public ExecutionParameters() {
+    debug = null;
+  }
 
-	public Boolean getDebug() {
-		return debug;
-	}
+  public void setUpExecutionParameters() {
+    nthreads = getEnvNumOfThreads();
+    coreThreads = getEnvCoreThreads();
+    debug = getEnvDebug();
+    forceImageUpdate = getEnvForceImgUpdate();
+    environment = getEnvEnvironment();
+    tmpImageFolder = getEnvTmpImagesFolder();
+    setPhantomjsPath(getEnvPhantomjsPath());
+    setHikariCpConnectionTimeout();
+    setHikariCpIDLETimeout();
+    setHikariCpMaxPoolSize();
+    setHikariCpMinIDLE();
+    setHikariCpValidationTimeout();
+    setUseFetcher(getEnvUseFetcher());
+    version = DEFAULT_CRAWLER_VERSION;
 
-	public String getEnvironment() {
-		return environment;
-	}
+    Logging.printLogDebug(logger, this.toString());
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
+  public Boolean getDebug() {
+    return debug;
+  }
 
-		sb.append("\n");
-		sb.append("Debug: " + this.debug);
-		sb.append("\n");
-		sb.append("Environment: " + this.environment);
-		sb.append("\n");
-		sb.append("Force image update: " + this.forceImageUpdate);
-		sb.append("\n");
-		sb.append("PhantomjsPath: " + this.phantomjsPath);
-		sb.append("\n");
-		sb.append("Use Fetcher: " + this.useFetcher);
-		sb.append("\n");
-		sb.append("Version: " + this.version);
-		sb.append("\n");
+  public String getEnvironment() {
+    return environment;
+  }
 
-		return sb.toString();
-	}
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
 
-	private boolean getEnvDebug() {
-		String debugEnv = System.getenv(EnvironmentVariables.ENV_DEBUG);
-		if (debugEnv != null) {
-			return true;
-		}
-		return false;
-	}
-	
-	private String getEnvPhantomjsPath() {
-		return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
-	}
+    sb.append("\n");
+    sb.append("Debug: " + this.debug);
+    sb.append("\n");
+    sb.append("Environment: " + this.environment);
+    sb.append("\n");
+    sb.append("Force image update: " + this.forceImageUpdate);
+    sb.append("\n");
+    sb.append("PhantomjsPath: " + this.phantomjsPath);
+    sb.append("\n");
+    sb.append("Use Fetcher: " + this.useFetcher);
+    sb.append("\n");
+    sb.append("Version: " + this.version);
+    sb.append("\n");
 
-	private String getEnvTmpImagesFolder() {
-		return System.getenv(EnvironmentVariables.ENV_TMP_IMG_FOLDER);
-	}
+    return sb.toString();
+  }
 
-	private String getEnvEnvironment() {
-		return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
-	}
+  private boolean getEnvDebug() {
+    String debugEnv = System.getenv(EnvironmentVariables.ENV_DEBUG);
+    if (debugEnv != null) {
+      return true;
+    }
+    return false;
+  }
 
-	private int getEnvNumOfThreads() {
-		String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
-		if (nThreads == null) {
-			return PoolExecutor.DEFAULT_NTHREADS;
-		}
-		return Integer.parseInt(nThreads);
-	}
+  private String getEnvPhantomjsPath() {
+    return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
+  }
 
-	private boolean getEnvForceImgUpdate() {
-		String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
-		if (forceImgUpdate != null) {
-			return true;
-		}
-		return false;
-	}
-	
-	private boolean getEnvUseFetcher() {
-		String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
-		if (useFetcher != null && useFetcher.equals("true")) {
-			return true;
-		}
-		return false;
-	}
+  private String getEnvTmpImagesFolder() {
+    return System.getenv(EnvironmentVariables.ENV_TMP_IMG_FOLDER);
+  }
 
-	private int getEnvCoreThreads() {
-		String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
-		if (coreThreadsString == null) {
-			return PoolExecutor.DEFAULT_NTHREADS;
-		}
-		return Integer.parseInt(coreThreadsString);
-	}
+  private String getEnvEnvironment() {
+    return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
+  }
 
-	public boolean mustForceImageUpdate() {
-		return forceImageUpdate;
-	}
+  private int getEnvNumOfThreads() {
+    String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
+    if (nThreads == null) {
+      return PoolExecutor.DEFAULT_NTHREADS;
+    }
+    return Integer.parseInt(nThreads);
+  }
 
-	public int getCoreThreads() {
-		return this.coreThreads;
-	}
+  private boolean getEnvForceImgUpdate() {
+    String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
+    if (forceImgUpdate != null) {
+      return true;
+    }
+    return false;
+  }
 
-	public int getNthreads() {
-		return nthreads;
-	}
+  private boolean getEnvUseFetcher() {
+    String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
+    if (useFetcher != null && useFetcher.equals("true")) {
+      return true;
+    }
+    return false;
+  }
 
-	public void setNthreads(int nthreads) {
-		this.nthreads = nthreads;
-	}
+  private int getEnvCoreThreads() {
+    String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
+    if (coreThreadsString == null) {
+      return PoolExecutor.DEFAULT_NTHREADS;
+    }
+    return Integer.parseInt(coreThreadsString);
+  }
 
-	public String getVersion() {
-		return version;
-	}
+  public boolean mustForceImageUpdate() {
+    return forceImageUpdate;
+  }
 
-	public void setVersion(String version) {
-		this.version = version;
-	}
+  public int getCoreThreads() {
+    return this.coreThreads;
+  }
 
-	public String getTmpImageFolder() {
-		return this.tmpImageFolder;
-	}
+  public int getNthreads() {
+    return nthreads;
+  }
 
-	public void setTmpImageFolder(String tmpImageFolder) {
-		this.tmpImageFolder = tmpImageFolder;
-	}
+  public void setNthreads(int nthreads) {
+    this.nthreads = nthreads;
+  }
 
-	public String getPhantomjsPath() {
-		return phantomjsPath;
-	}
+  public String getVersion() {
+    return version;
+  }
 
-	public void setPhantomjsPath(String phantomjsPath) {
-		this.phantomjsPath = phantomjsPath;
-	}
+  public void setVersion(String version) {
+    this.version = version;
+  }
 
-	public Boolean getUseFetcher() {
-		return useFetcher;
-	}
+  public String getTmpImageFolder() {
+    return this.tmpImageFolder;
+  }
 
-	public void setUseFetcher(Boolean useFetcher) {
-		this.useFetcher = useFetcher;
-	}
+  public void setTmpImageFolder(String tmpImageFolder) {
+    this.tmpImageFolder = tmpImageFolder;
+  }
+
+  public String getPhantomjsPath() {
+    return phantomjsPath;
+  }
+
+  public void setPhantomjsPath(String phantomjsPath) {
+    this.phantomjsPath = phantomjsPath;
+  }
+
+  public Boolean getUseFetcher() {
+    return useFetcher;
+  }
+
+  public void setUseFetcher(Boolean useFetcher) {
+    this.useFetcher = useFetcher;
+  }
+
+  public int getHikariCpMinIDLE() {
+    return hikariCpMinIdle;
+  }
+
+  public void setHikariCpMinIDLE() {
+    this.hikariCpMinIdle = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_MIN_IDLE));
+  }
+
+  public int getHikariCpMaxPoolSize() {
+    return hikariCpMaxPoolSize;
+  }
+
+  public void setHikariCpMaxPoolSize() {
+    this.hikariCpMaxPoolSize = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_MAX_POOL_SIZE));
+  }
+
+  public int getHikariCpValidationTimeout() {
+    return hikariCpValidationTimeout;
+  }
+
+  public void setHikariCpValidationTimeout() {
+    this.hikariCpValidationTimeout = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_VALIDATION_TIMEOUT));
+  }
+
+  public int getHikariCpConnectionTimeout() {
+    return hikariCpConnectionTimeout;
+  }
+
+  public void setHikariCpConnectionTimeout() {
+    this.hikariCpConnectionTimeout = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_CONNECTION_TIMEOUT));
+  }
+
+  public int getHikariCpIDLETimeout() {
+    return hikariCpIdleTimeout;
+  }
+
+  public void setHikariCpIDLETimeout() {
+    this.hikariCpIdleTimeout = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_IDLE_TIMEOUT));
+  }
+
 }

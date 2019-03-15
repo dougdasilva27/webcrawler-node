@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.processor;
 
 import java.sql.Array;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DBSlack;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -507,25 +509,22 @@ public class Processor {
 
     if (internalId != null && !internalId.isEmpty()) {
 
+      StringBuilder query = new StringBuilder();
+      query.append("SELECT * FROM processed WHERE market = ");
+      query.append(session.getMarket().getNumber());
+      query.append(" AND internal_id = '");
+      query.append(internalId);
+      query.append("' LIMIT 1");
+
+      Connection conn = null;
+      Statement sta = null;
+      ResultSet rs = null;
+
       try {
-        // Processed processedTable = Tables.PROCESSED;
-        //
-        // List<Condition> conditions = new ArrayList<>();
-        // conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
-        // .and(processedTable.INTERNAL_ID.equal(internalId)));
 
-        // TODO hotfix for query
-        // estava falhando aqui
-        // voltei do jeito antigo pra apagar o fogo
-        StringBuilder query = new StringBuilder();
-        query.append("SELECT * FROM processed WHERE market = ");
-        query.append(session.getMarket().getNumber());
-        query.append(" AND internal_id = '");
-        query.append(internalId);
-        query.append("' LIMIT 1");
-
-        // ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-        ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        sta = conn.createStatement();
+        rs = sta.executeQuery(query.toString());
 
         while (rs.next()) {
 
@@ -682,6 +681,10 @@ public class Processor {
 
       } catch (SQLException e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      } finally {
+        JdbcConnectionFactory.closeResource(rs);
+        JdbcConnectionFactory.closeResource(sta);
+        JdbcConnectionFactory.closeResource(conn);
       }
     }
 

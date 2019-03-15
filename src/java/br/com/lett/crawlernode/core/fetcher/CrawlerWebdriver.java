@@ -34,8 +34,6 @@ public class CrawlerWebdriver {
 
   protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
-  public static final String PHANTOMJS_EXECUTABLE_PATH = "/home/samirleao/Downloads/phantomjs-2.1.1-linux-i686/bin/phantomjs";
-
   public WebDriver driver;
 
   private Session session;
