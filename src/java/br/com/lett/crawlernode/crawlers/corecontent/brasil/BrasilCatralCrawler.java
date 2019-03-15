@@ -153,7 +153,7 @@ public class BrasilCatralCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

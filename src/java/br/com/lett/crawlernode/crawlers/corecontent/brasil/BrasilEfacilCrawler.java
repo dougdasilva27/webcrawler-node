@@ -271,7 +271,7 @@ public class BrasilEfacilCrawler extends Crawler {
       } // fim do caso de múltiplas variacoes
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

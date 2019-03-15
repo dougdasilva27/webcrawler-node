@@ -58,7 +58,7 @@ public class RiodejaneiroZonasulRatingReviewCrawler extends RatingReviewCrawler 
       ratingReviewsCollection.addRatingReviews(ratingsReviews);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;

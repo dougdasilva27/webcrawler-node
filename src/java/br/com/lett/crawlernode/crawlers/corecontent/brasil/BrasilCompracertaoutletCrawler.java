@@ -33,7 +33,7 @@ public class BrasilCompracertaoutletCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       products.addAll(new CompraCertaCrawlerUtils(session, logger).extractProducts(doc));
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

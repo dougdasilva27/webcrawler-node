@@ -94,36 +94,35 @@ public class BrasilDufrioCrawler extends Crawler {
             int u = b.indexOf(')', z);
 
             String result = b.substring(z, u);
-
             eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
-          }
-        }
 
-        ScriptEngineManager factory = new ScriptEngineManager();
-        ScriptEngine engine = factory.getEngineByName("js");
-        try {
-          String cookieString = engine.eval(eval).toString();
-          if (cookieString != null && cookieString.contains("=")) {
-            String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
+            ScriptEngineManager factory = new ScriptEngineManager();
+            ScriptEngine engine = factory.getEngineByName("js");
+            try {
+              String cookieString = engine.eval(eval).toString();
+              if (cookieString != null && cookieString.contains("=")) {
+                String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
 
-            String[] tokens = cookieValues.split("=");
+                String[] tokens = cookieValues.split("=");
 
-            if (tokens.length > 1) {
+                if (tokens.length > 1) {
 
-              BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-              cookie.setDomain("www.dufrio.com.br");
-              cookie.setPath("/");
-              this.cookies.add(cookie);
+                  BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
+                  cookie.setDomain("www.dufrio.com.br");
+                  cookie.setPath("/");
+                  this.cookies.add(cookie);
 
-              BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-              cookie2.setDomain("www.dufrio.com.br");
-              cookie2.setPath("/");
-              this.cookies.add(cookie2);
+                  BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
+                  cookie2.setDomain("www.dufrio.com.br");
+                  cookie2.setPath("/");
+                  this.cookies.add(cookie2);
+                }
+              }
+
+            } catch (ScriptException e) {
+              Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
           }
-
-        } catch (ScriptException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }
@@ -170,7 +169,7 @@ public class BrasilDufrioCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

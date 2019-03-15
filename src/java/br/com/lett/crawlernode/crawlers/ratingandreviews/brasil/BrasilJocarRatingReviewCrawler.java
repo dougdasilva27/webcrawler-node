@@ -33,7 +33,7 @@ public class BrasilJocarRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
