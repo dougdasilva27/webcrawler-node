@@ -160,7 +160,7 @@ public class CrawlerWebdriver {
         Main.server.decrementWebdriverInstances();
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -188,7 +188,7 @@ public class CrawlerWebdriver {
     try {
       FileUtils.copyFile(screenshot, new File(path));
     } catch (Exception ex) {
-      Logging.printLogError(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
+      Logging.printLogWarn(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
     }
   }
 
@@ -205,7 +205,7 @@ public class CrawlerWebdriver {
     try {
       FileUtils.copyFile(screenshot, new File(path));
     } catch (Exception ex) {
-      Logging.printLogError(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
+      Logging.printLogWarn(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
     }
   }
 

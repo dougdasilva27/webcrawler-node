@@ -124,7 +124,7 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
           try {
             object = new JSONObject(json);
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 

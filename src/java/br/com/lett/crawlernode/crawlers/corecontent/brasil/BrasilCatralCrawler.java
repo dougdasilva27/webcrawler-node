@@ -360,7 +360,7 @@ public class BrasilCatralCrawler extends Crawler {
           Float discountFloat = new Float(discount);
           discountPercentage = MathUtils.normalizeTwoDecimalPlaces(discountFloat / 100);
         } catch (NumberFormatException e) {
-          Logging.printLogError(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
+          Logging.printLogWarn(logger, session, "Error parsing integer from String in CrawlDiscountPercentage method.");
         }
       }
     }

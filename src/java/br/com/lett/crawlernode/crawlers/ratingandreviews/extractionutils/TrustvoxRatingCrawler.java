@@ -131,8 +131,8 @@ public class TrustvoxRatingCrawler {
       }
 
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       trustVoxResponse = new JSONObject();
     }
@@ -171,7 +171,7 @@ public class TrustvoxRatingCrawler {
           try {
             object = new JSONObject(json);
           } catch (Exception e1) {
-            Logging.printLogError(logger, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, CommonMethods.getStackTrace(e1));
           }
         }
 

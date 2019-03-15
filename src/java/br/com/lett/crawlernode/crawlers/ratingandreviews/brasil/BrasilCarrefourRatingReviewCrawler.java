@@ -128,7 +128,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
           avgOverallRating = dataRating.getDouble("rating");
         }
       } catch (JSONException e) {
-        Logging.printLogError(logger, session, "Error converting String to JSONObject");
+        Logging.printLogWarn(logger, session, "Error converting String to JSONObject");
       }
     }
 

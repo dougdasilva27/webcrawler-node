@@ -132,7 +132,7 @@ public class Crawler extends Task {
       // they can be exceptions or business logic errors
       // and are all gathered inside the session
       if (!errors.isEmpty()) {
-        Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+        Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
         session.setTaskStatus(Task.STATUS_FAILED);
       }
 
@@ -213,8 +213,7 @@ public class Crawler extends Task {
         try {
           activeVoidResultProduct = activeVoid(crawledProduct);
         } catch (Exception e) {
-          Logging.printLogError(logger, session, "Error in active void method.");
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogError(logger, session, "Error in active void method: " + CommonMethods.getStackTrace(e));
           SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
           session.registerError(error);
         }
@@ -227,8 +226,7 @@ public class Crawler extends Task {
         try {
           processProduct(activeVoidResultProduct);
         } catch (Exception e) {
-          Logging.printLogError(logger, session, "Error in process product method.");
-          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+          Logging.printLogError(logger, session, "Error in process product method: " + CommonMethods.getStackTraceString(e));
 
           SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
           session.registerError(error);

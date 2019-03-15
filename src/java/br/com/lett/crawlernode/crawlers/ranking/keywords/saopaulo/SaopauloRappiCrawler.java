@@ -140,7 +140,7 @@ public class SaopauloRappiCrawler extends CrawlerRankingKeywords {
       try {
         obj = new JSONObject(page);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 

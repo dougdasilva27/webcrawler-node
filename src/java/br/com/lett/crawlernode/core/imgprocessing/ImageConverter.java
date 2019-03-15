@@ -58,7 +58,7 @@ public class ImageConverter {
    */
   public static File createTransformedImageFile(File localOriginalFile, Session session) throws IOException {
     if (localOriginalFile == null) {
-      Logging.printLogError(LOGGER, session, "Image downloaded is null...returning...");
+      Logging.printLogWarn(LOGGER, session, "Image downloaded is null...returning...");
       return null;
     }
 

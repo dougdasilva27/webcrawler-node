@@ -105,7 +105,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
     description.append(CrawlerUtils.scrapSimpleDescription(doc,
         Arrays.asList(".atg_store_productDescription", "#detallesTecnicos", "#ContenedorDescripciones", ".template-aires")));
 
-      description.append(crawlDescriptionFromFlixMedia(doc, session));
+    description.append(crawlDescriptionFromFlixMedia(doc, session));
 
     return description.toString();
   }
@@ -116,14 +116,13 @@ public class ArgentinaRibeiroCrawler extends Crawler {
     Element ean = doc.selectFirst("script[data-flix-ean]");
     if (ean != null) {
 
-      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean.attr("data-flix-ean") 
-      	+ "?&=4782&=f4&ean=" + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
+      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean.attr("data-flix-ean") + "?&=4782&=f4&ean="
+          + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
 
-      if(!ean.attr("data-flix-mpn").isEmpty()) {
-    	  url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") 
-    			  + "&mpn=" +ean.attr("data-flix-mpn");
+      if (!ean.attr("data-flix-mpn").isEmpty()) {
+        url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") + "&mpn=" + ean.attr("data-flix-mpn");
       }
-      
+
       String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
       final String token = "$(\"#flixinpage_\"+i).inPage";
 
@@ -138,7 +137,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
         try {
           productInfo = new JSONObject(json);
         } catch (JSONException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
 
@@ -166,7 +165,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
               description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
             }
           } catch (JSONException e) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
           }
         }
       }

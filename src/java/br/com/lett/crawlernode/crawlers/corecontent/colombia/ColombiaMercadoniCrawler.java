@@ -236,7 +236,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
           // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
           products = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

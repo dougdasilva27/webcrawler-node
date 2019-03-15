@@ -213,7 +213,7 @@ public class BrasilDufrioCrawler extends Crawler {
             }
           }
         } catch (Exception e1) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
         }
 
         break;

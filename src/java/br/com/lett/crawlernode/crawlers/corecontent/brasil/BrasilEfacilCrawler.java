@@ -57,12 +57,11 @@ public class BrasilEfacilCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb ul li a", true);
 
       // Imagem primária
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.product-photo a", 
-    		  Arrays.asList("href"), "https:", "www.efacil.com.br");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.product-photo a", Arrays.asList("href"), "https:", "www.efacil.com.br");
 
       // Imagem secundária
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "div.thumbnails a", 
-    		  Arrays.asList("data-original", "href"), "https:", "www.efacil.com.br", primaryImage);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "div.thumbnails a", Arrays.asList("data-original", "href"), "https:",
+          "www.efacil.com.br", primaryImage);
 
       // Descrição
       String description = "";
@@ -266,7 +265,7 @@ public class BrasilEfacilCrawler extends Crawler {
 
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       } // fim do caso de múltiplas variacoes
 

@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,7 +67,7 @@ public class ChileParisOldCrawler extends Crawler {
       try {
         fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
       JSONObject json = new JSONObject();
@@ -102,8 +101,8 @@ public class ChileParisOldCrawler extends Crawler {
           }
         }
       }
-    } catch (MalformedURLException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    } catch (Exception e) {
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return productJson;
@@ -380,31 +379,31 @@ public class ChileParisOldCrawler extends Crawler {
     if (productJson.has("longDescription")) {
       description.append(Jsoup.parse(productJson.get("longDescription").toString()));
     }
-    
-    if(productJson.has("specs_open")) {
-    	
-    	description.append("Ficha Técnica");
-    	
-    	JSONArray specs = productJson.getJSONArray("specs_open");
-    	
-    	StringBuilder specsTable = new StringBuilder("<table><tbody>");
-    	
-    	for(Object o : specs) {
-    		if(o instanceof JSONObject) {
-    			JSONObject spec = (JSONObject) o;
-        		if(spec.has("key") && spec.has("value")) {
-        			specsTable.append("<tr><td>");
-        			specsTable.append(spec.get("key"));
-        			specsTable.append("</td><td>");
-        			specsTable.append(spec.get("value"));
-        			specsTable.append("</td></tr>");
-        		}	
-    		}
-    	}
-    	
-    	specsTable.append("</tbody></table>");
-    	
-    	description.append(specsTable);
+
+    if (productJson.has("specs_open")) {
+
+      description.append("Ficha Técnica");
+
+      JSONArray specs = productJson.getJSONArray("specs_open");
+
+      StringBuilder specsTable = new StringBuilder("<table><tbody>");
+
+      for (Object o : specs) {
+        if (o instanceof JSONObject) {
+          JSONObject spec = (JSONObject) o;
+          if (spec.has("key") && spec.has("value")) {
+            specsTable.append("<tr><td>");
+            specsTable.append(spec.get("key"));
+            specsTable.append("</td><td>");
+            specsTable.append(spec.get("value"));
+            specsTable.append("</td></tr>");
+          }
+        }
+      }
+
+      specsTable.append("</tbody></table>");
+
+      description.append(specsTable);
     }
 
     return description.toString();

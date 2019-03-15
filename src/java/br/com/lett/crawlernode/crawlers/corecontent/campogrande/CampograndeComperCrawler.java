@@ -160,11 +160,11 @@ public class CampograndeComperCrawler extends Crawler {
     Float price = null;
 
     try {
-      if (price == null && product.has("RKProductPrice")) {
+      if (product.has("RKProductPrice")) {
         price = Float.parseFloat(product.get("RKProductPrice").toString());
       }
     } catch (NumberFormatException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return price;

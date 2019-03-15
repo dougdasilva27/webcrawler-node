@@ -50,11 +50,9 @@ public class TestHtmlBuilder {
 
     Mustache mustache = null;
     try {
-      mustache = mustacheFactory.compile(
-          new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")),
-          file.getName());
+      mustache = mustacheFactory.compile(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")), file.getName());
     } catch (FileNotFoundException e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
     }
 
     if (mustache != null) {
@@ -110,11 +108,10 @@ public class TestHtmlBuilder {
       StringWriter writer = new StringWriter();
       mustache.execute(writer, scopes);
 
-      try (PrintWriter out = new PrintWriter(
-          pathWrite + session.getMarket().getName() + "-" + scopes.get(INTERNAL_ID) + ".html")) {
+      try (PrintWriter out = new PrintWriter(pathWrite + session.getMarket().getName() + "-" + scopes.get(INTERNAL_ID) + ".html")) {
         out.println(writer.toString());
       } catch (FileNotFoundException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
       return writer.toString();
@@ -268,7 +265,6 @@ public class TestHtmlBuilder {
   }
 
 
-  @SuppressWarnings("unchecked")
   private static Map<Object, Object> getMapPricesFromJson(JSONObject prices) {
     Map<Object, Object> pricesMap = new HashMap<>();
 

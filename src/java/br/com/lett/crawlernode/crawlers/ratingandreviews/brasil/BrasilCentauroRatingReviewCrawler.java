@@ -148,7 +148,7 @@ public class BrasilCentauroRatingReviewCrawler extends RatingReviewCrawler {
               skuJson = chaordic.getJSONObject("product");
             }
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 

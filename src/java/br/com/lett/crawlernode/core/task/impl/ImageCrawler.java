@@ -38,7 +38,8 @@ public class ImageCrawler extends Task {
       Logging.printLogInfo(LOGGER, session, "Image file format: " + simpleDownloadResult.imageFormat);
 
       if (simpleDownloadResult.imageFile == null) {
-        Logging.printLogError(LOGGER, session, "Failed to download image....returning from image processTask()....");
+        Logging.printLogError(LOGGER, session,
+            "Failed to download image " + session.getOriginalURL() + " ....returning from image processTask()....");
         session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
         return;
       }
@@ -108,7 +109,7 @@ public class ImageCrawler extends Task {
     List<SessionError> errors = session.getErrors();
 
     if (!errors.isEmpty()) {
-      Logging.printLogError(LOGGER, session, "Task failed!");
+      Logging.printLogWarn(LOGGER, session, "Task failed!");
       session.setTaskStatus(Task.STATUS_FAILED);
     } else { // only remove the task from queue if it was flawless
       Logging.printLogDebug(LOGGER, session, "Task completed.");
