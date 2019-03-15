@@ -20,7 +20,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -58,8 +57,8 @@ public class SaopauloDicicoCrawler extends Crawler {
           Document fetchedData = fetchAPIProduct(internalId);
 
           String name = crawlName(fetchedData);
-          Float price = crawlPrice(fetchedData);
-          Prices prices = crawlPrices(price, fetchedData);
+          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',');
+          Prices prices = crawlPrices(price);
           boolean available = crawlAvailability(fetchedData) && price != null;
           Marketplace marketplace = crawlMarketplace();
           List<String> imagesArr = getImagesFromAPI(internalId);
@@ -85,9 +84,8 @@ public class SaopauloDicicoCrawler extends Crawler {
   }
 
   private Document fetchAPIProduct(String id) {
-
     Document fetchedData = new Document("");
-    Map<String, String> headers = new HashMap();
+    Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/x-www-form-urlencoded");
 
     if (id != null) {
@@ -146,17 +144,6 @@ public class SaopauloDicicoCrawler extends Crawler {
     return doc.select("#productTitleDisplayContainer").first() != null;
   }
 
-  private String crawlInternalId(Document doc) {
-    String internalId = null;
-
-    Element id = doc.selectFirst("#currentProductId");
-    if (id != null) {
-      internalId = id.attr("value");
-    }
-
-    return internalId;
-  }
-
 
   private String crawlInternalPid(Document doc) {
     String internalId = null;
@@ -180,19 +167,7 @@ public class SaopauloDicicoCrawler extends Crawler {
   }
 
 
-  private Float crawlPrice(Document doc) {
-    Float price = null;
-
-    Element salePriceElement = doc.selectFirst(".t-black.bold.price");
-    if (salePriceElement != null) {
-      price = MathUtils.parseFloatWithComma(salePriceElement.ownText());
-    }
-
-    return price;
-  }
-
-
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices crawlPrices(Float price) {
     Prices prices = new Prices();
 
     if (price != null) {
