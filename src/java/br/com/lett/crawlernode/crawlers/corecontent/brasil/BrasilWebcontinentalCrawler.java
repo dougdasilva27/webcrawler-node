@@ -144,7 +144,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
           }
 
         } catch (JSONException ex) {
-          Logging.printLogError(logger, CommonMethods.getStackTrace(ex));
+          Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));
         }
 
         break;
@@ -427,7 +427,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
         return sanityzeJsonAPI(api);
       } catch (JSONException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 
@@ -475,8 +475,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
           child.put("skuId", sku.getString("repositoryId"));
         }
 
-        if (sku.has("voltagem")) {
-          child.put("skuName", sku.getString("voltagem"));
+        if (sku.has("voltagem") && !sku.isNull("voltagem")) {
+          child.put("skuName", sku.get("voltagem").toString().replace("[", "").replace("]", "").replace("\"", ""));
         }
 
         if (sku.has("salePrices")) {

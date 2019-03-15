@@ -172,7 +172,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
           try {
             object = new JSONObject(json);
           } catch (Exception e1) {
-            Logging.printLogError(logger, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, CommonMethods.getStackTrace(e1));
           }
         }
 

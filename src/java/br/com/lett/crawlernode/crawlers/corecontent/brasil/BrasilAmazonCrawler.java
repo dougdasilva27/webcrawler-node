@@ -88,7 +88,7 @@ public class BrasilAmazonCrawler extends Crawler {
         }
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return content;

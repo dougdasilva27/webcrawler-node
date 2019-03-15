@@ -299,7 +299,7 @@ public class BrasilCentauroCrawler extends Crawler {
           Seller s = new Seller(sellerJSON);
           marketplace.add(s);
         } catch (Exception e) {
-          Logging.printLogError(logger, session, Util.getStackTraceString(e));
+          Logging.printLogWarn(logger, session, Util.getStackTraceString(e));
         }
       }
     }
@@ -399,7 +399,7 @@ public class BrasilCentauroCrawler extends Crawler {
               skuJson = chaordic.getJSONObject("product");
             }
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 

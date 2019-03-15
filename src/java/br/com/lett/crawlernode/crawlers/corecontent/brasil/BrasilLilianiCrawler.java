@@ -348,7 +348,7 @@ public class BrasilLilianiCrawler extends Crawler {
 
       // this case was not found at the time this crawler was made
       if (colorsSkus.size() > 1 && voltSkus.size() > 1) {
-        Logging.printLogError(logger, session, "Produto com mais de 1 cor e voltagem!!!");
+        Logging.printLogWarn(logger, session, "Produto com mais de 1 cor e voltagem!!!");
 
         return new HashMap<>();
       }

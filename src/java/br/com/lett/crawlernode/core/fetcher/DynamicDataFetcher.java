@@ -141,7 +141,7 @@ public class DynamicDataFetcher {
 
       return webdriver;
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       return null;
     }
   }
@@ -181,7 +181,7 @@ public class DynamicDataFetcher {
 
       return doc;
     } catch (Exception e) {
-      Logging.printLogError(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
       return new Document(url);
     }
   }

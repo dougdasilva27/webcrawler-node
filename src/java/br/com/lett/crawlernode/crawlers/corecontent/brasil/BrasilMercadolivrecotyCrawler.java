@@ -181,7 +181,7 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
         try {
           sellerName = URLDecoder.decode(CommonMethods.getLast(sellerNameElement.attr("href").split("/")), "UTF-8").toLowerCase();
         } catch (UnsupportedEncodingException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

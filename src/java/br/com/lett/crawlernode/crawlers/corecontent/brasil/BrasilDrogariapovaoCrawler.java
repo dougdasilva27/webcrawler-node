@@ -84,7 +84,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
             }
           }
         } catch (JSONException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

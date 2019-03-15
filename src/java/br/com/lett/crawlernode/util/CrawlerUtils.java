@@ -582,8 +582,8 @@ public class CrawlerUtils {
         skuJson = new JSONObject(skuJsonString);
 
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(LOGGER, session, "Error creating JSONObject from var skuJson_0");
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTraceString(e));
       }
     }
 
@@ -769,7 +769,7 @@ public class CrawlerUtils {
       try {
         json = new JSONObject(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -783,7 +783,7 @@ public class CrawlerUtils {
       try {
         json = new JSONArray(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -818,7 +818,7 @@ public class CrawlerUtils {
       try {
         productInfo = new JSONObject(json);
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
       }
     }
 
@@ -846,7 +846,7 @@ public class CrawlerUtils {
             description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
           }
         } catch (JSONException e) {
-          Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
         }
       }
     }

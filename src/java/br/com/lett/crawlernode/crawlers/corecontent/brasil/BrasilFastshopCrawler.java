@@ -199,7 +199,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
         jsonStock = new JSONObject(json);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
       if (jsonStock.has("onlineInventory")) {

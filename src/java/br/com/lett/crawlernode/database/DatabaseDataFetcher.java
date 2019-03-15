@@ -137,7 +137,7 @@ public class DatabaseDataFetcher {
       count = (Long) rs.getObject("count");
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
     } finally {
       JdbcConnectionFactory.closeResource(rs);
       JdbcConnectionFactory.closeResource(sta);

@@ -120,7 +120,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
         products = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
 
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 

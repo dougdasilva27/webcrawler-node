@@ -134,10 +134,10 @@ public abstract class CrawlerRanking extends Task {
     // they can be exceptions or business logic errors
     // and are all gathered inside the session
     if (!errors.isEmpty()) {
-      Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+      Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
 
       for (SessionError error : errors) {
-        Logging.printLogError(logger, error.getErrorContent());
+        Logging.printLogError(logger, session, error.getErrorContent());
       }
 
       session.setTaskStatus(Task.STATUS_FAILED);
