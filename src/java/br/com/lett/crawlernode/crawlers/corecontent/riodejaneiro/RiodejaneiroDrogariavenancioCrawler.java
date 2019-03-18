@@ -128,8 +128,41 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
     if (obj.has("Descrição")) {
       JSONArray arr = obj.getJSONArray("Descrição");
 
-      for (Object o : arr) {
-        sb.append(o.toString());
+      if (arr.length() > 0) {
+        sb.append("<div id=\"Descricao\">").append("<h4> Descrição </h4>");
+        for (Object o : arr) {
+          sb.append(o.toString());
+        }
+        sb.append("</div\">");
+      }
+    }
+
+    /**
+     * Because of this link: https://www.drogariavenancio.com.br/fibermais10sachesx5g-8198/p
+     */
+
+    if (obj.has("Indicações")) {
+      JSONArray arr = obj.getJSONArray("Indicações");
+
+      if (arr.length() > 0) {
+        sb.append("<div id=\"Indicacoes\">").append("<h4> Indicações </h4>");
+        for (Object o : arr) {
+          sb.append(o.toString());
+        }
+        sb.append("</div\">");
+      }
+    }
+
+
+    if (obj.has("Contra indicações")) {
+      JSONArray arr = obj.getJSONArray("Contra indicações");
+
+      if (arr.length() > 0) {
+        sb.append("<div id=\"contra indicacoes\">").append("<h4> Contra indicações </h4>");
+        for (Object o : arr) {
+          sb.append(o.toString());
+        }
+        sb.append("</div\">");
       }
     }
 

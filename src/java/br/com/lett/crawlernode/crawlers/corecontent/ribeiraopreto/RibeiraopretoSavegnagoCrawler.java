@@ -157,6 +157,8 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
         description = description + elementSpecification.html();
       }
 
+      description += CrawlerUtils.scrapLettHtml(internalId, session);
+
       // Estoque
       Integer stock = null;
 

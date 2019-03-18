@@ -61,7 +61,7 @@ public class POSTFetcher {
   // private static final String FETCHER_HOST_OLD_ACCOUNT =
   // "http://development.j3mv2k6ceh.us-east-1.elasticbeanstalk.com/";
   public static final String FETCHER_HOST = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
-  public static final String FETCHER_HOST_DEV = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
+  public static final String FETCHER_HOST_DEV = "http://fetcher-development.us-east-1.elasticbeanstalk.com/";
   // public static final String FETCHER_HOST_DEV =
   // "http://placeholder-fetcher-dev.us-east-1.elasticbeanstalk.com";
 
@@ -720,6 +720,32 @@ public class POSTFetcher {
   }
 
   /**
+   * Fetch String using Fetcher
+   * 
+   * @param url
+   * @param fetcherPayload
+   * @param session
+   * @param dev
+   * @return
+   */
+  public static String requestStringUsingFetcher(String url, JSONObject fetcherPayload, Session session, boolean dev) {
+    String response = "";
+
+    JSONObject fetcherResponse = fetcherRequest(fetcherPayload, url, session, dev);
+
+    if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
+        && fetcherResponse.getInt("request_status_code") < 400) {
+      JSONObject responseJson = fetcherResponse.getJSONObject("response");
+
+      if (responseJson.has("body")) {
+        response = responseJson.get("body").toString();
+      }
+    }
+
+    return response;
+  }
+
+  /**
    * 
    * @param url
    * @param cookies
@@ -746,6 +772,33 @@ public class POSTFetcher {
     }
 
     JSONObject payloadFetcher = POSTFetcher.fetcherPayloadBuilder(url, resquestType, false, payload, headers, new ArrayList<>(), null);
+    JSONObject response = new JSONObject();
+    try {
+      response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
+    } catch (Exception e) {
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+    }
+
+    DataFetcher.setRequestProxyForFetcher(session, response, url);
+    if (response.has("response")) {
+      session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
+    }
+
+    return response;
+  }
+
+  /**
+   * 
+   * @param url
+   * @param cookies
+   * @param headers
+   * @param payload
+   * @param session
+   * @param dev - use fetcher dev
+   * @return
+   */
+  public static JSONObject fetcherRequest(JSONObject payloadFetcher, String url, Session session, boolean dev) {
+
     JSONObject response = new JSONObject();
     try {
       response = POSTFetcher.requestWithFetcher(session, payloadFetcher, dev);
