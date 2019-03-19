@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -313,30 +315,12 @@ public class BrasilDufrioCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.select("section.linha-01").first();
-    Element descriptionLGElement = document.select(".linha-bigLG").first();
-    Element caracteristicas = document.select(".caracteristicasDetalhe").first();
-    Element dimensoes = document.select(".dimensoes").first();
+    description.append(CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("section.linha-01",
+        "main > section:not([class]):not([id]) .small-12.columns", ".linha-bigLG", ".caracteristicasDetalhe", ".dimensoes")));
 
     Elements specialDescriptions = document.select("section[class^=linha-], div[class^=row box], .font-ubuntu-l");
     for (Element e : specialDescriptions) {
       description.append(e.html());
-    }
-
-    if (descriptionElement != null) {
-      description.append(descriptionElement.html());
-    }
-
-    if (descriptionLGElement != null) {
-      description.append(descriptionLGElement.html());
-    }
-
-    if (caracteristicas != null) {
-      description.append(caracteristicas.html());
-    }
-
-    if (dimensoes != null) {
-      description.append(dimensoes.html());
     }
 
     return description.toString();

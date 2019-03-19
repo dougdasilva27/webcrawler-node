@@ -107,7 +107,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document doc) {
-    return doc.selectFirst("#btnAddBasket") != null;
+    return doc.selectFirst("[id~=btnAddBasket]") != null;
   }
 
   /**
