@@ -5,25 +5,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -54,81 +48,48 @@ public class BrasilDufrioCrawler extends Crawler {
   private static final String HOME_PAGE_HTTP = "http://www.dufrio.com.br/";
   private static final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
 
-  private static final String USER_AGENT = DataFetcher.randUserAgent();
-  private LettProxy proxyToBeUsed = null;
-
   public BrasilDufrioCrawler(Session session) {
     super(session);
+    super.config.setFetcher(Fetcher.WEBDRIVER);
   }
 
-  @Override
-  protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, this.proxyToBeUsed, 1));
-  }
-
-  /**
-   * Esse market possui um verificador de javascript Esse verificador é uma função que monta o cookie
-   * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
-   * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
-   * 
-   * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
-   */
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
-
-    this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
-
-    if (!isProductPage(doc)) {
-      Element script = doc.select("script").first();
-
-      if (script != null) {
-        String eval = script.html().trim();
-
-        if (eval.endsWith(";")) {
-          int y = eval.indexOf(";}}") + 3;
-          int x = eval.indexOf(';', y) + 1;
-
-          String b = eval.substring(y, x);
-
-          if (b.contains("(")) {
-            int z = b.indexOf('(') + 1;
-            int u = b.indexOf(')', z);
-
-            String result = b.substring(z, u);
-            eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
-
-            ScriptEngineManager factory = new ScriptEngineManager();
-            ScriptEngine engine = factory.getEngineByName("js");
-            try {
-              String cookieString = engine.eval(eval).toString();
-              if (cookieString != null && cookieString.contains("=")) {
-                String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
-
-                String[] tokens = cookieValues.split("=");
-
-                if (tokens.length > 1) {
-
-                  BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-                  cookie.setDomain("www.dufrio.com.br");
-                  cookie.setPath("/");
-                  this.cookies.add(cookie);
-
-                  BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-                  cookie2.setDomain("www.dufrio.com.br");
-                  cookie2.setPath("/");
-                  this.cookies.add(cookie2);
-                }
-              }
-
-            } catch (ScriptException e) {
-              Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-            }
-          }
-        }
-      }
-    }
-  }
+  // @Override
+  // protected Object fetch() {
+  // return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
+  // USER_AGENT, this.proxyToBeUsed, 1));
+  // }
+  //
+  // /**
+  // * Esse market possui um verificador de javascript Esse verificador é uma função que monta o
+  // cookie
+  // * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
+  // * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
+  // *
+  // * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
+  // */
+  // @Override
+  // public void handleCookiesBeforeFetch() {
+  // Map<String, String> headers = new HashMap<>();
+  // headers.put("Accept",
+  // "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
+  // headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+  // headers.put("authority", "www.dufrio.com.br");
+  // headers.put("upgrade-insecure-requests", "1");
+  // headers.put("content-encoding", "");
+  // headers.put("accept-encoding", "");
+  // headers.put("User_Agent", USER_AGENT);
+  //
+  // JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(HOME_PAGE_HTTPS, "GET", true, null,
+  // headers, Arrays.asList(), null, true);
+  // Document doc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(HOME_PAGE_HTTPS, fetcherPayload,
+  // session, false));
+  //
+  // CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO1.html");
+  //
+  // this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
+  //
+  //
+  // }
 
   @Override
   public boolean shouldVisit() {
@@ -140,6 +101,8 @@ public class BrasilDufrioCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

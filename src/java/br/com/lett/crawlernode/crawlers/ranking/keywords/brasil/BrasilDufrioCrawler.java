@@ -1,205 +1,126 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilDufrioCrawler extends CrawlerRankingKeywords {
 
-	public BrasilDufrioCrawler(Session session) {
-		super(session);
-	}
+  public BrasilDufrioCrawler(Session session) {
+    super(session);
+  }
 
-	private static final String USER_AGENT = DataFetcher.randUserAgent();
-	private LettProxy proxyToBeUsed = null;
-	private List<Cookie> cookies = new ArrayList<>();
 
-	@Override
-	protected void processBeforeFetch() {
-		Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, "https://www.dufrio.com.br/",
-				cookies, USER_AGENT, null, 1));
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    // número de produtos por página do market
+    this.pageSize = 9;
 
-		this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
+    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
-		Element script = doc.select("script").first();
+    this.log("Página " + this.currentPage);
 
-		if (script != null) {
-			String eval = script.html().trim();
+    // monta a url com a keyword e a página
+    String url = "https://www.dufrio.com.br/busca/" + this.currentPage + "?busca=" + keyword + "&ipp=36";
+    this.log("Link onde são feitos os crawlers: " + url);
 
-			if (eval.endsWith(";")) {
-				int y = eval.indexOf(";}}") + 3;
-				int x = eval.indexOf(';', y) + 1;
+    // chama função de pegar a url
+    this.currentDoc = fetchDocumentWithWebDriver(url);
 
-				String b = eval.substring(y, x);
+    Elements products = this.currentDoc.select(".produtosCategoria > div.column .flex-child-auto .boxProduto");
 
-				if (b.contains("(")) {
-					int z = b.indexOf('(') + 1;
-					int u = b.indexOf(')', z);
+    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+    if (!products.isEmpty()) {
+      // se o total de busca não foi setado ainda, chama a função para setar
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
-					String result = b.substring(z, u);
+      for (Element e : products) {
 
-					eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result
-							+ ".replace(\"location.reload();\", \"\"); " + b;
-				}
-			}
+        // InternalPid
+        String internalPid = crawlInternalPid(e);
 
-			ScriptEngineManager factory = new ScriptEngineManager();
-			ScriptEngine engine = factory.getEngineByName("js");
-			try {
-				String cookieString = engine.eval(eval).toString();
-				if (cookieString != null && cookieString.contains("=")) {
-					String cookieValues =
-							cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
+        // InternalId
+        String internalId = crawlInternalId(e);
 
-					String[] tokens = cookieValues.split("=");
+        // Url do produto
+        String urlProduct = crawlProductUrl(e);
 
-					if (tokens.length > 1) {
+        saveDataProduct(internalId, internalPid, urlProduct);
 
-						BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-						cookie.setDomain("www.dufrio.com.br");
-						cookie.setPath("/");
-						this.cookies.add(cookie);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
 
-						BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-						cookie2.setDomain("www.dufrio.com.br");
-						cookie2.setPath("/");
-						this.cookies.add(cookie2);
-					}
-				}
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-			} catch (ScriptException e) {
-				this.logError(CommonMethods.getStackTrace(e));
-			}
-		}
-	}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 9;
+  @Override
+  protected boolean hasNextPage() {
+    Element nextPage = this.currentDoc.select("a.ultima[disabled]").first();
 
-		String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+    if (nextPage != null) {
+      return false;
+    }
 
-		this.log("Página " + this.currentPage);
+    return true;
 
-		// monta a url com a keyword e a página
-		String url =
-				"https://www.dufrio.com.br/busca/" + this.currentPage + "?busca=" + keyword + "&ipp=36";
-		this.log("Link onde são feitos os crawlers: " + url);
+  }
 
-		// chama função de pegar a url
-		this.currentDoc = Jsoup
-				.parse(GETFetcher.fetchPageGET(session, url, cookies, USER_AGENT, this.proxyToBeUsed, 1));
+  @Override
+  protected void setTotalProducts() {
+    Element totalElement = this.currentDoc.select(".qtdEncontrados span").first();
 
-		Elements products =
-				this.currentDoc.select(".produtosCategoria > div.column .flex-child-auto .boxProduto");
+    if (totalElement != null) {
+      String text = totalElement.text();
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if (!products.isEmpty()) {
-			// se o total de busca não foi setado ainda, chama a função para setar
-			if (this.totalProducts == 0) {
-				setTotalProducts();
-			}
+      if (text.contains("de")) {
+        try {
+          int x = text.indexOf("de") + 2;
 
-			for (Element e : products) {
+          this.totalProducts = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", "").trim());
+        } catch (Exception e) {
+          this.logError(CommonMethods.getStackTrace(e));
+        }
+      }
 
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+      this.log("Total da busca: " + this.totalProducts);
+    }
+  }
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+  private String crawlInternalId(Element e) {
+    return null;
+  }
 
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
+    Element checkBox = e.select(".boxCheckbox input").first();
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+    if (checkBox != null) {
+      internalPid = checkBox.val();
+    }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
-				}
+    return internalPid;
+  }
 
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+  private String crawlProductUrl(Element e) {
+    String urlProduct = null;
+    Element urlElement = e.select(".linkProd").first();
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-	}
+    if (urlElement != null) {
+      urlProduct = urlElement.attr("href");
+    }
 
-	@Override
-	protected boolean hasNextPage() {
-		Element nextPage = this.currentDoc.select("a.ultima[disabled]").first();
-
-		if (nextPage != null) {
-			return false;
-		}
-
-		return true;
-
-	}
-
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".qtdEncontrados span").first();
-
-		if (totalElement != null) {
-			String text = totalElement.text();
-
-			if (text.contains("de")) {
-				try {
-					int x = text.indexOf("de") + 2;
-
-					this.totalProducts = Integer.parseInt(text.substring(x).replaceAll("[^0-9]", "").trim());
-				} catch (Exception e) {
-					this.logError(CommonMethods.getStackTrace(e));
-				}
-			}
-
-			this.log("Total da busca: " + this.totalProducts);
-		}
-	}
-
-	private String crawlInternalId(Element e) {
-		return null;
-	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-		Element checkBox = e.select(".boxCheckbox input").first();
-
-		if (checkBox != null) {
-			internalPid = checkBox.val();
-		}
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element urlElement = e.select(".linkProd").first();
-
-		if (urlElement != null) {
-			urlProduct = urlElement.attr("href");
-		}
-
-		return urlProduct;
-	}
+    return urlProduct;
+  }
 }
