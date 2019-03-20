@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -45,7 +49,6 @@ import models.prices.Prices;
 
 public class BrasilDufrioCrawler extends Crawler {
 
-  private static final String HOME_PAGE_HTTP = "http://www.dufrio.com.br/";
   private static final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
 
   public BrasilDufrioCrawler(Session session) {
@@ -53,56 +56,39 @@ public class BrasilDufrioCrawler extends Crawler {
     super.config.setFetcher(Fetcher.WEBDRIVER);
   }
 
-  // @Override
-  // protected Object fetch() {
-  // return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
-  // USER_AGENT, this.proxyToBeUsed, 1));
-  // }
-  //
-  // /**
-  // * Esse market possui um verificador de javascript Esse verificador é uma função que monta o
-  // cookie
-  // * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
-  // * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
-  // *
-  // * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
-  // */
-  // @Override
-  // public void handleCookiesBeforeFetch() {
-  // Map<String, String> headers = new HashMap<>();
-  // headers.put("Accept",
-  // "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
-  // headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-  // headers.put("authority", "www.dufrio.com.br");
-  // headers.put("upgrade-insecure-requests", "1");
-  // headers.put("content-encoding", "");
-  // headers.put("accept-encoding", "");
-  // headers.put("User_Agent", USER_AGENT);
-  //
-  // JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(HOME_PAGE_HTTPS, "GET", true, null,
-  // headers, Arrays.asList(), null, true);
-  // Document doc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(HOME_PAGE_HTTPS, fetcherPayload,
-  // session, false));
-  //
-  // CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO1.html");
-  //
-  // this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
-  //
-  //
-  // }
+  @Override
+  protected Object fetch() {
+    Document doc = new Document("");
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+
+    if (this.webdriver != null) {
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+      String requestHash = DataFetcher.generateRequestHash(session);
+
+      if (!isProductPage(doc)) {
+        this.webdriver.waitLoad(10000);
+        doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+        CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO.html");
+      }
+      // saving request content result on Amazon
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+
+    }
+
+    return doc;
+  }
 
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && ((href.startsWith(HOME_PAGE_HTTPS)) || (href.startsWith(HOME_PAGE_HTTP)));
+    return !FILTERS.matcher(href).matches() && ((href.startsWith(HOME_PAGE_HTTPS)));
   }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

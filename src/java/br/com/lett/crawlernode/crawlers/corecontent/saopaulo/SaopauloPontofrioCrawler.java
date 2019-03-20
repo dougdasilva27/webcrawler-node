@@ -24,6 +24,7 @@ public class SaopauloPontofrioCrawler extends CNOVACrawler {
   protected String fetchPage(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("Accept-Enconding", "");
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Cache-Control", "no-cache");
     headers.put("Connection", "keep-alive");

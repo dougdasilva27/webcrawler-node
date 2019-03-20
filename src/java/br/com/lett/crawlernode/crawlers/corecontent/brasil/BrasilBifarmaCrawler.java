@@ -66,7 +66,6 @@ public class BrasilBifarmaCrawler extends Crawler {
       this.webdriver.waitLoad(12000);
 
       doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-      Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
 
       // saving request content result on Amazon
       S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());

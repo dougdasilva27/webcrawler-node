@@ -84,6 +84,11 @@ public class DynamicDataFetcher {
         proxyString = ProxyCollection.BONANZA;
       }
 
+      // Dufrio block luminati_server
+      if (session.getMarket().getName().equals("dufrio")) {
+        proxyString = ProxyCollection.BUY;
+      }
+
       LettProxy proxy = randomProxy(proxyString, session);
 
       DesiredCapabilities caps = DesiredCapabilities.phantomjs();
