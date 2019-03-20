@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -21,7 +21,7 @@ public class BrasilDufrioRatingReviewCrawler extends RatingReviewCrawler {
 
   public BrasilDufrioRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(Fetcher.WEBDRIVER);
+    super.config.setFetcher(FetchMode.WEBDRIVER);
   }
 
   @Override

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -27,7 +27,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
     // performing request to get cookie
-    String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
+    String cookieValue = DataFetcherNO.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
 
     BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
     cookie.setDomain("www.supernossoemcasa.com.br");
@@ -125,7 +125,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
       headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
 
       // request with fetcher
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false);
       String page = null;
 
       if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
@@ -137,7 +137,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
         }
       } else {
         // normal request
-        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+        page = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies);
       }
 
       if (page != null && page.startsWith("{") && page.endsWith("}")) {

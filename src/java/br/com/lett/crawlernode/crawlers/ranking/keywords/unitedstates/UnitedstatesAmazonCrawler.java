@@ -9,7 +9,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -27,7 +27,7 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
   @Override
   protected void processBeforeFetch() {
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
+    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, null, 1);
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());

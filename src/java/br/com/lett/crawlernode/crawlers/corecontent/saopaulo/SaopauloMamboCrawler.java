@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -184,7 +184,7 @@ public class SaopauloMamboCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.mambo.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+    String stringJsonImages = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
 
     JSONObject jsonObjectImages = new JSONObject();
     try {
@@ -316,7 +316,7 @@ public class SaopauloMamboCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.mambo.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
@@ -401,7 +401,7 @@ public class SaopauloMamboCrawler extends Crawler {
     JSONObject info = new JSONObject();
 
     String url = "https://www.mambo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skus = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray skus = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (skus.length() > 0) {
       info = skus.getJSONObject(0);

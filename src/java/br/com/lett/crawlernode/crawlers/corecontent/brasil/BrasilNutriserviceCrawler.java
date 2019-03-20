@@ -8,7 +8,7 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -210,13 +210,13 @@ public class BrasilNutriserviceCrawler extends Crawler {
   private Document crawlPriceDocument(String internalId, String internalPid) {
     String url = "http://www.nutriservice.com.br/ParcelamentoVariante/CodVariante/" + internalId + "/produto_id/" + internalPid + "/t/1";
 
-    return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    return DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
   }
 
   private Document crawlImagesDocument(String internalId, String internalPid) {
     String url = "http://www.nutriservice.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/" + internalPid + "/exibicao/produto/t/1";
 
-    return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    return DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
   }
 
   private Marketplace crawlMarketplace() {

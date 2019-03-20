@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -98,7 +98,7 @@ public class BrasilDafitiCrawler extends Crawler {
         // Pegando os produtos usando o endpoint da Dafiti
 
         String url = "https://www.dafiti.com.br/catalog/detailJson?sku=" + sku + "&_=1439492531368";
-        JSONObject json = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        JSONObject json = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
         JSONArray sizes = json.has("sizes") ? json.getJSONArray("sizes") : new JSONArray();
 

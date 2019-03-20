@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -123,7 +123,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
         url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") + "&mpn=" + ean.attr("data-flix-mpn");
       }
 
-      String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      String script = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
       final String token = "$(\"#flixinpage_\"+i).inPage";
 
       JSONObject productInfo = new JSONObject();
@@ -146,7 +146,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
 
         String urlDesc =
             "https://media.flixcar.com/delivery/inpage/show/4782/f4/" + id + "/json?c=jsonpcar4782f4" + id + "&complimentary=0&type=.html";
-        String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+        String scriptDesc = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, urlDesc, null, null);
 
         if (scriptDesc.contains("({")) {
           int x = scriptDesc.indexOf("({") + 1;

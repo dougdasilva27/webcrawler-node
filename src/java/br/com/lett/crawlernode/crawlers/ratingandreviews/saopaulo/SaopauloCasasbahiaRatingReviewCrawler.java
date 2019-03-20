@@ -8,7 +8,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -50,7 +50,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("Host", "www.casasbahia.com.br");
     headers.put("Referer", HOME_PAGE);
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    headers.put("User-Agent", DataFetcherNO.randUserAgent());
 
     return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
   }

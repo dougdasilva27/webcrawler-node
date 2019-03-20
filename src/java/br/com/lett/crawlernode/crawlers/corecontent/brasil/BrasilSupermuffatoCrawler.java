@@ -15,7 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -239,7 +239,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 			// fetch the page containing price payment options
 			String skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
 			String paymentOptionsURL = "http://www.supermuffato.com.br/productotherpaymentsystems/" + skuId;
-			Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+			Document paymentOptionsDocument = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, paymentOptionsURL, null, null);
 			
 			// bank slip
 			Element bankSlipPriceElement = paymentOptionsDocument.select("#divBoleto #ltlPrecoWrapper em").first();
@@ -414,7 +414,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 		JSONArray skuData = new JSONArray();
 		if (internalId != null) {
 			String apiURL = HOME_PAGE + "produto/sku/" + internalId;
-			String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiURL, null, null);
+			String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiURL, null, null);
 
 			try {
 				skuData = new JSONArray(json);

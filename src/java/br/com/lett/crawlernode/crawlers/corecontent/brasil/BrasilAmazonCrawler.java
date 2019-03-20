@@ -15,7 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -74,11 +74,11 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (fetcherResponse.has("response")) {
         JSONObject responseJSON = fetcherResponse.getJSONObject("response");
-        DataFetcher.setRequestProxyForFetcher(session, fetcherResponse, fetcherPayload.getString("url"));
+        DataFetcherNO.setRequestProxyForFetcher(session, fetcherResponse, fetcherPayload.getString("url"));
         session.addRedirection(fetcherPayload.getString("url"), fetcherResponse.getJSONObject("response").getString("redirect_url"));
 
         content = responseJSON.getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, DataFetcher.generateRequestHash(session), content);
+        S3Service.uploadCrawlerSessionContentToAmazon(session, DataFetcherNO.generateRequestHash(session), content);
 
         if (fetcherResponse.has("request_status_code")) {
           int responseCode = fetcherResponse.getInt("request_status_code");
@@ -92,7 +92,7 @@ public class BrasilAmazonCrawler extends Crawler {
     }
 
     if (content.isEmpty()) {
-      content = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      content = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
     }
 
     return content;

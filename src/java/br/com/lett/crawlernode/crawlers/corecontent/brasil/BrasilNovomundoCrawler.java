@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -84,8 +84,8 @@ public class BrasilNovomundoCrawler extends Crawler {
 
 
           // Pegar dados da API
-          JSONObject productInfoJSON = DataFetcher
-              .fetchJSONArray(DataFetcher.GET_REQUEST, session,
+          JSONObject productInfoJSON = DataFetcherNO
+              .fetchJSONArray(DataFetcherNO.GET_REQUEST, session,
                   ("http://www.novomundo.com.br/produto/sku/" + id.trim()), null, null)
               .getJSONObject(0);
 
@@ -352,7 +352,7 @@ public class BrasilNovomundoCrawler extends Crawler {
       String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku="
           + internalId + "&d=" + discountBoleto;
       Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+          DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       Element bankTicketElement = doc.select("#divBoleto .valor").first();
       if (bankTicketElement != null) {

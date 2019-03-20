@@ -7,7 +7,7 @@ import java.util.TreeMap;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -36,7 +36,7 @@ public class BrasilLefarmaCrawler extends Crawler {
       JSONObject script = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer[0]['product'] = ", ";", false, true);
       if(script.has("id")) {       
         String url = "https://www.lefarma.com.br/public_api/v1/products/" + script.get("id");
-        fetchedJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        fetchedJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
       }
       
       String internalPid = crawlInternalPid(fetchedJson);

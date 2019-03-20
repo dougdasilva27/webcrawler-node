@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-public enum Fetcher {
+public enum FetchMode {
 	
 	STATIC,
 	WEBDRIVER,

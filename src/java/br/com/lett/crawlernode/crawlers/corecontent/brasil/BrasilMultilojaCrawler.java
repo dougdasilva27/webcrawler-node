@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -491,7 +491,7 @@ public class BrasilMultilojaCrawler extends Crawler {
 			Map<String,String> headers = new HashMap<>();
 			headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-			Document docXml = DataFetcher.fetchDocumentXml(DataFetcher.POST_REQUEST, session, url, payload, cookies);
+			Document docXml = DataFetcherNO.fetchDocumentXml(DataFetcherNO.POST_REQUEST, session, url, payload, cookies);
 			
 			Document doc = parseXmlToHtml(docXml);			
 			Element principalPrice = doc.select(".preco span:not([class])").first();

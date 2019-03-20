@@ -10,7 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -387,6 +387,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
   private JSONObject crawlVariationsInfo(String pid, String variationId) {
     String url = "http://www.vitaesaude.com.br/remote.php?w=GetVariationOptions&productId=" + pid + "&options=" + variationId;
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    return DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
   }
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -242,6 +242,6 @@ public class UnitedstatesWholefoodsnewyorkCrawler extends Crawler {
     String slug = CommonMethods.getLast(productUrl.split("\\?")[0].split("/"));
     String apiUrl = "https://products.wholefoodsmarket.com/api/Product/slug/" + slug + "?store=" + STORE;
 
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+    return DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies);
   }
 }

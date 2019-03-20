@@ -11,7 +11,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -26,7 +26,7 @@ public class RiodejaneiroExtraCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected void processBeforeFetch() {		
-		Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, "https://chk.deliveryextra.com.br/address/chooseAddress", cookies, 1);
+		Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, "https://chk.deliveryextra.com.br/address/chooseAddress", cookies, 1);
 		
 		for(Entry<String, String> entry : cookiesMap.entrySet()) {
 			if(!entry.getKey().contains("241") && !entry.getKey().contains("ep.selected_store")) {

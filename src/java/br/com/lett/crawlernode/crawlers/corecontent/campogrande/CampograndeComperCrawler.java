@@ -13,7 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -49,9 +49,9 @@ public class CampograndeComperCrawler extends Crawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    this.userAgent = DataFetcher.randUserAgent();
+    this.userAgent = DataFetcherNO.randUserAgent();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
+    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
@@ -61,7 +61,7 @@ public class CampograndeComperCrawler extends Crawler {
     }
 
     Map<String, String> cookiesMap2 =
-        DataFetcher.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
+        DataFetcherNO.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
     for (Entry<String, String> entry : cookiesMap2.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
       cookie.setDomain("www.comperdelivery.com.br");

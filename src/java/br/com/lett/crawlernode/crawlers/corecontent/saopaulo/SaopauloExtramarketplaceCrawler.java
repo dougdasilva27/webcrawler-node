@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.HashMap;
 import java.util.Map;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVACrawler;
@@ -31,7 +31,7 @@ public class SaopauloExtramarketplaceCrawler extends CNOVACrawler {
     headers.put("Host", HOST);
     headers.put("Referer", PROTOCOL + "://" + HOST + "/");
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    headers.put("User-Agent", DataFetcherNO.randUserAgent());
 
     return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
   }

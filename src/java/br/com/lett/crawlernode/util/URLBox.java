@@ -18,7 +18,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
@@ -96,7 +96,7 @@ public class URLBox {
 
       Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 
-      DataFetcher.fetchPageAPIUrlBox(apiUrl, session);
+      DataFetcherNO.fetchPageAPIUrlBox(apiUrl, session);
     } catch (UnsupportedEncodingException ex) {
       Logging.printLogWarn(logger, session, "Problem with url encoding");
       Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));
@@ -170,7 +170,7 @@ public class URLBox {
 
       Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 
-      DataFetcher.fetchPageAPIUrlBox(apiUrl, session);
+      DataFetcherNO.fetchPageAPIUrlBox(apiUrl, session);
     } catch (UnsupportedEncodingException ex) {
       Logging.printLogWarn(logger, session, "Problem with url encoding");
       Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));

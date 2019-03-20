@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -30,7 +30,7 @@ public class BrasilKabumRatingReviewCrawler extends RatingReviewCrawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
+    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, 1);
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());

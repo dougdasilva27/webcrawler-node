@@ -17,7 +17,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -184,10 +184,10 @@ public class CuritibaMuffatoCrawler extends Crawler {
     String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
     JSONArray apiResponse = new JSONArray();
     try {
-      String apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
+      String apiString = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, getUrl, null, null).trim();
 
       if (apiString.isEmpty()) {
-        apiString = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
+        apiString = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
       }
 
       apiResponse = new JSONArray(apiString);

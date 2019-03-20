@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -96,7 +96,7 @@ public class ChileLidersuperCrawler extends Crawler {
   private List<String> crawlImages(String id) {
     List<String> images = new ArrayList<>();
 
-    Document docXml = DataFetcher.fetchDocumentXml(DataFetcher.GET_REQUEST, session,
+    Document docXml = DataFetcherNO.fetchDocumentXml(DataFetcherNO.GET_REQUEST, session,
         "https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml", null, cookies);
 
     Elements items = docXml.getElementsByTag("image");
@@ -132,7 +132,7 @@ public class ChileLidersuperCrawler extends Crawler {
   private Integer crawlStock(String id) {
     Integer stock = 0;
 
-    JSONArray json = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session,
+    JSONArray json = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session,
         "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true",
         null, cookies);
 

@@ -12,7 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -118,7 +118,7 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
       String dataValue = e.attr("data-value");
       String url =
           originalUrl + (originalUrl.contains("?") ? "&" : "?") + "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
-      Document docColor = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document docColor = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
       variations.putAll(getSizeVariationsHmtls(docColor, url));
     }
 
@@ -141,7 +141,7 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
       }
 
       String url = urlColor + (urlColor.contains("?") ? "&" : "?") + attribute;
-      Document docSize = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document docSize = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       variations.put(url, docSize);
     }

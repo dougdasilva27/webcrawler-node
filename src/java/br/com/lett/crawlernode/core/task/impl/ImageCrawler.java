@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
 import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
 import br.com.lett.crawlernode.core.session.Session;
@@ -229,7 +229,7 @@ public class ImageCrawler extends Task {
    */
   private File downloadImage() throws IOException {
     Logging.printLogDebug(LOGGER, session, "Downloading image from market...");
-    return DataFetcher.fetchImage(session);
+    return DataFetcherNO.fetchImage(session);
   }
 
   /**

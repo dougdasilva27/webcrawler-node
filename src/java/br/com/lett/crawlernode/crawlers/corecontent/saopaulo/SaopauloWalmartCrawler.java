@@ -12,7 +12,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -312,7 +312,7 @@ public class SaopauloWalmartCrawler extends Crawler {
         if (!url.endsWith(".jpg") && !url.endsWith(".jpeg") && !url.endsWith(".png") && !url.endsWith(".gif")) {
           supplierDescription.selectFirst("iframe").remove();
           description.append(supplierDescription.html());
-          description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies));
+          description.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies));
         }
       } else {
         description.append(supplierDescription.html());
@@ -432,14 +432,14 @@ public class SaopauloWalmartCrawler extends Crawler {
 
   private Document fetchMarketplaceInfoDoc(String productId, String pid) {
     String infoUrl = "https://www.walmart.com.br/xhr/sellers/sku/" + productId + "?productId=" + pid;
-    String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+    String fetchResult = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, infoUrl, null, null);
 
     return Jsoup.parse(fetchResult);
   }
 
   private Document fetchMarketplaceInfoDocMainPage(String productId) {
     String infoUrl = "https://www.walmart.com.br/xhr/sku/buybox/" + productId + "/?isProductPage=true";
-    String fetchResult = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, infoUrl, null, null);
+    String fetchResult = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, infoUrl, null, null);
 
     return Jsoup.parse(fetchResult);
   }
@@ -458,7 +458,7 @@ public class SaopauloWalmartCrawler extends Crawler {
         installmentPriceMap.put(1, price);
 
         String urlInstallmentPrice = "https://www.walmart.com.br/produto/installment/1," + internalPid + "," + price + ",VISA/";
-        Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlInstallmentPrice, null, cookies);
+        Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlInstallmentPrice, null, cookies);
         Elements installments = doc.select(".installment-table tr:not([id])");
 
         for (Element e : installments) {

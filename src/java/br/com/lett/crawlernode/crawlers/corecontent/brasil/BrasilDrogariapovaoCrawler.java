@@ -12,7 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -45,7 +45,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
     // performing request to get cookie
-    String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
+    String cookieValue = DataFetcherNO.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
 
     BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
     cookie.setDomain("www.drogariaspovao.com.br");

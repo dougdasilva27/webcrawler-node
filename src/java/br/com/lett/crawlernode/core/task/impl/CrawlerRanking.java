@@ -23,7 +23,7 @@ import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Ranking;
@@ -557,7 +557,7 @@ public abstract class CrawlerRanking extends Task {
       this.log(string.toString());
     }
 
-    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     // Screenshot
     takeAScreenshot(url, cookies);
@@ -586,7 +586,7 @@ public abstract class CrawlerRanking extends Task {
     this.currentDoc = new Document(url);
 
     // faz a conexão na url baixando o document html
-    return DataFetcher.fetchCookies(session, url, cookies, 1);
+    return DataFetcherNO.fetchCookies(session, url, cookies, 1);
   }
 
   /**
@@ -611,7 +611,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchGETString(String url, List<Cookie> cookies) {
-    return DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    return DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
   }
 
   /**
@@ -628,7 +628,7 @@ public abstract class CrawlerRanking extends Task {
     }
 
     // faz a conexão na url baixando o document html
-    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies).trim();
+    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies).trim();
 
     JSONObject jsonProducts = new JSONObject();
 
@@ -657,7 +657,7 @@ public abstract class CrawlerRanking extends Task {
     }
 
     // faz a conexão na url baixando o document html
-    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
 
     JsonObject jobj;
     try {
@@ -697,7 +697,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session, false);
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcherNO.POST_REQUEST, session, false);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").get("body").toString();
@@ -716,7 +716,7 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcher.GET_REQUEST, session, false);
+    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcherNO.GET_REQUEST, session, false);
 
     if (res != null && res.has("response")) {
       return res.getJSONObject("response").get("body").toString();

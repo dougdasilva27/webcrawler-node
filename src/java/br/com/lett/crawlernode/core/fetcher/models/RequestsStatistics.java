@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.core.fetcher.models;
 
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 
-public class FetcherReponseStatisticsRequest {
+public class RequestsStatistics {
 
   private int statusCode;
   private int attempt;

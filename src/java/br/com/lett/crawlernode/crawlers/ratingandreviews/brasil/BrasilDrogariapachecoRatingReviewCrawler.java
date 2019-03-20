@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -78,7 +78,7 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
     String url = "https://service.yourviews.com.br/review/GetReview?storeKey=87b2aa32-fdcb-4f1d-a0b9-fd6748df725a&" + "productStoreId=" + internalPid
         + "&extendedField=&callback=_jqjsp&_1516980244481=";
 
-    String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (response != null && response.contains("({")) {
       int x = response.indexOf('(') + 1;

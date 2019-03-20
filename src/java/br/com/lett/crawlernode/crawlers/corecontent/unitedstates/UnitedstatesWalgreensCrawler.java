@@ -9,7 +9,7 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -160,7 +160,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
     str.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#prod-DescriptionShopMore")));
 
     String url = "https://scontent.webcollage.net/walgreens/power-page?ird=true&channel-product-id=" + internalPid;
-    String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String script = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (script.contains("_wccontent =")) {
       JSONObject content = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(script, "_wccontent = ", "};", false));

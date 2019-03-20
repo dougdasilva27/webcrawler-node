@@ -8,7 +8,7 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -39,7 +39,7 @@ public class BrasilPassarelaCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+    return DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies);
   }
 
   @Override
@@ -232,7 +232,7 @@ public class BrasilPassarelaCrawler extends Crawler {
 
   protected Map<String, Integer> getStocks(String productPid) {
     Map<String, Integer> stocks = new HashMap<>();
-    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
+    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session,
         "https://www.passarela.com.br/ccstoreui/v1/stockStatus/?products=" + productPid, null, cookies);
 
     JSONObject json = new JSONObject(doc.text());

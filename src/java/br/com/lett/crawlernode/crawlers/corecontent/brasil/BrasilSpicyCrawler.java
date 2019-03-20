@@ -12,7 +12,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -319,7 +319,7 @@ public class BrasilSpicyCrawler extends Crawler {
     JSONObject json = new JSONObject();
 
     String url = "http://www.spicy.com.br/produto/sku/" + internalId;
-    JSONArray jsonProduct = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray jsonProduct = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (jsonProduct.length() > 0) {
       json = jsonProduct.getJSONObject(0);

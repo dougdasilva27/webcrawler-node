@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -39,7 +39,7 @@ public class BrasilEletrozemaCrawler extends Crawler {
 
     String apiUrl =
         "https://www.zema.com/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
-    JSONObject response = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies));
+    JSONObject response = CrawlerUtils.stringToJson(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies));
 
     if (response.has("data")) {
       api = response.getJSONObject("data");
@@ -135,7 +135,7 @@ public class BrasilEletrozemaCrawler extends Crawler {
     Integer stock = 0;
 
     String url = "https://www.zema.com/ccstoreui/v1/stockStatus/" + internalPid + "?skuId=" + internalId + "&catalogId=";
-    JSONObject stockJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies));
+    JSONObject stockJson = CrawlerUtils.stringToJson(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies));
 
     if (stockJson.has("inStockQuantity") && stockJson.get("inStockQuantity") instanceof Integer) {
       stock = stockJson.getInt("inStockQuantity");

@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.riodejaneiro;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -153,7 +153,7 @@ public class RiodejaneiroPaodeacucarRatingReviewCrawler extends RatingReviewCraw
 
     String url = "https://api.gpa.digital/pa/products/" + id + "/review";
 
-    JSONObject apiGPA = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONObject apiGPA = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (apiGPA.has("content")) {
       productsInfo = apiGPA.getJSONObject("content");

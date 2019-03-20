@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -86,7 +86,7 @@ public class BrasilSipolattiCrawler extends Crawler {
 	public void handleCookiesBeforeFetch() {
 		Logging.printLogDebug(logger, session, "Adding cookie...");
 		
-		Map<String,String> cookiesMap = DataFetcher.fetchCookies(session, "http://www.sipolatti.com.br/", cookies, 1);
+		Map<String,String> cookiesMap = DataFetcherNO.fetchCookies(session, "http://www.sipolatti.com.br/", cookies, 1);
 		
 		if(cookiesMap != null) {
 			for(String cookieName : cookiesMap.keySet()){

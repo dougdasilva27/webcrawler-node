@@ -5,7 +5,7 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
@@ -139,7 +139,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     String response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
 
     if (response == null || response.isEmpty()) {
-      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false);
     }
 
     return response;

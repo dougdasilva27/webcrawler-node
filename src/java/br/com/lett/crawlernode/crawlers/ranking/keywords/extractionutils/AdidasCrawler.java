@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -28,7 +28,7 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    return CrawlerUtils.stringToJson(DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1));
+    return CrawlerUtils.stringToJson(DataFetcherNO.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1));
   }
 
   @Override

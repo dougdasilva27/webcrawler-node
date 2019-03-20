@@ -6,7 +6,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -38,7 +38,7 @@ public class BrasilSaraivaRatingReviewCrawler extends RatingReviewCrawler {
 			String internalId = crawlInternalId(document);
 
 			if(internalId != null) {
-				JSONObject ratingJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, 
+				JSONObject ratingJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, 
 						"https://saraiva.mais.social/reviews/transit/get/products/srv/"+ internalId + "/reviews/offuser?data=VvV=", null, cookies);
 				
 				Integer totalNumOfEvaluations = getTotalNumOfRatings(ratingJson);			

@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -22,7 +22,7 @@ public class ChileSalcobrandCrawler extends CrawlerRankingKeywords {
     String url = "https://salcobrand.cl/chaordic_api/search?resultsPerPage=15&page=" + this.currentPage + "&terms=" + this.keywordEncoded + "&sortBy=relevance&filter[]=";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    JSONObject searchedJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONObject searchedJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
     
     JSONArray products = searchedJson.has("products") ? searchedJson.getJSONArray("products") : new JSONArray();
     

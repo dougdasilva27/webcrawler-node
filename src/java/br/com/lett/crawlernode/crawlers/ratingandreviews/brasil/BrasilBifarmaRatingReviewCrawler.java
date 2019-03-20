@@ -7,9 +7,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -27,7 +27,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
   
   public BrasilBifarmaRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(Fetcher.WEBDRIVER);
+    super.config.setFetcher(FetchMode.WEBDRIVER);
   }
   
   @Override
@@ -47,7 +47,7 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
       }
     }
     
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
     this.webdriver.waitLoad(9000);
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
     

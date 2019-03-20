@@ -11,7 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -482,7 +482,7 @@ public class GPACrawler {
 
     String url = "https://api.gpa.digital/" + this.store + "/products/" + id + "?storeId=" + storeId + "&isClienteMais=false";
 
-    String res = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String res = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     try {
       JSONObject apiGPA = new JSONObject(res);

@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -246,7 +246,7 @@ public class BrasilEletronicasantanaCrawler extends Crawler {
 			// fetch the page containing price payment options
 			String skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
 			String paymentOptionsURL = "http://www.eletronicasantana.com.br/productotherpaymentsystems/" + skuId;
-			Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+			Document paymentOptionsDocument = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, paymentOptionsURL, null, null);
 
 			// installments 
 			Elements tableElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system");

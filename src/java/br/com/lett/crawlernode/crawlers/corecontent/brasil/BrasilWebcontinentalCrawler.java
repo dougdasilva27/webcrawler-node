@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -407,7 +407,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       String url = "https://www.webcontinental.com.br/ccstoreui/v1/pages/product?" + "pageParam=" + internalPid
           + "&dataOnly=false&pageId=product&cacheableDataOnly=true";
 
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, null, null, DataFetcher.GET_REQUEST, session, false);
+      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, null, null, DataFetcherNO.GET_REQUEST, session, false);
       String page = null;
 
       if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
@@ -419,7 +419,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
         }
       } else {
         // normal request
-        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        page = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
       }
 
       try {

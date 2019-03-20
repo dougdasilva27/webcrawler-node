@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -38,7 +38,7 @@ public class SaopauloUltrafarmaRatingReviewCrawler extends RatingReviewCrawler {
       }
     }
 
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
     this.webdriver.waitLoad(12000);
 
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());

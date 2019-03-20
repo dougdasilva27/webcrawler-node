@@ -9,7 +9,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -104,7 +104,7 @@ public class BrasilMagazineluizaRatingReviewCrawler extends RatingReviewCrawler 
 		String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey();
 		String endpointRequest = assembleBazaarVoiceEndpointRequest(internalPid, bazaarVoicePassKey);
 
-		JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);		
+		JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);		
 		JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalPid);
 
 		ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));

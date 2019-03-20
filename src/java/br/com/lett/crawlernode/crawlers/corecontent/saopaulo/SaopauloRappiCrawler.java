@@ -7,7 +7,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -285,7 +285,7 @@ public class SaopauloRappiCrawler extends Crawler {
       headers.put("Content-Type", "application/json");
 
       String page = POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL + "?page=1", session, payload, cookies, 1, headers,
-          DataFetcher.randUserAgent(), null);
+          DataFetcherNO.randUserAgent(), null);
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
@@ -309,7 +309,7 @@ public class SaopauloRappiCrawler extends Crawler {
 
   private Map<String, String> crawlStores() {
     Map<String, String> stores = new HashMap<>();
-    JSONArray options = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, STORES_API_URL, null, cookies);
+    JSONArray options = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, STORES_API_URL, null, cookies);
 
     for (Object o : options) {
       JSONObject option = (JSONObject) o;

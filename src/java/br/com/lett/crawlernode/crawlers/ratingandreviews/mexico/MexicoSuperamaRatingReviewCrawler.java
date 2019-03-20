@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.mexico;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -71,7 +71,7 @@ public class MexicoSuperamaRatingReviewCrawler extends RatingReviewCrawler {
     String bazaarVoicePassKey = "ca00NLtrMkSnTddOCbktCnskwSV7OaQHCOTa3EZNMR2KE";
     String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, bazaarVoicePassKey, 0, 5);
 
-    JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+    JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalId);
 
     ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));

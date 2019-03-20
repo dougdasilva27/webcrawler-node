@@ -10,7 +10,7 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -28,7 +28,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     super.processBeforeFetch();
 
     Map<String, String> cookiesMap =
-        DataFetcher.fetchCookies(session, "https://www.exito.com/", cookies, 1);
+        DataFetcherNO.fetchCookies(session, "https://www.exito.com/", cookies, 1);
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());

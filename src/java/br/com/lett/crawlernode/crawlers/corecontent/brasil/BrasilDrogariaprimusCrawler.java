@@ -16,7 +16,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -396,7 +396,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
         URI uri = new URIBuilder().setScheme("https").setHost(rawUrl.getHost()).setPath(rawUrl.getPath()).setParameter(name, value).build();
 
-        return DataFetcher.fetchDocument("GET", session, uri.toString(), null, null);
+        return DataFetcherNO.fetchDocument("GET", session, uri.toString(), null, null);
 
       } catch (MalformedURLException malformedUrlException) {
         Logging.printLogDebug(logger, session, "Not a valid payment popup url");

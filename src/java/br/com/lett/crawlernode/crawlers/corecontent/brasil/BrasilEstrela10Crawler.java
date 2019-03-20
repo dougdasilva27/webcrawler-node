@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -434,7 +434,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 				JSONObject jsonColor = new JSONObject();				
 				jsonColor.put("color", colors.get(idColor));
 				
-				Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlColor, null, null);
+				Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlColor, null, null);
 				Elements colorsElements = doc.select("li.image");
 				
 				String primaryImage = colorsElements.get(0).select("img").attr("data-image-large");
@@ -495,7 +495,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 				String url = "http://www.estrela10.com.br/widget/product_payment_options?SkuID="+ internalId +"&ProductID=" + internalPid
 						+ "&Template=/wd.product.payment.options.result.custom.template";
 				
-				Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+				Document docPrices = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 				
 				Element indexCards = docPrices.select(".grid table th").first();
 				

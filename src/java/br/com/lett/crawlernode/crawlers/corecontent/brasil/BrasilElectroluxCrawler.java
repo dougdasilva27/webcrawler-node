@@ -15,7 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -232,7 +232,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 		if (skuJsonInformation.has("sku")) {
 			Integer skuId = skuJsonInformation.getInt("sku");
 			String url = "http://loja.electrolux.com.br/produto/sku/" + skuId;
-			JSONArray apiSkuInformationResponseArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
+			JSONArray apiSkuInformationResponseArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, null);
 			JSONObject apiSkuInformationResponse = apiSkuInformationResponseArray.getJSONObject(0);
 			
 			// bank slip
@@ -294,7 +294,7 @@ public class BrasilElectroluxCrawler extends Crawler {
 		JSONArray secondaryImagesArray = new JSONArray();
 	
 		String url = "http://www.loja.electrolux.com.br/produto/sku/" + internalId;
-		String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); //GET request to get secondary images
+		String stringJsonImages = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null); //GET request to get secondary images
 		
 		JSONObject jsonObjectImages;
 		try {

@@ -8,7 +8,7 @@ import java.util.Map;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -116,7 +116,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
     }
 
     if (apiUrl != null) {
-      description.append(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies));
+      description.append(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies));
     }
 
     return description.toString();

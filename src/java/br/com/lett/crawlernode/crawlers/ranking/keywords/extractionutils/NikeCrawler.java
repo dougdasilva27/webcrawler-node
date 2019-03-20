@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -23,7 +23,7 @@ public class NikeCrawler extends CrawlerRankingKeywords {
     String url = buildUrl();
     this.log("Url: " + url);
 
-    JSONObject json = CrawlerUtils.stringToJson(DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, new HashMap<>(), session, 1));
+    JSONObject json = CrawlerUtils.stringToJson(DataFetcherNO.fetchPageWithHttpURLConnectionUsingStormProxies(url, new HashMap<>(), session, 1));
     if (this.totalProducts == 0) {
       setTotalProducts(json);
     }

@@ -14,7 +14,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -353,7 +353,7 @@ public class BrasilSchumannCrawler extends Crawler {
       JSONObject jsonColor = new JSONObject();
       jsonColor.put("color", entry.getValue());
 
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlColor, null, null);
+      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlColor, null, null);
       Elements colorsElements = doc.select("li.image");
 
       if (!colorsElements.isEmpty()) {

@@ -66,7 +66,7 @@ public class DynamicDataFetcher {
    */
   public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
     Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
       String phantomjsPath = null;
@@ -120,11 +120,11 @@ public class DynamicDataFetcher {
       //
       // Set a random user agent
       //
-      String userAgent = DataFetcher.randUserAgent();
+      String userAgent = DataFetcherNO.randUserAgent();
       caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", userAgent);
 
 
-      DataFetcher.sendRequestInfoLogWebdriver(url, DataFetcher.GET_REQUEST, proxy, userAgent, session, requestHash);
+      DataFetcherNO.sendRequestInfoLogWebdriver(url, DataFetcherNO.GET_REQUEST, proxy, userAgent, session, requestHash);
 
       //
       // Tell the HAProxy which proxy service we want to use
@@ -169,7 +169,7 @@ public class DynamicDataFetcher {
    */
   public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
     try {
-      String requestHash = DataFetcher.generateRequestHash(session);
+      String requestHash = DataFetcherNO.generateRequestHash(session);
       Document doc = new Document(url);
       webdriver.loadUrl(url);
 

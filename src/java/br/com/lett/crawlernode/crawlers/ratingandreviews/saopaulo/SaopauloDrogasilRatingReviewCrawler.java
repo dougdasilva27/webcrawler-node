@@ -6,7 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -95,7 +95,7 @@ public class SaopauloDrogasilRatingReviewCrawler extends RatingReviewCrawler {
     requestURL.append("&product_extra_attributes%5Bgroup%5D=PERFUMARIA");
 
     Map<String, String> headerMap = new HashMap<>();
-    headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
+    headerMap.put(DataFetcherNO.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
 
     String response = GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
 

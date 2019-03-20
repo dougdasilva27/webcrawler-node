@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -358,7 +358,7 @@ public class BrasilCasashowCrawler extends Crawler {
 		if(price != null){
 			String url = "http://www.casashow.com.br/productotherpaymentsystems/" + internalId;
 
-			Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+			Document docPrices = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
 			Element bankTicketElement = docPrices.select("#divBoleto em").first();
 			if(bankTicketElement != null){				

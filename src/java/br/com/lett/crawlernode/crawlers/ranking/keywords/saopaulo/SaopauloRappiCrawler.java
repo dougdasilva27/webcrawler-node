@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
@@ -134,7 +134,7 @@ public class SaopauloRappiCrawler extends CrawlerRankingKeywords {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
 
-    String page = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, null, 1, headers, DataFetcher.randUserAgent(), null);
+    String page = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, null, 1, headers, DataFetcherNO.randUserAgent(), null);
 
     if (page.startsWith("{") && page.endsWith("}")) {
       try {
@@ -149,7 +149,7 @@ public class SaopauloRappiCrawler extends CrawlerRankingKeywords {
 
   private List<String> crawlStores() {
     List<String> stores = new ArrayList<>();
-    JSONArray options = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, STORES_API_URL, null, null);
+    JSONArray options = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, STORES_API_URL, null, null);
 
     for (Object o : options) {
       JSONObject option = (JSONObject) o;

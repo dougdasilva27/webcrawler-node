@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.chile;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -28,7 +28,7 @@ public class ChileParisRatingReviewCrawler extends RatingReviewCrawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(document, ".product-sku", true);
 
       String endpointRequest = assembleBazaarVoiceEndpointRequest(internalPid, "cawhDUNXMzzke7yV6JTnIiPm8Eh0hP8s7Oqzo57qihXkk");
-      JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+      JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
       JSONObject reviewSummary = getReviewSummary(ratingReviewsEndpointResponse);
       Integer numReviews = getNumReviews(reviewSummary);
       Double avg = getNumAvg(reviewSummary);

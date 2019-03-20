@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -323,7 +323,7 @@ public class BrasilLelisCrawler extends Crawler {
     if (price != null) {
       String url = "https://www.lelis.com.br/productotherpaymentsystems/" + internalId;
       Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+          DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -421,7 +421,7 @@ public class BrasilLelisCrawler extends Crawler {
     String url = "https://www.lelis.com.br/produto/sku/" + internalId;
 
     JSONArray jsonArray =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

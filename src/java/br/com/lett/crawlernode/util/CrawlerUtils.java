@@ -19,7 +19,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -541,7 +541,7 @@ public class CrawlerUtils {
       List<Cookie> cookiesClient, Session session, Map<String, String> headers) {
     List<Cookie> cookies = new ArrayList<>();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookiesClient, null, null, 1, headers);
+    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, url, cookiesClient, null, null, 1, headers);
     for (Entry<String, String> entry : cookiesMap.entrySet()) {
       String cookieName = entry.getKey().trim();
 
@@ -807,7 +807,7 @@ public class CrawlerUtils {
     String url =
         "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
 
-    String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+    String script = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
     final String token = "$(\"#flixinpage_\"+i).inPage";
 
     JSONObject productInfo = new JSONObject();
@@ -830,7 +830,7 @@ public class CrawlerUtils {
 
       String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
           + "&complimentary=0&type=.html";
-      String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+      String scriptDesc = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, urlDesc, null, null);
 
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
@@ -1327,7 +1327,7 @@ public class CrawlerUtils {
     StringBuilder str = new StringBuilder();
 
     String url = "https://standout.com.br/" + slugMarket + "/catchtag.php?distributor=" + slugMarket + "sku=&url=" + session.getOriginalURL();
-    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcher.fetchString("GET", session, url, null, cookies));
+    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcherNO.fetchString("GET", session, url, null, cookies));
 
     if (specialDesc.has("div")) {
       Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("[id^=standout]");
@@ -1340,7 +1340,7 @@ public class CrawlerUtils {
         descriptionUrl.append(e.attr("x")).append("/");
         descriptionUrl.append(e.attr("y"));
 
-        str.append(DataFetcher.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
+        str.append(DataFetcherNO.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
       }
     }
 

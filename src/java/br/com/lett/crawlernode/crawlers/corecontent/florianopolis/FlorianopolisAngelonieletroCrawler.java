@@ -12,7 +12,7 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -177,7 +177,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
         url.append("&useTheBestInstallment=false");
 
         // perform request
-        Document response = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url.toString(), null, cookies);;
+        Document response = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url.toString(), null, cookies);;
         Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
         cardInstallmentsMap.put(card.toString(), installments);
       }
@@ -241,7 +241,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
   private Set<Card> crawlSetOfCards(String internalId) {
     Set<Card> cards = new HashSet<>();
 
-    Document response = DataFetcher.fetchDocument(DataFetcher.POST_REQUEST, session, "https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp",
+    Document response = DataFetcherNO.fetchDocument(DataFetcherNO.POST_REQUEST, session, "https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp",
         "productId=" + internalId, null);
 
     Elements cardsElements = response.select("div.box-cartao h2");

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -103,7 +103,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
         assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
 
     JSONObject ratingReviewsEndpointResponse =
-        DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+        DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
 
     JSONObject reviewStatistics =
         getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);

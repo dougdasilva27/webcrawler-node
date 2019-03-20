@@ -13,7 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
@@ -49,18 +49,18 @@ public class BrasilPetzCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    this.userAgent = DataFetcher.randUserAgent();
+    this.userAgent = DataFetcherNO.randUserAgent();
     Map<String, String> cookiesMap;
 
-    if (DataFetcher.mustUseFetcher(1, session)) {
+    if (DataFetcherNO.mustUseFetcher(1, session)) {
       Map<String, String> headers = new HashMap<>();
       headers.put("User-Agent", this.userAgent);
 
       JSONObject fetcherPayload =
-          POSTFetcher.fetcherPayloadBuilder(HOME_PAGE, DataFetcher.GET_REQUEST, true, null, headers, session.getMarket().getProxies(), null);
+          POSTFetcher.fetcherPayloadBuilder(HOME_PAGE, DataFetcherNO.GET_REQUEST, true, null, headers, session.getMarket().getProxies(), null);
       cookiesMap = POSTFetcher.fetchCookiesWithFetcher(fetcherPayload, session);
     } else {
-      cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, userAgent, null, 1);
+      cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, userAgent, null, 1);
     }
 
     for (Entry<String, String> entry : cookiesMap.entrySet()) {

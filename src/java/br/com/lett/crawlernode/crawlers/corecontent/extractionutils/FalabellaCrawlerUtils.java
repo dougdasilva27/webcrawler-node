@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -272,7 +272,7 @@ public class FalabellaCrawlerUtils extends Crawler {
     } else {
       String url = IMAGE_URL_FIRST_PART + IMAGE_URL_CITY + internalId + "?req=set,json";
 
-      String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "esponse(", ",", true));
 
@@ -409,7 +409,7 @@ public class FalabellaCrawlerUtils extends Crawler {
       headers.put("Content-Type", "application/json");
 
       JSONObject json =
-          CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false));
+          CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false));
 
       if (json.has("state")) {
         jsonPrice = json.getJSONObject("state");

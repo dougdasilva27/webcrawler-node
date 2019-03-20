@@ -9,7 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -59,7 +59,7 @@ public class BrasilDellCrawler extends Crawler {
         if (productJson.has("Mpn") && productJson.has("Url")) {
           String internalId = productJson.get("Mpn").toString();
           String newUrl = CrawlerUtils.completeUrl(productJson.get("Url").toString(), "https", "www.dell.com");
-          Document newDoc = hasVariations ? DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, newUrl, null, cookies) : doc;
+          Document newDoc = hasVariations ? DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, newUrl, null, cookies) : doc;
 
           products.add(extractProduct(newDoc, internalId, newUrl));
         }

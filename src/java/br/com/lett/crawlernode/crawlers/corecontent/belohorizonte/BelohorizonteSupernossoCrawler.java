@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -46,7 +46,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
     // performing request to get cookie
-    String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
+    String cookieValue = DataFetcherNO.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
 
     BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
     cookie.setDomain("www.supernossoemcasa.com.br");
@@ -68,7 +68,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
       headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
 
       // request with fetcher
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false);
       String page = null;
 
       if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
@@ -80,7 +80,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
         }
       } else {
         // normal request
-        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+        page = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies);
       }
 
       if (page != null && page.startsWith("{") && page.endsWith("}")) {
@@ -261,7 +261,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
         if (!mainCategoryId.equals(categoryId)) {
           String categoryRequestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + categoryId;
 
-          JSONObject categoryRequestResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, categoryRequestURL, null, null);
+          JSONObject categoryRequestResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, categoryRequestURL, null, null);
 
           if (categoryRequestResponse.has("parentId")) {
             Object parentId = categoryRequestResponse.get("parentId");
@@ -270,7 +270,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
               String parentCategoryRequestURL = "https://www.supernossoemcasa.com.br/e-commerce/api/category/" + parentId.toString();
 
               JSONObject parentCategoryRequestResponse =
-                  DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, parentCategoryRequestURL, null, null);
+                  DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, parentCategoryRequestURL, null, null);
 
               if (parentCategoryRequestResponse.has("name")) {
                 Object cat2 = parentCategoryRequestResponse.get("name");

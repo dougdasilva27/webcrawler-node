@@ -13,7 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -172,7 +172,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.drogariaspacheco.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
+    String stringJsonImages = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null); // GET request
                                                                                                           // to get
     JSONObject jsonObjectImages = new JSONObject();
     try {
@@ -304,7 +304,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     }
 
     String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray skuInfo = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
@@ -348,7 +348,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
           if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+            description.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, iframe.attr("src"), null, cookies));
           }
         }
       }
@@ -370,7 +370,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.drogariaspacheco.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       if (jsonSku.has("listPriceFormated")) {
         prices.setPriceFrom(MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));

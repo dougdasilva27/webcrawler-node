@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -75,7 +75,7 @@ public class BrasilFarma22RatingReviewCrawler extends RatingReviewCrawler {
 				"http://service.yourviews.com.br/review/GetReview?storeKey=d8f4f406-5164-4042-81aa-a7fe0ec787f0"
 						+ "&productStoreId=" + internalPid + "&extendedField=&callback=_jqjsp&_1504115699466=";
 
-		String code = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		String code = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
 		if (code.contains("_jqjsp(")) {
 			int x = code.indexOf("_jqjsp(") + "_jqjsp(".length();

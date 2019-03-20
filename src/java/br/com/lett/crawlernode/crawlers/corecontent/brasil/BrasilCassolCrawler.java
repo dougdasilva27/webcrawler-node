@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -189,8 +189,8 @@ public class BrasilCassolCrawler extends Crawler {
           "https://www.cassol.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/" + internalPid + "/exibicao/produto/t/32";
       String pricesUrl = "https://www.cassol.com.br/ParcelamentoVariante/CodVariante/" + internalId + "/produto_id/" + internalPid + "/t/32";
 
-      doc.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, imagesUrl, null, cookies).toString());
-      doc.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, pricesUrl, null, cookies).toString());
+      doc.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, imagesUrl, null, cookies).toString());
+      doc.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, pricesUrl, null, cookies).toString());
     }
 
     return doc;

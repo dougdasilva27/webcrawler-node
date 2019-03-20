@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -58,7 +58,7 @@ public class BrasilCentralarCrawler extends Crawler {
       headers.put("Referer", url);
 
       // request with fetcher
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false);
       String page = null;
 
       if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
@@ -280,7 +280,7 @@ public class BrasilCentralarCrawler extends Crawler {
         JSONObject dimension = (JSONObject) o;
 
         if (dimension.has("url")) {
-          description.append(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, dimension.get("url").toString(), null, cookies));
+          description.append(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, dimension.get("url").toString(), null, cookies));
         }
       }
     }

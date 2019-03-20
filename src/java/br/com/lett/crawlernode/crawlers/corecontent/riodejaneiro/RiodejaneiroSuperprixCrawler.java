@@ -11,7 +11,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -297,7 +297,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     if (available) {
       String url = HOME_PAGE + "produto/sku/" + internalId;
 
-      JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       if (jsonArray.length() > 0) {
         JSONObject skuInfo = jsonArray.getJSONObject(0);

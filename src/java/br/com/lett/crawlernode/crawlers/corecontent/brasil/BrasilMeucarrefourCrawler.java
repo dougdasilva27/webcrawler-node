@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
@@ -45,12 +45,12 @@ public class BrasilMeucarrefourCrawler extends Crawler {
     JSONObject api = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("User-Agent", DataFetcher.randMobileUserAgent());
+    headers.put("User-Agent", DataFetcherNO.randMobileUserAgent());
     String[] tokens = session.getOriginalURL().split("#");
 
     String url = "https://api.carrefour.com.br/mobile-food/v1/product/" + tokens[tokens.length - 1];
     // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcherNO.GET_REQUEST, session, false);
     String page = null;
 
     if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200

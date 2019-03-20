@@ -12,7 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -377,7 +377,7 @@ public class VTEXCrawlersUtils {
     JSONObject json = new JSONObject();
 
     String url = homePage + "api/catalog_system/pub/products/search?fq=" + idType + ":" + id;
-    JSONArray array = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray array = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (array.length() > 0) {
       json = array.getJSONObject(0);
@@ -457,7 +457,7 @@ public class VTEXCrawlersUtils {
 
   public void crawlPricesFromApi(String internalId, JSONObject jsonSku, Prices prices, Float price, Float priceBase) {
     String url = homePage + "productotherpaymentsystems/" + internalId;
-    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (hasBankTicket) {
       Element bank = doc.select("#ltlPrecoWrapper em").first();
@@ -580,7 +580,7 @@ public class VTEXCrawlersUtils {
   public JSONObject crawlApi(String internalId) {
     String url = homePage + "produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

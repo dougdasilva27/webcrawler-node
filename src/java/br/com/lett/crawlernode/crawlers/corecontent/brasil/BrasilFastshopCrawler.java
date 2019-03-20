@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -188,7 +188,7 @@ public class BrasilFastshopCrawler extends Crawler {
       String url =
           "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6&hotsite=fastshop&itemId=" + internalId;
 
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       JSONObject jsonStock = new JSONObject();
       try {

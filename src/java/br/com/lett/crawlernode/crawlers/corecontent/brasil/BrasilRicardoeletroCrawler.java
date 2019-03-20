@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -192,7 +192,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     if (internalPid != null) {
       String url = "https://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
 
-      docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      docMarketplace = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
     }
 
     return docMarketplace;
@@ -349,7 +349,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
 
         String url = "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
-        Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        Document docPrices = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
         Elements installmentsElements = docPrices.select(".lista-parcelas tr");
 

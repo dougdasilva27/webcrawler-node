@@ -8,7 +8,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -294,7 +294,7 @@ public class ChileRipleyCrawler extends Crawler {
     Float value = null;
 
     String url = "https://simple.ripley.cl/api/v1/products/instalment-simulation?instalments=" + installment + "&amount=" + totalValue.intValue();
-    JSONObject installmentJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONObject installmentJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (installmentJson.has("instalmentCost")) {
       value = CrawlerUtils.getFloatValueFromJSON(installmentJson, "instalmentCost");

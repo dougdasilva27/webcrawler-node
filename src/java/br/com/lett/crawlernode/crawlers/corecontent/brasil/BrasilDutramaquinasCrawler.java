@@ -11,7 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -173,7 +173,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 	
 	private Document crawlVariationsFromApi(String internalID) {
 		String urlParameters = "id_produto=" + internalID;
-		return DataFetcher.fetchDocument(DataFetcher.POST_REQUEST, session, "http://www.dutramaquinas.com.br/model/md_interna_produtos_dados.php", urlParameters, null);
+		return DataFetcherNO.fetchDocument(DataFetcherNO.POST_REQUEST, session, "http://www.dutramaquinas.com.br/model/md_interna_produtos_dados.php", urlParameters, null);
 	}
 	
 	private String crawlNameVariations(Element e, boolean hasVariations, String nameMainPage, Document doc) {

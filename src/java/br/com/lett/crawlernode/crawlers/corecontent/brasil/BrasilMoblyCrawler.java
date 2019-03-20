@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -317,7 +317,7 @@ public class BrasilMoblyCrawler extends Crawler {
     String url =
         "https://secure.mobly.com.br/api/catalog/price/hash/92b1f91a6df23cfc5e00a6fc26bcb27d2b2d9128/?skus=" + internalIDS + "&_=1550515484107";
 
-    return CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies));
+    return CrawlerUtils.stringToJson(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies));
   }
 
   private JSONObject assembleJsonProduct(String internalID, String internalPid, JSONObject jsonPage, JSONObject jsonProduct) {

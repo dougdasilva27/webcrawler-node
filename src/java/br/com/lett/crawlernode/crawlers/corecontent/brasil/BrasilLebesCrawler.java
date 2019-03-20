@@ -12,7 +12,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -234,7 +234,7 @@ public class BrasilLebesCrawler extends Crawler {
     if (skuInformationJson.has("sku")) {
       skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
       String paymentOptionsURL = "http://www.lebes.com.br/productotherpaymentsystems/" + skuId;
-      Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+      Document paymentOptionsDocument = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, paymentOptionsURL, null, null);
 
       Elements tableElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system");
       for (Element tableElement : tableElements) {
@@ -549,7 +549,7 @@ public class BrasilLebesCrawler extends Crawler {
       if (elementId != null) {
         String id = elementId.attr("value").trim();
         String apiURL = "http://www.lebes.com.br/api/catalog_system/pub/products/variations/" + id;
-        skuJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiURL, null, null);
+        skuJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, apiURL, null, null);
       }
     }
 

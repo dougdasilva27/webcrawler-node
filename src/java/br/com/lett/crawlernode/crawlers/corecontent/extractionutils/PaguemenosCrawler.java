@@ -10,7 +10,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -309,7 +309,7 @@ public class PaguemenosCrawler extends Crawler {
       description.append(advert.html());
     }
 
-    String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session,
+    String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session,
         "https://scontent.webcollage.net/paguemenos-br-pt/power-page?ird=true&channel-product-id=" + internalPid, null, cookies);
 
     JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "_wccontent = ", "};", false));
@@ -337,7 +337,7 @@ public class PaguemenosCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.paguemenos.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, null);
+      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, null);
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -426,7 +426,7 @@ public class PaguemenosCrawler extends Crawler {
   private JSONObject crawlApi(String internalId, Session session) {
     String url = "https://www.paguemenos.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, null);
+    JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, null);
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

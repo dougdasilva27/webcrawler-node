@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -277,10 +277,10 @@ public class BrasilFastshopNewCrawler {
 
     String url = "https://www.fastshop.com.br/webapp/wcs/stores/servlet/SpotsContentView?type=content&hotsite=fastshop&catalogId=11052"
         + "&langId=-6&storeId=10151&emsName=SC_" + partnerId + "_Conteudo";
-    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     String urlDESC = "https://www.fastshop.com.br/wcs/resources/v1/spots/ProductDetail_" + partnerId;
-    Document docDesc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDESC, null, cookies);
+    Document docDesc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlDESC, null, cookies);
 
     if (!docDesc.toString().contains("errorCode")) {
       description.append(docDesc);
@@ -289,7 +289,7 @@ public class BrasilFastshopNewCrawler {
     Element iframe = doc.select("iframe").first();
 
     if (iframe != null) {
-      description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+      description.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, iframe.attr("src"), null, cookies));
     }
 
     return description;

@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -22,7 +22,7 @@ public class MexicoCornershophebhumbertoloboCrawler extends CrawlerRankingKeywor
     this.log("Link onde são feitos os crawlers: " + url);
 
     JSONArray categories =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (categories.length() > 0) {
       for (Object o : categories) {

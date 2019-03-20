@@ -5,7 +5,7 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -94,7 +94,7 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
     headers.put("Host", "www.pontofrio.com.br");
     headers.put("Referer", HOME_PAGE);
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    headers.put("User-Agent", DataFetcherNO.randUserAgent());
 
     return GETFetcher.fetchPageGETWithHeaders(session, url, null, new HashMap<>(), 1);
   }

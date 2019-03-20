@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -192,7 +192,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
     if (doc.select("figure.product-image > img").size() > 2) {
 
       String url = "http://www.tendadrive.com.br/produto/sku/" + internalId;
-      String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null); // GET request
+      String stringJsonImages = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null); // GET request
 
       JSONObject jsonObjectImages = new JSONObject();
       try {
@@ -322,7 +322,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.tendadrive.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
@@ -404,7 +404,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
     JSONObject info = new JSONObject();
 
     String url = "http://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=14";
-    JSONArray skus = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    JSONArray skus = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (skus.length() > 0) {
       info = skus.getJSONObject(0);

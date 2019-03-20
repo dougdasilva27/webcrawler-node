@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -183,7 +183,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     JSONArray api = new JSONArray();
 
     String url = "https://preco.saraiva.com.br/v3/buyBox/produto/" + internalId + "/lojistaeleito";
-    JSONArray apiJson = CrawlerUtils.stringToJsonArray(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies).trim());
+    JSONArray apiJson = CrawlerUtils.stringToJsonArray(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies).trim());
 
     if (apiJson.length() > 0) {
       api = apiJson.getJSONArray(0);
@@ -459,7 +459,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
-    JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies).trim());
+    JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies).trim());
 
     if (apiJson.length() > 0) {
       if (apiJson.has("description")) {

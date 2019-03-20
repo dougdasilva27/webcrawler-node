@@ -8,7 +8,7 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -397,7 +397,7 @@ public class MexicoWalmartCrawler extends Crawler {
     JsonObject product = new JsonObject();
     String url = "https://www.walmart.com.mx/WebControls/hlGetProductDetail.ashx?upc=" + internalId;
 
-    String detail = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    String detail = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
     if (detail.contains("Info =")) {
       int x = detail.indexOf("Info =") + 6;

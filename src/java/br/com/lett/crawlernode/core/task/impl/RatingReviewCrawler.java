@@ -8,9 +8,9 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -46,7 +46,7 @@ public class RatingReviewCrawler extends Task {
 
   private void createDefaultConfig() {
     this.config = new RatingCrawlerConfig();
-    this.config.setFetcher(Fetcher.STATIC);
+    this.config.setFetcher(FetchMode.STATIC);
     this.config.setProxyList(new ArrayList<String>());
     this.config.setConnectionAttempts(0);
   }
@@ -173,8 +173,8 @@ public class RatingReviewCrawler extends Task {
    */
   protected Document fetch() {
     String html;
-    if (this.config.getFetcher() == Fetcher.STATIC) {
-      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
+    if (this.config.getFetcher() == FetchMode.STATIC) {
+      html = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
       // } else if (this.config.getFetcher() == Fetcher.SMART) {
       // html = DynamicDataFetcher.fetchPageSmart(session.getOriginalURL(), session);
     } else {

@@ -8,7 +8,7 @@ import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -47,7 +47,7 @@ public class CornershopCrawler {
         String urlApi = PRODUCTS_API_URL + storeId + "/products/" + id;
 
         JSONArray array = CrawlerUtils
-            .stringToJsonArray(POSTFetcher.requestStringUsingFetcher(urlApi, cookies, null, null, DataFetcher.GET_REQUEST, session, false));
+            .stringToJsonArray(POSTFetcher.requestStringUsingFetcher(urlApi, cookies, null, null, DataFetcherNO.GET_REQUEST, session, false));
 
         if (array.length() > 0) {
           return array.getJSONObject(0);

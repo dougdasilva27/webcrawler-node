@@ -8,7 +8,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -328,7 +328,7 @@ public class ChileParisOldCrawler extends Crawler {
       } else {
         String url = IMAGE_URL_FIRST_PART + "Cencosud/" + colorId + "?req=set,json";
 
-        String response = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 
         JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "esponse(", ",", true));
 
@@ -464,7 +464,7 @@ public class ChileParisOldCrawler extends Crawler {
       String url = "https://www.paris.cl/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10801"
           + "&langId=-5&catalogId=40000000629&catalogEntryId=152117851&nonInstallmentPrice=" + skuJson.get("price_internet");
 
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
       jsonPrice = CrawlerUtils.stringToJsonArray(json.replace("*/", "").replace("/*", "").trim());
     }
 

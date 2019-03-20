@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -95,7 +95,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
     headers.put("Content-Encoding", "");
 
     JSONObject json = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies,
-        headers, null, DataFetcher.GET_REQUEST, session, false));
+        headers, null, DataFetcherNO.GET_REQUEST, session, false));
 
     if (json.has("placements")) {
       JSONArray placements = json.getJSONArray("placements");

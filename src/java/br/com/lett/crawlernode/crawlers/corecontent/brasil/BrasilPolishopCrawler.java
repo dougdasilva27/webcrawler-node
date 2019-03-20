@@ -13,7 +13,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -454,7 +454,7 @@ public class BrasilPolishopCrawler extends Crawler {
 	private JSONObject crawlApi(String internalId) {
 		String url = "http://www.polishop.com.br/produto/sku/" + internalId;
 		
-		JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+		JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
 		
 		if(jsonArray.length() > 0){
 			return jsonArray.getJSONObject(0);

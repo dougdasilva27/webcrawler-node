@@ -9,7 +9,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -117,8 +117,8 @@ public class TrustvoxRatingCrawler {
     }
 
     Map<String, String> headerMap = new HashMap<>();
-    headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
-    headerMap.put(DataFetcher.HTTP_HEADER_CONTENT_TYPE, "application/json; charset=utf-8");
+    headerMap.put(DataFetcherNO.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
+    headerMap.put(DataFetcherNO.HTTP_HEADER_CONTENT_TYPE, "application/json; charset=utf-8");
 
     String response = GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
 

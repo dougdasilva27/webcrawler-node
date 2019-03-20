@@ -5,7 +5,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.JsonParser;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -111,7 +111,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
     headers.put("Content-Type", "application/json");
 
     String page =
-        POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload, cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
+        POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload, cookies, 1, headers, DataFetcherNO.randUserAgent(), null).trim();
 
     if (page.startsWith("{") && page.endsWith("}")) {
       try {

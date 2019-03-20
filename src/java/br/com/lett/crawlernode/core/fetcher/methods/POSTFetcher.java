@@ -38,7 +38,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.PageContent;
@@ -90,13 +90,13 @@ public class POSTFetcher {
 
     CloseableHttpResponse closeableHttpResponse = null;
     int responseLength = 0;
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt, session)) {
-        JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcher.POST_REQUEST, session, true);
+      if (DataFetcherNO.mustUseFetcher(attempt, session)) {
+        JSONObject response = fetcherRequest(url, cookies, null, urlParameters, DataFetcherNO.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           String content = response.getJSONObject("response").getString("body");
@@ -116,10 +116,10 @@ public class POSTFetcher {
         }
       }
 
-      randUserAgent = DataFetcher.randUserAgent();
-      randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = DataFetcherNO.randUserAgent();
+      randProxy = DataFetcherNO.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
-      CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
+      CookieStore cookieStore = DataFetcherNO.createCookieStore(cookies);
 
       CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -142,7 +142,7 @@ public class POSTFetcher {
       RequestConfig requestConfig = getRequestConfig(proxy);
 
       List<Header> headers = new ArrayList<>();
-      headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+      headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
 
       CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
           .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(headers).build();
@@ -186,7 +186,7 @@ public class POSTFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       // saving request content result on Amazon
@@ -202,17 +202,17 @@ public class POSTFetcher {
       // sometimes the remote server doesn't send the http error code on the headers
       // but rater on the page bytes
       content = content.trim();
-      for (String errorCode : DataFetcher.errorCodes) {
+      for (String errorCode : DataFetcherNO.errorCodes) {
         if (content.equals(errorCode)) {
           throw new ResponseCodeException(Integer.parseInt(errorCode));
         }
       }
 
       // process response and parse
-      return DataFetcher.processContent(pageContent, session);
+      return DataFetcherNO.processContent(pageContent, session);
 
     } catch (Exception e) {
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       if (e instanceof ResponseCodeException) {
@@ -236,11 +236,11 @@ public class POSTFetcher {
   public static String fetchJsonPOST(Session session, String url, String payload, List<Cookie> cookies, int attempt) throws Exception {
     Logging.printLogDebug(logger, session, getLoggingMessage("POST", url));
 
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     // Request via fetcher on first attempt
-    if (DataFetcher.mustUseFetcher(attempt, session)) {
-      JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcher.POST_REQUEST, session, true);
+    if (DataFetcherNO.mustUseFetcher(attempt, session)) {
+      JSONObject response = fetcherRequest(url, cookies, null, payload, DataFetcherNO.POST_REQUEST, session, true);
 
       if (response.has("response")) {
         String content = response.getJSONObject("response").getString("body");
@@ -260,10 +260,10 @@ public class POSTFetcher {
       }
     }
 
-    String randUserAgent = DataFetcher.randUserAgent();
-    LettProxy randProxy = DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+    String randUserAgent = DataFetcherNO.randUserAgent();
+    LettProxy randProxy = DataFetcherNO.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
-    CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
+    CookieStore cookieStore = DataFetcherNO.createCookieStore(cookies);
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -283,11 +283,11 @@ public class POSTFetcher {
       proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
     }
 
-    RequestConfig requestConfig = DataFetcher.createRequestConfig(proxy);
+    RequestConfig requestConfig = DataFetcherNO.createRequestConfig(proxy);
 
     List<Header> headers = new ArrayList<>();
     headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-    headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+    headers.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
 
     // creating the redirect strategy
     // so we can get the final redirected URL
@@ -337,7 +337,7 @@ public class POSTFetcher {
       session.addRedirection(url, redirectStrategy.getFinalURL());
     }
 
-    DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
+    DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, requestHash);
 
     // analysing the status code
     // if there was some response code that indicates forbidden access or server error we want to
@@ -384,13 +384,13 @@ public class POSTFetcher {
     String randUserAgent = null;
     CloseableHttpResponse closeableHttpResponse = null;
     Integer responseLength = 0;
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
-      randUserAgent = userAgent != null ? userAgent : DataFetcher.randUserAgent();
-      randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = userAgent != null ? userAgent : DataFetcherNO.randUserAgent();
+      randProxy = lettProxy != null ? lettProxy : DataFetcherNO.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
-      CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
+      CookieStore cookieStore = DataFetcherNO.createCookieStore(cookies);
 
       CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -412,7 +412,7 @@ public class POSTFetcher {
       RequestConfig requestConfig = getRequestConfig(proxy);
 
       List<Header> reqHeaders = new ArrayList<>();
-      reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+      reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
       if (headers.containsKey("Content-Type")) {
         reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, headers.get("Content-Type")));
       }
@@ -471,13 +471,13 @@ public class POSTFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       Map<String, String> cookiesMap = new HashMap<>();
 
       // get all cookie headers
-      Header[] headersC = closeableHttpResponse.getHeaders(DataFetcher.HTTP_COOKIE_HEADER);
+      Header[] headersC = closeableHttpResponse.getHeaders(DataFetcherNO.HTTP_COOKIE_HEADER);
 
       for (Header header : headersC) {
         String cookieHeader = header.getValue();
@@ -494,7 +494,7 @@ public class POSTFetcher {
       return cookiesMap;
 
     } catch (Exception e) {
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       if (e instanceof ResponseCodeException) {
@@ -530,14 +530,14 @@ public class POSTFetcher {
     String randUserAgent = null;
     CloseableHttpResponse closeableHttpResponse = null;
     Integer responseLength = 0;
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
 
       // Request via fetcher on first attempt
-      if (DataFetcher.mustUseFetcher(attempt, session)) {
+      if (DataFetcherNO.mustUseFetcher(attempt, session)) {
 
-        JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcher.POST_REQUEST, session, true);
+        JSONObject response = fetcherRequest(url, cookies, headers, payload, DataFetcherNO.POST_REQUEST, session, true);
 
         if (response.has("response")) {
           String content = response.getJSONObject("response").getString("body");
@@ -557,10 +557,10 @@ public class POSTFetcher {
         }
       }
 
-      randUserAgent = userAgent != null ? userAgent : DataFetcher.randUserAgent();
-      randProxy = lettProxy != null ? lettProxy : DataFetcher.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
+      randUserAgent = userAgent != null ? userAgent : DataFetcherNO.randUserAgent();
+      randProxy = lettProxy != null ? lettProxy : DataFetcherNO.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 
-      CookieStore cookieStore = DataFetcher.createCookieStore(cookies);
+      CookieStore cookieStore = DataFetcherNO.createCookieStore(cookies);
 
       CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -583,7 +583,7 @@ public class POSTFetcher {
 
       List<Header> reqHeaders = new ArrayList<>();
       if (!url.contains("rappi.com") && !session.getMarket().getName().equals("paris")) {
-        reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcher.CONTENT_ENCODING));
+        reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
       }
 
       if (headers.containsKey("Content-Type")) {
@@ -642,7 +642,7 @@ public class POSTFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       // saving request content result on Amazon
@@ -658,17 +658,17 @@ public class POSTFetcher {
       // sometimes the remote server doesn't send the http error code on the headers
       // but rater on the page bytes
       content = content.trim();
-      for (String errorCode : DataFetcher.errorCodes) {
+      for (String errorCode : DataFetcherNO.errorCodes) {
         if (content.equals(errorCode)) {
           throw new ResponseCodeException(Integer.parseInt(errorCode));
         }
       }
 
       // process response and parse
-      return DataFetcher.processContent(pageContent, session);
+      return DataFetcherNO.processContent(pageContent, session);
 
     } catch (Exception e) {
-      DataFetcher.sendRequestInfoLog(url, DataFetcher.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.POST_REQUEST, randProxy, randUserAgent, session, closeableHttpResponse, responseLength,
           requestHash);
 
       if (e instanceof ResponseCodeException) {
@@ -779,7 +779,7 @@ public class POSTFetcher {
       Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
     }
 
-    DataFetcher.setRequestProxyForFetcher(session, response, url);
+    DataFetcherNO.setRequestProxyForFetcher(session, response, url);
     if (response.has("response")) {
       session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
     }
@@ -806,7 +806,7 @@ public class POSTFetcher {
       Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
     }
 
-    DataFetcher.setRequestProxyForFetcher(session, response, url);
+    DataFetcherNO.setRequestProxyForFetcher(session, response, url);
     if (response.has("response")) {
       session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
     }
@@ -838,7 +838,7 @@ public class POSTFetcher {
    * @throws Exception
    */
   public static JSONObject requestWithFetcher(Session session, JSONObject payload, Integer timeout, boolean dev) throws Exception {
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a "
         + payload.getString(FetcherRequest.FETCHER_PARAMETER_METHOD) + " request in: " + payload.getString(FetcherRequest.FETCHER_PARAMETER_URL));
@@ -855,7 +855,7 @@ public class POSTFetcher {
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 : timeout;
+    Integer defaultTimeout = timeout == null ? DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 : timeout;
 
     RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
         .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
@@ -895,7 +895,8 @@ public class POSTFetcher {
     Integer responseLength = pageContent.getContentData().length;
 
     // assembling request information log message
-    DataFetcher.sendRequestInfoLog(fetcherHost, DataFetcher.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength, requestHash);
+    DataFetcherNO.sendRequestInfoLog(fetcherHost, DataFetcherNO.POST_REQUEST, null, null, session, closeableHttpResponse, responseLength,
+        requestHash);
 
     // saving request content result on Amazon
     String content;
@@ -909,14 +910,14 @@ public class POSTFetcher {
     // sometimes the remote server doesn't send the http error code on the headers
     // but rater on the page bytes
     content = content.trim();
-    for (String errorCode : DataFetcher.errorCodes) {
+    for (String errorCode : DataFetcherNO.errorCodes) {
       if (content.equals(errorCode)) {
         throw new ResponseCodeException(Integer.parseInt(errorCode));
       }
     }
 
     // process response and parse
-    JSONObject response = new JSONObject(DataFetcher.processContent(pageContent, session));
+    JSONObject response = new JSONObject(DataFetcherNO.processContent(pageContent, session));
 
     if (response.has("statistics")) {
       JSONObject statistics = response.getJSONObject("statistics");
@@ -984,14 +985,14 @@ public class POSTFetcher {
 
   public static Map<String, String> fetchCookiesWithFetcher(JSONObject fetcherPayload, Session session) {
     Map<String, String> cookiesMap = new HashMap<>();
-    String requestHash = DataFetcher.generateRequestHash(session);
+    String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
       JSONObject response = POSTFetcher.requestWithFetcher(session, fetcherPayload, true);
 
       if (response.has("response")) {
         JSONObject responseJSON = response.getJSONObject("response");
-        DataFetcher.setRequestProxyForFetcher(session, response, fetcherPayload.getString("url"));
+        DataFetcherNO.setRequestProxyForFetcher(session, response, fetcherPayload.getString("url"));
         session.addRedirection(fetcherPayload.getString("url"), response.getJSONObject("response").getString("redirect_url"));
 
         String content = responseJSON.getString("body");
@@ -1008,8 +1009,8 @@ public class POSTFetcher {
         if (responseJSON.has("headers")) {
           JSONObject headersJson = responseJSON.getJSONObject("headers");
 
-          if (headersJson.has(DataFetcher.HTTP_COOKIE_HEADER.toLowerCase())) {
-            JSONArray cookiesArray = headersJson.getJSONArray(DataFetcher.HTTP_COOKIE_HEADER.toLowerCase());
+          if (headersJson.has(DataFetcherNO.HTTP_COOKIE_HEADER.toLowerCase())) {
+            JSONArray cookiesArray = headersJson.getJSONArray(DataFetcherNO.HTTP_COOKIE_HEADER.toLowerCase());
 
             for (Object o : cookiesArray) {
               String cookieHeader = o.toString();
@@ -1041,12 +1042,12 @@ public class POSTFetcher {
   private static RequestConfig getRequestConfig(HttpHost proxy) {
     if (proxy != null) {
       return RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
-          .setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-          .setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
+          .setConnectionRequestTimeout(DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcherNO.DEFAULT_CONNECT_TIMEOUT)
+          .setSocketTimeout(DataFetcherNO.DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
     }
 
     return RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true)
-        .setConnectionRequestTimeout(DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcher.DEFAULT_CONNECT_TIMEOUT)
-        .setSocketTimeout(DataFetcher.DEFAULT_SOCKET_TIMEOUT).build();
+        .setConnectionRequestTimeout(DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcherNO.DEFAULT_CONNECT_TIMEOUT)
+        .setSocketTimeout(DataFetcherNO.DEFAULT_SOCKET_TIMEOUT).build();
   }
 }

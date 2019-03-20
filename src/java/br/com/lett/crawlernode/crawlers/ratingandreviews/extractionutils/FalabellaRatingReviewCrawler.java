@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -70,7 +70,7 @@ public class FalabellaRatingReviewCrawler extends RatingReviewCrawler {
 
     String endpointRequest = assembleBazaarVoiceEndpointRequest(id, 0, 50);
 
-    JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+    JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, id);
 
     Integer totalNumOfEvaluations = getTotalReviewCount(reviewStatistics);

@@ -4,7 +4,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -33,7 +33,7 @@ public class BrasilLivrariaculturaRatingReviewCrawler extends RatingReviewCrawle
       String ratingApi = "https://comments.us1.gigya.com/comments.getComments?categoryID=ProductsRatingReview&streamID=" + internalId
           + "&includeStreamInfo=true&APIKey=3_3Mez5cLsMYm3EyiqY7w8i7fsPMonWe3pXEf29pFJTmxgG7pHbKZd0ytLh4KeenVe";
 
-      JSONObject ratingJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, ratingApi, null, cookies);
+      JSONObject ratingJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, ratingApi, null, cookies);
 
       ratingReviews.setAverageOverallRating(crawlRatingAvg(ratingJson));
 

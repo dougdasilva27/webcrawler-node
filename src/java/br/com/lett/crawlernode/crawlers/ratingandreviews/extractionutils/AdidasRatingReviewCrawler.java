@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -125,7 +125,7 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    return DataFetcher.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1);
+    return DataFetcherNO.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1);
   }
 
   private String scrapId(Document doc) {

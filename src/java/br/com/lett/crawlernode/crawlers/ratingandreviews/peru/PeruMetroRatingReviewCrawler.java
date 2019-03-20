@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -33,7 +33,7 @@ public class PeruMetroRatingReviewCrawler extends RatingReviewCrawler {
     VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
     String url = "https://www.metro.pe/wongfood/dataentities/RE/documents/" + internalPid + "?_fields=reviews";
-    Document html = Jsoup.parse(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies));
+    Document html = Jsoup.parse(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies));
 
     JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 

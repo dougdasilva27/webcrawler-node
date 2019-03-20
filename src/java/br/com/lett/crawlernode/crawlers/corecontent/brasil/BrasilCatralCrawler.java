@@ -12,7 +12,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -231,7 +231,7 @@ public class BrasilCatralCrawler extends Crawler {
       // fetch the page with payment options
       String skuId = Integer.toString(jsonSku.getInt("sku"));
       String paymentOptionsURL = "http://www.catral.com.br/productotherpaymentsystems/" + skuId;
-      Document paymentOptionsDocument = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, paymentOptionsURL, null, null);
+      Document paymentOptionsDocument = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, paymentOptionsURL, null, null);
 
       // get all cards brands
       List<String> cardBrands = new ArrayList<String>();

@@ -7,7 +7,7 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -161,7 +161,7 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 
   private JSONObject requestReviewPage(String skuId, Integer pageNumber) {
     String url = "https://www.netfarma.com.br/api/produto/" + skuId + "/avaliacoes/" + pageNumber;
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, null);
+    return DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, null);
   }
 
   /**

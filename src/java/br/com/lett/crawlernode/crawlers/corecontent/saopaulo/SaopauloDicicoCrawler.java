@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -195,7 +195,7 @@ public class SaopauloDicicoCrawler extends Crawler {
     String imagesFetched = null;
 
     if (id != null) {
-      imagesFetched = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, productAPI, null, cookies);
+      imagesFetched = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, productAPI, null, cookies);
       imagesFetched = imagesFetched.substring(31, imagesFetched.length() - 6);
 
       JSONObject imagesObj = new JSONObject(imagesFetched);

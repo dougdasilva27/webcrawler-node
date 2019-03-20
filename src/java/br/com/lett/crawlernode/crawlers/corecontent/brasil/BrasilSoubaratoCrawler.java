@@ -12,7 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -300,7 +300,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
 	private JSONObject getInformationsFromApi(String internalPid){
 		String url = "http://www.soubarato.com.br/produtosModa/" + internalPid;
 		
-		JSONObject jsonReturn = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, null);
+		JSONObject jsonReturn = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, null);
 		
 		return jsonReturn;
 	}

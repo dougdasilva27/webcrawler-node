@@ -8,7 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -172,7 +172,7 @@ public class BrasilFastshopCrawlerUtils {
     if (partnerId != null) {
       String apiUrl = "https://www.fastshop.com.br/wcs/resources/v1/products/byPartNumber/" + partnerId;
 
-      apiJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+      apiJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, apiUrl, null, cookies);
     }
 
     return apiJson;
@@ -193,7 +193,7 @@ public class BrasilFastshopCrawlerUtils {
       String url = "https://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
           + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
 
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
 
       try {
         int x = json.indexOf("/*");
