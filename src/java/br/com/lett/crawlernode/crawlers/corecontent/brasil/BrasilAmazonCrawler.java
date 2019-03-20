@@ -91,6 +91,10 @@ public class BrasilAmazonCrawler extends Crawler {
       Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
+    if (content.isEmpty()) {
+      content = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    }
+
     return content;
   }
 
