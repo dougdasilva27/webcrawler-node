@@ -1255,10 +1255,10 @@ public class CrawlerUtils {
    * @return default value is 0
    * @deprecated
    */
-  public static Integer scrapIntegerFromHtml(Document doc, String selector, boolean ownText) {
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, boolean ownText) {
     Integer total = 0;
 
-    Element totalElement = doc.select(selector).first();
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
 
     if (totalElement != null) {
       String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
@@ -1280,10 +1280,10 @@ public class CrawlerUtils {
    * @param defaultValue - return value if condition == null
    * @return
    */
-  public static Integer scrapIntegerFromHtml(Document doc, String selector, boolean ownText, Integer defaultValue) {
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, boolean ownText, Integer defaultValue) {
     Integer total = defaultValue;
 
-    Element totalElement = doc.select(selector).first();
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
 
     if (totalElement != null) {
       String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
