@@ -79,7 +79,7 @@ public class RatingReviewCrawler extends Task {
     // they can be exceptions or business logic errors
     // and are all gathered inside the session
     if (!errors.isEmpty()) {
-      Logging.printLogError(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+      Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
       session.setTaskStatus(Task.STATUS_FAILED);
     }
 
@@ -116,7 +116,7 @@ public class RatingReviewCrawler extends Task {
         Persistence.updateRating(ratingReviews, session);
 
       } else {
-        Logging.printLogError(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
+        Logging.printLogWarn(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
       }
 
     } catch (Exception e) {

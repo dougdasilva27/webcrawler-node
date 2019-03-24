@@ -8,7 +8,7 @@ public class KPLProducerConfig {
 	public static final long RECORD_MAX_BUFFERED_TIME = 20000;
 	
 	public static final String REGION = "us-east-1";
-	public static final String STREAM_NAME = "CoreWebscraperStream";
+	public static final String STREAM_NAME = "sku-core-crawler-kinesis-stream";
 	
 
 }

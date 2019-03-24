@@ -69,7 +69,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
       try {
         api = new JSONObject(page);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 
@@ -111,7 +111,7 @@ public class BrasilMeucarrefourCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

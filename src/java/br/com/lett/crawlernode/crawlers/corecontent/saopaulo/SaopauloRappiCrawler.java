@@ -75,7 +75,7 @@ public class SaopauloRappiCrawler extends Crawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -299,7 +299,7 @@ public class SaopauloRappiCrawler extends Crawler {
             }
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

@@ -60,7 +60,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       cookie.setPath("/");
       cookies.add(cookie);
     } catch (UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -121,7 +121,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     } else
 
     {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

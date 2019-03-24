@@ -1239,11 +1239,7 @@ public class DataFetcher {
     // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
     // Main.executionParameters.getUseFetcher());
 
-    String url = session.getOriginalURL();
-
-    boolean mustUseFetcher = attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher()
-        && !(url.contains("americanas.com") || url.contains("submarino.com") || url.contains("shoptime.com") || url.contains("casasbahia.com")
-            || url.contains("pontofrio.com") || url.contains("extra.com") || url.contains("ricardoeletro.com"));
+    boolean mustUseFetcher = attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher();
 
     if (mustUseFetcher && attempt == 1) {
       session.setMaxConnectionAttemptsCrawler(2);

@@ -61,7 +61,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;
@@ -128,7 +128,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
           avgOverallRating = dataRating.getDouble("rating");
         }
       } catch (JSONException e) {
-        Logging.printLogError(logger, session, "Error converting String to JSONObject");
+        Logging.printLogWarn(logger, session, "Error converting String to JSONObject");
       }
     }
 

@@ -112,8 +112,8 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
     try {
       trustVoxResponse = new JSONObject(response);
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       trustVoxResponse = new JSONObject();
     }
@@ -190,7 +190,7 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
             idList.add(variationJsonObject.getString("catentry_id").trim());
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

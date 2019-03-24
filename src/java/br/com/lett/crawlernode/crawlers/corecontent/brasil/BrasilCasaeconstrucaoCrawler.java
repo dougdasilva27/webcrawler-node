@@ -63,7 +63,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -107,7 +107,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document doc) {
-    return doc.selectFirst("#btnAddBasket") != null;
+    return doc.selectFirst("[id~=btnAddBasket]") != null;
   }
 
   /**

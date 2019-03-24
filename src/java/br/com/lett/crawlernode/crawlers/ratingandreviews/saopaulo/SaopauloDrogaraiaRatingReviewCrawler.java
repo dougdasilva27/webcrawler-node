@@ -94,7 +94,7 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
     try {
       requestURL.append(URLEncoder.encode(session.getOriginalURL(), "UTF-8"));
     } catch (UnsupportedEncodingException e1) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
     }
 
     requestURL.append("&product_extra_attributes%5Bsubgroup%5D");

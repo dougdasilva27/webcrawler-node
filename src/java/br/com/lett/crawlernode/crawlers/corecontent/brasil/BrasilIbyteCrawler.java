@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -195,15 +197,7 @@ public class BrasilIbyteCrawler extends Crawler {
       }
 
       // Descrição
-      String description = "";
-      Element elementDescription = doc.select("#descricao").first();
-      Element elementAdditionalContents = doc.select("#atributos").first();
-      if (elementDescription != null) {
-        description = description + elementDescription.html();
-      }
-      if (elementAdditionalContents != null) {
-        description = description + elementAdditionalContents.html();
-      }
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#descricao", "#atributos", ".infoEanGarantia"));
 
       // Estoque
       Integer stock = null;
@@ -227,7 +221,7 @@ public class BrasilIbyteCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

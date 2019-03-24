@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,6 +20,8 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -582,8 +585,8 @@ public class CrawlerUtils {
         skuJson = new JSONObject(skuJsonString);
 
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(LOGGER, session, "Error creating JSONObject from var skuJson_0");
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTraceString(e));
       }
     }
 
@@ -769,7 +772,7 @@ public class CrawlerUtils {
       try {
         json = new JSONObject(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -783,7 +786,7 @@ public class CrawlerUtils {
       try {
         json = new JSONArray(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -818,7 +821,7 @@ public class CrawlerUtils {
       try {
         productInfo = new JSONObject(json);
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
       }
     }
 
@@ -846,7 +849,7 @@ public class CrawlerUtils {
             description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
           }
         } catch (JSONException e) {
-          Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
         }
       }
     }
@@ -1342,5 +1345,29 @@ public class CrawlerUtils {
     }
 
     return str.toString();
+  }
+
+  /**
+   * This function scrap our html on ecommerce's
+   * 
+   * Using fetcher because there is no need of use proxy.
+   * 
+   * @param internalId
+   * @param session
+   * @return
+   */
+  public static Document scrapLettHtml(String internalId, Session session) {
+    Document doc = new Document("");
+
+    String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + session.getMarket().getNumber();
+    JSONObject fetcherPayload =
+        POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, new HashMap<>(), Arrays.asList(ProxyCollection.NO_PROXY), null, false);
+
+    JSONObject skuMap = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, fetcherPayload, session, false));
+    if (skuMap.has(internalId)) {
+      doc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(skuMap.get(internalId).toString(), fetcherPayload, session, false));
+    }
+
+    return doc;
   }
 }

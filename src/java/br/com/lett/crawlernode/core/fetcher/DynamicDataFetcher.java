@@ -84,6 +84,11 @@ public class DynamicDataFetcher {
         proxyString = ProxyCollection.BONANZA;
       }
 
+      // Dufrio block luminati_server
+      if (session.getMarket().getName().equals("dufrio")) {
+        proxyString = ProxyCollection.BUY;
+      }
+
       LettProxy proxy = randomProxy(proxyString, session);
 
       DesiredCapabilities caps = DesiredCapabilities.phantomjs();
@@ -141,7 +146,7 @@ public class DynamicDataFetcher {
 
       return webdriver;
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       return null;
     }
   }
@@ -181,7 +186,7 @@ public class DynamicDataFetcher {
 
       return doc;
     } catch (Exception e) {
-      Logging.printLogError(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, "Erro ao realizar requisição: " + CommonMethods.getStackTraceString(e));
       return new Document(url);
     }
   }

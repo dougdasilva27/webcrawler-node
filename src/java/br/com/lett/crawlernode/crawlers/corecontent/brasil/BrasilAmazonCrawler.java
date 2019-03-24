@@ -88,7 +88,11 @@ public class BrasilAmazonCrawler extends Crawler {
         }
       }
     } catch (Exception e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    if (content.isEmpty()) {
+      content = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
     }
 
     return content;
@@ -135,7 +139,7 @@ public class BrasilAmazonCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

@@ -40,7 +40,7 @@ public class DBSlack {
       api.call(message);
       Logging.printLogDebug(logger, session, "Send one message to slack.");
     } catch (Exception ex) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(ex));
     }
   }
 
@@ -65,7 +65,7 @@ public class DBSlack {
       api.call(message);
       Logging.printLogDebug(logger, session, "Send one message to slack.");
     } catch (Exception ex) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(ex));
     }
   }
 
@@ -102,7 +102,7 @@ public class DBSlack {
       api.call(message);
       Logging.printLogDebug(logger, "Send one message to slack.");
     } catch (Exception ex) {
-      Logging.printLogError(logger, CommonMethods.getStackTraceString(ex));
+      Logging.printLogWarn(logger, CommonMethods.getStackTraceString(ex));
     }
   }
 }

@@ -18,7 +18,6 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
-
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
@@ -95,7 +94,7 @@ public class Persistence {
 
     // checking fields
     if ((price == null || price.equals(0f)) && available) {
-      Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto dispon�vel mas com campo vazio: price");
+      Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto disponível mas com campo vazio: price");
       return;
     } else if (internalId == null || internalId.isEmpty()) {
       Logging.printLogError(logger, session, "Erro tentando inserir leitura de produto com campo vazio: internal_id");
@@ -1040,7 +1039,7 @@ public class Persistence {
     String taskId = session.getTaskId();
 
     if (taskId != null) {
-      Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+      Document taskDocument = new Document().append("updated", new Date()).append("progress", 100);
 
       StringBuilder errors = new StringBuilder();
 
@@ -1048,8 +1047,10 @@ public class Persistence {
         for (SessionError error : session.getErrors()) {
           errors.append(error.getErrorContent()).append("\n");
         }
+        taskDocument.append("status", "ERROR");
       } else {
         errors.append("Not a product page!");
+        taskDocument.append("status", "DONE");
       }
 
       taskDocument.append("result", new Document().append("error", errors.toString()));

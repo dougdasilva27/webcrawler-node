@@ -29,6 +29,10 @@ public class FetcherRequestForcedProxies {
     return forcedProxies;
   }
 
+  public boolean isEmpty() {
+    return this.specific == null && (this.any == null || this.any.isEmpty());
+  }
+
   public LettProxy getSpecific() {
     return specific;
   }
