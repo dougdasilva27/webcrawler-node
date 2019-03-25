@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -60,10 +61,10 @@ public class BrasilGazinCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#brd-crumbs li:not(:first-child) > a");
       String description = crawlDescription(doc);
-      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco #FotoProdutoM5 a", Arrays.asList("href"), PROTOCOL, HOST);
+      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco .FotoMenor a[href]", Arrays.asList("href"), PROTOCOL, HOST);
       String secondaryImagesMain =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco .FotoMenor a", Arrays.asList("href"), PROTOCOL, HOST, primaryImageMain);
-      Integer stock = null;
+      List<String> eans = scrapEans(jsonInfo);
 
       Map<String, String> skus = scrapVariations(doc);
       if (skus.isEmpty()) {
@@ -74,14 +75,15 @@ public class BrasilGazinCrawler extends Crawler {
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).build();
+            .setEans(eans).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
 
         products.add(product);
       } else {
         for (Entry<String, String> entry : skus.entrySet()) {
           String variationId = entry.getKey();
+          String variationName = entry.getValue() != null ? (name + " " + entry.getValue()).trim() : name;
           String internalId = internalPid + "-" + variationId;
           String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
               Arrays.asList("href"), PROTOCOL, HOST);
@@ -97,13 +99,13 @@ public class BrasilGazinCrawler extends Crawler {
             secondaryImages = secondaryImagesMain;
           }
 
-          boolean available = true;
+          boolean available = crawlAvailabilityVariation(doc, variationId);
 
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setName(variationName).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setEans(eans)
               .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+              .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
 
           products.add(product);
         }
@@ -119,6 +121,16 @@ public class BrasilGazinCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return !doc.select(".conteudopreco").isEmpty();
+  }
+
+  private List<String> scrapEans(JSONObject json) {
+    List<String> eans = new ArrayList<>();
+
+    if (json.has("mpn")) {
+      eans = Arrays.asList(json.getString("mpn").split(","));
+    }
+
+    return eans;
   }
 
   private Float crawlPrice(JSONObject json) {
@@ -153,6 +165,7 @@ public class BrasilGazinCrawler extends Crawler {
 
     if (shortDescription != null) {
       shortDescription.select("> .InfoProd").remove();
+      shortDescription.select("> .InfoProd2").remove();
       description.append(shortDescription.html());
     }
 
@@ -226,5 +239,30 @@ public class BrasilGazinCrawler extends Crawler {
     }
 
     return skus;
+  }
+
+  private boolean crawlAvailabilityVariation(Document doc, String id) {
+    boolean availability = false;
+    String token = "if(a.value == \"" + id + "\")";
+    String token2 = "document.getelementbyid('estoque').innerhtml = '";
+
+    Elements scripts = doc.select(".conteudo > div > script");
+    for (Element e : scripts) {
+      String html = e.outerHtml().toLowerCase();
+
+      if (html.contains(token) && html.contains(token2)) {
+        int x = html.indexOf(token) + token.length();
+        int y = html.indexOf("';", x);
+
+        String function = html.substring(x, y);
+
+        Element script = Jsoup.parse(function.substring(function.indexOf("= '") + 3).trim());
+        availability = !script.select("input").isEmpty();
+
+        break;
+      }
+    }
+
+    return availability;
   }
 }
