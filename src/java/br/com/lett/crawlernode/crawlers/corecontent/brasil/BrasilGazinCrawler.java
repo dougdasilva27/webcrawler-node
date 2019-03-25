@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,7 +30,9 @@ import models.prices.Prices;
  */
 public class BrasilGazinCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.gazin.com.br/";
+  private static final String PROTOCOL = "https";
+  private static final String HOST = "www.gazin.com.br";
+  private static final String HOME_PAGE = PROTOCOL + "://" + HOST;
 
   public BrasilGazinCrawler(Session session) {
     super(session);
@@ -54,23 +58,56 @@ public class BrasilGazinCrawler extends Crawler {
       String name = jsonInfo.has("name") ? jsonInfo.get("name").toString() : null;
       Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
-      CategoryCollection categories = crawlCategories(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#brd-crumbs li:not(:first-child) > a");
       String description = crawlDescription(doc);
+      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco #FotoProdutoM5 a", Arrays.asList("href"), PROTOCOL, HOST);
+      String secondaryImagesMain =
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco .FotoMenor a", Arrays.asList("href"), PROTOCOL, HOST, primaryImageMain);
       Integer stock = null;
-      Marketplace marketplace = crawlMarketplace();
 
-      String internalId = crawlInternalId(doc);
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
-      boolean available = crawlAvailability(doc);
+      Map<String, String> skus = scrapVariations(doc);
+      if (skus.isEmpty()) {
+        String internalId = internalPid;
+        String primaryImage = primaryImageMain;
+        String secondaryImages = secondaryImagesMain;
+        boolean available = crawlAvailability(jsonInfo);
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(new Marketplace()).build();
 
-      products.add(product);
+        products.add(product);
+      } else {
+        for (Entry<String, String> entry : skus.entrySet()) {
+          String variationId = entry.getKey();
+          String internalId = internalPid + "-" + variationId;
+          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
+              Arrays.asList("href"), PROTOCOL, HOST);
+
+          if (primaryImage == null) {
+            primaryImage = primaryImageMain;
+          }
+
+          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
+              Arrays.asList("href"), PROTOCOL, HOST, primaryImage);
+
+          if (secondaryImages == null) {
+            secondaryImages = secondaryImagesMain;
+          }
+
+          boolean available = true;
+
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+
+          products.add(product);
+        }
+      }
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -81,110 +118,42 @@ public class BrasilGazinCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.select("#lblCodProduto").first() != null;
-  }
-
-  private String crawlInternalId(Document document) {
-    String internalId = null;
-
-    Element id = document.select("#lblCodProduto").first();
-    if (id != null) {
-      internalId = id.ownText().trim();
-    }
-
-    return internalId;
+    return !doc.select(".conteudopreco").isEmpty();
   }
 
   private Float crawlPrice(JSONObject json) {
     Float price = null;
 
     if (json.has("offers")) {
-      JSONArray prices = json.getJSONArray("offers");
-      for (Object offer : prices) {
-        if (offer instanceof JSONObject) {
-          JSONObject value = (JSONObject) offer;
-          if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer")) {
-            price = value.getFloat("price");
-          }
-        }
-
+      JSONObject value = json.getJSONObject("offers");
+      if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer")) {
+        price = value.getFloat("price");
       }
     }
 
     return price;
   }
 
-  private boolean crawlAvailability(Document document) {
-    return document.select("#lnkCarrinho").first() != null;
-  }
+  private boolean crawlAvailability(JSONObject json) {
+    boolean availability = false;
 
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
-
-
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElement = document.select("#divGaleriaProdutos a").first();
-
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("data-zoom-image").trim();
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document document) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = document.select("#divGaleriaProdutos a");
-
-    for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-      String image = imagesElement.get(i).attr("data-zoom-image").trim();
-      secondaryImagesArray.put(image);
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-
-    Elements elementCategories = document.select(".spBreadcrumbs:not(.bold) a > span");
-    for (Element e : elementCategories) {
-      String cat = e.ownText().trim();
-
-      if (!cat.contains("inicial")) {
-        categories.add(cat);
+    if (json.has("offers")) {
+      JSONObject value = json.getJSONObject("offers");
+      if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer") && value.has("availability")) {
+        availability = value.get("availability").toString().equalsIgnoreCase("in stock");
       }
     }
 
-    return categories;
+    return availability;
   }
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element shortDescription = document.select("#lbl_DadosTecnicos").first();
+    Element shortDescription = document.selectFirst(".conteudopreco > .InfoProd");
 
     if (shortDescription != null) {
+      shortDescription.select("> .InfoProd").remove();
       description.append(shortDescription.html());
-    }
-
-    Element desc = document.select("#trDescr").first();
-
-    if (desc != null) {
-      description.append(desc.html());
-    }
-
-    Element caracElement = document.select("#trModelos").first();
-
-    if (caracElement != null) {
-      description.append(caracElement.html());
     }
 
     return description.toString();
@@ -237,4 +206,25 @@ public class BrasilGazinCrawler extends Crawler {
     return prices;
   }
 
+  /**
+   * Scrap variatons from html and returns a map with key internalId and value variationName
+   * 
+   * @param doc
+   * @return
+   */
+  private Map<String, String> scrapVariations(Document doc) {
+    Map<String, String> skus = new HashMap<>();
+
+    Elements variations = doc.select(".conteudopreco .ciq > div > div[id]");
+    for (Element e : variations) {
+      skus.put(e.id(), CrawlerUtils.scrapStringSimpleInfo(e, "a > span", true));
+    }
+
+    Elements variationsSpecial = doc.select(".conteudopreco .ciq select > option[class]");
+    for (Element e : variationsSpecial) {
+      skus.put(e.val(), e.ownText());
+    }
+
+    return skus;
+  }
 }
