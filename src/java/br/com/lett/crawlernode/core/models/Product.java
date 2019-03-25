@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -30,6 +31,8 @@ public class Product {
 	private String ean;
 	private List<String> eans;
 	private String timestamp;
+	private Integer marketId;
+	private String status;
 
 	public Product() {
 		this.description = "";
@@ -213,6 +216,22 @@ public class Product {
 	public void setEans(List<String> eans) {
 		this.eans = eans;
 	}
+	
+	public String getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public Integer getMarketId() {
+		return marketId;
+	}
+
+	public void setMarketId(Integer marketId) {
+		this.marketId = marketId;
+	}
 
 	@Override
 	public String toString() {
@@ -265,7 +284,7 @@ public class Product {
 				.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL))
 				.put("stock", (stock != null ? stock : JSONObject.NULL))
 				.put("description", (description != null ? description : JSONObject.NULL))
-				.put("eans", (eans != null ? eans : JSONObject.NULL))
+				.put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
 				.put("timestamp", timestamp)
 				.toString();
 	}
@@ -276,9 +295,11 @@ public class Product {
 				.put("url", (url != null ? url : JSONObject.NULL))
 				.put("internalId", (internalId != null ? internalId : JSONObject.NULL))
 				.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
+				.put("marketId", marketId)
 				.put("name", (name != null ? name : JSONObject.NULL))
 				.put("price", (price != null ? price.toString() : JSONObject.NULL))
 				.put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
+				.put("status", status)
 				.put("available", available)
 				.put("category1", (category1 != null ? category1 : JSONObject.NULL))
 				.put("category2", (category2 != null ? category2 : JSONObject.NULL))
@@ -293,12 +314,12 @@ public class Product {
 				.toString();
 	}
 
-	public String getTimestamp() {
-		return timestamp;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 }
