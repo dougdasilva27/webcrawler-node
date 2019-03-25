@@ -11,7 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -55,6 +55,7 @@ public class SaopauloDicicoCrawler extends Crawler {
       if (skuIDs != null) {
         for (String internalId : skuIDs) {
           Document fetchedData = fetchAPIProduct(internalId);
+          // fetchedData = isProductPage(fetchedData) ? fetchedData : doc;
 
           String name = crawlName(fetchedData);
           Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',');
@@ -85,12 +86,10 @@ public class SaopauloDicicoCrawler extends Crawler {
 
   private Document fetchAPIProduct(String id) {
     Document fetchedData = new Document("");
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded");
 
     if (id != null) {
-      String payload = "type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
-      fetchedData = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders(PRODUCT_API, session, payload, cookies, 1, headers, null, null));
+      String payload = "?type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
+      fetchedData = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, PRODUCT_API + payload, cookies, new HashMap<>(), 1));
     }
 
     return fetchedData;
@@ -159,6 +158,7 @@ public class SaopauloDicicoCrawler extends Crawler {
 
   private String crawlName(Document doc) {
     String name = null;
+
     Element nameElement = doc.selectFirst("#productTitleDisplayContainer");
     if (nameElement != null) {
       name = nameElement.text();
