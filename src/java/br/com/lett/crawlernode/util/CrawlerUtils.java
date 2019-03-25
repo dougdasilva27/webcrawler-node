@@ -461,14 +461,18 @@ public class CrawlerUtils {
   public static String completeUrl(String url, String protocol, String host) {
     StringBuilder sanitizedUrl = new StringBuilder();
 
+    if (url.startsWith("../")) {
+      url = CommonMethods.getLast(url.split("\\.\\.\\/"));
+    }
+
     if (!protocol.endsWith(":") && !protocol.endsWith("//")) {
       protocol += ":";
     }
 
     if (!url.startsWith("http") && url.contains(host)) {
-      sanitizedUrl.append(protocol).append(url);
+      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(url);
     } else if (!url.contains(host) && !url.startsWith("http")) {
-      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url);
+      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url.startsWith("/") ? url : "/" + url);
     } else {
       sanitizedUrl.append(url);
     }
@@ -1066,39 +1070,39 @@ public class CrawlerUtils {
    * @param json
    * @param key
    * @param stringWithDoubleLayout -> if price string is a double in a string format like "23.99"
-   * @param priceWithComma -> e.g: R$ 2.779,20 returns the Double 2779.2
+   * @param doubleWithComma -> e.g: R$ 2.779,20 returns the Double 2779.2
    * @return
    */
-  public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout, Boolean priceWithComma) {
-    Double price = null;
+  public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout, Boolean doubleWithComma) {
+    Double doubleValue = null;
 
     if (json.has(key)) {
-      Object priceObj = json.get(key);
+      Object obj = json.get(key);
 
-      if (priceObj instanceof Integer) {
-        price = ((Integer) priceObj).doubleValue();
-      } else if (priceObj instanceof Double) {
-        price = (Double) priceObj;
+      if (obj instanceof Integer) {
+        doubleValue = ((Integer) obj).doubleValue();
+      } else if (obj instanceof Double) {
+        doubleValue = (Double) obj;
       } else {
 
         if (stringWithDoubleLayout) {
-          String text = priceObj.toString().replaceAll("[^0-9.]", "");
+          String text = obj.toString().replaceAll("[^0-9.]", "");
 
           if (!text.isEmpty()) {
-            price = Double.parseDouble(text);
+            doubleValue = Double.parseDouble(text);
           }
         } else {
 
-          if (priceWithComma) {
-            price = MathUtils.parseDoubleWithComma(priceObj.toString());
+          if (doubleWithComma) {
+            doubleValue = MathUtils.parseDoubleWithComma(obj.toString());
           } else {
-            price = MathUtils.parseDoubleWithDot(priceObj.toString());
+            doubleValue = MathUtils.parseDoubleWithDot(obj.toString());
           }
         }
       }
     }
 
-    return price;
+    return doubleValue;
   }
 
   /**
