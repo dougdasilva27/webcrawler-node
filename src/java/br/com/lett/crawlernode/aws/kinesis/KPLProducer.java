@@ -19,6 +19,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.Logging;
 
 public class KPLProducer {
 
@@ -67,15 +69,15 @@ public class KPLProducer {
 	 * 
 	 * @param p
 	 */
-	public void put(Product p) {
+	public void put(Product p, Session session) {
 		try {
 			long countCreated = eventsCreated.incrementAndGet();
 			
-			LOGGER.debug("Received event " + countCreated);
+			Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
 
 			ByteBuffer data = ByteBuffer.wrap(
 					new StringBuilder()
-					.append(p.toJson())
+					.append(p.serializeToKinesis())
 					.append(RECORD_SEPARATOR)
 					.toString()
 					.getBytes("UTF-8")
@@ -89,16 +91,18 @@ public class KPLProducer {
 						UserRecordFailedException ex = (UserRecordFailedException)t;
 						UserRecordResult r = ex.getResult();
 						Attempt last = Iterables.getLast(r.getAttempts());
-						LOGGER.debug(String.format("Record failed to put - %s(Duration) : %s(ErrorCode) : %s(ErrorMessage)",
-								last.getDuration(), last.getErrorCode(), last.getErrorMessage()));
+						Logging.printLogError(LOGGER, session,
+								String.format("Record failed to put - %s(Duration) : %s(ErrorCode) : %s(ErrorMessage)",
+								last.getDuration(), last.getErrorCode(), last.getErrorMessage())
+								);
 					}
-					LOGGER.error("Exception during put", t);
+					Logging.printLogError(LOGGER, session, "Exception during put [" + t.getMessage() + "]");
 				};
 
 				@Override public void onSuccess(UserRecordResult result) { 
-					LOGGER.debug("Succesfully put record: " + result.getSequenceNumber());
+					Logging.printLogDebug(LOGGER, session, "Succesfully put record: " + result.getSequenceNumber());
 					long putCount = eventsPut.incrementAndGet();
-					LOGGER.debug(String.format("Events successfully put so far: %s", putCount));
+					Logging.printLogDebug(LOGGER, session, String.format("Events successfully put so far: %s", putCount));
 				};
 			};
 
