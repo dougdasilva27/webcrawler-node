@@ -65,6 +65,8 @@ public class BauruConfiancaCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       JSONObject json = crawlProductApi(internalPid);
 
+      System.err.println(json);
+
       String internalId = crawlInternalId(json);
       String name = crawlName(json);
       Integer stock = crawlStock(json);
