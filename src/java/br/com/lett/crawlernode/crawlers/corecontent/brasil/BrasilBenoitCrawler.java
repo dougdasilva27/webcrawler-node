@@ -1,19 +1,25 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -32,11 +38,7 @@ public class BrasilBenoitCrawler extends Crawler {
 
     JSONObject json = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
 
-    String description = crawlDesciption(doc);
 
-    Object categoriesJson = null;
-
-    CategoryCollection categories = crawlCategories(categoriesJson);
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -45,27 +47,30 @@ public class BrasilBenoitCrawler extends Crawler {
         JSONObject model = json.getJSONObject("Model");
         String internalPid = model.has("ProductID") ? model.get("ProductID").toString() : null;
         Float price = crawlPrice(model);
+        String primaryImage = crawlPrimaryImage(model);
+        String secondaryImages = crawlSecondaryImages(model, primaryImage);
+        CategoryCollection categories = crawlCategories(model);
+        String description = crawlDesciption(model);
 
         for (Object obj : model.getJSONArray("Items")) {
-
           JSONObject sku = (JSONObject) obj;
 
-          String internalId = sku.has("SKU") ? sku.get("SKU").toString() : null;
-          String name = crawlName(sku);
-          boolean available = crawlAvailability(sku);
-          Integer stock = scrapStock(sku);
-          Prices prices = crawlPrices(json, internalId);
-          String primaryImage =
-              CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"), "https:", "salcobrand.cl");
-          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"),
-              "https:", "salcobrand.cl", primaryImage);
+          // This verification exists to the json don't return the empty object.
 
-          Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-              .setStock(stock).setMarketplace(new Marketplace()).build();
+          if (sku.has("Items") && sku.getJSONArray("Items").length() < 1) {
+            String internalId = sku.has("ProductID") ? sku.get("ProductID").toString() : null;
+            Prices prices = crawlPrices(internalId, internalPid);
+            String name = crawlName(sku);
+            boolean available = crawlAvailability(sku);
 
-          products.add(product);
+
+            Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+                .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+                .setStock(null).setMarketplace(new Marketplace()).build();
+
+            products.add(product);
+          }
         }
       }
 
@@ -78,18 +83,140 @@ public class BrasilBenoitCrawler extends Crawler {
 
   }
 
-  private String crawlName(JSONObject sku) {
-    String name = sku.has("Name") ? sku.get("Name").toString() : null;
+  private Prices crawlPrices(String internalId, String internalPid) {
+    Prices prices = new Prices();
 
-    if (sku.has("Options") && name != null) {
-      JSONArray options = sku.getJSONArray("Options");
-      for (Object object : options) {
-        JSONArray values = (JSONArray) object;
-        for (Object object_ : values) {
-          JSONObject value = (JSONObject) object_;
-          if (value.has("Text")) {
-            name.concat(" ").concat(value.getString("Text"));
+    String url = "https://www.benoit.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalPid
+        + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true";
+    Document fetchPage = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Element firstGrid = fetchPage.selectFirst(".grid");
+
+    if (firstGrid != null) {
+      Elements table = fetchPage.select(".grid tbody tr");
+      Elements cards = firstGrid.select("table span");
+      for (Element element : cards) {
+        Map<Integer, Float> installments = new HashMap<>();
+        for (Element e : table) {
+          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "", true);
+
+          if (!pair.isAnyValueNull()) {
+            installments.put(pair.getFirst(), pair.getSecond());
           }
+        }
+
+        String cardName = cardName(element);
+        prices.insertCardInstallment(cardName, installments);
+      }
+      prices.setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ','));
+
+    }
+
+    return prices;
+  }
+
+  private String cardName(Element cardElement) {
+    String resultCard = null;
+    Card[] cards = Card.values();
+
+    String cardName = CommonMethods.getLast(cardElement.text().toLowerCase().trim().split(" "));
+
+    for (Card card : cards) {
+      if (card.toString().startsWith(cardName)) {
+        resultCard = card.toString();
+      }
+    }
+
+    return resultCard;
+  }
+
+  private String crawlSecondaryImages(JSONObject model, String primaryImage) {
+    String secondaryImage = null;
+    String secondaryImages = null;
+
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    if (model.has("MediaGroups")) {
+      JSONArray mediaGroups = model.getJSONArray("MediaGroups");
+      for (Object object : mediaGroups) {
+        JSONObject media = (JSONObject) object;
+        if (media.has("Large")) {
+          JSONObject large = media.getJSONObject("Large");
+          if (large.has("MediaPath")) {
+            secondaryImage = CrawlerUtils.completeUrl(large.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+          }
+        } else if (media.has("Medium")) {
+          JSONObject medium = media.getJSONObject("Medium");
+          if (medium.has("MediaPath")) {
+            secondaryImage = CrawlerUtils.completeUrl(medium.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+          }
+
+        } else if (media.has("Small")) {
+          JSONObject small = media.getJSONObject("Small");
+          if (small.has("MediaPath")) {
+            secondaryImage = CrawlerUtils.completeUrl(small.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+          }
+        }
+
+        if (secondaryImage != null && !secondaryImage.equals(primaryImage)) {
+          secondaryImagesArray.put(secondaryImage);
+        }
+      }
+    }
+
+    if (secondaryImagesArray.length() > 1) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private String crawlPrimaryImage(JSONObject model) {
+    String primaryImage = null;
+
+    if (model.has("MediaGroups")) {
+      JSONArray mediaGroups = model.getJSONArray("MediaGroups");
+      for (Object object : mediaGroups) {
+        JSONObject media = (JSONObject) object;
+        if (media.has("Large")) {
+          JSONObject large = media.getJSONObject("Large");
+          if (large.has("MediaPath")) {
+            primaryImage = CrawlerUtils.completeUrl(large.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+            break;
+          }
+        } else if (media.has("Medium")) {
+          JSONObject medium = media.getJSONObject("Medium");
+          if (medium.has("MediaPath")) {
+            primaryImage = CrawlerUtils.completeUrl(medium.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+            break;
+          }
+
+        } else if (media.has("Small")) {
+          JSONObject small = media.getJSONObject("Small");
+          if (small.has("MediaPath")) {
+            primaryImage = CrawlerUtils.completeUrl(small.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+            break;
+          }
+        }
+      }
+    }
+    return primaryImage;
+  }
+
+  private String crawlName(JSONObject sku) {
+    String name = new String();
+
+    if (sku.has("Name")) {
+      name = name.concat(sku.getString("Name"));
+    }
+
+    if (sku.has("SKUOptions") && name != null) {
+      JSONArray options = sku.getJSONArray("SKUOptions");
+
+      for (Object object : options) {
+        JSONObject opt = (JSONObject) object;
+
+        if (opt.has("Title")) {
+          name = name.concat(" ").concat(opt.getString("Title"));
         }
       }
     }
@@ -97,10 +224,6 @@ public class BrasilBenoitCrawler extends Crawler {
     return name;
   }
 
-  private Prices crawlPrices(JSONObject json, String internalId) {
-    // TODO Auto-generated method stub
-    return null;
-  }
 
   private Float crawlPrice(JSONObject json) {
     JSONObject priceJson = json.getJSONObject("Price");
@@ -110,11 +233,6 @@ public class BrasilBenoitCrawler extends Crawler {
       price = bestInstallment.getFloat("InstallmentPrice");
     }
     return price;
-  }
-
-  private Integer scrapStock(JSONObject sku) {
-    // TODO Auto-generated method stub
-    return null;
   }
 
   private boolean crawlAvailability(JSONObject sku) {
@@ -131,13 +249,45 @@ public class BrasilBenoitCrawler extends Crawler {
     return doc.selectFirst(".x-product-top-main") != null;
   }
 
-  private CategoryCollection crawlCategories(Object categoriesJson) {
-    // TODO Auto-generated method stub
-    return null;
+  private CategoryCollection crawlCategories(JSONObject model) {
+    CategoryCollection categories = new CategoryCollection();
+
+    if (model.has("Navigation")) {
+      JSONArray navigation = model.getJSONArray("Navigation");
+
+      for (Object object : navigation) {
+
+        JSONObject cat = (JSONObject) object;
+        categories.add(cat.getString("Text"));
+      }
+    }
+
+    return categories;
   }
 
-  private String crawlDesciption(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
+  private String crawlDesciption(JSONObject model) {
+    String finalDescription = "";
+
+    if (model.has("Descriptions")) {
+      JSONArray descriptions = model.getJSONArray("Descriptions");
+
+      for (Object object : descriptions) {
+        JSONObject description = (JSONObject) object;
+
+        if (description.has("Alias")) {
+          String alias = description.getString("Alias");
+
+          if (alias.equals("LongDescription") && description.has("Title") && description.has("Value")) {
+            finalDescription = finalDescription.concat(description.getString("Title")).concat(" ").concat(description.getString("Value"));
+          }
+
+          if (alias.equals("Specifications") && description.has("Title") && description.has("Value")) {
+            finalDescription = finalDescription.concat(description.getString("Title")).concat(" ").concat(description.getString("Value"));
+          }
+        }
+      }
+    }
+
+    return finalDescription;
   }
 }
