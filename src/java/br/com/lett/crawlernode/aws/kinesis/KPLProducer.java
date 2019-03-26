@@ -97,7 +97,8 @@ public class KPLProducer {
 								last.getDuration(), last.getErrorCode(), last.getErrorMessage())
 								);
 					}
-					Logging.printLogError(LOGGER, session, "Exception during put [" + t.getMessage() + "]");
+					Logging.printLogError(LOGGER, session, "Exception during put.");
+					Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(t));
 				};
 
 				@Override public void onSuccess(UserRecordResult result) { 
