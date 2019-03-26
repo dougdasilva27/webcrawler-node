@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -11,8 +14,10 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class Product {
+public class Product implements Serializable {
 
+	private static final long serialVersionUID = 4971005612828002546L;
+	
 	private String url;
 	private String internalId;
 	private String internalPid;
@@ -37,6 +42,10 @@ public class Product {
 	public Product() {
 		this.description = "";
 		this.timestamp = DateUtils.newTimestamp();
+	}
+	
+	public Product clone() {
+		return SerializationUtils.clone(this);
 	}
 
 	public String getUrl() {
@@ -290,6 +299,19 @@ public class Product {
 	}
 	
 	public String serializeToKinesis() {
+		
+		// Data transformation rule for marketplace
+		// String that must be interpreted as JSONArray
+		// Nullable
+		// We never have empty array
+		JSONArray marketplaceArray = null;
+		if (marketplace != null) {
+			marketplaceArray = new JSONArray(marketplace);
+			if (marketplaceArray.length() == 0) marketplaceArray = null;
+		}
+		
+		
+		
 		return 
 				new JSONObject()
 				.put("url", (url != null ? url : JSONObject.NULL))
@@ -306,10 +328,10 @@ public class Product {
 				.put("category3", (category3 != null ? category3 : JSONObject.NULL))
 				.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
 				.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
-				.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL))
+				.put("marketplace", (marketplaceArray != null ? marketplaceArray.toString() : JSONObject.NULL))
 				.put("stock", (stock != null ? stock : JSONObject.NULL))
-				.put("description", (description != null ? description : JSONObject.NULL))
-				.put("eans", (eans != null ? eans : JSONObject.NULL))
+				.put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
+				.put("eans", ((eans != null && !eans.isEmpty()) ? eans : JSONObject.NULL))
 				.put("timestamp", timestamp)
 				.toString();
 	}

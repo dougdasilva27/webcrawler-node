@@ -113,6 +113,30 @@ public class Crawler extends Task {
 		}
 	}
 
+	private void sendToKinesis(Product product) {
+		if (product.isVoid()) {
+			Product p = new Product();
+			p.setInternalId(session.getInternalId());
+			p.setMarketId(session.getMarket().getNumber());
+			p.setAvailable(false);
+			p.setStatus("void");
+
+			KPLProducer.getInstance().put(p, session);
+		} else {
+			product.setMarketId(session.getMarket().getNumber());
+			if (product.getAvailable()) {
+				product.setStatus("available");
+			} else {
+				if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
+					product.setStatus("only_marketplace");
+				} else {
+					product.setStatus("unavailable");
+				}
+			}
+			KPLProducer.getInstance().put(product, session);
+		}
+	}
+
 	@Override
 	public void onStart() {
 		Logging.printLogDebug(logger, session, "START");
@@ -221,28 +245,7 @@ public class Crawler extends Task {
 				}
 			}
 
-			// Send the sku to kinesis
-			if (activeVoidResultProduct.isVoid()) {
-				Product p = new Product();
-				p.setInternalId(session.getInternalId());
-				p.setMarketId(session.getMarket().getNumber());
-				p.setAvailable(false);
-				p.setStatus("void");
-
-				KPLProducer.getInstance().put(p, session);
-			} else {
-				activeVoidResultProduct.setMarketId(session.getMarket().getNumber());
-				if (activeVoidResultProduct.getAvailable()) {
-					activeVoidResultProduct.setStatus("available");
-				} else {
-					if (activeVoidResultProduct.getMarketplace() != null && activeVoidResultProduct.getMarketplace().size() > 0) {
-						activeVoidResultProduct.setStatus("only_marketplace");
-					} else {
-						activeVoidResultProduct.setStatus("unavailable");
-					}
-				}
-				KPLProducer.getInstance().put(activeVoidResultProduct, session);
-			}
+			sendToKinesis(activeVoidResultProduct);
 
 			// after active void analysis we have the resultant
 			// product after the extra extraction attempts
