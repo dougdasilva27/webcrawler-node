@@ -299,19 +299,12 @@ public class Product implements Serializable {
 	}
 	
 	public String serializeToKinesis() {
-		
-		// Data transformation rule for marketplace
-		// String that must be interpreted as JSONArray
-		// Nullable
-		// We never have empty array
-		JSONArray marketplaceArray = null;
-		if (marketplace != null) {
-			marketplaceArray = new JSONArray(marketplace);
-			if (marketplaceArray.length() == 0) marketplaceArray = null;
+		JSONArray secondaryImagesArray = null;
+		if (secondaryImages != null && !secondaryImages.isEmpty()) {
+			secondaryImagesArray = new JSONArray(secondaryImages);
+		} else {
+			secondaryImagesArray = new JSONArray();
 		}
-		
-		
-		
 		return 
 				new JSONObject()
 				.put("url", (url != null ? url : JSONObject.NULL))
@@ -327,11 +320,11 @@ public class Product implements Serializable {
 				.put("category2", (category2 != null ? category2 : JSONObject.NULL))
 				.put("category3", (category3 != null ? category3 : JSONObject.NULL))
 				.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
-				.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
-				.put("marketplace", (marketplaceArray != null ? marketplaceArray.toString() : JSONObject.NULL))
+				.put("secondaryImages", secondaryImagesArray.toString())
+				.put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
 				.put("stock", (stock != null ? stock : JSONObject.NULL))
 				.put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
-				.put("eans", ((eans != null && !eans.isEmpty()) ? eans : JSONObject.NULL))
+				.put("eans", (eans != null ? eans : Collections.emptyList()))
 				.put("timestamp", timestamp)
 				.toString();
 	}
