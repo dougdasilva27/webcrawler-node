@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class KPLProducer {
@@ -116,7 +117,7 @@ public class KPLProducer {
 			Futures.addCallback(f, myCallback);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
 		}
 	};
 	
