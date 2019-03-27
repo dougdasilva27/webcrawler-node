@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
@@ -113,27 +114,39 @@ public class Crawler extends Task {
 		}
 	}
 
+	/**
+	 * This method serializes the crawled sku instance and put its raw bytes
+	 * on a kinesis stream. The instance passed as parameter is not altered. Instead
+	 * we perform a clone to securely alter the attributes.
+	 * 
+	 * @param product
+	 */
 	private void sendToKinesis(Product product) {
 		if (product.isVoid()) {
 			Product p = new Product();
 			p.setInternalId(session.getInternalId());
+			p.setInternalPid(product.getInternalPid());
 			p.setMarketId(session.getMarket().getNumber());
 			p.setAvailable(false);
-			p.setStatus("void");
+			p.setStatus(SkuStatus.VOID);
 
 			KPLProducer.getInstance().put(p, session);
+			
 		} else {
-			product.setMarketId(session.getMarket().getNumber());
-			if (product.getAvailable()) {
-				product.setStatus("available");
+			Product p = product.clone();
+			
+			p.setMarketId(session.getMarket().getNumber());
+			if (p.getAvailable()) {
+				p.setStatus(SkuStatus.AVAILABLE);
 			} else {
-				if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
-					product.setStatus("only_marketplace");
+				if (p.getMarketplace() != null && p.getMarketplace().size() > 0) {
+					p.setStatus(SkuStatus.MARKETPLACE_ONLY);
 				} else {
-					product.setStatus("unavailable");
+					p.setStatus(SkuStatus.UNAVAILABLE);
 				}
 			}
-			KPLProducer.getInstance().put(product, session);
+			
+			KPLProducer.getInstance().put(p, session);
 		}
 	}
 
@@ -185,14 +198,6 @@ public class Crawler extends Task {
 	}
 
 	private void productionRun() {
-		// if (session instanceof InsightsCrawlerSession) {
-		// Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
-		// session.getMaxConnectionAttemptsCrawler());
-		// } else if (session instanceof ImageCrawlerSession) {
-		// Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
-		// session.getMaxConnectionAttemptsImages());
-		// }
-
 		if (session instanceof SeedCrawlerSession) {
 			Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 50);
 		}
@@ -245,6 +250,8 @@ public class Crawler extends Task {
 				}
 			}
 
+			// Before process and save to PostgreSQL
+			// we must send the raw crawled data to Kinesis
 			sendToKinesis(activeVoidResultProduct);
 
 			// after active void analysis we have the resultant
@@ -269,6 +276,12 @@ public class Crawler extends Task {
 		// we must process each crawled product
 		else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
 			Logging.printLogDebug(logger, session, "Processing session of type: " + session.getClass().getName());
+			
+			// Before process and save to PostgreSQL
+			// we must send the raw crawled data to Kinesis
+			for (Product p : products) {
+				sendToKinesis(p);
+			}
 
 			for (Product product : products) {
 				try {

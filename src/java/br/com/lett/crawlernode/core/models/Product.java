@@ -37,7 +37,7 @@ public class Product implements Serializable {
 	private List<String> eans;
 	private String timestamp;
 	private Integer marketId;
-	private String status;
+	private SkuStatus status;
 
 	public Product() {
 		this.description = "";
@@ -178,30 +178,6 @@ public class Product implements Serializable {
 		this.stock = stock;
 	}
 
-	/**
-	 * Check if the product instance is void. Cases in which it's considered a void product:
-	 * <ul>
-	 * <li>1. The price is null or 0.0 and at the same time is available.</li>
-	 * <li>2. The internal id is null or is an empty string</li>
-	 * <li>3. The name is null or is an empty string</li>
-	 * </ul>
-	 * 
-	 * @return true if product is void or false otherwise
-	 */
-	public boolean isVoid() {
-		if ((price == null || price.equals(0f)) && available) {
-			return true;
-		}
-		if (internalId == null || internalId.isEmpty()) {
-			return true;
-		}
-		if (name == null || name.isEmpty()) {
-			return true;
-		}
-
-		return false;
-	}
-
 	public Prices getPrices() {
 		return prices;
 	}
@@ -240,6 +216,38 @@ public class Product implements Serializable {
 
 	public void setMarketId(Integer marketId) {
 		this.marketId = marketId;
+	}
+	
+	public SkuStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(SkuStatus status) {
+		this.status = status;
+	}
+	
+	/**
+	 * Check if the product instance is void. Cases in which it's considered a void product:
+	 * <ul>
+	 * <li>1. The price is null or 0.0 and at the same time is available.</li>
+	 * <li>2. The internal id is null or is an empty string</li>
+	 * <li>3. The name is null or is an empty string</li>
+	 * </ul>
+	 * 
+	 * @return true if product is void or false otherwise
+	 */
+	public boolean isVoid() {
+		if ((price == null || price.equals(0f)) && available) {
+			return true;
+		}
+		if (internalId == null || internalId.isEmpty()) {
+			return true;
+		}
+		if (name == null || name.isEmpty()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	@Override
@@ -305,6 +313,7 @@ public class Product implements Serializable {
 		} else {
 			secondaryImagesArray = new JSONArray();
 		}
+		
 		return 
 				new JSONObject()
 				.put("url", (url != null ? url : JSONObject.NULL))
@@ -314,27 +323,19 @@ public class Product implements Serializable {
 				.put("name", (name != null ? name : JSONObject.NULL))
 				.put("price", (price != null ? price.toString() : JSONObject.NULL))
 				.put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
-				.put("status", status)
+				.put("status", status.toString())
 				.put("available", available)
 				.put("category1", (category1 != null ? category1 : JSONObject.NULL))
 				.put("category2", (category2 != null ? category2 : JSONObject.NULL))
 				.put("category3", (category3 != null ? category3 : JSONObject.NULL))
 				.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
-				.put("secondaryImages", secondaryImagesArray.toString())
+				.put("secondaryImages", secondaryImagesArray)
 				.put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
 				.put("stock", (stock != null ? stock : JSONObject.NULL))
 				.put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
 				.put("eans", (eans != null ? eans : Collections.emptyList()))
 				.put("timestamp", timestamp)
 				.toString();
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
 	}
 
 }
