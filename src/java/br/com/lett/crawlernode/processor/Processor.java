@@ -445,7 +445,7 @@ public class Processor {
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-      if (discount > 20 && (newProcessedProduct.getPrice() > 50 || discount > 80)) {
+      if ((discount > 75 && newProcessedProduct.getPrice() > 50) || discount > 90) {
         DBSlack.reportPriceChanges(session,
             "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
                 + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"

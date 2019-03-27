@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,12 +18,13 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class BrasilLojasbeckerCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.lojasbecker.com/";
-  private static final String MAIN_SELLER_NAME_LOWER = "lojas becker";
+public class BrasilShopfacilCrawler extends Crawler {
 
-  public BrasilLojasbeckerCrawler(Session session) {
+  private static final String HOME_PAGE = "https://www.shopfacil.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "shopfacil";
+
+  public BrasilShopfacilCrawler(Session session) {
     super(session);
   }
 
@@ -40,14 +40,15 @@ public class BrasilLojasbeckerCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
-      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+    if (skuJson.length() > 0) {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-details"));
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription", "#caracteristicas", ".stockkeepingunit-attributes"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -88,10 +89,5 @@ public class BrasilLojasbeckerCrawler extends Crawler {
     }
 
     return products;
-  }
-
-
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".productName") != null;
   }
 }
