@@ -122,6 +122,8 @@ public class Crawler extends Task {
 	 * @param product
 	 */
 	private void sendToKinesis(Product product) {
+		if (!GlobalConfigurations.executionParameters.mustSendToKinesis()) return;
+		
 		if (product.isVoid()) {
 			Product p = new Product();
 			p.setInternalId(session.getInternalId());

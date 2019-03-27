@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -110,7 +111,7 @@ public class KPLProducer {
 
 			// TIMESTAMP is our partition key
 			ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(
-					KPLProducerConfig.STREAM_NAME, 
+					GlobalConfigurations.executionParameters.getKinesisStream(), 
 					p.getTimestamp(), 
 					randomExplicitHashKey(), 
 					data);

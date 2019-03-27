@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.main;
 
 public class EnvironmentVariables {
-
   public static final String ENV_NTHREADS = "CRAWLER_THREADS";
   public static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
   public static final String ENV_DEBUG = "DEBUG";
@@ -15,4 +14,6 @@ public class EnvironmentVariables {
   public static final String HIKARI_CP_VALIDATION_TIMEOUT = "HIKARI_CP_VALIDATION_TIMEOUT";
   public static final String HIKARI_CP_CONNECTION_TIMEOUT = "HIKARI_CP_CONNECTION_TIMEOUT";
   public static final String HIKARI_CP_IDLE_TIMEOUT = "HIKARI_CP_IDLE_TIMEOUT";
+  public static final String KINESIS_STREAM = "KINESIS_STREAM";
+  public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
 }
