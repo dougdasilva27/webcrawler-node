@@ -126,9 +126,10 @@ public class Crawler extends Task {
 		
 		if (product.isVoid()) {
 			Product p = new Product();
-			p.setInternalId(session.getInternalId());
+			p.setInternalId(product.getInternalId());
 			p.setInternalPid(product.getInternalPid());
 			p.setMarketId(session.getMarket().getNumber());
+			p.setUrl(session.getOriginalURL());
 			p.setAvailable(false);
 			p.setStatus(SkuStatus.VOID);
 
