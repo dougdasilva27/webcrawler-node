@@ -97,7 +97,7 @@ public class BrasilBenoitCrawler extends Crawler {
       for (Element element : cards) {
         Map<Integer, Float> installments = new HashMap<>();
         for (Element e : table) {
-          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "", true);
+          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "juros", true);
 
           if (!pair.isAnyValueNull()) {
             installments.put(pair.getFirst(), pair.getSecond());
@@ -135,25 +135,33 @@ public class BrasilBenoitCrawler extends Crawler {
 
     JSONArray secondaryImagesArray = new JSONArray();
 
-    if (model.has("MediaGroups")) {
+    if (model.has("MediaGroups") && !model.isNull("MediaGroups")) {
       JSONArray mediaGroups = model.getJSONArray("MediaGroups");
+
       for (Object object : mediaGroups) {
         JSONObject media = (JSONObject) object;
-        if (media.has("Large")) {
+
+        if (media.has("Large") && !media.isNull("Large")) {
           JSONObject large = media.getJSONObject("Large");
+
           if (large.has("MediaPath")) {
             secondaryImage = CrawlerUtils.completeUrl(large.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+
           }
-        } else if (media.has("Medium")) {
+        } else if (media.has("Medium") && !media.isNull("Medium")) {
           JSONObject medium = media.getJSONObject("Medium");
+
           if (medium.has("MediaPath")) {
             secondaryImage = CrawlerUtils.completeUrl(medium.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+
           }
 
-        } else if (media.has("Small")) {
+        } else if (media.has("Small") && !media.isNull("Medium")) {
           JSONObject small = media.getJSONObject("Small");
+
           if (small.has("MediaPath")) {
             secondaryImage = CrawlerUtils.completeUrl(small.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
+
           }
         }
 
@@ -173,28 +181,36 @@ public class BrasilBenoitCrawler extends Crawler {
   private String crawlPrimaryImage(JSONObject model) {
     String primaryImage = null;
 
-    if (model.has("MediaGroups")) {
+    if (model.has("MediaGroups") && !model.isNull("MediaGroup")) {
       JSONArray mediaGroups = model.getJSONArray("MediaGroups");
+
       for (Object object : mediaGroups) {
         JSONObject media = (JSONObject) object;
-        if (media.has("Large")) {
+
+        if (media.has("Large") && !media.isNull("Large")) {
           JSONObject large = media.getJSONObject("Large");
-          if (large.has("MediaPath")) {
+
+          if (large.has("MediaPath") && !large.isNull("MediaPath")) {
             primaryImage = CrawlerUtils.completeUrl(large.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
             break;
+
           }
-        } else if (media.has("Medium")) {
+        } else if (media.has("Medium") && !media.isNull("Medium")) {
           JSONObject medium = media.getJSONObject("Medium");
-          if (medium.has("MediaPath")) {
+
+          if (medium.has("MediaPath") && !medium.isNull("MediaPath")) {
             primaryImage = CrawlerUtils.completeUrl(medium.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
             break;
+
           }
 
-        } else if (media.has("Small")) {
+        } else if (media.has("Small") && !media.has("Small")) {
           JSONObject small = media.getJSONObject("Small");
-          if (small.has("MediaPath")) {
+
+          if (small.has("MediaPath") && !small.isNull("MediaPath")) {
             primaryImage = CrawlerUtils.completeUrl(small.getString("MediaPath"), "https", "d296pbmv9m7g8v.cloudfront.net");
             break;
+
           }
         }
       }
