@@ -100,14 +100,12 @@ public class JavanetDataFetcher implements DataFetcher {
 
   @Override
   public Response post(Session session, Request request) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ApacheDataFetcher().post(session, request);
   }
 
   @Override
   public File fetchImage(Session session, Request request) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ApacheDataFetcher().fetchImage(session, request);
   }
 
 }

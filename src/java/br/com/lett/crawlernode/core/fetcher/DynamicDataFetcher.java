@@ -2,12 +2,14 @@ package br.com.lett.crawlernode.core.fetcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
@@ -33,7 +35,7 @@ public class DynamicDataFetcher {
    */
   public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
     Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
-    String requestHash = DataFetcherNO.generateRequestHash(session);
+    String requestHash = FetchUtilities.generateRequestHash(session);
 
     try {
       String phantomjsPath = null;
@@ -86,7 +88,7 @@ public class DynamicDataFetcher {
       caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", userAgent);
 
 
-      DataFetcherNO.sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
+      sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
       CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
 
@@ -104,6 +106,22 @@ public class DynamicDataFetcher {
       Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       return null;
     }
+  }
+
+  private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session,
+      String requestHash) {
+
+    JSONObject requestMetadata = new JSONObject();
+
+    requestMetadata.put("req_hash", requestHash);
+    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
+    requestMetadata.put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()));
+    requestMetadata.put("user_agent", userAgent);
+    requestMetadata.put("req_method", requestType);
+    requestMetadata.put("req_location", url);
+
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+
   }
 
   private static LettProxy randomProxy(String proxyService) {
@@ -124,7 +142,7 @@ public class DynamicDataFetcher {
    */
   public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
     try {
-      String requestHash = DataFetcherNO.generateRequestHash(session);
+      String requestHash = FetchUtilities.generateRequestHash(session);
       Document doc = new Document(url);
       webdriver.loadUrl(url);
 

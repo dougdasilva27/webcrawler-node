@@ -1,16 +1,20 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.net.ssl.SSLContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.joda.time.DateTime;
@@ -18,6 +22,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import br.com.lett.crawlernode.core.fetcher.DataFetch.TrustManager;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -186,25 +191,25 @@ public class FetchUtilities {
 
     if (proxy != null) {
 
-      if (session.getMarket().getName() != null && DataFetcherNO.highTimeoutMarkets.contains(session.getMarket().getName())) {
+      if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
         requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
-            .setConnectionRequestTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT).setConnectTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT)
-            .setSocketTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT).setProxy(proxy).build();
+            .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+            .setProxy(proxy).build();
       } else {
         requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
-            .setConnectionRequestTimeout(DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcherNO.DEFAULT_CONNECT_TIMEOUT)
-            .setSocketTimeout(DataFetcherNO.DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+            .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
       }
 
     } else {
-      if (session.getMarket().getName() != null && DataFetcherNO.highTimeoutMarkets.contains(session.getMarket().getName())) {
+      if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
         requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
-            .setConnectionRequestTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT).setConnectTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT)
-            .setSocketTimeout(DataFetcherNO.THIRTY_SECONDS_TIMEOUT).build();
+            .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+            .build();
       } else {
         requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
-            .setConnectionRequestTimeout(DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DataFetcherNO.DEFAULT_CONNECT_TIMEOUT)
-            .setSocketTimeout(DataFetcherNO.DEFAULT_SOCKET_TIMEOUT).build();
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+            .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
       }
     }
 
@@ -267,6 +272,20 @@ public class FetchUtilities {
     }
 
     return cookies;
+  }
+
+  /**
+   * 
+   * @return
+   * @throws NoSuchAlgorithmException
+   * @throws KeyManagementException
+   */
+  public static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
+    TrustManager trustManager = new TrustManager();
+    SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+    sslContext.init(null, new TrustManager[] {trustManager}, null);
+
+    return new SSLConnectionSocketFactory(sslContext);
   }
 
   /**

@@ -92,7 +92,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
         List<Header> reqHeaders = new ArrayList<>();
         if (request.mustSendContentEncoding()) {
-          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
+          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, FetchUtilities.CONTENT_ENCODING));
         }
 
         for (Entry<String, String> mapEntry : headers.entrySet()) {
@@ -117,7 +117,7 @@ public class ApacheDataFetcher implements DataFetcher {
         CloseableHttpClient httpclient =
             HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
                 .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
-                .setSSLSocketFactory(DataFetcherNO.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
+                .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
 
         HttpContext localContext = new BasicHttpContext();
         localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -204,7 +204,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
         List<Header> reqHeaders = new ArrayList<>();
         if (request.mustSendContentEncoding()) {
-          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, DataFetcherNO.CONTENT_ENCODING));
+          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, FetchUtilities.CONTENT_ENCODING));
         }
 
         for (Entry<String, String> mapEntry : headers.entrySet()) {
@@ -229,7 +229,7 @@ public class ApacheDataFetcher implements DataFetcher {
         CloseableHttpClient httpclient =
             HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
                 .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
-                .setSSLSocketFactory(DataFetcherNO.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
+                .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
 
         HttpContext localContext = new BasicHttpContext();
         localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -288,7 +288,7 @@ public class ApacheDataFetcher implements DataFetcher {
         // see if some code error occured
         // sometimes the remote server doesn't send the http error code on the headers
         // but rater on the page bytes
-        for (String errorCode : DataFetcherNO.errorCodes) {
+        for (String errorCode : FetchUtilities.errorCodes) {
           if (content.equals(errorCode)) {
             requestStats.setStatusCode(Integer.parseInt(errorCode));
             throw new ResponseCodeException(Integer.parseInt(errorCode));

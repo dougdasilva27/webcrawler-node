@@ -30,7 +30,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
@@ -38,11 +37,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.Logging;
 
-public class GETFetcher {
+public class GETFetcherr {
 
-  protected static final Logger logger = LoggerFactory.getLogger(GETFetcher.class);
+  protected static final Logger logger = LoggerFactory.getLogger(GETFetcherr.class);
 
-  private GETFetcher() {
+  private GETFetcherr() {
     super();
   }
 

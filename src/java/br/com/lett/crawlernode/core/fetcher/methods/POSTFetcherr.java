@@ -38,7 +38,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
@@ -51,9 +50,9 @@ import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
-public class POSTFetcher {
+public class POSTFetcherr {
 
-  protected static final Logger logger = LoggerFactory.getLogger(POSTFetcher.class);
+  protected static final Logger logger = LoggerFactory.getLogger(POSTFetcherr.class);
 
   private static final String FETCHER_CONTENT_TYPE = "application/json";
   private static final String FETCHER_USER = "fetcher";
@@ -65,7 +64,7 @@ public class POSTFetcher {
   // public static final String FETCHER_HOST_DEV =
   // "http://placeholder-fetcher-dev.us-east-1.elasticbeanstalk.com";
 
-  private POSTFetcher() {
+  private POSTFetcherr() {
     super();
   }
 

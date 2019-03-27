@@ -13,11 +13,16 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
+import br.com.lett.crawlernode.core.fetcher.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
@@ -68,6 +73,8 @@ public class Crawler extends Task {
 
   protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
+  protected DataFetcher dataFetcher;
+
   protected CrawlerConfig config;
 
   protected CrawlerWebdriver webdriver;
@@ -113,6 +120,16 @@ public class Crawler extends Task {
     } catch (Exception e) {
       DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+  }
+
+  private void setDataFetcher() {
+    if (config.getFetcher() == FetchMode.STATIC) {
+      dataFetcher = new ApacheDataFetcher();
+    } else if (config.getFetcher() == FetchMode.JAVANET) {
+      dataFetcher = new JavanetDataFetcher();
+    } else if (config.getFetcher() == FetchMode.FETCHER) {
+      dataFetcher = new FetcherDataFetcher();
     }
   }
 
@@ -531,14 +548,17 @@ public class Crawler extends Task {
    */
   protected Object fetch() {
     String html = "";
-    if (config.getFetcher() == FetchMode.STATIC) {
-      html = DataFetcherNO.fetchString(FetchUtilities.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-    } else {
+    if (config.getFetcher() == FetchMode.WEBDRIVER) {
       webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 
       if (webdriver != null) {
         html = webdriver.getCurrentPageSource();
       }
+    } else {
+      Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+
+      html = response.getBody();
     }
 
     return Jsoup.parse(html);

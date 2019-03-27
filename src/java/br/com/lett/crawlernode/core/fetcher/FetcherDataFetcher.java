@@ -48,8 +48,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
   @Override
   public File fetchImage(Session session, Request request) {
-    // TODO Auto-generated method stub
-    return null;
+    return new ApacheDataFetcher().fetchImage(session, request);
   }
 
   /**
@@ -69,7 +68,7 @@ public class FetcherDataFetcher implements DataFetcher {
       Logging.printLogDebug(logger, session,
           "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
-      Integer defaultTimeout = DataFetcherNO.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
+      Integer defaultTimeout = FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
 
       URL url = new URL(FETCHER_HOST);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();

@@ -165,7 +165,7 @@ public class Request {
       return this;
     }
 
-    public RequestBuilder setUrl(boolean followRedirects) {
+    public RequestBuilder setFollowRedirects(boolean followRedirects) {
       this.followRedirects = followRedirects;
       return this;
     }

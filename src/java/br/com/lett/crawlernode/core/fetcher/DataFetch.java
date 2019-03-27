@@ -70,9 +70,9 @@ import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.DateConstants;
 
 
 /**
@@ -81,9 +81,9 @@ import br.com.lett.crawlernode.util.MathUtils;
  * @author Samir Leão
  *
  */
-public class DataFetcherNO {
+public class DataFetch {
 
-  protected static final Logger logger = LoggerFactory.getLogger(DataFetcherNO.class);
+  protected static final Logger logger = LoggerFactory.getLogger(DataFetch.class);
 
   public static final String HTTP_COOKIE_HEADER = "Set-Cookie";
 
