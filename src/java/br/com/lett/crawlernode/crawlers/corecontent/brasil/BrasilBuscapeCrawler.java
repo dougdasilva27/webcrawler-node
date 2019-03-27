@@ -142,6 +142,7 @@ public class BrasilBuscapeCrawler extends Crawler {
 
   private Marketplace scrapMarketplaces(JSONObject pageInfo) {
     Marketplace mkt = new Marketplace();
+    List<String> sellers = new ArrayList<>();
 
     if (pageInfo.has("offers")) {
       JSONArray offers = pageInfo.getJSONArray("offers");
@@ -156,8 +157,9 @@ public class BrasilBuscapeCrawler extends Crawler {
           JSONObject sellerJson = offer.getJSONObject("seller");
           String sellerName = sellerJson.has("name") ? sellerJson.get("name").toString().toLowerCase().trim() : null;
 
-          if (!prices.isEmpty() && sellerName != null && price != null) {
+          if (!prices.isEmpty() && sellerName != null && price != null && !sellers.contains(sellerName)) {
             try {
+              sellers.add(sellerName);
               Seller seller = new SellerBuilder().setName(sellerName).setPrice(price).setPrices(prices).build();
               mkt.add(seller);
             } catch (IllegalSellerValueException e) {
