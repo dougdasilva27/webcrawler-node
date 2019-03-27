@@ -32,5 +32,6 @@ public interface DataFetcher {
    * @param request {@link Request}
    * @return {@link File}
    */
+
   public File fetchImage(Session session, Request request);
 }

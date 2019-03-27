@@ -12,8 +12,8 @@ import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
+import models.DateConstants;
 import models.Processed;
 
 

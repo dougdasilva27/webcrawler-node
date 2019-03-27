@@ -12,6 +12,7 @@ public class ExecutionParameters {
   public static final String ENVIRONMENT_DEVELOPMENT = "development";
   public static final String ENVIRONMENT_PRODUCTION = "production";
   public static final String DEFAULT_CRAWLER_VERSION = "-1";
+  public static final String DEFAULT_KINESIS_STREAM = "sku-core-crawler-kinesis-stream";
 
 
   /**
@@ -35,6 +36,8 @@ public class ExecutionParameters {
   private String version;
   private Boolean debug;
   private Boolean useFetcher;
+  private String kinesisStream;
+  private Boolean sendToKinesis;
 
   public ExecutionParameters() {
     debug = null;
@@ -47,6 +50,8 @@ public class ExecutionParameters {
     forceImageUpdate = getEnvForceImgUpdate();
     environment = getEnvEnvironment();
     tmpImageFolder = getEnvTmpImagesFolder();
+    kinesisStream = getEnvKinesisStream();
+    sendToKinesis = getEnvSendToKinesis();
     setPhantomjsPath(getEnvPhantomjsPath());
     setHikariCpConnectionTimeout();
     setHikariCpIDLETimeout();
@@ -57,6 +62,10 @@ public class ExecutionParameters {
     version = DEFAULT_CRAWLER_VERSION;
 
     Logging.printLogDebug(logger, this.toString());
+  }
+  
+  public Boolean mustSendToKinesis() {
+	  return sendToKinesis;
   }
 
   public Boolean getDebug() {
@@ -95,6 +104,14 @@ public class ExecutionParameters {
     }
     return false;
   }
+  
+  private boolean getEnvSendToKinesis() {
+	  String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
+	  if (Boolean.TRUE.toString().equals(sendToKinesis)) {
+		  return true;
+	  }
+	  return false;
+  }
 
   private String getEnvPhantomjsPath() {
     return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
@@ -123,6 +140,14 @@ public class ExecutionParameters {
     }
     return false;
   }
+  
+  private String getEnvKinesisStream() {
+	  String kinesisStream = System.getenv(EnvironmentVariables.KINESIS_STREAM);
+	  if (kinesisStream == null) {
+		  return DEFAULT_KINESIS_STREAM;
+	  }
+	  return kinesisStream;
+  }
 
   private boolean getEnvUseFetcher() {
     String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
@@ -146,6 +171,10 @@ public class ExecutionParameters {
 
   public int getCoreThreads() {
     return this.coreThreads;
+  }
+  
+  public String getKinesisStream() {
+	  return kinesisStream;
   }
 
   public int getNthreads() {

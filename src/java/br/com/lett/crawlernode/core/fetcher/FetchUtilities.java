@@ -26,7 +26,7 @@ import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 
@@ -103,7 +103,7 @@ public class FetchUtilities {
   }
 
   public static String generateRequestHash(Session session) {
-    String s = session.getSessionId() + new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String s = session.getSessionId() + new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
     return DigestUtils.md5Hex(s);
   }
 

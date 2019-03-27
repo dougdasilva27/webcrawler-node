@@ -1,21 +1,31 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class Product {
+public class Product implements Serializable {
 
+	private static final long serialVersionUID = 4971005612828002546L;
+	
 	private String url;
 	private String internalId;
 	private String internalPid;
 	private String name;
+	
+	@Deprecated
 	private Float price;
+	
 	private Prices prices;
 	private boolean available;
 	private String category1;
@@ -28,9 +38,17 @@ public class Product {
 	private Integer stock;
 	private String ean;
 	private List<String> eans;
+	private String timestamp;
+	private Integer marketId;
+	private SkuStatus status;
 
 	public Product() {
 		this.description = "";
+		this.timestamp = DateUtils.newTimestamp();
+	}
+	
+	public Product clone() {
+		return SerializationUtils.clone(this);
 	}
 
 	public String getUrl() {
@@ -163,6 +181,54 @@ public class Product {
 		this.stock = stock;
 	}
 
+	public Prices getPrices() {
+		return prices;
+	}
+
+	public void setPrices(Prices prices) {
+		this.prices = prices;
+	}
+
+	public String getEan() {
+		return ean;
+	}
+
+	public void setEan(String ean) {
+		this.ean = ean;
+	}
+
+	public List<String> getEans() {
+		return this.eans;
+	}
+
+	public void setEans(List<String> eans) {
+		this.eans = eans;
+	}
+	
+	public String getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public Integer getMarketId() {
+		return marketId;
+	}
+
+	public void setMarketId(Integer marketId) {
+		this.marketId = marketId;
+	}
+	
+	public SkuStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(SkuStatus status) {
+		this.status = status;
+	}
+	
 	/**
 	 * Check if the product instance is void. Cases in which it's considered a void product:
 	 * <ul>
@@ -185,30 +251,6 @@ public class Product {
 		}
 
 		return false;
-	}
-
-	public Prices getPrices() {
-		return prices;
-	}
-
-	public void setPrices(Prices prices) {
-		this.prices = prices;
-	}
-	
-	public String getEan() {
-		return ean;
-	}
-
-	public void setEan(String ean) {
-		this.ean = ean;
-	}
-	
-	public List<String> getEans() {
-		return this.eans;
-	}
-	
-	public void setEans(List<String> eans) {
-		this.eans = eans;
 	}
 
 	@Override
@@ -245,26 +287,57 @@ public class Product {
 		return sb.toString();
 	}
 
-	public JSONObject toJSON() {
-		JSONObject obj = new JSONObject();
-
-		obj.put("url", (url != null ? url : JSONObject.NULL));
-		obj.put("internalId", (internalId != null ? internalId : JSONObject.NULL));
-		obj.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL));
-		obj.put("name", (name != null ? name : JSONObject.NULL));
-		obj.put("price", (price != null ? price : JSONObject.NULL));
-		obj.put("prices", (prices != null ? prices.toString() : JSONObject.NULL));
-		obj.put("available", available);
-		obj.put("category1", (category1 != null ? category1 : JSONObject.NULL));
-		obj.put("category2", (category2 != null ? category2 : JSONObject.NULL));
-		obj.put("category3", (category3 != null ? category3 : JSONObject.NULL));
-		obj.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL));
-		obj.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL));
-		obj.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL));
-		obj.put("stock", (stock != null ? stock : JSONObject.NULL));
-		obj.put("description", (description != null ? description : JSONObject.NULL));
-
-		return obj;
+	public String toJson() {
+		return new JSONObject()
+				.put("url", (url != null ? url : JSONObject.NULL))
+				.put("internalId", (internalId != null ? internalId : JSONObject.NULL))
+				.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
+				.put("name", (name != null ? name : JSONObject.NULL))
+				.put("price", (price != null ? price : JSONObject.NULL))
+				.put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
+				.put("available", available)
+				.put("category1", (category1 != null ? category1 : JSONObject.NULL))
+				.put("category2", (category2 != null ? category2 : JSONObject.NULL))
+				.put("category3", (category3 != null ? category3 : JSONObject.NULL))
+				.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
+				.put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
+				.put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL))
+				.put("stock", (stock != null ? stock : JSONObject.NULL))
+				.put("description", (description != null ? description : JSONObject.NULL))
+				.put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
+				.put("timestamp", timestamp)
+				.toString();
+	}
+	
+	public String serializeToKinesis() {
+		JSONArray secondaryImagesArray = null;
+		if (secondaryImages != null && !secondaryImages.isEmpty()) {
+			secondaryImagesArray = new JSONArray(secondaryImages);
+		} else {
+			secondaryImagesArray = new JSONArray();
+		}
+		
+		return 
+				new JSONObject()
+				.put("url", (url != null ? url : JSONObject.NULL))
+				.put("internalId", (internalId != null ? internalId : JSONObject.NULL))
+				.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
+				.put("marketId", marketId)
+				.put("name", (name != null ? name : JSONObject.NULL))
+				.put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
+				.put("status", status.toString())
+				.put("available", available)
+				.put("category1", (category1 != null ? category1 : JSONObject.NULL))
+				.put("category2", (category2 != null ? category2 : JSONObject.NULL))
+				.put("category3", (category3 != null ? category3 : JSONObject.NULL))
+				.put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
+				.put("secondaryImages", secondaryImagesArray)
+				.put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
+				.put("stock", (stock != null ? stock : JSONObject.NULL))
+				.put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
+				.put("eans", (eans != null ? eans : Collections.emptyList()))
+				.put("timestamp", timestamp)
+				.toString();
 	}
 
 }
