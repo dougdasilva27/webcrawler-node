@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.core.fetcher.models;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.cookie.Cookie;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 
 public class Response {
 

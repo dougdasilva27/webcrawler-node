@@ -32,9 +32,8 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
-import br.com.lett.crawlernode.core.fetcher.HostNameVerifier;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.PageContent;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.Logging;
@@ -207,14 +206,11 @@ public class GETFetcher {
       // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
       // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
       // verification to happen the capture
-      HostnameVerifier hostNameVerifier = new HostNameVerifier();
-      if (session.getMarket().getNumber() == 115) {
-        hostNameVerifier = new HostnameVerifier() {
-          public boolean verify(String hostname, SSLSession session) {
-            return true;
-          }
-        };
-      }
+      HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+        public boolean verify(String hostname, SSLSession session) {
+          return true;
+        }
+      };
 
       CloseableHttpClient httpclient =
           HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(userAgent).setDefaultRequestConfig(requestConfig)
@@ -246,7 +242,8 @@ public class GETFetcher {
       responseLength = pageContent.getContentData().length;
 
       // assembling request information log message
-      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength, requestHash);
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength,
+          requestHash);
 
       // saving request content result on Amazon
       String content = "";
@@ -276,7 +273,8 @@ public class GETFetcher {
       return DataFetcherNO.processContent(pageContent, session);
 
     } catch (Exception e) {
-      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength, requestHash);
+      DataFetcherNO.sendRequestInfoLog(url, DataFetcherNO.GET_REQUEST, randProxy, userAgent, session, closeableHttpResponse, responseLength,
+          requestHash);
 
       Logging.printLogWarn(logger, session, "Error performing GET request [url: " + session.getOriginalURL() + " , attempt: " + attempt + "]");
       Logging.printLogWarn(logger, session, e.getMessage());
@@ -306,44 +304,6 @@ public class GETFetcher {
     String requestHash = DataFetcherNO.generateRequestHash(session);
 
     try {
-
-
-      // Request via fetcher on first attempt
-      if (DataFetcherNO.mustUseFetcher(attempt, session)) {
-        if (cookies != null && !cookies.isEmpty()) {
-          StringBuilder cookiesHeader = new StringBuilder();
-
-          for (Cookie c : cookies) {
-            cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
-          }
-
-          headers.put("Cookie", cookiesHeader.toString());
-        }
-
-        JSONObject payload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers, null);
-        JSONObject response = POSTFetcher.requestWithFetcher(session, payload, true);
-
-        if (response.has("response")) {
-          DataFetcherNO.setRequestProxyForFetcher(session, response, url);
-          session.addRedirection(url, response.getJSONObject("response").getString("redirect_url"));
-
-          String content = response.getJSONObject("response").getString("body");
-          S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
-
-          if (response.has("request_status_code")) {
-            int responseCode = response.getInt("request_status_code");
-            if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-              throw new ResponseCodeException(responseCode);
-            }
-          }
-
-          return content;
-        } else {
-          Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
-          throw new ResponseCodeException(500);
-        }
-      }
-
       randUserAgent = headers.containsKey("User-Agent") ? headers.get("User-Agent") : DataFetcherNO.randUserAgent();
       randProxy = lettProxy != null ? lettProxy : DataFetcherNO.randLettProxy(attempt, session, session.getMarket().getProxies(), url);
 

@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.fetcher;
+package br.com.lett.crawlernode.core.fetcher.models;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

@@ -15,6 +15,8 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import java.util.Map.Entry;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
@@ -58,6 +61,8 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
@@ -81,9 +86,6 @@ public class DataFetcherNO {
   protected static final Logger logger = LoggerFactory.getLogger(DataFetcherNO.class);
 
   public static final String HTTP_COOKIE_HEADER = "Set-Cookie";
-
-  public static final String GET_REQUEST = "GET";
-  public static final String POST_REQUEST = "POST";
 
   public static final String HTTP_HEADER_CONTENT_TYPE = "Content-Type";
   public static final String HTTP_HEADER_ACCEPT = "Accept";
@@ -506,14 +508,11 @@ public class DataFetcherNO {
       // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
       // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
       // verification to happen the capture
-      HostnameVerifier hostNameVerifier = new HostNameVerifier();
-      if (session.getMarket().getNumber() == 115) {
-        hostNameVerifier = new HostnameVerifier() {
-          public boolean verify(String hostname, SSLSession session) {
-            return true;
-          }
-        };
-      }
+      HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+        public boolean verify(String hostname, SSLSession session) {
+          return true;
+        }
+      };
 
       CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
           .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
@@ -1092,7 +1091,7 @@ public class DataFetcherNO {
     String serviceName = null;
 
     while (proxies.isEmpty() && attemptTemp <= maxAttempts) {
-      serviceName = getProxyService(attemptTemp, session, proxyServices);
+      serviceName = getProxyService(attemptTemp, session);
 
       if (serviceName != null) {
         if (GlobalConfigurations.proxies != null) {
@@ -1144,7 +1143,7 @@ public class DataFetcherNO {
    * @param proxyServices
    * @return
    */
-  public static String getProxyService(int attempt, Session session, List<String> proxyServices) {
+  public static String getProxyService(int attempt, Session session) {
     String service = null;
 
     Logging.printLogDebug(logger, session, "Selecting a proxy service...connection attempt " + attempt);
@@ -1246,5 +1245,23 @@ public class DataFetcherNO {
     }
 
     return mustUseFetcher;
+  }
+
+  public static class TrustManager implements X509TrustManager {
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
   }
 }

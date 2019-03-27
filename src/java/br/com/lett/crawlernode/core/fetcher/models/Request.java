@@ -1,9 +1,10 @@
 package br.com.lett.crawlernode.core.fetcher.models;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.cookie.Cookie;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 
 public class Request {
 
@@ -11,13 +12,15 @@ public class Request {
   private LettProxy proxy;
   private List<String> proxyServices;
   private String payload;
-  private Map<String, String> headers;
-  private List<Cookie> cookies;
+  private Map<String, String> headers = new HashMap<>();
+  private List<Cookie> cookies = new ArrayList<>();
   private FetcherOptions fetcherOptions;
 
   // Variables with default values
   private boolean followRedirects = true;
   private int timeout = 10000;
+  private boolean sendContentEncoding = true;
+  private boolean sendUserAgent = true;
 
   public String getUrl() {
     return url;
@@ -39,7 +42,7 @@ public class Request {
     return proxyServices;
   }
 
-  public void setProxyService(List<String> proxyServices) {
+  public void setProxyServices(List<String> proxyServices) {
     this.proxyServices = proxyServices;
   }
 
@@ -91,19 +94,37 @@ public class Request {
     this.timeout = timeout;
   }
 
+  public boolean mustSendContentEncoding() {
+    return sendContentEncoding;
+  }
+
+  public void setSendContentEncoding(boolean sendContentEncoding) {
+    this.sendContentEncoding = sendContentEncoding;
+  }
+
+  public boolean mustSendUserAgent() {
+    return sendUserAgent;
+  }
+
+  public void setSendUserAgent(boolean sendUserAgent) {
+    this.sendUserAgent = sendUserAgent;
+  }
+
   public static class RequestBuilder {
 
     private String url;
     private LettProxy proxy;
     private List<String> proxyServices;
     private String payload;
-    private Map<String, String> headers;
-    private List<Cookie> cookies;
+    private Map<String, String> headers = new HashMap<>();
+    private List<Cookie> cookies = new ArrayList<>();
     private FetcherOptions fetcherOptions;
 
     // Variables with default values
     private boolean followRedirects = true;
     private int timeout = 10000;
+    private boolean sendContentEncoding = true;
+    private boolean sendUserAgent = true;
 
     public static RequestBuilder create() {
       return new RequestBuilder();
@@ -154,6 +175,16 @@ public class Request {
       return this;
     }
 
+    public RequestBuilder mustSendContentEncoding(boolean must) {
+      this.sendContentEncoding = must;
+      return this;
+    }
+
+    public RequestBuilder setSendUserAgent(boolean must) {
+      this.sendUserAgent = must;
+      return this;
+    }
+
     public Request build() {
       Request request = new Request();
 
@@ -164,8 +195,10 @@ public class Request {
       request.setPayload(payload);
       request.setHeaders(headers);
       request.setProxy(proxy);
-      request.setProxyService(proxyServices);
+      request.setProxyServices(proxyServices);
       request.setTimeout(timeout);
+      request.setSendContentEncoding(sendContentEncoding);
+      request.setSendUserAgent(sendUserAgent);
 
       return request;
     }

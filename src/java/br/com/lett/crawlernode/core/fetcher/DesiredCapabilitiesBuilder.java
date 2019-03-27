@@ -18,16 +18,11 @@ import br.com.lett.crawlernode.util.Logging;
 public class DesiredCapabilitiesBuilder {
   protected static final Logger logger = LoggerFactory.getLogger(DesiredCapabilitiesBuilder.class);
 
-  private static final String DEFAULT_BROWSER = "chrome";
   private static final String DEFAULT_PROXY = "191.235.90.114:3333";
 
   private Session session;
   private String userAgent;
-  private String executablePath;
-  private LettProxy lettProxy;
   private Proxy proxy;
-  private List<String> clientArgs;
-  private String browserName;
 
   public static DesiredCapabilitiesBuilder create() {
     return new DesiredCapabilitiesBuilder();
@@ -42,16 +37,6 @@ public class DesiredCapabilitiesBuilder {
     return this;
   }
 
-  public DesiredCapabilitiesBuilder setExecutablePathProperty(String executablePath) {
-    this.executablePath = executablePath;
-    return this;
-  }
-
-  public DesiredCapabilitiesBuilder setLettProxy(LettProxy lettProxy) {
-    this.lettProxy = lettProxy;
-    return this;
-  }
-
   public DesiredCapabilitiesBuilder setSession(Session session) {
     this.session = session;
     return this;
@@ -62,22 +47,11 @@ public class DesiredCapabilitiesBuilder {
     return this;
   }
 
-  public DesiredCapabilitiesBuilder setBrowserType(String browserName) {
-    this.browserName = browserName;
-    return this;
-  }
-
   public DesiredCapabilities build() {
     DesiredCapabilities desiredCapabilities = DesiredCapabilities.chrome();
 
     desiredCapabilities.setPlatform(Platform.ANY);
     desiredCapabilities.setVersion("ANY");
-
-    // if (browserName != null) {
-    // desiredCapabilities.setBrowserName(browserName);
-    // } else {
-    // desiredCapabilities.setBrowserName(DEFAULT_BROWSER);
-    // }
 
     if (proxy != null) {
       desiredCapabilities.setCapability(CapabilityType.PROXY, proxy);
@@ -87,10 +61,6 @@ public class DesiredCapabilitiesBuilder {
       defaultProxy.setSslProxy(DEFAULT_PROXY);
       desiredCapabilities.setCapability(CapabilityType.PROXY, defaultProxy);
     }
-
-    // if (executablePath != null) {
-    // System.setProperty("webdriver.chrome.driver", executablePath);
-    // }
 
     ChromeOptions chromeOptions = new ChromeOptions();
 

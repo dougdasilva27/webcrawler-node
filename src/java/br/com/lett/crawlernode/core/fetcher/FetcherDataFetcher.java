@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.fetcher.models;
+package br.com.lett.crawlernode.core.fetcher;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,16 +10,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -30,16 +34,16 @@ public class FetcherDataFetcher implements DataFetcher {
   private static final String FETCHER_CONTENT_TYPE = "application/json";
   public static final String FETCHER_HOST = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
   public static final String FETCHER_HOST_DEV = "http://fetcher-development.us-east-1.elasticbeanstalk.com/";
-  protected static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
+  private static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
 
   @Override
   public Response get(Session session, Request request) {
-    return fetcherRequest(session, request, "GET");
+    return fetcherRequest(session, request, FetchUtilities.GET_REQUEST);
   }
 
   @Override
   public Response post(Session session, Request request) {
-    return fetcherRequest(session, request, "POST");
+    return fetcherRequest(session, request, FetchUtilities.POST_REQUEST);
   }
 
   @Override
@@ -48,8 +52,16 @@ public class FetcherDataFetcher implements DataFetcher {
     return null;
   }
 
-  public Response fetcherRequest(Session session, Request request, String method) {
+  /**
+   * 
+   * @param session
+   * @param request
+   * @param method
+   * @return
+   */
+  private Response fetcherRequest(Session session, Request request, String method) {
     Response response = new Response();
+    String requestHash = FetchUtilities.generateRequestHash(session);
 
     try {
       FetcherRequest payload = fetcherPayloadBuilder(request, method);
@@ -61,7 +73,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
       URL url = new URL(FETCHER_HOST);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod(DataFetcherNO.GET_REQUEST);
+      connection.setRequestMethod(method);
       connection.setInstanceFollowRedirects(true);
       connection.setUseCaches(false);
       connection.setReadTimeout(defaultTimeout);
@@ -90,14 +102,21 @@ public class FetcherDataFetcher implements DataFetcher {
       }
 
       response = responseBuilder(responseJson);
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, response.getBody());
     } catch (Exception e) {
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
+      Logging.printLogError(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));
     }
+
+    sendRequestInfoLog(request, response, method, session, requestHash);
 
     return response;
   }
 
+  /**
+   * 
+   * @param fetcherResponse
+   * @return
+   */
   private Response responseBuilder(JSONObject fetcherResponse) {
     Response response = new Response();
     List<RequestsStatistics> requestsStatistics = getStats(fetcherResponse);
@@ -124,32 +143,18 @@ public class FetcherDataFetcher implements DataFetcher {
 
       Map<String, String> headers = getHeaders(responseJson);
       response.setHeaders(headers);
-      response.setCookies(getCookies(headers));
+      response.setCookies(FetchUtilities.getCookiesFromHeadersMap(headers));
 
     }
 
     return response;
   }
 
-  private List<Cookie> getCookies(Map<String, String> headers) {
-    List<Cookie> cookies = new ArrayList<>();
-
-    for (Entry<String, String> entry : headers.entrySet()) {
-      String cookieHeader = entry.getValue();
-      String cookieName = cookieHeader.split("=")[0].trim();
-
-      int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
-      int y = cookieHeader.indexOf(";", x);
-
-      String cookieValue = cookieHeader.substring(x, y).trim();
-
-      BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
-      cookies.add(cookie);
-    }
-
-    return cookies;
-  }
-
+  /**
+   * 
+   * @param responseJson
+   * @return
+   */
   private Map<String, String> getHeaders(JSONObject responseJson) {
     Map<String, String> headers = new HashMap<>();
 
@@ -164,6 +169,11 @@ public class FetcherDataFetcher implements DataFetcher {
     return headers;
   }
 
+  /**
+   * 
+   * @param fetcherResponse
+   * @return
+   */
   private List<RequestsStatistics> getStats(JSONObject fetcherResponse) {
     List<RequestsStatistics> requestStatistics = new ArrayList<>();
 
@@ -243,5 +253,29 @@ public class FetcherDataFetcher implements DataFetcher {
     }
 
     return payload;
+  }
+
+  /**
+   * Log for requests
+   * 
+   * @param request
+   * @param response
+   * @param method
+   * @param session
+   * @param requestHash
+   */
+  public static void sendRequestInfoLog(Request request, Response response, String method, Session session, String requestHash) {
+    LettProxy proxy = response != null ? response.getProxyUsed() : null;
+
+    JSONObject requestMetadata = new JSONObject();
+    requestMetadata.put("req_hash", requestHash);
+    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
+    requestMetadata.put("proxy_ip", (proxy == null ? "" : proxy.getAddress()));
+    requestMetadata.put("req_method", method);
+    requestMetadata.put("req_location", request != null ? request.getUrl() : "");
+    requestMetadata.put("req_type", "FETCHER");
+
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+
   }
 }
