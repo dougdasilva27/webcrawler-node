@@ -35,10 +35,7 @@ public class BrasilBenoitCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-product-id]", "data-product-id");
-
         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-pid]", "data-pid");
-
-
         String productUrl = CrawlerUtils.scrapUrl(e, "h3[class=\"name\"] a", "href", "https:", "www.benoit.com.br");
 
         saveDataProduct(internalId, null, productUrl);
@@ -58,9 +55,7 @@ public class BrasilBenoitCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element count = this.currentDoc.selectFirst(".product-count span");
-    if (count != null) {
-      this.totalProducts = Integer.parseInt(count.text().trim());
-    }
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".product-count span", false, 0);
+    this.log("Total products: " + this.totalProducts);
   }
 }

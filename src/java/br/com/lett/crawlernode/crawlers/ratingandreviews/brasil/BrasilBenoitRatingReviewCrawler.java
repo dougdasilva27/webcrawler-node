@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -31,17 +32,15 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
       if (json.has("Model") && !json.isNull("Model")) {
         JSONObject model = json.getJSONObject("Model");
         String internalId = model.has("ProductID") ? model.get("ProductID").toString() : null;
+
         if (internalId != null) {
-
-
-
-          Integer totalNumOfEvaluations = getTotalNumOfRatings(model);
-          Double avgRating = getTotalAvgRating(model);
+          Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "RatingCount", 0);
+          Double avgRating = CrawlerUtils.getDoubleValueFromJSON(model, "RatingAverage");
 
           ratingReviews.setInternalId(internalId);
           ratingReviews.setTotalRating(totalNumOfEvaluations);
           ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-          ratingReviews.setAverageOverallRating(avgRating);
+          ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);
         }
 
         ratingReviewsCollection.addRatingReviews(ratingReviews);
@@ -53,28 +52,6 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
 
     return ratingReviewsCollection;
 
-  }
-
-
-
-  private Double getTotalAvgRating(JSONObject model) {
-    Double totalAvg = 0d;
-
-    if (model.has("RatingAverage") && !model.isNull("RatingAverage")) {
-      totalAvg = model.getDouble("RatingAverage");
-    }
-
-    return totalAvg;
-  }
-
-  private Integer getTotalNumOfRatings(JSONObject model) {
-    Integer count = 0;
-
-    if (model.has("RatingCount") && !model.isNull("RatingCount")) {
-      count = model.getInt("RatingCount");
-    }
-
-    return count;
   }
 
   private boolean isProductPage(Document document) {

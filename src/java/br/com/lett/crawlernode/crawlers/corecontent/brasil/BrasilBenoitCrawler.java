@@ -104,7 +104,7 @@ public class BrasilBenoitCrawler extends Crawler {
           }
         }
 
-        String cardName = cardName(element);
+        String cardName = scrapCardName(element);
         prices.insertCardInstallment(cardName, installments);
       }
       prices.setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ','));
@@ -114,7 +114,7 @@ public class BrasilBenoitCrawler extends Crawler {
     return prices;
   }
 
-  private String cardName(Element cardElement) {
+  private String scrapCardName(Element cardElement) {
     String resultCard = null;
     Card[] cards = Card.values();
 
@@ -130,7 +130,6 @@ public class BrasilBenoitCrawler extends Crawler {
   }
 
   private String crawlSecondaryImages(JSONObject model, String primaryImage) {
-    String secondaryImage = null;
     String secondaryImages = null;
 
     JSONArray secondaryImagesArray = new JSONArray();
@@ -139,6 +138,7 @@ public class BrasilBenoitCrawler extends Crawler {
       JSONArray mediaGroups = model.getJSONArray("MediaGroups");
 
       for (Object object : mediaGroups) {
+        String secondaryImage = null;
         JSONObject media = (JSONObject) object;
 
         if (media.has("Large") && !media.isNull("Large")) {
@@ -219,20 +219,20 @@ public class BrasilBenoitCrawler extends Crawler {
   }
 
   private String crawlName(JSONObject sku) {
-    String name = new String();
+    String name = null;
 
     if (sku.has("Name")) {
-      name = name.concat(sku.getString("Name"));
-    }
+      name = sku.getString("Name");
 
-    if (sku.has("SKUOptions") && name != null) {
-      JSONArray options = sku.getJSONArray("SKUOptions");
+      if (sku.has("SKUOptions") && name != null) {
+        JSONArray options = sku.getJSONArray("SKUOptions");
 
-      for (Object object : options) {
-        JSONObject opt = (JSONObject) object;
+        for (Object object : options) {
+          JSONObject opt = (JSONObject) object;
 
-        if (opt.has("Title")) {
-          name = name.concat(" ").concat(opt.getString("Title"));
+          if (opt.has("Title")) {
+            name = name.concat(" ").concat(opt.getString("Title"));
+          }
         }
       }
     }
@@ -242,12 +242,18 @@ public class BrasilBenoitCrawler extends Crawler {
 
 
   private Float crawlPrice(JSONObject json) {
-    JSONObject priceJson = json.getJSONObject("Price");
-    JSONObject bestInstallment = priceJson.getJSONObject("BestInstallment");
     Float price = null;
-    if (bestInstallment.has("InstallmentPrice")) {
-      price = bestInstallment.getFloat("InstallmentPrice");
+
+    if (json.has("Price")) {
+      JSONObject priceJson = json.getJSONObject("Price");
+
+      if (priceJson.has("BestInstallment")) {
+        JSONObject bestInstallment = priceJson.getJSONObject("BestInstallment");
+        price = CrawlerUtils.getFloatValueFromJSON(bestInstallment, "InstallmentPrice");
+
+      }
     }
+
     return price;
   }
 
@@ -274,7 +280,9 @@ public class BrasilBenoitCrawler extends Crawler {
       for (Object object : navigation) {
 
         JSONObject cat = (JSONObject) object;
-        categories.add(cat.getString("Text"));
+        if (cat.has("Text")) {
+          categories.add(cat.getString("Text"));
+        }
       }
     }
 
