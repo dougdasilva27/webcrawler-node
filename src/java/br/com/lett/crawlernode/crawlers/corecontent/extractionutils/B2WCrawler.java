@@ -22,7 +22,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -81,7 +80,7 @@ public class B2WCrawler extends Crawler {
         if (fetcherResponse.has("request_status_code")) {
           int responseCode = fetcherResponse.getInt("request_status_code");
           if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
+            content = "";
           }
         }
       }

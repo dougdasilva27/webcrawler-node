@@ -1039,7 +1039,7 @@ public class Persistence {
     String taskId = session.getTaskId();
 
     if (taskId != null) {
-      Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
+      Document taskDocument = new Document().append("updated", new Date()).append("progress", 100);
 
       StringBuilder errors = new StringBuilder();
 
@@ -1047,8 +1047,10 @@ public class Persistence {
         for (SessionError error : session.getErrors()) {
           errors.append(error.getErrorContent()).append("\n");
         }
+        taskDocument.append("status", "ERROR");
       } else {
         errors.append("Not a product page!");
+        taskDocument.append("status", "DONE");
       }
 
       taskDocument.append("result", new Document().append("error", errors.toString()));

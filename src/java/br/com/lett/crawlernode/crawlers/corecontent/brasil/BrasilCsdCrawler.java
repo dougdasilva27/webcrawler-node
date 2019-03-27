@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -305,13 +306,33 @@ public class BrasilCsdCrawler extends Crawler {
   private JSONObject crawlProductInformatioFromApi(String productUrl) {
     JSONObject productsInfo = new JSONObject();
 
+    String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
     String url = "https://www.sitemercado.com.br/core/api/v1/b2c/product/load?url=" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+
     Map<String, String> headers = new HashMap<>();
     headers.put("referer", productUrl);
-    headers.put("sm-b2c",
-        "{\"platform\":1,\"type\":2,\"lojaName\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeName\":\"supermercadoscidadecancao\"}");
     headers.put("sm-mmc", "true");
     headers.put("accept", "application/json, text/plain, */*");
+    headers.put("content-type", "application/json");
+
+    String payload = "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
+
+    JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(loadUrl, "POST", true, payload, headers, new ArrayList<>(), null, true);
+    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(fetcherPayload, url, session, false);
+
+    if (fetcherResponse.has("response")) {
+      JSONObject response = fetcherResponse.getJSONObject("response");
+
+      if (response.has("headers")) {
+        JSONObject headersJson = response.getJSONObject("headers");
+
+        if (headersJson.has("sm-token")) {
+          headers.put("sm-token", headersJson.get("sm-token").toString());
+        }
+      }
+    }
+
+    headers.remove("content-type");
 
     String res = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
 

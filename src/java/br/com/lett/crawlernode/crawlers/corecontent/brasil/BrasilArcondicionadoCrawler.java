@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -103,7 +105,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc);
 
       // Description
-      String description = crawlDescription(doc);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".infoProd"));
 
       // Stock
       Integer stock = null;
@@ -359,16 +361,4 @@ public class BrasilArcondicionadoCrawler extends Crawler {
 
     return "";
   }
-
-  private String crawlDescription(Document document) {
-    String description = "";
-
-    Element descriptionElement = document.selectFirst(".informacao-abas");
-    if (descriptionElement != null) {
-      description = description + descriptionElement.html();
-    }
-
-    return description;
-  }
-
 }

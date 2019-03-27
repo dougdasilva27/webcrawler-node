@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -36,40 +37,30 @@ public class BrasilNutricaototalCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
-          ".product-essential .no-display input[name=product]", "value");
-      String internalPid =
-          CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-shop .sku", true);
-      String name =
-          CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", true);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
-          ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
-          Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-          ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
-          Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".product-essential .short-description .std",
-              "#product_tabs_description_tabbed_contents",
-              "#product_tabs_additional_tabbed_contents"));
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essential .no-display input[name=product]", "value");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-shop .sku", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", true);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
+              Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br");
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
+              Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-essential .short-description .std",
+          "#product_tabs_description_tabbed_contents", "#product_tabs_additional_tabbed_contents"));
       Integer stock = null;
-      Float price =
-          CrawlerUtils.scrapSimplePriceFloat(doc, ".product-essential .regular-price .price", true);
-      Prices prices = crawlPrices(price, doc, ".product-essential .regular-price strong");
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-essential .regular-price .price", true);
+      Prices prices = crawlPrices(price, doc);
       boolean available = checkAvaliability(doc, ".add-to-box .add-to-cart");
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).build();
 
       products.add(product);
 
@@ -84,19 +75,22 @@ public class BrasilNutricaototalCrawler extends Crawler {
     return doc.selectFirst(".product-essential") != null;
   }
 
-  private Prices crawlPrices(Float price, Document doc, String selector) {
+  private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
-      Element priceFrom = doc.select(selector).first();
+      Element priceFrom = doc.select(".product-essential .regular-price strong").first();
       if (priceFrom != null) {
         prices.setBankTicketPrice(MathUtils.parseDoubleWithComma(priceFrom.text()));
       }
 
-      prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()));
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
 
     return prices;
