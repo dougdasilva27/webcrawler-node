@@ -22,7 +22,10 @@ public class Product implements Serializable {
 	private String internalId;
 	private String internalPid;
 	private String name;
+	
+	@Deprecated
 	private Float price;
+	
 	private Prices prices;
 	private boolean available;
 	private String category1;
@@ -321,7 +324,6 @@ public class Product implements Serializable {
 				.put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
 				.put("marketId", marketId)
 				.put("name", (name != null ? name : JSONObject.NULL))
-				.put("price", (price != null ? price.toString() : JSONObject.NULL))
 				.put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
 				.put("status", status.toString())
 				.put("available", available)
