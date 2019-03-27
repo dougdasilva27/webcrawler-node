@@ -112,6 +112,8 @@ public class Crawler extends Task {
   @Override
   public void processTask() {
     try {
+      setDataFetcher();
+
       if (session instanceof TestCrawlerSession) {
         testRun();
       } else {
