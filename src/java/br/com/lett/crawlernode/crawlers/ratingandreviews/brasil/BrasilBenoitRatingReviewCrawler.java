@@ -28,7 +28,7 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      if (json.has("Model")) {
+      if (json.has("Model") && !json.isNull("Model")) {
         JSONObject model = json.getJSONObject("Model");
         String internalId = model.has("ProductID") ? model.get("ProductID").toString() : null;
         if (internalId != null) {
@@ -60,7 +60,7 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
   private Double getTotalAvgRating(JSONObject model) {
     Double totalAvg = 0d;
 
-    if (model.has("RatingAverage")) {
+    if (model.has("RatingAverage") && !model.isNull("RatingAverage")) {
       totalAvg = model.getDouble("RatingAverage");
     }
 
@@ -70,7 +70,7 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
   private Integer getTotalNumOfRatings(JSONObject model) {
     Integer count = 0;
 
-    if (model.has("RatingCount")) {
+    if (model.has("RatingCount") && !model.isNull("RatingCount")) {
       count = model.getInt("RatingCount");
     }
 
