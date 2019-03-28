@@ -845,17 +845,13 @@ public class POSTFetcher {
 
     String fetcherHost = FETCHER_HOST;
 
-    if (dev) {
-      fetcherHost = FETCHER_HOST_DEV;
-    }
-
     // Authentication
     URL requestURL = new URI(fetcherHost).toURL();
     String fetcherUrl = requestURL.getProtocol() + "://" + FETCHER_USER + ":" + FETCHER_PASSWORD + "@" + requestURL.getHost();
 
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15 : timeout;
+    Integer defaultTimeout = timeout == null ? DataFetcher.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 16 : timeout;
 
     RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
         .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();

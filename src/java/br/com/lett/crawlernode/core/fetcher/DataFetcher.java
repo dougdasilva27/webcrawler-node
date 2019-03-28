@@ -1239,7 +1239,16 @@ public class DataFetcher {
     // return (attempt == 1 && (nowHour % 4 == 0 && nowHour != 20) &&
     // Main.executionParameters.getUseFetcher());
 
-    boolean mustUseFetcher = attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher();
+    int marketId = session.getMarket().getNumber();
+
+    List<Integer> withoutFetcher = new ArrayList<>();
+    withoutFetcher.add(62);
+    withoutFetcher.add(63);
+    withoutFetcher.add(73);
+    withoutFetcher.add(94);
+    withoutFetcher.add(165);
+
+    boolean mustUseFetcher = (attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher() && !withoutFetcher.contains(marketId));
 
     if (mustUseFetcher && attempt == 1) {
       session.setMaxConnectionAttemptsCrawler(2);
