@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -47,6 +46,8 @@ public class FetchUtilities {
   public static final String GET_REQUEST = "GET";
   public static final String POST_REQUEST = "POST";
   public static final String CONTENT_ENCODING = "compress, gzip";
+
+  public static final String HEADER_SET_COOKIE = "Set-Cookie";
 
   public static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000; // ms
   public static final int DEFAULT_CONNECT_TIMEOUT = 10000; // ms
@@ -254,7 +255,13 @@ public class FetchUtilities {
     Map<String, String> headersMap = new HashMap<>();
 
     for (Header header : headers) {
-      headersMap.put(header.getName(), header.getValue());
+      String headerName = header.getName();
+
+      if (headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
+        headerName = HEADER_SET_COOKIE;
+      }
+
+      headersMap.put(headerName, header.getValue());
     }
 
     return headersMap;
@@ -268,8 +275,8 @@ public class FetchUtilities {
   public static List<Cookie> getCookiesFromHeadersMap(Map<String, String> headers) {
     List<Cookie> cookies = new ArrayList<>();
 
-    for (Entry<String, String> entry : headers.entrySet()) {
-      String cookieHeader = entry.getValue();
+    if (headers.containsKey(HEADER_SET_COOKIE)) {
+      String cookieHeader = headers.get(HEADER_SET_COOKIE);
       String cookieName = cookieHeader.split("=")[0].trim();
 
       int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;

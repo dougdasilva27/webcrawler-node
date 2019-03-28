@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.core.fetcher.models;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.cookie.Cookie;
@@ -8,10 +10,10 @@ public class Response {
 
   private String body = "";
   private String redirectUrl;
-  private Map<String, String> headers;
-  private List<Cookie> cookies;
+  private Map<String, String> headers = new HashMap<>();
+  private List<Cookie> cookies = new ArrayList<>();
   private LettProxy proxyUsed;
-  private List<RequestsStatistics> requests;
+  private List<RequestsStatistics> requests = new ArrayList<>();
 
   public String getBody() {
     return body;

@@ -176,7 +176,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
     int attempt = 1;
 
-    while (attempt <= session.getMaxConnectionAttemptsCrawler() && response.getBody() == null) {
+    while (attempt <= session.getMaxConnectionAttemptsCrawler() && (response.getBody() == null || response.getBody().isEmpty())) {
       RequestsStatistics requestStats = new RequestsStatistics();
       requestStats.setAttempt(attempt);
 
@@ -315,7 +315,8 @@ public class ApacheDataFetcher implements DataFetcher {
         FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, code, requestHash);
         requestStats.setHasPassedValidation(false);
 
-        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url + " " + e.getMessage());
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
+        Logging.printLogWarn(logger, session, e.getMessage());
       }
 
       attempt++;

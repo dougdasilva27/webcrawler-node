@@ -90,7 +90,7 @@ public class Request {
     return timeout;
   }
 
-  public void setTimeout(int timeout) {
+  public void setTimeout(Integer timeout) {
     this.timeout = timeout;
   }
 
@@ -122,7 +122,7 @@ public class Request {
 
     // Variables with default values
     private boolean followRedirects = true;
-    private int timeout = 10000;
+    private Integer timeout;
     private boolean sendContentEncoding = true;
     private boolean sendUserAgent = true;
 

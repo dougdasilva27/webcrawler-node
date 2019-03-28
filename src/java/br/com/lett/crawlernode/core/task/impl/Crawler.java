@@ -127,7 +127,7 @@ public class Crawler extends Task {
 
   private void setDataFetcher() {
     if (config.getFetcher() == FetchMode.STATIC) {
-      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new ApacheDataFetcher() : new FetcherDataFetcher();
+      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
     } else if (config.getFetcher() == FetchMode.APACHE) {
       dataFetcher = new ApacheDataFetcher();
     } else if (config.getFetcher() == FetchMode.JAVANET) {

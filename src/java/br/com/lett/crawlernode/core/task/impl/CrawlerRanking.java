@@ -52,7 +52,7 @@ import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
 
-  protected FetchMode fetchMode = FetchMode.STATIC;
+  protected FetchMode fetchMode;
   protected DataFetcher dataFetcher;
 
   private Logger logger;
@@ -104,6 +104,7 @@ public abstract class CrawlerRanking extends Task {
     }
 
     this.result = true;
+    this.fetchMode = FetchMode.STATIC;
   }
 
   /**
@@ -120,7 +121,6 @@ public abstract class CrawlerRanking extends Task {
   @Override
   protected void onStart() {
     super.onStart();
-    this.setDataFetcher();
     this.log("Iniciando o crawler ranking ...");
   }
 
@@ -166,6 +166,7 @@ public abstract class CrawlerRanking extends Task {
 
   // função para extrair produtos do market
   public void extractProducts() {
+    this.setDataFetcher();
     try {
 
       Logging.printLogDebug(logger, "Initiate crawler ranking for this location: " + this.location);

@@ -1,16 +1,25 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +32,12 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -71,29 +82,65 @@ public class FetcherDataFetcher implements DataFetcher {
       Logging.printLogDebug(logger, session,
           "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
+      URL requestURL = new URI(FETCHER_HOST).toURL();
+      String fetcherUrl = requestURL.getProtocol() + "://" + requestURL.getHost();
+
       Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
+      RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
+          .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
 
-      URL url = new URL(FETCHER_HOST);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod(method);
-      connection.setInstanceFollowRedirects(true);
-      connection.setUseCaches(false);
-      connection.setReadTimeout(defaultTimeout);
-      connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE);
+      List<Header> reqHeaders = new ArrayList<>();
+      reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE));
 
-      // Get Response
-      InputStream is = connection.getInputStream();
-      BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-      StringBuilder content = new StringBuilder(); // or StringBuffer if Java version 5+
-      String line;
-      while ((line = rd.readLine()) != null) {
-        content.append(line);
-        content.append('\r');
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(requestConfig)
+          .setDefaultCredentialsProvider(new BasicCredentialsProvider()).setDefaultHeaders(reqHeaders).build();
+
+      HttpContext localContext = new BasicHttpContext();
+
+      StringEntity input = new StringEntity(payload.toJson().toString());
+      input.setContentType(FETCHER_CONTENT_TYPE);
+
+      HttpPost httpPost = new HttpPost(fetcherUrl);
+      httpPost.setEntity(input);
+      httpPost.setEntity(new StringEntity(payload.toJson().toString(), ContentType.create(FETCHER_CONTENT_TYPE)));
+      httpPost.setConfig(requestConfig);
+
+      // do request
+      CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+
+      // analysing the status code
+      // if there was some response code that indicates forbidden access or server error we want to
+      // try again
+      int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+      if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+        throw new ResponseCodeException(responseCode);
       }
-      rd.close();
+
+      // creating the page content result from the http request
+      PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
+      pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting the
+      pageContent.setUrl(fetcherUrl); // setting url
+
+      // saving request content result on Amazon
+      String content;
+      if (pageContent.getContentCharset() == null) {
+        content = new String(pageContent.getContentData());
+      } else {
+        content = new String(pageContent.getContentData(), pageContent.getContentCharset());
+      }
+
+      // see if some code error occured
+      // sometimes the remote server doesn't send the http error code on the headers
+      // but rater on the page bytes
+      content = content.trim();
+      for (String errorCode : FetchUtilities.errorCodes) {
+        if (content.equals(errorCode)) {
+          throw new ResponseCodeException(Integer.parseInt(errorCode));
+        }
+      }
 
       // process response and parse
-      JSONObject responseJson = CrawlerUtils.stringToJson(content.toString());
+      JSONObject responseJson = CrawlerUtils.stringToJson(content);
 
       if (responseJson.has("statistics")) {
         JSONObject statistics = responseJson.getJSONObject("statistics");
@@ -129,7 +176,7 @@ public class FetcherDataFetcher implements DataFetcher {
     }
 
     if (fetcherResponse.has("response")) {
-      JSONObject responseJson = fetcherResponse.getJSONObject("fetcherResponse");
+      JSONObject responseJson = fetcherResponse.getJSONObject("response");
 
       if (responseJson.has("body")) {
         response.setBody(responseJson.get("body").toString());
