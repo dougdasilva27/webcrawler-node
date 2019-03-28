@@ -304,8 +304,9 @@ public class ApacheDataFetcher implements DataFetcher {
 
         Map<String, String> responseHeaders = FetchUtilities.headersToMap(closeableHttpResponse.getAllHeaders());
 
-        response = new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session)).setRedirecturl(redirectStrategy.getFinalURL())
-            .setProxyused(randProxy).setHeaders(responseHeaders).setCookies(FetchUtilities.getCookiesFromHeadersMap(responseHeaders)).build();
+        response =
+            new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session).trim()).setRedirecturl(redirectStrategy.getFinalURL())
+                .setProxyused(randProxy).setHeaders(responseHeaders).setCookies(FetchUtilities.getCookiesFromHeadersMap(responseHeaders)).build();
         requestStats.setHasPassedValidation(true);
 
         FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);

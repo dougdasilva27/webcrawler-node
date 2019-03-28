@@ -171,7 +171,7 @@ public class FetcherDataFetcher implements DataFetcher {
     List<RequestsStatistics> requestsStatistics = getStats(fetcherResponse);
     response.setRequests(requestsStatistics);
 
-    if (requestsStatistics.isEmpty()) {
+    if (!requestsStatistics.isEmpty()) {
       response.setProxyUsed(requestsStatistics.get(requestsStatistics.size() - 1).getProxy());
     }
 
@@ -183,7 +183,7 @@ public class FetcherDataFetcher implements DataFetcher {
       }
 
       if (responseJson.has("body")) {
-        response.setBody(responseJson.get("body").toString());
+        response.setBody(responseJson.get("body").toString().trim());
       }
 
       if (responseJson.has("redirect_url")) {

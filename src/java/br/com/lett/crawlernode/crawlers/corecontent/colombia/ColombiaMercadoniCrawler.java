@@ -229,7 +229,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
       headers.put("Content-Type", "application/json");
 
       Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
-      String page = this.dataFetcher.post(session, request).getBody();
+      String page = this.dataFetcher.post(session, request).getBody().trim();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
