@@ -13,8 +13,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -172,8 +172,9 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.drogariaspacheco.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null); // GET request
-                                                                                                          // to get
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String stringJsonImages = this.dataFetcher.get(session, request).getBody(); // GET request
+                                                                                // to get
     JSONObject jsonObjectImages = new JSONObject();
     try {
       jsonObjectImages = new JSONArray(stringJsonImages).getJSONObject(0);
@@ -280,7 +281,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
       Element iframe = elementInformation.select("iframe[src]").first();
       if (iframe != null) {
-        description.append(GETFetcher.fetchPageGET(session, iframe.attr("src"), cookies, 1));
+        Request request = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+        description.append(this.dataFetcher.get(session, request).getBody());
       }
 
       description.append(elementInformation.html());
@@ -304,7 +306,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     }
 
     String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skuInfo = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray skuInfo = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
@@ -348,7 +351,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
           if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            description.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+            Request requestSpecial = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+            description.append(this.dataFetcher.get(session, requestSpecial).getBody());
           }
         }
       }
@@ -370,7 +374,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.drogariaspacheco.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       if (jsonSku.has("listPriceFormated")) {
         prices.setPriceFrom(MathUtils.parseDoubleWithComma(jsonSku.get("listPriceFormated").toString()));

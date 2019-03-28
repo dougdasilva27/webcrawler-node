@@ -6,21 +6,15 @@ public class FetcherOptions {
 
   public static final String FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE = "use_proxy_by_moving_average";
   public static final String FETCHER_PARAMETER_RETRIEVE_STATISTICS = "retrieve_statistics";
-  public static final String FETCHER_PARAMETER_PROXIES = "forced_proxies";
 
   private boolean mustUseMovingAverage;
   private boolean retrieveStatistics;
-  private FetcherRequestForcedProxies forcedProxies;
 
   public JSONObject toJson() {
     JSONObject fetcherParameters = new JSONObject();
 
     fetcherParameters.put(FETCHER_PARAMETER_RETRIEVE_STATISTICS, retrieveStatistics);
     fetcherParameters.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, mustUseMovingAverage);
-
-    if (forcedProxies != null) {
-      fetcherParameters.put(FETCHER_PARAMETER_PROXIES, forcedProxies.toJson());
-    }
 
     return fetcherParameters;
   }
@@ -41,11 +35,32 @@ public class FetcherOptions {
     this.retrieveStatistics = retrieveStatistics;
   }
 
-  public FetcherRequestForcedProxies getForcedProxies() {
-    return forcedProxies;
-  }
+  public static class FetcherOptionsBuilder {
+    private boolean mustUseMovingAverage;
+    private boolean retrieveStatistics;
 
-  public void setForcedProxies(FetcherRequestForcedProxies forcedProxies) {
-    this.forcedProxies = forcedProxies;
+    public static FetcherOptionsBuilder create() {
+      return new FetcherOptionsBuilder();
+    }
+
+    public FetcherOptionsBuilder mustUseMovingAverage(boolean must) {
+      this.mustUseMovingAverage = must;
+      return this;
+    }
+
+    public FetcherOptionsBuilder mustRetrieveStatistics(boolean must) {
+      this.retrieveStatistics = must;
+      return this;
+    }
+
+    public FetcherOptions build() {
+      FetcherOptions options = new FetcherOptions();
+
+      options.setMustUseMovingAverage(this.mustUseMovingAverage);
+      options.setMustUseMovingAverage(this.retrieveStatistics);
+
+      return options;
+    }
+
   }
 }

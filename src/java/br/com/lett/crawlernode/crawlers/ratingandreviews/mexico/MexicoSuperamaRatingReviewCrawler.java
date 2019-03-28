@@ -3,10 +3,12 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.mexico;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -71,7 +73,8 @@ public class MexicoSuperamaRatingReviewCrawler extends RatingReviewCrawler {
     String bazaarVoicePassKey = "ca00NLtrMkSnTddOCbktCnskwSV7OaQHCOTa3EZNMR2KE";
     String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, bazaarVoicePassKey, 0, 5);
 
-    JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, internalId);
 
     ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));

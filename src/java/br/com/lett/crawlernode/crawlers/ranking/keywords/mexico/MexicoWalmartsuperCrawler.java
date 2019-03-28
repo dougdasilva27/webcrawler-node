@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
 
@@ -20,8 +22,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
 
     this.log("Página " + this.currentPage);
-    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded
-        + "&Nrpp=2000&offSet=" + this.arrayProducts.size() + "&storeId=0000009999";
+    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=2000&offSet=" + this.arrayProducts.size()
+        + "&storeId=0000009999";
     this.log("Link onde são feitos os crawlers: " + url);
 
     JSONObject search = fetchJSONApi(url);
@@ -44,8 +46,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
 
           saveDataProduct(internalId, null, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId
-              + " - InternalPid: " + null + " - Url: " + productUrl);
+          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         }
 
         if (this.arrayProducts.size() == productsLimit) {
@@ -57,8 +58,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -90,8 +90,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
       JSONArray urls = product.getJSONArray("product.seoURL");
 
       if (urls.length() > 0) {
-        productUrl = "https://super.walmart.com.mx"
-            + urls.get(0).toString().replace("[", "").replace("]", "");
+        productUrl = "https://super.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
       }
     }
 
@@ -100,10 +99,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
 
   private JSONObject fetchJSONApi(String url) {
     JSONObject api = new JSONObject();
-    JSONObject response = new JSONObject();
 
-    String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded + "&No="
-        + this.arrayProducts.size();
+    String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded + "&No=" + this.arrayProducts.size();
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Host", "super.walmart.com.mx");
@@ -116,11 +113,8 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Cache-Control", "no-cache");
 
-    String res = GETFetcher.fetchPageGETWithHeaders(session, url, null, headers, 1).trim();
-
-    if (res.startsWith("{") && res.endsWith("}")) {
-      response = new JSONObject(res);
-    }
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (response.has("contents")) {
       JSONArray contents = response.getJSONArray("contents");

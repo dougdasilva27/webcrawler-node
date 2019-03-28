@@ -13,8 +13,8 @@ public class FetcherRequest {
 
   private String url;
   private String requestType;
-  private boolean mustUseMovingAverage;
-  private boolean retrieveStatistics;
+  private boolean mustUseMovingAverage = true;
+  private boolean retrieveStatistics = true;
   private FetcherRequestsParameters parameters;
   private FetcherRequestForcedProxies forcedProxies;
 

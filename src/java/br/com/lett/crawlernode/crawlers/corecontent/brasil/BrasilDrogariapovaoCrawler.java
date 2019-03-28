@@ -1,26 +1,25 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -44,13 +43,8 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    // performing request to get cookie
-    String cookieValue = DataFetcherNO.fetchCookie(session, HOME_PAGE, "PHPSESSID", null, 1);
-
-    BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", cookieValue);
-    cookie.setDomain("www.drogariaspovao.com.br");
-    cookie.setPath("/");
-    this.cookies.add(cookie);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, Arrays.asList("PHPSESSID"), "www.drogariaspovao.com.br", "/", cookies, session, null,
+        dataFetcher);
   }
 
   @Override
@@ -67,24 +61,17 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-      String page =
-          POSTFetcher.fetchPagePOSTWithHeaders("http://www.drogariaspovao.com.br/ct/atende_geral.php", session, payload, cookies, 1, headers).trim();
+      Request request = RequestBuilder.create().setUrl("http://www.drogariaspovao.com.br/ct/atende_geral.php").setCookies(cookies).setHeaders(headers)
+          .setPayload(payload).build();
+      JSONArray infos = CrawlerUtils.stringToJsonArray(this.dataFetcher.post(session, request).getBody());
 
-      if (page != null && page.startsWith("[") && page.endsWith("]")) {
-        try {
-          JSONArray infos = new JSONArray(page);
+      if (infos.length() > 6) {
+        JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
 
-          if (infos.length() > 6) {
-            JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
-
-            if (productInfo.length() >= 3) {
-              str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
-              str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
-              str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
-            }
-          }
-        } catch (JSONException e) {
-          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+        if (productInfo.length() >= 3) {
+          str.append("<h1 class=\"name\">" + productInfo.get(2) + "</h1>");
+          str.append("<h2 class=\"cod\">" + productInfo.get(1) + "</h2>");
+          str.append("<div class=\"info\">" + productInfo.get(0) + "</div>");
         }
       }
     }

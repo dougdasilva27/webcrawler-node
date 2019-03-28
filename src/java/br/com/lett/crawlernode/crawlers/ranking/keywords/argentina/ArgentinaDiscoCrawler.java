@@ -1,17 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
 
@@ -19,18 +15,11 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private List<Cookie> cookies = new ArrayList<>();
 
   @Override
   protected void processBeforeFetch() {
-    Map<String, String> cookiesMap = fetchCookies("https://www.disco.com.ar/Comprar/Home.aspx?");
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain("www.disco.com.ar");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.disco.com.ar/Comprar/Home.aspx?", null, "www.disco.com.ar", "/", cookies, session,
+        null, dataFetcher);
   }
 
   @Override

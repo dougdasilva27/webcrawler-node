@@ -9,7 +9,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -77,7 +78,7 @@ public class BrasilFastshopCrawler extends Crawler {
     if (jsonArrayInfo.length() > 0) {
       products.addAll(crawlProductsOldWay(doc, jsonArrayInfo));
     } else {
-      BrasilFastshopNewCrawler fastshop = new BrasilFastshopNewCrawler(session, logger, cookies);
+      BrasilFastshopNewCrawler fastshop = new BrasilFastshopNewCrawler(session, logger, cookies, dataFetcher);
       products.addAll(fastshop.crawlProductsNewWay());
     }
 
@@ -116,7 +117,7 @@ public class BrasilFastshopCrawler extends Crawler {
         String variationName = crawlVariationName(productInfo, name);
 
         // Json prices
-        JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, available, session, logger);
+        JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, available, session, logger, dataFetcher);
 
         // Marketplace
         Marketplace marketplace = crawlMarketPlace(doc, jsonPrices, available);
@@ -188,7 +189,8 @@ public class BrasilFastshopCrawler extends Crawler {
       String url =
           "http://www.fastshop.com.br/loja/GetInventoryStatusByIDView?storeId=10151&catalogId=11052&langId=-6&hotsite=fastshop&itemId=" + internalId;
 
-      String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String json = this.dataFetcher.get(session, request).getBody();
 
       JSONObject jsonStock = new JSONObject();
       try {

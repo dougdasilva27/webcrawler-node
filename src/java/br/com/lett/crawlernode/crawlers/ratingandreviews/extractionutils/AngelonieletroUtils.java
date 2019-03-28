@@ -2,14 +2,18 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
 
 import java.util.List;
 import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 
 public class AngelonieletroUtils {
 
-  public static Document fetchSkuHtml(Document doc, Element skuElement, String mainId, Session session, List<Cookie> cookies) {
+  public static Document fetchSkuHtml(Document doc, Element skuElement, String mainId, Session session, List<Cookie> cookies,
+      DataFetcher dataFetcher) {
     Document skuHtml = doc;
 
     String internalId = scrapInternalIdFromSkulement(skuElement);
@@ -21,7 +25,8 @@ public class AngelonieletroUtils {
       url.append("&productId=").append(scrapInternalPidFromSkulement(skuElement));
       url.append("&toCart=&changeSku=true&utm_source=&hideColor=undefined");
 
-      skuHtml = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url.toString(), null, cookies);
+      Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+      skuHtml = Jsoup.parse(dataFetcher.get(session, request).getBody());
     }
 
     return skuHtml;
@@ -64,7 +69,7 @@ public class AngelonieletroUtils {
     return info;
   }
 
-  public static Document fetchVoltageApi(String internalPid, String mainId, Session session, List<Cookie> cookies) {
+  public static Document fetchVoltageApi(String internalPid, String mainId, Session session, List<Cookie> cookies, DataFetcher dataFetcher) {
     StringBuilder url = new StringBuilder();
     url.append("https://www.angeloni.com.br/eletro/components/Product/SelectColorVoltagem.jsp").append("?");
     url.append("skuId=").append(mainId);
@@ -72,6 +77,7 @@ public class AngelonieletroUtils {
     url.append("&inStock=true&limitForPurchase=10&divElement=product-details&url=%2Fcartridges%2FDetalhesProduto%2FDetalhesProduto.jsp")
         .append("&showShipping=true&changeSku=true&quickView=&utm_source=");
 
-    return DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url.toString(), null, cookies);
+    Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+    return Jsoup.parse(dataFetcher.get(session, request).getBody());
   }
 }

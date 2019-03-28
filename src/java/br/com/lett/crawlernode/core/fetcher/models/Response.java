@@ -6,7 +6,7 @@ import org.apache.http.cookie.Cookie;
 
 public class Response {
 
-  private String body;
+  private String body = "";
   private String redirectUrl;
   private Map<String, String> headers;
   private List<Cookie> cookies;

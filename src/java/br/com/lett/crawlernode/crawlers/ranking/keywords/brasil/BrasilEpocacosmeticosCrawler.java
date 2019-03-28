@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -14,6 +15,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
   public BrasilEpocacosmeticosCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -39,8 +41,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -51,8 +52,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
   }
 
@@ -85,17 +85,15 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
   private JSONObject crawlSearchApi() {
     JSONObject searchApi = new JSONObject();
-    String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt"
-        + "&query=" + this.keywordEncoded + "&log=true&userId=&placement=search_page.find"
-        + "&start=" + this.arrayProducts.size() + "&rows=24";
+    String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt" + "&query=" + this.keywordEncoded
+        + "&log=true&userId=&placement=search_page.find" + "&start=" + this.arrayProducts.size() + "&rows=24";
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
-    headers.put("Content-Encoding", "");
 
-    JSONObject json = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies,
-        headers, null, DataFetcherNO.GET_REQUEST, session, false));
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+    JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (json.has("placements")) {
       JSONArray placements = json.getJSONArray("placements");

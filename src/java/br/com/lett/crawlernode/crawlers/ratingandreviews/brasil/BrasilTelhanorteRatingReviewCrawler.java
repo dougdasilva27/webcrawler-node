@@ -23,7 +23,7 @@ public class BrasilTelhanorteRatingReviewCrawler extends RatingReviewCrawler {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(document)) {
-      ratingReviewsCollection = new TrustvoxRatingCrawler(session, "73909", logger).extractRatingAndReviewsForVtex(document);
+      ratingReviewsCollection = new TrustvoxRatingCrawler(session, "73909", logger).extractRatingAndReviewsForVtex(document, dataFetcher);
     }
 
     return ratingReviewsCollection;

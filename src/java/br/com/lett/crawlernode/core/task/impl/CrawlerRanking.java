@@ -23,9 +23,15 @@ import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
@@ -40,11 +46,14 @@ import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.JsonUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
+
+  protected FetchMode fetchMode = FetchMode.STATIC;
+  protected DataFetcher dataFetcher;
 
   private Logger logger;
 
@@ -111,6 +120,7 @@ public abstract class CrawlerRanking extends Task {
   @Override
   protected void onStart() {
     super.onStart();
+    this.setDataFetcher();
     this.log("Iniciando o crawler ranking ...");
   }
 
@@ -209,6 +219,18 @@ public abstract class CrawlerRanking extends Task {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
       session.registerError(error);
+    }
+  }
+
+  private void setDataFetcher() {
+    if (this.fetchMode == FetchMode.STATIC) {
+      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new ApacheDataFetcher() : new FetcherDataFetcher();
+    } else if (this.fetchMode == FetchMode.APACHE) {
+      dataFetcher = new ApacheDataFetcher();
+    } else if (this.fetchMode == FetchMode.JAVANET) {
+      dataFetcher = new JavanetDataFetcher();
+    } else if (this.fetchMode == FetchMode.FETCHER) {
+      dataFetcher = new FetcherDataFetcher();
     }
   }
 
@@ -491,37 +513,6 @@ public abstract class CrawlerRanking extends Task {
 
   }
 
-  // /**
-  // *
-  // * @param mapUrlMessageId
-  // * @return
-  // */
-  // private List<RankingProductsDiscover> sanitizedRankingProducts(Map<String,String>
-  // mapUrlMessageId) {
-  // List<RankingProductsDiscover> productsDiscover = new ArrayList<>();
-  //
-  // for(RankingProducts product : this.arrayProducts) {
-  // RankingProductsDiscover productDiscover = new RankingProductsDiscover();
-  //
-  // productDiscover.setPosition(product.getPosition());
-  // productDiscover.setUrl(product.getUrl());
-  //
-  // List<Long> processedIds = product.getProcessedIds();
-  //
-  // if(processedIds.isEmpty()) {
-  // productDiscover.setType(RankingProductsDiscover.TYPE_NEW);
-  // productDiscover.setTaskId(mapUrlMessageId.get(product.getUrl()));
-  // } else {
-  // productDiscover.setType(RankingProductsDiscover.TYPE_OLD);
-  // productDiscover.setProcessedIds(processedIds);
-  // }
-  //
-  // productsDiscover.add(productDiscover);
-  // }
-  //
-  // return productsDiscover;
-  // }
-
   /**
    * Fetch Document
    * 
@@ -557,7 +548,10 @@ public abstract class CrawlerRanking extends Task {
       this.log(string.toString());
     }
 
-    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+    Response response = dataFetcher.get(session, request);
+
+    Document doc = Jsoup.parse(response.getBody());
 
     // Screenshot
     takeAScreenshot(url, cookies);
@@ -571,7 +565,7 @@ public abstract class CrawlerRanking extends Task {
    * @param url
    * @return
    */
-  protected Map<String, String> fetchCookies(String url) {
+  protected List<Cookie> fetchCookies(String url) {
     return fetchCookies(url, cookies);
   }
 
@@ -582,11 +576,14 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected Map<String, String> fetchCookies(String url, List<Cookie> cookies) {
+  protected List<Cookie> fetchCookies(String url, List<Cookie> cookies) {
     this.currentDoc = new Document(url);
 
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
+
     // faz a conexão na url baixando o document html
-    return DataFetcherNO.fetchCookies(session, url, cookies, 1);
+    return response.getCookies();
   }
 
   /**
@@ -611,7 +608,10 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchGETString(String url, List<Cookie> cookies) {
-    return DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
+
+    return response.getBody();
   }
 
   /**
@@ -627,20 +627,10 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    // faz a conexão na url baixando o document html
-    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies).trim();
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
 
-    JSONObject jsonProducts = new JSONObject();
-
-    if (json.startsWith("{") && json.endsWith("}")) {
-      try {
-        jsonProducts = new JsonUtils(json);
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTraceString(e));
-      }
-    }
-
-    return jsonProducts;
+    return CrawlerUtils.stringToJson(response.getBody());
   }
 
   /**
@@ -656,12 +646,12 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    // faz a conexão na url baixando o document html
-    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
 
     JsonObject jobj;
     try {
-      jobj = new Gson().fromJson(json, JsonObject.class);
+      jobj = new Gson().fromJson(response.getBody(), JsonObject.class);
     } catch (JsonSyntaxException e) {
       jobj = new JsonObject();
       this.logError(CommonMethods.getStackTraceString(e));
@@ -684,7 +674,10 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    return POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
+    Response response = dataFetcher.post(session, request);
+
+    return response.getBody();
   }
 
   /**
@@ -697,13 +690,10 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcherNO.POST_REQUEST, session, false);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
+    Response response = new FetcherDataFetcher().post(session, request);
 
-    if (res != null && res.has("response")) {
-      return res.getJSONObject("response").get("body").toString();
-    }
-
-    return null;
+    return response.getBody();
   }
 
   /**
@@ -716,13 +706,10 @@ public abstract class CrawlerRanking extends Task {
    * @return
    */
   protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    JSONObject res = POSTFetcher.fetcherRequest(url, cookies, headers, payload, DataFetcherNO.GET_REQUEST, session, false);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
+    Response response = new FetcherDataFetcher().get(session, request);
 
-    if (res != null && res.has("response")) {
-      return res.getJSONObject("response").get("body").toString();
-    }
-
-    return null;
+    return response.getBody();
   }
 
   /**
@@ -734,8 +721,11 @@ public abstract class CrawlerRanking extends Task {
    * @param cookies
    * @return
    */
-  protected Map<String, String> fetchCookiesPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-    return POSTFetcher.fetchCookiesPOSTWithHeaders(url, session, payload, cookies, 1, headers);
+  protected List<Cookie> fetchCookiesPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
+    Response response = dataFetcher.post(session, request);
+
+    return response.getCookies();
   }
 
   /**

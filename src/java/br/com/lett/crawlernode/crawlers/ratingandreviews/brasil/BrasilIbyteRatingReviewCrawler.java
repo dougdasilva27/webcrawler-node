@@ -25,7 +25,7 @@ public class BrasilIbyteRatingReviewCrawler extends RatingReviewCrawler {
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "92581cf1-146e-48cd-853a-1873e0e3fee1");
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "92581cf1-146e-48cd-853a-1873e0e3fee1", dataFetcher);
 
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
 

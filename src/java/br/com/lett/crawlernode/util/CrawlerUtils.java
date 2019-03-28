@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,9 +18,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -506,12 +509,6 @@ public class CrawlerUtils {
     return sanitizedUrl.toString();
   }
 
-  @Deprecated
-  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path, Session session) {
-    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, new ArrayList<>(), session);
-  }
-
-
   /**
    * Crawl cookies from a page
    * 
@@ -524,9 +521,9 @@ public class CrawlerUtils {
    * @return List<Cookie>
    */
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
-      List<Cookie> cookiesClient, Session session) {
+      List<Cookie> cookiesClient, Session session, DataFetcher dataFetcher) {
 
-    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, cookiesClient, session, null);
+    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, cookiesClient, session, null, dataFetcher);
   }
 
   /**
@@ -542,20 +539,51 @@ public class CrawlerUtils {
    * @return List<Cookie>
    */
   public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
-      List<Cookie> cookiesClient, Session session, Map<String, String> headers) {
+      List<Cookie> cookiesClient, Session session, Map<String, String> headers, DataFetcher dataFetcher) {
     List<Cookie> cookies = new ArrayList<>();
 
-    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, url, cookiesClient, null, null, 1, headers);
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      String cookieName = entry.getKey().trim();
+    Request request = RequestBuilder.create().setCookies(cookiesClient).setUrl(url).setHeaders(headers).build();
+    Response response = dataFetcher.get(session, request);
 
-      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieName)) {
-        BasicClientCookie cookie = new BasicClientCookie(cookieName, entry.getValue());
+    List<Cookie> cookiesResponse = response.getCookies();
+    for (Cookie cookieResponse : cookiesResponse) {
+      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
+        BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
         cookie.setDomain(domain);
         cookie.setPath(path);
         cookies.add(cookie);
       }
+    }
 
+    return cookies;
+  }
+
+  /**
+   * Crawl cookies from a page
+   * 
+   * @param url - page where are cookies
+   * @param cookiesToBeCrawled - list(string) of cookies to be crawled
+   * @param domain - domain to set in cookie
+   * @param path - path to set in cookie
+   * @param cookiesClient
+   * @param session - crawler session
+   * @param headers - request headers
+   * @return List<Cookie>
+   */
+  public static List<Cookie> fetchCookiesFromAPage(Request request, String domain, String path, List<String> cookiesToBeCrawled, Session session,
+      DataFetcher dataFetcher) {
+    List<Cookie> cookies = new ArrayList<>();
+
+    Response response = dataFetcher.get(session, request);
+
+    List<Cookie> cookiesResponse = response.getCookies();
+    for (Cookie cookieResponse : cookiesResponse) {
+      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
+        BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+        cookie.setDomain(domain);
+        cookie.setPath(path);
+        cookies.add(cookie);
+      }
     }
 
     return cookies;
@@ -805,13 +833,15 @@ public class CrawlerUtils {
    * @param session -> session of tasks
    * @return
    */
-  public static String crawlDescriptionFromFlixMedia(String storeId, String ean, Session session) {
+  public static String crawlDescriptionFromFlixMedia(String storeId, String ean, DataFetcher dataFetcher, Session session) {
     StringBuilder description = new StringBuilder();
 
     String url =
         "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
 
-    String script = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
+    Response response = dataFetcher.get(session, RequestBuilder.create().setUrl(url).build());
+
+    String script = response.getBody();
     final String token = "$(\"#flixinpage_\"+i).inPage";
 
     JSONObject productInfo = new JSONObject();
@@ -834,7 +864,10 @@ public class CrawlerUtils {
 
       String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
           + "&complimentary=0&type=.html";
-      String scriptDesc = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, urlDesc, null, null);
+
+      Response response2 = dataFetcher.get(session, RequestBuilder.create().setUrl(urlDesc).build());
+
+      String scriptDesc = response2.getBody();
 
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
@@ -1327,11 +1360,13 @@ public class CrawlerUtils {
    * @param cookies
    * @return
    */
-  public static String scrapStandoutDescription(String slugMarket, Session session, List<Cookie> cookies) {
+  public static String scrapStandoutDescription(String slugMarket, Session session, List<Cookie> cookies, DataFetcher dataFetcher) {
     StringBuilder str = new StringBuilder();
 
     String url = "https://standout.com.br/" + slugMarket + "/catchtag.php?distributor=" + slugMarket + "sku=&url=" + session.getOriginalURL();
-    JSONObject specialDesc = CrawlerUtils.stringToJson(DataFetcherNO.fetchString("GET", session, url, null, cookies));
+
+    Response response = dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build());
+    JSONObject specialDesc = CrawlerUtils.stringToJson(response.getBody());
 
     if (specialDesc.has("div")) {
       Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("[id^=standout]");
@@ -1344,7 +1379,8 @@ public class CrawlerUtils {
         descriptionUrl.append(e.attr("x")).append("/");
         descriptionUrl.append(e.attr("y"));
 
-        str.append(DataFetcherNO.fetchString("GET", session, descriptionUrl.toString(), null, cookies));
+        Response response2 = dataFetcher.get(session, RequestBuilder.create().setUrl(descriptionUrl.toString()).setCookies(cookies).build());
+        str.append(response2.getBody());
       }
     }
 
@@ -1362,14 +1398,20 @@ public class CrawlerUtils {
    */
   public static Document scrapLettHtml(String internalId, Session session) {
     Document doc = new Document("");
+    DataFetcher dataFetcher = new FetcherDataFetcher();
 
     String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + session.getMarket().getNumber();
-    JSONObject fetcherPayload =
-        POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, new HashMap<>(), Arrays.asList(ProxyCollection.NO_PROXY), null, false);
+    FetcherOptions options = new FetcherOptions();
+    options.setMustUseMovingAverage(false);
+    options.setRetrieveStatistics(true);
 
-    JSONObject skuMap = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, fetcherPayload, session, false));
+    Request request = RequestBuilder.create().setUrl(url).setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
+
+    JSONObject skuMap = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
     if (skuMap.has(internalId)) {
-      doc = Jsoup.parse(POSTFetcher.requestStringUsingFetcher(skuMap.get(internalId).toString(), fetcherPayload, session, false));
+      Request requestSkuMap = RequestBuilder.create().setUrl(skuMap.get(internalId).toString())
+          .setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
+      doc = Jsoup.parse(dataFetcher.get(session, requestSkuMap).getBody());
     }
 
     return doc;

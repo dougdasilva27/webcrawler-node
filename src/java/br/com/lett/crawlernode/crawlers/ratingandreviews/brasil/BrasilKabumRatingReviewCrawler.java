@@ -1,14 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -24,20 +21,12 @@ public class BrasilKabumRatingReviewCrawler extends RatingReviewCrawler {
     super(session);
   }
 
-  private final String HOME_PAGE = "http://www.kabum.com.br";
+  private static final String HOME_PAGE = "http://www.kabum.com.br";
 
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
-
-    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, 1);
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain(".kabum.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
   }
 
   @Override

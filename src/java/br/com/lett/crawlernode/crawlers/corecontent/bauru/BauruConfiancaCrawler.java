@@ -10,7 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -105,7 +106,9 @@ public class BauruConfiancaCrawler extends Crawler {
       headers.put("Referer", session.getOriginalURL());
 
       String url = "https://www.confianca.com.br/bizrest/action/product/id/" + internalPid;
-      json = CrawlerUtils.stringToJson(GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1));
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+      json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
     }
 
     return json;

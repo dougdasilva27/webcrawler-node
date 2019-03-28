@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -16,7 +15,8 @@ public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.callfarma.com.br/", new ArrayList<>(), "www.callfarma.com.br", "/", session);
+    this.cookies =
+        CrawlerUtils.fetchCookiesFromAPage("https://www.callfarma.com.br/", null, "www.callfarma.com.br", "/", cookies, session, null, dataFetcher);
   }
 
   @Override

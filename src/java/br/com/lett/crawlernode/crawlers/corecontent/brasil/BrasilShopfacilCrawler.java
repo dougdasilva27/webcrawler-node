@@ -40,7 +40,7 @@ public class BrasilShopfacilCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
     if (skuJson.length() > 0) {

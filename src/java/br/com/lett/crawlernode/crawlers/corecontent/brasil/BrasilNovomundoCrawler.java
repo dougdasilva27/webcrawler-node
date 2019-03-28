@@ -7,14 +7,17 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -42,8 +45,7 @@ public class BrasilNovomundoCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(this.session.getOriginalURL(), doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // Categoria
       String category1 = "";
@@ -65,9 +67,9 @@ public class BrasilNovomundoCrawler extends Crawler {
       Element ids = doc.select("#___rc-p-sku-ids").first();
 
       /*
-       * Já tratamos os dois casos de uma vez. O caso em que temos mais de uma variação na mesma
-       * página, e o caso em que não temos variação. Para cada id interno do produto, capturamos as
-       * informações através da API da Novomundo.
+       * Já tratamos os dois casos de uma vez. O caso em que temos mais de uma variação na mesma página, e
+       * o caso em que não temos variação. Para cada id interno do produto, capturamos as informações
+       * através da API da Novomundo.
        */
       if (ids != null) {
 
@@ -83,11 +85,11 @@ public class BrasilNovomundoCrawler extends Crawler {
           String secondaryImages = null;
 
 
+          Request request = RequestBuilder.create().setUrl("http://www.novomundo.com.br/produto/sku/" + id.trim()).setCookies(cookies).build();
+          JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
           // Pegar dados da API
-          JSONObject productInfoJSON = DataFetcherNO
-              .fetchJSONArray(DataFetcherNO.GET_REQUEST, session,
-                  ("http://www.novomundo.com.br/produto/sku/" + id.trim()), null, null)
-              .getJSONObject(0);
+          JSONObject productInfoJSON = jsonArray.length() > 0 ? jsonArray.getJSONObject(0) : new JSONObject();
 
           // internal id
           internalId = String.valueOf(productInfoJSON.getInt("Id"));
@@ -152,8 +154,7 @@ public class BrasilNovomundoCrawler extends Crawler {
           }
 
           // Prices
-          Prices prices =
-              crawlPricesForDefaultSeller(internalId, price, new Marketplace(), discountBoleto);
+          Prices prices = crawlPricesForDefaultSeller(internalId, price, new Marketplace(), discountBoleto);
 
           Product product = new Product();
 
@@ -239,8 +240,7 @@ public class BrasilNovomundoCrawler extends Crawler {
     return false;
   }
 
-  private Marketplace crawlMarketplace(JSONObject productInfoJSON, String internalId,
-      int discountBoleto) {
+  private Marketplace crawlMarketplace(JSONObject productInfoJSON, String internalId, int discountBoleto) {
     Marketplace marketplace = new Marketplace();
 
     JSONArray skuSellersInfo = productInfoJSON.getJSONArray("SkuSellersInformation");
@@ -258,9 +258,7 @@ public class BrasilNovomundoCrawler extends Crawler {
         partnerJSON.put("price", sellerPrice);
 
         if (seller.has("IsDefaultSeller") && seller.getBoolean("IsDefaultSeller")) {
-          partnerJSON.put("prices",
-              crawlPricesForDefaultSeller(internalId, sellerPrice, marketplace, discountBoleto)
-                  .toJSON());
+          partnerJSON.put("prices", crawlPricesForDefaultSeller(internalId, sellerPrice, marketplace, discountBoleto).toJSON());
         } else {
           partnerJSON.put("prices", crawlPricesForMarketplaces(sellerPrice).toJSON());
         }
@@ -344,23 +342,20 @@ public class BrasilNovomundoCrawler extends Crawler {
     return prices;
   }
 
-  private Prices crawlPricesForDefaultSeller(String internalId, Float price,
-      Marketplace marketplace, Integer discountBoleto) {
+  private Prices crawlPricesForDefaultSeller(String internalId, Float price, Marketplace marketplace, Integer discountBoleto) {
     Prices prices = new Prices();
 
     if (price != null || !marketplace.isEmpty()) {
-      String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku="
-          + internalId + "&d=" + discountBoleto;
-      Document doc =
-          DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+      String url = "http://campanhas.novomundo.com.br/vtex/productotherpaymentsystems.php?sku=" + internalId + "&d=" + discountBoleto;
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Element bankTicketElement = doc.select("#divBoleto .valor").first();
       if (bankTicketElement != null) {
-        Float bankTicketPrice = Float.parseFloat(bankTicketElement.text().replaceAll("[^0-9,]+", "")
-            .replaceAll("\\.", "").replaceAll(",", ".").trim());
+        Float bankTicketPrice =
+            Float.parseFloat(bankTicketElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
-        Float result =
-            (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue() / 100.0)));
+        Float result = (float) (bankTicketPrice - (bankTicketPrice * (discountBoleto.floatValue() / 100.0)));
         bankTicketPrice = MathUtils.normalizeTwoDecimalPlaces(result);
 
         prices.setBankTicketPrice(bankTicketPrice);
@@ -400,8 +395,7 @@ public class BrasilNovomundoCrawler extends Crawler {
             Element valueElement = i.select("td:not(.parcelas)").first();
 
             if (valueElement != null) {
-              Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-                  .replaceAll("\\.", "").replaceAll(",", ".").trim());
+              Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
               if (installment.equals(1)) {
                 Float result = (float) (value - (value * (discountBoleto.floatValue() / 100.0)));

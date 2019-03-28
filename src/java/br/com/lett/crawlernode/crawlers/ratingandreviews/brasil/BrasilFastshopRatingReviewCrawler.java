@@ -5,11 +5,13 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -32,7 +34,7 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
       partnerId = BrasilFastshopCrawlerUtils.crawlPartnerId(document);
     } else {
       partnerId = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
-      JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(partnerId, session, cookies);
+      JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(partnerId, session, cookies, dataFetcher);
       JSONArray arraySkus = productAPIJSON.has("voltage") ? productAPIJSON.getJSONArray("voltage") : new JSONArray();
 
       idList = crawlIdList(arraySkus);
@@ -95,7 +97,8 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
     final String bazaarVoicePassKey = "caw1ZMlxPTUHLUFtjzQeE602umnQqFlKyTwhRjlDvuTac";
     String endpointRequest = assembleBazaarVoiceEndpointRequest(partnerId, bazaarVoicePassKey, 0, 50);
 
-    JSONObject ratingReviewsEndpointResponse = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
 
     ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));

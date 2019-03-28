@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.core.fetcher;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -22,7 +25,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import br.com.lett.crawlernode.core.fetcher.DataFetch.TrustManager;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -105,6 +107,15 @@ public class FetchUtilities {
    */
   public static String randUserAgent() {
     return userAgents.get(MathUtils.randInt(0, userAgents.size() - 1));
+  }
+
+  /**
+   * Retrieve a random mobile user agent from the user agents array.
+   * 
+   * @return
+   */
+  public static String randMobileUserAgent() {
+    return mobileUserAgents.get(MathUtils.randInt(0, mobileUserAgents.size() - 1));
   }
 
   public static String generateRequestHash(Session session) {
@@ -308,5 +319,23 @@ public class FetchUtilities {
             .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status);
 
     Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+  }
+
+  public static class TrustManager implements X509TrustManager {
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
   }
 }

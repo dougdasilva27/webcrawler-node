@@ -9,8 +9,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -88,6 +90,7 @@ public abstract class CNOVACrawler extends Crawler {
 
   public CNOVACrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   protected String mainSellerNameLower;
@@ -123,9 +126,10 @@ public abstract class CNOVACrawler extends Crawler {
     headers.put("Host", this.marketHost);
     headers.put("Referer", PROTOCOL + "://" + this.marketHost + "/");
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcherNO.randUserAgent());
+    headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override
@@ -485,7 +489,8 @@ public abstract class CNOVACrawler extends Crawler {
 
     Element ean = document.select(".productEan").first();
     if (ean != null) {
-      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), session));
+      description
+          .append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), this.dataFetcher, session));
     }
 
     return description.toString();

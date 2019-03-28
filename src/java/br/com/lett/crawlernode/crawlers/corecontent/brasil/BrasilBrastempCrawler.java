@@ -45,7 +45,7 @@ public class BrasilBrastempCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
       vtexUtil.setCardDiscount(getCardDiscount(doc));
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);

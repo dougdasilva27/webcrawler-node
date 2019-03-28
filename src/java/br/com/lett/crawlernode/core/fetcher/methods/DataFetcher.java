@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.fetcher;
+package br.com.lett.crawlernode.core.fetcher.methods;
 
 import java.io.File;
 import br.com.lett.crawlernode.core.fetcher.models.Request;

@@ -27,7 +27,7 @@ public class BrasilMultisomRatingReviewCrawler extends RatingReviewCrawler {
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "e5006da2-cf44-417c-a86c-d99fbfc7fb23");
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "e5006da2-cf44-417c-a86c-d99fbfc7fb23", dataFetcher);
 
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
 

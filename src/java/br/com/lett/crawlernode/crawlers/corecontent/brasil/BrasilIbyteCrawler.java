@@ -8,15 +8,18 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -43,12 +46,17 @@ public class BrasilIbyteCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  private static final String USER_AGENT = DataFetcherNO.randUserAgent();
+  private static final String USER_AGENT = FetchUtilities.randUserAgent();
   private LettProxy proxyToBeUsed = null;
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, this.proxyToBeUsed, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+
+    Request request =
+        RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyToBeUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   /**
@@ -60,9 +68,14 @@ public class BrasilIbyteCrawler extends Crawler {
    */
   @Override
   public void handleCookiesBeforeFetch() {
-    Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
 
-    this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
+    Document doc = Jsoup.parse(response.getBody());
+
+    this.proxyToBeUsed = response.getProxyUsed();
 
     if (!isProductPage(doc)) {
       Element script = doc.select("script").first();

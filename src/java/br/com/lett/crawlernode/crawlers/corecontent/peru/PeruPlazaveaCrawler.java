@@ -44,7 +44,8 @@ public class PeruPlazaveaCrawler extends Crawler {
     URL url = new URL(session.getOriginalURL());
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, url.getProtocol() + "://" + url.getHost() + "/", cookies);
+      VTEXCrawlersUtils vtexUtil =
+          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, url.getProtocol() + "://" + url.getHost() + "/", cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);

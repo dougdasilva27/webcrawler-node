@@ -3,12 +3,14 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.riodejaneiro;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
@@ -138,7 +140,8 @@ public class RiodejaneiroExtraRatingReviewCrawler extends RatingReviewCrawler {
 
     String url = "https://api.gpa.digital/ex/products/" + id + "/review";
 
-    JSONObject apiGPA = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONObject apiGPA = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (apiGPA.has("content")) {
       productsInfo = apiGPA.getJSONObject("content");

@@ -6,10 +6,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -92,7 +94,9 @@ public class BrasilDafitiRatingReviewCrawler extends RatingReviewCrawler {
       String sku = elementSku.attr("value");
 
       String url = "https://www.dafiti.com.br/catalog/detailJson?sku=" + sku + "&_=1439492531368";
-      JSONObject json = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
       JSONArray sizes = json.has("sizes") ? json.getJSONArray("sizes") : new JSONArray();
 
       for (int i = 0; i < sizes.length(); i++) {

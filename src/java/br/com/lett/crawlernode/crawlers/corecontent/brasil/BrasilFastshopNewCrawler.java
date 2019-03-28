@@ -8,10 +8,13 @@ import java.util.Map.Entry;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -31,11 +34,13 @@ public class BrasilFastshopNewCrawler {
   private Logger logger;
   private Session session;
   private List<Cookie> cookies;
+  private DataFetcher dataFetcher;
 
-  public BrasilFastshopNewCrawler(Session session, Logger logger2, List<Cookie> cookies) {
+  public BrasilFastshopNewCrawler(Session session, Logger logger2, List<Cookie> cookies, DataFetcher dataFetcher) {
     this.session = session;
     this.logger = logger2;
     this.cookies = cookies;
+    this.dataFetcher = dataFetcher;
   }
 
   private static final String SELLER_NAME_LOWER = "fastshop";
@@ -43,7 +48,7 @@ public class BrasilFastshopNewCrawler {
   public List<Product> crawlProductsNewWay() {
     List<Product> products = new ArrayList<>();
     String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
-    JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(internalPid, session, cookies);
+    JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(internalPid, session, cookies, dataFetcher);
 
     if (productAPIJSON.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -63,7 +68,7 @@ public class BrasilFastshopNewCrawler {
 
         if (arraySkus.length() > 1) { // In case the array only has 1 sku.
           skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null,
-              session, cookies);
+              session, cookies, dataFetcher);
 
           if (skuAPIJSON.length() < 1) {
             skuAPIJSON = productAPIJSON;
@@ -180,7 +185,7 @@ public class BrasilFastshopNewCrawler {
     boolean available = crawlAvailability(apiSku);
 
     if (available) {
-      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger);
+      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger, dataFetcher);
 
       Prices prices = crawlPrices(jsonPrices, apiSku);
 
@@ -277,10 +282,12 @@ public class BrasilFastshopNewCrawler {
 
     String url = "https://www.fastshop.com.br/webapp/wcs/stores/servlet/SpotsContentView?type=content&hotsite=fastshop&catalogId=11052"
         + "&langId=-6&storeId=10151&emsName=SC_" + partnerId + "_Conteudo";
-    Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).build();
+    Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
     String urlDESC = "https://www.fastshop.com.br/wcs/resources/v1/spots/ProductDetail_" + partnerId;
-    Document docDesc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlDESC, null, cookies);
+    Request requestDesc = RequestBuilder.create().setUrl(urlDESC).build();
+    Document docDesc = Jsoup.parse(this.dataFetcher.get(session, requestDesc).getBody());
 
     if (!docDesc.toString().contains("errorCode")) {
       description.append(docDesc);
@@ -289,7 +296,8 @@ public class BrasilFastshopNewCrawler {
     Element iframe = doc.select("iframe").first();
 
     if (iframe != null) {
-      description.append(DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+      Request requestIframe = RequestBuilder.create().setUrl(iframe.attr("src")).build();
+      description.append(Jsoup.parse(this.dataFetcher.get(session, requestIframe).getBody()));
     }
 
     return description;

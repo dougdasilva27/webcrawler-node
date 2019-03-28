@@ -6,7 +6,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -89,9 +91,10 @@ public class CuritibaMuffatoRatingReviewCrawler extends RatingReviewCrawler {
         "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"4f870cb3-d6ef-5664-2950-de136d5b471e\",\"plateforme\":\"br\"}";
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
-    headers.put("Content-Encoding", "");
 
-    return CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(apiUrl, cookies, headers, payload, "POST", session, false));
+    Request request =
+        RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
+    return CrawlerUtils.stringToJson(new FetcherDataFetcher().post(session, request).getBody());
 
   }
 

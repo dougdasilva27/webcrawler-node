@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -10,8 +9,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -89,7 +88,8 @@ public class SaopauloDicicoCrawler extends Crawler {
 
     if (id != null) {
       String payload = "?type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
-      fetchedData = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, PRODUCT_API + payload, cookies, new HashMap<>(), 1));
+      Request request = RequestBuilder.create().setUrl(PRODUCT_API + payload).setCookies(cookies).build();
+      fetchedData = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     }
 
     return fetchedData;
@@ -195,7 +195,8 @@ public class SaopauloDicicoCrawler extends Crawler {
     String imagesFetched = null;
 
     if (id != null) {
-      imagesFetched = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, productAPI, null, cookies);
+      Request request = RequestBuilder.create().setUrl(productAPI).setCookies(cookies).build();
+      imagesFetched = this.dataFetcher.get(session, request).getBody();
       imagesFetched = imagesFetched.substring(31, imagesFetched.length() - 6);
 
       JSONObject imagesObj = new JSONObject(imagesFetched);

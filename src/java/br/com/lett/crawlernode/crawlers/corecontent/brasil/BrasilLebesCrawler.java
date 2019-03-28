@@ -8,11 +8,13 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -234,7 +236,8 @@ public class BrasilLebesCrawler extends Crawler {
     if (skuInformationJson.has("sku")) {
       skuId = Integer.toString((skuInformationJson.getInt("sku"))).trim();
       String paymentOptionsURL = "http://www.lebes.com.br/productotherpaymentsystems/" + skuId;
-      Document paymentOptionsDocument = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, paymentOptionsURL, null, null);
+      Request request = RequestBuilder.create().setUrl(paymentOptionsURL).setCookies(cookies).build();
+      Document paymentOptionsDocument = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Elements tableElements = paymentOptionsDocument.select("#divCredito .tbl-payment-system");
       for (Element tableElement : tableElements) {
@@ -483,7 +486,7 @@ public class BrasilLebesCrawler extends Crawler {
     String ean = crawlEan(document);
 
     if (ean != null && detalheNagem != null && !detalheNagem.html().trim().isEmpty()) {
-      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("11947", ean, session));
+      description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("11947", ean, dataFetcher, session));
     }
 
     return description.toString();
@@ -549,7 +552,8 @@ public class BrasilLebesCrawler extends Crawler {
       if (elementId != null) {
         String id = elementId.attr("value").trim();
         String apiURL = "http://www.lebes.com.br/api/catalog_system/pub/products/variations/" + id;
-        skuJson = DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, apiURL, null, null);
+        Request request = RequestBuilder.create().setUrl(apiURL).setCookies(cookies).build();
+        skuJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
       }
     }
 

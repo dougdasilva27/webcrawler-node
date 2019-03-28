@@ -20,6 +20,6 @@ public class BrasilShopfacilRatingReviewCrawler extends RatingReviewCrawler {
 
   @Override
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-    return new TrustvoxRatingCrawler(session, "104407", logger).extractRatingAndReviewsForVtex(document);
+    return new TrustvoxRatingCrawler(session, "104407", logger).extractRatingAndReviewsForVtex(document, dataFetcher);
   }
 }

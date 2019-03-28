@@ -12,13 +12,13 @@ public class Request {
   private LettProxy proxy;
   private List<String> proxyServices;
   private String payload;
+  private Integer timeout;
   private Map<String, String> headers = new HashMap<>();
   private List<Cookie> cookies = new ArrayList<>();
   private FetcherOptions fetcherOptions;
 
   // Variables with default values
   private boolean followRedirects = true;
-  private int timeout = 10000;
   private boolean sendContentEncoding = true;
   private boolean sendUserAgent = true;
 
@@ -86,7 +86,7 @@ public class Request {
     this.followRedirects = followRedirects;
   }
 
-  public int getTimeout() {
+  public Integer getTimeout() {
     return timeout;
   }
 
@@ -150,7 +150,7 @@ public class Request {
       return this;
     }
 
-    public RequestBuilder setPayload(Map<String, String> headers) {
+    public RequestBuilder setHeaders(Map<String, String> headers) {
       this.headers = headers;
       return this;
     }

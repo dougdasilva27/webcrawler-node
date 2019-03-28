@@ -7,7 +7,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -21,6 +23,7 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
 
   public AdidasRatingReviewCrawler(Session session, String HOME_PAGE) {
     super(session);
+    super.config.setFetcher(FetchMode.JAVANET);
     this.HOME_PAGE = HOME_PAGE;
   }
 
@@ -125,7 +128,8 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    return DataFetcherNO.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   private String scrapId(Document doc) {

@@ -7,7 +7,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 
 public class YourreviewsRatingCrawler {
@@ -30,13 +32,14 @@ public class YourreviewsRatingCrawler {
    * @param internalPid
    * @return document
    */
-  public Document crawlPageRatingsFromYourViews(String internalPid, String storeKey) {
+  public Document crawlPageRatingsFromYourViews(String internalPid, String storeKey, DataFetcher dataFetcher) {
     Document doc = new Document("");
 
     String url = "https://service.yourviews.com.br/review/GetReview?storeKey=" + storeKey + "&productStoreId=" + internalPid
         + "&extendedField=&callback=_jqjsp";
 
-    String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies).trim();
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String response = dataFetcher.get(session, request).getBody().trim();
 
     if (response != null && response.contains("({")) {
       int x = response.indexOf("({") + 1;

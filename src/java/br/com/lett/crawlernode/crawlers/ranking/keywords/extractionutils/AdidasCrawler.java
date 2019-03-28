@@ -6,7 +6,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -16,19 +18,20 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
 
   public AdidasCrawler(Session session, String host) {
     super(session);
+    super.fetchMode = FetchMode.JAVANET;
     this.host = host;
   }
 
   protected JSONObject fecthJson(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtmlxml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    // headers.put("accept-encoding", "gzip, deflate, br");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("cache-control", "max-age=0");
     headers.put("upgrade-insecure-requests", "1");
     headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
 
-    return CrawlerUtils.stringToJson(DataFetcherNO.fetchPageWithHttpURLConnectionUsingStormProxies(url, headers, session, 1));
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override

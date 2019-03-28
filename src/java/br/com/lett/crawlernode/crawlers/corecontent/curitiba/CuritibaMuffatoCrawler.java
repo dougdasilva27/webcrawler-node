@@ -17,7 +17,8 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -110,7 +111,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies, dataFetcher);
 
       // InternalId
       String internalId = crawlInternalId(doc);
@@ -184,10 +185,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
     String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
     JSONArray apiResponse = new JSONArray();
     try {
-      String apiString = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, getUrl, null, null).trim();
+      Request request = RequestBuilder.create().setUrl(getUrl).setCookies(cookies).build();
+      String apiString = this.dataFetcher.get(session, request).getBody().trim();
 
       if (apiString.isEmpty()) {
-        apiString = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
+        request.setUrl(getUrl + "?sc=13");
+        apiString = this.dataFetcher.get(session, request).getBody().trim();
       }
 
       apiResponse = new JSONArray(apiString);

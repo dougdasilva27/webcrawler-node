@@ -5,8 +5,10 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -14,6 +16,7 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
   public SaopauloCasasbahiaCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
@@ -79,9 +82,10 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Cache-Control", "max-age=0");
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcherNO.randUserAgent());
+    headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, null, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override

@@ -14,7 +14,8 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -330,7 +331,8 @@ public class BrasilMiamistoreCrawler extends Crawler {
       jsonColor.put("color", color.getValue());
 
       String urlColor = url.contains("?") ? url.split("\\?")[0] + "?pp=/" + color.getKey() + "/" : url + "?pp=/" + color.getKey() + "/";
-      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, urlColor, null, null);
+      Request request = RequestBuilder.create().setUrl(urlColor).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Elements colorsElements = doc.select("li.image");
 

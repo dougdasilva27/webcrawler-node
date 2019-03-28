@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -298,7 +300,7 @@ public class BrasilIkesakiCrawler extends Crawler {
       description.append(shortDescription.html());
     }
 
-    description.append(CrawlerUtils.scrapStandoutDescription("ikesaki", session, cookies));
+    description.append(CrawlerUtils.scrapStandoutDescription("ikesaki", session, cookies, dataFetcher));
 
     return description.toString();
   }
@@ -316,7 +318,8 @@ public class BrasilIkesakiCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.ikesaki.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -412,10 +415,11 @@ public class BrasilIkesakiCrawler extends Crawler {
   private JSONObject crawlApi(String internalId) {
     String url = "https://www.ikesaki.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
-    if (jsonArray.length() > 0) {
-      return jsonArray.getJSONObject(0);
+    if (array.length() > 0) {
+      return array.getJSONObject(0);
     }
 
     return new JSONObject();

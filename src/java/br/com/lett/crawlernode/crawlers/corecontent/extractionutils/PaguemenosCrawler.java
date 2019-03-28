@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -309,8 +311,9 @@ public class PaguemenosCrawler extends Crawler {
       description.append(advert.html());
     }
 
-    String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session,
-        "https://scontent.webcollage.net/paguemenos-br-pt/power-page?ird=true&channel-product-id=" + internalPid, null, cookies);
+    Request request = RequestBuilder.create()
+        .setUrl("https://scontent.webcollage.net/paguemenos-br-pt/power-page?ird=true&channel-product-id=" + internalPid).setCookies(cookies).build();
+    String response = this.dataFetcher.get(session, request).getBody();
 
     JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "_wccontent = ", "};", false));
     if (json.has("aplus")) {
@@ -337,7 +340,8 @@ public class PaguemenosCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.paguemenos.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url, null, null);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -426,7 +430,8 @@ public class PaguemenosCrawler extends Crawler {
   private JSONObject crawlApi(String internalId, Session session) {
     String url = "https://www.paguemenos.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcherNO.fetchJSONArray(DataFetcherNO.GET_REQUEST, session, url, null, null);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

@@ -8,11 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -72,12 +75,12 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
       String mainId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-sku]", "data-sku");
 
-      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies);
+      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies, dataFetcher);
       Elements voltageVariation = voltageAPi.select("#formGroupVoltage input[name=voltagem]");
 
       if (!voltageVariation.isEmpty()) {
         for (Element e : voltageVariation) {
-          Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies));
+          Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher));
           String variationName = CrawlerUtils.scrapStringSimpleInfo(voltageAPi, "label[for=" + e.attr("id") + "]", true);
 
           if (!p.getName().toLowerCase().contains(variationName.toLowerCase())) {
@@ -176,8 +179,9 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
         url.append("&totalValue=").append(price);
         url.append("&useTheBestInstallment=false");
 
-        // perform request
-        Document response = DataFetcherNO.fetchDocument(DataFetcherNO.GET_REQUEST, session, url.toString(), null, cookies);;
+        Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+        Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
         Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
         cardInstallmentsMap.put(card.toString(), installments);
       }
@@ -241,8 +245,12 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
   private Set<Card> crawlSetOfCards(String internalId) {
     Set<Card> cards = new HashSet<>();
 
-    Document response = DataFetcherNO.fetchDocument(DataFetcherNO.POST_REQUEST, session, "https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp",
-        "productId=" + internalId, null);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+
+    Request request = RequestBuilder.create().setUrl("https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp").setCookies(cookies)
+        .setHeaders(headers).setPayload("productId=" + internalId).build();
+    Document response = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
 
     Elements cardsElements = response.select("div.box-cartao h2");
 

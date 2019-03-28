@@ -8,8 +8,9 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -56,35 +57,22 @@ public class ChileParisOldCrawler extends Crawler {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
-      headers.put("Content-Encoding", "");
       headers.put("referer", session.getOriginalURL());
       headers.put("authority", "www.paris.cl");
 
-      JSONObject payloaFetcher =
-          POSTFetcher.fetcherPayloadBuilder("https://www.paris.cl/store-api/pyload/_search", "POST", true, payload, headers, null, null);
+      String apiUrl = "https://www.paris.cl/store-api/pyload/_search";
 
-      JSONObject fetcherReponse = new JSONObject();
-      try {
-        fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
-      } catch (Exception e) {
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      Request request =
+          RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).setPayload(payload).build();
+
+      String content = new FetcherDataFetcher().post(session, request).getBody();
+
+      if (content == null || content.isEmpty()) {
+        Request requestApache = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+        content = this.dataFetcher.post(session, requestApache).getBody();
       }
 
-      JSONObject json = new JSONObject();
-
-      if (fetcherReponse.has("response") && fetcherReponse.has("request_status_code") && fetcherReponse.getInt("request_status_code") >= 200
-          && fetcherReponse.getInt("request_status_code") < 400) {
-        JSONObject responseJson = fetcherReponse.getJSONObject("response");
-
-        if (responseJson.has("body")) {
-          json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
-        }
-      }
-
-      if (json.length() < 1) {
-        json = new JSONObject(
-            POSTFetcher.fetchPagePOSTWithHeaders("https://www.paris.cl/store-api/pyload/_search", session, payload, cookies, 1, headers));
-      }
+      JSONObject json = CrawlerUtils.stringToJson(content);
 
       if (json.has("hits")) {
         JSONObject hits = json.getJSONObject("hits");
@@ -328,7 +316,8 @@ public class ChileParisOldCrawler extends Crawler {
       } else {
         String url = IMAGE_URL_FIRST_PART + "Cencosud/" + colorId + "?req=set,json";
 
-        String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        String response = this.dataFetcher.get(session, request).getBody();
 
         JSONObject json = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(response, "esponse(", ",", true));
 
@@ -464,7 +453,8 @@ public class ChileParisOldCrawler extends Crawler {
       String url = "https://www.paris.cl/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10801"
           + "&langId=-5&catalogId=40000000629&catalogEntryId=152117851&nonInstallmentPrice=" + skuJson.get("price_internet");
 
-      String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, null);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String json = this.dataFetcher.get(session, request).getBody();
       jsonPrice = CrawlerUtils.stringToJsonArray(json.replace("*/", "").replace("/*", "").trim());
     }
 

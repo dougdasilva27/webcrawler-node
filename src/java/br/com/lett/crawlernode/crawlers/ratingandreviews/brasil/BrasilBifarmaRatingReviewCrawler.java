@@ -7,9 +7,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -24,87 +24,87 @@ import models.RatingsReviews;
  *
  */
 public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
-  
+
   public BrasilBifarmaRatingReviewCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.WEBDRIVER);
   }
-  
+
   @Override
   protected Document fetch() {
     this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
     Document doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-    
+
     Element script = doc.select("head script").last();
     Element robots = doc.select("meta[name=robots]").first();
-    
+
     if (script != null && robots != null) {
       String eval = script.html().trim();
-      
+
       if (!eval.isEmpty()) {
         Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
         this.webdriver.executeJavascript(eval);
       }
     }
-    
-    String requestHash = DataFetcherNO.generateRequestHash(session);
+
+    String requestHash = FetchUtilities.generateRequestHash(session);
     this.webdriver.waitLoad(9000);
     doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-    
+
     // saving request content result on Amazon
     S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
-    
+
     return doc;
   }
-  
+
   @Override
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-    
+
     if (isProductPage(document)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      
+
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
       JSONObject productInfo = crawlProductInfo(document);
-      
+
       String internalId = crawlInternalId(productInfo);
-      
+
       if (internalId != null) {
         Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
         Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
-        
+
         ratingReviews.setInternalId(internalId);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
-        
+
         ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
-      
+
     }
-    
+
     return ratingReviewsCollection;
-    
+
   }
-  
+
   private String crawlInternalId(JSONObject info) {
     String internalId = null;
-    
+
     if (info.has("skus")) {
       JSONArray skus = info.getJSONArray("skus");
-      
+
       if (skus.length() > 0) {
         JSONObject sku = skus.getJSONObject(0);
-        
+
         if (sku.has("sku")) {
           internalId = sku.getString("sku");
         }
       }
     }
-    
+
     return internalId;
   }
-  
+
   /**
    * Return a json like this: "{\"product\": {\n" + "\t \"id\": \"7748\",\n" + "\t \"name\": \"Mucilon
    * arroz/aveia 400gr neste\",\n" + "\t \n" + "\t \"url\":
@@ -121,35 +121,35 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
    */
   private JSONObject crawlProductInfo(Document doc) {
     JSONObject info = new JSONObject();
-    
+
     Elements scripts = doc.select("script");
-    
+
     for (Element e : scripts) {
       String text = e.html();
-      
+
       String varChaordic = "chaordicProduct =";
-      
+
       if (text.contains(varChaordic)) {
         int x = text.indexOf(varChaordic) + varChaordic.length();
         int y = text.indexOf(';', x);
-        
+
         String json = text.substring(x, y).trim();
-        
+
         if (json.startsWith("{") && json.endsWith("}")) {
           JSONObject product = new JSONObject(json);
-          
+
           if (product.has("product")) {
             info = product.getJSONObject("product");
           }
         }
-        
+
         break;
       }
     }
-    
+
     return info;
   }
-  
+
   /**
    * Average is calculated Example: img src = ".../star5.png" [percentage bar] 0(number of evaluations
    * of this star)/0,00%(percentage of votes) img src = ".../star4.png" [percentage bar] 1(number of
@@ -163,23 +163,23 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
   private Double getTotalAvgRating(Document docRating, Integer totalRating) {
     Double avgRating = 0d;
     Elements rating = docRating.select(".card [data-rating]");
-    
+
     if (totalRating != null && totalRating > 0) {
       Double total = 0d;
       for (Element e : rating) {
         Double value = MathUtils.parseDoubleWithComma(e.attr("data-rating"));
-        
+
         if (value != null) {
           total += value;
         }
       }
-      
+
       avgRating = MathUtils.normalizeTwoDecimalPlaces(total / totalRating);
     }
-    
+
     return avgRating;
   }
-  
+
   /**
    * Number of ratings appear in api
    * 
@@ -189,10 +189,10 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
   private Integer getTotalNumOfRatings(Document docRating) {
     return docRating.select(".card [data-rating]").size();
   }
-  
-  
+
+
   private boolean isProductPage(Document document) {
     return !document.select(".product_body").isEmpty();
   }
-  
+
 }

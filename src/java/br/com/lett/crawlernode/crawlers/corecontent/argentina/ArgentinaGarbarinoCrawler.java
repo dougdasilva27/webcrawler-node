@@ -11,7 +11,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -218,7 +219,9 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
         url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") + "&mpn=" + ean.attr("data-flix-mpn");
       }
 
-      String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String script = this.dataFetcher.get(session, request).getBody();
+
       final String token = "$(\"#flixinpage_\"+i).inPage";
 
       JSONObject productInfo = new JSONObject();
@@ -241,7 +244,9 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
 
         String urlDesc =
             "https://media.flixcar.com/delivery/inpage/show/2468/f4/" + id + "/json?c=jsonpcar2468f4" + id + "&complimentary=0&type=.html";
-        String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+
+        Request requestDesc = RequestBuilder.create().setUrl(urlDesc).setCookies(cookies).build();
+        String scriptDesc = this.dataFetcher.get(session, requestDesc).getBody();
 
         if (scriptDesc.contains("({")) {
           int x = scriptDesc.indexOf("({") + 1;

@@ -9,6 +9,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,14 +24,17 @@ public class CompraCertaCrawlerUtils {
   private static final String HOME_PAGE = "https://www.compracerta.com.br/";
   private Session session;
 
-  public CompraCertaCrawlerUtils(Session session, Logger logger2) {
+  private DataFetcher dataFetcher;
+
+  public CompraCertaCrawlerUtils(Session session, Logger logger2, DataFetcher dataFetcher) {
     this.session = session;
+    this.dataFetcher = dataFetcher;
   }
 
   public List<Product> extractProducts(Document doc) {
     List<Product> products = new ArrayList<>();
 
-    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null);
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null, dataFetcher);
     vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cc-bf--desconto-a-vista-cartao-]", true, false);
 
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);

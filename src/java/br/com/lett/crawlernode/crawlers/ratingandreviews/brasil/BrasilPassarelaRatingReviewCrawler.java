@@ -45,7 +45,7 @@ public class BrasilPassarelaRatingReviewCrawler extends RatingReviewCrawler {
       if (json.has("id")) {
         String internalPid = Integer.toString(json.getInt("id"));
 
-        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "da65c974-40a1-4fe6-9ef0-4110a813586d");
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "da65c974-40a1-4fe6-9ef0-4110a813586d", dataFetcher);
         Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 

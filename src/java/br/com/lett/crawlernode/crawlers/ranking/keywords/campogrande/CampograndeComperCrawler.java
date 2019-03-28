@@ -1,17 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.campogrande;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -23,27 +24,34 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
-  private List<Cookie> cookies = new ArrayList<>();
-
   private String userAgent;
+  private LettProxy proxyUsed;
 
   @Override
   protected void processBeforeFetch() {
-    this.userAgent = DataFetcherNO.randUserAgent();
+    this.userAgent = FetchUtilities.randUserAgent();
 
-    Map<String, String> cookiesMap = DataFetcherNO.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
+
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
     }
 
-    Map<String, String> cookiesMap2 =
-        DataFetcherNO.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
-    for (Entry<String, String> entry : cookiesMap2.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Request request2 = RequestBuilder.create().setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=6602").setCookies(cookies)
+        .setHeaders(headers).build();
+    Response response2 = this.dataFetcher.get(session, request2);
+
+    for (Cookie cookieResponse : response2.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -61,8 +69,11 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
     String url = "https://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/" + this.currentPage + "/0/0/" + specialKeywrod
         + ".aspx?q=" + specialKeywrod;
 
-    LettProxy proxy = session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
-    this.currentDoc = Jsoup.parse(GETFetcher.fetchPageGET(session, url, cookies, this.userAgent, proxy, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     this.log("Link onde são feitos os crawlers: " + url);
 
     Elements products = this.currentDoc.select("ul#listProduct > li .url[title]");

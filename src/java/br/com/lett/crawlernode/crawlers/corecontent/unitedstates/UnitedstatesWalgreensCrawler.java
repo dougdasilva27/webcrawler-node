@@ -9,7 +9,8 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -38,7 +39,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".walgreens.com", "/", cookies, session, new HashMap<>());
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".walgreens.com", "/", cookies, session, new HashMap<>(), dataFetcher);
   }
 
   @Override
@@ -160,7 +161,8 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
     str.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#prod-DescriptionShopMore")));
 
     String url = "https://scontent.webcollage.net/walgreens/power-page?ird=true&channel-product-id=" + internalPid;
-    String script = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String script = this.dataFetcher.get(session, request).getBody();
 
     if (script.contains("_wccontent =")) {
       JSONObject content = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(script, "_wccontent = ", "};", false));

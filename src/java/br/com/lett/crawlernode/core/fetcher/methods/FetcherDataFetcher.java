@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.core.fetcher;
+package br.com.lett.crawlernode.core.fetcher.methods;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +15,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
@@ -25,6 +27,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -68,7 +71,7 @@ public class FetcherDataFetcher implements DataFetcher {
       Logging.printLogDebug(logger, session,
           "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
-      Integer defaultTimeout = FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
+      Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
 
       URL url = new URL(FETCHER_HOST);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -209,14 +212,21 @@ public class FetcherDataFetcher implements DataFetcher {
             }
 
             if (proxy.has("source")) {
-              lettProxy.setSource(proxy.getString("source"));
+              String source = proxy.getString("source");
+              lettProxy.setSource(source);
+
+              List<LettProxy> proxies = GlobalConfigurations.proxies.getProxy(source);
+              if (proxies.size() > 0) {
+                LettProxy temp = proxies.get(0);
+
+                lettProxy.setUser(temp.getUser());
+                lettProxy.setPass(temp.getPass());
+              }
             }
 
             if (proxy.has("location")) {
               lettProxy.setLocation(proxy.getString("location"));
             }
-
-            requestStats.setProxy(lettProxy);
           }
 
           requestStatistics.add(requestStats);
@@ -239,16 +249,25 @@ public class FetcherDataFetcher implements DataFetcher {
     FetcherRequest payload;
     FetcherOptions options = request.getFetcherOptions();
 
+    Map<String, String> finaHeaders = request.getHeaders() != null ? request.getHeaders() : new HashMap<>();
+    if (!request.mustSendContentEncoding()) {
+      finaHeaders.put(HttpHeaders.CONTENT_ENCODING, "");
+    }
+
+    if (!request.mustSendUserAgent()) {
+      finaHeaders.put(HttpHeaders.USER_AGENT, "");
+    }
+
     if (options != null) {
       payload = FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(options.isMustUseMovingAverage())
           .setRequestType(method).setRetrieveStatistics(options.isRetrieveStatistics())
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(request.getHeaders()).setPayload(request.getPayload())).build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finaHeaders).setPayload(request.getPayload())).build();
     } else {
       payload =
           FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
               .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-              .setParameters(new FetcherRequestsParameters().setHeaders(request.getHeaders()).setPayload(request.getPayload())).build();
+              .setParameters(new FetcherRequestsParameters().setHeaders(finaHeaders).setPayload(request.getPayload())).build();
     }
 
     return payload;

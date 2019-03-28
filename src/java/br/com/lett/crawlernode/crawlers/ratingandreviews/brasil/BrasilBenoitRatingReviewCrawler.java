@@ -2,7 +2,8 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -21,7 +22,9 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
     String url = session.getOriginalURL().concat(".json");
-    JSONObject json = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (isProductPage(document)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

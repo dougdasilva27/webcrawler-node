@@ -10,7 +10,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -238,7 +239,9 @@ public class BrasilLojasmelCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
       String installmentsUrl = buildInstallmentsUrl(doc, price);
-      String installmentsString = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, installmentsUrl, null, cookies).trim();
+
+      Request request = RequestBuilder.create().setUrl(installmentsUrl).setCookies(cookies).build();
+      String installmentsString = this.dataFetcher.get(session, request).getBody().trim();
 
       JSONArray installments = new JSONArray(installmentsString);
 

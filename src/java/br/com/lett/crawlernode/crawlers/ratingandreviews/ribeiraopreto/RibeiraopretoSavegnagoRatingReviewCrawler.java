@@ -4,7 +4,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -72,7 +73,8 @@ public class RibeiraopretoSavegnagoRatingReviewCrawler extends RatingReviewCrawl
     String url = "https://service.yourviews.com.br/review/GetReview?storeKey=d23c4a07-61d5-43d3-97da-32c0680a32b8" + "&productStoreId=" + internalId
         + "&callback=_jqjsp&_1535991546340=";
 
-    String response = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String response = this.dataFetcher.get(session, request).getBody();
 
     if (response != null && response.contains("({")) {
       int x = response.indexOf('(') + 1;

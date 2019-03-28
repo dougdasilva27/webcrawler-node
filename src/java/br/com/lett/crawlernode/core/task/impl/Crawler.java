@@ -13,13 +13,13 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
-import br.com.lett.crawlernode.core.fetcher.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -127,6 +127,8 @@ public class Crawler extends Task {
 
   private void setDataFetcher() {
     if (config.getFetcher() == FetchMode.STATIC) {
+      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new ApacheDataFetcher() : new FetcherDataFetcher();
+    } else if (config.getFetcher() == FetchMode.APACHE) {
       dataFetcher = new ApacheDataFetcher();
     } else if (config.getFetcher() == FetchMode.JAVANET) {
       dataFetcher = new JavanetDataFetcher();

@@ -9,7 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -413,7 +414,8 @@ public class BrasilEfacilCrawler extends Crawler {
     String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
         + "&catalogEntryId=" + internalId + "&nonInstallmentPrice=" + priceApi;
 
-    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String json = this.dataFetcher.get(session, request).getBody();
 
     if (json.contains("/*") && json.contains("*/")) {
       int x = json.indexOf("/*");
@@ -431,7 +433,8 @@ public class BrasilEfacilCrawler extends Crawler {
     String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10154&langId=-6&catalogId=10051"
         + "&catalogEntryId=" + internalId + "&productId=" + internalPid + "&parcelaEmDestaque=";
 
-    String json = DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String json = this.dataFetcher.get(session, request).getBody();
 
     if (json.contains("/*") && json.contains("*/")) {
       int x = json.indexOf("/*");

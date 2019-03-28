@@ -11,7 +11,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -45,18 +47,20 @@ public class ChileJumboCrawler {
   private Session session;
   private List<Cookie> cookies = new ArrayList<>();
   private Logger logger;
+  private DataFetcher dataFetcher;
 
-  public ChileJumboCrawler(Session session, List<Cookie> cookies, Logger logger) {
+  public ChileJumboCrawler(Session session, List<Cookie> cookies, Logger logger, DataFetcher dataFetcher) {
     this.session = session;
     this.cookies = cookies;
     this.logger = logger;
+    this.dataFetcher = dataFetcher;
   }
 
   public List<Product> extractProducts(Document doc) {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, this.cookies, dataFetcher);
       vtexUtil.setHasBankTicket(false);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
@@ -136,8 +140,9 @@ public class ChileJumboCrawler {
   }
 
   private JSONObject crawlPromotionsAPI() {
-    return DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session,
-        "https://nuevo.jumbo.cl/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid", null, cookies);
+    Request request = RequestBuilder.create().setUrl("https://nuevo.jumbo.cl/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid")
+        .setCookies(cookies).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   private Float getPromotionShopCardPrice(JSONObject descriptionApi, String id) {

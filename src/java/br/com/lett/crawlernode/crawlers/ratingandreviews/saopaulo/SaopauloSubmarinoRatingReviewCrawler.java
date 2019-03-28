@@ -1,15 +1,23 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -23,6 +31,31 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
 
   public SaopauloSubmarinoRatingReviewCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
+  }
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+  }
+
+  public String fetchPage(String url, Session session) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Accept-Encoding", "");
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+        .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
+
+    String content = this.dataFetcher.get(session, request).getBody();
+
+    if (content == null || content.isEmpty()) {
+      content = new ApacheDataFetcher().get(session, request).getBody();
+    }
+
+    return content;
   }
 
   @Override
@@ -30,12 +63,10 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(session.getOriginalURL())) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(document);
-      JSONObject infoProductJson =
-          SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
       RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson);
 
@@ -55,8 +86,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private boolean isProductPage(String url) {
-    if (url.startsWith("https://www.submarino.com.br/produto/")
-        || url.startsWith("http://www.submarino.com.br/produto/")) {
+    if (url.startsWith("https://www.submarino.com.br/produto/") || url.startsWith("http://www.submarino.com.br/produto/")) {
       return true;
     }
     return false;
@@ -88,9 +118,9 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   /**
-   * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary
-   * we need at first, we only have to do one request. If we want to get detailed information about
-   * each review, we must perform pagination.
+   * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
+   * need at first, we only have to do one request. If we want to get detailed information about each
+   * review, we must perform pagination.
    * 
    * The RatingReviews crawled in this method, is the same across all skus variations in a page.
    *
@@ -105,14 +135,13 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
     String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(frontPageJson);
     String skuInternalPid = crawlSkuInternalPid(frontPageJson);
 
-    String endpointRequest =
-        assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
 
-    JSONObject ratingReviewsEndpointResponse =
-        DataFetcherNO.fetchJSONObject(DataFetcherNO.GET_REQUEST, session, endpointRequest, null, null);
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-    JSONObject reviewStatistics =
-        getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
+
+    JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
 
     ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
     ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
@@ -144,12 +173,12 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
    * 
    * Endpoint request parameters:
    * <p>
-   * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled
-   * inside the html of the sku page, inside a script tag. More details on how to crawl this passKey
+   * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled inside
+   * the html of the sku page, inside a script tag. More details on how to crawl this passKey
    * </p>
    * <p>
-   * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second
-   * chunk, we must add this value by the &Limit parameter.
+   * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second chunk,
+   * we must add this value by the &Limit parameter.
    * </p>
    * <p>
    * &Limit: the number of reviews that a request will return, at maximum.
@@ -159,8 +188,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
    * 
    * Request Method: GET
    */
-  private String assembleBazaarVoiceEndpointRequest(String skuInternalPid,
-      String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
 
     StringBuilder request = new StringBuilder();
 
@@ -197,8 +225,7 @@ public class SaopauloSubmarinoRatingReviewCrawler extends RatingReviewCrawler {
     return passKey;
   }
 
-  private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse,
-      String skuInternalPid) {
+  private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
     if (ratingReviewsEndpointResponse.has("Includes")) {
       JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
 

@@ -8,7 +8,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -59,8 +60,6 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Document crawlApiRatings(String url, String internalPid) {
-    Document doc = new Document(url);
-
     String[] tokens = url.split("/");
     String productLinkId = tokens[tokens.length - 2];
     String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
@@ -69,13 +68,9 @@ public class BrasilIkesakiRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("Content-Type", "application/x-www-form-urlencoded");
     headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
 
-    String response = POSTFetcher.fetchPagePOSTWithHeaders("https://www.ikesaki.com.br/userreview", session, payload, cookies, 1, headers);
-
-    if (response != null) {
-      doc = Jsoup.parse(response);
-    }
-
-    return doc;
+    Request request =
+        RequestBuilder.create().setUrl("https://www.ikesaki.com.br/userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
   }
 
   private Integer getTotalNumOfRatings(Document doc) {

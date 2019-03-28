@@ -5,7 +5,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -30,10 +31,12 @@ public class PeruMetroRatingReviewCrawler extends RatingReviewCrawler {
 
     // Acessing API to get reviews HTML
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
     String internalPid = vtexUtil.crawlInternalPid(skuJson);
     String url = "https://www.metro.pe/wongfood/dataentities/RE/documents/" + internalPid + "?_fields=reviews";
-    Document html = Jsoup.parse(DataFetcherNO.fetchString(DataFetcherNO.GET_REQUEST, session, url, null, cookies));
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    Document html = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
     JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 

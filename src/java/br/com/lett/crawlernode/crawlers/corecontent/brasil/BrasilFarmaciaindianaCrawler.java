@@ -40,7 +40,7 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
       // vtexUtil.setDiscountWithDocument(doc, ".flagPromos-v1 p[class^=flag desconto-]", false,
       // true);
 

@@ -9,8 +9,9 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -317,28 +318,22 @@ public class BrasilCsdCrawler extends Crawler {
 
     String payload = "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
 
-    JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(loadUrl, "POST", true, payload, headers, new ArrayList<>(), null, true);
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(fetcherPayload, url, session, false);
+    Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
 
-    if (fetcherResponse.has("response")) {
-      JSONObject response = fetcherResponse.getJSONObject("response");
-
-      if (response.has("headers")) {
-        JSONObject headersJson = response.getJSONObject("headers");
-
-        if (headersJson.has("sm-token")) {
-          headers.put("sm-token", headersJson.get("sm-token").toString());
-        }
-      }
+    if (responseHeaders.containsKey("sm-token")) {
+      headers.put("sm-token", responseHeaders.get("sm-token"));
     }
 
     headers.remove("content-type");
 
-    String res = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    String res = this.dataFetcher.get(session, requestApi).getBody();
 
     if (res.isEmpty()) {
       headers.put("sm-mmc", new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0");
-      res = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+      requestApi.setHeaders(headers);
+      res = this.dataFetcher.get(session, requestApi).getBody();
     }
 
     try {

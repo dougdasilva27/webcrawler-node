@@ -10,7 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -35,8 +36,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
-    this.cookies =
-        CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Arrays.asList("ASP.NET_SessionId"), "www.disco.com.ar", "/", session);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Arrays.asList("ASP.NET_SessionId"), "www.disco.com.ar", "/",
+        cookies, session, new HashMap<>(), dataFetcher);
   }
 
   @Override
@@ -193,7 +194,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
 
-    String response = POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers);
+    Request request = RequestBuilder.create().setUrl(url).setPayload(payload).setCookies(cookies).setHeaders(headers).build();
+    String response = this.dataFetcher.post(session, request).getBody();
 
     if (response != null && response.contains("descr")) {
       JSONObject json = CrawlerUtils.stringToJson(response);
@@ -267,8 +269,6 @@ public class ArgentinaDiscoCrawler extends Crawler {
    * @return
    */
   private JSONObject crawlProductOldApi(String url) {
-    JSONObject json = new JSONObject();
-
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
     headers.put("Content-Type", "application/json; charset=UTF-8");
@@ -278,15 +278,11 @@ public class ArgentinaDiscoCrawler extends Crawler {
     String[] tokens = url.split("=");
 
     String urlSearch = HOME_PAGE + "Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-    String urlParameters = "{IdMenu:\"\",textoBusqueda:\"" + CommonMethods.removeAccents(tokens[tokens.length - 1]) + "\","
+    String payload = "{IdMenu:\"\",textoBusqueda:\"" + CommonMethods.removeAccents(tokens[tokens.length - 1]) + "\","
         + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
-    String jsonString = POSTFetcher.fetchPagePOSTWithHeaders(urlSearch, session, urlParameters, cookies, 1, headers);
-
-    if (jsonString != null && jsonString.startsWith("{")) {
-      json = new JSONObject(jsonString);
-    }
-
+    Request request = RequestBuilder.create().setUrl(urlSearch).setPayload(payload).setCookies(cookies).setHeaders(headers).build();
+    JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
     if (json.has("d")) {
       JSONObject jsonD = CrawlerUtils.stringToJson(json.get("d").toString());

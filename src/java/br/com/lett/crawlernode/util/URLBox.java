@@ -18,8 +18,11 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherNO;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
@@ -96,7 +99,9 @@ public class URLBox {
 
       Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 
-      DataFetcherNO.fetchPageAPIUrlBox(apiUrl, session);
+      Request request = RequestBuilder.create().setUrl(apiUrl).setTimeout(1000)
+          .setFetcheroptions(FetcherOptionsBuilder.create().mustRetrieveStatistics(false).build()).build();
+      new FetcherDataFetcher().get(session, request);
     } catch (UnsupportedEncodingException ex) {
       Logging.printLogWarn(logger, session, "Problem with url encoding");
       Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));
@@ -170,7 +175,9 @@ public class URLBox {
 
       Logging.printLogDebug(logger, session, "Api url " + apiUrl);
 
-      DataFetcherNO.fetchPageAPIUrlBox(apiUrl, session);
+      Request request = RequestBuilder.create().setUrl(apiUrl).setTimeout(1000)
+          .setFetcheroptions(FetcherOptionsBuilder.create().mustRetrieveStatistics(false).build()).build();
+      new FetcherDataFetcher().get(session, request);
     } catch (UnsupportedEncodingException ex) {
       Logging.printLogWarn(logger, session, "Problem with url encoding");
       Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));

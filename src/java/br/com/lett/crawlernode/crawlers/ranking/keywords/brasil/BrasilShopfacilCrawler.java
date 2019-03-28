@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -14,6 +16,7 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
   public BrasilShopfacilCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
 
@@ -118,11 +121,9 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
 
     this.log("Link onde são feitos os crawlers: " + url);
-    Map<String, String> headers = new HashMap<>();
-    headers.put("content-encoding", "");
 
-    JSONObject response =
-        CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url.toString(), cookies, headers, null, "GET", session, false));
+    Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).mustSendContentEncoding(false).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (response.has("data")) {
       JSONObject data = response.getJSONObject("data");
@@ -151,9 +152,11 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
-    headers.put("content-encoding", "");
 
-    JSONObject response = CrawlerUtils.stringToJson(POSTFetcher.requestStringUsingFetcher(url, cookies, headers, payload, "POST", session, false));
+    Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+        .setPayload(payload).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+
     if (response.has("substantives")) {
       JSONArray substantives = response.getJSONArray("substantives");
 
