@@ -1247,6 +1247,10 @@ public class DataFetcher {
     withoutFetcher.add(73);
     withoutFetcher.add(94);
     withoutFetcher.add(165);
+    withoutFetcher.add(112);
+    withoutFetcher.add(321);
+    withoutFetcher.add(115);
+    withoutFetcher.add(258);
 
     boolean mustUseFetcher = (attempt == 1 && GlobalConfigurations.executionParameters.getUseFetcher() && !withoutFetcher.contains(marketId));
 
