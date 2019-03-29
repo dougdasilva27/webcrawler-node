@@ -205,7 +205,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    if (images.has("primary")) {
+    if (images.has("secondary")) {
       secondaryImagesArray = images.getJSONArray("secondary");
     }
 
