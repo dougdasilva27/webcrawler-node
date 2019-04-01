@@ -102,17 +102,17 @@ public class Session {
 
     maxConnectionAttemptsWebcrawler = 0;
 
-    // if (Main.executionParameters.getUseFetcher()) {
-    // // for (String proxy : market.getProxies()) {
-    // // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-    // // }
-    // // maxConnectionAttemptsWebcrawler++;
-    // maxConnectionAttemptsWebcrawler = 2;
-    // } else {
-    for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+    if (GlobalConfigurations.executionParameters.getUseFetcher()) {
+      // for (String proxy : market.getProxies()) {
+      // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+      // }
+      // maxConnectionAttemptsWebcrawler++;
+      maxConnectionAttemptsWebcrawler = 2;
+    } else {
+      for (String proxy : market.getProxies()) {
+        maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+      }
     }
-    // }
 
     maxConnectionAttemptsImages = 0;
     for (String proxy : market.getImageProxies()) {

@@ -93,7 +93,6 @@ public class Crawler extends Task {
     createDefaultConfig();
   }
 
-
   /**
    * Create the config with default values
    */
@@ -103,7 +102,6 @@ public class Crawler extends Task {
     this.config.setProxyList(new ArrayList<String>());
     this.config.setConnectionAttempts(0);
   }
-
 
   /**
    * Overrides the run method that will perform a task within a thread. The actual thread performs
@@ -150,9 +148,10 @@ public class Crawler extends Task {
 
     if (product.isVoid()) {
       Product p = new Product();
-      p.setInternalId(session.getInternalId());
+      p.setInternalId(product.getInternalId());
       p.setInternalPid(product.getInternalPid());
       p.setMarketId(session.getMarket().getNumber());
+      p.setUrl(session.getOriginalURL());
       p.setAvailable(false);
       p.setStatus(SkuStatus.VOID);
 
