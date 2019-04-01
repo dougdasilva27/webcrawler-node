@@ -87,7 +87,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       productInfo = crawlProductInfo(doc);
     }
 
-    if (isProductPage(doc)) {
+    if (productInfo.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(productInfo);

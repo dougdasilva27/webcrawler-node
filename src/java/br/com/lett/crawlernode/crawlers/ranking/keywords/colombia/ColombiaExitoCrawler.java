@@ -44,7 +44,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
     Elements products = this.currentDoc.select(".product-list div.product");
 
-    if (products.size() >= 1) {
+    if (!products.isEmpty()) {
       if (totalProducts == 0) {
         setTotalProducts();
       }

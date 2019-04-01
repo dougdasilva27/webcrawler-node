@@ -61,12 +61,13 @@ public class BrasilBifarmaRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(document)) {
+    JSONObject productInfo = crawlProductInfo(document);
+
+    if (productInfo.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
-      JSONObject productInfo = crawlProductInfo(document);
 
       String internalId = crawlInternalId(productInfo);
 

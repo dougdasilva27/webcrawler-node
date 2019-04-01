@@ -30,7 +30,7 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(document)) {
 
       String trustVoxId = crawlTrustVoxId(document);
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(trustVoxId);
@@ -123,8 +123,8 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
     return trustVoxResponse;
   }
 
-  private boolean isProductPage(String url) {
-    return url.startsWith("https://www.efacil.com.br/loja/produto/") || url.startsWith("https://www.efacil.com.br/loja/produto/");
+  private boolean isProductPage(Document doc) {
+    return !doc.select("h1.product-name").isEmpty();
   }
 
   private String crawlTrustVoxId(Document doc) {

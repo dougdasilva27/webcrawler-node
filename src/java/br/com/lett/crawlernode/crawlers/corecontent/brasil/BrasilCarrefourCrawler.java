@@ -165,7 +165,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     }
 
     if (url.contains("/p/")) {
-      String[] tokens = url.split("p/");
+      String[] tokens = url.split("/p/");
 
       if (tokens.length > 1 && tokens[1].contains("/")) {
         internalPid = tokens[1].split("/")[0];

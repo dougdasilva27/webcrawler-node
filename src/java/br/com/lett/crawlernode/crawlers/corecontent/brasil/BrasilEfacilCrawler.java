@@ -41,8 +41,7 @@ public class BrasilEfacilCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (session.getOriginalURL().startsWith("https://www.efacil.com.br/loja/produto/")
-        || session.getOriginalURL().startsWith("http://www.efacil.com.br/loja/produto/")) {
+    if (!doc.select("h1.product-name").isEmpty()) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       Element variationSelector = doc.select(".options_attributes").first();

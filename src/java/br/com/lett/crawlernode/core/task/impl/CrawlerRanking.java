@@ -225,7 +225,7 @@ public abstract class CrawlerRanking extends Task {
 
   private void setDataFetcher() {
     if (this.fetchMode == FetchMode.STATIC) {
-      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new ApacheDataFetcher() : new FetcherDataFetcher();
+      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
     } else if (this.fetchMode == FetchMode.APACHE) {
       dataFetcher = new ApacheDataFetcher();
     } else if (this.fetchMode == FetchMode.JAVANET) {
@@ -770,15 +770,17 @@ public abstract class CrawlerRanking extends Task {
       Document doc = new Document(url);
       this.webdriver = startWebDriver(url);
 
-      if (timeout != null) {
-        this.webdriver.waitLoad(timeout);
-      }
+      if (this.webdriver != null) {
+        if (timeout != null) {
+          this.webdriver.waitLoad(timeout);
+        }
 
-      String html = this.webdriver.getCurrentPageSource();
-      session.addRedirection(url, webdriver.getCurURL());
+        String html = this.webdriver.getCurrentPageSource();
+        session.addRedirection(url, webdriver.getCurURL());
 
-      if (html != null) {
-        doc = Jsoup.parse(html);
+        if (html != null) {
+          doc = Jsoup.parse(html);
+        }
       }
 
       return doc;

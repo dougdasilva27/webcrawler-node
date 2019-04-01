@@ -946,7 +946,7 @@ public class CrawlerUtils {
             Seller seller = new Seller(sellerJSON);
             marketplace.add(seller);
           } catch (Exception e) {
-            Logging.printLogError(LOGGER, session, Util.getStackTraceString(e));
+            Logging.printLogWarn(LOGGER, session, Util.getStackTraceString(e));
           }
         }
       }
@@ -1324,6 +1324,36 @@ public class CrawlerUtils {
 
     if (totalElement != null) {
       String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param selector
+   * @param ownText - if true this function will use element.ownText(), if false will be used
+   *        element.text()
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, String delimiter, boolean ownText, Integer defaultValue) {
+    Integer total = defaultValue;
+
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (delimiter != null && text.contains(delimiter)) {
+        int x = text.indexOf(delimiter);
+        text = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      }
 
       if (!text.isEmpty()) {
         total = Integer.parseInt(text);
