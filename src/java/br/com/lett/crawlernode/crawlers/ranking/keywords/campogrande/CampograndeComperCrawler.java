@@ -8,6 +8,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -21,6 +22,7 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
   public CampograndeComperCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
