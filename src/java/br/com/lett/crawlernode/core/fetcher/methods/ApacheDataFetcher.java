@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -181,7 +182,7 @@ public class ApacheDataFetcher implements DataFetcher {
       requestStats.setAttempt(attempt);
 
       LettProxy randProxy = null;
-      Map<String, String> headers = request.getHeaders();
+      Map<String, String> headers = request.getHeaders() != null ? request.getHeaders() : new HashMap<>();
       String randUserAgent = headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
       CloseableHttpResponse closeableHttpResponse = null;
       String requestHash = FetchUtilities.generateRequestHash(session);
@@ -304,9 +305,9 @@ public class ApacheDataFetcher implements DataFetcher {
 
         Map<String, String> responseHeaders = FetchUtilities.headersToMap(closeableHttpResponse.getAllHeaders());
 
-        response =
-            new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session).trim()).setRedirecturl(redirectStrategy.getFinalURL())
-                .setProxyused(randProxy).setHeaders(responseHeaders).setCookies(FetchUtilities.getCookiesFromHeadersMap(responseHeaders)).build();
+        response = new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session).trim())
+            .setRedirecturl(redirectStrategy.getFinalURL()).setProxyused(randProxy).setHeaders(responseHeaders)
+            .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE))).build();
         requestStats.setHasPassedValidation(true);
 
         FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);

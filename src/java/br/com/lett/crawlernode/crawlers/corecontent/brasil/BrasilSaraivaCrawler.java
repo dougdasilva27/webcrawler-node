@@ -223,7 +223,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 
       prices.setBankTicketPrice(crawlBilletPrice(apiJson));
 
-      Map<Integer, Float> installments = crawlInstallmentsNormalCard(apiJson);
+      Float price = CrawlerUtils.getFloatValueFromJSON(priceJson, "final");
+
+      Map<Integer, Float> installments = crawlInstallmentsNormalCard(apiJson, price);
       Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(apiJson);
 
       if (installments.size() > 0) {
@@ -271,8 +273,9 @@ public class BrasilSaraivaCrawler extends Crawler {
    * @param doc
    * @return
    */
-  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock) {
+  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock, Float price) {
     Map<Integer, Float> installments = new HashMap<>();
+    installments.put(1, price);
 
     if (priceBlock.has("price")) {
       JSONObject priceJson = priceBlock.getJSONObject("price");

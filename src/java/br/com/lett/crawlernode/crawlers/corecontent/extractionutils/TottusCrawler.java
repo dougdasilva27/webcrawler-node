@@ -90,11 +90,10 @@ public class TottusCrawler {
     StringBuilder description = new StringBuilder();
     Map<String, String> headers = new HashMap<>();
 
-    headers.put("Content-Encoding", "");
     headers.put("Accept", "");
 
-    Request request =
-        RequestBuilder.create().setUrl("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id).build();
+    Request request = RequestBuilder.create().setUrl("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id)
+        .mustSendContentEncoding(false).build();
     JSONObject skuDescription = CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
 
     if (descriptionHtml != null) {

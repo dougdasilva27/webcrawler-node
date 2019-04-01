@@ -12,14 +12,17 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,7 +182,7 @@ public class FetcherDataFetcher implements DataFetcher {
       JSONObject responseJson = fetcherResponse.getJSONObject("response");
 
       if (responseJson.has("body")) {
-        response.setBody(responseJson.get("body").toString());
+        response.setBody(responseJson.get("body").toString().trim());
       }
 
       if (responseJson.has("body")) {
@@ -190,32 +193,53 @@ public class FetcherDataFetcher implements DataFetcher {
         response.setRedirectUrl(responseJson.get("redirect_url").toString());
       }
 
-      Map<String, String> headers = getHeaders(responseJson);
-      response.setHeaders(headers);
-      response.setCookies(FetchUtilities.getCookiesFromHeadersMap(headers));
-
+      setHeadersAndCookies(response, responseJson);
     }
 
     return response;
   }
 
-  /**
-   * 
-   * @param responseJson
-   * @return
-   */
-  private Map<String, String> getHeaders(JSONObject responseJson) {
+  private void setHeadersAndCookies(Response response, JSONObject responseJson) {
     Map<String, String> headers = new HashMap<>();
 
     if (responseJson.has("headers")) {
       JSONObject headersJson = responseJson.getJSONObject("headers");
 
       for (String key : headersJson.keySet()) {
-        headers.put(key, headersJson.get(key).toString());
+        String headerName = key;
+
+        if (headerName.equalsIgnoreCase(FetchUtilities.HEADER_SET_COOKIE)) {
+          headerName = FetchUtilities.HEADER_SET_COOKIE;
+          response.setCookies(getCookies(headersJson.get(key)));
+        }
+
+        headers.put(headerName, headersJson.get(key).toString());
       }
     }
 
-    return headers;
+    response.setHeaders(headers);
+  }
+
+  private List<Cookie> getCookies(Object cookiesObject) {
+    List<Cookie> cookies = new ArrayList<>();
+
+    if (cookiesObject instanceof JSONArray) {
+      for (Object o : ((JSONArray) cookiesObject)) {
+        String cookieHeader = o.toString();
+        String cookieName = cookieHeader.split("=")[0].trim();
+
+        int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+        int y = cookieHeader.indexOf(';', x);
+
+        String cookieValue = cookieHeader.substring(x, y).trim();
+
+        BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+        cookie.setPath("/");
+        cookies.add(cookie);
+      }
+    }
+
+    return cookies;
   }
 
   /**
@@ -296,25 +320,35 @@ public class FetcherDataFetcher implements DataFetcher {
     FetcherRequest payload;
     FetcherOptions options = request.getFetcherOptions();
 
-    Map<String, String> finaHeaders = request.getHeaders() != null ? request.getHeaders() : new HashMap<>();
+    Map<String, String> finalHeaders = request.getHeaders() != null ? request.getHeaders() : new HashMap<>();
     if (!request.mustSendContentEncoding()) {
-      finaHeaders.put(HttpHeaders.CONTENT_ENCODING, "");
+      finalHeaders.put(HttpHeaders.CONTENT_ENCODING, "");
+    }
+
+    List<Cookie> cookies = request.getCookies();
+    if (cookies != null && !cookies.isEmpty()) {
+      StringBuilder cookiesHeader = new StringBuilder();
+      for (Cookie c : cookies) {
+        cookiesHeader.append(c.getName() + "=" + c.getValue() + ";");
+      }
+
+      finalHeaders.put("Cookie", cookiesHeader.toString());
     }
 
     if (!request.mustSendUserAgent()) {
-      finaHeaders.put(HttpHeaders.USER_AGENT, "");
+      finalHeaders.put(HttpHeaders.USER_AGENT, "");
     }
 
     if (options != null) {
       payload = FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(options.isMustUseMovingAverage())
           .setRequestType(method).setRetrieveStatistics(options.isRetrieveStatistics())
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finaHeaders).setPayload(request.getPayload())).build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
     } else {
       payload =
           FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
               .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-              .setParameters(new FetcherRequestsParameters().setHeaders(finaHeaders).setPayload(request.getPayload())).build();
+              .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
     }
 
     return payload;

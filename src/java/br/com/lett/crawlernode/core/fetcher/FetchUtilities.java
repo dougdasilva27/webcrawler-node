@@ -267,6 +267,26 @@ public class FetchUtilities {
     return headersMap;
   }
 
+  public static List<Cookie> getCookiesFromHeaders(Header[] headers) {
+    List<Cookie> cookies = new ArrayList<>();
+
+    for (Header header : headers) {
+      String cookieHeader = header.getValue();
+      String cookieName = cookieHeader.split("=")[0].trim();
+
+      int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+      int y = cookieHeader.indexOf(";", x);
+
+      String cookieValue = cookieHeader.substring(x, y).trim();
+
+      BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+      cookie.setPath("/");
+      cookies.add(cookie);
+    }
+
+    return cookies;
+  }
+
   /**
    * 
    * @param headers

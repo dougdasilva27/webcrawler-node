@@ -229,9 +229,9 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
 
-      Request request =
-          RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
-      String page = this.dataFetcher.post(session, request).getBody();
+      Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload)
+          .mustSendContentEncoding(false).build();
+      String page = this.dataFetcher.post(session, request).getBody().trim();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
