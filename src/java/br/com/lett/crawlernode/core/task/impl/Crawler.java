@@ -413,6 +413,11 @@ public class Crawler extends Task {
         // we don't have anything to give a trucada!
         Logging.printLogDebug(logger, session,
             "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+
+        if (session instanceof SeedCrawlerSession) {
+          Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
+              "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+        }
       }
     }
   }
