@@ -311,7 +311,7 @@ public class BrasilLilianiCrawler extends Crawler {
     Request request = RequestBuilder.create().setUrl(URL_API).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
     String response = this.dataFetcher.post(session, request).getBody();
 
-    return new JSONObject(response);
+    return CrawlerUtils.stringToJson(response);
   }
 
   /**
