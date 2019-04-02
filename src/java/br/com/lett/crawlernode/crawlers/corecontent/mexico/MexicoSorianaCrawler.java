@@ -36,7 +36,7 @@ import models.prices.Prices;
  */
 public class MexicoSorianaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.soriana.com/";
+  private static final String HOME_PAGE = "https://www.soriana.com/";
 
   public MexicoSorianaCrawler(Session session) {
     super(session);

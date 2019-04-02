@@ -198,28 +198,28 @@ public class FetchUtilities {
    * @param proxy
    * @return
    */
-  public static RequestConfig getRequestConfig(HttpHost proxy, Session session) {
+  public static RequestConfig getRequestConfig(HttpHost proxy, boolean followRedirect, Session session) {
     RequestConfig requestConfig;
 
     if (proxy != null) {
 
       if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
             .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
             .setProxy(proxy).build();
       } else {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
             .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
             .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
       }
 
     } else {
       if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
             .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
             .build();
       } else {
-        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(true) // set // true
+        requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
             .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
             .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
       }

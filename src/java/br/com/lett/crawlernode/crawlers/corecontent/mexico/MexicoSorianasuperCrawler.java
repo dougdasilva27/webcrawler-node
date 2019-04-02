@@ -7,7 +7,7 @@ import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -41,14 +41,15 @@ public class MexicoSorianasuperCrawler extends Crawler {
 
   public MexicoSorianasuperCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
   public void handleCookiesBeforeFetch() {
-    Request request =
-        RequestBuilder.create().setCookies(cookies).setUrl("http://superentucasa.soriana.com/default.aspx").setFollowRedirects(false).build();
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl("http://superentucasa.soriana.com/default.aspx?p=13187&temprefer=2141442")
+        .setFollowRedirects(false).build();
 
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, new FetcherDataFetcher());
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, dataFetcher);
   }
 
   @Override
