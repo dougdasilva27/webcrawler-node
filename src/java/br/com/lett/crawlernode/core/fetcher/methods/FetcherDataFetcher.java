@@ -80,7 +80,7 @@ public class FetcherDataFetcher implements DataFetcher {
     String requestHash = FetchUtilities.generateRequestHash(session);
 
     try {
-      FetcherRequest payload = fetcherPayloadBuilder(request, method);
+      FetcherRequest payload = fetcherPayloadBuilder(request, method, session);
 
       Logging.printLogDebug(logger, session,
           "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
@@ -287,7 +287,7 @@ public class FetcherDataFetcher implements DataFetcher {
               lettProxy.setSource(source);
 
               List<LettProxy> proxies = GlobalConfigurations.proxies.getProxy(source);
-              if (proxies.size() > 0) {
+              if (!proxies.isEmpty()) {
                 LettProxy temp = proxies.get(0);
 
                 lettProxy.setUser(temp.getUser());
@@ -316,7 +316,7 @@ public class FetcherDataFetcher implements DataFetcher {
    * 
    * @return FetcherRequest
    */
-  private static FetcherRequest fetcherPayloadBuilder(Request request, String method) {
+  private static FetcherRequest fetcherPayloadBuilder(Request request, String method, Session session) {
     FetcherRequest payload;
     FetcherOptions options = request.getFetcherOptions();
 
@@ -339,16 +339,22 @@ public class FetcherDataFetcher implements DataFetcher {
       finalHeaders.put(HttpHeaders.USER_AGENT, "");
     }
 
+    String url = request.getUrl();
+    try {
+      url = URI.create(request.getUrl()).toASCIIString();
+    } catch (Exception e) {
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+    }
+
     if (options != null) {
-      payload = FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(options.isMustUseMovingAverage())
-          .setRequestType(method).setRetrieveStatistics(options.isRetrieveStatistics())
+      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(options.isMustUseMovingAverage()).setRequestType(method)
+          .setRetrieveStatistics(options.isRetrieveStatistics())
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
           .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
     } else {
-      payload =
-          FetcherRequestBuilder.create().setUrl(request.getUrl()).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
-              .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-              .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
+      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
+          .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
     }
 
     return payload;
