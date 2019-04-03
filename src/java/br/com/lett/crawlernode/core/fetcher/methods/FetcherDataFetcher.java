@@ -350,11 +350,15 @@ public class FetcherDataFetcher implements DataFetcher {
       payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(options.isMustUseMovingAverage()).setRequestType(method)
           .setRetrieveStatistics(options.isRetrieveStatistics())
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
+              .setMustFollowRedirects(request.isFollowRedirects()))
+          .build();
     } else {
       payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())).build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
+              .setMustFollowRedirects(request.isFollowRedirects()))
+          .build();
     }
 
     return payload;

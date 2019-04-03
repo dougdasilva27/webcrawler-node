@@ -11,6 +11,7 @@ public class FetcherRequestsParameters {
 
   private Map<String, String> headers = new HashMap<>();
   private String payload;
+  private boolean mustFollowRedirects = true;
 
   public JSONObject toJson() {
     JSONObject parameters = new JSONObject();
@@ -28,6 +29,8 @@ public class FetcherRequestsParameters {
     if (payload != null) {
       parameters.put("payload", payload);
     }
+
+    parameters.put("follow_redirect", mustFollowRedirects);
 
     return parameters;
   }
@@ -60,6 +63,15 @@ public class FetcherRequestsParameters {
 
       headers.put("Cookie", cookiesHeader.toString());
     }
+    return this;
+  }
+
+  public boolean isMustFollowRedirects() {
+    return mustFollowRedirects;
+  }
+
+  public FetcherRequestsParameters setMustFollowRedirects(boolean mustFollowRedirects) {
+    this.mustFollowRedirects = mustFollowRedirects;
     return this;
   }
 }

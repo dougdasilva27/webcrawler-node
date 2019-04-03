@@ -63,111 +63,6 @@ public class ApacheDataFetcher implements DataFetcher {
     return fetch(session, request, FetchUtilities.POST_REQUEST);
   }
 
-  @Override
-  public File fetchImage(Session session, Request request) {
-    File localFile = null;
-    int attempt = 1;
-
-    while (attempt <= session.getMaxConnectionAttemptsCrawler() && localFile == null) {
-      LettProxy randProxy = null;
-      String url = request.getUrl();
-      Map<String, String> headers = request.getHeaders();
-      String randUserAgent = headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
-      CloseableHttpResponse closeableHttpResponse = null;
-      String requestHash = FetchUtilities.generateRequestHash(session);
-
-      try {
-        randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
-        session.addRequestProxy(url, randProxy);
-
-        CookieStore cookieStore = createCookieStore(request.getCookies());
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-
-        if (randProxy != null) {
-          Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
-          if (randProxy.getUser() != null) {
-            credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-                new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
-          }
-        } else {
-          Logging.printLogWarn(logger, session, "Using no proxy for this request.");
-        }
-
-        List<Header> reqHeaders = new ArrayList<>();
-        if (request.mustSendContentEncoding()) {
-          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, FetchUtilities.CONTENT_ENCODING));
-        }
-
-        for (Entry<String, String> mapEntry : headers.entrySet()) {
-          reqHeaders.add(new BasicHeader(mapEntry.getKey(), mapEntry.getValue()));
-        }
-
-        // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
-        // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
-        // verification to happen the capture
-        HostnameVerifier hostNameVerifier = new HostnameVerifier() {
-          @Override
-          public boolean verify(String hostname, SSLSession session) {
-            return true;
-          }
-        };
-
-        // creating the redirect strategy so we can get the final redirected URL
-        DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-        HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
-        RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
-
-        CloseableHttpClient httpclient =
-            HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-                .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
-                .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
-
-        HttpContext localContext = new BasicHttpContext();
-        localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setConfig(requestConfig);
-
-        // do request
-        closeableHttpResponse = httpclient.execute(httpGet, localContext);
-
-        // analysing the status code
-        // if there was some response code that indicates forbidden access or server error we want to
-        // try again
-        int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-        if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-          throw new ResponseCodeException(responseCode);
-        }
-
-        localFile = new File(((ImageCrawlerSession) session).getLocalOriginalFileDir());
-
-        // get image bytes
-        BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());
-        FileOutputStream file = new FileOutputStream(localFile);
-        BufferedOutputStream bout = new BufferedOutputStream(file);
-        byte[] b = new byte[8 * 1024]; // reading each 8kb
-        int read = 0;
-        while ((read = is.read(b)) > -1) {
-          bout.write(b, 0, read);
-        }
-        bout.flush();
-        bout.close();
-        file.close();
-        is.close();
-
-        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
-      } catch (Exception e) {
-        int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
-        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
-
-        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + url + " " + e.getMessage());
-      }
-      attempt++;
-    }
-
-    return localFile;
-  }
-
   private Response fetch(Session session, Request request, String method) {
     Response response = new Response();
     List<RequestsStatistics> requests = new ArrayList<>();
@@ -326,6 +221,111 @@ public class ApacheDataFetcher implements DataFetcher {
 
     response.setRequests(requests);
     return response;
+  }
+
+  @Override
+  public File fetchImage(Session session, Request request) {
+    File localFile = null;
+    int attempt = 1;
+
+    while (attempt <= session.getMaxConnectionAttemptsCrawler() && localFile == null) {
+      LettProxy randProxy = null;
+      String url = request.getUrl();
+      Map<String, String> headers = request.getHeaders();
+      String randUserAgent = headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
+      CloseableHttpResponse closeableHttpResponse = null;
+      String requestHash = FetchUtilities.generateRequestHash(session);
+
+      try {
+        randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+        session.addRequestProxy(url, randProxy);
+
+        CookieStore cookieStore = createCookieStore(request.getCookies());
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+        if (randProxy != null) {
+          Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
+          if (randProxy.getUser() != null) {
+            credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
+                new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
+          }
+        } else {
+          Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+        }
+
+        List<Header> reqHeaders = new ArrayList<>();
+        if (request.mustSendContentEncoding()) {
+          reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_ENCODING, FetchUtilities.CONTENT_ENCODING));
+        }
+
+        for (Entry<String, String> mapEntry : headers.entrySet()) {
+          reqHeaders.add(new BasicHeader(mapEntry.getKey(), mapEntry.getValue()));
+        }
+
+        // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
+        // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
+        // verification to happen the capture
+        HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+          @Override
+          public boolean verify(String hostname, SSLSession session) {
+            return true;
+          }
+        };
+
+        // creating the redirect strategy so we can get the final redirected URL
+        DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
+        HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
+        RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
+
+        CloseableHttpClient httpclient =
+            HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
+                .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
+                .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
+
+        HttpContext localContext = new BasicHttpContext();
+        localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setConfig(requestConfig);
+
+        // do request
+        closeableHttpResponse = httpclient.execute(httpGet, localContext);
+
+        // analysing the status code
+        // if there was some response code that indicates forbidden access or server error we want to
+        // try again
+        int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+        if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+          throw new ResponseCodeException(responseCode);
+        }
+
+        localFile = new File(((ImageCrawlerSession) session).getLocalOriginalFileDir());
+
+        // get image bytes
+        BufferedInputStream is = new BufferedInputStream(closeableHttpResponse.getEntity().getContent());
+        FileOutputStream file = new FileOutputStream(localFile);
+        BufferedOutputStream bout = new BufferedOutputStream(file);
+        byte[] b = new byte[8 * 1024]; // reading each 8kb
+        int read = 0;
+        while ((read = is.read(b)) > -1) {
+          bout.write(b, 0, read);
+        }
+        bout.flush();
+        bout.close();
+        file.close();
+        is.close();
+
+        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
+      } catch (Exception e) {
+        int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
+        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
+
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + url + " " + e.getMessage());
+      }
+      attempt++;
+    }
+
+    return localFile;
   }
 
   public static CookieStore createCookieStore(List<Cookie> cookies) {
