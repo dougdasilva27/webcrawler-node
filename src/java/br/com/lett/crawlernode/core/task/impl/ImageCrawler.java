@@ -266,6 +266,8 @@ public class ImageCrawler extends Task {
       request.setSendContentEncoding(false);
     }
 
+    request.setHeaders(headers);
+
     return new ApacheDataFetcher().fetchImage(session, request);
   }
 
