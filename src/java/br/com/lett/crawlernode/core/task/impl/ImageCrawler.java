@@ -36,6 +36,8 @@ public class ImageCrawler extends Task {
   @Override
   public void processTask() {
 
+    Logging.printLogDebug(LOGGER, session, "Downloading image for processed:" + session.getProcessedId());
+
     try {
       ImageDownloadResult simpleDownloadResult = simpleDownload();
 

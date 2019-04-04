@@ -1,13 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.cookie.Cookie;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
@@ -17,12 +22,12 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.amazon.com/";
-  private List<Cookie> cookies = new ArrayList<>();
   private String nextPageUrl;
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "amazon.com", "/", cookies, session, null, dataFetcher);
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).mustSendContentEncoding(false).build();
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, ".amazon.com", "/", null, session, dataFetcher);
   }
 
   @Override
@@ -40,8 +45,17 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
     }
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url, this.cookies);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.ACCEPT_ENCODING, "false");
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).setHeaders(headers).build();
+    this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
+    CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "AMAZON.html");
+
     this.nextPageUrl = crawlNextPage();
+
+    CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "AMAZON.html");
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");
     Element result = this.currentDoc.select("#noResultsTitle").first();

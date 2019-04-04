@@ -41,7 +41,7 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url, cookies);
 
-    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(currentDoc, "script", "window.__WML_REDUX_INITIAL_STATE__=", ";", true, true);
+    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(currentDoc, "script#searchContent", null, ";", true, true);
     JSONArray products = crawlProductsJson(initialState);
 
     if (products.length() > 0) {
@@ -72,17 +72,19 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
 
   protected void setTotalProducts(JSONObject initialState) {
 
-    if (initialState.has("preso")) {
-      JSONObject preso = initialState.getJSONObject("preso");
+    if (initialState.has("searchContent")) {
+      JSONObject searchContent = initialState.getJSONObject("searchContent");
+      if (searchContent.has("preso")) {
+        JSONObject preso = searchContent.getJSONObject("preso");
+        if (preso.has("requestContext")) {
+          JSONObject requestContext = preso.getJSONObject("requestContext");
 
-      if (preso.has("requestContext")) {
-        JSONObject requestContext = preso.getJSONObject("requestContext");
+          if (requestContext.has("itemCount")) {
+            JSONObject itemCount = requestContext.getJSONObject("itemCount");
 
-        if (requestContext.has("itemCount")) {
-          JSONObject itemCount = requestContext.getJSONObject("itemCount");
-
-          if (itemCount.has("total") && itemCount.get("total") instanceof Integer) {
-            this.totalProducts = itemCount.getInt("total");
+            if (itemCount.has("total") && itemCount.get("total") instanceof Integer) {
+              this.totalProducts = itemCount.getInt("total");
+            }
           }
         }
       }
@@ -95,11 +97,7 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
     String productUrl = null;
 
     if (item.has("productPageUrl")) {
-      productUrl = item.getString("productPageUrl");
-
-      if (!productUrl.contains("walmart.com")) {
-        productUrl = ("https://www.walmart.com/" + productUrl).replace(".com//", ".com/");
-      }
+      productUrl = CrawlerUtils.completeUrl(item.getString("productPageUrl"), "https", "www.walmart.com");
     }
 
     return productUrl;
@@ -118,11 +116,14 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
   private JSONArray crawlProductsJson(JSONObject initialState) {
     JSONArray items = new JSONArray();
 
-    if (initialState.has("preso")) {
-      JSONObject preso = initialState.getJSONObject("preso");
+    if (initialState.has("searchContent")) {
+      JSONObject searchContent = initialState.getJSONObject("searchContent");
+      if (searchContent.has("preso")) {
+        JSONObject preso = searchContent.getJSONObject("preso");
 
-      if (preso.has("items")) {
-        items = preso.getJSONArray("items");
+        if (preso.has("items")) {
+          items = preso.getJSONArray("items");
+        }
       }
     }
 
