@@ -1,15 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -78,47 +82,21 @@ public class BrasilMartinsCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // InternalId
       String internalId = crawlInternalId(doc);
-
-      // internalPid
-      String internalPid = crawlInternalPid(doc);
-
-      // availability
-      boolean available = crawlAvailability(doc);
-
-      // name
       String name = crawlName(doc);
-
-      // price
       Float price = crawlPrice(doc);
 
-      // prices
-      Prices prices = crawlPrices(doc);
-
-      // categories
       ArrayList<String> categories = crawlCategories(doc);
       String category1 = getCategory(categories, 0);
       String category2 = getCategory(categories, 1);
       String category3 = getCategory(categories, 2);
 
-      // primary image
       String primaryImage = crawlPrimaryImage(doc);
-
-      // secondary images
       String secondaryImages = crawlSecondaryImages(doc);
-
-      // description
       String description = crawlDescription(doc);
-
-      // stock
-      Integer stock = null;
-
-      // marketplace
-      Marketplace marketplace = new Marketplace();
 
       // ean
       String ean = crawlEan(doc);
@@ -129,23 +107,48 @@ public class BrasilMartinsCrawler extends Crawler {
       Product product = new Product();
       product.setUrl(session.getOriginalURL());
       product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
       product.setName(name);
       product.setPrice(price);
-      product.setPrices(prices);
-      product.setAvailable(available);
+      product.setPrices(new Prices());
+      product.setAvailable(false);
       product.setCategory1(category1);
       product.setCategory2(category2);
       product.setCategory3(category3);
       product.setPrimaryImage(primaryImage);
       product.setSecondaryImages(secondaryImages);
       product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
+      product.setMarketplace(new Marketplace());
       product.setEans(eans);
 
       products.add(product);
 
+    } else {
+      products.addAll(extractProductsNewWay(doc));
+    }
+
+    return products;
+  }
+
+  private List<Product> extractProductsNewWay(Document doc) {
+    List<Product> products = new ArrayList<>();
+
+    if (!doc.select("input#id").isEmpty()) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value");
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagePrincipal img", Arrays.asList("src"), "https", "imgprd.martins.com.br");
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".galeryImages img", Arrays.asList("src"), "https", "imgprd.martins.com.br", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".qdDetails .cods", ".details", "#especfication"));
+      List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+
+      // Creating the product
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrices(new Prices())
+          .setAvailable(false).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace())
+          .setEans(eans).build();
+
+      products.add(product);
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -153,17 +156,8 @@ public class BrasilMartinsCrawler extends Crawler {
     return products;
   }
 
-  private boolean isProductPage(String originalURL) {
-    System.err.println(originalURL);
-    return (originalURL.startsWith("https://b.martins.com.br/detalhe_produto"));
-  }
-
-  private String crawlInternalPid(Document doc) {
-    return null;
-  }
-
-  private Prices crawlPrices(Document doc) {
-    return new Prices();
+  private boolean isProductPage(Document doc) {
+    return !doc.select("#ctnTitProduto").isEmpty();
   }
 
   private String crawlDescription(Document doc) {
@@ -250,10 +244,6 @@ public class BrasilMartinsCrawler extends Crawler {
       name = nameElement.text().trim();
     }
     return name;
-  }
-
-  private boolean crawlAvailability(Document doc) {
-    return false;
   }
 
   private String crawlInternalId(Document doc) {
