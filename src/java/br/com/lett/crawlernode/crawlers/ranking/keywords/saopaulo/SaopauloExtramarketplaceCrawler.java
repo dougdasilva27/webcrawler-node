@@ -6,7 +6,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -90,14 +89,15 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
   private String fetchPage(String url) {
     Map<String, String> headers = new HashMap<>();
-    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Cache-Control", "no-cache");
-    headers.put("Connection", "keep-alive");
-    headers.put("Host", "www.extra.com.br");
-    headers.put("Referer", HOME_PAGE);
-    headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", FetchUtilities.randUserAgent());
+    // headers.put("Accept",
+    // "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    // headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    // headers.put("Cache-Control", "no-cache");
+    // headers.put("Connection", "keep-alive");
+    // headers.put("Host", "www.extra.com.br");
+    // headers.put("Referer", HOME_PAGE);
+    // headers.put("Upgrade-Insecure-Requests", "1");
+    // headers.put("User-Agent", FetchUtilities.randUserAgent());
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
     return this.dataFetcher.get(session, request).getBody();
