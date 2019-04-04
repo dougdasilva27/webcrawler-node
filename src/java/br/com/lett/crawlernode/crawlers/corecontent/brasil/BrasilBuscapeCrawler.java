@@ -182,7 +182,7 @@ public class BrasilBuscapeCrawler extends Crawler {
   private Prices crawlPrices(JSONObject pricesJson) {
     Prices prices = new Prices();
 
-    if (pricesJson.has("CPC")) {
+    if (pricesJson.has("CPC") && !pricesJson.isNull("CPC")) {
       JSONObject cpc = pricesJson.getJSONObject("CPC");
       Float price = CrawlerUtils.getFloatValueFromJSON(cpc, "value", true, false);
 
@@ -191,7 +191,7 @@ public class BrasilBuscapeCrawler extends Crawler {
         installmentPriceMap.put(1, price);
         prices.setBankTicketPrice(price);
 
-        if (cpc.has("installment")) {
+        if (cpc.has("installment") && !cpc.isNull("installment")) {
           JSONObject installment = cpc.getJSONObject("installment");
 
           Integer installmentNumber = CrawlerUtils.getIntegerValueFromJSON(installment, "total", null);

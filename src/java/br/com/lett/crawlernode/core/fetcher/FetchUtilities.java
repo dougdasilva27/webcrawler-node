@@ -275,9 +275,13 @@ public class FetchUtilities {
       String cookieName = cookieHeader.split("=")[0].trim();
 
       int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
-      int y = cookieHeader.indexOf(";", x);
-
-      String cookieValue = cookieHeader.substring(x, y).trim();
+      String cookieValue;
+      if (cookieHeader.contains(";")) {
+        int y = cookieHeader.indexOf(';', x);
+        cookieValue = cookieHeader.substring(x, y).trim();
+      } else {
+        cookieValue = cookieHeader.substring(x).trim();
+      }
 
       BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
       cookie.setPath("/");
@@ -300,9 +304,13 @@ public class FetchUtilities {
       String cookieName = cookieHeader.split("=")[0].trim();
 
       int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
-      int y = cookieHeader.indexOf(';', x);
-
-      String cookieValue = cookieHeader.substring(x, y).trim();
+      String cookieValue;
+      if (cookieHeader.contains(";")) {
+        int y = cookieHeader.indexOf(';', x);
+        cookieValue = cookieHeader.substring(x, y).trim();
+      } else {
+        cookieValue = cookieHeader.substring(x).trim();
+      }
 
       BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
       cookie.setPath("/");

@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ApacheDataFetcher implements DataFetcher {
@@ -206,7 +208,7 @@ public class ApacheDataFetcher implements DataFetcher {
         requestStats.setHasPassedValidation(true);
 
         FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);
-      } catch (Exception e) {
+      } catch (IOException | ResponseCodeException e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
         FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, code, requestHash);
@@ -214,7 +216,16 @@ public class ApacheDataFetcher implements DataFetcher {
 
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
         Logging.printLogWarn(logger, session, e.getMessage());
+      } catch (Exception e) {
+        int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
+
+        FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, code, requestHash);
+        requestStats.setHasPassedValidation(false);
+
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+
 
       attempt++;
     }
