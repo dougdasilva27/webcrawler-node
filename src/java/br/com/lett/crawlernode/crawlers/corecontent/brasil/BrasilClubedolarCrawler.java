@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -339,7 +341,8 @@ public class BrasilClubedolarCrawler extends Crawler {
     if (price != null) {
       String url = "http://www.clubedolar.com.br/productotherpaymentsystems/" + internalId;
 
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {

@@ -84,7 +84,7 @@ public class PeruTottusCrawler extends CrawlerRankingKeywords {
 
     Element eUrl = e.selectFirst(".title a");
     if (eUrl != null) {
-      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "http:", "www.tottus.com.pe");
+      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "https:", "www.tottus.com.pe");
     }
 
     return url;

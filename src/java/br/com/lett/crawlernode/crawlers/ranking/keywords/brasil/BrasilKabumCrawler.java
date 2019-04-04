@@ -1,16 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
@@ -18,20 +12,11 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private List<Cookie> cookies = new ArrayList<>();
-
   @Override
   protected void processBeforeFetch() {
     super.processBeforeFetch();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, "https://www.kabum.com.br/", cookies, 1);
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain(".kabum.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.kabum.com.br/", null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
   }
 
   private String baseUrl;

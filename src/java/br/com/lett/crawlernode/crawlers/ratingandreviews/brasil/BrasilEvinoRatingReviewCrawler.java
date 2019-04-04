@@ -25,7 +25,7 @@ public class BrasilEvinoRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject productBiggyJson = skuJson.has("productBiggyJson") ? new JSONObject(skuJson.get("productBiggyJson").toString()) : new JSONObject();
     String internalId = crawlInternalId(productBiggyJson);
 
-    RatingsReviews ratingReviews = trustvox.extractRatingAndReviews(internalId, doc);
+    RatingsReviews ratingReviews = trustvox.extractRatingAndReviews(internalId, doc, dataFetcher);
 
     ratingReviews.setInternalId(internalId);
     ratingReviewsCollection.addRatingReviews(ratingReviews);

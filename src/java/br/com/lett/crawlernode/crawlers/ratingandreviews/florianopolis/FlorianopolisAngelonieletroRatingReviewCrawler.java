@@ -25,12 +25,12 @@ public class FlorianopolisAngelonieletroRatingReviewCrawler extends RatingReview
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
       String mainId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-sku]", "data-sku");
 
-      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies);
+      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies, dataFetcher);
       Elements voltageVariation = voltageAPi.select("#formGroupVoltage input[name=voltagem]");
 
       if (!voltageVariation.isEmpty()) {
         for (Element e : voltageVariation) {
-          ratingReviewsCollection.addRatingReviews(crawlRating(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies)));
+          ratingReviewsCollection.addRatingReviews(crawlRating(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher)));
         }
       } else {
         ratingReviewsCollection.addRatingReviews(crawlRating(doc));

@@ -2,15 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -26,16 +22,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   @Override
   protected void processBeforeFetch() {
     super.processBeforeFetch();
-
-    Map<String, String> cookiesMap =
-        DataFetcher.fetchCookies(session, "https://www.exito.com/", cookies, 1);
-
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain(".exito.com");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.exito.com/", null, ".exito.com", "/", cookies, session, null, dataFetcher);
   }
 
   @Override
@@ -48,8 +35,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     String keyword = this.keywordWithoutAccents.replace(" ", "%20");
 
     // builds the url with the keyword and page number
-    String url = "https://www.exito.com/browse?Ntt=" + keyword + "&No="
-        + (this.currentPage - 1) * 80 + "&Nrpp=80";
+    String url = "https://www.exito.com/browse?Ntt=" + keyword + "&No=" + (this.currentPage - 1) * 80 + "&Nrpp=80";
 
     this.log("Link onde são feitos os crawlers: " + url);
 
@@ -58,7 +44,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
     Elements products = this.currentDoc.select(".product-list div.product");
 
-    if (products.size() >= 1) {
+    if (!products.isEmpty()) {
       if (totalProducts == 0) {
         setTotalProducts();
       }
@@ -70,8 +56,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -82,8 +67,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
@@ -115,8 +99,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     Elements pages = this.currentDoc.select(".desktop ul li:not(:first-child)");
 
     if (pages.size() > 2) {
-      if (pages.get(pages.size() - 1).hasClass("disabled")
-          && pages.get(pages.size() - 2).hasClass("active")) {
+      if (pages.get(pages.size() - 1).hasClass("disabled") && pages.get(pages.size() - 2).hasClass("active")) {
         return false;
       }
     }

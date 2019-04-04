@@ -6,15 +6,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -203,6 +208,68 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+
+    Element ean = doc.selectFirst("script[data-flix-ean]");
+    if (ean != null) {
+
+      String url = "https://media.flixcar.com/delivery/js/inpage/2468/f4/40/ean/" + ean.attr("data-flix-ean") + "?&=2468&=f4&ean="
+          + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
+
+      if (!ean.attr("data-flix-mpn").isEmpty()) {
+        url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") + "&mpn=" + ean.attr("data-flix-mpn");
+      }
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String script = this.dataFetcher.get(session, request).getBody();
+
+      final String token = "$(\"#flixinpage_\"+i).inPage";
+
+      JSONObject productInfo = new JSONObject();
+
+      if (script.contains(token)) {
+        int x = script.indexOf(token + " (") + token.length() + 2;
+        int y = script.indexOf(");", x);
+
+        String json = script.substring(x, y);
+
+        try {
+          productInfo = new JSONObject(json);
+        } catch (JSONException e) {
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+        }
+      }
+
+      if (productInfo.has("product")) {
+        String id = productInfo.getString("product");
+
+        String urlDesc =
+            "https://media.flixcar.com/delivery/inpage/show/2468/f4/" + id + "/json?c=jsonpcar2468f4" + id + "&complimentary=0&type=.html";
+
+        Request requestDesc = RequestBuilder.create().setUrl(urlDesc).setCookies(cookies).build();
+        String scriptDesc = this.dataFetcher.get(session, requestDesc).getBody();
+
+        if (scriptDesc.contains("({")) {
+          int x = scriptDesc.indexOf("({") + 1;
+          int y = scriptDesc.lastIndexOf("})") + 1;
+
+          String json = scriptDesc.substring(x, y);
+
+          try {
+            JSONObject jsonInfo = new JSONObject(json);
+
+            if (jsonInfo.has("html")) {
+              if (jsonInfo.has("css")) {
+                description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
+              }
+
+              description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
+            }
+          } catch (JSONException e) {
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+          }
+        }
+      }
+    }
 
     Element techElement = doc.selectFirst(".gb-tech-spec");
 

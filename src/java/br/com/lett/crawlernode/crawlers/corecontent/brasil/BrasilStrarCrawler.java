@@ -43,7 +43,7 @@ public class BrasilStrarCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -145,7 +145,7 @@ public class BrasilStrarCrawler extends Crawler {
       description.append(shortDesc.html().replace("style=\"display: none;\"", ""));
     }
 
-    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("7034", ean, session));
+    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("7034", ean, dataFetcher, session));
 
     return description.toString();
   }

@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -10,8 +9,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -55,6 +54,7 @@ public class SaopauloDicicoCrawler extends Crawler {
       if (skuIDs != null) {
         for (String internalId : skuIDs) {
           Document fetchedData = fetchAPIProduct(internalId);
+          // fetchedData = isProductPage(fetchedData) ? fetchedData : doc;
 
           String name = crawlName(fetchedData);
           Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',');
@@ -85,12 +85,11 @@ public class SaopauloDicicoCrawler extends Crawler {
 
   private Document fetchAPIProduct(String id) {
     Document fetchedData = new Document("");
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded");
 
     if (id != null) {
-      String payload = "type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
-      fetchedData = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders(PRODUCT_API, session, payload, cookies, 1, headers, null, null));
+      String payload = "?type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
+      Request request = RequestBuilder.create().setUrl(PRODUCT_API + payload).setCookies(cookies).build();
+      fetchedData = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     }
 
     return fetchedData;
@@ -159,6 +158,7 @@ public class SaopauloDicicoCrawler extends Crawler {
 
   private String crawlName(Document doc) {
     String name = null;
+
     Element nameElement = doc.selectFirst("#productTitleDisplayContainer");
     if (nameElement != null) {
       name = nameElement.text();
@@ -195,7 +195,8 @@ public class SaopauloDicicoCrawler extends Crawler {
     String imagesFetched = null;
 
     if (id != null) {
-      imagesFetched = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, productAPI, null, cookies);
+      Request request = RequestBuilder.create().setUrl(productAPI).setCookies(cookies).build();
+      imagesFetched = this.dataFetcher.get(session, request).getBody();
       imagesFetched = imagesFetched.substring(31, imagesFetched.length() - 6);
 
       JSONObject imagesObj = new JSONObject(imagesFetched);

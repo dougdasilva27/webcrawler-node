@@ -2,8 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.HashMap;
 import java.util.Map;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVACrawler;
 
@@ -31,8 +32,9 @@ public class SaopauloPontofrioCrawler extends CNOVACrawler {
     headers.put("Host", HOST);
     headers.put("Referer", PROTOCOL + "://" + HOST + "/");
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 }

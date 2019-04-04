@@ -23,7 +23,7 @@ public class BrasilHavanRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
     JSONObject jsonSku = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
@@ -36,7 +36,7 @@ public class BrasilHavanRatingReviewCrawler extends RatingReviewCrawler {
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "e26e19e6-eb4c-4e0f-b1e6-a11e8a461160");
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "e26e19e6-eb4c-4e0f-b1e6-a11e8a461160", dataFetcher);
 
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
 

@@ -10,7 +10,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -193,7 +194,7 @@ public class BrasilNagemCrawler extends Crawler {
 
       if (eanE != null && detalheNagem != null && !detalheNagem.html().trim().isEmpty()) {
         String ean = eanE.attr("data-flix-ean");
-        String flixMediaDesc = CrawlerUtils.crawlDescriptionFromFlixMedia("4154", ean, session);
+        String flixMediaDesc = CrawlerUtils.crawlDescriptionFromFlixMedia("4154", ean, dataFetcher, session);
 
         description.append(flixMediaDesc);
       } else if (detalheNagem != null) {
@@ -238,8 +239,9 @@ public class BrasilNagemCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-      Document doc = Jsoup.parse(
-          POSTFetcher.fetchPagePOSTWithHeaders("http://www.nagem.com.br/produto/pagamentoproduto", session, urlParameters, cookies, 1, headers));
+      Request request = RequestBuilder.create().setUrl("http://www.nagem.com.br/produto/pagamentoproduto").setCookies(cookies).setHeaders(headers)
+          .setPayload(urlParameters).build();
+      Document doc = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
 
       Elements cards = doc.select(".modal-body > ul.nav-tabs > li > a");
 

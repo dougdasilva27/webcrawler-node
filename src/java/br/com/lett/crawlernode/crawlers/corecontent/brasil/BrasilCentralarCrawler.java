@@ -11,16 +11,16 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -57,29 +57,14 @@ public class BrasilCentralarCrawler extends Crawler {
       headers.put("Authorization", "123456");
       headers.put("Referer", url);
 
-      // request with fetcher
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
-      String page = null;
+      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).build();
+      String content = new FetcherDataFetcher().get(session, request).getBody();
 
-      if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
-          && fetcherResponse.getInt("request_status_code") < 400) {
-        JSONObject response = fetcherResponse.getJSONObject("response");
-
-        if (response.has("body")) {
-          page = response.get("body").toString();
-        }
-      } else {
-        // normal request
-        page = GETFetcher.fetchPageGETWithHeaders(session, apiUrl, cookies, headers, 1);
+      if (content == null || content.isEmpty()) {
+        content = this.dataFetcher.get(session, request).getBody();
       }
 
-      if (page != null && page.startsWith("{") && page.endsWith("}")) {
-        try {
-          api = new JSONObject(page);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-        }
-      }
+      api = CrawlerUtils.stringToJson(content);
     }
 
     return api;
@@ -280,7 +265,8 @@ public class BrasilCentralarCrawler extends Crawler {
         JSONObject dimension = (JSONObject) o;
 
         if (dimension.has("url")) {
-          description.append(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, dimension.get("url").toString(), null, cookies));
+          Request request = RequestBuilder.create().setUrl(dimension.get("url").toString()).setCookies(cookies).build();
+          description.append(this.dataFetcher.get(session, request).getBody());
         }
       }
     }

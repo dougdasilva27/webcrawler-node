@@ -5,10 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -152,7 +154,9 @@ public class BrasilTerabyteCrawler extends Crawler {
       Element parcelUrl = doc.selectFirst("a.parc-pro");
       if (parcelUrl != null) {
         String url = CrawlerUtils.sanitizeUrl(parcelUrl, "href", "https:", "www.terabyteshop.com.br");
-        Document parcelsDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        Document parcelsDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
         Elements parcels = parcelsDoc.select("#verparcelamento ul li");
         for (Element e : parcels) {

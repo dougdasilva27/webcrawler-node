@@ -18,7 +18,7 @@ public class BrasilMultiarRatingReviewCrawler extends RatingReviewCrawler {
 
     if (isProductPage(document)) {
       VtexRatingCrawler vtex = new VtexRatingCrawler(session, "https://www.leveros.com.br/", logger, cookies);
-      ratingReviewsCollection = vtex.extractRatingAndReviewsForVtex(document);
+      ratingReviewsCollection = vtex.extractRatingAndReviewsForVtex(document, dataFetcher);
     }
 
     return ratingReviewsCollection;

@@ -5,6 +5,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
@@ -14,17 +16,15 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    String url = "https://www.princesadonorteonline.com.br//catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+    String url = "https://www.princesadonorteonline.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
     this.pageSize = 9;
-
     this.log("Página " + this.currentPage);
 
     Document doc = fetchDocument(url);
-
     Elements products = doc.select(".category-products .products-grid.row .item");
 
-    if (products.size() > 0) {
+    if (!products.isEmpty()) {
       if (totalProducts == 0) {
         setTotalProducts(doc);
       }
@@ -53,10 +53,14 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
   private String scrapInternalId(Element product) {
     Element ancorElement = product.selectFirst(".view-detail");
-    String internalId = null;
 
+    String internalId = null;
     if (ancorElement != null) {
       internalId = ancorElement.attr("id").replaceAll("[^0-9]", "");
+    }
+
+    if (internalId == null) {
+      internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
     }
 
     return internalId;
@@ -75,18 +79,8 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
   }
 
   private void setTotalProducts(Document doc) {
-    Element amount = doc.selectFirst(".amount");
-    String total = null;
-    if (amount != null) {
-      total = amount.text().trim();
-      total = total.substring(total.indexOf("de"), total.length());
-      total = total.replaceAll("[^0-9]", "");
-      if (!total.isEmpty()) {
-        this.totalProducts = Integer.parseInt(total);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, ".amount", "de", true, 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 
 }

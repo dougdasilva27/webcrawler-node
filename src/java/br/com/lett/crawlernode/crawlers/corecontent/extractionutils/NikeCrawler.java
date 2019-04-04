@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -45,14 +45,16 @@ public class NikeCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  @Override
-  public void handleCookiesBeforeFetch() { // cookies =
-    CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + COUNTRY_URL, null, ".nike.com", "/", null, session, defaultHeaders);
-  }
+  // @Override
+  // public void handleCookiesBeforeFetch() { // cookies =
+  // CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + COUNTRY_URL, null, ".nike.com", "/", null,
+  // session, defaultHeaders);
+  // }
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, defaultHeaders, null, 1));
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(defaultHeaders).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override

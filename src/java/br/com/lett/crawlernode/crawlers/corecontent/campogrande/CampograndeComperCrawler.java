@@ -6,16 +6,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -44,26 +47,33 @@ public class CampograndeComperCrawler extends Crawler {
   }
 
   private String userAgent;
+  private LettProxy proxyUsed;
 
   @Override
   public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.userAgent = FetchUtilities.randUserAgent();
 
-    this.userAgent = DataFetcher.randUserAgent();
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
 
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
     }
 
-    Map<String, String> cookiesMap2 =
-        DataFetcher.fetchCookies(session, "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent, 1);
-    for (Entry<String, String> entry : cookiesMap2.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Request request2 = RequestBuilder.create().setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=6602").setCookies(cookies)
+        .setHeaders(headers).build();
+    Response response2 = this.dataFetcher.get(session, request2);
+
+    for (Cookie cookieResponse : response2.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -72,10 +82,11 @@ public class CampograndeComperCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    LettProxy proxy = session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
-    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    return Jsoup.parse(page);
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override

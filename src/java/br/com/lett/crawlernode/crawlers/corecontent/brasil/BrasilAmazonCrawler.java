@@ -14,17 +14,17 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -46,6 +46,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
@@ -61,38 +62,16 @@ public class BrasilAmazonCrawler extends Crawler {
   }
 
   public String fetchPage(String url, Map<String, String> headers) {
-    String content = "";
-
-    headers.put("Content-Encoding", "");
     headers.put("Accept-Encoding", "no");
 
-    JSONObject fetcherPayload = POSTFetcher.fetcherPayloadBuilder(url, "GET", true, null, headers,
-        Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU), null, false);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU)).build();
 
-    try {
-      JSONObject fetcherResponse = POSTFetcher.requestWithFetcher(session, fetcherPayload, false);
+    String content = this.dataFetcher.get(session, request).getBody();
 
-      if (fetcherResponse.has("response")) {
-        JSONObject responseJSON = fetcherResponse.getJSONObject("response");
-        DataFetcher.setRequestProxyForFetcher(session, fetcherResponse, fetcherPayload.getString("url"));
-        session.addRedirection(fetcherPayload.getString("url"), fetcherResponse.getJSONObject("response").getString("redirect_url"));
-
-        content = responseJSON.getString("body");
-        S3Service.uploadCrawlerSessionContentToAmazon(session, DataFetcher.generateRequestHash(session), content);
-
-        if (fetcherResponse.has("request_status_code")) {
-          int responseCode = fetcherResponse.getInt("request_status_code");
-          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
-            throw new ResponseCodeException(responseCode);
-          }
-        }
-      }
-    } catch (Exception e) {
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-    }
-
-    if (content.isEmpty()) {
-      content = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    if (content == null || content.isEmpty()) {
+      Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      content = new ApacheDataFetcher().get(session, requestApache).getBody();
     }
 
     return content;

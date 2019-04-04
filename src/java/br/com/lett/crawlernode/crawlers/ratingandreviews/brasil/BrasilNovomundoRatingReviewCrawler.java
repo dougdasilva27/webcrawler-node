@@ -32,7 +32,7 @@ public class BrasilNovomundoRatingReviewCrawler extends RatingReviewCrawler {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
         YourreviewsRatingCrawler yrRC = new YourreviewsRatingCrawler(session, cookies, logger);
-        Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "4c93a458-0ff1-453e-b5b6-b361ad6aaeda");
+        Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "4c93a458-0ff1-453e-b5b6-b361ad6aaeda", dataFetcher);
 
         Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);

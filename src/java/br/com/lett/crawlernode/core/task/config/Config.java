@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.core.task.config;
 
 import java.util.List;
 
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 
 public class Config {
 	
@@ -20,18 +20,18 @@ public class Config {
 	 * Defines the fetcher to be used on the the first fetching of the crawling.
 	 * The result of this fetching will be passed to the crawler extraction method.
 	 */
-	protected Fetcher fetcher;
+	protected FetchMode fetcher;
 	
 	
 	public Config() {
 		super();
 	}
 	
-	public void setFetcher(Fetcher fetcher) {
+	public void setFetcher(FetchMode fetcher) {
 		this.fetcher = fetcher;
 	}
 	
-	public Fetcher getFetcher() {
+	public FetchMode getFetcher() {
 		return this.fetcher;
 	}
 	

@@ -28,7 +28,7 @@ public class BrasilCasaeconstrucaoRatingReviewCrawler extends RatingReviewCrawle
 
       YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "53f7df57-db2b-4521-b829-617abf75405d");
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "53f7df57-db2b-4521-b829-617abf75405d", dataFetcher);
 
       Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating, "p[itemprop=\"count\"]");
 

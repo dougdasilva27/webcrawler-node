@@ -25,7 +25,7 @@ public class BrasilLojacotyRatingReviewCrawler extends RatingReviewCrawler {
 
     if (isProductPage(document)) {
       VtexRatingCrawler vtex = new VtexRatingCrawler(session, "https://www.lojacoty.com.br/", logger, cookies);
-      ratingReviewsCollection = vtex.extractRatingAndReviewsForVtex(document);
+      ratingReviewsCollection = vtex.extractRatingAndReviewsForVtex(document, dataFetcher);
     }
 
     return ratingReviewsCollection;

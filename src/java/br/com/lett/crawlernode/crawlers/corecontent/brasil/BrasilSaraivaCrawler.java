@@ -12,7 +12,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -183,10 +184,11 @@ public class BrasilSaraivaCrawler extends Crawler {
     JSONArray api = new JSONArray();
 
     String url = "https://preco.saraiva.com.br/v3/buyBox/produto/" + internalId + "/lojistaeleito";
-    JSONArray apiJson = CrawlerUtils.stringToJsonArray(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies).trim());
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
-    if (apiJson.length() > 0) {
-      api = apiJson.getJSONArray(0);
+    if (jsonArray.length() > 0) {
+      api = jsonArray.getJSONArray(0);
     }
 
     return api;
@@ -202,7 +204,9 @@ public class BrasilSaraivaCrawler extends Crawler {
         sellerName = sellerApi.get("store_name").toString().toLowerCase().trim();
       }
 
-      marketplaceMap.put(sellerName, crawlPrices(sellerApi));
+      if (!sellerName.isEmpty()) {
+        marketplaceMap.put(sellerName, crawlPrices(sellerApi));
+      }
     }
 
     return marketplaceMap;
@@ -219,7 +223,9 @@ public class BrasilSaraivaCrawler extends Crawler {
 
       prices.setBankTicketPrice(crawlBilletPrice(apiJson));
 
-      Map<Integer, Float> installments = crawlInstallmentsNormalCard(apiJson);
+      Float price = CrawlerUtils.getFloatValueFromJSON(priceJson, "final");
+
+      Map<Integer, Float> installments = crawlInstallmentsNormalCard(apiJson, price);
       Map<Integer, Float> installmentsShopcardMap = crawlInstallmentsShopCard(apiJson);
 
       if (installments.size() > 0) {
@@ -267,8 +273,9 @@ public class BrasilSaraivaCrawler extends Crawler {
    * @param doc
    * @return
    */
-  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock) {
+  private Map<Integer, Float> crawlInstallmentsNormalCard(JSONObject priceBlock, Float price) {
     Map<Integer, Float> installments = new HashMap<>();
+    installments.put(1, price);
 
     if (priceBlock.has("price")) {
       JSONObject priceJson = priceBlock.getJSONObject("price");
@@ -459,7 +466,8 @@ public class BrasilSaraivaCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     String apiUrl = "https://api.saraiva.com.br/sc/produto/pdp/" + internalId + "/0/19121647/1/";
-    JSONObject apiJson = CrawlerUtils.stringToJson(DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies).trim());
+    Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+    JSONObject apiJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (apiJson.length() > 0) {
       if (apiJson.has("description")) {
@@ -492,7 +500,7 @@ public class BrasilSaraivaCrawler extends Crawler {
       description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_attributes", "#product_description")));
     }
 
-    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, session));
+    description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, dataFetcher, session));
 
     return description.toString();
   }

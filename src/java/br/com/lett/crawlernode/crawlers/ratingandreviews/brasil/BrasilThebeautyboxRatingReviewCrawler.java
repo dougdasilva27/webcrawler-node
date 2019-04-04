@@ -38,7 +38,7 @@ public class BrasilThebeautyboxRatingReviewCrawler extends RatingReviewCrawler {
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "31087896-d490-4f03-b64b-5948e3fb52e5");
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "31087896-d490-4f03-b64b-5948e3fb52e5", dataFetcher);
         Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 

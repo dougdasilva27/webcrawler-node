@@ -35,7 +35,7 @@ public class ChileJumbolareinaCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
 
-    return new ChileJumboCrawler(session, cookies, logger).extractProducts(doc);
+    return new ChileJumboCrawler(session, cookies, logger, dataFetcher).extractProducts(doc);
   }
 
 }

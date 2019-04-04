@@ -11,7 +11,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -59,7 +60,8 @@ public class BrasilHpCrawler extends Crawler {
     headers.put("Host", "www.lojahp.com.br");
     headers.put("Upgrade-Insecure-Requests", "1");
 
-    return Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), cookies, headers, 1));
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override

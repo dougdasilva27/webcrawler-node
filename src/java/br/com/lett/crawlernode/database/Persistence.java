@@ -1065,6 +1065,32 @@ public class Persistence {
   }
 
   /**
+   * Update frozen server task
+   * 
+   * @param session
+   */
+  public static void updateFrozenServerTask(SeedCrawlerSession session, String msg) {
+    String taskId = session.getTaskId();
+
+    if (taskId != null) {
+      Document taskDocument = new Document().append("updated", new Date()).append("progress", 100);
+
+      StringBuilder errors = new StringBuilder();
+      errors.append(msg);
+      taskDocument.append("status", "ERROR");
+
+      taskDocument.append("result", new Document().append("error", errors.toString()));
+
+      try {
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
+            MONGO_COLLECTION_SERVER_TASK);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
+    }
+  }
+
+  /**
    * Update frozen server task progress
    * 
    * @param session

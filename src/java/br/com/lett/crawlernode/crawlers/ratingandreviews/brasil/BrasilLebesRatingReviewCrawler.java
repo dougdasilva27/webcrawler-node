@@ -30,7 +30,7 @@ public class BrasilLebesRatingReviewCrawler extends RatingReviewCrawler {
 
       if (vtexJson.has("productId")) {
         String internalPid = Integer.toString(vtexJson.getInt("productId"));
-        Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "d0b53e21-10fb-4c05-8d9c-10fdafae9edd");
+        Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "d0b53e21-10fb-4c05-8d9c-10fdafae9edd", dataFetcher);
 
         Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);

@@ -11,16 +11,17 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -45,33 +46,21 @@ public class BrasilMeucarrefourCrawler extends Crawler {
     JSONObject api = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("User-Agent", DataFetcher.randMobileUserAgent());
+    headers.put("User-Agent", FetchUtilities.randMobileUserAgent());
     String[] tokens = session.getOriginalURL().split("#");
 
     String url = "https://api.carrefour.com.br/mobile-food/v1/product/" + tokens[tokens.length - 1];
-    // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
-    String page = null;
 
-    if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
-        && fetcherResponse.getInt("request_status_code") < 400) {
-      JSONObject response = fetcherResponse.getJSONObject("response");
 
-      if (response.has("body")) {
-        page = response.get("body").toString();
-      }
-    } else {
-      // normal request
-      page = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+
+    String content = this.dataFetcher.get(session, request).getBody();
+
+    if (content == null || content.isEmpty()) {
+      content = new ApacheDataFetcher().get(session, request).getBody();
     }
 
-    if (page != null && page.startsWith("{") && page.endsWith("}")) {
-      try {
-        api = new JSONObject(page);
-      } catch (Exception e) {
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
-    }
+    api = CrawlerUtils.stringToJson(content);
 
     return api;
   }

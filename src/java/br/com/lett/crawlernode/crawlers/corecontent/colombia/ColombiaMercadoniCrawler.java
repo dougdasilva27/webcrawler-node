@@ -7,8 +7,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.JsonParser;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -228,8 +228,8 @@ public class ColombiaMercadoniCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
 
-      String page =
-          POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload, cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
+      Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+      String page = this.dataFetcher.post(session, request).getBody().trim();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {

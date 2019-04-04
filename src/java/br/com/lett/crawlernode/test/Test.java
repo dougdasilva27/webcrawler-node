@@ -108,9 +108,7 @@ public class Test {
         session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
             market, "Aparelhos");
       } else {
-        session = SessionFactory.createTestSession(
-            "https://www.casasbahia.com.br/Eletroportateis/Cafeteiras/CafeteirasEletricas/cafeteira-eletrica-philco-ph30-temp-aco-escovado-7484257.html",
-            market);
+        session = SessionFactory.createTestSession("https://www.savegnago.com.br/alimento-infantil-nestle-120g-maca/p", market);
       }
 
       Task task = TaskFactory.createTask(session);

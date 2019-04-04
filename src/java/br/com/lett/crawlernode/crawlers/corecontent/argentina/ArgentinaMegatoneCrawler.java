@@ -10,7 +10,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -103,7 +104,8 @@ public class ArgentinaMegatoneCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
 
-    JSONObject d = CrawlerUtils.stringToJson(POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers));
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    JSONObject d = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
     if (d.has("d")) {
       str.append(Jsoup.parse(d.get("d").toString()));

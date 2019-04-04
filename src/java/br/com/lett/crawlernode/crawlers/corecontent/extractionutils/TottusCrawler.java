@@ -13,7 +13,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -88,12 +90,11 @@ public class TottusCrawler {
     StringBuilder description = new StringBuilder();
     Map<String, String> headers = new HashMap<>();
 
-    headers.put("Content-Encoding", "");
     headers.put("Accept", "");
 
-    JSONObject skuDescription =
-        new JSONObject(POSTFetcher.requestStringUsingFetcher("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id,
-            null, headers, null, "GET", session, false));
+    Request request = RequestBuilder.create().setUrl("https://api-fichas-tecnicas.firebaseio.com/fichas.json?orderBy=%22SKU%22&equalTo=" + id)
+        .mustSendContentEncoding(false).build();
+    JSONObject skuDescription = CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
 
     if (descriptionHtml != null) {
       description.append(descriptionHtml.text());

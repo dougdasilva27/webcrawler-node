@@ -8,8 +8,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -26,6 +28,7 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
 
   public SaopauloCasasbahiaRatingReviewCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   private static final String HOME_PAGE = "https://www.casasbahia.com.br/";
@@ -50,9 +53,10 @@ public class SaopauloCasasbahiaRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("Host", "www.casasbahia.com.br");
     headers.put("Referer", HOME_PAGE);
     headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override

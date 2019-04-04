@@ -30,7 +30,7 @@ public class BrasilPoloarRatingReviewCrawler extends RatingReviewCrawler {
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "d6e492c4-14f6-45f0-8241-43a67ce4bb45");
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "d6e492c4-14f6-45f0-8241-43a67ce4bb45", dataFetcher);
         Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 

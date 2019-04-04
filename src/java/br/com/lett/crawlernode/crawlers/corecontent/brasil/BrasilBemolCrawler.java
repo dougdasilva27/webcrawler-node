@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -143,10 +145,10 @@ public class BrasilBemolCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-          "https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
-              + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214",
-          null, cookies);
+      Request request =
+          RequestBuilder.create().setUrl("https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
+              + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214").setCookies(cookies).build();
+      Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Elements cards = docPrices.select(".modal-wd-product-payment-options .grid table");
       for (Element e : cards) {

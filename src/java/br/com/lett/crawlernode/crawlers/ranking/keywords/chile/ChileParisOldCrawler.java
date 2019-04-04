@@ -4,16 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ChileParisOldCrawler extends CrawlerRankingKeywords {
 
   public ChileParisOldCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -86,13 +88,11 @@ public class ChileParisOldCrawler extends CrawlerRankingKeywords {
   }
 
   private JSONObject crawlSearchApi() {
-    JSONObject searchApi = new JSONObject();
     String url = "https://www.paris.cl/store-api/pyload/_search";
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
-    headers.put("Content-Encoding", "");
 
     String payload;
 
@@ -128,27 +128,9 @@ public class ChileParisOldCrawler extends CrawlerRankingKeywords {
           + "{\"field\":\"delivery.keyword\",\"size\":1000,\"order\":{\"_key\":\"asc\"}}}}}";
     }
 
-    JSONObject payloaFetcher = POSTFetcher.fetcherPayloadBuilder(url, "POST", true, payload, headers, null, null);
-    JSONObject fetcherReponse = new JSONObject();
-    try {
-      fetcherReponse = POSTFetcher.requestWithFetcher(session, payloaFetcher, false);
-    } catch (Exception e) {
-      this.logError(CommonMethods.getStackTrace(e));
-    }
+    Request request =
+        RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
 
-    if (fetcherReponse.has("response") && fetcherReponse.has("request_status_code") && fetcherReponse.getInt("request_status_code") >= 200
-        && fetcherReponse.getInt("request_status_code") < 400) {
-      JSONObject responseJson = fetcherReponse.getJSONObject("response");
-
-      if (responseJson.has("body")) {
-        JSONObject json = CrawlerUtils.stringToJson(responseJson.get("body").toString());
-
-        if (json.has("hits")) {
-          searchApi = json.getJSONObject("hits");
-        }
-      }
-    }
-
-    return searchApi;
+    return CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
   }
 }

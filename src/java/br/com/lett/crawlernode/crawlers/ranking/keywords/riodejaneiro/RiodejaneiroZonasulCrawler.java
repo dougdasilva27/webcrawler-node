@@ -7,7 +7,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -20,8 +21,8 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies =
-        CrawlerUtils.fetchCookiesFromAPage("https://www.zonasul.com.br/", Arrays.asList("ASP.NET_SessionId"), "www.zonasul.com.br", "/", session);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.zonasul.com.br/", Arrays.asList("ASP.NET_SessionId"), "www.zonasul.com.br", "/",
+        null, session, dataFetcher);
   }
 
   @Override
@@ -99,7 +100,8 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
       headers.put("referer", url);
       headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-      doc = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders(postUrl, session, payload.toString(), cookies, 1, headers, null, null));
+      Request request = RequestBuilder.create().setUrl(postUrl).setCookies(cookies).setHeaders(headers).setPayload(payload.toString()).build();
+      doc = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
     }
 
     return doc;

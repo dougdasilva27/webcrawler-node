@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ImageCrawlerSession extends Session {
@@ -87,7 +87,7 @@ public class ImageCrawlerSession extends Session {
    * @return a String representing the name of the image.
    */
   private String createImageBaseName() {
-    String s = super.originalURL + new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String s = super.originalURL + new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
     String extension = FilenameUtils.getExtension(CommonMethods.strip(super.originalURL, 230));
     if (extension == null || extension.isEmpty()) {
       extension = DEFAULT_EXTENSION;

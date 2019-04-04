@@ -5,8 +5,9 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -14,6 +15,7 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 
   public SaopauloPontofrioCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "https://www.pontofrio.com.br/";
@@ -87,16 +89,18 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
 
   private String fetchPage(String url) {
     Map<String, String> headers = new HashMap<>();
-    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Cache-Control", "no-cache");
-    headers.put("Connection", "keep-alive");
-    headers.put("Host", "www.pontofrio.com.br");
-    headers.put("Referer", HOME_PAGE);
-    headers.put("Upgrade-Insecure-Requests", "1");
-    headers.put("User-Agent", DataFetcher.randUserAgent());
+    // headers.put("Accept",
+    // "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    // headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    // headers.put("Cache-Control", "no-cache");
+    // headers.put("Connection", "keep-alive");
+    // headers.put("Host", "www.pontofrio.com.br");
+    // headers.put("Referer", HOME_PAGE);
+    // headers.put("Upgrade-Insecure-Requests", "1");
+    // headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, null, new HashMap<>(), 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override

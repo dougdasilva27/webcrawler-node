@@ -17,7 +17,7 @@ public class UnitedstatesWalgreensCrawler extends CrawlerRankingKeywords {
 
   @Override
   public void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".walgreens.com", "/", cookies, session, new HashMap<>());
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".walgreens.com", "/", cookies, session, new HashMap<>(), dataFetcher);
   }
 
   @Override

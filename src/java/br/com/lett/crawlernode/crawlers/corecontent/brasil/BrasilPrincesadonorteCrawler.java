@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,7 +11,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -35,12 +36,14 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
   public BrasilPrincesadonorteCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(POSTFetcher.requestStringUsingFetcher(session.getOriginalURL(), cookies, new HashMap<>(), null, "GET", session, false));
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override

@@ -7,20 +7,20 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 
 public class Session {
 
   protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-  protected DateTime date = new DateTime(DateConstants.timeZone);
+  protected DateTime date = new DateTime(DateUtils.timeZone);
 
   protected String taskStaus;
 
@@ -102,17 +102,17 @@ public class Session {
 
     maxConnectionAttemptsWebcrawler = 0;
 
-    // if (Main.executionParameters.getUseFetcher()) {
-    // // for (String proxy : market.getProxies()) {
-    // // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-    // // }
-    // // maxConnectionAttemptsWebcrawler++;
-    // maxConnectionAttemptsWebcrawler = 2;
-    // } else {
-    for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+    if (GlobalConfigurations.executionParameters.getUseFetcher()) {
+      // for (String proxy : market.getProxies()) {
+      // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+      // }
+      // maxConnectionAttemptsWebcrawler++;
+      maxConnectionAttemptsWebcrawler = 2;
+    } else {
+      for (String proxy : market.getProxies()) {
+        maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+      }
     }
-    // }
 
     maxConnectionAttemptsImages = 0;
     for (String proxy : market.getImageProxies()) {

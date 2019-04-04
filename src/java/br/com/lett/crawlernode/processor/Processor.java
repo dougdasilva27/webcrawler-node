@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DBSlack;
 import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
@@ -49,7 +49,7 @@ public class Processor {
 
     Logging.printLogInfo(logger, session, "Creating processed product ...");
 
-    String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     Processed newProcessedProduct = null;
 
@@ -227,8 +227,8 @@ public class Processor {
   public void updateBehaviorTest(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
       Prices prices, Marketplace marketplace, Session session) {
 
-    DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
-    String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    DateTime startOfDay = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay();
+    String startOfDayISO = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     // Get the previous behavior object
     Behavior oldBehaviour;
@@ -294,8 +294,8 @@ public class Processor {
   public static void updateBehavior(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
       Prices prices, Marketplace marketplace, Session session) {
 
-    DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
-    String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    DateTime startOfDay = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay();
+    String startOfDayISO = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     // Get the previous behavior object
     Behavior oldBehaviour;
@@ -445,7 +445,7 @@ public class Processor {
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-      if (discount > 20 && (newProcessedProduct.getPrice() > 50 || discount > 80)) {
+      if ((discount > 75 && newProcessedProduct.getPrice() > 50) || discount > 90) {
         DBSlack.reportPriceChanges(session,
             "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
                 + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"

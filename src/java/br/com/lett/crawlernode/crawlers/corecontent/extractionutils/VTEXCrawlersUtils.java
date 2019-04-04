@@ -12,7 +12,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -49,21 +51,25 @@ public class VTEXCrawlersUtils {
   private List<Card> cards;
   private boolean hasBankTicket = true;
   private boolean isPriceBasePriceFrom = false;
+  private DataFetcher dataFetcher;
 
-  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies) {
+  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, DataFetcher dataFetcher) {
     this.session = session;
     this.sellerNameLower = store;
     this.homePage = homePage;
     this.cookies = cookies;
+    this.dataFetcher = dataFetcher;
   }
 
-  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, Integer cardDiscount, Integer bankDiscount) {
+  public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, Integer cardDiscount, Integer bankDiscount,
+      DataFetcher dataFetcher) {
     this.session = session;
     this.sellerNameLower = store;
     this.homePage = homePage;
     this.cookies = cookies;
     this.cardDiscount = cardDiscount;
     this.bankTicketDiscount = bankDiscount;
+    this.dataFetcher = dataFetcher;
   }
 
   public VTEXCrawlersUtils(Session session, List<Cookie> cookies) {
@@ -377,7 +383,9 @@ public class VTEXCrawlersUtils {
     JSONObject json = new JSONObject();
 
     String url = homePage + "api/catalog_system/pub/products/search?fq=" + idType + ":" + id;
-    JSONArray array = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (array.length() > 0) {
       json = array.getJSONObject(0);
@@ -457,7 +465,9 @@ public class VTEXCrawlersUtils {
 
   public void crawlPricesFromApi(String internalId, JSONObject jsonSku, Prices prices, Float price, Float priceBase) {
     String url = homePage + "productotherpaymentsystems/" + internalId;
-    Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
     if (hasBankTicket) {
       Element bank = doc.select("#ltlPrecoWrapper em").first();
@@ -580,7 +590,8 @@ public class VTEXCrawlersUtils {
   public JSONObject crawlApi(String internalId) {
     String url = homePage + "produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

@@ -3,18 +3,19 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
 public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
 
   public LeroymerlinRatingReviewCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -29,7 +30,8 @@ public class LeroymerlinRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, "caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc");
-      JSONObject ratingReviewsEndpointResponse = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, endpointRequest, null, null);
+      Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+      JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       if (ratingReviewsEndpointResponse.has("reviewSummary")) {
         reviewSummary = ratingReviewsEndpointResponse.getJSONObject("reviewSummary");

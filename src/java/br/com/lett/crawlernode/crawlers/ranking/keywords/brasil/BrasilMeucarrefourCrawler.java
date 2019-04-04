@@ -4,16 +4,19 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilMeucarrefourCrawler extends CrawlerRankingKeywords {
 
   public BrasilMeucarrefourCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -79,24 +82,10 @@ public class BrasilMeucarrefourCrawler extends CrawlerRankingKeywords {
 
   private JSONObject crawlSearchApi(String url) {
     Map<String, String> headers = new HashMap<>();
-    headers.put("User-Agent", DataFetcher.randMobileUserAgent());
+    headers.put("User-Agent", FetchUtilities.randMobileUserAgent());
 
-    // request with fetcher
-    JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, null, headers, null, DataFetcher.GET_REQUEST, session, false);
-    String page = null;
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
 
-    if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
-        && fetcherResponse.getInt("request_status_code") < 400) {
-      JSONObject response = fetcherResponse.getJSONObject("response");
-
-      if (response.has("body")) {
-        page = response.get("body").toString();
-      }
-    } else {
-      // normal request
-      page = GETFetcher.fetchPageGETWithHeaders(session, session.getOriginalURL(), null, headers, 1);
-    }
-
-    return page == null ? new JSONObject() : new JSONObject(page);
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 }

@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.main;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.server.ServerExecutorStatusAgent;
@@ -47,23 +49,26 @@ public class Main {
   public static void main(String args[]) {
     Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
-    // setting global configuraions
+    // Setting global configuraions
     GlobalConfigurations.setConfigurations();
+    
+    // Create Kinesis KPL child process
+    KPLProducer.getInstance();
 
-    // check resources
+    // Check resources
     Logging.printLogInfo(LOGGER, "Checking files...");
     checkFiles();
 
-    // initialize temporary folder for images download
+    // Initialize temporary folder for images download
     Persistence.initializeImagesDirectories(GlobalConfigurations.markets);
 
-    // create a queue handler that will contain an Amazon SQS instance
+    // Create a queue handler that will contain an Amazon SQS instance
     queueHandler = new QueueHandler();
 
-    // create the server
+    // Create the server
     server = new Server();
 
-    // create the scheduled task to check the executor status
+    // Create the scheduled task to check the executor status
     serverExecutorStatusAgent = new ServerExecutorStatusAgent();
     serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 20);
   }

@@ -12,11 +12,19 @@ import org.jsoup.nodes.Document;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
@@ -35,10 +43,10 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import containers.ProcessedComparison;
+import models.DateConstants;
 import models.Processed;
 import models.prices.Prices;
 
@@ -65,6 +73,8 @@ public class Crawler extends Task {
 
   protected static final int MAX_TRUCO_ATTEMPTS = 3;
 
+  protected DataFetcher dataFetcher;
+
   protected CrawlerConfig config;
 
   protected CrawlerWebdriver webdriver;
@@ -88,7 +98,7 @@ public class Crawler extends Task {
    */
   private void createDefaultConfig() {
     this.config = new CrawlerConfig();
-    this.config.setFetcher(Fetcher.STATIC);
+    this.config.setFetcher(FetchMode.STATIC);
     this.config.setProxyList(new ArrayList<String>());
     this.config.setConnectionAttempts(0);
   }
@@ -100,6 +110,8 @@ public class Crawler extends Task {
   @Override
   public void processTask() {
     try {
+      setDataFetcher();
+
       if (session instanceof TestCrawlerSession) {
         testRun();
       } else {
@@ -108,6 +120,58 @@ public class Crawler extends Task {
     } catch (Exception e) {
       DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+  }
+
+  private void setDataFetcher() {
+    if (config.getFetcher() == FetchMode.STATIC) {
+      dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+    } else if (config.getFetcher() == FetchMode.APACHE) {
+      dataFetcher = new ApacheDataFetcher();
+    } else if (config.getFetcher() == FetchMode.JAVANET) {
+      dataFetcher = new JavanetDataFetcher();
+    } else if (config.getFetcher() == FetchMode.FETCHER) {
+      dataFetcher = new FetcherDataFetcher();
+    }
+  }
+
+  /**
+   * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The
+   * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
+   * attributes.
+   * 
+   * @param product
+   */
+  private void sendToKinesis(Product product) {
+    if (!GlobalConfigurations.executionParameters.mustSendToKinesis())
+      return;
+
+    if (product.isVoid()) {
+      Product p = new Product();
+      p.setInternalId(product.getInternalId());
+      p.setInternalPid(product.getInternalPid());
+      p.setMarketId(session.getMarket().getNumber());
+      p.setUrl(session.getOriginalURL());
+      p.setAvailable(false);
+      p.setStatus(SkuStatus.VOID);
+
+      KPLProducer.getInstance().put(p, session);
+
+    } else {
+      Product p = product.clone();
+
+      p.setMarketId(session.getMarket().getNumber());
+      if (p.getAvailable()) {
+        p.setStatus(SkuStatus.AVAILABLE);
+      } else {
+        if (p.getMarketplace() != null && p.getMarketplace().size() > 0) {
+          p.setStatus(SkuStatus.MARKETPLACE_ONLY);
+        } else {
+          p.setStatus(SkuStatus.UNAVAILABLE);
+        }
+      }
+
+      KPLProducer.getInstance().put(p, session);
     }
   }
 
@@ -159,14 +223,6 @@ public class Crawler extends Task {
   }
 
   private void productionRun() {
-    // if (session instanceof InsightsCrawlerSession) {
-    // Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
-    // session.getMaxConnectionAttemptsCrawler());
-    // } else if (session instanceof ImageCrawlerSession) {
-    // Logging.printLogDebug(logger, session, "Max attempts for request in this market: " +
-    // session.getMaxConnectionAttemptsImages());
-    // }
-
     if (session instanceof SeedCrawlerSession) {
       Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 50);
     }
@@ -219,6 +275,10 @@ public class Crawler extends Task {
         }
       }
 
+      // Before process and save to PostgreSQL
+      // we must send the raw crawled data to Kinesis
+      sendToKinesis(activeVoidResultProduct);
+
       // after active void analysis we have the resultant
       // product after the extra extraction attempts
       // if the resultant product is not void, the we will process it
@@ -241,6 +301,12 @@ public class Crawler extends Task {
     // we must process each crawled product
     else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
       Logging.printLogDebug(logger, session, "Processing session of type: " + session.getClass().getName());
+
+      // Before process and save to PostgreSQL
+      // we must send the raw crawled data to Kinesis
+      for (Product p : products) {
+        sendToKinesis(p);
+      }
 
       for (Product product : products) {
         try {
@@ -272,7 +338,7 @@ public class Crawler extends Task {
 
     for (Product p : products) {
       if (Test.pathWrite != null) {
-        TestHtmlBuilder.buildProductHtml(p.toJSON(), Test.pathWrite, session);
+        TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, session);
       }
 
       printCrawledInformation(p);
@@ -347,6 +413,11 @@ public class Crawler extends Task {
         // we don't have anything to give a trucada!
         Logging.printLogDebug(logger, session,
             "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+
+        if (session instanceof SeedCrawlerSession) {
+          Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
+              "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+        }
       }
     }
   }
@@ -485,14 +556,17 @@ public class Crawler extends Task {
    */
   protected Object fetch() {
     String html = "";
-    if (config.getFetcher() == Fetcher.STATIC) {
-      html = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, session.getOriginalURL(), null, cookies);
-    } else {
+    if (config.getFetcher() == FetchMode.WEBDRIVER) {
       webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 
       if (webdriver != null) {
         html = webdriver.getCurrentPageSource();
       }
+    } else {
+      Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+
+      html = response.getBody();
     }
 
     return Jsoup.parse(html);
@@ -683,4 +757,3 @@ public class Crawler extends Task {
   }
 
 }
-

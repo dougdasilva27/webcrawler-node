@@ -14,10 +14,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.remote.BrowserType;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DesiredCapabilitiesBuilder;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -39,7 +35,7 @@ public class BrasilCdiscountCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = new ArrayList<Product>();
+    List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -53,11 +49,10 @@ public class BrasilCdiscountCrawler extends Crawler {
 
         // initialize the webdriver
         Logging.printLogDebug(logger, session, "Creating WebDriver instance...");
-        initWebdriver();
 
         // load main page
         Logging.printLogDebug(logger, session, "Loading main page via WebDriver...");
-        this.webdriver.loadUrl(session.getOriginalURL());
+        this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 
         // getting all the sku options
         List<WebElement> webElements = this.webdriver.findElementsByCssSelector("select.listaSku.selSku option");
@@ -410,13 +405,6 @@ public class BrasilCdiscountCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  private void initWebdriver() {
-    DesiredCapabilities capabilities =
-        DesiredCapabilitiesBuilder.create().setBrowserType(BrowserType.PHANTOMJS).setUserAgent(DynamicDataFetcher.randUserAgent()).build();
-
-    this.webdriver = new CrawlerWebdriver(capabilities, session);
   }
 
   private String crawlDescription(Document document) {

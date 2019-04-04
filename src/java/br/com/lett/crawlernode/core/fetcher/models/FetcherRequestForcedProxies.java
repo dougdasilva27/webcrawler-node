@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 
 public class FetcherRequestForcedProxies {
 

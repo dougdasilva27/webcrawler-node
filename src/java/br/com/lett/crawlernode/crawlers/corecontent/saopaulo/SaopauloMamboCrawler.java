@@ -7,10 +7,12 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -184,7 +186,8 @@ public class SaopauloMamboCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     String url = "https://www.mambo.com.br/produto/sku/" + internalId;
-    String stringJsonImages = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String stringJsonImages = this.dataFetcher.get(session, request).getBody();
 
     JSONObject jsonObjectImages = new JSONObject();
     try {
@@ -316,7 +319,8 @@ public class SaopauloMamboCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.mambo.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
       if (bank != null) {
@@ -401,7 +405,8 @@ public class SaopauloMamboCrawler extends Crawler {
     JSONObject info = new JSONObject();
 
     String url = "https://www.mambo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skus = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray skus = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (skus.length() > 0) {
       info = skus.getJSONObject(0);

@@ -9,8 +9,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -44,7 +44,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -122,7 +122,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
       Element iframe = elementInformation.select("iframe[src]").first();
       if (iframe != null) {
-        description.append(GETFetcher.fetchPageGET(session, iframe.attr("src"), cookies, 1));
+        Request request = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+        description.append(this.dataFetcher.get(session, request).getBody());
       }
 
       description.append(elementInformation.html());
@@ -134,7 +135,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     }
 
     String url = "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid;
-    JSONArray skuInfo = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray skuInfo = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (skuInfo.length() > 0) {
       JSONObject product = skuInfo.getJSONObject(0);
@@ -163,7 +165,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
           if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            description.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies));
+            Request requestFrame = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+            description.append(this.dataFetcher.get(session, requestFrame).getBody());
           }
         }
       }

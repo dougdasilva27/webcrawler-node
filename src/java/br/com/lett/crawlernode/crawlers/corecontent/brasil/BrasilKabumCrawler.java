@@ -5,10 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,7 +23,7 @@ import models.prices.Prices;
 
 public class BrasilKabumCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.kabum.com.br";
+  private static final String HOME_PAGE = "http://www.kabum.com.br";
 
   public BrasilKabumCrawler(Session session) {
     super(session);
@@ -58,7 +60,8 @@ public class BrasilKabumCrawler extends Crawler {
           url = url.substring(x);
         }
 
-        doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       }
 
       // internalId
