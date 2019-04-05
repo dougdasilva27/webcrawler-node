@@ -78,9 +78,9 @@ public class PageContent {
       setContentEncoding(encoding.getValue());
     }
 
-    String contentTypeString = entity.getContentType().getValue();
+    String contentTypeString = type != null ? type.getValue() : null;
 
-    if (!contentTypeString.contains("charset=none")) {
+    if (contentTypeString != null && !contentTypeString.contains("charset=none")) {
       // setting charset
       Charset charset = ContentType.getOrDefault(entity).getCharset();
       if (charset != null) {

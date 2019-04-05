@@ -166,7 +166,10 @@ public class ApacheDataFetcher implements DataFetcher {
         // try again
         int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
         requestStats.setStatusCode(responseCode);
-        if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
+        if (responseCode == 404) {
+          FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);
+          break;
+        } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
           throw new ResponseCodeException(responseCode);
         }
 
